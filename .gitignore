@@ -1,0 +1,14 @@
+# ─── Secret credentials — NEVER commit these ───────────────────────────────────
+.env
+.env.*
+
+# ─── Dependencies — too large to commit, restored via npm install ───────────────
+node_modules/
+
+# ─── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+
+# ─── OS junk ───────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
