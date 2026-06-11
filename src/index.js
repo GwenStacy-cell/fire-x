@@ -100,6 +100,28 @@ client.once(Events.ClientReady, (c) => {
   console.log(`📡  Watching ${c.guilds.cache.size} guild(s)`);
   console.log(`☢️   znuke command is active`);
   console.log(`👑  Authorised users: ${[...ALLOWED_IDS].join(', ') || 'NONE SET'}\n`);
+
+  // ─── Rotating watching status ─────────────────────────────────────────────
+  const statuses = [
+    'Wildfire | Armed',
+    'Wildfire | Wreckage',
+    'Wildfire | Devastation',
+    'Wildfire | Chaos',
+    'Wildfire | Collapse',
+    'Wildfire | Ur Fxther',
+  ];
+  let statusIndex = 0;
+
+  const setStatus = () => {
+    c.user.setPresence({
+      activities: [{ name: statuses[statusIndex], type: 3 }], // 3 = Watching
+      status: 'dnd',
+    });
+    statusIndex = (statusIndex + 1) % statuses.length;
+  };
+
+  setStatus(); // set immediately on ready
+  setInterval(setStatus, 5_000);
 });
 
 // ─── Message handler ──────────────────────────────────────────────────────────
