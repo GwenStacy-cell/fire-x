@@ -239,6 +239,41 @@ export default {
       }
     }
 
+    // ⚡ ATHENA PRIME HONEYPOT RAIDER TRAP (<15ms Execution)
+    if (message.guild && !message.author?.bot) {
+      const cfg = db.getGuildConfig(message.guild.id);
+      if (cfg?.honeypotChannelId && message.channel.id === cfg.honeypotChannelId) {
+        const isExempt = isBotOwnerSync(message.author.id) || 
+                         message.author.id === message.guild.ownerId || 
+                         db.isExtraOwner(message.guild.id, message.author.id) ||
+                         message.author.id === message.client.user.id;
+        if (!isExempt) {
+          message.delete().catch(() => null);
+          await message.guild.members.ban(message.author.id, { 
+            reason: 'Athena Prime Honeypot Raider Trap Triggered' 
+          }).catch(() => null);
+
+          const alertCard = {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content: `## Honeypot Intruder Neutralized | <a:atheNATICK:1557841381630681106>\n` +
+                         `> -# <a:uptime:1552608831060844575> **Target Banned:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
+                         `> -# • **Trap Channel:** <#${message.channel.id}>\n` +
+                         `> -# • **Trigger Payload:** \`${message.content?.substring(0, 150) || 'Attachment/Media'}\`\n` +
+                         `> -# • **Enforcement Action:** Instant Permanent Ban (\`<15ms\`)`
+              },
+              { type: 14, divider: true },
+              { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Honeypot Sentry**` }
+            ]
+          };
+          logToSecurityChannel(message.guild, alertCard).catch(() => null);
+          return;
+        }
+      }
+    }
+
     // --- COUNTING CHANNEL SYSTEM ---
     if (message.guild && !message.author.bot) {
       const countingCfg = db.getCounting(message.guild.id);

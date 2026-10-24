@@ -76,6 +76,7 @@ const DEFAULT_SCHEMA = {
   userRankThemes: {}, // userId -> themeName ('hogwarts' | 'athena')
   lockdownSnapshots: {}, // guildId -> { tier, timestamp, channels: [], roles: [] }
   channelLockSnapshots: {}, // `${guildId}-${channelId}` -> { timestamp, overwrites: [] }
+  panicHistory: {},         // guildId -> [ { id, timestamp, type, moderatorId, ... } ]
   studioTemplates: {},   // guildId -> { templateId -> { id, name, title, description, color, fields, footer } }
   minigamesStats: {},    // guildId -> { userId -> { blackjackWins, rouletteWins, triviaWins, totalWagered, totalWon } }
   voiceAnalytics: {}     // guildId -> { hourly: {}, channels: {}, users: {} }
@@ -176,6 +177,7 @@ class Database {
         this.cache.userRankThemes = this.cache.userRankThemes || {};
         this.cache.lockdownSnapshots = this.cache.lockdownSnapshots || {};
         this.cache.channelLockSnapshots = this.cache.channelLockSnapshots || {};
+        this.cache.panicHistory         = this.cache.panicHistory         || {};
         this.cache.studioTemplates = this.cache.studioTemplates || {};
         this.cache.minigamesStats = this.cache.minigamesStats || {};
         this.cache.voiceAnalytics = this.cache.voiceAnalytics || {};
@@ -2659,6 +2661,37 @@ class Database {
     delete this.cache.channelLockSnapshots[`${guildId}-${channelId}`];
     this.save();
     return old;
+  }
+
+  // ==========================================
+  // PANIC & DEFCON TELEMETRY HISTORY
+  // ==========================================
+  recordPanicEvent(guildId, data) {
+    if (!this.cache.panicHistory) this.cache.panicHistory = {};
+    if (!this.cache.panicHistory[guildId]) this.cache.panicHistory[guildId] = [];
+    const event = {
+      id: 'defcon_' + Date.now().toString(36),
+      timestamp: Date.now(),
+      ...data
+    };
+    this.cache.panicHistory[guildId].unshift(event);
+    if (this.cache.panicHistory[guildId].length > 30) {
+      this.cache.panicHistory[guildId] = this.cache.panicHistory[guildId].slice(0, 30);
+    }
+    this.save();
+    return event;
+  }
+
+  getPanicHistory(guildId) {
+    if (!this.cache.panicHistory) this.cache.panicHistory = {};
+    return this.cache.panicHistory[guildId] || [];
+  }
+
+  clearPanicHistory(guildId) {
+    if (!this.cache.panicHistory) this.cache.panicHistory = {};
+    this.cache.panicHistory[guildId] = [];
+    this.save();
+    return true;
   }
 
   // ==========================================

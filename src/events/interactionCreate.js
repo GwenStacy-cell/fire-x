@@ -2440,6 +2440,153 @@ async function handleSecurityInteractions(interaction, guild) {
       } catch(e) { console.error(e); }
     }
 
+    // 🍯 Honeypot Raider Sentry Controls
+    if (customId === 'sec_honeypot_deploy') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.handleHoneypotCommand(guild, interaction.member, 'deploy');
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    if (customId === 'sec_honeypot_remove') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.handleHoneypotCommand(guild, interaction.member, 'remove');
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    // 👻 Anti-GhostPing Sentry Toggle
+    if (customId === 'sec_antighostping_toggle') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.handleAntiGhostPingCommand(guild, interaction.member, 'toggle');
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    // 🔒 Quarantine Vault Roster Actions
+    if (customId === 'sec_mass_unquarantine') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.handleMassUnquarantineAction(guild, interaction.member);
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    if (customId === 'sec_mass_ban_quarantine') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.handleMassBanQuarantineAction(guild, interaction.member);
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    if (customId === 'sec_quarantine_extend') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.handleExtendQuarantineAction(guild, interaction.member, 15);
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    if (customId === 'sec_quarantine_refresh') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.getQuarantineListPanel(guild, interaction.member);
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    // 🏥 Server Health Scorecard & Auto-Fix
+    if (customId === 'sec_health_rescan' || customId === 'sec_health_btn') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.getSecurityHealthPanel(guild);
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    if (customId === 'sec_fix_vectors') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.handleAutoFixHealthVectors(guild, interaction.member);
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    // ⚡ Zero-Risk Nuke Attack Simulator
+    if (customId === 'sec_simnuke_rerun' || customId === 'sec_simnuke_btn') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.handleSimNukeCommand(guild, interaction.member);
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    // 🎙️ Tactical Voice Briefing Quick Button
+    if (customId === 'sec_briefing_btn') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.handleTacticalBriefing(guild, interaction.member, interaction.channel, interaction.member.voice?.channel);
+        return interaction.reply({ ...panel, flags: (panel.flags || 32768) | MessageFlags.Ephemeral });
+      } catch (e) { console.error(e); }
+    }
+
+    // 📜 Defense Matrix Black Box
+    if (customId === 'sec_panichistory_btn') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.getPanicHistoryPanel(guild, interaction.member);
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    if (customId === 'sec_clear_panic_history') {
+      const isOwnerOrExtra = isBotOwnerSync(interaction.user.id) || interaction.user.id === guild.ownerId || db.isExtraOwner(guild.id, interaction.user.id);
+      if (!isOwnerOrExtra) {
+        return interaction.reply({ content: '-# Only the **Server Owner** or **Extra Owners** can purge the Black Box telemetry log.', flags: MessageFlags.Ephemeral });
+      }
+      db.clearPanicHistory(guild.id);
+      const sec = await import('../commands/security.js');
+      const panel = await sec.getPanicHistoryPanel(guild, interaction.member);
+      return cv2.respond(interaction, panel, 7);
+    }
+
+    // 🎛️ Unified Security Matrix Control Room Jump & Module Selector
+    if (customId === 'sec_matrix_jump') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.getSecurityMatrixHub(guild, interaction.member);
+        return cv2.respond(interaction, panel, 7);
+      } catch (e) { console.error(e); }
+    }
+
+    if (interaction.isStringSelectMenu() && customId === 'sec_matrix_module_select') {
+      const sec = await import('../commands/security.js');
+      const val = interaction.values[0];
+      let panel;
+      if (val === 'mod_antinuke') {
+        panel = await sec.getAntinukeConfigPanel(guild);
+      } else if (val === 'mod_honeypot') {
+        panel = await sec.getHoneypotStatusPanel(guild);
+      } else if (val === 'mod_ghostping') {
+        panel = await sec.getAntiGhostPingPanel(guild);
+      } else if (val === 'mod_quarantine') {
+        panel = await sec.getQuarantineListPanel(guild, interaction.member);
+      } else if (val === 'mod_defcon') {
+        panel = await sec.getSecurityStatusPanel(guild);
+      } else if (val === 'mod_health') {
+        panel = await sec.getSecurityHealthPanel(guild);
+      } else if (val === 'mod_simnuke') {
+        panel = await sec.handleSimNukeCommand(guild, interaction.member);
+      } else if (val === 'mod_blackbox') {
+        panel = await sec.getPanicHistoryPanel(guild, interaction.member);
+      }
+      if (panel) return cv2.respond(interaction, panel, 7);
+    }
+
     if (['toggle_antinuke', 'toggle_spam', 'toggle_invite', 'cycle_punishment', 'sec_status_back', 'sec_status_view', 'sec_architecture_guide', 'antinuke_config', 'save_panel'].includes(customId)) {
       try {
         let updated = false;

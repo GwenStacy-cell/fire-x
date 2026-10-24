@@ -128,6 +128,30 @@ if (!message.guild) return;
       innerComps.push({ type: 14, divider: true });
       innerComps.push({ type: 10, content: `-# **Ghost Pinged:**` });
       innerComps.push({ type: 10, content: `-# ${pinged.join(', ').substring(0, 1024)}` });
+
+      const guildConfig = db.getGuildConfig(message.guild.id);
+      if (guildConfig?.antiGhostPing && message.channel && !message.author?.bot) {
+        const ghostAlert = {
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## Ghost Ping Intercepted | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Sender:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
+                           `> -# • **Target(s):** ${pinged.join(', ').substring(0, 300)}\n` +
+                           `> -# • **Deleted Content:** ${content.substring(0, 350)}`
+                },
+                { type: 14, divider: true },
+                { type: 10, content: `-# **Athena Ghost Ping Sentry \u2022 Anti-Troll Defense**` }
+              ]
+            }
+          ],
+          flags: 32768
+        };
+        message.channel.send(ghostAlert).catch(() => null);
+      }
     }
 
     // Footer
