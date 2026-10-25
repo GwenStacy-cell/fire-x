@@ -2284,6 +2284,25 @@ export const DETAILED_COMMANDS = {
     example: '!stocknews NVDA'
   },
 
+  symbols: {
+    name: 'symbols',
+    aliases: ['symbollist', 'tickers', 'tickerlist', 'stocksymbols', 'marketlist', 'symlist'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!symbols [query/category] (or /symbols [query])',
+    purpose: 'Universal symbol directory and real-time ticker resolution covering every publicly traded asset worldwide.',
+    architecture:
+`• **Universal Asset Resolution:**
+  - Full support for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, ITC, HDFCBANK), US tech titans (NVDA, AAPL, MSFT, TSLA, GOOGL), crypto (BTC, ETH, SOL), commodities (GOLD, SILVER, CRUDE, NATGAS), and global indices (NIFTY, SENSEX, SP500, NASDAQ).
+• **Real-Time Dynamic Symbol Search:**
+  - Queries global financial search APIs in real-time to find exact symbols, exchange codes, and asset classes from company names or keywords (e.g. \`!symbols Tata\`, \`!symbols Adani\`, \`!symbols Palantir\`).
+• **Interactive Categorized Directory:**
+  - Interactive Component V2 buttons allow 1-click browsing across India (NSE/BSE), US Tech & AI, Cryptocurrencies, and Commodities/Macro.
+• **Risk Disclaimer:**
+  - Reminds users that Athena can make mistakes and quotes are for educational/informational purposes only.`,
+    example: '!symbols TCS'
+  },
+
   afk: {
     name: 'afk',
     aliases: ['brb'],

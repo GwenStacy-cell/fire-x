@@ -300,6 +300,8 @@ export const commands = [
                   usageText = `${prefix}stocknews [symbol/market] / ${prefix}marketnews`;
               } else if (targetCmd.name === "stockchannel") {
                   usageText = `${prefix}stockchannel set <#channel> / ${prefix}stockchannel disable / ${prefix}stockchannel test / ${prefix}stockchannel status`;
+              } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
+                  usageText = `${prefix}symbols [category/query] / ${prefix}symbollist / ${prefix}tickers / ${prefix}symbols search <query> / /symbols [query]`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -475,6 +477,18 @@ export const commands = [
                     `> • \`${prefix}stocknews [symbol]\` - Primary news wiretap.\n` +
                     `> • \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market news is for informational purposes only. Always double check live data.`;
+              } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
+                  descContent = `Universal symbol directory and real-time ticker resolution covering every publicly traded asset worldwide.\n\n` +
+                    `> -# **__Features & Directory Categories:__**\n` +
+                    `> • **Global Coverage:** Instant resolution for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN), US mega-caps (NVDA, AAPL, TSLA), crypto (BTC, ETH, SOL), commodities (GOLD, CRUDE, SILVER), and indices (NIFTY, SENSEX, SP500, NASDAQ).\n` +
+                    `> • **Dynamic Search Engine:** Search by company name or ticker (\`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`) to retrieve verified exchange symbols and 1-click telemetry commands.\n` +
+                    `> • **Interactive Category Switcher:** Switch between India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
+                    `> -# **__All Aliases & Directives:__**\n` +
+                    `> • \`${prefix}symbols\` - Open universal symbol directory.\n` +
+                    `> • \`${prefix}symbols india\` / \`us\` / \`crypto\` / \`macro\` - Direct category view.\n` +
+                    `> • \`${prefix}symbols <query>\` - Search matching symbols on global exchanges.\n` +
+                    `> • \`${prefix}symbollist\` / \`${prefix}tickers\` / \`${prefix}tickerlist\` / \`${prefix}stocksymbols\` - Command aliases.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
               } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
                   descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
                     `> -# **__Diagnostics Evaluated:__**\n` +
@@ -695,6 +709,8 @@ export const commands = [
           usageText = `${prefix}stocknews [symbol/market] / ${prefix}marketnews`;
         } else if (targetCmd.name === "stockchannel") {
           usageText = `${prefix}stockchannel set <#channel> / ${prefix}stockchannel disable / ${prefix}stockchannel test / ${prefix}stockchannel status`;
+        } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
+          usageText = `${prefix}symbols [category/query] / ${prefix}symbollist / ${prefix}tickers / ${prefix}symbols search <query> / /symbols [query]`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -867,6 +883,18 @@ export const commands = [
             `> • \`${prefix}stocknews [symbol]\` - Primary news wiretap.\n` +
             `> • \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market news is for informational purposes only. Always double check live data.`;
+        } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
+          descContent = `Universal symbol directory and real-time ticker resolution covering every publicly traded asset worldwide.\n\n` +
+            `> -# **__Features & Directory Categories:__**\n` +
+            `> • **Global Coverage:** Instant resolution for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN), US mega-caps (NVDA, AAPL, TSLA), crypto (BTC, ETH, SOL), commodities (GOLD, CRUDE, SILVER), and indices (NIFTY, SENSEX, SP500, NASDAQ).\n` +
+            `> • **Dynamic Search Engine:** Search by company name or ticker (\`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`) to retrieve verified exchange symbols and 1-click telemetry commands.\n` +
+            `> • **Interactive Category Switcher:** Switch between India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
+            `> -# **__All Aliases & Directives:__**\n` +
+            `> • \`${prefix}symbols\` - Open universal symbol directory.\n` +
+            `> • \`${prefix}symbols india\` / \`us\` / \`crypto\` / \`macro\` - Direct category view.\n` +
+            `> • \`${prefix}symbols <query>\` - Search matching symbols on global exchanges.\n` +
+            `> • \`${prefix}symbollist\` / \`${prefix}tickers\` / \`${prefix}tickerlist\` / \`${prefix}stocksymbols\` - Command aliases.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
         } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
           descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
             `> -# **__Diagnostics Evaluated:__**\n` +
@@ -2185,6 +2213,7 @@ export const helpModules = [
     "`!weather / !wtr / !climate / !forecast / !temp / !temperature <location/maps_url>` - Live global weather reconnaissance with satellite world map & 3-day forecast `[Public]`",
     "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Live web high-res picture retrieval with interactive browsing & fresh batches `[Public]`",
     "`!stock / !stocks / !market / !stockmarket / !ticker [symbol]` - Live stock & crypto telemetry in a high-res image with financial breakdown `[Public]`",
+    "`!symbols / !symbollist / !tickers [query]` - Universal global ticker directory & real-time symbol search `[Public]`",
     "`!stockai / !stockexplain / !marketai / !stai <question/topic>` - Ask Athena AI for detailed financial reports, earnings breakdowns & market explanations `[Public]`",
     "`!movers / !topmovers / !gainers / !losers` - Real-time breakdown of top market movers across equities & crypto `[Public]`",
     "`!crypto / !coin / !btc / !eth [coin]` - Dedicated cryptocurrency market telemetry and Canvas charts `[Public]`",
@@ -2194,6 +2223,7 @@ export const helpModules = [
     "`!profile / !card [@user]` - Official God of War canvas profile card `[Public]`",
     "",
     "-# **__Stock Market Intelligence & Telemetry Engine:__**",
+    "-# • **Universal Ticker Resolution:** Resolves every publicly traded asset globally (Indian equities on NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN; US tech titans NVDA, AAPL, TSLA; crypto; commodities; indices).",
     "-# • **High-Resolution Canvas Cards:** Generates terminal-grade Canvas images with smooth Bezier price curves, day range sliders, 52-week range sliders, volume, and sentiment gauges.",
     "-# • **Global Market Pulse Dashboard:** Generates a 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) + mega-caps ticker tape.",
     "-# • **Automated Daily Channel Broadcast:** Configurable morning broadcast (`!stockchannel set <#channel>`) that automatically generates and uploads the daily market briefing at US Market Open (09:30 AM EST).",

@@ -39,86 +39,270 @@ export function getFormattedDateTimeStrings(date = new Date()) {
 }
 
 /**
- * Searches Yahoo Finance for a company name or ticker query
+ * Curated map of common aliases for indices, commodities, currencies, and major Indian stocks
  */
-export async function searchTicker(query) {
-  if (!query) return null;
-  const clean = query.trim().toUpperCase();
+export const COMMON_MARKET_ALIASES = {
+  // Indian Indices
+  'NIFTY': '^NSEI',
+  'NIFTY50': '^NSEI',
+  'SENSEX': '^BSESN',
+  'BANKNIFTY': '^NSEBANK',
 
-  // If query already looks like standard ticker (1-5 chars), try direct first
-  if (/^[A-Z0-9\.\-\^]{1,6}$/.test(clean)) {
-    return clean;
-  }
+  // Major Indian Companies (auto-resolved to NSE listings)
+  'TCS': 'TCS.NS',
+  'RELIANCE': 'RELIANCE.NS',
+  'INFY': 'INFY.NS',
+  'INFOSYS': 'INFY.NS',
+  'HDFCBANK': 'HDFCBANK.NS',
+  'HDFC': 'HDFCBANK.NS',
+  'ICICIBANK': 'ICICIBANK.NS',
+  'ICICI': 'ICICIBANK.NS',
+  'SBIN': 'SBIN.NS',
+  'SBI': 'SBIN.NS',
+  'TATAMOTORS': 'TMCV.NS',
+  'TATAMOTOR': 'TMCV.NS',
+  'TATASTEEL': 'TATASTEEL.NS',
+  'TATAPOWER': 'TATAPOWER.NS',
+  'TATAELXSI': 'TATAELXSI.NS',
+  'ITC': 'ITC.NS',
+  'BHARTIARTL': 'BHARTIARTL.NS',
+  'AIRTEL': 'BHARTIARTL.NS',
+  'WIPRO': 'WIPRO.NS',
+  'LT': 'LT.NS',
+  'L&T': 'LT.NS',
+  'ADANIENT': 'ADANIENT.NS',
+  'ADANI': 'ADANIENT.NS',
+  'ADANIPORTS': 'ADANIPORTS.NS',
+  'MARUTI': 'MARUTI.NS',
+  'TITAN': 'TITAN.NS',
+  'BAJFINANCE': 'BAJFINANCE.NS',
+  'BAJAJ': 'BAJFINANCE.NS',
+  'BAJAJFINANCE': 'BAJFINANCE.NS',
+  'HINDUNILVR': 'HINDUNILVR.NS',
+  'HUL': 'HINDUNILVR.NS',
+  'JIOFIN': 'JIOFIN.NS',
+  'JIO': 'JIOFIN.NS',
+  'KOTAKBANK': 'KOTAKBANK.NS',
+  'AXISBANK': 'AXISBANK.NS',
+  'SUNPHARMA': 'SUNPHARMA.NS',
+  'ONGC': 'ONGC.NS',
+  'NTPC': 'NTPC.NS',
+  'POWERGRID': 'POWERGRID.NS',
+  'COALINDIA': 'COALINDIA.NS',
 
-  try {
-    const res = await fetch(`https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=5`, {
-      headers: { 'User-Agent': USER_AGENT }
-    });
-    if (!res.ok) return clean;
-    const data = await res.json();
-    const firstQuote = data?.quotes?.find(q => q.quoteType === 'EQUITY' || q.quoteType === 'INDEX' || q.quoteType === 'CRYPTOCURRENCY' || q.quoteType === 'ETF') || data?.quotes?.[0];
-    return firstQuote?.symbol || clean;
-  } catch {
-    return clean;
+  // US Indices
+  'SP500': '^GSPC',
+  'S&P500': '^GSPC',
+  'SPX': '^GSPC',
+  'NASDAQ': '^IXIC',
+  'DOW': '^DJI',
+  'DOWJONES': '^DJI',
+  'DJI': '^DJI',
+  'RUSSELL': '^RUT',
+  'VIX': '^VIX',
+
+  // World Indices
+  'FTSE': '^FTSE',
+  'DAX': '^GDAXI',
+  'NIKKEI': '^N225',
+  'HANGSENG': '^HSI',
+
+  // Commodities
+  'GOLD': 'GC=F',
+  'XAU': 'GC=F',
+  'SILVER': 'SI=F',
+  'XAG': 'SI=F',
+  'CRUDE': 'CL=F',
+  'OIL': 'CL=F',
+  'CRUDEOIL': 'CL=F',
+  'BRENT': 'BZ=F',
+  'NATGAS': 'NG=F',
+  'GAS': 'NG=F',
+  'COPPER': 'HG=F',
+
+  // Currencies / Forex
+  'USDINR': 'INR=X',
+  'INR': 'INR=X',
+  'EURUSD': 'EURUSD=X',
+  'GBPUSD': 'GBPUSD=X',
+  'USDJPY': 'JPY=X',
+
+  // Common Crypto abbreviations
+  'BTC': 'BTC-USD',
+  'BITCOIN': 'BTC-USD',
+  'ETH': 'ETH-USD',
+  'ETHEREUM': 'ETH-USD',
+  'SOL': 'SOL-USD',
+  'SOLANA': 'SOL-USD',
+  'DOGE': 'DOGE-USD',
+  'DOGECOIN': 'DOGE-USD',
+  'XRP': 'XRP-USD',
+  'RIPPLE': 'XRP-USD',
+  'ADA': 'ADA-USD',
+  'CARDANO': 'ADA-USD',
+  'BNB': 'BNB-USD',
+  'AVAX': 'AVAX-USD',
+  'SHIB': 'SHIB-USD',
+  'PEPE': 'PEPE-USD',
+  'SUI': 'SUI-USD',
+  'DOT': 'DOT-USD',
+  'LINK': 'LINK-USD',
+  'LTC': 'LTC-USD',
+  'NEAR': 'NEAR-USD',
+  'TRX': 'TRX-USD',
+  'TON': 'TON-USD'
+};
+
+/**
+ * Returns appropriate currency symbol
+ */
+export function getCurrencySymbol(currency = 'USD') {
+  if (!currency) return '$';
+  switch (currency.toUpperCase()) {
+    case 'USD': return '$';
+    case 'INR': return '₹';
+    case 'EUR': return '€';
+    case 'GBP': return '£';
+    case 'JPY': return '¥';
+    case 'CAD': return 'CA$';
+    case 'AUD': return 'A$';
+    default: return `${currency} `;
   }
 }
 
 /**
- * Fetches real-time price, meta, range, and historical chart points for any stock, ETF, or crypto ticker
+ * Searches Yahoo Finance for matching symbols across equities, crypto, indices, and commodities
+ */
+export async function searchTickerSymbols(query) {
+  if (!query) return [];
+  try {
+    const sUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=12`;
+    const sRes = await fetch(sUrl, { headers: { 'User-Agent': USER_AGENT } });
+    if (!sRes.ok) return [];
+    const sData = await sRes.json().catch(() => null);
+    const quotes = sData?.quotes || [];
+    return quotes
+      .filter(q => q.symbol && (q.quoteType === 'EQUITY' || q.quoteType === 'INDEX' || q.quoteType === 'CRYPTOCURRENCY' || q.quoteType === 'ETF' || q.quoteType === 'FUTURE' || q.quoteType === 'CURRENCY'))
+      .map(q => ({
+        symbol: q.symbol,
+        name: q.shortname || q.longname || q.name || q.symbol,
+        exchange: q.exchange || 'GLOBAL',
+        type: q.quoteType || 'EQUITY'
+      }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Searches Yahoo Finance for a company name or ticker query
+ */
+export async function searchTicker(query) {
+  if (!query) return null;
+  const results = await searchTickerSymbols(query);
+  return results[0]?.symbol || query.trim().toUpperCase();
+}
+
+/**
+ * Internal helper to attempt fetching chart telemetry for a candidate ticker
+ */
+async function tryFetchChart(symbol) {
+  try {
+    let url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=15m&range=1d`;
+    let res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+    if (!res.ok) return null;
+    let data = await res.json().catch(() => null);
+    let resObj = data?.chart?.result?.[0];
+    let closes = (resObj?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number');
+
+    // Fallback to 5d if 1d has insufficient closes (e.g. weekend, holiday, market closed)
+    if (!resObj || closes.length < 2) {
+      url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=30m&range=5d`;
+      res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+      if (!res.ok) return null;
+      data = await res.json().catch(() => null);
+      resObj = data?.chart?.result?.[0];
+      closes = (resObj?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number');
+    }
+
+    if (!resObj || !resObj.meta) return null;
+
+    const meta = resObj.meta || {};
+    const price = meta.regularMarketPrice || (closes.length ? closes[closes.length - 1] : 0);
+    const prevClose = meta.chartPreviousClose || (closes.length ? closes[0] : price);
+    const change = price - prevClose;
+    const changePct = prevClose ? (change / prevClose) * 100 : 0;
+
+    const dayHigh = meta.regularMarketDayHigh || (closes.length ? Math.max(...closes, price) : price);
+    const dayLow = meta.regularMarketDayLow || (closes.length ? Math.min(...closes, price) : price);
+    const fiftyTwoWeekHigh = meta.fiftyTwoWeekHigh || dayHigh;
+    const fiftyTwoWeekLow = meta.fiftyTwoWeekLow || dayLow;
+    const volume = meta.regularMarketVolume || 0;
+
+    return {
+      symbol: meta.symbol || symbol,
+      name: meta.shortName || meta.longName || meta.symbol || symbol,
+      currency: meta.currency || 'USD',
+      exchange: meta.exchangeName || 'EXCHANGE',
+      price,
+      prevClose,
+      change,
+      changePct,
+      dayHigh,
+      dayLow,
+      fiftyTwoWeekHigh,
+      fiftyTwoWeekLow,
+      volume,
+      closes: closes.length > 1 ? closes : [prevClose, price],
+      timestamps: resObj.timestamp || []
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Universal stock/crypto/macro fetcher resolving every global symbol (Indian NSE/BSE, US, Crypto, Forex, Commodities)
  */
 export async function fetchStockData(tickerInput) {
-  const symbol = await searchTicker(tickerInput);
-  if (!symbol) throw new Error(`Could not resolve ticker symbol for "${tickerInput}".`);
+  if (!tickerInput) throw new Error('Please specify a stock ticker or company name.');
+  const query = tickerInput.trim();
+  const clean = query.toUpperCase();
 
-  // First try 1-day 15-minute range
-  let url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=15m&range=1d`;
-  let res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
-  let data = await res.json().catch(() => null);
-  let resObj = data?.chart?.result?.[0];
+  const candidates = [];
+  if (COMMON_MARKET_ALIASES[clean]) {
+    candidates.push(COMMON_MARKET_ALIASES[clean]);
+  }
+  candidates.push(clean);
 
-  // If 1d has fewer than 2 closes (e.g. market closed, weekend, or holiday), fallback to 5d
-  let closes = (resObj?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number');
-  if (!resObj || closes.length < 2) {
-    url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=30m&range=5d`;
-    res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
-    data = await res.json().catch(() => null);
-    resObj = data?.chart?.result?.[0];
-    closes = (resObj?.indicators?.quote?.[0]?.close || []).filter(v => typeof v === 'number');
+  // If query doesn't have an exchange suffix (.NS, .BO, -USD, =F, =X)
+  if (!clean.includes('.') && !clean.includes('-') && !clean.includes('=')) {
+    if (/^[A-Z0-9]{2,12}$/.test(clean)) {
+      candidates.push(`${clean}.NS`);   // National Stock Exchange of India (e.g. TCS.NS)
+      candidates.push(`${clean}.BO`);   // Bombay Stock Exchange (e.g. TCS.BO)
+      candidates.push(`${clean}-USD`);  // Cryptocurrency USD pair (e.g. BTC-USD)
+    }
   }
 
-  if (!resObj) {
-    throw new Error(`No financial telemetry available for symbol "${symbol}". Please check the ticker name.`);
+  const candidateSet = new Set(candidates);
+
+  // 1. Try direct and auto-suffixed candidates
+  for (const sym of candidateSet) {
+    const data = await tryFetchChart(sym);
+    if (data) return data;
   }
 
-  const meta = resObj.meta || {};
-  const price = meta.regularMarketPrice || (closes.length ? closes[closes.length - 1] : 0);
-  const prevClose = meta.chartPreviousClose || (closes.length ? closes[0] : price);
-  const change = price - prevClose;
-  const changePct = prevClose ? (change / prevClose) * 100 : 0;
+  // 2. Fall back to Yahoo Finance Search API to resolve company name or ticker
+  const searchResults = await searchTickerSymbols(query);
+  for (const item of searchResults) {
+    if (!candidateSet.has(item.symbol)) {
+      candidateSet.add(item.symbol);
+      const data = await tryFetchChart(item.symbol);
+      if (data) return data;
+    }
+  }
 
-  const dayHigh = meta.regularMarketDayHigh || (closes.length ? Math.max(...closes, price) : price);
-  const dayLow = meta.regularMarketDayLow || (closes.length ? Math.min(...closes, price) : price);
-  const fiftyTwoWeekHigh = meta.fiftyTwoWeekHigh || dayHigh;
-  const fiftyTwoWeekLow = meta.fiftyTwoWeekLow || dayLow;
-  const volume = meta.regularMarketVolume || 0;
-
-  return {
-    symbol: meta.symbol || symbol,
-    name: meta.shortName || meta.longName || meta.symbol || symbol,
-    currency: meta.currency || 'USD',
-    exchange: meta.exchangeName || 'EXCHANGE',
-    price,
-    prevClose,
-    change,
-    changePct,
-    dayHigh,
-    dayLow,
-    fiftyTwoWeekHigh,
-    fiftyTwoWeekLow,
-    volume,
-    closes: closes.length > 1 ? closes : [prevClose, price],
-    timestamps: resObj.timestamp || []
-  };
+  throw new Error(`Could not resolve financial telemetry for "${tickerInput}". Type "!symbols" or "!symbols search ${tickerInput}" to inspect available tickers.`);
 }
 
 /**
@@ -278,8 +462,10 @@ export function renderSingleStockCard(stock) {
   ctx.fillStyle = '#94a3b8';
   ctx.fillText(stock.name, 45, 164);
 
+  const currSym = getCurrencySymbol(stock.currency);
+
   // Price Display
-  const priceStr = `$${stock.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const priceStr = `${currSym}${stock.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   ctx.font = 'bold 50px Roboto, sans-serif';
   ctx.fillStyle = '#f8fafc';
   ctx.fillText(priceStr, 45, 226);
@@ -287,7 +473,7 @@ export function renderSingleStockCard(stock) {
 
   // Change Pill Badge
   const sign = isUp ? '+' : '';
-  const changeStr = `${sign}${stock.change.toFixed(2)} (${sign}${stock.changePct.toFixed(2)}%)`;
+  const changeStr = `${sign}${currSym}${Math.abs(stock.change).toFixed(2)} (${sign}${stock.changePct.toFixed(2)}%)`;
   ctx.font = 'bold 16px Roboto, sans-serif';
   const chgW = ctx.measureText(changeStr).width + 24;
   const pillY = 190;
@@ -339,7 +525,7 @@ export function renderSingleStockCard(stock) {
 
   ctx.font = '10px Roboto, sans-serif';
   ctx.fillStyle = '#64748b';
-  ctx.fillText(`PREV CLOSE $${stock.prevClose.toFixed(2)}`, chartX + chartW - 130, prevY - 6);
+  ctx.fillText(`PREV CLOSE ${currSym}${stock.prevClose.toFixed(2)}`, chartX + chartW - 130, prevY - 6);
 
   // Area under curve
   const areaGrad = ctx.createLinearGradient(0, chartY, 0, chartY + chartH);
@@ -407,8 +593,8 @@ export function renderSingleStockCard(stock) {
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('DAY RANGE', panelX + 20, panelY + 65);
   ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(`$${stock.dayLow.toFixed(2)}`, panelX + 20, panelY + 84);
-  const dayHighStr = `$${stock.dayHigh.toFixed(2)}`;
+  ctx.fillText(`${currSym}${stock.dayLow.toFixed(2)}`, panelX + 20, panelY + 84);
+  const dayHighStr = `${currSym}${stock.dayHigh.toFixed(2)}`;
   ctx.font = '11px Roboto, sans-serif';
   const dhW = ctx.measureText(dayHighStr).width;
   ctx.fillText(dayHighStr, panelX + panelW - 20 - dhW, panelY + 84);
@@ -438,8 +624,8 @@ export function renderSingleStockCard(stock) {
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('52-WEEK RANGE', panelX + 20, panelY + 140);
   ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(`$${stock.fiftyTwoWeekLow.toFixed(2)}`, panelX + 20, panelY + 160);
-  const w52HighStr = `$${stock.fiftyTwoWeekHigh.toFixed(2)}`;
+  ctx.fillText(`${currSym}${stock.fiftyTwoWeekLow.toFixed(2)}`, panelX + 20, panelY + 160);
+  const w52HighStr = `${currSym}${stock.fiftyTwoWeekHigh.toFixed(2)}`;
   ctx.font = '11px Roboto, sans-serif';
   const whW = ctx.measureText(w52HighStr).width;
   ctx.fillText(w52HighStr, panelX + panelW - 20 - whW, panelY + 160);
@@ -484,7 +670,7 @@ export function renderSingleStockCard(stock) {
   ctx.fillText('PREV CLOSE', panelX + 182, rowY + 24);
   ctx.font = 'bold 16px Roboto, sans-serif';
   ctx.fillStyle = '#f1f5f9';
-  ctx.fillText(`$${stock.prevClose.toFixed(2)}`, panelX + 182, rowY + 48);
+  ctx.fillText(`${currSym}${stock.prevClose.toFixed(2)}`, panelX + 182, rowY + 48);
 
   // Sentiment Card
   const sentY = panelY + 300;
@@ -751,6 +937,7 @@ export function renderMarketOverviewCard(overview) {
 export function buildStockPayload(stock, imageBuffer, prefix = '!') {
   const isUp = stock.change >= 0;
   const sign = isUp ? '+' : '';
+  const currSym = getCurrencySymbol(stock.currency);
   const filename = `stock_${stock.symbol.toLowerCase().replace(/[^a-z0-9]/g, '_')}.png`;
   const attachment = new AttachmentBuilder(imageBuffer, { name: filename });
   const dt = getFormattedDateTimeStrings();
@@ -764,13 +951,14 @@ export function buildStockPayload(stock, imageBuffer, prefix = '!') {
       type: 10,
       content: `## ${stock.name} (${stock.symbol}) Stock Telemetry | <a:atheNATICK:1557841381630681106>\n` +
                `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
-               `> -# <a:uptime:1552608831060844575> **Current Price:** \`$${stock.price.toFixed(2)} ${stock.currency}\` (\`${sign}${stock.change.toFixed(2)}\` | \`${sign}${stock.changePct.toFixed(2)}%\`)\n` +
-               `> -# • **Day Session Range:** \`$${stock.dayLow.toFixed(2)}\` \u2014 \`$${stock.dayHigh.toFixed(2)}\`\n` +
-               `> -# • **52-Week Range:** \`$${stock.fiftyTwoWeekLow.toFixed(2)}\` \u2014 \`$${stock.fiftyTwoWeekHigh.toFixed(2)}\`\n` +
-               `> -# • **24h Volume:** \`${stock.volume > 1e6 ? (stock.volume / 1e6).toFixed(2) + 'M' : stock.volume.toLocaleString()}\` \u2022 **Prev Close:** \`$${stock.prevClose.toFixed(2)}\`\n` +
+               `> -# <a:uptime:1552608831060844575> **Current Price:** \`${currSym}${stock.price.toFixed(2)} ${stock.currency}\` (\`${sign}${currSym}${Math.abs(stock.change).toFixed(2)}\` | \`${sign}${stock.changePct.toFixed(2)}%\`)\n` +
+               `> -# • **Day Session Range:** \`${currSym}${stock.dayLow.toFixed(2)}\` \u2014 \`${currSym}${stock.dayHigh.toFixed(2)}\`\n` +
+               `> -# • **52-Week Range:** \`${currSym}${stock.fiftyTwoWeekLow.toFixed(2)}\` \u2014 \`${currSym}${stock.fiftyTwoWeekHigh.toFixed(2)}\`\n` +
+               `> -# • **24h Volume:** \`${stock.volume > 1e6 ? (stock.volume / 1e6).toFixed(2) + 'M' : stock.volume.toLocaleString()}\` \u2022 **Prev Close:** \`${currSym}${stock.prevClose.toFixed(2)}\`\n` +
                `> -# • **Exchange Market:** \`${stock.exchange}\` (\`${stock.currency}\`)\n` +
                `> -# • **Session Momentum:** \`${isUp ? 'Bullish (Upward Momentum)' : 'Bearish (Downward Pull)'}\`\n\n` +
                `### Supporting Commands Guidance\n` +
+               `> -# • \`${prefix}symbols\` \u2014 Browse global ticker directory (NSE/BSE, US Tech, Crypto, Commodities) or search any company.\n` +
                `> -# • \`${prefix}market\` \u2014 Global 6-index world market pulse & mega-caps tape.\n` +
                `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown.\n` +
                `> -# • \`${prefix}movers\` \u2014 Real-time top gainers & decliners across equities/crypto.\n` +
@@ -815,6 +1003,12 @@ export function buildStockPayload(stock, imageBuffer, prefix = '!') {
     {
       type: 1,
       components: [
+        {
+          type: 2,
+          custom_id: 'stk_cat_all',
+          label: 'Symbols List',
+          style: 2
+        },
         {
           type: 2,
           custom_id: 'stk_ref_overview',
@@ -897,7 +1091,8 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
                `> -# • **Key Indices:** ${indicesSummary}\n` +
                `> -# • **Tech Mega-Caps:** \`NVDA\` (${overview.tickers[0]?.changePct >= 0 ? '+' : ''}${overview.tickers[0]?.changePct?.toFixed(1)}%), \`AAPL\` (${overview.tickers[1]?.changePct >= 0 ? '+' : ''}${overview.tickers[1]?.changePct?.toFixed(1)}%), \`MSFT\` (${overview.tickers[2]?.changePct >= 0 ? '+' : ''}${overview.tickers[2]?.changePct?.toFixed(1)}%), \`TSLA\` (${overview.tickers[3]?.changePct >= 0 ? '+' : ''}${overview.tickers[3]?.changePct?.toFixed(1)}%)\n\n` +
                `### Supporting Commands Guidance\n` +
-               `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry (e.g. \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`).\n` +
+               `> -# • \`${prefix}symbols\` \u2014 Browse global ticker directory (NSE, US Tech, Crypto, Commodities) or search any company.\n` +
+               `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry (e.g. \`${prefix}stock TCS\`, \`${prefix}stock NVDA\`).\n` +
                `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown.\n` +
                `> -# • \`${prefix}movers\` \u2014 Real-time top gainers & decliners across equities/crypto.\n` +
                `> -# • \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL).\n` +
@@ -912,6 +1107,12 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
     {
       type: 1,
       components: [
+        {
+          type: 2,
+          custom_id: 'stk_cat_all',
+          label: 'Symbols List',
+          style: 2
+        },
         {
           type: 2,
           custom_id: 'stk_ref_overview',
@@ -977,18 +1178,21 @@ export function buildStockGuidancePayload(prefix = '!') {
                      `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                      `> -# <a:uptime:1552608831060844575> **Overview:** Athena Prime provides real-time stock/crypto telemetry, high-resolution Canvas charts, and AI-driven financial intelligence.\n\n` +
                      `### 1. Market Telemetry & Charts\n` +
-                     `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart with Bezier curves, day range, 52w range, volume, & sentiment gauge (e.g. \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock TSLA\`).\n` +
+                     `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart with Bezier curves, day range, 52w range, volume, & sentiment gauge (e.g. \`${prefix}stock TCS\`, \`${prefix}stock NVDA\`, \`${prefix}stock RELIANCE\`).\n` +
                      `> -# • \`${prefix}market\` / \`${prefix}stocks\` \u2014 Global 6-index world market pulse (S&P 500, NASDAQ, Dow, NIFTY 50, BTC, ETH) + mega-caps ticker tape.\n` +
                      `> -# • \`${prefix}ticker <symbol>\` \u2014 Direct company/ticker resolution.\n\n` +
-                     `### 2. AI Financial Analyst & Reports\n` +
+                     `### 2. Universal Ticker Directory & Real-Time Symbol Search\n` +
+                     `> -# • \`${prefix}symbols\` / \`${prefix}symbollist\` \u2014 Interactive ticker directory with 1-click categories (Indian Equities, US Mega-Caps, Crypto, Commodities & Indices).\n` +
+                     `> -# • \`${prefix}symbols <query>\` / \`${prefix}symbols search <name>\` \u2014 Dynamic real-time symbol search on Yahoo Finance (e.g. \`${prefix}symbols tata\`, \`${prefix}symbols sbi\`, \`${prefix}symbols reliance\`, \`${prefix}symbols adani\`).\n\n` +
+                     `### 3. AI Financial Analyst & Reports\n` +
                      `> -# • \`${prefix}stockai <question or topic>\` \u2014 Ask Athena AI for detailed earnings breakdowns, macro trends, or financial concepts (e.g. \`${prefix}stockai why did tech drop today?\`, \`${prefix}stockai explain NVDA valuation\`).\n` +
                      `> -# • \`${prefix}stockexplain <symbol/topic>\` / \`${prefix}marketai\` \u2014 AI financial research aliases.\n\n` +
-                     `### 3. Market Movers & Catalysts\n` +
+                     `### 4. Market Movers & Catalysts\n` +
                      `> -# • \`${prefix}movers\` / \`${prefix}topmovers\` \u2014 Real-time top gainers and decliners across mega-caps and crypto.\n` +
                      `> -# • \`${prefix}stocknews [symbol]\` / \`${prefix}marketnews\` \u2014 Real-time press wiretap with direct links to Bloomberg, Reuters, Yahoo Finance, etc.\n\n` +
-                     `### 4. Cryptocurrency Telemetry\n` +
+                     `### 5. Cryptocurrency Telemetry\n` +
                      `> -# • \`${prefix}crypto [coin]\` \u2014 Cryptocurrency charts and telemetry (e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`).\n\n` +
-                     `### 5. Automated Daily Briefing Channel\n` +
+                     `### 6. Automated Daily Briefing Channel\n` +
                      `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Binds an automated morning upload channel (posts every morning at 09:30 AM EST / 14:30 UTC at US Market Open).\n` +
                      `> -# • \`${prefix}stockchannel test\` \u2014 Immediately uploads today's briefing to verify delivery.\n` +
                      `> -# • \`${prefix}stockchannel status\` \u2014 Inspect current broadcast channel ID & delivery state.\n` +
@@ -1002,6 +1206,12 @@ export function buildStockGuidancePayload(prefix = '!') {
           {
             type: 1,
             components: [
+              {
+                type: 2,
+                custom_id: 'stk_cat_all',
+                label: 'Symbols Directory',
+                style: 2
+              },
               {
                 type: 2,
                 custom_id: 'stk_ref_overview',
@@ -1029,6 +1239,334 @@ export function buildStockGuidancePayload(prefix = '!') {
           {
             type: 10,
             content: `-# **Athena Prime Financial Intelligence \u2022 Ground-Truth Telemetry Engine**`
+          }
+        ]
+      }
+    ],
+    flags: MessageFlags.IsComponentsV2
+  };
+}
+
+/**
+ * Builds interactive Symbols directory with categorized sections and one-click commands
+ */
+export function buildSymbolsPayload(category = 'all', prefix = '!') {
+  const dt = getFormattedDateTimeStrings();
+  const cat = String(category || 'all').toLowerCase();
+
+  let title = 'Global Symbol & Ticker Directory';
+  let bodyContent = '';
+
+  if (cat === 'india') {
+    title = 'Indian Equities & Indices (NSE / BSE)';
+    bodyContent =
+      `### Benchmark Indices\n` +
+      `> -# • \`NIFTY\` \u2014 NIFTY 50 Benchmark Index (\`${prefix}stock NIFTY\`)\n` +
+      `> -# • \`SENSEX\` \u2014 BSE SENSEX 30 Index (\`${prefix}stock SENSEX\`)\n` +
+      `> -# • \`BANKNIFTY\` \u2014 Nifty Bank Banking Index (\`${prefix}stock BANKNIFTY\`)\n\n` +
+      `### Top Bluechips & Heavyweights\n` +
+      `> -# • \`TCS\` \u2014 Tata Consultancy Services (\`${prefix}stock TCS\`)\n` +
+      `> -# • \`RELIANCE\` \u2014 Reliance Industries Ltd (\`${prefix}stock RELIANCE\`)\n` +
+      `> -# • \`INFY\` \u2014 Infosys Limited (\`${prefix}stock INFY\`)\n` +
+      `> -# • \`HDFCBANK\` \u2014 HDFC Bank Limited (\`${prefix}stock HDFCBANK\`)\n` +
+      `> -# • \`TATAMOTORS\` \u2014 Tata Motors Ltd (\`${prefix}stock TATAMOTORS\`)\n` +
+      `> -# • \`SBIN\` \u2014 State Bank of India (\`${prefix}stock SBIN\`)\n` +
+      `> -# • \`ITC\` \u2014 ITC Limited (\`${prefix}stock ITC\`)\n` +
+      `> -# • \`ICICIBANK\` \u2014 ICICI Bank Ltd (\`${prefix}stock ICICIBANK\`)\n` +
+      `> -# • \`BHARTIARTL\` \u2014 Bharti Airtel Ltd (\`${prefix}stock BHARTIARTL\`)\n` +
+      `> -# • \`HINDUNILVR\` \u2014 Hindustan Unilever Ltd (\`${prefix}stock HINDUNILVR\`)\n` +
+      `> -# • \`LT\` \u2014 Larsen & Toubro Ltd (\`${prefix}stock LT\`)\n` +
+      `> -# • \`WIPRO\` \u2014 Wipro Limited (\`${prefix}stock WIPRO\`)\n` +
+      `> -# • \`BAJFINANCE\` \u2014 Bajaj Finance Ltd (\`${prefix}stock BAJFINANCE\`)\n` +
+      `> -# • \`ADANIENT\` \u2014 Adani Enterprises Ltd (\`${prefix}stock ADANIENT\`)\n` +
+      `> -# • \`MARUTI\` \u2014 Maruti Suzuki India (\`${prefix}stock MARUTI\`)\n` +
+      `> -# • \`TITAN\` \u2014 Titan Company Ltd (\`${prefix}stock TITAN\`)\n` +
+      `> -# • \`TATASTEEL\` \u2014 Tata Steel Ltd (\`${prefix}stock TATASTEEL\`)\n` +
+      `> -# • \`KOTAKBANK\` \u2014 Kotak Mahindra Bank (\`${prefix}stock KOTAKBANK\`)\n` +
+      `> -# • \`AXISBANK\` \u2014 Axis Bank Ltd (\`${prefix}stock AXISBANK\`)\n` +
+      `> -# • \`SUNPHARMA\` \u2014 Sun Pharmaceutical Industries (\`${prefix}stock SUNPHARMA\`)`;
+  } else if (cat === 'us') {
+    title = 'US Tech Titans & Global Equities';
+    bodyContent =
+      `### US Benchmark Indices & ETFs\n` +
+      `> -# • \`SP500\` \u2014 S&P 500 Index (\`${prefix}stock SP500\`)\n` +
+      `> -# • \`NASDAQ\` \u2014 Nasdaq Composite Index (\`${prefix}stock NASDAQ\`)\n` +
+      `> -# • \`DOW\` \u2014 Dow Jones Industrial Average (\`${prefix}stock DOW\`)\n` +
+      `> -# • \`QQQ\` \u2014 Invesco QQQ Trust ETF (\`${prefix}stock QQQ\`)\n` +
+      `> -# • \`SPY\` \u2014 SPDR S&P 500 ETF Trust (\`${prefix}stock SPY\`)\n\n` +
+      `### Tech Titans & AI Powerhouses\n` +
+      `> -# • \`NVDA\` \u2014 NVIDIA Corporation (\`${prefix}stock NVDA\`)\n` +
+      `> -# • \`AAPL\` \u2014 Apple Inc. (\`${prefix}stock AAPL\`)\n` +
+      `> -# • \`MSFT\` \u2014 Microsoft Corporation (\`${prefix}stock MSFT\`)\n` +
+      `> -# • \`GOOGL\` \u2014 Alphabet Inc. Google (\`${prefix}stock GOOGL\`)\n` +
+      `> -# • \`AMZN\` \u2014 Amazon.com Inc. (\`${prefix}stock AMZN\`)\n` +
+      `> -# • \`META\` \u2014 Meta Platforms Inc. (\`${prefix}stock META\`)\n` +
+      `> -# • \`TSLA\` \u2014 Tesla Inc. (\`${prefix}stock TSLA\`)\n` +
+      `> -# • \`AMD\` \u2014 Advanced Micro Devices (\`${prefix}stock AMD\`)\n` +
+      `> -# • \`AVGO\` \u2014 Broadcom Inc. (\`${prefix}stock AVGO\`)\n` +
+      `> -# • \`NFLX\` \u2014 Netflix Inc. (\`${prefix}stock NFLX\`)\n` +
+      `> -# • \`PLTR\` \u2014 Palantir Technologies (\`${prefix}stock PLTR\`)\n` +
+      `> -# • \`COIN\` \u2014 Coinbase Global Inc. (\`${prefix}stock COIN\`)`;
+  } else if (cat === 'crypto') {
+    title = 'Cryptocurrency & Digital Assets';
+    bodyContent =
+      `### Major Cryptocurrencies\n` +
+      `> -# • \`BTC\` \u2014 Bitcoin (\`${prefix}stock BTC\` / \`${prefix}crypto BTC\`)\n` +
+      `> -# • \`ETH\` \u2014 Ethereum (\`${prefix}stock ETH\` / \`${prefix}crypto ETH\`)\n` +
+      `> -# • \`SOL\` \u2014 Solana (\`${prefix}stock SOL\` / \`${prefix}crypto SOL\`)\n` +
+      `> -# • \`BNB\` \u2014 Binance Coin (\`${prefix}stock BNB\` / \`${prefix}crypto BNB\`)\n` +
+      `> -# • \`XRP\` \u2014 XRP Ledger (\`${prefix}stock XRP\` / \`${prefix}crypto XRP\`)\n` +
+      `> -# • \`DOGE\` \u2014 Dogecoin (\`${prefix}stock DOGE\` / \`${prefix}crypto DOGE\`)\n` +
+      `> -# • \`ADA\` \u2014 Cardano (\`${prefix}stock ADA\` / \`${prefix}crypto ADA\`)\n` +
+      `> -# • \`AVAX\` \u2014 Avalanche (\`${prefix}stock AVAX\` / \`${prefix}crypto AVAX\`)\n` +
+      `> -# • \`LINK\` \u2014 Chainlink (\`${prefix}stock LINK\` / \`${prefix}crypto LINK\`)\n` +
+      `> -# • \`SUI\` \u2014 Sui Network (\`${prefix}stock SUI\` / \`${prefix}crypto SUI\`)\n` +
+      `> -# • \`NEAR\` \u2014 NEAR Protocol (\`${prefix}stock NEAR\` / \`${prefix}crypto NEAR\`)\n` +
+      `> -# • \`DOT\` \u2014 Polkadot (\`${prefix}stock DOT\` / \`${prefix}crypto DOT\`)\n` +
+      `> -# • \`SHIB\` \u2014 Shiba Inu (\`${prefix}stock SHIB\` / \`${prefix}crypto SHIB\`)\n` +
+      `> -# • \`PEPE\` \u2014 Pepe (\`${prefix}stock PEPE\` / \`${prefix}crypto PEPE\`)`;
+  } else if (cat === 'macro') {
+    title = 'Commodities, Global Indices & Forex';
+    bodyContent =
+      `### Global Commodities\n` +
+      `> -# • \`GOLD\` \u2014 Gold Futures / Spot (\`${prefix}stock GOLD\`)\n` +
+      `> -# • \`SILVER\` \u2014 Silver Futures / Spot (\`${prefix}stock SILVER\`)\n` +
+      `> -# • \`CRUDE\` \u2014 Crude Oil WTI Futures (\`${prefix}stock CRUDE\`)\n` +
+      `> -# • \`NATGAS\` \u2014 Natural Gas Futures (\`${prefix}stock NATGAS\`)\n` +
+      `> -# • \`COPPER\` \u2014 Copper Futures (\`${prefix}stock COPPER\`)\n\n` +
+      `### International Market Indices\n` +
+      `> -# • \`NIKKEI\` \u2014 Nikkei 225 - Japan (\`${prefix}stock NIKKEI\`)\n` +
+      `> -# • \`FTSE\` \u2014 FTSE 100 - United Kingdom (\`${prefix}stock FTSE\`)\n` +
+      `> -# • \`DAX\` \u2014 DAX 40 - Germany (\`${prefix}stock DAX\`)\n` +
+      `> -# • \`HANGSENG\` \u2014 Hang Seng Index - Hong Kong (\`${prefix}stock HANGSENG\`)\n\n` +
+      `### Major Forex Pairs\n` +
+      `> -# • \`USDINR\` \u2014 US Dollar to Indian Rupee (\`${prefix}stock USDINR\`)\n` +
+      `> -# • \`EURUSD\` \u2014 Euro to US Dollar (\`${prefix}stock EURUSD\`)\n` +
+      `> -# • \`GBPUSD\` \u2014 British Pound to US Dollar (\`${prefix}stock GBPUSD\`)\n` +
+      `> -# • \`USDJPY\` \u2014 US Dollar to Japanese Yen (\`${prefix}stock USDJPY\`)`;
+  } else {
+    // 'all' / general overview
+    title = 'Universal Ticker & Symbol Directory';
+    bodyContent =
+      `### 1. Indian Equities & Indices (NSE / BSE)\n` +
+      `> -# \`NIFTY\` \u2022 \`SENSEX\` \u2022 \`BANKNIFTY\` \u2022 \`TCS\` \u2022 \`RELIANCE\` \u2022 \`INFY\` \u2022 \`HDFCBANK\` \u2022 \`TATAMOTORS\` \u2022 \`SBIN\` \u2022 \`ITC\`\n` +
+      `> -# \u25b8 Try: \`${prefix}stock TCS\`, \`${prefix}stock RELIANCE\`, \`${prefix}stock INFY\`\n\n` +
+      `### 2. US Tech Titans & Global Equities\n` +
+      `> -# \`NVDA\` \u2022 \`AAPL\` \u2022 \`MSFT\` \u2022 \`GOOGL\` \u2022 \`AMZN\` \u2022 \`META\` \u2022 \`TSLA\` \u2022 \`AMD\` \u2022 \`SP500\` \u2022 \`NASDAQ\`\n` +
+      `> -# \u25b8 Try: \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock TSLA\`\n\n` +
+      `### 3. Cryptocurrencies & Digital Assets\n` +
+      `> -# \`BTC\` \u2022 \`ETH\` \u2022 \`SOL\` \u2022 \`BNB\` \u2022 \`XRP\` \u2022 \`DOGE\` \u2022 \`ADA\` \u2022 \`AVAX\` \u2022 \`LINK\` \u2022 \`SUI\`\n` +
+      `> -# \u25b8 Try: \`${prefix}stock BTC\`, \`${prefix}crypto ETH\`, \`${prefix}stock SOL\`\n\n` +
+      `### 4. Commodities & Global Macro\n` +
+      `> -# \`GOLD\` \u2022 \`SILVER\` \u2022 \`CRUDE\` \u2022 \`NATGAS\` \u2022 \`USDINR\` \u2022 \`EURUSD\` \u2022 \`NIKKEI\`\n` +
+      `> -# \u25b8 Try: \`${prefix}stock GOLD\`, \`${prefix}stock CRUDE\`, \`${prefix}stock USDINR\``;
+  }
+
+  const buttons = [
+    {
+      type: 2,
+      custom_id: 'stk_cat_all',
+      label: 'Overview',
+      style: cat === 'all' ? 1 : 2
+    },
+    {
+      type: 2,
+      custom_id: 'stk_cat_india',
+      label: 'India NSE/BSE',
+      style: cat === 'india' ? 1 : 2
+    },
+    {
+      type: 2,
+      custom_id: 'stk_cat_us',
+      label: 'US Tech & AI',
+      style: cat === 'us' ? 1 : 2
+    },
+    {
+      type: 2,
+      custom_id: 'stk_cat_crypto',
+      label: 'Crypto',
+      style: cat === 'crypto' ? 1 : 2
+    },
+    {
+      type: 2,
+      custom_id: 'stk_cat_macro',
+      label: 'Macro & Commodities',
+      style: cat === 'macro' ? 1 : 2
+    }
+  ];
+
+  return {
+    components: [
+      {
+        type: 17,
+        components: [
+          {
+            type: 10,
+            content: `## ${title} | <a:atheNATICK:1557841381630681106>\n` +
+                     `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                     `> -# <a:uptime:1552608831060844575> **Universal Ticker Support:** Athena resolves **every single publicly traded asset globally**.\n\n` +
+                     `${bodyContent}\n\n` +
+                     `### Dynamic Symbol Search\n` +
+                     `> -# • Run \`${prefix}symbols <search-term>\` to search any company by name or ticker in real-time (e.g. \`${prefix}symbols tata\`, \`${prefix}symbols adani\`, \`${prefix}symbols zomato\`, \`${prefix}symbols palantir\`).\n\n` +
+                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
+          },
+          {
+            type: 14,
+            divider: true
+          },
+          {
+            type: 1,
+            components: buttons
+          },
+          {
+            type: 14,
+            divider: true
+          },
+          {
+            type: 10,
+            content: `-# **Athena Prime Financial Intelligence \u2022 Universal Ticker Directory**`
+          }
+        ]
+      }
+    ],
+    flags: MessageFlags.IsComponentsV2
+  };
+}
+
+/**
+ * Builds search results container for user query
+ */
+export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!') {
+  const dt = getFormattedDateTimeStrings();
+
+  if (!results || !results.length) {
+    return {
+      components: [
+        {
+          type: 17,
+          components: [
+            {
+              type: 10,
+              content: `## Symbol Search: "${query}" | <a:atheNATICK:1557841381630681106>\n` +
+                       `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                       `> -# <a:uptime:1552608831060844575> **Status:** No verified ticker symbols found matching "${query}".\n\n` +
+                       `### Search Recommendations\n` +
+                       `> -# • Try searching by full company name (e.g. \`${prefix}symbols Tata Motors\`, \`${prefix}symbols State Bank\`).\n` +
+                       `> -# • Try searching by asset code (e.g. \`${prefix}symbols TCS\`, \`${prefix}symbols NVDA\`, \`${prefix}symbols BTC\`).\n` +
+                       `> -# • Browse standard categories using the directory buttons below.\n\n` +
+                       `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
+            },
+            {
+              type: 14,
+              divider: true
+            },
+            {
+              type: 1,
+              components: [
+                {
+                  type: 2,
+                  custom_id: 'stk_cat_all',
+                  label: 'Overview Directory',
+                  style: 2
+                },
+                {
+                  type: 2,
+                  custom_id: 'stk_cat_india',
+                  label: 'India NSE/BSE',
+                  style: 2
+                },
+                {
+                  type: 2,
+                  custom_id: 'stk_cat_us',
+                  label: 'US Tech & AI',
+                  style: 2
+                },
+                {
+                  type: 2,
+                  custom_id: 'stk_cat_crypto',
+                  label: 'Crypto',
+                  style: 2
+                }
+              ]
+            },
+            {
+              type: 14,
+              divider: true
+            },
+            {
+              type: 10,
+              content: `-# **Athena Prime Financial Intelligence \u2022 Universal Ticker Directory**`
+            }
+          ]
+        }
+      ],
+      flags: MessageFlags.IsComponentsV2
+    };
+  }
+
+  const items = results.slice(0, 8);
+  const rows = items.map((r, idx) => {
+    const baseTicker = r.symbol.replace(/\.NS$|\.BO$/, '');
+    return `> -# **${idx + 1}. ${r.name}** (\`${r.symbol}\`)\n` +
+           `> -# \u2022 Exchange: \`${r.exchange}\` \u2022 Asset Type: \`${r.type}\`\n` +
+           `> -# \u25b8 Telemetry: \`${prefix}stock ${baseTicker}\` or \`${prefix}stock ${r.symbol}\``;
+  }).join('\n\n');
+
+  return {
+    components: [
+      {
+        type: 17,
+        components: [
+          {
+            type: 10,
+            content: `## Symbol Search Results: "${query}" | <a:atheNATICK:1557841381630681106>\n` +
+                     `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                     `> -# <a:uptime:1552608831060844575> **Matches Found:** Showing top ${items.length} verified market assets for \`${query}\`.\n\n` +
+                     `${rows}\n\n` +
+                     `### Instant Telemetry Commands\n` +
+                     `> -# Run \`${prefix}stock <ticker>\` to view live Canvas charts and technical gauges.\n\n` +
+                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
+          },
+          {
+            type: 14,
+            divider: true
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                custom_id: 'stk_cat_all',
+                label: 'Overview Directory',
+                style: 2
+              },
+              {
+                type: 2,
+                custom_id: 'stk_cat_india',
+                label: 'India NSE/BSE',
+                style: 2
+              },
+              {
+                type: 2,
+                custom_id: 'stk_cat_us',
+                label: 'US Tech & AI',
+                style: 2
+              },
+              {
+                type: 2,
+                custom_id: 'stk_ref_overview',
+                label: 'Global Markets',
+                style: 2
+              }
+            ]
+          },
+          {
+            type: 14,
+            divider: true
+          },
+          {
+            type: 10,
+            content: `-# **Athena Prime Financial Intelligence \u2022 Universal Ticker Directory**`
           }
         ]
       }

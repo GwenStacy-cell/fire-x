@@ -5,11 +5,14 @@ import {
   fetchStockData, 
   fetchMarketOverview, 
   fetchStockNews, 
+  searchTickerSymbols,
   renderSingleStockCard, 
   renderMarketOverviewCard, 
   buildStockPayload, 
   buildMarketOverviewPayload,
   buildStockGuidancePayload,
+  buildSymbolsPayload,
+  buildSymbolSearchResultsPayload,
   getFormattedDateTimeStrings,
   DISCLAIMER_TEXT 
 } from '../utils/stockMarket.js';
@@ -839,6 +842,147 @@ export const commands = [
         });
       }
     }
+  },
+
+  // 7. SYMBOLS DIRECTORY & UNIVERSAL TICKER SEARCH
+  {
+    name: 'symbols',
+    aliases: ['symbollist', 'tickers', 'tickerlist', 'stocksymbols', 'marketlist', 'symlist'],
+    description: 'Explore global ticker directory or search any stock, crypto, commodity or index in real-time',
+    category: 'utility',
+    permissions: [],
+    options: [
+      {
+        name: 'query',
+        description: 'Search query (e.g. Tata, Reliance, Adani, Apple, Bitcoin) or category (india, us, crypto, macro)',
+        type: 3, // STRING
+        required: false
+      }
+    ],
+    async executePrefix(message, args) {
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+      let input = args.join(' ').trim();
+
+      if (!input) {
+        return message.reply(buildSymbolsPayload('all', prefix));
+      }
+
+      const lower = input.toLowerCase();
+      if (['india', 'indian', 'nse', 'bse'].includes(lower)) {
+        return message.reply(buildSymbolsPayload('india', prefix));
+      }
+      if (['us', 'usa', 'tech', 'nasdaq'].includes(lower)) {
+        return message.reply(buildSymbolsPayload('us', prefix));
+      }
+      if (['crypto', 'coins', 'btc', 'cryptocurrency'].includes(lower)) {
+        return message.reply(buildSymbolsPayload('crypto', prefix));
+      }
+      if (['macro', 'commodities', 'commodity', 'gold', 'forex'].includes(lower)) {
+        return message.reply(buildSymbolsPayload('macro', prefix));
+      }
+      if (['all', 'overview', 'dir', 'directory'].includes(lower)) {
+        return message.reply(buildSymbolsPayload('all', prefix));
+      }
+
+      if (lower.startsWith('search ')) {
+        input = input.slice(7).trim();
+      }
+
+      const loadingMsg = await message.reply({
+        components: [
+          {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content: `<a:uptime:1552608831060844575> **Athena Symbol Directory:** Searching global exchanges for \`${input}\`...`
+              }
+            ]
+          }
+        ],
+        flags: MessageFlags.IsComponentsV2
+      });
+
+      try {
+        const results = await searchTickerSymbols(input);
+        const payload = buildSymbolSearchResultsPayload(input, results, prefix);
+        return await loadingMsg.edit(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await loadingMsg.edit({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## Symbol Search Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Symbol search failed.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    },
+    async executeSlash(interaction) {
+      const prefix = interaction.guild ? (db.getGuildConfig(interaction.guild.id)?.prefix || '!') : '!';
+      let query = interaction.options?.getString('query')?.trim();
+
+      if (!query) {
+        return interaction.reply(buildSymbolsPayload('all', prefix));
+      }
+
+      const lower = query.toLowerCase();
+      if (['india', 'indian', 'nse', 'bse'].includes(lower)) {
+        return interaction.reply(buildSymbolsPayload('india', prefix));
+      }
+      if (['us', 'usa', 'tech', 'nasdaq'].includes(lower)) {
+        return interaction.reply(buildSymbolsPayload('us', prefix));
+      }
+      if (['crypto', 'coins', 'btc', 'cryptocurrency'].includes(lower)) {
+        return interaction.reply(buildSymbolsPayload('crypto', prefix));
+      }
+      if (['macro', 'commodities', 'commodity', 'gold', 'forex'].includes(lower)) {
+        return interaction.reply(buildSymbolsPayload('macro', prefix));
+      }
+      if (['all', 'overview', 'dir', 'directory'].includes(lower)) {
+        return interaction.reply(buildSymbolsPayload('all', prefix));
+      }
+
+      if (lower.startsWith('search ')) {
+        query = query.slice(7).trim();
+      }
+
+      await interaction.deferReply();
+      try {
+        const results = await searchTickerSymbols(query);
+        const payload = buildSymbolSearchResultsPayload(query, results, prefix);
+        return await interaction.editReply(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await interaction.editReply({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## Symbol Search Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Symbol search failed.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    }
   }
 ];
 
@@ -847,6 +991,18 @@ export const commands = [
  */
 export async function handleStockButton(interaction) {
   const customId = interaction.customId;
+
+  // Interactive Category Buttons for Symbols Directory
+  if (customId.startsWith('stk_cat_')) {
+    const cat = customId.replace('stk_cat_', '');
+    const prefix = interaction.guild ? (db.getGuildConfig(interaction.guild.id)?.prefix || '!') : '!';
+    const payload = buildSymbolsPayload(cat, prefix);
+    try {
+      return await interaction.update(payload);
+    } catch {
+      return await interaction.reply({ ...payload, flags: MessageFlags.Ephemeral });
+    }
+  }
 
   // Refresh single stock card
   if (customId.startsWith('stk_ref_') && customId !== 'stk_ref_overview') {
