@@ -377,50 +377,61 @@ Athena Prime separates security administration into distinct, tamper-proof tiers
   ,
   learn: {
     id: 'learn',
-    label: 'Heuristic Threat Profiling & Learn Engine',
-    aliases: ['heuristics', 'ai', 'behavioral', 'ml', 'profiling', 'signature', 'signatures'],
-    title: 'Adaptive Heuristic Profiling & Threat Signature Engine | <a:atheNATICK:1557841381630681106>',
-    description: 'Interactive dashboard, staff velocity baselining, and rogue attack signature recording.',
+    label: 'Autonomous Self-Learning & Lambda AI Threat Matrix',
+    aliases: ['lambda', 'heuristics', 'ai', 'behavioral', 'ml', 'profiling', 'signature', 'signatures', 'lambdalearn', 'selflearn'],
+    title: 'Autonomous Self-Learning, Lambda AI & Defense Flaw Matrix | <a:atheNATICK:1557841381630681106>',
+    description: 'Autonomous rogue bot threat learning, automated antinuke flaw diagnosis, root-cause forensic analysis & step-by-step remedies.',
     pages: [
       {
-        pageTitle: 'Interactive Dashboard & Telemetry Metrics',
+        pageTitle: 'Autonomous Self-Learning & Flaw Diagnostic Dashboard',
         content:
-`# 1. Interactive Components V2 Dashboard (\`!learn\` / \`!learn status\`)
-The **Learn Mode Dashboard** provides real-time oversight of Athena's adaptive behavioral intelligence:
+`# 1. Interactive Components V2 Dashboard (\`!learn\` / \`!lambda\` / \`!learn status\`)
+The **Autonomous Learning & Lambda AI Dashboard** provides real-time oversight of Athena's adaptive behavioral intelligence:
 • **Live Telemetry Status:**
-  - <a:uptime:1552608831060844575> **Active (Adaptive Profiling Engaged)**: Continuous profiling is actively indexing legitimate staff action velocity.
-  - <:off:1533844858983157851> **Inactive / Standby**: Threat learning is dormant while static deterministic velocity tripwires protect the guild.
+  - <a:uptime:1552608831060844575> **Active (Autonomous Self-Learning Engaged)**: Continuous profiling actively indexes rogue bot attacks, velocity fingerprints, and defense execution flaws.
+  - <:off:1533844858983157851> **Inactive / Standby**: Heuristic threat learning is dormant while static deterministic velocity tripwires protect the guild.
 • **Core Telemetry Metrics Tracked:**
-  - **Threat Signatures Captured:** Rogue and anomalous attack patterns fingerprinted into SQLite storage.
+  - **Total Threat Signatures Captured:** Rogue and anomalous attack patterns fingerprinted into SQLite storage.
+  - **Hostile Bot Threats Profiled:** Dedicated metrics for rogue/compromised bot actions, tokens, and privilege abuse.
+  - **Identified Defense Flaws & Failures:** Real-time count of attacks where antinuke encountered friction, hierarchy blocks, or execution limits.
   - **Baseline Staff Actions Profiled:** Aggregate legitimate staff actions indexed across channels, roles, and webhooks.
-  - **Staff Accounts Indexed:** Whitelisted administrative accounts profiled for normal velocity baselines.
   - **False-Positive Guard Status:** Active verification preventing legitimate administrators from being penalized during normal maintenance.
-  - **Last Recorded Event & Timestamp:** Discord relative timestamp and last logged event type.
+  - **Lambda AI Neural Pipeline:** Powered by Google Gemini 3.8 Flash High Intelligence Pipeline for instant forensic autopsies.
 • **Interactive Components V2 Controls:**
-  - \`[Engage Learning]\` / \`[Disengage Learning]\`: Toggles continuous adaptive profiling on or off.
-  - \`[Run Baseline Scan]\`: Triggers on-demand full audit scan across current staff, elevated roles, and webhooks.
-  - \`[View Signatures]\`: Displays paginated view of fingerprinted anomaly records.
-  - \`[Clear History]\`: Resets captured signature registry for the server.
-  - \`[Refresh]\`: Re-fetches current live SQLite metrics and re-renders container.`
+  - \`[Engage/Disengage Learning]\`: Toggles continuous adaptive profiling on or off.
+  - \`[Run Baseline Scan]\`: Triggers on-demand full audit scan across staff, elevated roles, and webhooks.
+  - \`[Signatures]\`: Displays paginated view of fingerprinted anomaly records.
+  - \`[Flaws & Fixes]\`: Displays all recorded block failures, root causes, and step-by-step remedies.
+  - \`[Run Security Fix Audit]\`: Live server hierarchy & permission audit checking Athena vs external bots.
+  - \`[Lambda AI Autopsy]\`: Deep neural AI forensic breakdown of the latest threat or selected signature.
+  - \`[Clear History]\`: Resets captured signature registry for the server.`
       },
       {
-        pageTitle: 'Subcommands, SQLite Engine & Slash Support',
+        pageTitle: 'Flaw Diagnostics, Lambda AI Autopsies & Subcommand Suite',
         content:
-`# 2. Comprehensive Subcommand Suite (Prefix & Slash Supported)
-Athena Prime supports full parity across standard text prefixes (\`!learn\`) and Discord slash commands (\`/learn\`):
-• \`!learn on\` / \`!learn enable\`: Engages continuous adaptive profiling.
-• \`!learn off\` / \`!learn disable\`: Disengages profiling mode.
-• \`!learn baseline\`: Performs a real-time audit scan of server staff members, elevated roles, and webhooks to establish a clean initial baseline.
-• \`!learn signatures\` / \`!learn list\`: Displays the recent threat signatures and velocity anomaly patterns recorded for the server.
-• \`!learn clear\`: Resets the recorded signature registry for the guild.
-• \`!learn status\`: Displays the live telemetry dashboard.
+`# 2. Autonomous Antinuke Flaw Diagnosis Engine
+When a hostile bot executes a nuking event and Athena encounters friction or fails to completely block the action, Athena's **Autonomous Flaw Diagnostic Engine** immediately investigates:
+• **Role Hierarchy Inversion Detection:**
+  - If the attacking bot holds a role equal to or higher than Athena's role, Discord API returns Error 50013. Athena instantly diagnoses the exact role name and position gap, and instructs the owner to drag Athena to the top of Server Settings > Roles.
+• **Missing Core Permissions Check:**
+  - Detects if Athena lacks Administrator, Ban Members, Manage Roles, Manage Channels, or View Audit Log, specifying the exact missing grant.
+• **Server Owner Immunity Verification:**
+  - Identifies if actions were executed via owner credentials, providing immediate credential rotation and token containment steps.
+• **Emergency Broadcast:**
+  - Automatically sends high-priority flaw alerts to the security logs channel and DMs the server owner with step-by-step remediation fixes.
 
-# 3. Persistent SQLite Signature & Baseline Engine (\`src/database.js\`)
-• **Database Methods:** Powered by dedicated storage pipelines: \`getNukeSignatures()\`, \`addNukeSignature()\`, \`clearNukeSignatures()\`, \`getLearnBaseline()\`, and \`recordBaselineAction()\`.
-• **Infinite Bloat Protection:** Threat signatures and event history are cleanly capped and circular-buffered to maintain microsecond query performance without database degradation.
+# 3. Comprehensive Subcommand Suite (\`!learn\` / \`!lambda\`)
+Athena Prime supports full parity across standard text prefixes and Discord slash commands:
+• \`!learn on\` / \`!learn off\` (or \`!lambda on / off\`): Toggles continuous autonomous self-learning.
+• \`!learn flaws\` (or \`!lambda flaws\`): Displays recorded defense failures, exact root causes, and remedies.
+• \`!learn fix\` (or \`!lambda fix\`): Performs live server audit and provides an actionable remediation checklist.
+• \`!learn analyze [id]\` (or \`!lambda analyze\`): Synthesizes a Google Gemini 3.8 Flash forensic autopsy on an incident.
+• \`!learn baseline\`: Real-time audit scan of staff, roles & webhooks.
+• \`!learn signatures\`: Displays recorded threat signatures & velocity spikes.
+• \`!learn clear\`: Resets captured signature registry for the server.
 
-# 4. Slash Command Support (\`/learn\`)
-• Registered as a Discord Chat Input command with an \`action\` option choice: \`status\`, \`enable\`, \`disable\`, \`baseline\`, \`signatures\`, and \`clear\`.`
+# 4. Persistent SQLite Storage (\`src/database.js\`)
+• Powered by \`getNukeSignatures()\`, \`addNukeSignature()\`, \`updateNukeSignature()\`, \`getNukeFlaws()\`, \`clearNukeFlaws()\`, and \`getLearnBaseline()\`.`
       }
     ]
   },
@@ -2509,29 +2520,34 @@ export const DETAILED_COMMANDS = {
 
   learn: {
     name: 'learn',
-    aliases: ['ai', 'heuristics', 'behavioral'],
+    aliases: ['lambda', 'ai', 'heuristics', 'behavioral', 'lambdalearn', 'selflearn', 'autolearn'],
     category: 'Security & Access Control',
     clearance: 'Admin Tier / Server Owner / Extra Owners',
-    syntax: '!learn [status|on|off|baseline|signatures|clear]',
-    purpose: 'Interactive Heuristic Threat Profiling & Machine Learning engine that establishes staff velocity baselines and fingerprints rogue attack signatures.',
+    syntax: '!learn [status|on|off|flaws|fix|analyze|baseline|signatures|clear] (or !lambda, /learn, /lambda)',
+    purpose: 'Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.',
     architecture: 
-`• **Interactive Components V2 Dashboard (\`!learn\` / \`!learn status\`):**
-  - **Live Telemetry Status:** <a:uptime:1552608831060844575> \`Active (Adaptive Profiling Engaged)\` vs <:off:1533844858983157851> \`Inactive / Standby\`.
-  - **Metrics Tracked:** Threat Signatures Captured, Baseline Staff Actions Profiled, Staff Accounts Indexed, False-Positive Guard Status, and Last Recorded Event & Timestamp.
-  - **Interactive 1-Click Buttons:** \`[Engage/Disengage Learning]\`, \`[Run Baseline Scan]\`, \`[View Signatures]\`, \`[Clear History]\`, and \`[Refresh]\`.
+`• **Interactive Components V2 Dashboard (\`!learn\` / \`!lambda\` / \`!learn status\`):**
+  - **Live Telemetry Status:** <a:uptime:1552608831060844575> \`Active (Autonomous Self-Learning Engaged)\` vs <:off:1533844858983157851> \`Inactive / Standby\`.
+  - **Metrics Tracked:** Total Threat Signatures Captured, Rogue Bot Threats Profiled, Identified Defense Flaws & Failures, Baseline Actions, and Lambda AI Pipeline Status.
+  - **Interactive 1-Click Buttons:** \`[Engage/Disengage Learning]\`, \`[Run Baseline Scan]\`, \`[Signatures]\`, \`[Flaws & Fixes]\`, \`[Run Security Fix Audit]\`, \`[Lambda AI Autopsy]\`, and \`[Clear History]\`.
+• **Autonomous Antinuke Defense Flaw Diagnosis:**
+  - When an antinuke countermeasure fails or encounters execution friction, Athena autonomously diagnoses the exact architectural bottleneck:
+    - **Role Hierarchy Inversion:** Attacking bot holds a role equal to or higher than Athena (Discord Error 50013). Athena diagnoses the position gap and gives step-by-step role re-ordering instructions.
+    - **Missing Core Permissions:** Detects if Athena lacks Administrator, Ban Members, Manage Roles, Manage Channels, or View Audit Log.
+    - **Server Owner Crown Immunity:** Identifies if actions were executed via owner credentials, providing credential rotation and session termination procedures.
+• **Lambda AI Neural Forensic Autopsy:**
+  - Powered by Google Gemini 3.8 Flash Neural Pipeline to dissect rogue bot motives, velocity spikes, and structural remedies.
 • **Full Subcommand Suite (Prefix & Slash Supported):**
-  - \`!learn on\` / \`!learn enable\`: Engages continuous adaptive profiling.
-  - \`!learn off\` / \`!learn disable\`: Disengages profiling mode.
-  - \`!learn baseline\`: Real-time audit scan of server staff members, elevated roles, and webhooks to establish a clean initial baseline.
-  - \`!learn signatures\` / \`!learn list\`: Displays recent threat signatures and velocity anomaly patterns.
+  - \`!learn on\` / \`!learn off\` (or \`!lambda on / off\`): Toggles continuous autonomous self-learning.
+  - \`!learn flaws\` (or \`!lambda flaws\`): Displays recorded defense failures, exact root causes, and remedies.
+  - \`!learn fix\` (or \`!lambda fix\`): Live server hierarchy audit with step-by-step flaw remedies.
+  - \`!learn analyze [id]\` (or \`!lambda analyze\`): Synthesizes a Neural AI forensic autopsy on an incident.
+  - \`!learn baseline\`: Real-time audit scan of staff, roles & webhooks.
+  - \`!learn signatures\`: Displays recent threat signatures and velocity anomaly patterns.
   - \`!learn clear\`: Resets recorded signature registry for the guild.
-  - \`!learn status\`: Displays the live telemetry dashboard.
 • **Persistent SQLite Signature & Baseline Engine (\`src/database.js\`):**
-  - Powered by \`getNukeSignatures()\`, \`addNukeSignature()\`, \`clearNukeSignatures()\`, \`getLearnBaseline()\`, and \`recordBaselineAction()\`.
-  - Threat signatures are cleanly capped in a circular buffer to prevent database bloat.
-• **Slash Command Support (\`/learn\`):**
-  - Full slash command implementation with \`action\` choices (\`status\`, \`enable\`, \`disable\`, \`baseline\`, \`signatures\`, \`clear\`).`,
-    example: '!learn baseline'
+  - Powered by \`getNukeSignatures()\`, \`addNukeSignature()\`, \`updateNukeSignature()\`, \`getNukeFlaws()\`, \`clearNukeFlaws()\`, and \`getLearnBaseline()\`.`,
+    example: '!learn flaws'
   },
 
   np: {

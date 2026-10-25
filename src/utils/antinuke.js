@@ -3,6 +3,7 @@ import db from '../database.js';
 import cv2 from '../cv2.js';
 import { logToSecurityChannel, isBotOwnerSync } from './helpers.js';
 import { executeQuarantine } from '../commands/security.js';
+import { recordAndLearnThreat } from './botThreatLearner.js';
 
 import { Agent, setGlobalDispatcher } from 'undici';
 
@@ -1090,6 +1091,11 @@ async function notifyAndLog(guild, executor, eventType, punishResult, rollbackRe
   } catch (err) {
     console.error('[AntiNuke Live Record Error]', err);
   }
+
+  // Autonomous Self-Learning & Flaw Diagnostic Pipeline (Lambda AI Engine)
+  const learnPromise = recordAndLearnThreat(guild, executor, eventType, punishResult, rollbackResult).catch(err => {
+    console.error('[AntiNuke Self-Learning Error]', err);
+  });
 
   const logEmbed = cv2.log(
     'ATHENA FIREWALL — HOSTILE NEUTRALIZED',

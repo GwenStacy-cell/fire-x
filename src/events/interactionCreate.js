@@ -359,7 +359,7 @@ export default {
     // ==========================================
     // --- LEARN MODE & HEURISTICS INTERACTIONS ---
     // ==========================================
-    if (interaction.customId && interaction.customId.startsWith('learn_')) {
+    if (interaction.customId && (interaction.customId.startsWith('learn_') || interaction.customId.startsWith('lambda_'))) {
       try {
         const { handleLearnInteraction } = await import('../commands/learn.js');
         if (handleLearnInteraction) {

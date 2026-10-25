@@ -278,8 +278,8 @@ export const commands = [
               let usageText = `${prefix}${targetCmd.name}`;
               if (targetCmd.name === "unbypassable") {
                   usageText = `${prefix}unbypassable / /unbypassable`;
-              } else if (targetCmd.name === "learn") {
-                  usageText = `${prefix}learn [status|on|off|baseline|signatures|clear] / /learn`;
+              } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
+                  usageText = `${prefix}learn [status|on|off|flaws|fix|analyze|baseline|signatures|clear] / ${prefix}lambda / /learn / /lambda`;
               } else if (targetCmd.name === "voicerole") {
                   usageText = `${prefix}voicerole [@role|ID|Name|disable] / /voicerole [role] [disable]`;
               } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
@@ -348,15 +348,21 @@ export const commands = [
                     `> • **Live Ephemeral Preview:** Preview your broadcast before sending it to the target channel.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
                     `> • \`${prefix}${targetCmd.name} [prompt] [#channel]\` - Launch announcement builder.`;
-              } else if (targetCmd.name === "learn") {
-                  descContent = `${targetCmd.description}\n\n` +
-                    `> -# **__Subcommands Supported:__**\n` +
-                    `> • \`${prefix}learn on / enable\` - Engages continuous adaptive profiling.\n` +
-                    `> • \`${prefix}learn off / disable\` - Disengages profiling mode.\n` +
-                    `> • \`${prefix}learn baseline\` - Real-time audit scan of staff, roles & webhooks.\n` +
-                    `> • \`${prefix}learn signatures / list\` - Displays recorded threat signatures & velocity spikes.\n` +
-                    `> • \`${prefix}learn clear\` - Resets captured signature registry for the server.\n` +
-                    `> • \`${prefix}learn status\` - Displays the live telemetry dashboard.`;
+              } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
+                  descContent = `Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.\n\n` +
+                    `> -# **__Autonomous Bot Self-Learning & Neural Autopsy:__**\n` +
+                    `> • **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
+                    `> • **Autonomous Defense Flaw Diagnosis:** If antinuke fails or is blocked from eliminating a hostile actor or rolling back damage, Athena autonomously analyzes the exact architectural flaw (Discord Role Hierarchy Inversion, Missing Core Permissions, Server Owner Immunity) and formulates step-by-step remediation fixes!\n` +
+                    `> • **Lambda AI Incident Autopsy:** Powered by Google Gemini 3.8 Flash Neural Pipeline to dissect attack vectors and generate professional forensic reports.\n\n` +
+                    `> -# **__Subcommands & Directives:__**\n` +
+                    `> • \`${prefix}learn status\` (or \`${prefix}lambda\`) — Interactive Component V2 learning & flaw dashboard.\n` +
+                    `> • \`${prefix}learn flaws\` — View historical defense block failures, root causes, and fixes.\n` +
+                    `> • \`${prefix}learn fix\` — Live server hierarchy & permission audit with immediate step-by-step fixes.\n` +
+                    `> • \`${prefix}learn analyze [id]\` — Deep Lambda Neural AI forensic breakdown of any threat signature.\n` +
+                    `> • \`${prefix}learn on / off\` — Toggle continuous autonomous self-learning.\n` +
+                    `> • \`${prefix}learn baseline\` — Audit staff accounts, elevated roles & webhooks to establish normal baselines.\n` +
+                    `> • \`${prefix}learn signatures\` — Display captured rogue bot fingerprints and velocity patterns.\n` +
+                    `> • \`${prefix}learn clear\` — Reset captured signature history.`;
               } else if (targetCmd.name === "voicerole") {
                   descContent = `Automatically assigns a designated role to members the instant they connect to ANY voice channel, and strips it when they disconnect.\n\n` +
                     `> -# **__Universal Scope:__**\n` +
@@ -711,8 +717,8 @@ export const commands = [
         let usageText = `${prefix}${targetCmd.name}`;
         if (targetCmd.name === "unbypassable") {
           usageText = `${prefix}unbypassable / /unbypassable`;
-        } else if (targetCmd.name === "learn") {
-          usageText = `${prefix}learn [status|on|off|baseline|signatures|clear] / /learn`;
+        } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
+          usageText = `${prefix}learn [status|on|off|flaws|fix|analyze|baseline|signatures|clear] / ${prefix}lambda / /learn / /lambda`;
         } else if (targetCmd.name === "voicerole") {
           usageText = `${prefix}voicerole [@role|ID|Name|disable] / /voicerole [role] [disable]`;
         } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
@@ -778,15 +784,21 @@ export const commands = [
             `> • **Live Ephemeral Preview:** Preview your broadcast before sending it to the target channel.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
             `> • \`${prefix}${targetCmd.name} [prompt] [#channel]\` - Launch announcement builder.`;
-        } else if (targetCmd.name === "learn") {
-          descContent = `${targetCmd.description}\n\n` +
-            `> -# **__Subcommands Supported:__**\n` +
-            `> • \`${prefix}learn on / enable\` - Engages continuous adaptive profiling.\n` +
-            `> • \`${prefix}learn off / disable\` - Disengages profiling mode.\n` +
-            `> • \`${prefix}learn baseline\` - Real-time audit scan of staff, roles & webhooks.\n` +
-            `> • \`${prefix}learn signatures / list\` - Displays recorded threat signatures & velocity spikes.\n` +
-            `> • \`${prefix}learn clear\` - Resets captured signature registry for the server.\n` +
-            `> • \`${prefix}learn status\` - Displays the live telemetry dashboard.`;
+        } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
+          descContent = `Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.\n\n` +
+            `> -# **__Autonomous Bot Self-Learning & Neural Autopsy:__**\n` +
+            `> • **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
+            `> • **Autonomous Defense Flaw Diagnosis:** If antinuke fails or is blocked from eliminating a hostile actor or rolling back damage, Athena autonomously analyzes the exact architectural flaw (Discord Role Hierarchy Inversion, Missing Core Permissions, Server Owner Immunity) and formulates step-by-step remediation fixes!\n` +
+            `> • **Lambda AI Incident Autopsy:** Powered by Google Gemini 3.8 Flash Neural Pipeline to dissect attack vectors and generate professional forensic reports.\n\n` +
+            `> -# **__Subcommands & Directives:__**\n` +
+            `> • \`${prefix}learn status\` (or \`${prefix}lambda\`) — Interactive Component V2 learning & flaw dashboard.\n` +
+            `> • \`${prefix}learn flaws\` — View historical defense block failures, root causes, and fixes.\n` +
+            `> • \`${prefix}learn fix\` — Live server hierarchy & permission audit with immediate step-by-step fixes.\n` +
+            `> • \`${prefix}learn analyze [id]\` — Deep Lambda Neural AI forensic breakdown of any threat signature.\n` +
+            `> • \`${prefix}learn on / off\` — Toggle continuous autonomous self-learning.\n` +
+            `> • \`${prefix}learn baseline\` — Audit staff accounts, elevated roles & webhooks to establish normal baselines.\n` +
+            `> • \`${prefix}learn signatures\` — Display captured rogue bot fingerprints and velocity patterns.\n` +
+            `> • \`${prefix}learn clear\` — Reset captured signature history.`;
         } else if (targetCmd.name === "voicerole") {
           descContent = `Automatically assigns a designated role to members the instant they connect to ANY voice channel, and strips it when they disconnect.\n\n` +
             `> -# **__Universal Scope:__**\n` +
@@ -1842,7 +1854,7 @@ export const helpModules = [
     "`!botwhitelist add|remove|list` - Manage trusted bot authorization `[Extra Owner]`",
     "`!autonick` - Interactive auto-nickname enforcer dashboard `[Extra Owner]`",
     "`!config / !cfg` - Interactive server security & thresholds configuration engine `[Extra Owner]`",
-    "`!learn [status|on|off|baseline|signatures|clear]` - Heuristic Threat Profiling & Signatures Dashboard `[Admin / Extra Owner]`",
+    "`!learn / !lambda [status|on|off|flaws|fix|analyze|baseline|signatures|clear]` - Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics `[Admin / Extra Owner]`",
     "`!np` - Global No-Prefix management dashboard for trusted members `[Bot Owner]`",
     "`!modmode` - Temporarily pause restore for server edits `[Server Owner]`",
     "",
@@ -1853,7 +1865,7 @@ export const helpModules = [
     "-# • **__Server Identity Rollback:__** Instant rollback of server name, icon, banner, and verification tampering.",
     "-# • **__Join-Velocity Anti-Raid Shield:__** Automatic verification level elevation to Phone Required on join bursts.",
     "-# • **__Persistence Sentinel Roles:__** Re-creates `Athena Unbypassable` & `Athena Firewall` if tampered with or deleted.",
-    "-# • **__Heuristic Learn Engine:__** Adaptive staff velocity profiling, false-positive protection & SQLite anomaly signatures.",
+    "-# • **__Autonomous Self-Learning & Lambda AI:__** Bot threat fingerprinting, automated defense flaw diagnosis, root cause analysis & Google Gemini 3.8 Flash autopsies.",
     "-# • Use `!explain security`, `!explain learn`, or `!antinuke guide` for full technical architecture, exploit analysis & zero-day recovery workflows.",
     "-# **__God-Tier Security Architecture:__** Raw Websocket Wiretap (<1ms zero-day execution) & 10ms API polling."
   ] },

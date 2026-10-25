@@ -2,22 +2,31 @@ import { MessageFlags, PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
 import { isServerAdmin } from '../utils/helpers.js';
+import {
+  auditServerFlaws,
+  buildFlawsReportContainer,
+  buildServerFixContainer,
+  buildAIAnalysisContainer
+} from '../utils/botThreatLearner.js';
 
 const TICK = '<a:atheNATICK:1557841381630681106>';
 const UPTIME = '<a:uptime:1552608831060844575>';
 const OFF = '<:off:1533844858983157851>';
 
 /**
- * Builds the comprehensive Components V2 Learn Mode & Heuristics Dashboard.
+ * Builds the comprehensive Components V2 Autonomous Self-Learning, Lambda AI,
+ * and Heuristic Threat Matrix Dashboard.
  */
 export function buildLearnDashboard(guild, config, prefix = '!') {
   const isLearning = Boolean(config.learnModeEnabled);
   const signatures = db.getNukeSignatures(guild.id);
+  const flaws = db.getNukeFlaws(guild.id);
+  const botThreats = signatures.filter(s => s.isBot);
   const baseline = db.getLearnBaseline(guild.id);
 
   const statusLine = isLearning
-    ? `> ${UPTIME} **Status: Active (Adaptive Profiling Engaged)**\n> -# Athena is continuously profiling staff action velocity and recording anomalous threat signatures to dynamically tune velocity thresholds.`
-    : `> ${OFF} **Status: Inactive / Standby**\n> -# Heuristic threat learning is dormant. Standard deterministic antinuke velocity tripwires remain fully armed.`;
+    ? `> ${UPTIME} **Status: Active (Continuous Autonomous Self-Learning Engaged)**\n> -# Athena Prime is actively monitoring rogue bot actions, analyzing attack velocity fingerprints, and automatically diagnosing defense flaws.`
+    : `> ${OFF} **Status: Inactive / Standby**\n> -# Heuristic threat learning is dormant. Deterministic antinuke tripwires remain fully armed.`;
 
   let lastActivity = 'None recorded';
   if (baseline.lastAction && baseline.lastAction.timestamp) {
@@ -25,33 +34,43 @@ export function buildLearnDashboard(guild, config, prefix = '!') {
     lastActivity = `<t:${ts}:R> (${baseline.lastAction.eventType || 'Staff Action'})`;
   }
 
+  const flawWarning = flaws.length > 0
+    ? `\n> <:off:1533844858983157851> **Active Defense Flaws Recorded (${flaws.length}):** Antinuke encountered execution friction during past attacks. Run \`${prefix}learn flaws\` or \`${prefix}learn fix\` to view reasons and apply immediate fixes!`
+    : '';
+
   const container = {
     type: 17,
     components: [
       {
         type: 10,
-        content: `# Heuristic Threat Profiling & Learn Mode | ${TICK}\n${statusLine}`
+        content: `# Autonomous Self-Learning & Lambda AI Threat Matrix | ${TICK}\n${statusLine}${flawWarning}`
       },
       { type: 14, divider: true },
       {
         type: 10,
         content:
-`### Engine Telemetry & Heuristic Profile
-• **Threat Signatures Captured:** \`${signatures.length}\`
+`### Engine Telemetry & Autonomous Learning Memory
+• **Total Threat Signatures Captured:** \`${signatures.length}\`
+• **Hostile Bot Threats Profiled:** \`${botThreats.length}\`
+• **Identified Defense Flaws & Failures:** \`${flaws.length}\` ${flaws.length > 0 ? '`[REMEDY REQUIRED]`' : '`[OPTIMAL]`'}
 • **Baseline Staff Actions Profiled:** \`${baseline.actionsRecorded || 0}\`
-• **Staff Accounts Indexed:** \`${baseline.staffTracked ? baseline.staffTracked.length : 0}\`
-• **False-Positive Guard:** ${UPTIME} **Active** (Authorized staff actions establish safe baselines without punishment)
+• **Staff & Bot Accounts Indexed:** \`${baseline.staffTracked ? baseline.staffTracked.length : 0}\`
+• **False-Positive Guard:** ${UPTIME} **Active** (Authorized administrative tasks establish safe baselines)
+• **Lambda AI Neural Pipeline:** ${UPTIME} **Active** (Google Gemini 3.8 Flash automated autopsy core)
 • **Last Recorded Activity:** ${lastActivity}`
       },
       { type: 14, divider: true },
       {
         type: 10,
         content:
-`### Management & Usage
-• \`${prefix}learn on\` / \`${prefix}learn off\` - Enable or disable continuous heuristic profiling.
-• \`${prefix}learn baseline\` - Run an immediate audit scan across current roles and staff.
-• \`${prefix}learn signatures\` - Inspect recent recorded threat signatures and velocity anomalies.
-• \`${prefix}learn clear\` - Reset captured signature logs for this server.`
+`### Management & Diagnostic Commands
+• \`${prefix}learn on\` / \`${prefix}learn off\` — Enable or disable continuous autonomous learning.
+• \`${prefix}learn flaws\` — View why antinuke failed to block certain actions, with root causes and fixes.
+• \`${prefix}learn fix\` — Run live server hierarchy audit to identify and remediate permission flaws.
+• \`${prefix}learn analyze [id]\` — Generate a Lambda Neural AI forensic autopsy for an incident.
+• \`${prefix}learn baseline\` — Establish fresh privilege baselines across staff and integrated bots.
+• \`${prefix}learn signatures\` — Inspect captured rogue bot fingerprints and velocity patterns.
+• \`${prefix}learn clear\` — Reset signature history for this server.`
       },
       { type: 14, divider: true },
       {
@@ -61,15 +80,29 @@ export function buildLearnDashboard(guild, config, prefix = '!') {
             ? { type: 2, custom_id: 'learn_off', label: 'Disengage Learning', style: 2, emoji: { id: '1533844858983157851' } }
             : { type: 2, custom_id: 'learn_on', label: 'Engage Learning', style: 3, emoji: { id: '1552608831060844575' } },
           { type: 2, custom_id: 'learn_baseline', label: 'Run Baseline Scan', style: 2, emoji: { id: '1523765738655973589' } },
-          { type: 2, custom_id: 'learn_signatures', label: 'View Signatures', style: 2 },
-          { type: 2, custom_id: 'learn_clear', label: 'Clear History', style: 4 },
+          { type: 2, custom_id: 'learn_signatures', label: 'Signatures', style: 2 },
+          {
+            type: 2,
+            custom_id: 'learn_flaws',
+            label: `Flaws (${flaws.length})`,
+            style: flaws.length > 0 ? 4 : 2,
+            emoji: { id: '1523766065576935475' }
+          },
           { type: 2, custom_id: 'learn_refresh', label: 'Refresh', style: 2, emoji: { id: '1523766065576935475' } }
+        ]
+      },
+      {
+        type: 1,
+        components: [
+          { type: 2, custom_id: 'learn_fix', label: 'Run Security Fix Audit', style: 3, emoji: { id: '1552608831060844575' } },
+          { type: 2, custom_id: 'learn_ai', label: 'Lambda AI Autopsy', style: 2, emoji: { id: '1523765738655973589' } },
+          { type: 2, custom_id: 'learn_clear', label: 'Clear History', style: 4 }
         ]
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: '-# **Athena Prime Adaptive Defense Matrix · Zero-Day Immunity**'
+        content: '-# **Athena Prime Autonomous Self-Learning & Lambda AI Matrix · Zero-Day Immunity**'
       }
     ]
   };
@@ -106,8 +139,12 @@ export function buildSignaturesContainer(guild, prefix = '!') {
   const recent = signatures.slice(0, 8);
   const rows = recent.map((sig, idx) => {
     const ts = sig.timestamp ? `<t:${Math.floor(sig.timestamp / 1000)}:R>` : 'Unknown';
-    const exec = sig.executorId ? `<@${sig.executorId}> (\`${sig.executorId}\`)` : 'Unknown Actor';
-    return `**${idx + 1}. ${sig.eventType || 'Threat Anomaly'}**\n-# • **Executor:** ${exec}\n-# • **Action:** \`${sig.action || 'Unknown'}\` • **Logged:** ${ts}`;
+    const exec = sig.executorId ? `<@${sig.executorId}> (\`${sig.executorTag || sig.executorId}\`) ${sig.isBot ? '`[BOT]`' : '`[USER]`'}` : 'Unknown Actor';
+    const flawBadge = sig.flawDetected ? '`[FLAW DETECTED]`' : '`[BLOCKED]`';
+    return `**${idx + 1}. ${sig.eventType || 'Threat Anomaly'}** ${flawBadge}\n` +
+           `-# • **Executor:** ${exec}\n` +
+           `-# • **Action:** \`${sig.action || 'Unknown'}\` • **Verdict:** \`${sig.verdict || 'Processed'}\` • **Logged:** ${ts}` +
+           (sig.flawDetected ? `\n-# • **Flaw:** ${sig.flawReason ? sig.flawReason.slice(0, 90) + '...' : 'Hierarchy/Permission conflict.'}` : '');
   }).join('\n\n');
 
   const container = {
@@ -127,13 +164,14 @@ export function buildSignaturesContainer(guild, prefix = '!') {
         type: 1,
         components: [
           { type: 2, custom_id: 'learn_dashboard', label: 'Return to Dashboard', style: 2, emoji: { id: '1523765738655973589' } },
+          { type: 2, custom_id: 'learn_flaws', label: 'View Flaws & Fixes', style: 2 },
           { type: 2, custom_id: 'learn_clear', label: 'Clear All Signatures', style: 4 }
         ]
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: '-# **Athena Prime Adaptive Defense Matrix · Zero-Day Immunity**'
+        content: '-# **Athena Prime Autonomous Self-Learning & Lambda AI Matrix · Zero-Day Immunity**'
       }
     ]
   };
@@ -192,13 +230,14 @@ export async function executeBaselineScan(guild) {
         {
           type: 1,
           components: [
-            { type: 2, custom_id: 'learn_dashboard', label: 'Return to Dashboard', style: 2, emoji: { id: '1523765738655973589' } }
+            { type: 2, custom_id: 'learn_dashboard', label: 'Return to Dashboard', style: 2, emoji: { id: '1523765738655973589' } },
+            { type: 2, custom_id: 'learn_fix', label: 'Run Security Fix Audit', style: 3, emoji: { id: '1552608831060844575' } }
           ]
         },
         { type: 14, divider: true },
         {
           type: 10,
-          content: '-# **Athena Prime Adaptive Defense Matrix · Zero-Day Immunity**'
+          content: '-# **Athena Prime Autonomous Self-Learning & Lambda AI Matrix · Zero-Day Immunity**'
         }
       ]
     };
@@ -219,16 +258,16 @@ export async function executeBaselineScan(guild) {
 }
 
 /**
- * Global persistent interaction handler for Learn Mode buttons.
+ * Global persistent interaction handler for Learn & Lambda Mode buttons.
  */
 export async function handleLearnInteraction(interaction) {
   try {
     const customId = interaction.customId;
-    if (!customId || !customId.startsWith('learn_')) return false;
+    if (!customId || (!customId.startsWith('learn_') && !customId.startsWith('lambda_'))) return false;
 
     if (!isServerAdmin(interaction.member, interaction.guild.id)) {
       await interaction.reply({
-        content: `-# ${OFF} **Access Denied:** Only Server Administrators or Owners can manage Learn Mode.`,
+        content: `-# ${OFF} **Access Denied:** Only Server Administrators or Owners can manage Learn & Lambda AI Mode.`,
         flags: 64
       }).catch(() => null);
       return true;
@@ -238,7 +277,10 @@ export async function handleLearnInteraction(interaction) {
     const config = db.getGuildConfig(guild.id);
     const prefix = config.prefix || '!';
 
-    if (customId === 'learn_on') {
+    // Normalize prefix
+    const actionKey = customId.replace(/^(learn_|lambda_)/, '');
+
+    if (actionKey === 'on') {
       config.learnModeEnabled = true;
       db.updateGuildConfig(guild.id, { learnModeEnabled: true });
       const payload = buildLearnDashboard(guild, config, prefix);
@@ -246,7 +288,7 @@ export async function handleLearnInteraction(interaction) {
       return true;
     }
 
-    if (customId === 'learn_off') {
+    if (actionKey === 'off') {
       config.learnModeEnabled = false;
       db.updateGuildConfig(guild.id, { learnModeEnabled: false });
       const payload = buildLearnDashboard(guild, config, prefix);
@@ -254,25 +296,53 @@ export async function handleLearnInteraction(interaction) {
       return true;
     }
 
-    if (customId === 'learn_refresh' || customId === 'learn_dashboard') {
+    if (actionKey === 'refresh' || actionKey === 'dashboard') {
       const payload = buildLearnDashboard(guild, config, prefix);
       await interaction.update(payload).catch(() => null);
       return true;
     }
 
-    if (customId === 'learn_signatures') {
+    if (actionKey === 'signatures') {
       const payload = buildSignaturesContainer(guild, prefix);
       await interaction.update(payload).catch(() => null);
       return true;
     }
 
-    if (customId === 'learn_baseline') {
+    if (actionKey === 'flaws') {
+      const payload = buildFlawsReportContainer(guild, prefix);
+      await interaction.update(payload).catch(() => null);
+      return true;
+    }
+
+    if (actionKey === 'fix') {
+      await interaction.deferUpdate().catch(() => null);
+      const payload = await buildServerFixContainer(guild, prefix);
+      await interaction.editReply(payload).catch(() => null);
+      return true;
+    }
+
+    if (actionKey.startsWith('ai')) {
+      const targetSigId = actionKey.includes('_') ? actionKey.split('_')[1] : null;
+      await interaction.deferUpdate().catch(() => null);
+      const payload = await buildAIAnalysisContainer(guild, targetSigId, prefix);
+      await interaction.editReply(payload).catch(() => null);
+      return true;
+    }
+
+    if (actionKey === 'clear_flaws') {
+      db.clearNukeFlaws(guild.id);
+      const payload = buildFlawsReportContainer(guild, prefix);
+      await interaction.update(payload).catch(() => null);
+      return true;
+    }
+
+    if (actionKey === 'baseline') {
       const payload = await executeBaselineScan(guild);
       await interaction.update(payload).catch(() => null);
       return true;
     }
 
-    if (customId === 'learn_clear') {
+    if (actionKey === 'clear') {
       db.clearNukeSignatures(guild.id);
       const payload = buildLearnDashboard(guild, config, prefix);
       await interaction.update(payload).catch(() => null);
@@ -287,12 +357,13 @@ export async function handleLearnInteraction(interaction) {
 }
 
 export const commands = [
+  // 1. LEARN COMMAND
   {
     name: 'learn',
-    description: 'Configure and monitor Athena Prime Heuristic Machine Learning & Behavioral Antinuke Mode.',
+    description: 'Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics.',
     category: 'security',
     permissions: [],
-    aliases: ['ai', 'heuristics', 'behavioral'],
+    aliases: ['lambda', 'ai', 'heuristics', 'behavioral', 'lambdalearn', 'selflearn', 'autolearn'],
     options: [
       {
         name: 'action',
@@ -301,10 +372,13 @@ export const commands = [
         required: false,
         choices: [
           { name: 'Dashboard / Status', value: 'status' },
-          { name: 'Enable Profiling', value: 'enable' },
-          { name: 'Disable Profiling', value: 'disable' },
+          { name: 'Enable Autonomous Learning', value: 'enable' },
+          { name: 'Disable Autonomous Learning', value: 'disable' },
+          { name: 'View Defense Flaws & Failures', value: 'flaws' },
+          { name: 'Run Security Fix Audit', value: 'fix' },
+          { name: 'Lambda AI Threat Autopsy', value: 'analyze' },
           { name: 'Run Baseline Scan', value: 'baseline' },
-          { name: 'View Signatures', value: 'signatures' },
+          { name: 'View Threat Signatures', value: 'signatures' },
           { name: 'Clear History', value: 'clear' }
         ]
       }
@@ -333,6 +407,22 @@ export const commands = [
         return message.reply(payload);
       }
 
+      if (sub === 'flaws' || sub === 'flaw' || sub === 'failures' || sub === 'reasons') {
+        const payload = buildFlawsReportContainer(guild, prefix);
+        return message.reply(payload);
+      }
+
+      if (sub === 'fix' || sub === 'auditfix' || sub === 'check' || sub === 'repair') {
+        const payload = await buildServerFixContainer(guild, prefix);
+        return message.reply(payload);
+      }
+
+      if (sub === 'analyze' || sub === 'ai' || sub === 'autopsy' || sub === 'lambda') {
+        const sigId = args[1] || null;
+        const payload = await buildAIAnalysisContainer(guild, sigId, prefix);
+        return message.reply(payload);
+      }
+
       if (sub === 'baseline' || sub === 'scan' || sub === 'audit') {
         const payload = await executeBaselineScan(guild);
         return message.reply(payload);
@@ -350,7 +440,21 @@ export const commands = [
           components: [
             {
               type: 10,
-              content: `# Threat Signatures Cleared | ${TICK}\n> -# All captured anomaly logs and attack patterns for **${guild.name}** have been reset.`
+              content: `# Threat Signatures Cleared | ${TICK}\n> -# All captured anomaly logs, bot attack patterns, and flaw records for **${guild.name}** have been reset.`
+            }
+          ]
+        };
+        return message.reply({ components: [container], flags: (MessageFlags.IsComponentsV2 || 32768) });
+      }
+
+      if (sub === 'clearflaws') {
+        db.clearNukeFlaws(guild.id);
+        const container = {
+          type: 17,
+          components: [
+            {
+              type: 10,
+              content: `# Defense Flaws Cleared | ${TICK}\n> -# All historical flaw flags for **${guild.name}** have been cleared.`
             }
           ]
         };
@@ -364,7 +468,7 @@ export const commands = [
     async executeSlash(interaction) {
       if (!isServerAdmin(interaction.member, interaction.guild.id)) {
         return interaction.reply({
-          content: `-# ${OFF} **Access Denied:** Only Server Administrators or Owners can manage Learn Mode.`,
+          content: `-# ${OFF} **Access Denied:** Only Server Administrators or Owners can manage Learn & Lambda Mode.`,
           flags: 64
         });
       }
@@ -386,6 +490,23 @@ export const commands = [
         db.updateGuildConfig(guild.id, { learnModeEnabled: false });
         const payload = buildLearnDashboard(guild, config, prefix);
         return interaction.reply(payload);
+      }
+
+      if (action === 'flaws') {
+        const payload = buildFlawsReportContainer(guild, prefix);
+        return interaction.reply(payload);
+      }
+
+      if (action === 'fix') {
+        await interaction.deferReply();
+        const payload = await buildServerFixContainer(guild, prefix);
+        return interaction.editReply(payload);
+      }
+
+      if (action === 'analyze') {
+        await interaction.deferReply();
+        const payload = await buildAIAnalysisContainer(guild, null, prefix);
+        return interaction.editReply(payload);
       }
 
       if (action === 'baseline') {
@@ -415,6 +536,42 @@ export const commands = [
 
       const payload = buildLearnDashboard(guild, config, prefix);
       return interaction.reply(payload);
+    }
+  },
+
+  // 2. DEDICATED LAMBDA COMMAND (Full Parity)
+  {
+    name: 'lambda',
+    description: 'Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics.',
+    category: 'security',
+    permissions: [],
+    aliases: ['lambdalearn', 'selflearning'],
+    options: [
+      {
+        name: 'action',
+        description: 'Action to execute',
+        type: 3,
+        required: false,
+        choices: [
+          { name: 'Dashboard / Status', value: 'status' },
+          { name: 'Enable Autonomous Learning', value: 'enable' },
+          { name: 'Disable Autonomous Learning', value: 'disable' },
+          { name: 'View Defense Flaws & Failures', value: 'flaws' },
+          { name: 'Run Security Fix Audit', value: 'fix' },
+          { name: 'Lambda AI Threat Autopsy', value: 'analyze' },
+          { name: 'Run Baseline Scan', value: 'baseline' },
+          { name: 'View Threat Signatures', value: 'signatures' },
+          { name: 'Clear History', value: 'clear' }
+        ]
+      }
+    ],
+    async executePrefix(message, args) {
+      const learnCmd = commands[0];
+      return learnCmd.executePrefix(message, args);
+    },
+    async executeSlash(interaction) {
+      const learnCmd = commands[0];
+      return learnCmd.executeSlash(interaction);
     }
   }
 ];

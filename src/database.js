@@ -802,6 +802,29 @@ class Database {
     return true;
   }
 
+  updateNukeSignature(guildId, signatureId, updates) {
+    if (!this.cache.nukeSignatures || !this.cache.nukeSignatures[guildId]) return false;
+    const sig = this.cache.nukeSignatures[guildId].find(s => s.id === signatureId);
+    if (!sig) return false;
+    Object.assign(sig, updates);
+    this.save();
+    return sig;
+  }
+
+  getNukeFlaws(guildId) {
+    const list = this.getNukeSignatures(guildId);
+    return list.filter(s => s.flawDetected);
+  }
+
+  clearNukeFlaws(guildId) {
+    if (!this.cache.nukeSignatures || !this.cache.nukeSignatures[guildId]) return true;
+    for (const sig of this.cache.nukeSignatures[guildId]) {
+      if (sig.flawDetected) sig.flawDetected = false;
+    }
+    this.save();
+    return true;
+  }
+
   // --- REAL-TIME SECURITY LIVE AUDIT & INCIDENT RECORDS ---
   getSecurityLiveRecords(guildId, limit = 50) {
     if (!this.cache.securityLiveRecords) this.cache.securityLiveRecords = {};
