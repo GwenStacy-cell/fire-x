@@ -301,7 +301,7 @@ export const commands = [
               } else if (targetCmd.name === "stockchannel") {
                   usageText = `${prefix}stockchannel set <#channel> / ${prefix}stockchannel disable / ${prefix}stockchannel test / ${prefix}stockchannel status`;
               } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
-                  usageText = `${prefix}symbols [category/query] / ${prefix}symbollist / ${prefix}tickers / ${prefix}symbols search <query> / /symbols [query]`;
+                  usageText = `${prefix}symbols [query/category] / ${prefix}symbollist / ${prefix}tickers / ${prefix}tickerlist / ${prefix}stocksymbols / ${prefix}marketlist / ${prefix}symlist / /symbols [query]`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -482,19 +482,20 @@ export const commands = [
                     `> • \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market news is for informational purposes only. Always double check live data.`;
               } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
-                  descContent = `Universal symbol directory and real-time ticker resolution covering every publicly traded asset worldwide.\n\n` +
-                    `> -# **__Features & Directory Categories:__**\n` +
-                    `> • **Global Coverage:** Instant resolution for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, ETERNAL/ZOMATO, SWIGGY, HYUNDAI), US mega-caps (NVDA, AAPL, TSLA), crypto (BTC, ETH, SOL), commodities (GOLD, CRUDE, SILVER), and global indices (NIFTY, SENSEX, SP500, NASDAQ).\n` +
-                    `> • **Trending & Newly Discovered Tickers:** Dynamic live category displaying real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
-                    `> • **Dynamic Search Engine:** Search by company name or ticker (\`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Zomato\`, \`${prefix}symbols Palantir\`) to retrieve verified exchange symbols and 1-click telemetry commands.\n` +
-                    `> • **Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n` +
-                    `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n\n` +
-                    `> -# **__All Aliases & Directives:__**\n` +
-                    `> • \`${prefix}symbols\` - Open universal symbol directory.\n` +
-                    `> • \`${prefix}symbols trending\` / \`new\` / \`recent\` - View newly discovered and trending tickers.\n` +
-                    `> • \`${prefix}symbols india\` / \`us\` / \`crypto\` / \`macro\` - Direct category view.\n` +
-                    `> • \`${prefix}symbols <query>\` - Search matching symbols on global exchanges.\n` +
-                    `> • \`${prefix}symbollist\` / \`${prefix}tickers\` / \`${prefix}tickerlist\` / \`${prefix}stocksymbols\` / \`${prefix}marketlist\` / \`${prefix}symlist\` - Command aliases.\n\n` +
+                  descContent = `Universal symbol directory, autonomous self-learning ticker registry, and real-time search covering every publicly traded asset worldwide.\n\n` +
+                    `> -# **__Primary & Aliases:__**\n` +
+                    `> • \`${prefix}symbols\`, \`${prefix}symbollist\`, \`${prefix}tickers\`, \`${prefix}tickerlist\`, \`${prefix}stocksymbols\`, \`${prefix}marketlist\`, \`${prefix}symlist\`, \`/symbols [query]\`.\n\n` +
+                    `> -# **__Interactive Categorized Directory:__**\n` +
+                    `> • **Overview Directory:** Master cross-asset directory of top world equities, tech giants, crypto assets, and benchmark indices.\n` +
+                    `> • **Trending & Newly Discovered Tickers:** Real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
+                    `> • **India (NSE / BSE):** Benchmark indices (\`NIFTY\`, \`SENSEX\`, \`BANKNIFTY\`) and heavyweights (\`TCS\`, \`RELIANCE\`, \`INFY\`, \`TATAMOTORS\`, \`SBIN\`, \`ETERNAL\` [Zomato], \`SWIGGY\`, \`HYUNDAI\`).\n` +
+                    `> • **US Tech & AI Titans:** Mega-caps and semiconductor giants (\`NVDA\`, \`AAPL\`, \`MSFT\`, \`GOOGL\`, \`AMZN\`, \`META\`, \`TSLA\`, \`AMD\`, \`PLTR\`).\n` +
+                    `> • **Cryptocurrencies:** Major digital blockchain assets (\`BTC\`, \`ETH\`, \`SOL\`, \`BNB\`, \`XRP\`, \`DOGE\`, \`ADA\`, \`AVAX\`, \`LINK\`, \`SUI\`).\n` +
+                    `> • **Macro & Commodities:** Raw materials, international market indices & forex (\`GOLD\`, \`SILVER\`, \`CRUDE\`, \`NATGAS\`, \`NIKKEI\`, \`FTSE\`, \`DAX\`, \`USDINR\`, \`EURUSD\`).\n\n` +
+                    `> -# **__Dynamic Search & Telemetry Commands:__**\n` +
+                    `> • **Real-Time Live Search:** Run \`${prefix}symbols <query>\` or \`${prefix}symbols search <query>\` to instantly search global exchanges (e.g. \`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`, \`${prefix}symbols Zomato\`).\n` +
+                    `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n` +
+                    `> • **1-Click Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
               } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
                   descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
@@ -717,7 +718,7 @@ export const commands = [
         } else if (targetCmd.name === "stockchannel") {
           usageText = `${prefix}stockchannel set <#channel> / ${prefix}stockchannel disable / ${prefix}stockchannel test / ${prefix}stockchannel status`;
         } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
-          usageText = `${prefix}symbols [category/query] / ${prefix}symbollist / ${prefix}tickers / ${prefix}symbols search <query> / /symbols [query]`;
+          usageText = `${prefix}symbols [query/category] / ${prefix}symbollist / ${prefix}tickers / ${prefix}tickerlist / ${prefix}stocksymbols / ${prefix}marketlist / ${prefix}symlist / /symbols [query]`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -895,19 +896,20 @@ export const commands = [
             `> • \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market news is for informational purposes only. Always double check live data.`;
         } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
-          descContent = `Universal symbol directory and real-time ticker resolution covering every publicly traded asset worldwide.\n\n` +
-            `> -# **__Features & Directory Categories:__**\n` +
-            `> • **Global Coverage:** Instant resolution for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, ETERNAL/ZOMATO, SWIGGY, HYUNDAI), US mega-caps (NVDA, AAPL, TSLA), crypto (BTC, ETH, SOL), commodities (GOLD, CRUDE, SILVER), and global indices (NIFTY, SENSEX, SP500, NASDAQ).\n` +
-            `> • **Trending & Newly Discovered Tickers:** Dynamic live category displaying real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
-            `> • **Dynamic Search Engine:** Search by company name or ticker (\`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Zomato\`, \`${prefix}symbols Palantir\`) to retrieve verified exchange symbols and 1-click telemetry commands.\n` +
-            `> • **Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n` +
-            `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n\n` +
-            `> -# **__All Aliases & Directives:__**\n` +
-            `> • \`${prefix}symbols\` - Open universal symbol directory.\n` +
-            `> • \`${prefix}symbols trending\` / \`new\` / \`recent\` - View newly discovered and trending tickers.\n` +
-            `> • \`${prefix}symbols india\` / \`us\` / \`crypto\` / \`macro\` - Direct category view.\n` +
-            `> • \`${prefix}symbols <query>\` - Search matching symbols on global exchanges.\n` +
-            `> • \`${prefix}symbollist\` / \`${prefix}tickers\` / \`${prefix}tickerlist\` / \`${prefix}stocksymbols\` / \`${prefix}marketlist\` / \`${prefix}symlist\` - Command aliases.\n\n` +
+          descContent = `Universal symbol directory, autonomous self-learning ticker registry, and real-time search covering every publicly traded asset worldwide.\n\n` +
+            `> -# **__Primary & Aliases:__**\n` +
+            `> • \`${prefix}symbols\`, \`${prefix}symbollist\`, \`${prefix}tickers\`, \`${prefix}tickerlist\`, \`${prefix}stocksymbols\`, \`${prefix}marketlist\`, \`${prefix}symlist\`, \`/symbols [query]\`.\n\n` +
+            `> -# **__Interactive Categorized Directory:__**\n` +
+            `> • **Overview Directory:** Master cross-asset directory of top world equities, tech giants, crypto assets, and benchmark indices.\n` +
+            `> • **Trending & Newly Discovered Tickers:** Real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
+            `> • **India (NSE / BSE):** Benchmark indices (\`NIFTY\`, \`SENSEX\`, \`BANKNIFTY\`) and heavyweights (\`TCS\`, \`RELIANCE\`, \`INFY\`, \`TATAMOTORS\`, \`SBIN\`, \`ETERNAL\` [Zomato], \`SWIGGY\`, \`HYUNDAI\`).\n` +
+            `> • **US Tech & AI Titans:** Mega-caps and semiconductor giants (\`NVDA\`, \`AAPL\`, \`MSFT\`, \`GOOGL\`, \`AMZN\`, \`META\`, \`TSLA\`, \`AMD\`, \`PLTR\`).\n` +
+            `> • **Cryptocurrencies:** Major digital blockchain assets (\`BTC\`, \`ETH\`, \`SOL\`, \`BNB\`, \`XRP\`, \`DOGE\`, \`ADA\`, \`AVAX\`, \`LINK\`, \`SUI\`).\n` +
+            `> • **Macro & Commodities:** Raw materials, international market indices & forex (\`GOLD\`, \`SILVER\`, \`CRUDE\`, \`NATGAS\`, \`NIKKEI\`, \`FTSE\`, \`DAX\`, \`USDINR\`, \`EURUSD\`).\n\n` +
+            `> -# **__Dynamic Search & Telemetry Commands:__**\n` +
+            `> • **Real-Time Live Search:** Run \`${prefix}symbols <query>\` or \`${prefix}symbols search <query>\` to instantly search global exchanges (e.g. \`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`, \`${prefix}symbols Zomato\`).\n` +
+            `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n` +
+            `> • **1-Click Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
         } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
           descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
@@ -2227,7 +2229,7 @@ export const helpModules = [
     "`!weather / !wtr / !climate / !forecast / !temp / !temperature <location/maps_url>` - Live global weather reconnaissance with satellite world map & 3-day forecast `[Public]`",
     "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Live web high-res picture retrieval with interactive browsing & fresh batches `[Public]`",
     "`!stock / !stocks / !market / !stockmarket / !ticker [symbol]` - Live stock & crypto telemetry in a high-res image with financial breakdown `[Public]`",
-    "`!symbols / !symbollist / !tickers [query]` - Universal global ticker directory & real-time symbol search `[Public]`",
+    "`!symbols / !symbollist / !tickers / !tickerlist / !stocksymbols / !marketlist / !symlist [query]` - Universal global ticker directory, trending IPOs & real-time symbol search `[Public]`",
     "`!stockai / !stockexplain / !marketai / !stai <question/topic>` - Ask Athena AI for detailed financial reports, earnings breakdowns & market explanations `[Public]`",
     "`!movers / !topmovers / !gainers / !losers` - Real-time breakdown of top market movers across equities & crypto `[Public]`",
     "`!crypto / !coin / !btc / !eth [coin]` - Dedicated cryptocurrency market telemetry and Canvas charts `[Public]`",
@@ -2237,6 +2239,8 @@ export const helpModules = [
     "`!profile / !card [@user]` - Official God of War canvas profile card `[Public]`",
     "",
     "-# **__Stock Market Intelligence & Telemetry Engine:__**",
+    "-# • **Primary & Aliases:** `!symbols`, `!symbollist`, `!tickers`, `!tickerlist`, `!stocksymbols`, `!marketlist`, `!symlist`, `/symbols [query]`.",
+    "-# • **Interactive Categorized Directory:** 1-click interactive tabs for Overview, Trending & New IPOs, India (NSE/BSE), US Tech & AI, Cryptocurrencies, and Macro & Commodities.",
     "-# • **Universal Ticker Resolution:** Resolves every publicly traded asset globally (Indian equities on NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, ETERNAL, SWIGGY; US tech titans NVDA, AAPL, TSLA; crypto; commodities; indices).",
     "-# • **Autonomous Self-Learning & Auto-Updating Registry:** Automatically detects, indexes, and edits any new stock, recent IPO, or corporate ticker renaming (e.g. Zomato -> ETERNAL.NS, Tata Motors -> TMCV.NS, FB -> META) and permanently caches it in SQLite.",
     "-# • **Trending & Newly Discovered Tickers Directory:** Interactive tab (`!symbols trending`) tracking real-time newly listed IPOs, active movers, and corporate ticker migrations auto-discovered and indexed by Athena.",
