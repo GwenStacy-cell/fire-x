@@ -96,7 +96,65 @@ export function buildLearnDashboard(guild, config, prefix = '!') {
         components: [
           { type: 2, custom_id: 'learn_fix', label: 'Run Security Fix Audit', style: 3, emoji: { id: '1552608831060844575' } },
           { type: 2, custom_id: 'learn_ai', label: 'Lambda AI Autopsy', style: 2, emoji: { id: '1523765738655973589' } },
+          { type: 2, custom_id: 'learn_help', label: 'Commands Guidance', style: 2, emoji: { id: '1523766065576935475' } },
           { type: 2, custom_id: 'learn_clear', label: 'Clear History', style: 4 }
+        ]
+      },
+      { type: 14, divider: true },
+      {
+        type: 10,
+        content: '-# **Athena Prime Autonomous Self-Learning & Lambda AI Matrix · Zero-Day Immunity**'
+      }
+    ]
+  };
+
+  return { components: [container], flags: (MessageFlags.IsComponentsV2 || 32768) };
+}
+
+/**
+ * Builds the comprehensive Components V2 Architectural Guidance card for Learn & Lambda AI.
+ */
+export function buildLearnGuidancePayload(prefix = '!') {
+  const container = {
+    type: 17,
+    components: [
+      {
+        type: 10,
+        content: `# Autonomous Self-Learning & Lambda AI Guidance | ${TICK}\n` +
+                 `> ${UPTIME} **Zero Security Disruption Guarantee:**\n` +
+                 `> • **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
+                 `> • **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.`
+      },
+      { type: 14, divider: true },
+      {
+        type: 10,
+        content:
+`### Dedicated Interactive Subcommands & Component V2 Controls
+• \`${prefix}learn status\` (or \`${prefix}lambda\`) — Main live telemetry dashboard with threat metrics, active flaw alerts, and interactive buttons.
+• \`${prefix}learn flaws\` (or \`${prefix}lambda flaws\`) — Displays all historical block failures, exact root causes (Role Hierarchy Inversions, Missing Permissions), and step-by-step fixes.
+• \`${prefix}learn fix\` (or \`${prefix}lambda fix\`) — Runs a live server hierarchy & permission audit checking Athena vs all external bots, providing an actionable checklist.
+• \`${prefix}learn analyze [id]\` (or \`${prefix}lambda analyze\`) — Synthesizes a Lambda Neural AI forensic autopsy explaining the attacker's vector and defensive bottlenecks.
+• \`${prefix}learn on / off\` (or \`${prefix}lambda on / off\`) — Toggles continuous autonomous self-learning.
+• \`${prefix}learn baseline\` — Audits staff accounts, elevated roles, and webhooks to establish nominal activity baselines.
+• \`${prefix}learn signatures\` — Displays recent fingerprinted threat signatures and velocity telemetry.
+• \`${prefix}learn clear\` — Resets signature history for this server.`
+      },
+      { type: 14, divider: true },
+      {
+        type: 10,
+        content:
+`### Rate Limit & Emergency Resilience
+• **Discord Rate Limits (429):** Identifies API congestion and shifts restoration into background ring buffers to guarantee reliable server recovery.
+• **Emergency Dispatch:** Automatically sends high-priority flaw alerts to the designated security log channel and DMs the Server Owner with the exact flaw reason and step-by-step fix if an action is ever obstructed.`
+      },
+      { type: 14, divider: true },
+      {
+        type: 1,
+        components: [
+          { type: 2, custom_id: 'learn_dashboard', label: 'Open Dashboard', style: 2, emoji: { id: '1523765738655973589' } },
+          { type: 2, custom_id: 'learn_fix', label: 'Run Security Fix Audit', style: 3, emoji: { id: '1552608831060844575' } },
+          { type: 2, custom_id: 'learn_flaws', label: 'View Flaws', style: 2, emoji: { id: '1523766065576935475' } },
+          { type: 2, custom_id: 'learn_signatures', label: 'Signatures', style: 2 }
         ]
       },
       { type: 14, divider: true },
@@ -302,6 +360,12 @@ export async function handleLearnInteraction(interaction) {
       return true;
     }
 
+    if (actionKey === 'help' || actionKey === 'guidance') {
+      const payload = buildLearnGuidancePayload(prefix);
+      await interaction.update(payload).catch(() => null);
+      return true;
+    }
+
     if (actionKey === 'signatures') {
       const payload = buildSignaturesContainer(guild, prefix);
       await interaction.update(payload).catch(() => null);
@@ -372,6 +436,7 @@ export const commands = [
         required: false,
         choices: [
           { name: 'Dashboard / Status', value: 'status' },
+          { name: 'Commands Guidance & Help', value: 'help' },
           { name: 'Enable Autonomous Learning', value: 'enable' },
           { name: 'Disable Autonomous Learning', value: 'disable' },
           { name: 'View Defense Flaws & Failures', value: 'flaws' },
@@ -392,6 +457,11 @@ export const commands = [
       const config = db.getGuildConfig(guild.id);
       const prefix = config.prefix || '!';
       const sub = (args[0] || 'status').toLowerCase();
+
+      if (sub === 'help' || sub === 'guide' || sub === 'guidance' || sub === 'cmds' || sub === 'commands') {
+        const payload = buildLearnGuidancePayload(prefix);
+        return message.reply(payload);
+      }
 
       if (sub === 'on' || sub === 'enable' || sub === 'start') {
         config.learnModeEnabled = true;
@@ -477,6 +547,11 @@ export const commands = [
       const config = db.getGuildConfig(guild.id);
       const prefix = config.prefix || '!';
       const action = (interaction.options.getString('action') || 'status').toLowerCase();
+
+      if (action === 'help' || action === 'guide' || action === 'guidance') {
+        const payload = buildLearnGuidancePayload(prefix);
+        return interaction.reply(payload);
+      }
 
       if (action === 'enable') {
         config.learnModeEnabled = true;

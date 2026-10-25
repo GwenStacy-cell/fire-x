@@ -279,7 +279,7 @@ export const commands = [
               if (targetCmd.name === "unbypassable") {
                   usageText = `${prefix}unbypassable / /unbypassable`;
               } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
-                  usageText = `${prefix}learn [status|on|off|flaws|fix|analyze|baseline|signatures|clear] / ${prefix}lambda / /learn / /lambda`;
+                  usageText = `${prefix}learn [status|help|on|off|flaws|fix|analyze|baseline|signatures|clear] / ${prefix}lambda / /learn / /lambda`;
               } else if (targetCmd.name === "voicerole") {
                   usageText = `${prefix}voicerole [@role|ID|Name|disable] / /voicerole [role] [disable]`;
               } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
@@ -350,12 +350,19 @@ export const commands = [
                     `> • \`${prefix}${targetCmd.name} [prompt] [#channel]\` - Launch announcement builder.`;
               } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
                   descContent = `Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Zero Security Disruption Guarantee:__**\n` +
+                    `> • **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
+                    `> • **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.\n\n` +
                     `> -# **__Autonomous Bot Self-Learning & Neural Autopsy:__**\n` +
                     `> • **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
                     `> • **Autonomous Defense Flaw Diagnosis:** If antinuke fails or is blocked from eliminating a hostile actor or rolling back damage, Athena autonomously analyzes the exact architectural flaw (Discord Role Hierarchy Inversion, Missing Core Permissions, Server Owner Immunity) and formulates step-by-step remediation fixes!\n` +
                     `> • **Lambda AI Incident Autopsy:** Powered by Google Gemini 3.8 Flash Neural Pipeline to dissect attack vectors and generate professional forensic reports.\n\n` +
+                    `> -# **__Rate Limit & Emergency Resilience:__**\n` +
+                    `> • **Discord Rate Limits (429):** Identifies API congestion and shifts restoration into background ring buffers.\n` +
+                    `> • **Emergency Dispatch:** Automatically sends high-priority flaw alerts to the security log channel and DMs the Server Owner with the exact flaw reason and step-by-step fix.\n\n` +
                     `> -# **__Subcommands & Directives:__**\n` +
                     `> • \`${prefix}learn status\` (or \`${prefix}lambda\`) — Interactive Component V2 learning & flaw dashboard.\n` +
+                    `> • \`${prefix}learn help\` (or \`${prefix}lambda help\`) — Interactive Component V2 commands & architecture guidance.\n` +
                     `> • \`${prefix}learn flaws\` — View historical defense block failures, root causes, and fixes.\n` +
                     `> • \`${prefix}learn fix\` — Live server hierarchy & permission audit with immediate step-by-step fixes.\n` +
                     `> • \`${prefix}learn analyze [id]\` — Deep Lambda Neural AI forensic breakdown of any threat signature.\n` +
@@ -718,7 +725,7 @@ export const commands = [
         if (targetCmd.name === "unbypassable") {
           usageText = `${prefix}unbypassable / /unbypassable`;
         } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
-          usageText = `${prefix}learn [status|on|off|flaws|fix|analyze|baseline|signatures|clear] / ${prefix}lambda / /learn / /lambda`;
+          usageText = `${prefix}learn [status|help|on|off|flaws|fix|analyze|baseline|signatures|clear] / ${prefix}lambda / /learn / /lambda`;
         } else if (targetCmd.name === "voicerole") {
           usageText = `${prefix}voicerole [@role|ID|Name|disable] / /voicerole [role] [disable]`;
         } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
@@ -786,12 +793,19 @@ export const commands = [
             `> • \`${prefix}${targetCmd.name} [prompt] [#channel]\` - Launch announcement builder.`;
         } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
           descContent = `Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Zero Security Disruption Guarantee:__**\n` +
+            `> • **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
+            `> • **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.\n\n` +
             `> -# **__Autonomous Bot Self-Learning & Neural Autopsy:__**\n` +
             `> • **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
             `> • **Autonomous Defense Flaw Diagnosis:** If antinuke fails or is blocked from eliminating a hostile actor or rolling back damage, Athena autonomously analyzes the exact architectural flaw (Discord Role Hierarchy Inversion, Missing Core Permissions, Server Owner Immunity) and formulates step-by-step remediation fixes!\n` +
             `> • **Lambda AI Incident Autopsy:** Powered by Google Gemini 3.8 Flash Neural Pipeline to dissect attack vectors and generate professional forensic reports.\n\n` +
+            `> -# **__Rate Limit & Emergency Resilience:__**\n` +
+            `> • **Discord Rate Limits (429):** Identifies API congestion and shifts restoration into background ring buffers.\n` +
+            `> • **Emergency Dispatch:** Automatically sends high-priority flaw alerts to the security log channel and DMs the Server Owner with the exact flaw reason and step-by-step fix.\n\n` +
             `> -# **__Subcommands & Directives:__**\n` +
             `> • \`${prefix}learn status\` (or \`${prefix}lambda\`) — Interactive Component V2 learning & flaw dashboard.\n` +
+            `> • \`${prefix}learn help\` (or \`${prefix}lambda help\`) — Interactive Component V2 commands & architecture guidance.\n` +
             `> • \`${prefix}learn flaws\` — View historical defense block failures, root causes, and fixes.\n` +
             `> • \`${prefix}learn fix\` — Live server hierarchy & permission audit with immediate step-by-step fixes.\n` +
             `> • \`${prefix}learn analyze [id]\` — Deep Lambda Neural AI forensic breakdown of any threat signature.\n` +
