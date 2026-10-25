@@ -79,7 +79,8 @@ const DEFAULT_SCHEMA = {
   panicHistory: {},         // guildId -> [ { id, timestamp, type, moderatorId, ... } ]
   studioTemplates: {},   // guildId -> { templateId -> { id, name, title, description, color, fields, footer } }
   minigamesStats: {},    // guildId -> { userId -> { blackjackWins, rouletteWins, triviaWins, totalWagered, totalWon } }
-  voiceAnalytics: {}     // guildId -> { hourly: {}, channels: {}, users: {} }
+  voiceAnalytics: {},    // guildId -> { hourly: {}, channels: {}, users: {} }
+  dynamicStockSymbols: {} // cleanQuery -> { symbol, name, exchange, currency, assetType, updatedAt }
 };
 
 class Database {
@@ -2494,6 +2495,89 @@ class Database {
       }
     }
     return results;
+  }
+
+  // --- DYNAMIC STOCK & TICKER REGISTRY ---
+
+  getDynamicStockSymbol(query) {
+    if (!query) return null;
+    const clean = String(query).trim().toUpperCase();
+    if (!this.cache.dynamicStockSymbols) this.cache.dynamicStockSymbols = {};
+
+    if (this.cache.dynamicStockSymbols[clean]) {
+      return this.cache.dynamicStockSymbols[clean];
+    }
+
+    // Pre-seeded rebrand & demerger fallbacks
+    const KNOWN_RENAME_SEED = {
+      'ZOMATO': { symbol: 'ETERNAL.NS', name: 'ETERNAL LIMITED (Zomato)', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'ETERNAL': { symbol: 'ETERNAL.NS', name: 'ETERNAL LIMITED', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'TATAMOTORS': { symbol: 'TMCV.NS', name: 'TATA MOTORS LIMITED', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'TMCV': { symbol: 'TMCV.NS', name: 'TATA MOTORS LIMITED', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'TMPV': { symbol: 'TMPV.NS', name: 'TATA MOTORS PASSENGER VEHICLES', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'SWIGGY': { symbol: 'SWIGGY.NS', name: 'SWIGGY LIMITED', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'HYUNDAI': { symbol: 'HYUNDAI.NS', name: 'HYUNDAI MOTOR INDIA LTD', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'OLAELEC': { symbol: 'OLAELEC.NS', name: 'OLA ELECTRIC MOBILITY', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'BAJAJHFL': { symbol: 'BAJAJHFL.NS', name: 'BAJAJ HOUSING FINANCE', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'FB': { symbol: 'META', name: 'Meta Platforms, Inc.', exchange: 'NASDAQ', currency: 'USD', assetType: 'EQUITY' },
+      'TWTR': { symbol: 'X', name: 'X Corp (formerly Twitter)', exchange: 'GLOBAL', currency: 'USD', assetType: 'EQUITY' },
+      'HDFC': { symbol: 'HDFCBANK.NS', name: 'HDFC Bank Ltd', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'LTI': { symbol: 'LTIM.NS', name: 'LTIMindtree Limited', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' },
+      'MINDTREE': { symbol: 'LTIM.NS', name: 'LTIMindtree Limited', exchange: 'NSI', currency: 'INR', assetType: 'EQUITY' }
+    };
+
+    if (KNOWN_RENAME_SEED[clean]) {
+      const item = { ...KNOWN_RENAME_SEED[clean], updatedAt: Date.now() };
+      this.cache.dynamicStockSymbols[clean] = item;
+      this.save();
+      return item;
+    }
+
+    return null;
+  }
+
+  saveDynamicStockSymbol(query, resolvedSymbol, meta = {}) {
+    if (!query || !resolvedSymbol) return false;
+    const clean = String(query).trim().toUpperCase();
+    if (!this.cache.dynamicStockSymbols) this.cache.dynamicStockSymbols = {};
+
+    const entry = {
+      symbol: resolvedSymbol,
+      name: meta.name || clean,
+      exchange: meta.exchange || 'GLOBAL',
+      currency: meta.currency || 'USD',
+      assetType: meta.assetType || 'EQUITY',
+      updatedAt: Date.now()
+    };
+
+    this.cache.dynamicStockSymbols[clean] = entry;
+
+    const cleanResolved = resolvedSymbol.toUpperCase();
+    if (clean !== cleanResolved) {
+      this.cache.dynamicStockSymbols[cleanResolved] = entry;
+    }
+
+    this.save();
+    return true;
+  }
+
+  deleteDynamicStockSymbol(query) {
+    if (!query) return false;
+    const clean = String(query).trim().toUpperCase();
+    if (this.cache.dynamicStockSymbols && this.cache.dynamicStockSymbols[clean]) {
+      delete this.cache.dynamicStockSymbols[clean];
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  getAllDynamicStockSymbols(limit = 100) {
+    if (!this.cache.dynamicStockSymbols) return [];
+    return Object.entries(this.cache.dynamicStockSymbols)
+      .map(([query, data]) => ({ query, ...data }))
+      .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+      .slice(0, limit);
   }
 
   addAutoTtsUser(guildId, userId) {

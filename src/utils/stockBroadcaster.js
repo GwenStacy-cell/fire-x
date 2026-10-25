@@ -1,5 +1,5 @@
 import db from '../database.js';
-import { fetchMarketOverview, renderMarketOverviewCard, buildMarketOverviewPayload } from './stockMarket.js';
+import { fetchMarketOverview, renderMarketOverviewCard, buildMarketOverviewPayload, syncTrendingMarketSymbols } from './stockMarket.js';
 
 let isRunning = false;
 
@@ -25,6 +25,14 @@ export async function dispatchDailyBriefing(channel) {
 export function startDailyStockBroadcaster(client) {
   if (isRunning) return;
   isRunning = true;
+
+  // Proactively discover and sync trending & new stocks on startup
+  syncTrendingMarketSymbols().catch(() => null);
+
+  // Periodic discovery of new IPOs, active movers, and ticker changes every 2 hours
+  setInterval(() => {
+    syncTrendingMarketSymbols().catch(() => null);
+  }, 2 * 60 * 60 * 1000);
 
   // Check every 60 seconds
   setInterval(async () => {

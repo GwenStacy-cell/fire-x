@@ -868,6 +868,9 @@ export const commands = [
       }
 
       const lower = input.toLowerCase();
+      if (['trending', 'new', 'recent', 'hot', 'dynamic', 'ipos', 'ipo'].includes(lower)) {
+        return message.reply(buildSymbolsPayload('trending', prefix));
+      }
       if (['india', 'indian', 'nse', 'bse'].includes(lower)) {
         return message.reply(buildSymbolsPayload('india', prefix));
       }
@@ -937,6 +940,9 @@ export const commands = [
       }
 
       const lower = query.toLowerCase();
+      if (['trending', 'new', 'recent', 'hot', 'dynamic', 'ipos', 'ipo'].includes(lower)) {
+        return interaction.reply(buildSymbolsPayload('trending', prefix));
+      }
       if (['india', 'indian', 'nse', 'bse'].includes(lower)) {
         return interaction.reply(buildSymbolsPayload('india', prefix));
       }
