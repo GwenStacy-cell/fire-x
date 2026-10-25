@@ -9,6 +9,7 @@ import {
   renderMarketOverviewCard, 
   buildStockPayload, 
   buildMarketOverviewPayload,
+  buildStockGuidancePayload,
   DISCLAIMER_TEXT 
 } from '../utils/stockMarket.js';
 import { generateAIResponse, formatAIToGreyMarkdown } from '../utils/ai.js';
@@ -32,6 +33,12 @@ export const commands = [
     ],
     async executePrefix(message, args) {
       const input = args.join(' ').trim();
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+
+      if (input.toLowerCase() === 'help' || input.toLowerCase() === 'cmds' || input.toLowerCase() === 'guidance') {
+        return message.reply({ ...buildStockGuidancePayload(prefix), flags: MessageFlags.IsComponentsV2 });
+      }
+
       const loadingMsg = await message.reply({
         components: [
           {
@@ -52,13 +59,13 @@ export const commands = [
           // Global Market Overview
           const overview = await fetchMarketOverview();
           const imageBuffer = renderMarketOverviewCard(overview);
-          const payload = buildMarketOverviewPayload(overview, imageBuffer, false);
+          const payload = buildMarketOverviewPayload(overview, imageBuffer, false, prefix);
           return await loadingMsg.edit(payload);
         } else {
           // Specific Stock / Crypto Ticker
           const stockData = await fetchStockData(input);
           const imageBuffer = renderSingleStockCard(stockData);
-          const payload = buildStockPayload(stockData, imageBuffer);
+          const payload = buildStockPayload(stockData, imageBuffer, prefix);
           return await loadingMsg.edit(payload);
         }
       } catch (err) {
@@ -71,7 +78,8 @@ export const commands = [
                   type: 10,
                   content: `## Financial Reconnaissance Error | <a:atheNATICK:1557841381630681106>\n` +
                            `> -# <a:uptime:1552608831060844575> **Telemetry Fault:** ${err.message || 'Unable to resolve market data.'}\n` +
-                           `> -# • **Try:** \`!stock NVDA\`, \`!stock AAPL\`, \`!stock BTC\`, or \`!market\` for global overview.\n\n` +
+                           `> -# • **Try:** \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock BTC\`, or \`${prefix}market\` for global overview.\n` +
+                           `> -# • **All Features Guide:** Type \`${prefix}stock help\` for complete commands guidance.\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
               ]
@@ -83,18 +91,24 @@ export const commands = [
     },
     async executeSlash(interaction) {
       const input = interaction.options?.getString('symbol')?.trim();
+      const prefix = interaction.guild ? (db.getGuildConfig(interaction.guild.id)?.prefix || '!') : '!';
+
+      if (input?.toLowerCase() === 'help' || input?.toLowerCase() === 'cmds') {
+        return interaction.reply(buildStockGuidancePayload(prefix));
+      }
+
       await interaction.deferReply();
 
       try {
         if (!input) {
           const overview = await fetchMarketOverview();
           const imageBuffer = renderMarketOverviewCard(overview);
-          const payload = buildMarketOverviewPayload(overview, imageBuffer, false);
+          const payload = buildMarketOverviewPayload(overview, imageBuffer, false, prefix);
           return await interaction.editReply(payload);
         } else {
           const stockData = await fetchStockData(input);
           const imageBuffer = renderSingleStockCard(stockData);
-          const payload = buildStockPayload(stockData, imageBuffer);
+          const payload = buildStockPayload(stockData, imageBuffer, prefix);
           return await interaction.editReply(payload);
         }
       } catch (err) {
@@ -274,6 +288,7 @@ export const commands = [
       });
 
       try {
+        const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
         const overview = await fetchMarketOverview();
         const allAssets = [...overview.indices, ...overview.tickers].filter(a => a.price > 0);
         allAssets.sort((a, b) => b.changePct - a.changePct);
@@ -296,7 +311,41 @@ export const commands = [
                            gainersList + `\n\n` +
                            `### Top Decliners & Downward Volatility\n` +
                            declinersList + `\n\n` +
+                           `### Supporting Commands Guidance\n` +
+                           `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry\n` +
+                           `> -# • \`${prefix}market\` \u2014 Global 6-index world market pulse\n` +
+                           `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown\n` +
+                           `> -# • \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL)\n` +
+                           `> -# • \`${prefix}stocknews [symbol]\` \u2014 Real-time press wiretap & headlines\n` +
+                           `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
+                },
+                { type: 14, divider: true },
+                {
+                  type: 1,
+                  components: [
+                    {
+                      type: 2,
+                      custom_id: 'stk_ref_overview',
+                      label: 'Global Pulse',
+                      style: 2,
+                      emoji: { name: '🌐' }
+                    },
+                    {
+                      type: 2,
+                      custom_id: 'stk_crypto',
+                      label: 'Crypto Pulse',
+                      style: 2,
+                      emoji: { name: '🪙' }
+                    },
+                    {
+                      type: 2,
+                      custom_id: 'stk_help',
+                      label: 'All Cmds Guide',
+                      style: 2,
+                      emoji: { name: '🧭' }
+                    }
+                  ]
                 },
                 { type: 14, divider: true },
                 {
@@ -337,7 +386,13 @@ export const commands = [
     category: 'utility',
     permissions: [],
     async executePrefix(message, args) {
-      let coin = (args[0] || 'BTC').toUpperCase();
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+      const rawArg = (args[0] || '').trim();
+      if (rawArg.toLowerCase() === 'help' || rawArg.toLowerCase() === 'cmds') {
+        return message.reply({ ...buildStockGuidancePayload(prefix), flags: MessageFlags.IsComponentsV2 });
+      }
+
+      let coin = (rawArg || 'BTC').toUpperCase();
       if (!coin.includes('-USD') && !coin.includes('-USDT')) {
         coin = `${coin}-USD`;
       }
@@ -360,7 +415,7 @@ export const commands = [
       try {
         const stockData = await fetchStockData(coin);
         const imageBuffer = renderSingleStockCard(stockData);
-        const payload = buildStockPayload(stockData, imageBuffer);
+        const payload = buildStockPayload(stockData, imageBuffer, prefix);
         return await loadingMsg.edit(payload);
       } catch (err) {
         return await loadingMsg.edit({
@@ -372,7 +427,8 @@ export const commands = [
                   type: 10,
                   content: `## Crypto Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Crypto coin not found.'}\n` +
-                           `> -# • **Try:** \`!crypto BTC\`, \`!crypto ETH\`, \`!crypto SOL\`, \`!crypto DOGE\`\n\n` +
+                           `> -# • **Try:** \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`, \`${prefix}crypto DOGE\`\n` +
+                           `> -# • **All Features Guide:** Type \`${prefix}stock help\` for complete commands guidance.\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
               ]
@@ -393,6 +449,12 @@ export const commands = [
     permissions: [],
     async executePrefix(message, args) {
       const query = args.join(' ').trim() || 'stock market';
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+
+      if (query.toLowerCase() === 'help' || query.toLowerCase() === 'cmds') {
+        return message.reply({ ...buildStockGuidancePayload(prefix), flags: MessageFlags.IsComponentsV2 });
+      }
+
       const loadingMsg = await message.reply({
         components: [
           {
@@ -444,7 +506,48 @@ export const commands = [
                   content: `## Live Financial News Wire | <a:atheNATICK:1557841381630681106>\n` +
                            `> -# <a:uptime:1552608831060844575> **Subject:** \`${query}\`\n\n` +
                            headlines + `\n\n` +
+                           `### Supporting Commands Guidance\n` +
+                           `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry\n` +
+                           `> -# • \`${prefix}market\` \u2014 Global 6-index world market pulse\n` +
+                           `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown\n` +
+                           `> -# • \`${prefix}movers\` \u2014 Top market gainers & decliners\n` +
+                           `> -# • \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency telemetry\n` +
+                           `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
+                },
+                { type: 14, divider: true },
+                {
+                  type: 1,
+                  components: [
+                    {
+                      type: 2,
+                      custom_id: 'stk_ref_overview',
+                      label: 'Global Pulse',
+                      style: 2,
+                      emoji: { name: '🌐' }
+                    },
+                    {
+                      type: 2,
+                      custom_id: 'stk_movers',
+                      label: 'Market Movers',
+                      style: 2,
+                      emoji: { name: '🔥' }
+                    },
+                    {
+                      type: 2,
+                      custom_id: 'stk_crypto',
+                      label: 'Crypto Pulse',
+                      style: 2,
+                      emoji: { name: '🪙' }
+                    },
+                    {
+                      type: 2,
+                      custom_id: 'stk_help',
+                      label: 'All Cmds Guide',
+                      style: 2,
+                      emoji: { name: '🧭' }
+                    }
+                  ]
                 },
                 { type: 14, divider: true },
                 {
@@ -887,5 +990,12 @@ export async function handleStockButton(interaction) {
     } catch (err) {
       return await interaction.editReply({ content: `-! Error compiling crypto: ${err.message}` });
     }
+  }
+
+  // All Cmds Guide button
+  if (customId === 'stk_help') {
+    const config = interaction.guild ? db.getGuildConfig(interaction.guild.id) : null;
+    const prefix = config?.prefix || '!';
+    return await interaction.reply({ ...buildStockGuidancePayload(prefix), flags: MessageFlags.Ephemeral });
   }
 }

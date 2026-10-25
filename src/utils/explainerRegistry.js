@@ -2230,6 +2230,60 @@ export const DETAILED_COMMANDS = {
     example: '!stockchannel set #stock-market'
   },
 
+  movers: {
+    name: 'movers',
+    aliases: ['topmovers', 'gainers', 'losers', 'marketmovers'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!movers / !topmovers / !gainers / !losers',
+    purpose: 'Real-time market volatility and momentum scanner across mega-cap equities and major cryptocurrencies.',
+    architecture:
+`• **Real-Time Cross-Asset Velocity Scan:**
+  - Evaluates live percentage changes across major equity indices, mega-caps (NVDA, AAPL, MSFT, TSLA, GOOGL, AMZN), and top cryptocurrencies (BTC, ETH, SOL).
+  - Automatically partitions assets into **Top Gainers (Momentum Leaders)** and **Top Decliners (Volatility Pullbacks)**.
+• **Instant Navigation Buttons:**
+  - Embedded Component V2 buttons allow instant toggling between Global Market Pulse, Crypto Pulse, and full financial suite guidance.
+• **Risk Disclaimer:**
+  - Prominently reminds users that Athena can make mistakes and market data may experience network delays.`,
+    example: '!movers'
+  },
+
+  crypto: {
+    name: 'crypto',
+    aliases: ['cryptocurrency', 'coin', 'btc', 'eth'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!crypto [coin] (or !btc, !eth, !coin <symbol>)',
+    purpose: 'Dedicated cryptocurrency market telemetry and Canvas price action charts.',
+    architecture:
+`• **Universal Cryptocurrency Resolution:**
+  - Automatically resolves crypto symbols (e.g., BTC, ETH, SOL, DOGE, XRP) against standard USD quote pairs.
+  - Defaults to Bitcoin (BTC-USD) if invoked without arguments.
+• **Widescreen Canvas Charts & Range Sliders:**
+  - Generates high-resolution price action curves with 24h range, 52-week range, volume, and sentiment gauge.
+• **Risk Disclaimer:**
+  - Prominently warns that crypto markets are volatile and quotes are for informational purposes only.`,
+    example: '!crypto SOL'
+  },
+
+  stocknews: {
+    name: 'stocknews',
+    aliases: ['marketnews', 'financenews'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!stocknews [symbol/topic] (or !marketnews)',
+    purpose: 'Real-time financial press wiretap aggregating breaking news and market catalysts.',
+    architecture:
+`• **Direct Financial Press Aggregation:**
+  - Queries live financial news engines to pull headlines, publishers, and verified URLs (Bloomberg, Reuters, Yahoo Finance, Motley Fool).
+  - Relative Discord timestamps (<t:...:R>) display exactly when news broke.
+• **Targeted Ticker News & Macro Catalyst Search:**
+  - Search news for any specific company (\`!stocknews NVDA\`, \`!stocknews TSLA\`) or the general market (\`!stocknews\`).
+• **Risk Disclaimer:**
+  - Prominently highlights that news summaries are for informational purposes only.`,
+    example: '!stocknews NVDA'
+  },
+
   afk: {
     name: 'afk',
     aliases: ['brb'],

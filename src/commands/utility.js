@@ -445,6 +445,36 @@ export const commands = [
                     `> • \`${prefix}stockchannel test\` - Immediately post today's briefing to verify.\n` +
                     `> • \`${prefix}stockchannel status\` - View current configuration.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
+              } else if (targetCmd.name === "movers") {
+                  descContent = `Real-time market volatility and momentum scanner across mega-cap equities and major cryptocurrencies.\n\n` +
+                    `> -# **__Features & Intelligence:__**\n` +
+                    `> • **Top Gainers:** Identifies the strongest positive price velocity across global equities and crypto.\n` +
+                    `> • **Top Decliners:** Highlights major downward volatility and market pullbacks.\n` +
+                    `> • **Supporting Ecosystem:** Seamless integration with \`${prefix}stock <symbol>\`, \`${prefix}market\`, and \`${prefix}stockai <query>\`.\n\n` +
+                    `> -# **__All Aliases & Directives:__**\n` +
+                    `> • \`${prefix}movers\` - Full market gainers & decliners breakdown.\n` +
+                    `> • \`${prefix}topmovers\` / \`${prefix}gainers\` / \`${prefix}losers\` / \`${prefix}marketmovers\` - Direct aliases.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
+              } else if (targetCmd.name === "crypto") {
+                  descContent = `Dedicated cryptocurrency market telemetry and Canvas price action charts.\n\n` +
+                    `> -# **__Features & Visual Telemetry:__**\n` +
+                    `> • **Widescreen Canvas Charts:** Generates high-resolution price action curves with 24h range, 52-week range, volume, and sentiment gauge.\n` +
+                    `> • **Universal Coin Support:** Supports Bitcoin (\`BTC\`), Ethereum (\`ETH\`), Solana (\`SOL\`), Dogecoin (\`DOGE\`), XRP, and 100+ crypto assets.\n` +
+                    `> • **Default Asset:** Running \`${prefix}crypto\` without arguments defaults to Bitcoin (BTC-USD).\n\n` +
+                    `> -# **__All Aliases & Directives:__**\n` +
+                    `> • \`${prefix}crypto [coin]\` - e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`\n` +
+                    `> • \`${prefix}btc\` / \`${prefix}eth\` / \`${prefix}coin <symbol>\` - Quick crypto shortcuts.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Crypto markets are highly volatile. Not financial advice. Always double check live data.`;
+              } else if (targetCmd.name === "stocknews") {
+                  descContent = `Real-time financial press wiretap aggregating breaking news and market catalysts.\n\n` +
+                    `> -# **__Features & Syndicate:__**\n` +
+                    `> • **Direct Publisher Links:** Real-time articles with direct links to verified financial press (Yahoo Finance, Bloomberg, Reuters, Motley Fool, MarketWatch).\n` +
+                    `> • **Targeted Ticker News:** Query news for any specific stock (\`${prefix}stocknews NVDA\`, \`${prefix}stocknews TSLA\`) or general market (\`${prefix}stocknews\`).\n` +
+                    `> • **Relative Timestamps:** Displays when articles were published (<t:...:R>).\n\n` +
+                    `> -# **__All Aliases & Directives:__**\n` +
+                    `> • \`${prefix}stocknews [symbol]\` - Primary news wiretap.\n` +
+                    `> • \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market news is for informational purposes only. Always double check live data.`;
               } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
                   descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
                     `> -# **__Diagnostics Evaluated:__**\n` +
@@ -807,6 +837,36 @@ export const commands = [
             `> • \`${prefix}stockchannel test\` - Immediately post today's briefing to verify.\n` +
             `> • \`${prefix}stockchannel status\` - View current configuration.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
+        } else if (targetCmd.name === "movers") {
+          descContent = `Real-time market volatility and momentum scanner across mega-cap equities and major cryptocurrencies.\n\n` +
+            `> -# **__Features & Intelligence:__**\n` +
+            `> • **Top Gainers:** Identifies the strongest positive price velocity across global equities and crypto.\n` +
+            `> • **Top Decliners:** Highlights major downward volatility and market pullbacks.\n` +
+            `> • **Supporting Ecosystem:** Seamless integration with \`${prefix}stock <symbol>\`, \`${prefix}market\`, and \`${prefix}stockai <query>\`.\n\n` +
+            `> -# **__All Aliases & Directives:__**\n` +
+            `> • \`${prefix}movers\` - Full market gainers & decliners breakdown.\n` +
+            `> • \`${prefix}topmovers\` / \`${prefix}gainers\` / \`${prefix}losers\` / \`${prefix}marketmovers\` - Direct aliases.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
+        } else if (targetCmd.name === "crypto") {
+          descContent = `Dedicated cryptocurrency market telemetry and Canvas price action charts.\n\n` +
+            `> -# **__Features & Visual Telemetry:__**\n` +
+            `> • **Widescreen Canvas Charts:** Generates high-resolution price action curves with 24h range, 52-week range, volume, and sentiment gauge.\n` +
+            `> • **Universal Coin Support:** Supports Bitcoin (\`BTC\`), Ethereum (\`ETH\`), Solana (\`SOL\`), Dogecoin (\`DOGE\`), XRP, and 100+ crypto assets.\n` +
+            `> • **Default Asset:** Running \`${prefix}crypto\` without arguments defaults to Bitcoin (BTC-USD).\n\n` +
+            `> -# **__All Aliases & Directives:__**\n` +
+            `> • \`${prefix}crypto [coin]\` - e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`\n` +
+            `> • \`${prefix}btc\` / \`${prefix}eth\` / \`${prefix}coin <symbol>\` - Quick crypto shortcuts.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Crypto markets are highly volatile. Not financial advice. Always double check live data.`;
+        } else if (targetCmd.name === "stocknews") {
+          descContent = `Real-time financial press wiretap aggregating breaking news and market catalysts.\n\n` +
+            `> -# **__Features & Syndicate:__**\n` +
+            `> • **Direct Publisher Links:** Real-time articles with direct links to verified financial press (Yahoo Finance, Bloomberg, Reuters, Motley Fool, MarketWatch).\n` +
+            `> • **Targeted Ticker News:** Query news for any specific stock (\`${prefix}stocknews NVDA\`, \`${prefix}stocknews TSLA\`) or general market (\`${prefix}stocknews\`).\n` +
+            `> • **Relative Timestamps:** Displays when articles were published (<t:...:R>).\n\n` +
+            `> -# **__All Aliases & Directives:__**\n` +
+            `> • \`${prefix}stocknews [symbol]\` - Primary news wiretap.\n` +
+            `> • \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market news is for informational purposes only. Always double check live data.`;
         } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
           descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
             `> -# **__Diagnostics Evaluated:__**\n` +

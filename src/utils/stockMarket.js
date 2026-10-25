@@ -702,7 +702,7 @@ export function renderMarketOverviewCard(overview) {
 /**
  * Builds Components V2 Discord payload for a single stock ticker
  */
-export function buildStockPayload(stock, imageBuffer) {
+export function buildStockPayload(stock, imageBuffer, prefix = '!') {
   const isUp = stock.change >= 0;
   const sign = isUp ? '+' : '';
   const attachment = new AttachmentBuilder(imageBuffer, { name: `stock_${stock.symbol.toLowerCase()}.png` });
@@ -717,6 +717,13 @@ export function buildStockPayload(stock, imageBuffer) {
                `> -# • **24h Volume:** \`${stock.volume > 1e6 ? (stock.volume / 1e6).toFixed(2) + 'M' : stock.volume.toLocaleString()}\` \u2022 **Prev Close:** \`$${stock.prevClose.toFixed(2)}\`\n` +
                `> -# • **Exchange Market:** \`${stock.exchange}\` (\`${stock.currency}\`)\n` +
                `> -# • **Session Momentum:** \`${isUp ? 'Bullish (Upward Momentum)' : 'Bearish (Downward Pull)'}\`\n\n` +
+               `### Supporting Commands Guidance\n` +
+               `> -# • \`${prefix}market\` \u2014 Global 6-index world market pulse & mega-caps tape.\n` +
+               `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown.\n` +
+               `> -# • \`${prefix}movers\` \u2014 Real-time top gainers & decliners across equities/crypto.\n` +
+               `> -# • \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL).\n` +
+               `> -# • \`${prefix}stocknews [symbol]\` \u2014 Real-time press wiretap & headlines.\n` +
+               `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload.\n\n` +
                `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
     },
     {
@@ -756,6 +763,39 @@ export function buildStockPayload(stock, imageBuffer) {
       ]
     },
     {
+      type: 1,
+      components: [
+        {
+          type: 2,
+          custom_id: 'stk_ref_overview',
+          label: 'Global Pulse',
+          style: 2,
+          emoji: { name: '🌐' }
+        },
+        {
+          type: 2,
+          custom_id: 'stk_movers',
+          label: 'Market Movers',
+          style: 2,
+          emoji: { name: '🔥' }
+        },
+        {
+          type: 2,
+          custom_id: 'stk_crypto',
+          label: 'Crypto Pulse',
+          style: 2,
+          emoji: { name: '🪙' }
+        },
+        {
+          type: 2,
+          custom_id: 'stk_help',
+          label: 'All Cmds Guide',
+          style: 2,
+          emoji: { name: '🧭' }
+        }
+      ]
+    },
+    {
       type: 14,
       divider: true
     },
@@ -779,7 +819,7 @@ export function buildStockPayload(stock, imageBuffer) {
 /**
  * Builds Components V2 Discord payload for Global Market Overview or Daily Briefing
  */
-export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = false) {
+export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = false, prefix = '!') {
   const attachment = new AttachmentBuilder(imageBuffer, { name: 'market_overview.png' });
 
   const heading = isDaily 
@@ -802,6 +842,13 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
                `> -# <a:uptime:1552608831060844575> **Global Market Regime:** \`${bias}\` across 6 major indices.\n` +
                `> -# • **Key Indices:** ${indicesSummary}\n` +
                `> -# • **Tech Mega-Caps:** \`NVDA\` (${overview.tickers[0]?.changePct >= 0 ? '+' : ''}${overview.tickers[0]?.changePct?.toFixed(1)}%), \`AAPL\` (${overview.tickers[1]?.changePct >= 0 ? '+' : ''}${overview.tickers[1]?.changePct?.toFixed(1)}%), \`MSFT\` (${overview.tickers[2]?.changePct >= 0 ? '+' : ''}${overview.tickers[2]?.changePct?.toFixed(1)}%), \`TSLA\` (${overview.tickers[3]?.changePct >= 0 ? '+' : ''}${overview.tickers[3]?.changePct?.toFixed(1)}%)\n\n` +
+               `### Supporting Commands Guidance\n` +
+               `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry (e.g. \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`).\n` +
+               `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown.\n` +
+               `> -# • \`${prefix}movers\` \u2014 Real-time top gainers & decliners across equities/crypto.\n` +
+               `> -# • \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL).\n` +
+               `> -# • \`${prefix}stocknews [symbol]\` \u2014 Real-time press wiretap & headlines.\n` +
+               `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload.\n\n` +
                `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
     },
     {
@@ -831,6 +878,13 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
           label: 'Crypto Pulse',
           style: 2,
           emoji: { name: '🪙' }
+        },
+        {
+          type: 2,
+          custom_id: 'stk_help',
+          label: 'All Cmds Guide',
+          style: 2,
+          emoji: { name: '🧭' }
         }
       ]
     },
@@ -852,5 +906,81 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
       }
     ],
     files: [attachment]
+  };
+}
+
+/**
+ * Builds interactive guidance UI container listing all supporting financial commands
+ */
+export function buildStockGuidancePayload(prefix = '!') {
+  return {
+    components: [
+      {
+        type: 17,
+        components: [
+          {
+            type: 10,
+            content: `## Financial Intelligence Suite & Commands Guidance | <a:atheNATICK:1557841381630681106>\n` +
+                     `> -# <a:uptime:1552608831060844575> **Overview:** Athena Prime provides real-time stock/crypto telemetry, high-resolution Canvas charts, and AI-driven financial intelligence.\n\n` +
+                     `### 1. Market Telemetry & Charts\n` +
+                     `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart with Bezier curves, day range, 52w range, volume, & sentiment gauge (e.g. \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock TSLA\`).\n` +
+                     `> -# • \`${prefix}market\` / \`${prefix}stocks\` \u2014 Global 6-index world market pulse (S&P 500, NASDAQ, Dow, NIFTY 50, BTC, ETH) + mega-caps ticker tape.\n` +
+                     `> -# • \`${prefix}ticker <symbol>\` \u2014 Direct company/ticker resolution.\n\n` +
+                     `### 2. AI Financial Analyst & Reports\n` +
+                     `> -# • \`${prefix}stockai <question or topic>\` \u2014 Ask Athena AI for detailed earnings breakdowns, macro trends, or financial concepts (e.g. \`${prefix}stockai why did tech drop today?\`, \`${prefix}stockai explain NVDA valuation\`).\n` +
+                     `> -# • \`${prefix}stockexplain <symbol/topic>\` / \`${prefix}marketai\` \u2014 AI financial research aliases.\n\n` +
+                     `### 3. Market Movers & Catalysts\n` +
+                     `> -# • \`${prefix}movers\` / \`${prefix}topmovers\` \u2014 Real-time top gainers and decliners across mega-caps and crypto.\n` +
+                     `> -# • \`${prefix}stocknews [symbol]\` / \`${prefix}marketnews\` \u2014 Real-time press wiretap with direct links to Bloomberg, Reuters, Yahoo Finance, etc.\n\n` +
+                     `### 4. Cryptocurrency Telemetry\n` +
+                     `> -# • \`${prefix}crypto [coin]\` \u2014 Cryptocurrency charts and telemetry (e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`).\n\n` +
+                     `### 5. Automated Daily Briefing Channel\n` +
+                     `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Binds an automated morning upload channel (posts every morning at 09:30 AM EST / 14:30 UTC at US Market Open).\n` +
+                     `> -# • \`${prefix}stockchannel test\` \u2014 Immediately uploads today's briefing to verify delivery.\n` +
+                     `> -# • \`${prefix}stockchannel status\` \u2014 Inspect current broadcast channel ID & delivery state.\n` +
+                     `> -# • \`${prefix}stockchannel disable\` \u2014 Turn off daily automated briefing.\n\n` +
+                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
+          },
+          {
+            type: 14,
+            divider: true
+          },
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                custom_id: 'stk_ref_overview',
+                label: 'View Global Market Pulse',
+                style: 2,
+                emoji: { name: '🌐' }
+              },
+              {
+                type: 2,
+                custom_id: 'stk_movers',
+                label: 'View Top Movers',
+                style: 2,
+                emoji: { name: '🔥' }
+              },
+              {
+                type: 2,
+                custom_id: 'stk_crypto',
+                label: 'View Crypto Pulse',
+                style: 2,
+                emoji: { name: '🪙' }
+              }
+            ]
+          },
+          {
+            type: 14,
+            divider: true
+          },
+          {
+            type: 10,
+            content: `-# **Athena Prime Financial Intelligence \u2022 Ground-Truth Telemetry Engine**`
+          }
+        ]
+      }
+    ]
   };
 }
