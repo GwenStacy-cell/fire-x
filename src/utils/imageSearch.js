@@ -200,12 +200,6 @@ export function buildImageResultPayload(sessionId, index = 0) {
 
   return {
     components: [container],
-    embeds: [
-      {
-        image: { url: current.image },
-        color: 0x00f0ff
-      }
-    ],
     flags: MessageFlags.IsComponentsV2
   };
 }

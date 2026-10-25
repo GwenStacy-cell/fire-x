@@ -45,8 +45,15 @@ export const commands = [
 
         if (i.customId === 'cancel_wipe_emojis') {
           collector.stop('cancelled');
-          const cancelContainer = new EmbedBuilder().setTitle('Emoji Wipe Sequence').setDescription('Operation cancelled by user.').setColor('#2b2d31');
-          return i.update({ embeds: [cancelContainer], components: [], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
+          const cancelContainer = {
+            type: 17,
+            components: [
+              { type: 10, content: `## Emoji Wipe Sequence | <a:atheNATICK:1557841381630681106>\n> -# Operation cancelled by user.` },
+              { type: 14, divider: true },
+              { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
+            ]
+          };
+          return i.update({ components: [cancelContainer], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
         }
 
         if (i.customId === 'confirm_wipe_emojis') {
@@ -55,11 +62,17 @@ export const commands = [
           let deleted = 0;
           const emojis = Array.from(message.guild.emojis.cache.values());
           const total = emojis.length;
-          const loadingEmoji = "<a:loading:1542155051286396938>";
 
-          const buildProgressContainer = () => new EmbedBuilder().setTitle('Emoji Wipe Sequence').setDescription(`<a:loading:1542155051286396938> Deleting emojis... [${deleted}/${total}]`).setColor('#ffaa00');
+          const buildProgressContainer = () => ({
+            type: 17,
+            components: [
+              { type: 10, content: `## Emoji Wipe Sequence | <a:atheNATICK:1557841381630681106>\n> -# <a:uptime:1552608831060844575> Deleting emojis... [${deleted}/${total}]` },
+              { type: 14, divider: true },
+              { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
+            ]
+          });
 
-          await i.update({ embeds: [buildProgressContainer()], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
+          await i.update({ components: [buildProgressContainer()], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
 
           for (let idx = 0; idx < emojis.length; idx++) {
             try {
@@ -71,20 +84,33 @@ export const commands = [
 
             // Update UI every 5 deletions to prevent Discord edit rate limits (5 per 5 seconds)
             if (deleted % 5 === 0 && deleted !== total) {
-              await msg.edit({ embeds: [buildProgressContainer()], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
+              await msg.edit({ components: [buildProgressContainer()], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
             }
           }
 
-          const successEmoji = "<:emoji_16:1533860111704002665>";
-          const finalContainer = new EmbedBuilder().setTitle('Emoji Wipe Sequence').setDescription(`${successEmoji} Successfully deleted **${deleted}** emojis from the server.`).setColor('#00ff00');
-          await msg.edit({ embeds: [finalContainer], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
+          const finalContainer = {
+            type: 17,
+            components: [
+              { type: 10, content: `## Emoji Wipe Sequence | <a:atheNATICK:1557841381630681106>\n> -# <a:uptime:1552608831060844575> Successfully deleted **${deleted}** emojis from the server.` },
+              { type: 14, divider: true },
+              { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
+            ]
+          };
+          await msg.edit({ components: [finalContainer], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
         }
       });
 
       collector.on('end', (collected, reason) => {
         if (reason === 'time') {
-          const timeoutContainer = new EmbedBuilder().setTitle('Emoji Wipe Sequence').setDescription('Operation timed out.').setColor('#ff0000');
-          msg.edit({ embeds: [timeoutContainer], components: [], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
+          const timeoutContainer = {
+            type: 17,
+            components: [
+              { type: 10, content: `## Emoji Wipe Sequence | <a:atheNATICK:1557841381630681106>\n> -# Operation timed out.` },
+              { type: 14, divider: true },
+              { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
+            ]
+          };
+          msg.edit({ components: [timeoutContainer], flags: MessageFlags.IsComponentsV2 }).catch(()=>{});
         }
       });
     }
