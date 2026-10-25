@@ -287,6 +287,23 @@ export async function generateAIResponse(prompt, context = {}) {
     activePrompt += `\n\n[Live Meteorological Sensor Telemetry (Current Verified Ground Truth)]: Location: ${liveWeather.location} | Temperature: ${liveWeather.tempC}°C (${liveWeather.tempF}°F) | Feels Like: ${liveWeather.feelsLikeC}°C | Condition: ${liveWeather.condition} | Humidity: ${liveWeather.humidity}% | Wind: ${liveWeather.windSpeedKmph} km/h ${liveWeather.windDir} | Visibility: ${liveWeather.visibilityKm} km. Answer the user's weather inquiry using this exact live data with grey bold underlined headings.`;
   }
 
+  // Live Picture / Image Request Resolver
+  const imageMatch = cleanPrompt.match(/(?:show|give|send|find|get|fetch|display|provide)?\s*(?:me\s+)?(?:a\s+|an\s+)?(?:picture|photo|image|pic|img)\s+(?:of\s+)?(.+)/i);
+  let liveImageUrl = null;
+  if (imageMatch && !cleanPrompt.toLowerCase().includes('generate') && !cleanPrompt.toLowerCase().includes('draw')) {
+    const imgQuery = imageMatch[1].trim().replace(/[?.!]+$/, '');
+    if (imgQuery.length >= 2) {
+      try {
+        const { searchWebImages } = await import('./imageSearch.js');
+        const imgResults = await searchWebImages(imgQuery, 5);
+        if (imgResults && imgResults.length > 0) {
+          liveImageUrl = imgResults[0].image;
+          activePrompt += `\n\n[Live High-Resolution Web Picture Retrieved from the Internet]: Query: "${imgQuery}" | Title: "${imgResults[0].title}" | Direct Image URL: ${liveImageUrl} | Source: ${imgResults[0].source}. Confirm you found the picture from the web and mention what is shown.`;
+        }
+      } catch (err) {}
+    }
+  }
+
   const systemInstructions = context.customSystem || [
     'You are Athena Prime, the elite security, administration, and community AI assistant for Discord servers.',
     'Temporal Context: The current year is 2026.',
@@ -393,6 +410,7 @@ export async function generateAIResponse(prompt, context = {}) {
               success: true,
               text: cleanedText,
               model: displayModel,
+              imageUrl: liveImageUrl,
               latencyMs
             };
           }
@@ -436,6 +454,7 @@ export async function generateAIResponse(prompt, context = {}) {
             success: true,
             text: cleanedText,
             model: `Athena Neural (${model})`,
+            imageUrl: liveImageUrl,
             latencyMs
           };
         }
@@ -473,6 +492,7 @@ export async function generateAIResponse(prompt, context = {}) {
           success: true,
           text: cleanedText,
           model: 'Athena Neural Edge',
+          imageUrl: liveImageUrl,
           latencyMs
         };
       }

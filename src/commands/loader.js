@@ -96,9 +96,13 @@ import { commands as minigamesCmds } from './minigames.js';
 import { commands as voicestudioCmds } from './voicestudio.js';
 import { commands as studioCmds } from './studio.js';
 import { commands as athenaCmds } from './athena.js';
+import { commands as weatherCmds } from './weather.js';
+import { commands as imageCmds } from './image.js';
 
 export const allCommands = [
   ...athenaCmds,
+  ...weatherCmds,
+  ...imageCmds,
   ...askCmds,
   ...economyCmds,
   ...minigamesCmds,

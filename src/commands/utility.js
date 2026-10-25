@@ -357,6 +357,32 @@ export const commands = [
                     `> • \`${prefix}raidmode auto off\` - Disarms automated join-velocity burst detection.\n` +
                     `> • \`${prefix}raidmode auto threshold <number>\` - Configures how many joins trigger the auto-shield (default: 8).\n` +
                     `> • \`${prefix}raidmode auto window <seconds>\` - Configures time window in seconds (default: 5s).`;
+              } else if (targetCmd.name === "weather" || targetCmd.name === "wtr") {
+                  descContent = `Live global weather reconnaissance with generated satellite world map projection and 3-day forecast.\n\n` +
+                    `> -# **__Features & Projection Engine:__**\n` +
+                    `> • **Universal Location Support:** Works for any location globally — city names, countries, coordinates, or Google Maps links.\n` +
+                    `> • **Google Maps Link Support:** Paste any Google Maps URL (\`https://maps.google.com/...\` or \`https://maps.app.goo.gl/...\`) and Athena will automatically extract and pinpoint the exact coordinates.\n` +
+                    `> • **Generated World Map:** Renders an Equirectangular satellite world map on Canvas with locked radar crosshairs, target pinpoint, and coordinates HUD.\n` +
+                    `> • **Atmospheric Telemetry:** Current temperature (°C and °F), feels-like index, humidity, wind velocity and direction, UV index, pressure, and visibility.\n` +
+                    `> • **3-Day Meteorological Forecast:** Max/min temperatures and daily condition summaries.\n` +
+                    `> • **Solar & Lunar Telemetry:** Sunrise, sunset, and moon phase illumination.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> • \`${prefix}weather <city>\` - e.g. \`${prefix}weather London\` or \`${prefix}weather Tokyo\`\n` +
+                    `> • \`${prefix}weather <coordinates>\` - e.g. \`${prefix}weather 13.0827, 80.2707\`\n` +
+                    `> • \`${prefix}weather <google_maps_url>\` - Extract weather from Google Maps link.\n` +
+                    `> • \`/weather [location]\` - Slash command equivalent.`;
+              } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
+                  descContent = `Real-time web image search retrieving actual high-resolution pictures from the internet.\n\n` +
+                    `> -# **__Features & Intelligence:__**\n` +
+                    `> • **Real Web Pictures:** Queries live net search engines to retrieve actual authentic pictures matching any topic (e.g. \`cat\`, \`worldmap\`, \`fog\`, \`mist\`, \`car\`, \`cm of tn\`, \`biden\`).\n` +
+                    `> • **Interactive Pagination:** Browse results with \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.\n` +
+                    `> • **Random Shuffle Button:** Click \`🎲 Random\` to discover unexpected high-res pictures.\n` +
+                    `> • **Direct Source Link:** 1-click button to view the original full-resolution image on the hosting website.\n` +
+                    `> • **Conversational AI Integration:** You can also ask Athena in chat (e.g. \`@Athena picture of cat\` or \`${prefix}ask give me a picture of biden\`) and Athena will automatically fetch and provide the picture.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> • \`${prefix}image <query>\` - Search for images of any subject.\n` +
+                    `> • \`${prefix}pic <query>\` - Short quick-alias (e.g. \`${prefix}pic cat\`, \`${prefix}pic car\`).\n` +
+                    `> • \`/image [query]\` - Slash command equivalent.`;
               } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
                   descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
                     `> -# **__Diagnostics Evaluated:__**\n` +
@@ -1907,6 +1933,8 @@ export const helpModules = [
   
   { id: 'utilities', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Utilities', label: 'General Utilities', emoji: 'utilities', commands: [
     "`!help [module/command]` - Displays this interactive menu `[Public]`",
+    "`!weather / !wtr / !climate / !forecast / !temp [location|google_maps_url]` - Live global weather reconnaissance with generated satellite world map & 3-day forecast `[Public]`",
+    "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Real-time web picture retrieval with interactive pagination (Next, Prev, Random, Source) `[Public]`",
     "`!dashboard / !commandcenter / !omni / !omnihud / !warroomall / !fullhud / !matrix360 / !allinone / !allstats / !masterhud / !cyberhud / !central` - Flagship Unified Command Center combining Telemetry, Server Operations & DEFCON Security `[Public / Admin]`",
     "`!hud / !warroom / !corehud / !matrixhud` - Flagship Animated Cyber War-Room HUD with live mode switching `[Public / Admin]`",
     "`!botstats / !botinfo / !bi / !binfo` - View advanced bot performance, cluster metrics & system health `[Public]`",

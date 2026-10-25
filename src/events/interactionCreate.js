@@ -2587,6 +2587,49 @@ async function handleSecurityInteractions(interaction, guild) {
       if (panel) return cv2.respond(interaction, panel, 7);
     }
 
+    // 🌦️ Weather Telemetry Refresh Button
+    if (customId && customId.startsWith('wtr_refresh_')) {
+      try {
+        const rawLoc = decodeURIComponent(customId.replace('wtr_refresh_', ''));
+        const { resolveLocationInput, fetchWeatherData, buildWeatherReportPayload } = await import('../utils/weatherMap.js');
+        const resolved = await resolveLocationInput(rawLoc);
+        if (resolved && resolved.query) {
+          const data = await fetchWeatherData(resolved.query);
+          if (data && data.current_condition) {
+            const payload = await buildWeatherReportPayload(data, resolved.query, resolved.sourceUrl);
+            return interaction.update(payload);
+          }
+        }
+        return interaction.reply({ content: '-# Meteorological telemetry could not be refreshed.', flags: MessageFlags.Ephemeral });
+      } catch (err) {
+        console.error('[WeatherInteraction Error]', err);
+      }
+    }
+
+    // 🖼️ Image Search Interactive Pagination Buttons
+    if (customId && (customId.startsWith('img_prev_') || customId.startsWith('img_next_') || customId.startsWith('img_rand_'))) {
+      try {
+        const { buildImageResultPayload, imageSessions } = await import('../utils/imageSearch.js');
+        if (customId.startsWith('img_rand_')) {
+          const sessionId = customId.replace('img_rand_', '');
+          const session = imageSessions.get(sessionId);
+          if (session && session.results && session.results.length > 0) {
+            const randIndex = Math.floor(Math.random() * session.results.length);
+            const payload = buildImageResultPayload(sessionId, randIndex);
+            return interaction.update(payload);
+          }
+        } else {
+          const parts = customId.split('_');
+          const sessionId = parts[2];
+          const targetIndex = parseInt(parts[3]) || 0;
+          const payload = buildImageResultPayload(sessionId, targetIndex);
+          return interaction.update(payload);
+        }
+      } catch (err) {
+        console.error('[ImageInteraction Error]', err);
+      }
+    }
+
     if (['toggle_antinuke', 'toggle_spam', 'toggle_invite', 'cycle_punishment', 'sec_status_back', 'sec_status_view', 'sec_architecture_guide', 'antinuke_config', 'save_panel'].includes(customId)) {
       try {
         let updated = false;

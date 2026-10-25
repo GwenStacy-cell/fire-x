@@ -58,6 +58,12 @@ export function buildAICV2Container(user, prompt, aiResult, accentColor = '#00e5
   }
 
   comps.push({ type: 10, content: safeContent });
+  if (aiResult.imageUrl) {
+    comps.push({
+      type: 12,
+      items: [{ media: { url: aiResult.imageUrl } }]
+    });
+  }
   comps.push({ type: 14, divider: true });
   comps.push({
     type: 10,
