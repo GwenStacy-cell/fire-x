@@ -29,9 +29,10 @@ export const commands = [
                   type: 10,
                   content: `## Weather Reconnaissance Guidance | <a:atheNATICK:1557841381630681106>\n` +
                            `> -# <a:uptime:1552608831060844575> **Usage:** \`!weather <city | country | coordinates | google_maps_url>\`\n` +
-                           `> -# • **City Example:** \`!weather London\` or \`!weather Chennai\`\n` +
-                           `> -# • **Coordinates Example:** \`!weather 13.0827, 80.2707\`\n` +
-                           `> -# • **Google Maps Link:** \`!weather https://maps.google.com/?q=Eiffel+Tower\`\n` +
+                           `> -# • **All Aliases:** \`!wtr\`, \`!climate\`, \`!forecast\`, \`!temp\`, \`!temperature\`, \`/weather\`\n` +
+                           `> -# • **City Example:** \`!weather London\` or \`!wtr Chennai\`\n` +
+                           `> -# • **Coordinates Example:** \`!wtr 13.0827, 80.2707\`\n` +
+                           `> -# • **Google Maps Link:** \`!wtr https://maps.google.com/?q=Eiffel+Tower\`\n` +
                            `> -# • **Projection Feature:** Generates an Equirectangular world map with locked radar crosshairs.`
                 },
                 { type: 14, divider: true },

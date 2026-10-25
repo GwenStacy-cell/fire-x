@@ -2124,6 +2124,52 @@ export const DETAILED_COMMANDS = {
     example: '!pinterest https://pin.it/5gq1j4x'
   },
 
+  weather: {
+    name: 'weather',
+    aliases: ['wtr', 'climate', 'forecast', 'temp', 'temperature'],
+    category: 'Media & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!weather <city | country | coordinates | google_maps_url> (or !wtr, !climate, !forecast, !temp, !temperature, /weather)',
+    purpose: 'Live global weather reconnaissance with real-time Equirectangular satellite world map projection and 3-day meteorological forecast.',
+    architecture:
+`• **Universal Location & Coordinates Engine:**
+  - Accepts any location globally: city name, country, ISO code, latitude/longitude coordinates (e.g., 13.0827, 80.2707), or raw Google Maps links.
+  - Automatically parses and extracts target coordinates from standard and shortened Google Maps URLs (maps.google.com, maps.app.goo.gl).
+• **Canvas Equirectangular Satellite World Map HUD:**
+  - Renders a 1000x500 high-resolution satellite world map with high-precision radar crosshairs centered directly on target coordinates.
+  - Features an animated target lock ring, cyan glowing target beacon, and telemetry text repositioned cleanly in the lower open ocean without obstructing Northern landmasses.
+• **Atmospheric & Solar Telemetry Suite:**
+  - Real-time current temperature (°C and °F), feels-like index, humidity, wind velocity and direction, UV index, pressure, and visibility.
+  - 3-day meteorological forecast with daily max/min temperatures and condition summaries.
+  - Solar and lunar cycle indicators (sunrise, sunset, moon illumination).`,
+    example: '!wtr Tokyo'
+  },
+
+  image: {
+    name: 'image',
+    aliases: ['pic', 'img', 'photo', 'picture', 'searchimg'],
+    category: 'Media & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!image <query> (or !pic, !img, !photo, !picture, !searchimg, /image)',
+    purpose: 'Real-time web image search retrieving actual authentic high-resolution pictures from the internet with interactive multi-page browsing.',
+    architecture:
+`• **Live Web Scraping & Multi-Engine Aggregation:**
+  - Queries real-time internet search engines to discover and extract authentic web photos for any search term (e.g. cat, worldmap, fog, car, cm of tn, biden).
+  - Automatically filters corrupted or dead thumbnails and resolves direct CDN image sources.
+• **70+ Image Pool & Dynamic Shuffling:**
+  - Simultaneously retrieves and pools dozens of high-res images per search query.
+  - Dynamic index shuffling prevents repetitive result sequences across consecutive searches.
+• **Interactive Browsing & Fail-Safe Pagination:**
+  - Browse results using \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.
+  - \`🎲 Random\` button for rapid discovery and \`🔄 Fresh Batch\` button to pull brand new pictures on demand.
+  - Auto-recovering session manager ensures interactive buttons remain fully responsive even if sessions age.
+• **Direct Source Inspection:**
+  - Every picture result includes an external web button linking directly to the full-resolution asset on the host domain.
+• **Conversational AI Synthesis:**
+  - Athena's AI guide naturally triggers this engine when users ask for pictures in chat (@Athena picture of cat).`,
+    example: '!pic cat'
+  },
+
   afk: {
     name: 'afk',
     aliases: ['brb'],

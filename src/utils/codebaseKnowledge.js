@@ -417,6 +417,8 @@ export const SEMANTIC_INTENTS = [
   { match: /\b(auto\s*media|setmedia|media\s*downloader|download\s*reels?|tiktok\s*downloader)\b/i, commands: ['setmedia', 'utility'] },
   { match: /\b(auto\s*quote|setquote|quote\s*channel|quotemaker)\b/i, commands: ['quote', 'quotemaker'] },
   { match: /\b(counting|count\s*channel|counting\s*game)\b/i, commands: ['counting'] },
+  { match: /\b(weather|wtr|climate|forecast|temperature|temp|world\s*map|radar|satellite\s*map)\b/i, commands: ['weather'] },
+  { match: /\b(image|pic|img|photo|picture|searchimg|pictures|photos|search\s*image|find\s*pic)\b/i, commands: ['image'] },
   { match: /\b(pinterest|pintrest|pin\.it|pinimg|pin\s*image|pinterest\s*link|pinterest\s*download)\b/i, commands: ['pinterest'] },
   { match: /\b(auto\s*role|autorole|join\s*role)\b/i, commands: ['autorole'] },
   { match: /\b(welcome|welcomer|greet|leave(\s*message)?|farewell|member\s*count\s*(in\s*)?(welcome|leave|greet)|(welcome|leave).*member\s*count)\b/i, commands: ['welcome'] },

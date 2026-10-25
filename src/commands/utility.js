@@ -284,6 +284,10 @@ export const commands = [
                   usageText = `${prefix}voicerole [@role|ID|Name|disable] / /voicerole [role] [disable]`;
               } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
                   usageText = `${prefix}pinterest <link> / ${prefix}pin <link> / /pinterest <link>`;
+              } else if (targetCmd.name === "weather" || targetCmd.name === "wtr") {
+                  usageText = `${prefix}weather <location/maps_url> / ${prefix}wtr / ${prefix}climate / ${prefix}forecast / ${prefix}temp / /weather [location]`;
+              } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
+                  usageText = `${prefix}image <query> / ${prefix}pic / ${prefix}img / ${prefix}photo / ${prefix}picture / ${prefix}searchimg / /image [query]`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -362,26 +366,33 @@ export const commands = [
                     `> -# **__Features & Projection Engine:__**\n` +
                     `> • **Universal Location Support:** Works for any location globally — city names, countries, coordinates, or Google Maps links.\n` +
                     `> • **Google Maps Link Support:** Paste any Google Maps URL (\`https://maps.google.com/...\` or \`https://maps.app.goo.gl/...\`) and Athena will automatically extract and pinpoint the exact coordinates.\n` +
-                    `> • **Generated World Map:** Renders an Equirectangular satellite world map on Canvas with locked radar crosshairs, target pinpoint, and coordinates HUD.\n` +
+                    `> • **Generated World Map:** Renders an Equirectangular satellite world map on Canvas with locked radar crosshairs, target beacon, and telemetry.\n` +
                     `> • **Atmospheric Telemetry:** Current temperature (°C and °F), feels-like index, humidity, wind velocity and direction, UV index, pressure, and visibility.\n` +
                     `> • **3-Day Meteorological Forecast:** Max/min temperatures and daily condition summaries.\n` +
                     `> • **Solar & Lunar Telemetry:** Sunrise, sunset, and moon phase illumination.\n\n` +
-                    `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}weather <city>\` - e.g. \`${prefix}weather London\` or \`${prefix}weather Tokyo\`\n` +
-                    `> • \`${prefix}weather <coordinates>\` - e.g. \`${prefix}weather 13.0827, 80.2707\`\n` +
-                    `> • \`${prefix}weather <google_maps_url>\` - Extract weather from Google Maps link.\n` +
+                    `> -# **__All Aliases & Usage Syntax:__**\n` +
+                    `> • \`${prefix}weather <city>\` / \`${prefix}wtr <city>\` - Quick weather search (e.g. \`${prefix}wtr London\`, \`${prefix}wtr Tokyo\`).\n` +
+                    `> • \`${prefix}climate <city>\` / \`${prefix}forecast <city>\` - Detailed regional meteorological forecast.\n` +
+                    `> • \`${prefix}temp <city>\` / \`${prefix}temperature <city>\` - Temperature and atmospheric condition lookup.\n` +
+                    `> • \`${prefix}wtr <coordinates>\` - Coordinate search (e.g. \`${prefix}wtr 13.0827, 80.2707\`).\n` +
+                    `> • \`${prefix}wtr <google_maps_url>\` - Extract weather directly from any Google Maps link.\n` +
                     `> • \`/weather [location]\` - Slash command equivalent.`;
               } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
                   descContent = `Real-time web image search retrieving actual high-resolution pictures from the internet.\n\n` +
                     `> -# **__Features & Intelligence:__**\n` +
                     `> • **Real Web Pictures:** Queries live net search engines to retrieve actual authentic pictures matching any topic (e.g. \`cat\`, \`worldmap\`, \`fog\`, \`mist\`, \`car\`, \`cm of tn\`, \`biden\`).\n` +
+                    `> • **Multi-Page 70+ Pool & Fresh Batches:** Concurrently pools dozens of high-res pictures per search with automatic unblocked resolution.\n` +
                     `> • **Interactive Pagination:** Browse results with \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.\n` +
                     `> • **Random Shuffle Button:** Click \`🎲 Random\` to discover unexpected high-res pictures.\n` +
+                    `> • **1-Click Fresh Batch Button:** Click \`🔄 Fresh Batch\` to fetch brand new pictures on demand.\n` +
                     `> • **Direct Source Link:** 1-click button to view the original full-resolution image on the hosting website.\n` +
+                    `> • **Fail-Safe Session Recovery:** Sessions never expire; Athena seamlessly re-queries in the background.\n` +
                     `> • **Conversational AI Integration:** You can also ask Athena in chat (e.g. \`@Athena picture of cat\` or \`${prefix}ask give me a picture of biden\`) and Athena will automatically fetch and provide the picture.\n\n` +
-                    `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}image <query>\` - Search for images of any subject.\n` +
+                    `> -# **__All Aliases & Usage Syntax:__**\n` +
+                    `> • \`${prefix}image <query>\` - Primary image search directive.\n` +
                     `> • \`${prefix}pic <query>\` - Short quick-alias (e.g. \`${prefix}pic cat\`, \`${prefix}pic car\`).\n` +
+                    `> • \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
+                    `> • \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
                     `> • \`/image [query]\` - Slash command equivalent.`;
               } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
                   descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
@@ -587,6 +598,10 @@ export const commands = [
           usageText = `${prefix}voicerole [@role|ID|Name|disable] / /voicerole [role] [disable]`;
         } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
           usageText = `${prefix}pinterest <link> / ${prefix}pin <link> / /pinterest <link>`;
+        } else if (targetCmd.name === "weather" || targetCmd.name === "wtr") {
+          usageText = `${prefix}weather <location/maps_url> / ${prefix}wtr / ${prefix}climate / ${prefix}forecast / ${prefix}temp / /weather [location]`;
+        } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
+          usageText = `${prefix}image <query> / ${prefix}pic / ${prefix}img / ${prefix}photo / ${prefix}picture / ${prefix}searchimg / /image [query]`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -657,6 +672,39 @@ export const commands = [
             `> • \`${prefix}raidmode auto off\` - Disarms automated join-velocity burst detection.\n` +
             `> • \`${prefix}raidmode auto threshold <number>\` - Configures how many joins trigger the auto-shield (default: 8).\n` +
             `> • \`${prefix}raidmode auto window <seconds>\` - Configures time window in seconds (default: 5s).`;
+        } else if (targetCmd.name === "weather" || targetCmd.name === "wtr") {
+          descContent = `Live global weather reconnaissance with generated satellite world map projection and 3-day forecast.\n\n` +
+            `> -# **__Features & Projection Engine:__**\n` +
+            `> • **Universal Location Support:** Works for any location globally — city names, countries, coordinates, or Google Maps links.\n` +
+            `> • **Google Maps Link Support:** Paste any Google Maps URL (\`https://maps.google.com/...\` or \`https://maps.app.goo.gl/...\`) and Athena will automatically extract and pinpoint the exact coordinates.\n` +
+            `> • **Generated World Map:** Renders an Equirectangular satellite world map on Canvas with locked radar crosshairs, target beacon, and telemetry.\n` +
+            `> • **Atmospheric Telemetry:** Current temperature (°C and °F), feels-like index, humidity, wind velocity and direction, UV index, pressure, and visibility.\n` +
+            `> • **3-Day Meteorological Forecast:** Max/min temperatures and daily condition summaries.\n` +
+            `> • **Solar & Lunar Telemetry:** Sunrise, sunset, and moon phase illumination.\n\n` +
+            `> -# **__All Aliases & Usage Syntax:__**\n` +
+            `> • \`${prefix}weather <city>\` / \`${prefix}wtr <city>\` - Quick weather search (e.g. \`${prefix}wtr London\`, \`${prefix}wtr Tokyo\`).\n` +
+            `> • \`${prefix}climate <city>\` / \`${prefix}forecast <city>\` - Detailed regional meteorological forecast.\n` +
+            `> • \`${prefix}temp <city>\` / \`${prefix}temperature <city>\` - Temperature and atmospheric condition lookup.\n` +
+            `> • \`${prefix}wtr <coordinates>\` - Coordinate search (e.g. \`${prefix}wtr 13.0827, 80.2707\`).\n` +
+            `> • \`${prefix}wtr <google_maps_url>\` - Extract weather directly from any Google Maps link.\n` +
+            `> • \`/weather [location]\` - Slash command equivalent.`;
+        } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
+          descContent = `Real-time web image search retrieving actual high-resolution pictures from the internet.\n\n` +
+            `> -# **__Features & Intelligence:__**\n` +
+            `> • **Real Web Pictures:** Queries live net search engines to retrieve actual authentic pictures matching any topic (e.g. \`cat\`, \`worldmap\`, \`fog\`, \`mist\`, \`car\`, \`cm of tn\`, \`biden\`).\n` +
+            `> • **Multi-Page 70+ Pool & Fresh Batches:** Concurrently pools dozens of high-res pictures per search with automatic unblocked resolution.\n` +
+            `> • **Interactive Pagination:** Browse results with \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.\n` +
+            `> • **Random Shuffle Button:** Click \`🎲 Random\` to discover unexpected high-res pictures.\n` +
+            `> • **1-Click Fresh Batch Button:** Click \`🔄 Fresh Batch\` to fetch brand new pictures on demand.\n` +
+            `> • **Direct Source Link:** 1-click button to view the original full-resolution image on the hosting website.\n` +
+            `> • **Fail-Safe Session Recovery:** Sessions never expire; Athena seamlessly re-queries in the background.\n` +
+            `> • **Conversational AI Integration:** You can also ask Athena in chat (e.g. \`@Athena picture of cat\` or \`${prefix}ask give me a picture of biden\`) and Athena will automatically fetch and provide the picture.\n\n` +
+            `> -# **__All Aliases & Usage Syntax:__**\n` +
+            `> • \`${prefix}image <query>\` - Primary image search directive.\n` +
+            `> • \`${prefix}pic <query>\` - Short quick-alias (e.g. \`${prefix}pic cat\`, \`${prefix}pic car\`).\n` +
+            `> • \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
+            `> • \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
+            `> • \`/image [query]\` - Slash command equivalent.`;
         } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
           descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
             `> -# **__Diagnostics Evaluated:__**\n` +
@@ -1972,8 +2020,21 @@ export const helpModules = [
     "`!sticky / !stick <message>` - Keep a message stuck at bottom of chat `[Extra Owner]`",
     "`!upload <url>` - Upload and mirror file from direct URL `[Public]`",
     "`!pinterest / !pin <link>` - Extract & download master uncompressed images or MP4 videos from Pinterest `[Public]`",
+    "`!weather / !wtr / !climate / !forecast / !temp / !temperature <location/maps_url>` - Live global weather reconnaissance with satellite world map & 3-day forecast `[Public]`",
+    "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Live web high-res picture retrieval with interactive browsing & fresh batches `[Public]`",
     "`!tier / !mytier / !perms` - Check your current Athena Prime authorization tier `[Public]`",
     "`!profile / !card [@user]` - Official God of War canvas profile card `[Public]`",
+    "",
+    "-# **__Global Weather Reconnaissance Engine:__**",
+    "-# • **Universal Target Pinpointing:** Works for any location worldwide via city name, country, latitude/longitude, or Google Maps URL.",
+    "-# • **Dynamic Satellite World Map:** Generates an Equirectangular satellite world map on Canvas with pinpoint radar crosshairs, target beacon, and telemetry.",
+    "-# • **Atmospheric & Solar Telemetry:** Real-time temperature (°C/°F), humidity, wind velocity, UV index, pressure, visibility, sunrise/sunset, and 3-day meteorological forecast.",
+    "",
+    "-# **__Live Web Visual Intelligence Engine:__**",
+    "-# • **Authentic Web Media:** Queries live internet image databases to retrieve real high-resolution photographs for any query (e.g. cat, worldmap, car, biden, cm of tn).",
+    "-# • **Multi-Page 70+ Pool & Fresh Batches:** Browse high-res photos with `◀ Previous`, `Next ▶`, `🎲 Random`, and `🔄 Fresh Batch` buttons.",
+    "-# • **Direct Source Links:** Instant button link to the original high-resolution photo on the host website.",
+    "-# • **Conversational AI Trigger:** Ask Athena naturally in chat (`@Athena picture of cat` or `!ask give me a picture of biden`) and Athena will automatically retrieve and display the picture.",
     "",
     "-# **__Pinterest Media Downloader Engine:__**",
     "-# • **__Full Master Resolution Scraper:__** Resolves shortened `pin.it` redirects and upgrades preview thumbnails (736x, 564x) to full uncompressed original master quality (/originals/).",

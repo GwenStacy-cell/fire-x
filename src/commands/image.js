@@ -28,8 +28,9 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Image Search Guidance | <a:atheNATICK:1557841381630681106>\n` +
-                           `> -# <a:uptime:1552608831060844575> **Usage:** \`!image <search query>\` or \`!pic <query>\`\n` +
-                           `> -# • **Examples:** \`!pic cat\`, \`!img car\`, \`!pic worldmap\`, \`!pic cm of tn\`, \`!image biden\`\n` +
+                           `> -# <a:uptime:1552608831060844575> **Usage:** \`!image <search query>\`\n` +
+                           `> -# • **All Aliases:** \`!pic\`, \`!img\`, \`!photo\`, \`!picture\`, \`!searchimg\`, \`/image\`\n` +
+                           `> -# • **Examples:** \`!pic cat\`, \`!img car\`, \`!photo worldmap\`, \`!picture cm of tn\`, \`!image biden\`\n` +
                            `> -# • **Interactive Pagination:** Use \`Next\` and \`Previous\` buttons to cycle through high-res net pictures.`
                 },
                 { type: 14, divider: true },
