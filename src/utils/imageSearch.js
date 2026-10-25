@@ -33,6 +33,39 @@ function shuffleArray(array) {
 }
 
 /**
+ * Unescapes HTML and XML entities
+ */
+function unescapeHtml(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
+/**
+ * Normalizes and formats Bing/Edge CDN URLs for Discord media proxy compatibility
+ */
+function formatBingCdnUrl(rawTurl, rawMurl) {
+  const cleanTurl = unescapeHtml(rawTurl || '');
+  if (!cleanTurl) return unescapeHtml(rawMurl || '');
+
+  const idMatch = cleanTurl.match(/[?&]id=([^&]+)/i) || cleanTurl.match(/\/th\/id\/([^?&]+)/i);
+  if (idMatch && idMatch[1]) {
+    const imgId = idMatch[1];
+    if (imgId.startsWith('OIP.')) {
+      return `https://th.bing.com/th/id/${imgId}?w=1280&h=960&c=7&rs=1&p=0`;
+    }
+    const separator = cleanTurl.includes('?') ? '&' : '?';
+    return `${cleanTurl}${separator}w=1280&h=960`;
+  }
+
+  return cleanTurl;
+}
+
+/**
  * Searches the web for real high-resolution images across Bing, DuckDuckGo, and Wikimedia
  */
 export async function searchWebImages(query, options = {}) {
@@ -75,16 +108,22 @@ export async function searchWebImages(query, options = {}) {
         try {
           const raw = m[1].replace(/&quot;/g, '"');
           const data = JSON.parse(raw);
-          if (data.murl) {
+          if (data.murl || data.turl) {
             let domain = 'web';
             try {
-              domain = new URL(data.purl || data.murl).hostname.replace(/^www\./, '');
+              domain = new URL(data.purl || data.murl || 'https://bing.com').hostname.replace(/^www\./, '');
             } catch {}
+
+            const unescapedMurl = unescapeHtml(data.murl || '');
+            const unescapedTurl = unescapeHtml(data.turl || '');
+            const displayImage = formatBingCdnUrl(unescapedTurl, unescapedMurl);
+
             pageItems.push({
-              title: (data.t || cleanQuery).replace(/<[^>]*>/g, '').trim(),
-              image: data.murl,
-              thumbnail: data.turl || data.murl,
-              url: data.purl || data.murl,
+              title: unescapeHtml(data.t || cleanQuery).replace(/<[^>]*>/g, '').trim(),
+              image: displayImage,
+              originalImage: unescapedMurl || displayImage,
+              thumbnail: unescapedTurl || displayImage,
+              url: unescapeHtml(data.purl || data.murl || displayImage),
               source: domain
             });
           }
@@ -134,13 +173,19 @@ export async function searchWebImages(query, options = {}) {
               for (const r of data.results) {
                 let domain = 'web';
                 try {
-                  domain = new URL(r.url || 'https://google.com').hostname.replace(/^www\./, '');
+                  domain = new URL(r.url || 'https://duckduckgo.com').hostname.replace(/^www\./, '');
                 } catch {}
+
+                const unescapedThumb = unescapeHtml(r.thumbnail || '');
+                const unescapedImg = unescapeHtml(r.image || '');
+                const displayImage = formatBingCdnUrl(unescapedThumb, unescapedImg);
+
                 addResult({
-                  title: r.title || cleanQuery,
-                  image: r.image,
-                  thumbnail: r.thumbnail || r.image,
-                  url: r.url || r.image,
+                  title: unescapeHtml(r.title || cleanQuery).trim(),
+                  image: displayImage,
+                  originalImage: unescapedImg || displayImage,
+                  thumbnail: unescapedThumb || displayImage,
+                  url: unescapeHtml(r.url || r.image || displayImage),
                   source: domain
                 });
               }
@@ -168,8 +213,9 @@ export async function searchWebImages(query, options = {}) {
           const info = p.imageinfo?.[0];
           if (info && info.url) {
             addResult({
-              title: (p.title || cleanQuery).replace(/^File:/i, ''),
+              title: (p.title || cleanQuery).replace(/^File:/i, '').trim(),
               image: info.url,
+              originalImage: info.url,
               thumbnail: info.thumburl || info.url,
               url: info.descriptionurl || info.url,
               source: 'wikimedia.org'
@@ -321,33 +367,42 @@ export function buildImageResultPayload(sessionId, index = 0) {
   const prevIndex = (clampedIndex - 1 + total) % total;
   const nextIndex = (clampedIndex + 1) % total;
 
+  const safeUrl = (current.url && current.url.startsWith('http'))
+    ? current.url
+    : ((current.originalImage && current.originalImage.startsWith('http')) ? current.originalImage : current.image);
+
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`img:prev:${sessionId}:${prevIndex}`)
-      .setLabel('◀ Prev')
+      .setLabel('Prev')
       .setStyle(ButtonStyle.Primary)
       .setDisabled(total <= 1),
     new ButtonBuilder()
       .setCustomId(`img:next:${sessionId}:${nextIndex}`)
-      .setLabel('Next ▶')
+      .setLabel('Next')
       .setStyle(ButtonStyle.Primary)
       .setDisabled(total <= 1),
     new ButtonBuilder()
       .setCustomId(`img:rand:${sessionId}`)
-      .setLabel('🎲 Random')
+      .setLabel('Random')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(total <= 1),
     new ButtonBuilder()
       .setCustomId(`img:fresh:${sessionId}`)
-      .setLabel('🔄 Fresh Batch')
+      .setLabel('Fresh Batch')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setLabel('View Source')
       .setStyle(ButtonStyle.Link)
-      .setURL(current.url && current.url.startsWith('http') ? current.url : current.image)
+      .setURL(safeUrl)
   );
 
-  const cleanTitle = (current.title || session.query).substring(0, 100);
+  const cleanTitle = (current.title || session.query)
+    .replace(/[`*_\r\n]/g, '')
+    .trim()
+    .substring(0, 100);
+
+  const sourceDomain = current.source || 'web';
 
   const container = {
     type: 17,
@@ -361,7 +416,7 @@ export function buildImageResultPayload(sessionId, index = 0) {
         content: `## Web Image Retrieval | <a:atheNATICK:1557841381630681106>\n` +
                  `> -# <a:uptime:1552608831060844575> **Query:** \`${session.query}\` • **Result:** \`${clampedIndex + 1} of ${total}\`\n` +
                  `> -# • **Title:** \`${cleanTitle}\`\n` +
-                 `> -# • **Source Domain:** [${current.source}](${current.url})`
+                 `> -# • **Source Domain:** [${sourceDomain}](${safeUrl})`
       },
       { type: 14, divider: true },
       actionRow.toJSON(),

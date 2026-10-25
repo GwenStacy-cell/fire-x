@@ -2616,7 +2616,7 @@ async function handleSecurityInteractions(interaction, guild) {
       }
     }
 
-    // 🖼️ Image Search Interactive Navigation Buttons
+    // Image Search Interactive Navigation Buttons
     if (customId && (customId.startsWith('img:') || customId.startsWith('img_'))) {
       try {
         const {
