@@ -2606,22 +2606,93 @@ async function handleSecurityInteractions(interaction, guild) {
       }
     }
 
-    // 🖼️ Image Search Interactive Pagination Buttons
-    if (customId && (customId.startsWith('img_prev_') || customId.startsWith('img_next_') || customId.startsWith('img_rand_'))) {
+    // 🖼️ Image Search Interactive Navigation Buttons
+    if (customId && (customId.startsWith('img:') || customId.startsWith('img_'))) {
       try {
-        const { buildImageResultPayload, imageSessions } = await import('../utils/imageSearch.js');
-        if (customId.startsWith('img_rand_')) {
-          const sessionId = customId.replace('img_rand_', '');
-          const session = imageSessions.get(sessionId);
-          if (session && session.results && session.results.length > 0) {
-            const randIndex = Math.floor(Math.random() * session.results.length);
-            const payload = buildImageResultPayload(sessionId, randIndex);
-            return interaction.update(payload);
-          }
+        const {
+          buildImageResultPayload,
+          imageSessions,
+          getOrRecoverSession,
+          fetchFreshBatchForSession,
+          extractQueryFromMessage
+        } = await import('../utils/imageSearch.js');
+
+        let action = 'next';
+        let sessionId = '';
+        let targetIndex = 0;
+
+        if (customId.startsWith('img:')) {
+          const parts = customId.split(':');
+          action = parts[1] || 'next'; // 'prev', 'next', 'rand', 'fresh'
+          sessionId = parts[2] || '';
+          targetIndex = parseInt(parts[3]) || 0;
         } else {
-          const parts = customId.split('_');
-          const sessionId = parts[2];
-          const targetIndex = parseInt(parts[3]) || 0;
+          // Legacy format fallback
+          if (customId.startsWith('img_rand_')) {
+            action = 'rand';
+            sessionId = customId.replace('img_rand_', '');
+          } else if (customId.startsWith('img_prev_')) {
+            action = 'prev';
+            const rem = customId.replace('img_prev_', '');
+            const lastUnderscore = rem.lastIndexOf('_');
+            sessionId = rem.substring(0, lastUnderscore);
+            targetIndex = parseInt(rem.substring(lastUnderscore + 1)) || 0;
+          } else if (customId.startsWith('img_next_')) {
+            action = 'next';
+            const rem = customId.replace('img_next_', '');
+            const lastUnderscore = rem.lastIndexOf('_');
+            sessionId = rem.substring(0, lastUnderscore);
+            targetIndex = parseInt(rem.substring(lastUnderscore + 1)) || 0;
+          }
+        }
+
+        const fallbackQuery = extractQueryFromMessage(interaction.message);
+
+        // Fresh Batch requested: fetch brand new pictures from web with next offset
+        if (action === 'fresh') {
+          await interaction.deferUpdate().catch(() => null);
+          const session = await fetchFreshBatchForSession(sessionId, fallbackQuery);
+          if (session && session.results.length > 0) {
+            const payload = buildImageResultPayload(session.id || sessionId, 0);
+            return interaction.editReply(payload);
+          }
+          return interaction.followUp({
+            content: '-# Unable to fetch a fresh batch of images at this moment.',
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        // Check if session is already cached in memory
+        let session = imageSessions.get(sessionId);
+
+        // Transparent session recovery if lost / bot restarted
+        if (!session || !session.results || session.results.length === 0) {
+          if (fallbackQuery) {
+            await interaction.deferUpdate().catch(() => null);
+            session = await getOrRecoverSession(sessionId, fallbackQuery);
+            if (session && session.results.length > 0) {
+              const reqIdx = action === 'rand'
+                ? Math.floor(Math.random() * session.results.length)
+                : targetIndex;
+              const payload = buildImageResultPayload(sessionId, reqIdx);
+              return interaction.editReply(payload);
+            }
+          }
+          return interaction.reply({
+            content: '-# Image search session expired. Please run a new `!image <query>` command.',
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        // Session exists in memory: instant response without defer lag
+        if (action === 'rand') {
+          let randIndex = Math.floor(Math.random() * session.results.length);
+          if (session.results.length > 1 && randIndex === session.index) {
+            randIndex = (randIndex + 1) % session.results.length;
+          }
+          const payload = buildImageResultPayload(sessionId, randIndex);
+          return interaction.update(payload);
+        } else {
           const payload = buildImageResultPayload(sessionId, targetIndex);
           return interaction.update(payload);
         }

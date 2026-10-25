@@ -57,14 +57,14 @@ export const commands = [
       }).catch(() => null);
 
       try {
-        const results = await searchWebImages(query, 25);
+        const results = await searchWebImages(query, { offset: 0, shuffle: true });
         if (!results || results.length === 0) {
           const errPayload = cv2.warn('No Images Found', `No web images were found matching \`${query}\`. Try a different search term.`);
           if (loadingMsg) return loadingMsg.edit(errPayload);
           return message.reply(errPayload);
         }
 
-        const sessionId = createSearchSession(query, results);
+        const sessionId = createSearchSession(query, results, 0);
         const payload = buildImageResultPayload(sessionId, 0);
 
         if (loadingMsg) {
@@ -84,12 +84,12 @@ export const commands = [
       await interaction.deferReply();
 
       try {
-        const results = await searchWebImages(query, 25);
+        const results = await searchWebImages(query, { offset: 0, shuffle: true });
         if (!results || results.length === 0) {
           return interaction.editReply(cv2.warn('No Images Found', `No web images were found matching \`${query}\`. Try a different search term.`));
         }
 
-        const sessionId = createSearchSession(query, results);
+        const sessionId = createSearchSession(query, results, 0);
         const payload = buildImageResultPayload(sessionId, 0);
         return interaction.editReply(payload);
       } catch (err) {

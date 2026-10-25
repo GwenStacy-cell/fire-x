@@ -7,120 +7,288 @@ export const imageSessions = new Map();
 setInterval(() => {
   const now = Date.now();
   for (const [id, s] of imageSessions.entries()) {
-    if (now - s.createdAt > 30 * 60 * 1000) {
+    if (now - s.createdAt > 45 * 60 * 1000) {
       imageSessions.delete(id);
     }
   }
 }, 10 * 60 * 1000);
 
 /**
- * Searches the web for real high-resolution images across DuckDuckGo and fallbacks
+ * Generates clean alphanumeric session IDs without colons or underscores
  */
-export async function searchWebImages(query, limit = 25) {
-  const cleanQuery = (query || '').trim();
+export function generateSessionId() {
+  return 's' + Date.now().toString(36) + Math.random().toString(36).substring(2, 8);
+}
+
+/**
+ * Fisher-Yates shuffle algorithm for rich image variety
+ */
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+/**
+ * Searches the web for real high-resolution images across Bing, DuckDuckGo, and Wikimedia
+ */
+export async function searchWebImages(query, options = {}) {
+  const cleanQuery = (typeof query === 'string' ? query : '').trim();
   if (!cleanQuery) return [];
 
-  // Primary: DuckDuckGo High-Resolution Image Engine
+  const offset = typeof options === 'number' ? 0 : (options.offset || 0);
+  const shuffle = typeof options === 'number' ? true : (options.shuffle ?? true);
+  const limit = typeof options === 'number' ? options : (options.limit || 70);
+
+  const results = [];
+  const seenUrls = new Set();
+
+  const addResult = (item) => {
+    if (!item || !item.image || typeof item.image !== 'string') return;
+    if (!item.image.startsWith('http://') && !item.image.startsWith('https://')) return;
+    if (item.image.endsWith('.svg') || item.image.endsWith('.ogg')) return;
+    if (seenUrls.has(item.image)) return;
+    seenUrls.add(item.image);
+    results.push(item);
+  };
+
+  // Primary: Bing Images Async (High-resolution, fast, paginated via first=offset)
   try {
-    const tokenController = new AbortController();
-    const tokenTimeout = setTimeout(() => tokenController.abort(), 4000);
-    const tokenRes = await fetch('https://duckduckgo.com/?q=' + encodeURIComponent(cleanQuery), {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
-      },
-      signal: tokenController.signal
-    }).catch(() => null);
-    clearTimeout(tokenTimeout);
+    const fetchBingPage = async (firstIdx, count = 35) => {
+      const url = `https://www.bing.com/images/async?q=${encodeURIComponent(cleanQuery)}&first=${firstIdx}&count=${count}&mmasync=1`;
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        },
+        signal: AbortSignal.timeout(6000)
+      }).catch(() => null);
 
-    if (tokenRes && tokenRes.ok) {
-      const html = await tokenRes.text();
-      const vqdMatch = html.match(/vqd=([\d-]+)/) || html.match(/vqd=([a-zA-Z0-9_-]+)/);
-      const vqd = vqdMatch ? vqdMatch[1] : null;
+      if (!res || !res.ok) return [];
+      const html = await res.text();
+      const matches = [...html.matchAll(/class="iusc"[^>]*\s+m="([^"]+)"/g)];
+      const pageItems = [];
+      for (const m of matches) {
+        try {
+          const raw = m[1].replace(/&quot;/g, '"');
+          const data = JSON.parse(raw);
+          if (data.murl) {
+            let domain = 'web';
+            try {
+              domain = new URL(data.purl || data.murl).hostname.replace(/^www\./, '');
+            } catch {}
+            pageItems.push({
+              title: (data.t || cleanQuery).replace(/<[^>]*>/g, '').trim(),
+              image: data.murl,
+              thumbnail: data.turl || data.murl,
+              url: data.purl || data.murl,
+              source: domain
+            });
+          }
+        } catch {}
+      }
+      return pageItems;
+    };
 
-      if (vqd) {
-        const imgController = new AbortController();
-        const imgTimeout = setTimeout(() => imgController.abort(), 5000);
-        const imgUrl = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(cleanQuery)}&vqd=${vqd}&f=,,,`;
-        const imgRes = await fetch(imgUrl, {
-          headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Referer': 'https://duckduckgo.com/'
-          },
-          signal: imgController.signal
-        }).catch(() => null);
-        clearTimeout(imgTimeout);
+    const [b1, b2] = await Promise.all([
+      fetchBingPage(offset, 40),
+      fetchBingPage(offset + 40, 40)
+    ]);
 
-        if (imgRes && imgRes.ok) {
-          const data = await imgRes.json().catch(() => null);
-          if (data && Array.isArray(data.results) && data.results.length > 0) {
-            return data.results.slice(0, limit).map(r => {
-              let domain = 'web';
-              try {
-                domain = new URL(r.url || 'https://google.com').hostname.replace(/^www\./, '');
-              } catch {}
-              return {
-                title: r.title || cleanQuery,
-                image: r.image,
-                thumbnail: r.thumbnail || r.image,
-                url: r.url || r.image,
-                width: r.width || 0,
-                height: r.height || 0,
-                source: domain
-              };
+    for (const item of [...b1, ...b2]) {
+      addResult(item);
+    }
+  } catch (err) {
+    console.error('[ImageSearch] Bing async error:', err);
+  }
+
+  // Secondary Fallback: DuckDuckGo High-Resolution Image Engine
+  if (results.length < 10) {
+    try {
+      const tokenRes = await fetch('https://duckduckgo.com/?q=' + encodeURIComponent(cleanQuery), {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
+        },
+        signal: AbortSignal.timeout(4000)
+      }).catch(() => null);
+
+      if (tokenRes && tokenRes.ok) {
+        const html = await tokenRes.text();
+        const vqd = (html.match(/vqd=([\d-]+)/) || html.match(/vqd=([a-zA-Z0-9_-]+)/))?.[1];
+        if (vqd) {
+          const imgUrl = `https://duckduckgo.com/i.js?l=us-en&o=json&q=${encodeURIComponent(cleanQuery)}&vqd=${vqd}&f=,,,&s=${offset}`;
+          const imgRes = await fetch(imgUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+              'Referer': 'https://duckduckgo.com/'
+            },
+            signal: AbortSignal.timeout(5000)
+          }).catch(() => null);
+
+          if (imgRes && imgRes.ok) {
+            const data = await imgRes.json().catch(() => null);
+            if (data && Array.isArray(data.results)) {
+              for (const r of data.results) {
+                let domain = 'web';
+                try {
+                  domain = new URL(r.url || 'https://google.com').hostname.replace(/^www\./, '');
+                } catch {}
+                addResult({
+                  title: r.title || cleanQuery,
+                  image: r.image,
+                  thumbnail: r.thumbnail || r.image,
+                  url: r.url || r.image,
+                  source: domain
+                });
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[ImageSearch] DDG error:', err);
+    }
+  }
+
+  // Tertiary Fallback: Wikimedia Commons Open Media Search
+  if (results.length < 5) {
+    try {
+      const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery)}&gsrnamespace=6&gsrlimit=20&prop=imageinfo&iiprop=url|size&format=json`;
+      const wikiRes = await fetch(wikiUrl, {
+        headers: { 'User-Agent': 'AthenaPrimeBot/1.0 (https://github.com/GwenStacy-cell/Athena-prime)' },
+        signal: AbortSignal.timeout(5000)
+      }).catch(() => null);
+      if (wikiRes && wikiRes.ok) {
+        const data = await wikiRes.json().catch(() => null);
+        const pages = data?.query?.pages ? Object.values(data.query.pages) : [];
+        for (const p of pages) {
+          const info = p.imageinfo?.[0];
+          if (info && info.url) {
+            addResult({
+              title: (p.title || cleanQuery).replace(/^File:/i, ''),
+              image: info.url,
+              thumbnail: info.thumburl || info.url,
+              url: info.descriptionurl || info.url,
+              source: 'wikimedia.org'
             });
           }
         }
       }
+    } catch (err) {
+      console.error('[ImageSearch] Wikimedia error:', err);
     }
-  } catch (err) {
-    console.error('[ImageSearch] DDG error:', err);
   }
 
-  // Secondary Fallback: Wikimedia Commons Open Media Search
-  try {
-    const wikiUrl = `https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrsearch=${encodeURIComponent(cleanQuery)}&gsrnamespace=6&gsrlimit=15&prop=imageinfo&iiprop=url|size&format=json`;
-    const wikiRes = await fetch(wikiUrl, {
-      headers: { 'User-Agent': 'AthenaPrimeBot/1.0 (https://github.com/GwenStacy-cell/Athena-prime)' }
-    }).catch(() => null);
-    if (wikiRes && wikiRes.ok) {
-      const data = await wikiRes.json().catch(() => null);
-      const pages = data?.query?.pages ? Object.values(data.query.pages) : [];
-      const results = [];
-      for (const p of pages) {
-        const info = p.imageinfo?.[0];
-        if (info && info.url && !info.url.endsWith('.svg') && !info.url.endsWith('.ogg')) {
-          results.push({
-            title: (p.title || cleanQuery).replace(/^File:/i, ''),
-            image: info.url,
-            thumbnail: info.thumburl || info.url,
-            url: info.descriptionurl || info.url,
-            width: info.width || 0,
-            height: info.height || 0,
-            source: 'wikimedia.org'
-          });
-        }
-      }
-      if (results.length > 0) return results;
-    }
-  } catch (err) {
-    console.error('[ImageSearch] Wikimedia error:', err);
+  let finalResults = results.slice(0, limit);
+  if (shuffle && finalResults.length > 2) {
+    finalResults = shuffleArray(finalResults);
   }
-
-  return [];
+  return finalResults;
 }
 
 /**
- * Creates or retrieves an image search session
+ * Creates an image search session
  */
-export function createSearchSession(query, results) {
-  const sessionId = 'img_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+export function createSearchSession(query, results, offset = 0) {
+  const sessionId = generateSessionId();
   imageSessions.set(sessionId, {
+    id: sessionId,
     query,
     results,
     index: 0,
+    offset,
     createdAt: Date.now()
   });
   return sessionId;
+}
+
+/**
+ * Gets active session or seamlessly recovers from fallback query if expired/lost
+ */
+export async function getOrRecoverSession(sessionId, fallbackQuery) {
+  let session = imageSessions.get(sessionId);
+  if (!session && fallbackQuery) {
+    const results = await searchWebImages(fallbackQuery, { offset: 0, shuffle: true });
+    if (results && results.length > 0) {
+      session = {
+        id: sessionId,
+        query: fallbackQuery,
+        results,
+        index: 0,
+        offset: 0,
+        createdAt: Date.now()
+      };
+      imageSessions.set(sessionId, session);
+    }
+  }
+  return session;
+}
+
+/**
+ * Fetches a brand new batch of pictures for the session using an advanced offset
+ */
+export async function fetchFreshBatchForSession(sessionId, query) {
+  let session = imageSessions.get(sessionId);
+  const targetQuery = query || session?.query;
+  if (!targetQuery) return null;
+
+  const currentOffset = session ? (session.offset || 0) + 70 : 70;
+  const newResults = await searchWebImages(targetQuery, { offset: currentOffset, shuffle: true });
+
+  if (newResults && newResults.length > 0) {
+    if (!session) {
+      session = {
+        id: sessionId,
+        query: targetQuery,
+        results: newResults,
+        index: 0,
+        offset: currentOffset,
+        createdAt: Date.now()
+      };
+      imageSessions.set(sessionId, session);
+    } else {
+      session.results = newResults;
+      session.index = 0;
+      session.offset = currentOffset;
+      session.createdAt = Date.now();
+    }
+    return session;
+  } else if (session && session.results.length > 0) {
+    // If no new offset results, reshuffle existing pool
+    session.results = shuffleArray(session.results);
+    session.index = 0;
+    return session;
+  }
+  return null;
+}
+
+/**
+ * Extracts query from a Discord Components V2 message
+ */
+export function extractQueryFromMessage(message) {
+  if (!message) return null;
+  if (typeof message.content === 'string') {
+    const m = message.content.match(/\*\*Query:\*\*\s*`([^`]+)`/i);
+    if (m) return m[1];
+  }
+  const scan = (comps) => {
+    if (!Array.isArray(comps)) return null;
+    for (const c of comps) {
+      if (typeof c.content === 'string') {
+        const m = c.content.match(/\*\*Query:\*\*\s*`([^`]+)`/i);
+        if (m) return m[1];
+      }
+      if (c.components) {
+        const res = scan(c.components);
+        if (res) return res;
+      }
+    }
+    return null;
+  };
+  return scan(message.components);
 }
 
 /**
@@ -155,20 +323,24 @@ export function buildImageResultPayload(sessionId, index = 0) {
 
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId(`img_prev_${sessionId}_${prevIndex}`)
-      .setLabel('◀ Previous')
+      .setCustomId(`img:prev:${sessionId}:${prevIndex}`)
+      .setLabel('◀ Prev')
       .setStyle(ButtonStyle.Primary)
       .setDisabled(total <= 1),
     new ButtonBuilder()
-      .setCustomId(`img_next_${sessionId}_${nextIndex}`)
+      .setCustomId(`img:next:${sessionId}:${nextIndex}`)
       .setLabel('Next ▶')
       .setStyle(ButtonStyle.Primary)
       .setDisabled(total <= 1),
     new ButtonBuilder()
-      .setCustomId(`img_rand_${sessionId}`)
+      .setCustomId(`img:rand:${sessionId}`)
       .setLabel('🎲 Random')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(total <= 1),
+    new ButtonBuilder()
+      .setCustomId(`img:fresh:${sessionId}`)
+      .setLabel('🔄 Fresh Batch')
+      .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setLabel('View Source')
       .setStyle(ButtonStyle.Link)
