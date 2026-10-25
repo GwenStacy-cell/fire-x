@@ -2170,6 +2170,66 @@ export const DETAILED_COMMANDS = {
     example: '!pic cat'
   },
 
+  stock: {
+    name: 'stock',
+    aliases: ['stocks', 'market', 'stockmarket', 'ticker', 'share', 'shares'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!stock [symbol] (or !market, !stocks, !ticker <symbol>, /stock [symbol])',
+    purpose: 'Generates real-time stock, ETF, and cryptocurrency telemetry in a high-resolution Canvas image with financial breakdown and market intelligence.',
+    architecture:
+`• **Dual-Mode Telemetry Rendering:**
+  - **Global Market Overview Mode (!stock / !market):** Renders a master 6-index telemetry dashboard (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) with individual mini sparklines plus mega-caps ticker tape.
+  - **Single Stock Telemetry Mode (!stock <symbol>):** Renders a widescreen Canvas terminal card with smooth Bezier price curve, day range slider, 52-week range slider, 24h volume, and sentiment gauge.
+• **Exchange API Aggregation:**
+  - Connects to real-time financial market streams to query quotes, price changes, high/low bounds, and intraday trading volumes.
+  - Automatic company name resolution (e.g. typing "apple" resolves to AAPL).
+• **Interactive Discord Components V2 Controls:**
+  - 1-click \`🔄 Refresh\` button to update quotes in place.
+  - 1-click \`📊 AI Breakdown\` button for instant technical and fundamental analysis.
+  - 1-click \`📰 News\` button for live financial catalysts and headlines.
+• **Mandatory Risk Transparency Notice:**
+  - Prominently states on every image and embed that Athena can make mistakes, quotes may be delayed, and insights do not constitute financial advice.`,
+    example: '!stock NVDA'
+  },
+
+  stockai: {
+    name: 'stockai',
+    aliases: ['stockexplain', 'marketai', 'stai'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!stockai <question or topic or symbol>',
+    purpose: 'AI-powered quantitative financial analyst providing in-depth market explanations, earnings breakdowns, and valuation concepts.',
+    architecture:
+`• **Context-Enriched Financial AI:**
+  - Automatically detects mentioned tickers, pulling live quotes and recent news headlines to ground the AI response in real market reality.
+  - Analyzes macroeconomic indicators, Federal Reserve interest rate policy, earnings reports, valuation metrics (P/E, PEG), and key technical support/resistance levels.
+• **Grey Markdown Formatting:**
+  - Outputs strictly in Discord small grey text (-# ) with bold-underlined headers for clean readability.
+• **Strict Risk Disclaimer:**
+  - Prominently reminds users that Athena can make mistakes and AI insights are for informational/educational purposes only.`,
+    example: '!stockai why did tech drop today?'
+  },
+
+  stockchannel: {
+    name: 'stockchannel',
+    aliases: ['dailystock', 'setstockchannel', 'stockalert'],
+    category: 'Automation & Finance',
+    clearance: 'Administrator / Extra Owner',
+    syntax: '!stockchannel <set <#channel> | disable | status | test>',
+    purpose: 'Configures an automated daily morning stock market intelligence briefing and Canvas image upload channel.',
+    architecture:
+`• **Database Snowflake ID Ground-Truth:**
+  - Stores and resolves target channel strictly via Discord Snowflake ID in SQLite, immune to channel renaming or display spoofing.
+• **Automated Daily Dispatch Daemon:**
+  - Background daemon checks every 60 seconds; dispatches automatically at US Market Open (09:30 AM EST / 14:30 UTC).
+  - Generates the World Market Pulse dashboard image and compiles the morning narrative.
+• **Instant Test & Status Directives:**
+  - \`!stockchannel test\`: Immediately generates and uploads today's market briefing into the configured channel.
+  - \`!stockchannel status\`: Reports current binding and last sent timestamp.`,
+    example: '!stockchannel set #stock-market'
+  },
+
   afk: {
     name: 'afk',
     aliases: ['brb'],

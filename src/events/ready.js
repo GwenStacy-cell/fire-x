@@ -13,6 +13,7 @@ import { endGiveaway } from '../commands/giveaway.js';
 import { setupDashboardChannel, updateDashboardMessage } from '../utils/dashboardManager.js';
 import { startNewsJob } from '../jobs/newsJob.js';
 import { startMusicCleanupJob } from '../jobs/musicCleanupJob.js';
+import { startDailyStockBroadcaster } from '../utils/stockBroadcaster.js';
 import { buildStatusPanel } from '../commands/globalcontrols.js';
 import { formatServerStatChannelName } from '../commands/serverstats.js';
 import { initWebSub } from '../utils/websub.js';
@@ -378,6 +379,9 @@ export default {
 
     console.log(chalk.blue(' Initializing Music Cleanup Job...'));
     startMusicCleanupJob(client);
+
+    console.log(chalk.cyan(' Initializing Daily Stock Market Broadcaster...'));
+    startDailyStockBroadcaster(client);
 
     
     // Live Status Panel Auto-Updater (Every 60s)

@@ -287,6 +287,9 @@ class Database {
         quarantineCategoryId: null,
         homeVcId: null,
         inviteChannelId: null,
+        stockChannelId: null,
+        dailyStockEnabled: false,
+        lastDailyStockSentDate: null,
         linkBypassRoles: [],
         inviteBypassRoles: [],
         allowInvitesGlobally: false,
@@ -439,6 +442,9 @@ class Database {
       if (cfg.homeVcId === undefined) { cfg.homeVcId = null; updated = true; }
       if (cfg.theaterModeVcId === undefined) { cfg.theaterModeVcId = null; updated = true; }
       if (cfg.inviteChannelId === undefined) { cfg.inviteChannelId = null; updated = true; }
+      if (cfg.stockChannelId === undefined) { cfg.stockChannelId = null; updated = true; }
+      if (cfg.dailyStockEnabled === undefined) { cfg.dailyStockEnabled = false; updated = true; }
+      if (cfg.lastDailyStockSentDate === undefined) { cfg.lastDailyStockSentDate = null; updated = true; }
       if (cfg.linkBypassRoles === undefined) { cfg.linkBypassRoles = []; updated = true; }
       if (cfg.inviteBypassRoles === undefined) { cfg.inviteBypassRoles = []; updated = true; }
       if (cfg.allowInvitesGlobally === undefined) { cfg.allowInvitesGlobally = false; updated = true; }
@@ -2451,6 +2457,43 @@ class Database {
       this.cache.tts.autoTts[guildId] = [];
     }
     return this.cache.tts.autoTts[guildId];
+  }
+
+  // --- STOCK MARKET SYSTEM ---
+  setStockChannel(guildId, channelId) {
+    const config = this.getGuildConfig(guildId);
+    config.stockChannelId = channelId;
+    config.dailyStockEnabled = !!channelId;
+    this.save();
+    return true;
+  }
+
+  getStockChannel(guildId) {
+    const config = this.getGuildConfig(guildId);
+    return config?.stockChannelId || null;
+  }
+
+  isDailyStockEnabled(guildId) {
+    const config = this.getGuildConfig(guildId);
+    return !!(config?.dailyStockEnabled && config?.stockChannelId);
+  }
+
+  setLastDailyStockSent(guildId, dateStr) {
+    const config = this.getGuildConfig(guildId);
+    config.lastDailyStockSentDate = dateStr;
+    this.save();
+    return true;
+  }
+
+  getAllStockChannels() {
+    const results = [];
+    if (!this.cache?.guilds) return results;
+    for (const [guildId, cfg] of Object.entries(this.cache.guilds)) {
+      if (cfg?.stockChannelId && cfg?.dailyStockEnabled) {
+        results.push({ guildId, channelId: cfg.stockChannelId, lastSent: cfg.lastDailyStockSentDate });
+      }
+    }
+    return results;
   }
 
   addAutoTtsUser(guildId, userId) {

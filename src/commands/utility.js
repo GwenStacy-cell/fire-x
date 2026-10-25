@@ -288,6 +288,18 @@ export const commands = [
                   usageText = `${prefix}weather <location/maps_url> / ${prefix}wtr / ${prefix}climate / ${prefix}forecast / ${prefix}temp / /weather [location]`;
               } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
                   usageText = `${prefix}image <query> / ${prefix}pic / ${prefix}img / ${prefix}photo / ${prefix}picture / ${prefix}searchimg / /image [query]`;
+              } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
+                  usageText = `${prefix}stock [symbol] / ${prefix}market / ${prefix}stocks / ${prefix}ticker [symbol] / /stock [symbol]`;
+              } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
+                  usageText = `${prefix}stockai <question/topic> / ${prefix}stockexplain <symbol/topic> / ${prefix}marketai / /stockai [query]`;
+              } else if (targetCmd.name === "movers") {
+                  usageText = `${prefix}movers / ${prefix}topmovers / ${prefix}gainers / ${prefix}losers`;
+              } else if (targetCmd.name === "crypto") {
+                  usageText = `${prefix}crypto [coin] / ${prefix}btc / ${prefix}eth / ${prefix}coin [symbol]`;
+              } else if (targetCmd.name === "stocknews") {
+                  usageText = `${prefix}stocknews [symbol/market] / ${prefix}marketnews`;
+              } else if (targetCmd.name === "stockchannel") {
+                  usageText = `${prefix}stockchannel set <#channel> / ${prefix}stockchannel disable / ${prefix}stockchannel test / ${prefix}stockchannel status`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -394,6 +406,45 @@ export const commands = [
                     `> • \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
                     `> • \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
                     `> • \`/image [query]\` - Slash command equivalent.`;
+              } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
+                  descContent = `Real-time stock, ETF, and cryptocurrency telemetry with high-resolution Canvas charts and market intelligence.\n\n` +
+                    `> -# **__Features & Telemetry Pipeline:__**\n` +
+                    `> • **Global Market Pulse Dashboard:** Run without arguments (\`${prefix}stock\` or \`${prefix}market\`) to generate a master 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) plus mega-caps ticker tape.\n` +
+                    `> • **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
+                    `> • **Interactive Controls:** 1-click buttons to refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
+                    `> -# **__All Aliases & Directives:__**\n` +
+                    `> • \`${prefix}stock [symbol]\` - Primary stock command.\n` +
+                    `> • \`${prefix}market\` / \`${prefix}stocks\` - Global market overview shortcuts.\n` +
+                    `> • \`${prefix}ticker <symbol>\` - Direct ticker lookup.\n` +
+                    `> • \`${prefix}stockai <query>\` - Ask Athena AI for detailed financial and earnings analysis.\n` +
+                    `> • \`${prefix}movers\` - Real-time market gainers and decliners.\n` +
+                    `> • \`${prefix}crypto [coin]\` - Dedicated cryptocurrency asset telemetry.\n` +
+                    `> • \`${prefix}stocknews [symbol]\` - Recent headlines and financial catalysts.\n` +
+                    `> • \`${prefix}stockchannel <set|disable|status|test>\` - Configure daily automated market upload channel.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data before investing.`;
+              } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
+                  descContent = `AI-powered quantitative financial analyst providing in-depth market explanations, earnings breakdowns, and valuation concepts.\n\n` +
+                    `> -# **__Capabilities:__**\n` +
+                    `> • Injects live exchange prices and recent press headlines into query context.\n` +
+                    `> • Dissects macroeconomic trends, Federal Reserve rate decisions, technical levels, and earnings drivers.\n` +
+                    `> • Formats all responses in sleek grey markdown with clear bold-underlined headers.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> • \`${prefix}stockai why did tech drop today?\`\n` +
+                    `> • \`${prefix}stockai explain NVDA valuation\`\n` +
+                    `> • \`${prefix}stockexplain TSLA\`\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. AI insights are for educational purposes only. Not financial advice. Always double check data.`;
+              } else if (targetCmd.name === "stockchannel") {
+                  descContent = `Configures an automated channel for daily stock market intelligence briefings and high-resolution Canvas image uploads.\n\n` +
+                    `> -# **__Automated Dispatch System:__**\n` +
+                    `> • Automatically posts every morning at **09:30 AM EST (14:30 UTC)** coinciding with US Market Open.\n` +
+                    `> • Generates and attaches the high-resolution World Market Pulse dashboard image.\n` +
+                    `> • Strictly tracks and fetches channels via database Snowflake ID.\n\n` +
+                    `> -# **__Directives:__**\n` +
+                    `> • \`${prefix}stockchannel set <#channel>\` - Bind broadcast channel.\n` +
+                    `> • \`${prefix}stockchannel disable\` - Turn off automated daily upload.\n` +
+                    `> • \`${prefix}stockchannel test\` - Immediately post today's briefing to verify.\n` +
+                    `> • \`${prefix}stockchannel status\` - View current configuration.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
               } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
                   descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
                     `> -# **__Diagnostics Evaluated:__**\n` +
@@ -602,6 +653,18 @@ export const commands = [
           usageText = `${prefix}weather <location/maps_url> / ${prefix}wtr / ${prefix}climate / ${prefix}forecast / ${prefix}temp / /weather [location]`;
         } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
           usageText = `${prefix}image <query> / ${prefix}pic / ${prefix}img / ${prefix}photo / ${prefix}picture / ${prefix}searchimg / /image [query]`;
+        } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
+          usageText = `${prefix}stock [symbol] / ${prefix}market / ${prefix}stocks / ${prefix}ticker [symbol] / /stock [symbol]`;
+        } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
+          usageText = `${prefix}stockai <question/topic> / ${prefix}stockexplain <symbol/topic> / ${prefix}marketai / /stockai [query]`;
+        } else if (targetCmd.name === "movers") {
+          usageText = `${prefix}movers / ${prefix}topmovers / ${prefix}gainers / ${prefix}losers`;
+        } else if (targetCmd.name === "crypto") {
+          usageText = `${prefix}crypto [coin] / ${prefix}btc / ${prefix}eth / ${prefix}coin [symbol]`;
+        } else if (targetCmd.name === "stocknews") {
+          usageText = `${prefix}stocknews [symbol/market] / ${prefix}marketnews`;
+        } else if (targetCmd.name === "stockchannel") {
+          usageText = `${prefix}stockchannel set <#channel> / ${prefix}stockchannel disable / ${prefix}stockchannel test / ${prefix}stockchannel status`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -705,6 +768,45 @@ export const commands = [
             `> • \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
             `> • \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
             `> • \`/image [query]\` - Slash command equivalent.`;
+        } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
+          descContent = `Real-time stock, ETF, and cryptocurrency telemetry with high-resolution Canvas charts and market intelligence.\n\n` +
+            `> -# **__Features & Telemetry Pipeline:__**\n` +
+            `> • **Global Market Pulse Dashboard:** Run without arguments (\`${prefix}stock\` or \`${prefix}market\`) to generate a master 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) plus mega-caps ticker tape.\n` +
+            `> • **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
+            `> • **Interactive Controls:** 1-click buttons to refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
+            `> -# **__All Aliases & Directives:__**\n` +
+            `> • \`${prefix}stock [symbol]\` - Primary stock command.\n` +
+            `> • \`${prefix}market\` / \`${prefix}stocks\` - Global market overview shortcuts.\n` +
+            `> • \`${prefix}ticker <symbol>\` - Direct ticker lookup.\n` +
+            `> • \`${prefix}stockai <query>\` - Ask Athena AI for detailed financial and earnings analysis.\n` +
+            `> • \`${prefix}movers\` - Real-time market gainers and decliners.\n` +
+            `> • \`${prefix}crypto [coin]\` - Dedicated cryptocurrency asset telemetry.\n` +
+            `> • \`${prefix}stocknews [symbol]\` - Recent headlines and financial catalysts.\n` +
+            `> • \`${prefix}stockchannel <set|disable|status|test>\` - Configure daily automated market upload channel.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data before investing.`;
+        } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
+          descContent = `AI-powered quantitative financial analyst providing in-depth market explanations, earnings breakdowns, and valuation concepts.\n\n` +
+            `> -# **__Capabilities:__**\n` +
+            `> • Injects live exchange prices and recent press headlines into query context.\n` +
+            `> • Dissects macroeconomic trends, Federal Reserve rate decisions, technical levels, and earnings drivers.\n` +
+            `> • Formats all responses in sleek grey markdown with clear bold-underlined headers.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> • \`${prefix}stockai why did tech drop today?\`\n` +
+            `> • \`${prefix}stockai explain NVDA valuation\`\n` +
+            `> • \`${prefix}stockexplain TSLA\`\n\n` +
+            `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. AI insights are for educational purposes only. Not financial advice. Always double check data.`;
+        } else if (targetCmd.name === "stockchannel") {
+          descContent = `Configures an automated channel for daily stock market intelligence briefings and high-resolution Canvas image uploads.\n\n` +
+            `> -# **__Automated Dispatch System:__**\n` +
+            `> • Automatically posts every morning at **09:30 AM EST (14:30 UTC)** coinciding with US Market Open.\n` +
+            `> • Generates and attaches the high-resolution World Market Pulse dashboard image.\n` +
+            `> • Strictly tracks and fetches channels via database Snowflake ID.\n\n` +
+            `> -# **__Directives:__**\n` +
+            `> • \`${prefix}stockchannel set <#channel>\` - Bind broadcast channel.\n` +
+            `> • \`${prefix}stockchannel disable\` - Turn off automated daily upload.\n` +
+            `> • \`${prefix}stockchannel test\` - Immediately post today's briefing to verify.\n` +
+            `> • \`${prefix}stockchannel status\` - View current configuration.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
         } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
           descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
             `> -# **__Diagnostics Evaluated:__**\n` +
@@ -2022,8 +2124,20 @@ export const helpModules = [
     "`!pinterest / !pin <link>` - Extract & download master uncompressed images or MP4 videos from Pinterest `[Public]`",
     "`!weather / !wtr / !climate / !forecast / !temp / !temperature <location/maps_url>` - Live global weather reconnaissance with satellite world map & 3-day forecast `[Public]`",
     "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Live web high-res picture retrieval with interactive browsing & fresh batches `[Public]`",
+    "`!stock / !stocks / !market / !stockmarket / !ticker [symbol]` - Live stock & crypto telemetry in a high-res image with financial breakdown `[Public]`",
+    "`!stockai / !stockexplain / !marketai / !stai <question/topic>` - Ask Athena AI for detailed financial reports, earnings breakdowns & market explanations `[Public]`",
+    "`!movers / !topmovers / !gainers / !losers` - Real-time breakdown of top market movers across equities & crypto `[Public]`",
+    "`!crypto / !coin / !btc / !eth [coin]` - Dedicated cryptocurrency market telemetry and Canvas charts `[Public]`",
+    "`!stocknews / !marketnews [symbol]` - Real-time financial headlines & market catalysts `[Public]`",
+    "`!stockchannel <set #channel | disable | status | test>` - Configure automated daily stock market image upload channel `[Admin]`",
     "`!tier / !mytier / !perms` - Check your current Athena Prime authorization tier `[Public]`",
     "`!profile / !card [@user]` - Official God of War canvas profile card `[Public]`",
+    "",
+    "-# **__Stock Market Intelligence & Telemetry Engine:__**",
+    "-# • **High-Resolution Canvas Cards:** Generates terminal-grade Canvas images with smooth Bezier price curves, day range sliders, 52-week range sliders, volume, and sentiment gauges.",
+    "-# • **Global Market Pulse Dashboard:** Generates a 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) + mega-caps ticker tape.",
+    "-# • **Automated Daily Channel Broadcast:** Configurable morning broadcast (`!stockchannel set <#channel>`) that automatically generates and uploads the daily market briefing at US Market Open (09:30 AM EST).",
+    "-# • **Mandatory Risk Transparency:** Prominently highlights that Athena can make mistakes, data may be delayed, and insights do not constitute financial advice.",
     "",
     "-# **__Global Weather Reconnaissance Engine:__**",
     "-# • **Universal Target Pinpointing:** Works for any location worldwide via city name, country, latitude/longitude, or Google Maps URL.",

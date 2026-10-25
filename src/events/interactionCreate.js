@@ -2606,6 +2606,16 @@ async function handleSecurityInteractions(interaction, guild) {
       }
     }
 
+    // 📈 Stock Market Interactive Buttons
+    if (customId && customId.startsWith('stk_')) {
+      try {
+        const { handleStockButton } = await import('../commands/stock.js');
+        return await handleStockButton(interaction);
+      } catch (err) {
+        console.error('[StockInteraction Error]', err);
+      }
+    }
+
     // 🖼️ Image Search Interactive Navigation Buttons
     if (customId && (customId.startsWith('img:') || customId.startsWith('img_'))) {
       try {

@@ -419,6 +419,7 @@ export const SEMANTIC_INTENTS = [
   { match: /\b(counting|count\s*channel|counting\s*game)\b/i, commands: ['counting'] },
   { match: /\b(weather|wtr|climate|forecast|temperature|temp|world\s*map|radar|satellite\s*map)\b/i, commands: ['weather'] },
   { match: /\b(image|pic|img|photo|picture|searchimg|pictures|photos|search\s*image|find\s*pic)\b/i, commands: ['image'] },
+  { match: /\b(stock|stocks|stockmarket|market\s*overview|shares|ticker|crypto|bitcoin|ethereum|market\s*movers|stockchannel|daily\s*stock)\b/i, commands: ['stock', 'stockai', 'stockchannel'] },
   { match: /\b(pinterest|pintrest|pin\.it|pinimg|pin\s*image|pinterest\s*link|pinterest\s*download)\b/i, commands: ['pinterest'] },
   { match: /\b(auto\s*role|autorole|join\s*role)\b/i, commands: ['autorole'] },
   { match: /\b(welcome|welcomer|greet|leave(\s*message)?|farewell|member\s*count\s*(in\s*)?(welcome|leave|greet)|(welcome|leave).*member\s*count)\b/i, commands: ['welcome'] },
