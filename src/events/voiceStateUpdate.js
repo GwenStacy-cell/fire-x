@@ -5,7 +5,7 @@ import { getVoiceConnection } from '@discordjs/voice';
 import { buildControlPanel, buildSharedPanel } from '../commands/jtc.js';
 import statsDB from '../statsDB.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
-import { isBotOwnerSync } from '../utils/helpers.js';
+import { isBotOwnerSync, getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
 import { handleWarn } from '../commands/moderation.js';
 
 const theaterStrikes = new Map();
@@ -351,10 +351,10 @@ export default {
                 else durStr = `${s}s`;
                 
                 const leaveEmbed = new EmbedBuilder()
-                  .setAuthor({ name: member.user.username, iconURL: member.user.displayAvatarURL() })
+                  .setAuthor({ name: member.user.username, iconURL: getSafeUserAvatar(member, 128) })
                   .setColor('#ff0000') // Pure red
                   .setDescription(`<@${userId}> left voice channel <#${oldChannelId}>. (lasted ${durStr})`)
-                  .setFooter({ text: guild.name, iconURL: guild.iconURL({ dynamic: true }) || undefined })
+                  .setFooter({ text: guild.name, iconURL: getSafeGuildIcon(guild, 128) || undefined })
                   .setTimestamp();
                 logChannel.send({ embeds: [leaveEmbed] }).catch(() => null);
               }
@@ -375,10 +375,10 @@ export default {
             const logChannel = guild.channels.cache.get(guildCfg.voiceLogChannel);
             if (logChannel) {
               const joinEmbed = new EmbedBuilder()
-                .setAuthor({ name: member.user.username, iconURL: member.user.displayAvatarURL() })
+                .setAuthor({ name: member.user.username, iconURL: getSafeUserAvatar(member, 128) })
                 .setColor('#00ff00') // Pure green
                 .setDescription(`<@${userId}> joined voice channel <#${newChannelId}>.`)
-                .setFooter({ text: guild.name, iconURL: guild.iconURL({ dynamic: true }) || undefined })
+                .setFooter({ text: guild.name, iconURL: getSafeGuildIcon(guild, 128) || undefined })
                 .setTimestamp();
               logChannel.send({ embeds: [joinEmbed] }).catch(() => null);
             }

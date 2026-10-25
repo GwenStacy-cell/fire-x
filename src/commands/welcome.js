@@ -2,7 +2,7 @@ import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, But
 import db from '../database.js';
 import cv2 from '../cv2.js';
 import { convertMp4ToGif, uploadGifToDiscord } from '../utils/mediaConverter.js';
-import { isBotOwnerSync, cleanDisplayName } from '../utils/helpers.js';
+import { isBotOwnerSync, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon, isValidImageUrl } from '../utils/helpers.js';
 import { resolveMediaUrl, isPinterestUrl } from '../utils/pinterest.js';
 
 // ============================================================
@@ -38,8 +38,8 @@ export function resolvePlaceholders(text, memberOrUser, guildParam = null, cfg =
     userFormat = `[${displayName}](https://discord.com/users/${userId})`;
   }
 
-  const avatarUrl = user?.displayAvatarURL ? user.displayAvatarURL({ size: 256 }) : '';
-  const serverIcon = guild?.iconURL ? (guild.iconURL({ dynamic: true, size: 256 }) || '') : '';
+  const avatarUrl = getSafeUserAvatar(memberOrUser, 256);
+  const serverIcon = getSafeGuildIcon(guild, 256) || '';
   const memberCount = guild?.memberCount || guild?.members?.cache?.size || 0;
   const countStr = String(memberCount);
   const ordinalStr = getOrdinal(memberCount);
@@ -157,41 +157,87 @@ export function buildWelcomeEmbed(member, cfg) {
     e.setColor(0x5865F2);
   }
 
-  const user = member.user || member;
-  const userAvatar = user.displayAvatarURL ? user.displayAvatarURL({ size: 256 }) : undefined;
+  const user = member?.user || member;
+  const userAvatar = getSafeUserAvatar(member, 256);
   const avatarPos = cfg.avatarPos || 'thumbnail';
 
   if (cfg.from || avatarPos === 'author') {
     try {
+      const authorText = (cfg.from ? resolve(cfg.from, member, cfg) : resolve('{user}', member, cfg))
+        .replace(/<@!?\d+>/g, user?.username || 'User')
+        .trim();
+
+      let authorIcon = undefined;
+      if (avatarPos === 'author') {
+        authorIcon = userAvatar;
+      } else if (cfg.fromIcon) {
+        const rawIcon = resolve(cfg.fromIcon, member, cfg);
+        if (isValidImageUrl(rawIcon)) authorIcon = rawIcon.trim();
+      } else {
+        const gIcon = getSafeGuildIcon(member?.guild);
+        if (gIcon) authorIcon = gIcon;
+      }
+
       e.setAuthor({
-        name: (cfg.from ? resolve(cfg.from, member, cfg) : resolve('{user}', member, cfg)).replace(/<@!?\d+>/g, user.username || 'User'),
-        iconURL: (avatarPos === 'author') ? userAvatar : (cfg.fromIcon ? resolve(cfg.fromIcon, member, cfg) : member.guild?.iconURL({ dynamic: true }) || undefined)
+        name: authorText.substring(0, 256) || 'Welcome',
+        ...(authorIcon && isValidImageUrl(authorIcon) ? { iconURL: authorIcon } : {})
       });
     } catch (err) {}
   }
 
-  if (cfg.title) e.setTitle(resolve(cfg.title, member, cfg));
-
-  if (cfg.description) e.setDescription(resolve(cfg.description, member, cfg));
-  else if (!cfg.title && !cfg.from) e.setDescription(`**Welcome to ${member.guild?.name || 'the server'}!**`);
-
-  if (cfg.thumbnailUrl) {
-    try { e.setThumbnail(resolve(cfg.thumbnailUrl, member, cfg)); } catch(e) {}
-  } else if (avatarPos === 'thumbnail' && userAvatar) {
-    e.setThumbnail(userAvatar);
+  if (cfg.title) {
+    const t = resolve(cfg.title, member, cfg);
+    if (t) e.setTitle(t.substring(0, 256));
   }
 
+  if (cfg.description) {
+    const d = resolve(cfg.description, member, cfg);
+    if (d) e.setDescription(d.substring(0, 4096));
+  } else if (!cfg.title && !cfg.from) {
+    e.setDescription(`**Welcome to ${member?.guild?.name || 'the server'}!**`);
+  }
+
+  let thumbUrl = null;
+  if (cfg.thumbnailUrl) {
+    const rawThumb = resolve(cfg.thumbnailUrl, member, cfg);
+    if (isValidImageUrl(rawThumb)) {
+      thumbUrl = rawThumb.trim();
+    }
+  }
+  if (!thumbUrl && avatarPos === 'thumbnail') {
+    thumbUrl = userAvatar;
+  }
+  if (thumbUrl && isValidImageUrl(thumbUrl)) {
+    try { e.setThumbnail(thumbUrl); } catch {}
+  }
+
+  let imageUrl = null;
   if (cfg.image) {
-    try { e.setImage(resolve(cfg.image, member, cfg)); } catch(e) {}
-  } else if (avatarPos === 'image' && userAvatar) {
-    e.setImage(userAvatar);
+    const rawImage = resolve(cfg.image, member, cfg);
+    if (isValidImageUrl(rawImage)) {
+      imageUrl = rawImage.trim();
+    }
+  } else if (avatarPos === 'image') {
+    imageUrl = userAvatar;
+  }
+  if (imageUrl && isValidImageUrl(imageUrl)) {
+    try { e.setImage(imageUrl); } catch {}
   }
 
   if (cfg.footer || avatarPos === 'footer') {
     try {
+      const footerText = cfg.footer ? resolve(cfg.footer, member, cfg).trim() : 'Welcome!';
+      let footerIcon = undefined;
+      if (avatarPos === 'footer') {
+        footerIcon = userAvatar;
+      } else if (cfg.footerIcon) {
+        const rawFooterIcon = resolve(cfg.footerIcon, member, cfg);
+        if (isValidImageUrl(rawFooterIcon)) footerIcon = rawFooterIcon.trim();
+      }
+
       e.setFooter({
-        text: cfg.footer ? resolve(cfg.footer, member, cfg) : 'Welcome!',
-        iconURL: (avatarPos === 'footer') ? userAvatar : (cfg.footerIcon ? resolve(cfg.footerIcon, member, cfg) : undefined)
+        text: footerText.substring(0, 2048) || 'Welcome!',
+        ...(footerIcon && isValidImageUrl(footerIcon) ? { iconURL: footerIcon } : {})
       });
     } catch (err) {}
   }

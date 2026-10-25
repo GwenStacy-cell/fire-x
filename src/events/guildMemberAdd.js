@@ -3,7 +3,7 @@ import statsDB from '../statsDB.js';
 import embed from '../embed.js';
 import { executeQuarantine } from '../commands/security.js';
 import { PermissionFlagsBits, Routes, MessageFlags } from 'discord.js';
-import { logToSecurityChannel, getOrCreateQuarantineRole, getOrCreateQuarantineChannel, isBotOwnerSync, getUserTierName, cleanDisplayName } from '../utils/helpers.js';
+import { logToSecurityChannel, getOrCreateQuarantineRole, getOrCreateQuarantineChannel, isBotOwnerSync, getUserTierName, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
 import { sendWelcomeMessage } from '../commands/welcome.js';
 import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, directStrike } from '../utils/antinuke.js';
 import { logServerEvent } from '../utils/serverLogger.js';
@@ -410,11 +410,12 @@ export default {
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
       };
       
+      const guildIcon = getSafeGuildIcon(guild);
       const welcomeDm = embed.build({
         title: `Welcome to ${guild.name}!`,
         description: `Thank you for joining **${guild.name}**! <a:uptime:1552608831060844575>\n\nYou are our **${getOrdinal(guild.memberCount)}** member! We hope you have a great time here. Stay safe!`,
         color: config.accentColor || '#2b2d31',
-        thumbnail: guild.iconURL({ dynamic: true })
+        ...(guildIcon ? { thumbnail: guildIcon } : {})
       });
       await member.send({ embeds: [welcomeDm] }).catch(() => null);
     } catch (err) {
@@ -424,12 +425,13 @@ export default {
     // ==========================================
     // 5.5 SERVER LOGS
     // ==========================================
-    const accountAge = Date.now() - member.user.createdAt.getTime();
+    const accountAge = Date.now() - (member.user?.createdAt?.getTime() || member.user?.createdTimestamp || Date.now());
     const ageDays = Math.floor(accountAge / (1000 * 60 * 60 * 24));
+    const userAvatar = getSafeUserAvatar(member, 256);
     const joinEmbed = embed.build({
-      description: `__**Member Joined |**__ <a:uptime:1552608831060844575>\n> **User:** ${member.user.tag} (<@${member.user.id}>)\n>  **Account Age:** ${ageDays} days old\n>  **Total Members:** ${guild.memberCount}`,
+      description: `__**Member Joined |**__ <a:uptime:1552608831060844575>\n> **User:** ${member.user?.tag || member.id} (<@${member.id}>)\n>  **Account Age:** ${ageDays} days old\n>  **Total Members:** ${guild.memberCount}`,
       color: '#2b2d31',
-      thumbnail: member.user.displayAvatarURL({ dynamic: true })
+      thumbnail: userAvatar
     });
     await logServerEvent(guild, 'joins', joinEmbed);
 
@@ -503,7 +505,7 @@ export default {
                   components: [
                     { type: 10, content: `**User Joined:** [${memberDisplayName}](https://discord.com/users/${member.id})\n**Account Created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>` }
                   ],
-                  accessory: { type: 11, media: { url: member.user.displayAvatarURL({ dynamic: true, size: 256 }) } }
+                  accessory: { type: 11, media: { url: getSafeUserAvatar(member, 256) } }
                 },
                 { type: 14, divider: true },
                 { type: 10, content: `**INVITE DETAILS**\n**Creator:** ${inviterLine}\n**Invite Code:** \`${codeText}\`\n**Total Uses:** ${usesText} / ${maxUses}\n**Duration:** ${maxAge}\n**Created At:** ${createdTime}` }

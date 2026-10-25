@@ -1,5 +1,6 @@
 import db from '../database.js';
 import embed from '../embed.js';
+import { getSafeUserAvatar } from '../utils/helpers.js';
 
 export default {
   name: 'messageReactionAdd',
@@ -74,7 +75,7 @@ export default {
                 color: 0xffac33,
                 author: {
                   name: reaction.message.author.tag,
-                  icon_url: reaction.message.author.displayAvatarURL()
+                  icon_url: getSafeUserAvatar(reaction.message.author)
                 },
                 description: reaction.message.content + `\n\n[**Jump to message**](${reaction.message.url})`,
                 timestamp: new Date().toISOString(),

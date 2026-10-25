@@ -2,6 +2,7 @@ import { EmbedBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import db from './database.js';
+import { isValidImageUrl } from './utils/helpers.js';
 
 // Safely load config
 const configPath = path.resolve('config.json');
@@ -68,8 +69,12 @@ export const embed = {
 
     if (title) builder.setTitle(title);
     if (description) builder.setDescription(description);
-    if (thumbnail) builder.setThumbnail(thumbnail);
-    if (image) builder.setImage(image);
+    if (thumbnail && typeof thumbnail === 'string' && isValidImageUrl(thumbnail)) {
+      try { builder.setThumbnail(thumbnail.trim()); } catch {}
+    }
+    if (image && typeof image === 'string' && isValidImageUrl(image)) {
+      try { builder.setImage(image.trim()); } catch {}
+    }
 
     if (fields && fields.length > 0) {
       builder.addFields(fields.map(f => ({
@@ -86,7 +91,7 @@ export const embed = {
     if (author) {
       builder.setAuthor({
         name: author.name,
-        iconURL: author.iconURL
+        ...(author.iconURL && typeof author.iconURL === 'string' && isValidImageUrl(author.iconURL) ? { iconURL: author.iconURL.trim() } : {})
       });
     }
 

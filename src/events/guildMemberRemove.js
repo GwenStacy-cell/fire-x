@@ -5,6 +5,7 @@ import statsDB from '../statsDB.js';
 import { sendLeaveMessage } from '../commands/welcome.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import embed from '../embed.js';
+import { getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
 
 export default {
   name: 'guildMemberRemove',
@@ -18,11 +19,12 @@ export default {
     sendLeaveMessage(member).catch(() => null);
     try {
       const config = db.getGuildConfig(guild.id);
+      const guildIcon = getSafeGuildIcon(guild);
       const leaveDm = embed.build({
         title: `Goodbye from ${guild.name}!`,
         description: `We're sorry to see you go from **${guild.name}**. We will miss you! <a:uptime:1552608831060844575>`,
         color: config.accentColor || '#2b2d31',
-        thumbnail: guild.iconURL({ dynamic: true })
+        ...(guildIcon ? { thumbnail: guildIcon } : {})
       });
       member.send({ embeds: [leaveDm] }).catch(() => null);
     } catch {}
@@ -50,18 +52,22 @@ export default {
         const executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown (Native/Other Bot)';
         const reason = ring?.reason || 'No reason provided';
 
+        const memberUser = member.user || await member.client.users.fetch(member.id).catch(() => null);
+        const userTag = memberUser ? memberUser.tag : (member.displayName || member.id);
+        const avatarUrl = getSafeUserAvatar(memberUser || member, 256);
+
         if (isKick) {
           const kickEmbed = embed.build({
-            description: `__**Member Kicked |**__ <a:uptime:1552608831060844575>\n> **User:** ${member.user.tag} (<@${member.user.id}>)\n>  **Executor:** ${executor}\n>  **Reason:** ${reason}`,
+            description: `__**Member Kicked |**__ <a:uptime:1552608831060844575>\n> **User:** ${userTag} (<@${member.id}>)\n>  **Executor:** ${executor}\n>  **Reason:** ${reason}`,
             color: '#2b2d31',
-            thumbnail: member.user.displayAvatarURL({ dynamic: true })
+            thumbnail: avatarUrl
           });
           await logServerEvent(guild, 'kicks', kickEmbed);
         } else {
           const leaveEmbed = embed.build({
-            description: `__**Member Left |**__ <a:uptime:1552608831060844575>\n> **User:** ${member.user.tag} (<@${member.user.id}>)`,
+            description: `__**Member Left |**__ <a:uptime:1552608831060844575>\n> **User:** ${userTag} (<@${member.id}>)`,
             color: '#2b2d31',
-            thumbnail: member.user.displayAvatarURL({ dynamic: true })
+            thumbnail: avatarUrl
           });
           await logServerEvent(guild, 'leaves', leaveEmbed);
         }

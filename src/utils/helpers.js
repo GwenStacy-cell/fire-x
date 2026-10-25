@@ -1026,3 +1026,55 @@ export function renderSleekProgressBar(current, total = 50, length = 12) {
   return `\`[${'▰'.repeat(filled)}${'▱'.repeat(empty)}]\` **${pct}%** (${current}/${total})`;
 }
 
+/**
+ * Validates that a string is a genuine, well-formed HTTP/HTTPS URL
+ */
+export function isValidImageUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) return false;
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Safely resolves a user or member's avatar URL to a guaranteed valid PNG CDN link.
+ * Prevents crashed/broken image icons in embeds and Components V2.
+ */
+export function getSafeUserAvatar(memberOrUser, size = 256) {
+  if (!memberOrUser) return 'https://cdn.discordapp.com/embed/avatars/0.png';
+  const user = memberOrUser.user || memberOrUser;
+  try {
+    if (user && typeof user.displayAvatarURL === 'function') {
+      const url = user.displayAvatarURL({ extension: 'png', forceStatic: false, size });
+      if (isValidImageUrl(url)) return url;
+    }
+    if (user && typeof user.avatarURL === 'function') {
+      const url = user.avatarURL({ extension: 'png', size });
+      if (isValidImageUrl(url)) return url;
+    }
+    if (user && user.defaultAvatarURL && isValidImageUrl(user.defaultAvatarURL)) {
+      return user.defaultAvatarURL;
+    }
+  } catch {}
+  return 'https://cdn.discordapp.com/embed/avatars/0.png';
+}
+
+/**
+ * Safely resolves a guild's icon URL, returning null if the server has no custom icon.
+ */
+export function getSafeGuildIcon(guild, size = 256) {
+  if (!guild || typeof guild.iconURL !== 'function') return null;
+  try {
+    const url = guild.iconURL({ extension: 'png', forceStatic: false, size });
+    return isValidImageUrl(url) ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+

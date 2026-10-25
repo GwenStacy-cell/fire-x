@@ -3,6 +3,7 @@ import { postGlobalActionLog } from '../utils/globalLog.js';
 import { directStrike, getRecentAuditEntry } from '../utils/antinuke.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import embed from '../embed.js';
+import { getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
 
 export default {
   name: 'guildBanAdd',
@@ -47,7 +48,7 @@ export default {
         const logEmbed = embed.build({
           description: `__**Member Banned |**__ <a:uptime:1552608831060844575>\n> **User:** ${ban.user.tag} (<@${ban.user.id}>)\n>  **Executor:** ${executor}\n>  **Reason:** ${reason}`,
           color: '#2b2d31',
-          thumbnail: ban.user.displayAvatarURL({ dynamic: true })
+          thumbnail: getSafeUserAvatar(ban.user, 256)
         });
         await logServerEvent(ban.guild, 'bans', logEmbed);
 
@@ -56,7 +57,7 @@ export default {
           action: 'BAN',
           guildId: ban.guild.id,
           guildName: ban.guild.name,
-          guildIconUrl: ban.guild.iconURL({ extension: 'png', size: 256 }),
+          guildIconUrl: getSafeGuildIcon(ban.guild, 256),
           targetId: ban.user.id,
           targetTag: ban.user.tag,
           executorId: executorId || ban.guild.client.user.id,
