@@ -13,6 +13,8 @@ import {
   buildStockGuidancePayload,
   buildSymbolsPayload,
   buildSymbolSearchResultsPayload,
+  buildNiftyPayload,
+  getIndianMarketStatus,
   getFormattedDateTimeStrings,
   DISCLAIMER_TEXT 
 } from '../utils/stockMarket.js';
@@ -989,6 +991,414 @@ export const commands = [
         });
       }
     }
+  },
+
+  // 8. NIFTY 50 & INDIAN BENCHMARK COMMAND
+  {
+    name: 'nifty',
+    aliases: ['nifty50', 'n50', 'nse', 'nse50', 'indmarket', 'indianmarket'],
+    description: 'Live NIFTY 50 benchmark telemetry in a terminal-grade Canvas image with Indian market breakdown',
+    category: 'utility',
+    permissions: [],
+    options: [
+      {
+        name: 'index',
+        description: 'Indian benchmark index or sector (50, bank, sensex, it, vix)',
+        type: 3, // STRING
+        required: false,
+        choices: [
+          { name: 'NIFTY 50 (National Benchmark 50)', value: '50' },
+          { name: 'BANK NIFTY (Banking Sector)', value: 'bank' },
+          { name: 'BSE SENSEX (Dalal Street 30)', value: 'sensex' },
+          { name: 'NIFTY IT (Technology Sector)', value: 'it' },
+          { name: 'INDIA VIX (Market Volatility)', value: 'vix' }
+        ]
+      }
+    ],
+    async executePrefix(message, args) {
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+      const target = args[0] || '50';
+
+      const loadingMsg = await message.reply({
+        components: [
+          {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content: `<a:uptime:1552608831060844575> **Indian Benchmark Terminal:** Fetching live telemetry for \`${target}\`...`
+              }
+            ]
+          }
+        ],
+        flags: MessageFlags.IsComponentsV2
+      });
+
+      try {
+        const payload = await buildNiftyPayload(target, prefix);
+        return await loadingMsg.edit(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await loadingMsg.edit({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## Indian Benchmark Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve benchmark telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    },
+    async executeSlash(interaction) {
+      const prefix = interaction.guild ? (db.getGuildConfig(interaction.guild.id)?.prefix || '!') : '!';
+      const target = interaction.options?.getString('index') || '50';
+
+      await interaction.deferReply();
+      try {
+        const payload = await buildNiftyPayload(target, prefix);
+        return await interaction.editReply(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await interaction.editReply({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## Indian Benchmark Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve benchmark telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    }
+  },
+
+  // 9. BANK NIFTY COMMAND
+  {
+    name: 'banknifty',
+    aliases: ['niftybank', 'bnifty', 'bankn50'],
+    description: 'Dedicated Bank Nifty index telemetry and banking sector gauges in a high-res Canvas image',
+    category: 'utility',
+    permissions: [],
+    options: [],
+    async executePrefix(message, args) {
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+      const loadingMsg = await message.reply({
+        components: [
+          {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content: `<a:uptime:1552608831060844575> **Bank Nifty Terminal:** Fetching live banking sector telemetry...`
+              }
+            ]
+          }
+        ],
+        flags: MessageFlags.IsComponentsV2
+      });
+
+      try {
+        const payload = await buildNiftyPayload('bank', prefix);
+        return await loadingMsg.edit(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await loadingMsg.edit({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## Bank Nifty Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Bank Nifty telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    },
+    async executeSlash(interaction) {
+      const prefix = interaction.guild ? (db.getGuildConfig(interaction.guild.id)?.prefix || '!') : '!';
+      await interaction.deferReply();
+      try {
+        const payload = await buildNiftyPayload('bank', prefix);
+        return await interaction.editReply(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await interaction.editReply({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## Bank Nifty Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Bank Nifty telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    }
+  },
+
+  // 10. BSE SENSEX COMMAND
+  {
+    name: 'sensex',
+    aliases: ['bse', 'bsesensex', 'bse30'],
+    description: 'Live Bombay Stock Exchange (BSE Sensex 30) market telemetry in a high-res Canvas image',
+    category: 'utility',
+    permissions: [],
+    options: [],
+    async executePrefix(message, args) {
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+      const loadingMsg = await message.reply({
+        components: [
+          {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content: `<a:uptime:1552608831060844575> **BSE Sensex Terminal:** Fetching live Dalal Street benchmark telemetry...`
+              }
+            ]
+          }
+        ],
+        flags: MessageFlags.IsComponentsV2
+      });
+
+      try {
+        const payload = await buildNiftyPayload('sensex', prefix);
+        return await loadingMsg.edit(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await loadingMsg.edit({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## BSE Sensex Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve BSE Sensex telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    },
+    async executeSlash(interaction) {
+      const prefix = interaction.guild ? (db.getGuildConfig(interaction.guild.id)?.prefix || '!') : '!';
+      await interaction.deferReply();
+      try {
+        const payload = await buildNiftyPayload('sensex', prefix);
+        return await interaction.editReply(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await interaction.editReply({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## BSE Sensex Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve BSE Sensex telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    }
+  },
+
+  // 11. NIFTY IT COMMAND
+  {
+    name: 'niftyit',
+    aliases: ['itnifty', 'cnxit'],
+    description: 'Live Nifty IT index telemetry & Indian software exporter telemetry in a high-res Canvas image',
+    category: 'utility',
+    permissions: [],
+    options: [],
+    async executePrefix(message, args) {
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+      const loadingMsg = await message.reply({
+        components: [
+          {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content: `<a:uptime:1552608831060844575> **Nifty IT Terminal:** Fetching live IT sector exporter telemetry...`
+              }
+            ]
+          }
+        ],
+        flags: MessageFlags.IsComponentsV2
+      });
+
+      try {
+        const payload = await buildNiftyPayload('it', prefix);
+        return await loadingMsg.edit(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await loadingMsg.edit({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## Nifty IT Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Nifty IT telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    },
+    async executeSlash(interaction) {
+      const prefix = interaction.guild ? (db.getGuildConfig(interaction.guild.id)?.prefix || '!') : '!';
+      await interaction.deferReply();
+      try {
+        const payload = await buildNiftyPayload('it', prefix);
+        return await interaction.editReply(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await interaction.editReply({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## Nifty IT Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Nifty IT telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    }
+  },
+
+  // 12. INDIA VIX COMMAND
+  {
+    name: 'indiavix',
+    aliases: ['vixindia', 'vix'],
+    description: 'Live India VIX market volatility & fear gauge index in a high-res Canvas image',
+    category: 'utility',
+    permissions: [],
+    options: [],
+    async executePrefix(message, args) {
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+      const loadingMsg = await message.reply({
+        components: [
+          {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content: `<a:uptime:1552608831060844575> **India VIX Terminal:** Fetching live market volatility & fear gauge...`
+              }
+            ]
+          }
+        ],
+        flags: MessageFlags.IsComponentsV2
+      });
+
+      try {
+        const payload = await buildNiftyPayload('vix', prefix);
+        return await loadingMsg.edit(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await loadingMsg.edit({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## India VIX Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve India VIX telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    },
+    async executeSlash(interaction) {
+      const prefix = interaction.guild ? (db.getGuildConfig(interaction.guild.id)?.prefix || '!') : '!';
+      await interaction.deferReply();
+      try {
+        const payload = await buildNiftyPayload('vix', prefix);
+        return await interaction.editReply(payload);
+      } catch (err) {
+        const dt = getFormattedDateTimeStrings();
+        return await interaction.editReply({
+          components: [
+            {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `## India VIX Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve India VIX telemetry.'}\n\n` +
+                           `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
+                }
+              ]
+            }
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+    }
   }
 ];
 
@@ -997,6 +1407,19 @@ export const commands = [
  */
 export async function handleStockButton(interaction) {
   const customId = interaction.customId;
+
+  // Interactive Nifty & Indian Benchmark Buttons
+  if (customId.startsWith('nifty_btn_') || customId.startsWith('stk_nifty_')) {
+    const rawTarget = customId.replace(/^nifty_btn_|^stk_nifty_/, '');
+    await interaction.deferUpdate();
+    try {
+      const prefix = interaction.guild ? (db.getGuildConfig(interaction.guild.id)?.prefix || '!') : '!';
+      const payload = await buildNiftyPayload(rawTarget, prefix);
+      return await interaction.editReply(payload);
+    } catch (err) {
+      return await interaction.followUp({ content: `-! Indian benchmark update failed: ${err.message}`, flags: MessageFlags.Ephemeral });
+    }
+  }
 
   // Interactive Category Buttons for Symbols Directory
   if (customId.startsWith('stk_cat_')) {

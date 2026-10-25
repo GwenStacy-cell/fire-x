@@ -2606,8 +2606,8 @@ async function handleSecurityInteractions(interaction, guild) {
       }
     }
 
-    // 📈 Stock Market Interactive Buttons
-    if (customId && customId.startsWith('stk_')) {
+    // Stock Market & Indian Benchmark Interactive Buttons
+    if (customId && (customId.startsWith('stk_') || customId.startsWith('nifty_'))) {
       try {
         const { handleStockButton } = await import('../commands/stock.js');
         return await handleStockButton(interaction);

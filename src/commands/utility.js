@@ -302,6 +302,8 @@ export const commands = [
                   usageText = `${prefix}stockchannel set <#channel> / ${prefix}stockchannel disable / ${prefix}stockchannel test / ${prefix}stockchannel status`;
               } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
                   usageText = `${prefix}symbols [query/category] / ${prefix}symbollist / ${prefix}tickers / ${prefix}tickerlist / ${prefix}stocksymbols / ${prefix}marketlist / ${prefix}symlist / /symbols [query]`;
+              } else if (targetCmd.name === "nifty" || targetCmd.name === "banknifty" || targetCmd.name === "sensex" || targetCmd.name === "niftyit" || targetCmd.name === "indiavix") {
+                  usageText = `${prefix}nifty [50|bank|sensex|it|vix] / ${prefix}banknifty / ${prefix}sensex / ${prefix}niftyit / ${prefix}indiavix / /nifty [index]`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -497,6 +499,20 @@ export const commands = [
                     `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n` +
                     `> • **1-Click Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
+              } else if (targetCmd.name === "nifty" || targetCmd.name === "banknifty" || targetCmd.name === "sensex" || targetCmd.name === "niftyit" || targetCmd.name === "indiavix") {
+                  descContent = `Real-time Indian Benchmark Indices & Dalal Street telemetry engine with terminal-grade Canvas charts, Classic Pivot points (P, R1, S1), and interactive sector switches.\n\n` +
+                    `> -# **__Primary & Dedicated Sector Commands:__**\n` +
+                    `> • \`${prefix}nifty [50|bank|sensex|it|vix]\` - Primary Indian market benchmark terminal (defaults to NIFTY 50).\n` +
+                    `> • \`${prefix}banknifty\` (\`${prefix}niftybank\`, \`${prefix}bnifty\`) - Dedicated Bank Nifty index telemetry & banking sector health.\n` +
+                    `> • \`${prefix}sensex\` (\`${prefix}bse\`, \`${prefix}bsesensex\`) - Dedicated Bombay Stock Exchange Dalal Street 30 benchmark.\n` +
+                    `> • \`${prefix}niftyit\` (\`${prefix}itnifty\`, \`${prefix}cnxit\`) - Dedicated Nifty IT index & tech exporter telemetry.\n` +
+                    `> • \`${prefix}indiavix\` (\`${prefix}vixindia\`, \`${prefix}vix\`) - Dedicated India Volatility Index (Fear & Greed gauge).\n\n` +
+                    `> -# **__Canvas Cards & Analytical Telemetry:__**\n` +
+                    `> • **Custom Index Badges & Logos:** Official badges (\`N50\`, \`BNK\`, \`BSE\`, \`IT\`, \`VIX\`) and official NSE / BSE branding.\n` +
+                    `> • **Classic Pivot Points Calculation:** Live mathematical Intraday Pivot Points (\`P\`, \`R1\`, \`S1\`) derived from High, Low, and Close.\n` +
+                    `> • **Live Operational Market Hours Detector:** Pre-Market (09:00 - 09:15 IST), Regular Trading (09:15 - 15:30 IST), Post-Market (15:40 - 16:00 IST), and Off-Market/Weekend countdowns.\n` +
+                    `> • **Interactive 1-Click Buttons:** Switch between Nifty 50, Bank Nifty, Sensex, Nifty IT, and India VIX instantly.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Index market data is for informational purposes only. Not financial advice.`;
               } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
                   descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
                     `> -# **__Diagnostics Evaluated:__**\n` +
@@ -719,6 +735,8 @@ export const commands = [
           usageText = `${prefix}stockchannel set <#channel> / ${prefix}stockchannel disable / ${prefix}stockchannel test / ${prefix}stockchannel status`;
         } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
           usageText = `${prefix}symbols [query/category] / ${prefix}symbollist / ${prefix}tickers / ${prefix}tickerlist / ${prefix}stocksymbols / ${prefix}marketlist / ${prefix}symlist / /symbols [query]`;
+        } else if (targetCmd.name === "nifty" || targetCmd.name === "banknifty" || targetCmd.name === "sensex" || targetCmd.name === "niftyit" || targetCmd.name === "indiavix") {
+          usageText = `${prefix}nifty [50|bank|sensex|it|vix] / ${prefix}banknifty / ${prefix}sensex / ${prefix}niftyit / ${prefix}indiavix / /nifty [index]`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -911,6 +929,20 @@ export const commands = [
             `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n` +
             `> • **1-Click Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
+        } else if (targetCmd.name === "nifty" || targetCmd.name === "banknifty" || targetCmd.name === "sensex" || targetCmd.name === "niftyit" || targetCmd.name === "indiavix") {
+          descContent = `Real-time Indian Benchmark Indices & Dalal Street telemetry engine with terminal-grade Canvas charts, Classic Pivot points (P, R1, S1), and interactive sector switches.\n\n` +
+            `> -# **__Primary & Dedicated Sector Commands:__**\n` +
+            `> • \`${prefix}nifty [50|bank|sensex|it|vix]\` - Primary Indian market benchmark terminal (defaults to NIFTY 50).\n` +
+            `> • \`${prefix}banknifty\` (\`${prefix}niftybank\`, \`${prefix}bnifty\`) - Dedicated Bank Nifty index telemetry & banking sector health.\n` +
+            `> • \`${prefix}sensex\` (\`${prefix}bse\`, \`${prefix}bsesensex\`) - Dedicated Bombay Stock Exchange Dalal Street 30 benchmark.\n` +
+            `> • \`${prefix}niftyit\` (\`${prefix}itnifty\`, \`${prefix}cnxit\`) - Dedicated Nifty IT index & tech exporter telemetry.\n` +
+            `> • \`${prefix}indiavix\` (\`${prefix}vixindia\`, \`${prefix}vix\`) - Dedicated India Volatility Index (Fear & Greed gauge).\n\n` +
+            `> -# **__Canvas Cards & Analytical Telemetry:__**\n` +
+            `> • **Custom Index Badges & Logos:** Official badges (\`N50\`, \`BNK\`, \`BSE\`, \`IT\`, \`VIX\`) and official NSE / BSE branding.\n` +
+            `> • **Classic Pivot Points Calculation:** Live mathematical Intraday Pivot Points (\`P\`, \`R1\`, \`S1\`) derived from High, Low, and Close.\n` +
+            `> • **Live Operational Market Hours Detector:** Pre-Market (09:00 - 09:15 IST), Regular Trading (09:15 - 15:30 IST), Post-Market (15:40 - 16:00 IST), and Off-Market/Weekend countdowns.\n` +
+            `> • **Interactive 1-Click Buttons:** Switch between Nifty 50, Bank Nifty, Sensex, Nifty IT, and India VIX instantly.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Index market data is for informational purposes only. Not financial advice.`;
         } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
           descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
             `> -# **__Diagnostics Evaluated:__**\n` +
@@ -2230,6 +2262,11 @@ export const helpModules = [
     "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Live web high-res picture retrieval with interactive browsing & fresh batches `[Public]`",
     "`!stock / !stocks / !market / !stockmarket / !ticker [symbol]` - Live stock & crypto telemetry in a high-res image with financial breakdown `[Public]`",
     "`!symbols / !symbollist / !tickers / !tickerlist / !stocksymbols / !marketlist / !symlist [query]` - Universal global ticker directory, trending IPOs & real-time symbol search `[Public]`",
+    "`!nifty [50|bank|sensex|it|vix]` - Live NIFTY 50 Indian benchmark index telemetry in a high-res Canvas card `[Public]`",
+    "`!banknifty / !bnifty` - Dedicated Bank Nifty index telemetry & banking sector pivot points `[Public]`",
+    "`!sensex / !bse` - Live Bombay Stock Exchange (BSE Sensex 30) Dalal Street benchmark `[Public]`",
+    "`!niftyit / !cnxit` - Live Nifty IT index telemetry & Indian software exporter price action `[Public]`",
+    "`!indiavix / !vix` - Live India VIX market volatility & fear gauge index `[Public]`",
     "`!stockai / !stockexplain / !marketai / !stai <question/topic>` - Ask Athena AI for detailed financial reports, earnings breakdowns & market explanations `[Public]`",
     "`!movers / !topmovers / !gainers / !losers` - Real-time breakdown of top market movers across equities & crypto `[Public]`",
     "`!crypto / !coin / !btc / !eth [coin]` - Dedicated cryptocurrency market telemetry and Canvas charts `[Public]`",
@@ -2248,6 +2285,13 @@ export const helpModules = [
     "-# • **Global Market Pulse Dashboard:** Generates a 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) + mega-caps ticker tape.",
     "-# • **Automated Daily Channel Broadcast:** Configurable morning broadcast (`!stockchannel set <#channel>`) that automatically generates and uploads the daily market briefing at US Market Open (09:30 AM EST).",
     "-# • **Mandatory Risk Transparency:** Prominently highlights that Athena can make mistakes, data may be delayed, and insights do not constitute financial advice.",
+    "",
+    "-# **__Indian Market Benchmark Suite (NIFTY & Dalal Street):__**",
+    "-# • **Dedicated Benchmark Commands:** `!nifty` (NIFTY 50), `!banknifty` (Bank Nifty), `!sensex` (BSE Sensex 30), `!niftyit` (Nifty IT), `!indiavix` (India VIX).",
+    "-# • **High-Resolution Canvas Graphics:** Dedicated index badges (`N50`, `BNK`, `BSE`, `IT`, `VIX`), official NSE/BSE branding, and smooth Bezier price action curves.",
+    "-# • **Classic Pivot Points Engine:** Automatically computes mathematical intraday pivot levels (`P = (H + L + C) / 3`, `R1 = 2P - L`, `S1 = 2P - H`) for index traders.",
+    "-# • **Live Market Session Tracker:** Real-time Indian Standard Time (IST) operational session tracker (Pre-Market, Regular 09:15 - 15:30 IST, Post-Market, Weekend).",
+    "-# • **Interactive 1-Click Navigation:** Switch between Nifty 50, Bank Nifty, Sensex, Nifty IT, and India VIX with zero-lag interactive button components.",
     "",
     "-# **__Global Weather Reconnaissance Engine:__**",
     "-# • **Universal Target Pinpointing:** Works for any location worldwide via city name, country, latitude/longitude, or Google Maps URL.",
@@ -2334,7 +2378,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
       let topText = `# Hey !!! , I am <@${botId}> ,\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Welcome to Athena Prime A bot which is made for unbypassable security features and community management! View down and see our srv management modules listed below:**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **To set Custom Prefix use <@${botId}> \`${prefix}prefix " your custom prefix "\`**\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Indian Benchmarks Suite (\`${prefix}nifty\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Hint: For a detailed guide and instruction on any specific command, type \`${prefix}help <command>\` !**`;
 
       rawComponents.push({ type: 10, content: topText });

@@ -2312,6 +2312,95 @@ export const DETAILED_COMMANDS = {
     example: '!symbols trending'
   },
 
+  nifty: {
+    name: 'nifty',
+    aliases: ['nifty50', 'n50', 'nse', 'nse50', 'indmarket', 'indianmarket'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!nifty [50|bank|sensex|it|vix] (or /nifty [index])',
+    purpose: 'Flagship Indian Benchmark Index telemetry terminal with high-resolution Canvas charts, live market session detector, and Classic Intraday Pivot Points.',
+    architecture:
+`• **Universal Indian Benchmark Engine:**
+  - Tracks live price action, net change, percentage shift, day high/low, and 52-week boundaries for India's premier benchmark index (NIFTY 50 / ^NSEI).
+• **Classic Pivot Points Matrix:**
+  - Automatically calculates intraday mathematical pivot levels (Pivot P = (H + L + C) / 3, Resistance R1 = 2P - L, Support S1 = 2P - H) for professional Dalal Street traders.
+• **Live Indian Market Session Sentry:**
+  - Tracks operational IST session state: Pre-Market (09:00 - 09:15 IST), Regular Trading (09:15 - 15:30 IST), Post-Market (15:40 - 16:00 IST), and Weekend / Holiday status.
+• **High-Resolution Canvas Terminal:**
+  - Widescreen 1100x600 Canvas image with official index badges (N50), official logos, smooth Bezier curves, and terminal-grade styling.
+• **Interactive Component V2 Sector Switcher:**
+  - One-click buttons to instantly toggle between NIFTY 50, Bank Nifty, BSE Sensex, Nifty IT, and India VIX.`,
+    example: '!nifty'
+  },
+
+  banknifty: {
+    name: 'banknifty',
+    aliases: ['niftybank', 'bnifty', 'bankn50'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!banknifty (or /banknifty)',
+    purpose: 'Dedicated banking sector benchmark index telemetry and Classic Pivot Points for India\'s banking leaders (^NSEBANK).',
+    architecture:
+`• **Banking Sector Telemetry:**
+  - Real-time price action for Bank Nifty comprising India\'s top banking institutions (HDFC Bank, ICICI Bank, SBI, Axis Bank, Kotak).
+• **Intraday Pivot Levels & Risk Gauge:**
+  - Computes Classic Pivot (P), Resistance 1 (R1), and Support 1 (S1) directly on the Canvas terminal card.
+• **Interactive Sector Switcher:**
+  - Instantly pivot between Bank Nifty, NIFTY 50, BSE Sensex, Nifty IT, and India VIX via interactive buttons.`,
+    example: '!banknifty'
+  },
+
+  sensex: {
+    name: 'sensex',
+    aliases: ['bse', 'bsesensex', 'bse30'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!sensex (or /sensex)',
+    purpose: 'Live Bombay Stock Exchange (BSE Sensex 30 / ^BSESN) Dalal Street benchmark index telemetry and Canvas chart.',
+    architecture:
+`• **Dalal Street 30 Benchmark:**
+  - Tracks the oldest and most prestigious benchmark index in India, representing 30 well-established and financially sound companies listed on BSE.
+• **Official BSE Monogram & Badging:**
+  - Rendered with crisp BSE index badging, session timings, and Day / 52-Week range sliders.
+• **Intraday Pivot Points:**
+  - Computes mathematical pivot, resistance, and support levels for Dalal Street index options and futures analysis.`,
+    example: '!sensex'
+  },
+
+  niftyit: {
+    name: 'niftyit',
+    aliases: ['itnifty', 'cnxit'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!niftyit (or /niftyit)',
+    purpose: 'Dedicated Nifty IT index telemetry & Indian software exporter price action (^CNXIT).',
+    architecture:
+`• **Technology Sector Telemetry:**
+  - Tracks India\'s top global IT software exporters including TCS, Infosys, Wipro, HCL Tech, and Tech Mahindra.
+• **Export Catalyst & Currency Sensitivity:**
+  - Ideal for assessing the impact of USD/INR fluctuations and global tech earnings on Indian tech equities.
+• **Full Canvas Visual Integration:**
+  - Generates high-res Canvas card with sector badges, price trajectory, and pivot points.`,
+    example: '!niftyit'
+  },
+
+  indiavix: {
+    name: 'indiavix',
+    aliases: ['vixindia', 'vix'],
+    category: 'Finance & Utility',
+    clearance: '@everyone (Standard User)',
+    syntax: '!indiavix (or /indiavix)',
+    purpose: 'Live India VIX volatility and market sentiment fear gauge index (^INDIAVIX).',
+    architecture:
+`• **Dalal Street Fear & Greed Sentry:**
+  - Measures the Indian equity market\'s expectation of volatility over the near term (30 calendar days) based on NIFTY option prices.
+• **Volatility Sentiment Classification:**
+  - Automatically assesses volatility regimes (Complacent/Low Volatility under 13, Neutral/Normal 13-18, High Volatility/Fear above 18).
+• **Pivot Points & Range Sliders:**
+  - Full intraday range sliders, 52-week volatility range, and mathematical pivot points.`,
+    example: '!indiavix'
+  },
+
   afk: {
     name: 'afk',
     aliases: ['brb'],

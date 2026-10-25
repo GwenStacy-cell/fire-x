@@ -685,6 +685,19 @@ export const KNOWN_STOCK_DOMAINS = {
   'HAL.NS': 'hal-india.co.in',
   'IRCTC.NS': 'irctc.co.in',
 
+  // Indian Benchmark Indices
+  '^NSEI': 'nseindia.com',
+  'NIFTY': 'nseindia.com',
+  'NIFTY50': 'nseindia.com',
+  '^NSEBANK': 'nseindia.com',
+  'BANKNIFTY': 'nseindia.com',
+  '^CNXIT': 'nseindia.com',
+  'NIFTYIT': 'nseindia.com',
+  '^INDIAVIX': 'nseindia.com',
+  'INDIAVIX': 'nseindia.com',
+  '^BSESN': 'bseindia.com',
+  'SENSEX': 'bseindia.com',
+
   // US Tech & AI Titans
   'NVDA': 'nvidia.com',
   'AAPL': 'apple.com',
@@ -770,6 +783,64 @@ export async function fetchCompanyLogo(symbol, companyName = '') {
 }
 
 /**
+ * Identifies official Indian market index display metadata
+ */
+export function getIndexDisplayMeta(symbol) {
+  const s = String(symbol || '').toUpperCase();
+  if (s === '^NSEI' || s === 'NIFTY' || s === 'NIFTY50') {
+    return { title: 'NIFTY 50', badge: 'N50', subtitle: 'National Stock Exchange • Benchmark 50', exchangePill: 'NSE • INDEX • INR' };
+  }
+  if (s === '^NSEBANK' || s === 'BANKNIFTY') {
+    return { title: 'BANK NIFTY', badge: 'BNK', subtitle: 'NSE Banking Sector Benchmark', exchangePill: 'NSE • INDEX • INR' };
+  }
+  if (s === '^BSESN' || s === 'SENSEX') {
+    return { title: 'SENSEX 30', badge: 'BSE', subtitle: 'Bombay Stock Exchange • Benchmark 30', exchangePill: 'BSE • INDEX • INR' };
+  }
+  if (s === '^CNXIT' || s === 'NIFTYIT') {
+    return { title: 'NIFTY IT', badge: 'IT', subtitle: 'NSE Information Technology Index', exchangePill: 'NSE • INDEX • INR' };
+  }
+  if (s === '^INDIAVIX' || s === 'INDIAVIX') {
+    return { title: 'INDIA VIX', badge: 'VIX', subtitle: 'NSE Market Volatility & Fear Gauge', exchangePill: 'NSE • VOLATILITY • INDEX' };
+  }
+  return null;
+}
+
+/**
+ * Evaluates real-time operational session status for Indian Stock Exchanges (NSE / BSE)
+ */
+export function getIndianMarketStatus() {
+  const now = new Date();
+  const istDateStr = now.toLocaleString('en-US', { timeZone: 'Asia/Kolkata' });
+  const ist = new Date(istDateStr);
+  const day = ist.getDay(); // 0 is Sunday, 6 is Saturday
+  const hours = ist.getHours();
+  const minutes = ist.getMinutes();
+  const timeInMinutes = hours * 60 + minutes;
+
+  const isWeekend = day === 0 || day === 6;
+  if (isWeekend) {
+    return { isOpen: false, status: 'CLOSED (Weekend)', session: 'Weekend Halt (Re-opens Mon 09:15 AM IST)' };
+  }
+
+  // Pre-market: 09:00 to 09:15 IST (540 to 555)
+  if (timeInMinutes >= 540 && timeInMinutes < 555) {
+    return { isOpen: true, status: 'PRE-MARKET', session: 'Pre-Open Call Auction (09:00 - 09:15 IST)' };
+  }
+
+  // Regular market: 09:15 to 15:30 IST (555 to 930)
+  if (timeInMinutes >= 555 && timeInMinutes <= 930) {
+    return { isOpen: true, status: 'OPEN', session: 'Regular Trading Session (09:15 - 15:30 IST)' };
+  }
+
+  // Post-market: 15:30 to 16:00 IST (930 to 960)
+  if (timeInMinutes > 930 && timeInMinutes <= 960) {
+    return { isOpen: false, status: 'POST-MARKET', session: 'Closing & Settlement (15:30 - 16:00 IST)' };
+  }
+
+  return { isOpen: false, status: 'CLOSED', session: 'Off-Market Hours (Re-opens 09:15 AM IST)' };
+}
+
+/**
  * Renders high-resolution Canvas single-stock telemetry HUD with integrated company logo badge
  */
 export async function renderSingleStockCard(stock, customLogo = null) {
@@ -843,6 +914,7 @@ export async function renderSingleStockCard(stock, customLogo = null) {
   ctx.beginPath(); ctx.moveTo(40, 82); ctx.lineTo(W - 40, 82); ctx.stroke();
 
   // 4. Company Logo Badge & Stock Identity
+  const indexMeta = getIndexDisplayMeta(stock.symbol);
   const logoImg = customLogo || await fetchCompanyLogo(stock.symbol, stock.name);
   const logoX = 45;
   const logoY = 98;
@@ -855,7 +927,7 @@ export async function renderSingleStockCard(stock, customLogo = null) {
   else ctx.rect(logoX, logoY, logoSize, logoSize);
   ctx.fillStyle = '#0f172a';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+  ctx.strokeStyle = indexMeta ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255, 255, 255, 0.14)';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
@@ -880,12 +952,13 @@ export async function renderSingleStockCard(stock, customLogo = null) {
     ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
     ctx.restore();
   } else {
-    const base = stock.symbol.replace(/\.NS$|\.BO$|-USD$/i, '');
-    ctx.font = 'bold 20px Roboto, sans-serif';
-    ctx.fillStyle = primaryColor;
+    const base = stock.symbol.replace(/^\^|\.NS$|\.BO$|-USD$/i, '');
+    const monogram = indexMeta?.badge || base.slice(0, 3);
+    ctx.font = 'bold 22px Roboto, sans-serif';
+    ctx.fillStyle = indexMeta ? '#38bdf8' : primaryColor;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(base.slice(0, 3), logoX + logoSize / 2, logoY + logoSize / 2);
+    ctx.fillText(monogram, logoX + logoSize / 2, logoY + logoSize / 2);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
   }
@@ -895,36 +968,38 @@ export async function renderSingleStockCard(stock, customLogo = null) {
   const textStartX = 122;
   ctx.font = 'bold 38px Roboto, sans-serif';
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(stock.symbol, textStartX, 134);
-  const symW = ctx.measureText(stock.symbol).width;
+  const displayTitle = indexMeta?.title || stock.symbol;
+  ctx.fillText(displayTitle, textStartX, 134);
+  const symW = ctx.measureText(displayTitle).width;
 
   // Exchange Pill
-  const exText = `${stock.exchange} • ${stock.currency}`;
+  const exText = indexMeta?.exchangePill || `${stock.exchange} • ${stock.currency}`;
   ctx.font = 'bold 11px Roboto, sans-serif';
   const exW = ctx.measureText(exText).width + 16;
   const pillExX = textStartX + symW + 14;
   const pillExY = 108;
 
   ctx.beginPath();
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+  ctx.fillStyle = indexMeta ? 'rgba(56, 189, 248, 0.12)' : 'rgba(255, 255, 255, 0.08)';
   ctx.roundRect ? ctx.roundRect(pillExX, pillExY, exW, 24, 4) : ctx.fillRect(pillExX, pillExY, exW, 24);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.strokeStyle = indexMeta ? 'rgba(56, 189, 248, 0.3)' : 'rgba(255, 255, 255, 0.15)';
   ctx.stroke();
 
-  ctx.fillStyle = '#94a3b8';
+  ctx.fillStyle = indexMeta ? '#38bdf8' : '#94a3b8';
   ctx.fillText(exText, pillExX + 8, pillExY + 16);
 
-  // Company Name (with width clamp)
+  // Company Name / Subtitle (with width clamp)
   ctx.font = '15px Roboto, sans-serif';
   ctx.fillStyle = '#94a3b8';
-  let displayName = stock.name;
+  let displayName = indexMeta?.subtitle || stock.name;
   if (ctx.measureText(displayName).width > 560) {
     while (ctx.measureText(displayName + '...').width > 560 && displayName.length > 0) {
       displayName = displayName.slice(0, -1);
     }
     displayName += '...';
   }
+  ctx.fillText(displayName, textStartX, 156);
   ctx.fillText(displayName, textStartX, 156);
 
   const currSym = getCurrencySymbol(stock.currency);
@@ -1112,33 +1187,60 @@ export async function renderSingleStockCard(stock, customLogo = null) {
   ctx.fillStyle = '#ffffff';
   ctx.fill();
 
-  // Volume & Prev Close Grid
-  const rowY = panelY + 215;
-  ctx.beginPath();
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-  ctx.roundRect ? ctx.roundRect(panelX + 20, rowY, 135, 65, 6) : ctx.fillRect(panelX + 20, rowY, 135, 65);
-  ctx.fill();
-  ctx.font = '10px Roboto, sans-serif';
-  ctx.fillStyle = '#64748b';
-  ctx.fillText('24H VOLUME', panelX + 32, rowY + 24);
-  ctx.font = 'bold 16px Roboto, sans-serif';
-  ctx.fillStyle = '#f1f5f9';
-  const volStr = stock.volume > 1e6 ? `${(stock.volume / 1e6).toFixed(1)}M` : stock.volume.toLocaleString();
-  ctx.fillText(volStr, panelX + 32, rowY + 48);
+  // Volume & Prev Close Grid or Index Pivots Box
+  const rowY = panelY + 205;
+  if (indexMeta) {
+    const pivW = panelW - 40;
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.roundRect ? ctx.roundRect(panelX + 20, rowY, pivW, 75, 6) : ctx.fillRect(panelX + 20, rowY, pivW, 75);
+    ctx.fill();
 
-  ctx.beginPath();
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
-  ctx.roundRect ? ctx.roundRect(panelX + 170, rowY, 135, 65, 6) : ctx.fillRect(panelX + 170, rowY, 135, 65);
-  ctx.fill();
-  ctx.font = '10px Roboto, sans-serif';
-  ctx.fillStyle = '#64748b';
-  ctx.fillText('PREV CLOSE', panelX + 182, rowY + 24);
-  ctx.font = 'bold 16px Roboto, sans-serif';
-  ctx.fillStyle = '#f1f5f9';
-  ctx.fillText(`${currSym}${stock.prevClose.toFixed(2)}`, panelX + 182, rowY + 48);
+    const p = (stock.dayHigh + stock.dayLow + stock.price) / 3;
+    const r1 = (2 * p) - stock.dayLow;
+    const s1 = (2 * p) - stock.dayHigh;
+
+    ctx.font = '10px Roboto, sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('CLASSIC PIVOT (P)', panelX + 32, rowY + 22);
+    ctx.fillText('R1 / S1 LEVELS', panelX + 175, rowY + 22);
+
+    ctx.font = 'bold 15px Roboto, sans-serif';
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillText(currSym + p.toFixed(1), panelX + 32, rowY + 48);
+
+    ctx.font = 'bold 12px Roboto, sans-serif';
+    ctx.fillStyle = '#00e676';
+    ctx.fillText('R1: ' + r1.toFixed(0), panelX + 175, rowY + 42);
+    ctx.fillStyle = '#ff3d71';
+    ctx.fillText('S1: ' + s1.toFixed(0), panelX + 175, rowY + 60);
+  } else {
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.roundRect ? ctx.roundRect(panelX + 20, rowY, 135, 65, 6) : ctx.fillRect(panelX + 20, rowY, 135, 65);
+    ctx.fill();
+    ctx.font = '10px Roboto, sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('24H VOLUME', panelX + 32, rowY + 24);
+    ctx.font = 'bold 16px Roboto, sans-serif';
+    ctx.fillStyle = '#f1f5f9';
+    const volStr = stock.volume > 1e6 ? `${(stock.volume / 1e6).toFixed(1)}M` : stock.volume.toLocaleString();
+    ctx.fillText(volStr, panelX + 32, rowY + 48);
+
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
+    ctx.roundRect ? ctx.roundRect(panelX + 170, rowY, 135, 65, 6) : ctx.fillRect(panelX + 170, rowY, 135, 65);
+    ctx.fill();
+    ctx.font = '10px Roboto, sans-serif';
+    ctx.fillStyle = '#64748b';
+    ctx.fillText('PREV CLOSE', panelX + 182, rowY + 24);
+    ctx.font = 'bold 16px Roboto, sans-serif';
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillText(`${currSym}${stock.prevClose.toFixed(2)}`, panelX + 182, rowY + 48);
+  }
 
   // Sentiment Card
-  const sentY = panelY + 300;
+  const sentY = panelY + 295;
   ctx.beginPath();
   ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
   ctx.roundRect ? ctx.roundRect(panelX + 20, sentY, 285, 95, 6) : ctx.fillRect(panelX + 20, sentY, 285, 95);
@@ -1155,7 +1257,8 @@ export async function renderSingleStockCard(stock, customLogo = null) {
 
   ctx.font = '11px Roboto, sans-serif';
   ctx.fillStyle = '#64748b';
-  ctx.fillText('Model calculated via price momentum & range velocity.', panelX + 32, sentY + 76);
+  const sentSub = indexMeta ? 'NSE India benchmark momentum & range velocity.' : 'Model calculated via price momentum & range velocity.';
+  ctx.fillText(sentSub, panelX + 32, sentY + 76);
 
   // 7. MANDATORY DISCLAIMER BAR (At very bottom)
   ctx.beginPath();
@@ -1523,6 +1626,170 @@ export function buildStockPayload(stock, imageBuffer, prefix = '!') {
 }
 
 /**
+ * Builds Components V2 Discord payload for NIFTY 50 and Indian Market Benchmark Telemetry
+ */
+export async function buildNiftyPayload(targetKey = '50', prefix = '!') {
+  const dt = getFormattedDateTimeStrings();
+  const mktStatus = getIndianMarketStatus();
+
+  let targetSymbol = '^NSEI';
+  let targetLabel = 'NIFTY 50';
+  let activeKey = '50';
+
+  const cleanKey = String(targetKey || '50').toLowerCase().trim();
+  if (['bank', 'banknifty', 'bn', 'bnifty', '^nsebank'].includes(cleanKey)) {
+    targetSymbol = '^NSEBANK';
+    targetLabel = 'BANK NIFTY';
+    activeKey = 'bank';
+  } else if (['sensex', 'bse', 'bse30', '^bsesn'].includes(cleanKey)) {
+    targetSymbol = '^BSESN';
+    targetLabel = 'BSE SENSEX';
+    activeKey = 'sensex';
+  } else if (['it', 'niftyit', 'cnxit', '^cnxit'].includes(cleanKey)) {
+    targetSymbol = '^CNXIT';
+    targetLabel = 'NIFTY IT';
+    activeKey = 'it';
+  } else if (['vix', 'indiavix', 'volatility', '^indiavix'].includes(cleanKey)) {
+    targetSymbol = '^INDIAVIX';
+    targetLabel = 'INDIA VIX';
+    activeKey = 'vix';
+  } else {
+    targetSymbol = '^NSEI';
+    targetLabel = 'NIFTY 50';
+    activeKey = '50';
+  }
+
+  const stockData = await fetchStockData(targetSymbol);
+  const imageBuffer = await renderSingleStockCard(stockData);
+  const filename = `nifty_${activeKey}.png`;
+  const attachment = new AttachmentBuilder(imageBuffer, { name: filename });
+
+  const sign = stockData.change >= 0 ? '+' : '';
+  const high = stockData.dayHigh;
+  const low = stockData.dayLow;
+  const close = stockData.price;
+  const pivot = (high + low + close) / 3;
+  const r1 = (2 * pivot) - low;
+  const s1 = (2 * pivot) - high;
+  const r2 = pivot + (high - low);
+  const s2 = pivot - (high - low);
+
+  const row1 = {
+    type: 1,
+    components: [
+      {
+        type: 2,
+        custom_id: 'nifty_btn_50',
+        label: 'NIFTY 50',
+        style: activeKey === '50' ? 1 : 2
+      },
+      {
+        type: 2,
+        custom_id: 'nifty_btn_bank',
+        label: 'BANK NIFTY',
+        style: activeKey === 'bank' ? 1 : 2
+      },
+      {
+        type: 2,
+        custom_id: 'nifty_btn_sensex',
+        label: 'SENSEX',
+        style: activeKey === 'sensex' ? 1 : 2
+      },
+      {
+        type: 2,
+        custom_id: 'nifty_btn_it',
+        label: 'NIFTY IT',
+        style: activeKey === 'it' ? 1 : 2
+      }
+    ]
+  };
+
+  const row2 = {
+    type: 1,
+    components: [
+      {
+        type: 2,
+        custom_id: 'nifty_btn_vix',
+        label: 'INDIA VIX',
+        style: activeKey === 'vix' ? 1 : 2
+      },
+      {
+        type: 2,
+        custom_id: 'stk_cat_india',
+        label: 'India Stocks',
+        style: 2
+      },
+      {
+        type: 2,
+        custom_id: 'stk_ref_overview',
+        label: 'Global Markets',
+        style: 2
+      },
+      {
+        type: 2,
+        custom_id: 'stk_cat_trending',
+        label: 'Trending IPOs',
+        style: 2
+      }
+    ]
+  };
+
+  const components = [
+    {
+      type: 12,
+      items: [{ media: { url: `attachment://${filename}` } }]
+    },
+    {
+      type: 10,
+      content: `## ${targetLabel} Benchmark Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+               `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
+               `> -# <a:uptime:1552608831060844575> **Exchange & Currency:** \`${stockData.exchange}\` • \`${stockData.currency}\`\n` +
+               `> -# <a:uptime:1552608831060844575> **Market Status:** \`${mktStatus.status}\` • ${mktStatus.session}\n\n` +
+               `### Real-Time Benchmark Metrics\n` +
+               `> • **Current Level:** \`₹${stockData.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\` (\`${sign}₹${Math.abs(stockData.change).toFixed(2)}\` | \`${sign}${stockData.changePct.toFixed(2)}%\`)\n` +
+               `> • **Day Session Range:** \`₹${stockData.dayLow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\` \u2014 \`₹${stockData.dayHigh.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\`\n` +
+               `> • **52-Week Range:** \`₹${stockData.fiftyTwoWeekLow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\` \u2014 \`₹${stockData.fiftyTwoWeekHigh.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\`\n\n` +
+               `### Technical Pivot Points & Key Levels (Classic)\n` +
+               `> • **R2 Resistance:** \`₹${r2.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\` • **R1 Resistance:** \`₹${r1.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\`\n` +
+               `> • **Central Pivot (P):** \`₹${pivot.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\`\n` +
+               `> • **S1 Support:** \`₹${s1.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\` • **S2 Support:** \`₹${s2.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\`\n\n` +
+               `### Dalal Street Directives & Supporting Commands\n` +
+               `> -# • Run \`${prefix}banknifty\` or \`${prefix}nifty bank\` for Banking Sector telemetry (\`^NSEBANK\`).\n` +
+               `> -# • Run \`${prefix}sensex\` or \`${prefix}nifty sensex\` for Bombay Stock Exchange (\`^BSESN\`).\n` +
+               `> -# • Run \`${prefix}niftyit\` or \`${prefix}nifty it\` for Indian IT export sector telemetry (\`^CNXIT\`).\n` +
+               `> -# • Run \`${prefix}indiavix\` or \`${prefix}nifty vix\` for market volatility fear gauge (\`^INDIAVIX\`).\n` +
+               `> -# • Run \`${prefix}stock <ticker>\` for single stock telemetry (e.g. \`${prefix}stock TCS\`, \`${prefix}stock RELIANCE\`).\n\n` +
+               `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
+    },
+    {
+      type: 14,
+      divider: true
+    },
+    row1,
+    row2,
+    {
+      type: 14,
+      divider: true
+    },
+    {
+      type: 10,
+      content: `-# **Athena Prime Financial Intelligence \u2022 National Stock Exchange of India (NSE)**`
+    }
+  ];
+
+  return {
+    components: [
+      {
+        type: 17,
+        components
+      }
+    ],
+    files: [attachment],
+    flags: MessageFlags.IsComponentsV2
+  };
+}
+
+/**
  * Builds Components V2 Discord payload for Global Market Overview or Daily Briefing
  */
 export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = false, prefix = '!') {
@@ -1646,19 +1913,25 @@ export function buildStockGuidancePayload(prefix = '!') {
                      `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart with Bezier curves, day range, 52w range, volume, & sentiment gauge (e.g. \`${prefix}stock TCS\`, \`${prefix}stock NVDA\`, \`${prefix}stock RELIANCE\`).\n` +
                      `> -# • \`${prefix}market\` / \`${prefix}stocks\` \u2014 Global 6-index world market pulse (S&P 500, NASDAQ, Dow, NIFTY 50, BTC, ETH) + mega-caps ticker tape.\n` +
                      `> -# • \`${prefix}ticker <symbol>\` \u2014 Direct company/ticker resolution.\n\n` +
-                     `### 2. Universal Ticker Directory & Autonomous Symbol Search\n` +
+                     `### 2. Indian Market Benchmarks & Dalal Street Suite\n` +
+                     `> -# • \`${prefix}nifty [50|bank|sensex|it|vix]\` \u2014 Live NIFTY 50 telemetry Canvas image with pivot levels & Indian market status.\n` +
+                     `> -# • \`${prefix}banknifty\` / \`${prefix}niftybank\` \u2014 Dedicated Bank Nifty banking sector telemetry card.\n` +
+                     `> -# • \`${prefix}sensex\` / \`${prefix}bse\` \u2014 Live Bombay Stock Exchange benchmark telemetry.\n` +
+                     `> -# • \`${prefix}niftyit\` / \`${prefix}itnifty\` \u2014 Live Nifty IT exporter sector telemetry card.\n` +
+                     `> -# • \`${prefix}indiavix\` / \`${prefix}vix\` \u2014 Live India VIX market volatility & fear gauge index.\n\n` +
+                     `### 3. Universal Ticker Directory & Autonomous Symbol Search\n` +
                      `> -# • \`${prefix}symbols\` / \`${prefix}symbollist\` \u2014 Interactive ticker directory with 1-click categories (Trending & New IPOs, Indian Equities, US Mega-Caps, Crypto, Commodities & Indices).\n` +
                      `> -# • \`${prefix}symbols trending\` \u2014 Real-time newly discovered and active market tickers auto-indexed in SQLite.\n` +
                      `> -# • \`${prefix}symbols <query>\` / \`${prefix}symbols search <name>\` \u2014 Dynamic real-time symbol search on Yahoo Finance (e.g. \`${prefix}symbols tata\`, \`${prefix}symbols sbi\`, \`${prefix}symbols reliance\`, \`${prefix}symbols adani\`, \`${prefix}symbols zomato\`).\n\n` +
-                     `### 3. AI Financial Analyst & Reports\n` +
+                     `### 4. AI Financial Analyst & Reports\n` +
                      `> -# • \`${prefix}stockai <question or topic>\` \u2014 Ask Athena AI for detailed earnings breakdowns, macro trends, or financial concepts (e.g. \`${prefix}stockai why did tech drop today?\`, \`${prefix}stockai explain NVDA valuation\`).\n` +
                      `> -# • \`${prefix}stockexplain <symbol/topic>\` / \`${prefix}marketai\` \u2014 AI financial research aliases.\n\n` +
-                     `### 4. Market Movers & Catalysts\n` +
+                     `### 5. Market Movers & Catalysts\n` +
                      `> -# • \`${prefix}movers\` / \`${prefix}topmovers\` \u2014 Real-time top gainers and decliners across mega-caps and crypto.\n` +
                      `> -# • \`${prefix}stocknews [symbol]\` / \`${prefix}marketnews\` \u2014 Real-time press wiretap with direct links to Bloomberg, Reuters, Yahoo Finance, etc.\n\n` +
-                     `### 5. Cryptocurrency Telemetry\n` +
+                     `### 6. Cryptocurrency Telemetry\n` +
                      `> -# • \`${prefix}crypto [coin]\` \u2014 Cryptocurrency charts and telemetry (e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`).\n\n` +
-                     `### 6. Automated Daily Briefing Channel\n` +
+                     `### 7. Automated Daily Briefing Channel\n` +
                      `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Binds an automated morning upload channel (posts every morning at 09:30 AM EST / 14:30 UTC at US Market Open).\n` +
                      `> -# • \`${prefix}stockchannel test\` \u2014 Immediately uploads today's briefing to verify delivery.\n` +
                      `> -# • \`${prefix}stockchannel status\` \u2014 Inspect current broadcast channel ID & delivery state.\n` +
