@@ -1293,9 +1293,10 @@ export function buildStockGuidancePayload(prefix = '!') {
                      `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart with Bezier curves, day range, 52w range, volume, & sentiment gauge (e.g. \`${prefix}stock TCS\`, \`${prefix}stock NVDA\`, \`${prefix}stock RELIANCE\`).\n` +
                      `> -# • \`${prefix}market\` / \`${prefix}stocks\` \u2014 Global 6-index world market pulse (S&P 500, NASDAQ, Dow, NIFTY 50, BTC, ETH) + mega-caps ticker tape.\n` +
                      `> -# • \`${prefix}ticker <symbol>\` \u2014 Direct company/ticker resolution.\n\n` +
-                     `### 2. Universal Ticker Directory & Real-Time Symbol Search\n` +
-                     `> -# • \`${prefix}symbols\` / \`${prefix}symbollist\` \u2014 Interactive ticker directory with 1-click categories (Indian Equities, US Mega-Caps, Crypto, Commodities & Indices).\n` +
-                     `> -# • \`${prefix}symbols <query>\` / \`${prefix}symbols search <name>\` \u2014 Dynamic real-time symbol search on Yahoo Finance (e.g. \`${prefix}symbols tata\`, \`${prefix}symbols sbi\`, \`${prefix}symbols reliance\`, \`${prefix}symbols adani\`).\n\n` +
+                     `### 2. Universal Ticker Directory & Autonomous Symbol Search\n` +
+                     `> -# • \`${prefix}symbols\` / \`${prefix}symbollist\` \u2014 Interactive ticker directory with 1-click categories (Trending & New IPOs, Indian Equities, US Mega-Caps, Crypto, Commodities & Indices).\n` +
+                     `> -# • \`${prefix}symbols trending\` \u2014 Real-time newly discovered and active market tickers auto-indexed in SQLite.\n` +
+                     `> -# • \`${prefix}symbols <query>\` / \`${prefix}symbols search <name>\` \u2014 Dynamic real-time symbol search on Yahoo Finance (e.g. \`${prefix}symbols tata\`, \`${prefix}symbols sbi\`, \`${prefix}symbols reliance\`, \`${prefix}symbols adani\`, \`${prefix}symbols zomato\`).\n\n` +
                      `### 3. AI Financial Analyst & Reports\n` +
                      `> -# • \`${prefix}stockai <question or topic>\` \u2014 Ask Athena AI for detailed earnings breakdowns, macro trends, or financial concepts (e.g. \`${prefix}stockai why did tech drop today?\`, \`${prefix}stockai explain NVDA valuation\`).\n` +
                      `> -# • \`${prefix}stockexplain <symbol/topic>\` / \`${prefix}marketai\` \u2014 AI financial research aliases.\n\n` +
@@ -1326,20 +1327,26 @@ export function buildStockGuidancePayload(prefix = '!') {
               },
               {
                 type: 2,
+                custom_id: 'stk_cat_trending',
+                label: 'Trending & New',
+                style: 2
+              },
+              {
+                type: 2,
                 custom_id: 'stk_ref_overview',
-                label: 'View Global Market Pulse',
+                label: 'Global Market Pulse',
                 style: 2
               },
               {
                 type: 2,
                 custom_id: 'stk_movers',
-                label: 'View Top Movers',
+                label: 'Top Movers',
                 style: 2
               },
               {
                 type: 2,
                 custom_id: 'stk_crypto',
-                label: 'View Crypto Pulse',
+                label: 'Crypto Pulse',
                 style: 2
               }
             ]

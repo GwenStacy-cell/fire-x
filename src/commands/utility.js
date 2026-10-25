@@ -397,8 +397,8 @@ export const commands = [
                     `> • **Real Web Pictures:** Queries live net search engines to retrieve actual authentic pictures matching any topic (e.g. \`cat\`, \`worldmap\`, \`fog\`, \`mist\`, \`car\`, \`cm of tn\`, \`biden\`).\n` +
                     `> • **Multi-Page 70+ Pool & Fresh Batches:** Concurrently pools dozens of high-res pictures per search with automatic unblocked resolution.\n` +
                     `> • **Interactive Pagination:** Browse results with \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.\n` +
-                    `> • **Random Shuffle Button:** Click \`🎲 Random\` to discover unexpected high-res pictures.\n` +
-                    `> • **1-Click Fresh Batch Button:** Click \`🔄 Fresh Batch\` to fetch brand new pictures on demand.\n` +
+                    `> • **Random Shuffle Button:** Click \`[Random]\` to discover unexpected high-res pictures.\n` +
+                    `> • **1-Click Fresh Batch Button:** Click \`[Fresh Batch]\` to fetch brand new pictures on demand.\n` +
                     `> • **Direct Source Link:** 1-click button to view the original full-resolution image on the hosting website.\n` +
                     `> • **Fail-Safe Session Recovery:** Sessions never expire; Athena seamlessly re-queries in the background.\n` +
                     `> • **Conversational AI Integration:** You can also ask Athena in chat (e.g. \`@Athena picture of cat\` or \`${prefix}ask give me a picture of biden\`) and Athena will automatically fetch and provide the picture.\n\n` +
@@ -409,15 +409,19 @@ export const commands = [
                     `> • \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
                     `> • \`/image [query]\` - Slash command equivalent.`;
               } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
-                  descContent = `Real-time stock, ETF, and cryptocurrency telemetry with high-resolution Canvas charts and market intelligence.\n\n` +
+                  descContent = `Universal real-time stock, ETF, and cryptocurrency telemetry engine with terminal-grade Canvas charts, autonomous self-learning database, and market intelligence.\n\n` +
                     `> -# **__Features & Telemetry Pipeline:__**\n` +
                     `> • **Global Market Pulse Dashboard:** Run without arguments (\`${prefix}stock\` or \`${prefix}market\`) to generate a master 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) plus mega-caps ticker tape.\n` +
-                    `> • **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
-                    `> • **Interactive Controls:** 1-click buttons to refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
+                    `> • **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock TCS\`, \`${prefix}stock ZOMATO\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
+                    `> • **Universal Global Market Resolution:** Resolves any publicly traded asset worldwide without forcing exchange extensions (Indian NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, SWIGGY; US tech titans NVDA, AAPL, TSLA; crypto BTC, ETH, SOL; commodities GOLD, CRUDE; and global indices).\n` +
+                    `> • **Autonomous Self-Learning & Auto-Updating Registry:** Automatically detects, indexes, and edits any new stock, recent IPO, or corporate ticker renaming (e.g. Zomato -> ETERNAL.NS, Tata Motors -> TMCV.NS, FB -> META) and permanently caches it in SQLite.\n` +
+                    `> • **Dynamic Multi-Currency Auto-Formatting:** Dynamically detects and formats quotes with appropriate currency symbols (₹ for INR, $ for USD, € for EUR, £ for GBP, ¥ for JPY).\n` +
+                    `> • **Interactive Components V2 Controls:** 1-click buttons to browse Symbols Directory, refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
                     `> -# **__All Aliases & Directives:__**\n` +
                     `> • \`${prefix}stock [symbol]\` - Primary stock command.\n` +
-                    `> • \`${prefix}market\` / \`${prefix}stocks\` - Global market overview shortcuts.\n` +
-                    `> • \`${prefix}ticker <symbol>\` - Direct ticker lookup.\n` +
+                    `> • \`${prefix}market\` / \`${prefix}stocks\` / \`${prefix}stockmarket\` - Global market overview shortcuts.\n` +
+                    `> • \`${prefix}ticker <symbol>\` / \`${prefix}share <symbol>\` / \`${prefix}shares <symbol>\` - Direct ticker lookup.\n` +
+                    `> • \`${prefix}symbols [query]\` - Universal symbol directory & search.\n` +
                     `> • \`${prefix}stockai <query>\` - Ask Athena AI for detailed financial and earnings analysis.\n` +
                     `> • \`${prefix}movers\` - Real-time market gainers and decliners.\n` +
                     `> • \`${prefix}crypto [coin]\` - Dedicated cryptocurrency asset telemetry.\n` +
@@ -480,14 +484,17 @@ export const commands = [
               } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
                   descContent = `Universal symbol directory and real-time ticker resolution covering every publicly traded asset worldwide.\n\n` +
                     `> -# **__Features & Directory Categories:__**\n` +
-                    `> • **Global Coverage:** Instant resolution for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN), US mega-caps (NVDA, AAPL, TSLA), crypto (BTC, ETH, SOL), commodities (GOLD, CRUDE, SILVER), and indices (NIFTY, SENSEX, SP500, NASDAQ).\n` +
-                    `> • **Dynamic Search Engine:** Search by company name or ticker (\`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`) to retrieve verified exchange symbols and 1-click telemetry commands.\n` +
-                    `> • **Interactive Category Switcher:** Switch between India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
+                    `> • **Global Coverage:** Instant resolution for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, ETERNAL/ZOMATO, SWIGGY, HYUNDAI), US mega-caps (NVDA, AAPL, TSLA), crypto (BTC, ETH, SOL), commodities (GOLD, CRUDE, SILVER), and global indices (NIFTY, SENSEX, SP500, NASDAQ).\n` +
+                    `> • **Trending & Newly Discovered Tickers:** Dynamic live category displaying real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
+                    `> • **Dynamic Search Engine:** Search by company name or ticker (\`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Zomato\`, \`${prefix}symbols Palantir\`) to retrieve verified exchange symbols and 1-click telemetry commands.\n` +
+                    `> • **Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n` +
+                    `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n\n` +
                     `> -# **__All Aliases & Directives:__**\n` +
                     `> • \`${prefix}symbols\` - Open universal symbol directory.\n` +
+                    `> • \`${prefix}symbols trending\` / \`new\` / \`recent\` - View newly discovered and trending tickers.\n` +
                     `> • \`${prefix}symbols india\` / \`us\` / \`crypto\` / \`macro\` - Direct category view.\n` +
                     `> • \`${prefix}symbols <query>\` - Search matching symbols on global exchanges.\n` +
-                    `> • \`${prefix}symbollist\` / \`${prefix}tickers\` / \`${prefix}tickerlist\` / \`${prefix}stocksymbols\` - Command aliases.\n\n` +
+                    `> • \`${prefix}symbollist\` / \`${prefix}tickers\` / \`${prefix}tickerlist\` / \`${prefix}stocksymbols\` / \`${prefix}marketlist\` / \`${prefix}symlist\` - Command aliases.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
               } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
                   descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
@@ -803,8 +810,8 @@ export const commands = [
             `> • **Real Web Pictures:** Queries live net search engines to retrieve actual authentic pictures matching any topic (e.g. \`cat\`, \`worldmap\`, \`fog\`, \`mist\`, \`car\`, \`cm of tn\`, \`biden\`).\n` +
             `> • **Multi-Page 70+ Pool & Fresh Batches:** Concurrently pools dozens of high-res pictures per search with automatic unblocked resolution.\n` +
             `> • **Interactive Pagination:** Browse results with \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.\n` +
-            `> • **Random Shuffle Button:** Click \`🎲 Random\` to discover unexpected high-res pictures.\n` +
-            `> • **1-Click Fresh Batch Button:** Click \`🔄 Fresh Batch\` to fetch brand new pictures on demand.\n` +
+            `> • **Random Shuffle Button:** Click \`[Random]\` to discover unexpected high-res pictures.\n` +
+            `> • **1-Click Fresh Batch Button:** Click \`[Fresh Batch]\` to fetch brand new pictures on demand.\n` +
             `> • **Direct Source Link:** 1-click button to view the original full-resolution image on the hosting website.\n` +
             `> • **Fail-Safe Session Recovery:** Sessions never expire; Athena seamlessly re-queries in the background.\n` +
             `> • **Conversational AI Integration:** You can also ask Athena in chat (e.g. \`@Athena picture of cat\` or \`${prefix}ask give me a picture of biden\`) and Athena will automatically fetch and provide the picture.\n\n` +
@@ -815,15 +822,19 @@ export const commands = [
             `> • \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
             `> • \`/image [query]\` - Slash command equivalent.`;
         } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
-          descContent = `Real-time stock, ETF, and cryptocurrency telemetry with high-resolution Canvas charts and market intelligence.\n\n` +
+          descContent = `Universal real-time stock, ETF, and cryptocurrency telemetry engine with terminal-grade Canvas charts, autonomous self-learning database, and market intelligence.\n\n` +
             `> -# **__Features & Telemetry Pipeline:__**\n` +
             `> • **Global Market Pulse Dashboard:** Run without arguments (\`${prefix}stock\` or \`${prefix}market\`) to generate a master 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) plus mega-caps ticker tape.\n` +
-            `> • **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
-            `> • **Interactive Controls:** 1-click buttons to refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
+            `> • **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock TCS\`, \`${prefix}stock ZOMATO\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
+            `> • **Universal Global Market Resolution:** Resolves any publicly traded asset worldwide without forcing exchange extensions (Indian NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, SWIGGY; US tech titans NVDA, AAPL, TSLA; crypto BTC, ETH, SOL; commodities GOLD, CRUDE; and global indices).\n` +
+            `> • **Autonomous Self-Learning & Auto-Updating Registry:** Automatically detects, indexes, and edits any new stock, recent IPO, or corporate ticker renaming (e.g. Zomato -> ETERNAL.NS, Tata Motors -> TMCV.NS, FB -> META) and permanently caches it in SQLite.\n` +
+            `> • **Dynamic Multi-Currency Auto-Formatting:** Dynamically detects and formats quotes with appropriate currency symbols (₹ for INR, $ for USD, € for EUR, £ for GBP, ¥ for JPY).\n` +
+            `> • **Interactive Components V2 Controls:** 1-click buttons to browse Symbols Directory, refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
             `> -# **__All Aliases & Directives:__**\n` +
             `> • \`${prefix}stock [symbol]\` - Primary stock command.\n` +
-            `> • \`${prefix}market\` / \`${prefix}stocks\` - Global market overview shortcuts.\n` +
-            `> • \`${prefix}ticker <symbol>\` - Direct ticker lookup.\n` +
+            `> • \`${prefix}market\` / \`${prefix}stocks\` / \`${prefix}stockmarket\` - Global market overview shortcuts.\n` +
+            `> • \`${prefix}ticker <symbol>\` / \`${prefix}share <symbol>\` / \`${prefix}shares <symbol>\` - Direct ticker lookup.\n` +
+            `> • \`${prefix}symbols [query]\` - Universal symbol directory & search.\n` +
             `> • \`${prefix}stockai <query>\` - Ask Athena AI for detailed financial and earnings analysis.\n` +
             `> • \`${prefix}movers\` - Real-time market gainers and decliners.\n` +
             `> • \`${prefix}crypto [coin]\` - Dedicated cryptocurrency asset telemetry.\n` +
@@ -886,14 +897,17 @@ export const commands = [
         } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
           descContent = `Universal symbol directory and real-time ticker resolution covering every publicly traded asset worldwide.\n\n` +
             `> -# **__Features & Directory Categories:__**\n` +
-            `> • **Global Coverage:** Instant resolution for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN), US mega-caps (NVDA, AAPL, TSLA), crypto (BTC, ETH, SOL), commodities (GOLD, CRUDE, SILVER), and indices (NIFTY, SENSEX, SP500, NASDAQ).\n` +
-            `> • **Dynamic Search Engine:** Search by company name or ticker (\`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`) to retrieve verified exchange symbols and 1-click telemetry commands.\n` +
-            `> • **Interactive Category Switcher:** Switch between India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
+            `> • **Global Coverage:** Instant resolution for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, ETERNAL/ZOMATO, SWIGGY, HYUNDAI), US mega-caps (NVDA, AAPL, TSLA), crypto (BTC, ETH, SOL), commodities (GOLD, CRUDE, SILVER), and global indices (NIFTY, SENSEX, SP500, NASDAQ).\n` +
+            `> • **Trending & Newly Discovered Tickers:** Dynamic live category displaying real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
+            `> • **Dynamic Search Engine:** Search by company name or ticker (\`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Zomato\`, \`${prefix}symbols Palantir\`) to retrieve verified exchange symbols and 1-click telemetry commands.\n` +
+            `> • **Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n` +
+            `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n\n` +
             `> -# **__All Aliases & Directives:__**\n` +
             `> • \`${prefix}symbols\` - Open universal symbol directory.\n` +
+            `> • \`${prefix}symbols trending\` / \`new\` / \`recent\` - View newly discovered and trending tickers.\n` +
             `> • \`${prefix}symbols india\` / \`us\` / \`crypto\` / \`macro\` - Direct category view.\n` +
             `> • \`${prefix}symbols <query>\` - Search matching symbols on global exchanges.\n` +
-            `> • \`${prefix}symbollist\` / \`${prefix}tickers\` / \`${prefix}tickerlist\` / \`${prefix}stocksymbols\` - Command aliases.\n\n` +
+            `> • \`${prefix}symbollist\` / \`${prefix}tickers\` / \`${prefix}tickerlist\` / \`${prefix}stocksymbols\` / \`${prefix}marketlist\` / \`${prefix}symlist\` - Command aliases.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
         } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
           descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
@@ -2223,7 +2237,9 @@ export const helpModules = [
     "`!profile / !card [@user]` - Official God of War canvas profile card `[Public]`",
     "",
     "-# **__Stock Market Intelligence & Telemetry Engine:__**",
-    "-# • **Universal Ticker Resolution:** Resolves every publicly traded asset globally (Indian equities on NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN; US tech titans NVDA, AAPL, TSLA; crypto; commodities; indices).",
+    "-# • **Universal Ticker Resolution:** Resolves every publicly traded asset globally (Indian equities on NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, ETERNAL, SWIGGY; US tech titans NVDA, AAPL, TSLA; crypto; commodities; indices).",
+    "-# • **Autonomous Self-Learning & Auto-Updating Registry:** Automatically detects, indexes, and edits any new stock, recent IPO, or corporate ticker renaming (e.g. Zomato -> ETERNAL.NS, Tata Motors -> TMCV.NS, FB -> META) and permanently caches it in SQLite.",
+    "-# • **Trending & Newly Discovered Tickers Directory:** Interactive tab (`!symbols trending`) tracking real-time newly listed IPOs, active movers, and corporate ticker migrations auto-discovered and indexed by Athena.",
     "-# • **High-Resolution Canvas Cards:** Generates terminal-grade Canvas images with smooth Bezier price curves, day range sliders, 52-week range sliders, volume, and sentiment gauges.",
     "-# • **Global Market Pulse Dashboard:** Generates a 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) + mega-caps ticker tape.",
     "-# • **Automated Daily Channel Broadcast:** Configurable morning broadcast (`!stockchannel set <#channel>`) that automatically generates and uploads the daily market briefing at US Market Open (09:30 AM EST).",
@@ -2236,7 +2252,7 @@ export const helpModules = [
     "",
     "-# **__Live Web Visual Intelligence Engine:__**",
     "-# • **Authentic Web Media:** Queries live internet image databases to retrieve real high-resolution photographs for any query (e.g. cat, worldmap, car, biden, cm of tn).",
-    "-# • **Multi-Page 70+ Pool & Fresh Batches:** Browse high-res photos with `◀ Previous`, `Next ▶`, `🎲 Random`, and `🔄 Fresh Batch` buttons.",
+    "-# • **Multi-Page 70+ Pool & Fresh Batches:** Browse high-res photos with `◀ Previous`, `Next ▶`, `[Random]`, and `[Fresh Batch]` buttons.",
     "-# • **Direct Source Links:** Instant button link to the original high-resolution photo on the host website.",
     "-# • **Conversational AI Trigger:** Ask Athena naturally in chat (`@Athena picture of cat` or `!ask give me a picture of biden`) and Athena will automatically retrieve and display the picture.",
     "",
@@ -2314,7 +2330,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
       let topText = `# Hey !!! , I am <@${botId}> ,\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Welcome to Athena Prime A bot which is made for unbypassable security features and community management! View down and see our srv management modules listed below:**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **To set Custom Prefix use <@${botId}> \`${prefix}prefix " your custom prefix "\`**\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **New: Intelligently-Syncable Cyber HUD Animated GIF Banners across commands, plus AI Celebrity Voice Studio (\`${prefix}tts\`)!**\n\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Hint: For a detailed guide and instruction on any specific command, type \`${prefix}help <command>\` !**`;
 
       rawComponents.push({ type: 10, content: topText });

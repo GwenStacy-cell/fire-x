@@ -2161,7 +2161,7 @@ export const DETAILED_COMMANDS = {
   - Dynamic index shuffling prevents repetitive result sequences across consecutive searches.
 • **Interactive Browsing & Fail-Safe Pagination:**
   - Browse results using \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.
-  - \`🎲 Random\` button for rapid discovery and \`🔄 Fresh Batch\` button to pull brand new pictures on demand.
+  - \`[Random]\` button for rapid discovery and \`[Fresh Batch]\` button to pull brand new pictures on demand.
   - Auto-recovering session manager ensures interactive buttons remain fully responsive even if sessions age.
 • **Direct Source Inspection:**
   - Every picture result includes an external web button linking directly to the full-resolution asset on the host domain.
@@ -2176,18 +2176,23 @@ export const DETAILED_COMMANDS = {
     category: 'Finance & Utility',
     clearance: '@everyone (Standard User)',
     syntax: '!stock [symbol] (or !market, !stocks, !ticker <symbol>, /stock [symbol])',
-    purpose: 'Generates real-time stock, ETF, and cryptocurrency telemetry in a high-resolution Canvas image with financial breakdown and market intelligence.',
+    purpose: 'Universal stock, ETF, and cryptocurrency telemetry engine with terminal-grade Canvas charts, autonomous self-learning database, and market intelligence.',
     architecture:
 `• **Dual-Mode Telemetry Rendering:**
   - **Global Market Overview Mode (!stock / !market):** Renders a master 6-index telemetry dashboard (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) with individual mini sparklines plus mega-caps ticker tape.
   - **Single Stock Telemetry Mode (!stock <symbol>):** Renders a widescreen Canvas terminal card with smooth Bezier price curve, day range slider, 52-week range slider, 24h volume, and sentiment gauge.
-• **Exchange API Aggregation:**
-  - Connects to real-time financial market streams to query quotes, price changes, high/low bounds, and intraday trading volumes.
-  - Automatic company name resolution (e.g. typing "apple" resolves to AAPL).
+• **4-Tier Autonomous Self-Learning Resolver:**
+  - **Tier 1 (Persistent DB):** O(1) instant resolution for previously queried or indexed tickers in SQLite.
+  - **Tier 2 (Candidate Suffixes):** Probes global exchange suffixes (.NS, .BO, -USD, -USDT, =F, =X, .L, .TO, .DE, .T, .HK, .AX).
+  - **Tier 3 (Live Yahoo Search):** Real-time multi-market search indexing 100,000+ global assets.
+  - **Tier 4 (Neural AI Rebrand Dissector):** Autonomously deciphers corporate restructurings, ticker migrations (e.g. Zomato -> ETERNAL.NS, Tata Motors -> TMCV.NS, FB -> META), and day-1 IPOs.
+• **Dynamic Multi-Currency Auto-Formatting:**
+  - Auto-formats all financial outputs with proper currency symbols (₹ for INR, $ for USD, € for EUR, £ for GBP, ¥ for JPY).
 • **Interactive Discord Components V2 Controls:**
-  - 1-click \`🔄 Refresh\` button to update quotes in place.
-  - 1-click \`📊 AI Breakdown\` button for instant technical and fundamental analysis.
-  - 1-click \`📰 News\` button for live financial catalysts and headlines.
+  - 1-click \`Symbols Directory\` button to browse categories and search tickers.
+  - 1-click \`Refresh\` button to update quotes and charts in place.
+  - 1-click \`AI Breakdown\` button for instant technical and fundamental analysis.
+  - 1-click \`News\` button for live financial catalysts and verified press links.
 • **Mandatory Risk Transparency Notice:**
   - Prominently states on every image and embed that Athena can make mistakes, quotes may be delayed, and insights do not constitute financial advice.`,
     example: '!stock NVDA'
@@ -2290,17 +2295,21 @@ export const DETAILED_COMMANDS = {
     category: 'Finance & Utility',
     clearance: '@everyone (Standard User)',
     syntax: '!symbols [query/category] (or /symbols [query])',
-    purpose: 'Universal symbol directory and real-time ticker resolution covering every publicly traded asset worldwide.',
+    purpose: 'Universal symbol directory, autonomous ticker registry, and real-time search covering every publicly traded asset worldwide.',
     architecture:
 `• **Universal Asset Resolution:**
-  - Full support for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, ITC, HDFCBANK), US tech titans (NVDA, AAPL, MSFT, TSLA, GOOGL), crypto (BTC, ETH, SOL), commodities (GOLD, SILVER, CRUDE, NATGAS), and global indices (NIFTY, SENSEX, SP500, NASDAQ).
+  - Full support for Indian equities (NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, ETERNAL/ZOMATO, SWIGGY, HYUNDAI), US tech titans (NVDA, AAPL, MSFT, TSLA, GOOGL), crypto (BTC, ETH, SOL), commodities (GOLD, SILVER, CRUDE, NATGAS), and global indices (NIFTY, SENSEX, SP500, NASDAQ).
+• **Trending & Newly Discovered Tickers Directory:**
+  - Dedicated interactive tab (\`!symbols trending\`) tracking real-time newly listed IPOs, active market movers, and corporate ticker migrations auto-discovered and indexed in SQLite.
 • **Real-Time Dynamic Symbol Search:**
-  - Queries global financial search APIs in real-time to find exact symbols, exchange codes, and asset classes from company names or keywords (e.g. \`!symbols Tata\`, \`!symbols Adani\`, \`!symbols Palantir\`).
+  - Queries global financial search engines in real time to find exact symbols, exchange codes, and asset classes from company names or keywords (e.g. \`!symbols Tata\`, \`!symbols Adani\`, \`!symbols Palantir\`, \`!symbols Swiggy\`).
+• **Autonomous Background Synchronizer:**
+  - Proactively queries trending exchange feeds across India and US markets every 2 hours, automatically updating the dynamic database without requiring bot restarts.
 • **Interactive Categorized Directory:**
-  - Interactive Component V2 buttons allow 1-click browsing across India (NSE/BSE), US Tech & AI, Cryptocurrencies, and Commodities/Macro.
+  - Interactive Component V2 buttons allow 1-click tab switching across Overview, Trending & New, India (NSE/BSE), US Tech & AI, Cryptocurrencies, and Commodities/Macro.
 • **Risk Disclaimer:**
   - Reminds users that Athena can make mistakes and quotes are for educational/informational purposes only.`,
-    example: '!symbols TCS'
+    example: '!symbols trending'
   },
 
   afk: {
