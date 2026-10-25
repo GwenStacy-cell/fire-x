@@ -10,6 +10,7 @@ import {
   buildStockPayload, 
   buildMarketOverviewPayload,
   buildStockGuidancePayload,
+  getFormattedDateTimeStrings,
   DISCLAIMER_TEXT 
 } from '../utils/stockMarket.js';
 import { generateAIResponse, formatAIToGreyMarkdown } from '../utils/ai.js';
@@ -69,6 +70,7 @@ export const commands = [
           return await loadingMsg.edit(payload);
         }
       } catch (err) {
+        const dt = getFormattedDateTimeStrings();
         return await loadingMsg.edit({
           components: [
             {
@@ -77,6 +79,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Financial Reconnaissance Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Telemetry Fault:** ${err.message || 'Unable to resolve market data.'}\n` +
                            `> -# • **Try:** \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock BTC\`, or \`${prefix}market\` for global overview.\n` +
                            `> -# • **All Features Guide:** Type \`${prefix}stock help\` for complete commands guidance.\n\n` +
@@ -112,6 +115,7 @@ export const commands = [
           return await interaction.editReply(payload);
         }
       } catch (err) {
+        const dt = getFormattedDateTimeStrings();
         return await interaction.editReply({
           components: [
             {
@@ -120,6 +124,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Financial Reconnaissance Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Telemetry Fault:** ${err.message || 'Unable to resolve market data.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
@@ -149,6 +154,7 @@ export const commands = [
     async executePrefix(message, args) {
       const query = args.join(' ').trim();
       if (!query) {
+        const dt = getFormattedDateTimeStrings();
         return message.reply({
           components: [
             {
@@ -157,6 +163,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Athena Stock AI Guidance | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Usage:** \`!stockai <question / topic / symbol>\`\n` +
                            `> -# • **Examples:** \`!stockai why did tech drop today?\`, \`!stockai explain NVDA earnings\`, \`!stockai what is market cap?\`\n` +
                            `> -# • **All Aliases:** \`!stockai\`, \`!stockexplain\`, \`!marketai\`, \`!stai\`\n\n` +
@@ -220,6 +227,7 @@ export const commands = [
         });
 
         const formatted = formatAIToGreyMarkdown(aiResponse);
+        const dt = getFormattedDateTimeStrings();
 
         return await loadingMsg.edit({
           components: [
@@ -229,6 +237,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Financial Intelligence Analysis | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Inquiry:** \`${query}\`\n\n` +
                            formatted + `\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
@@ -244,6 +253,7 @@ export const commands = [
           flags: MessageFlags.IsComponentsV2
         });
       } catch (err) {
+        const dt = getFormattedDateTimeStrings();
         return await loadingMsg.edit({
           components: [
             {
@@ -252,6 +262,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Financial AI Generation Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to generate analysis.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
@@ -298,6 +309,7 @@ export const commands = [
 
         const gainersList = gainers.map(g => `> -# • **${g.symbol || g.label}:** \`$${g.price.toFixed(2)}\` (\`+${g.changePct.toFixed(2)}%\`)`).join('\n') || '> -# • No major positive movers recorded.';
         const declinersList = decliners.map(d => `> -# • **${d.symbol || d.label}:** \`$${d.price.toFixed(2)}\` (\`${d.changePct.toFixed(2)}%\`)`).join('\n') || '> -# • No major negative decliners recorded.';
+        const dt = getFormattedDateTimeStrings();
 
         return await loadingMsg.edit({
           components: [
@@ -306,7 +318,8 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Market Movers Telemetry | <a:atheNATICK:1557841381630681106>\n\n` +
+                  content: `## Market Movers Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                            `### Top Gainers & Momentum Leaders\n` +
                            gainersList + `\n\n` +
                            `### Top Decliners & Downward Volatility\n` +
@@ -328,22 +341,19 @@ export const commands = [
                       type: 2,
                       custom_id: 'stk_ref_overview',
                       label: 'Global Pulse',
-                      style: 2,
-                      emoji: { name: '🌐' }
+                      style: 2
                     },
                     {
                       type: 2,
                       custom_id: 'stk_crypto',
                       label: 'Crypto Pulse',
-                      style: 2,
-                      emoji: { name: '🪙' }
+                      style: 2
                     },
                     {
                       type: 2,
                       custom_id: 'stk_help',
                       label: 'All Cmds Guide',
-                      style: 2,
-                      emoji: { name: '🧭' }
+                      style: 2
                     }
                   ]
                 },
@@ -358,6 +368,7 @@ export const commands = [
           flags: MessageFlags.IsComponentsV2
         });
       } catch (err) {
+        const dt = getFormattedDateTimeStrings();
         return await loadingMsg.edit({
           components: [
             {
@@ -366,6 +377,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Market Movers Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
@@ -418,6 +430,7 @@ export const commands = [
         const payload = buildStockPayload(stockData, imageBuffer, prefix);
         return await loadingMsg.edit(payload);
       } catch (err) {
+        const dt = getFormattedDateTimeStrings();
         return await loadingMsg.edit({
           components: [
             {
@@ -426,6 +439,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Crypto Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Crypto coin not found.'}\n` +
                            `> -# • **Try:** \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`, \`${prefix}crypto DOGE\`\n` +
                            `> -# • **All Features Guide:** Type \`${prefix}stock help\` for complete commands guidance.\n\n` +
@@ -471,6 +485,7 @@ export const commands = [
       });
 
       try {
+        const dt = getFormattedDateTimeStrings();
         const newsItems = await fetchStockNews(query);
         if (!newsItems.length) {
           return await loadingMsg.edit({
@@ -481,6 +496,7 @@ export const commands = [
                   {
                     type: 10,
                     content: `## No Headlines Found | <a:atheNATICK:1557841381630681106>\n` +
+                             `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> No recent articles found for \`${query}\`.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                   }
@@ -504,6 +520,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Live Financial News Wire | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Subject:** \`${query}\`\n\n` +
                            headlines + `\n\n` +
                            `### Supporting Commands Guidance\n` +
@@ -523,29 +540,25 @@ export const commands = [
                       type: 2,
                       custom_id: 'stk_ref_overview',
                       label: 'Global Pulse',
-                      style: 2,
-                      emoji: { name: '🌐' }
+                      style: 2
                     },
                     {
                       type: 2,
                       custom_id: 'stk_movers',
                       label: 'Market Movers',
-                      style: 2,
-                      emoji: { name: '🔥' }
+                      style: 2
                     },
                     {
                       type: 2,
                       custom_id: 'stk_crypto',
                       label: 'Crypto Pulse',
-                      style: 2,
-                      emoji: { name: '🪙' }
+                      style: 2
                     },
                     {
                       type: 2,
                       custom_id: 'stk_help',
                       label: 'All Cmds Guide',
-                      style: 2,
-                      emoji: { name: '🧭' }
+                      style: 2
                     }
                   ]
                 },
@@ -560,6 +573,7 @@ export const commands = [
           flags: MessageFlags.IsComponentsV2
         });
       } catch (err) {
+        const dt = getFormattedDateTimeStrings();
         return await loadingMsg.edit({
           components: [
             {
@@ -568,6 +582,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## News Retrieval Error | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
@@ -595,6 +610,7 @@ export const commands = [
       if (!sub || sub === 'help') {
         const boundChannelId = db.getStockChannel(message.guild.id);
         const boundChannelText = boundChannelId ? `<#${boundChannelId}> (\`${boundChannelId}\`)` : '`None (Disabled)`';
+        const dt = getFormattedDateTimeStrings();
 
         return message.reply({
           components: [
@@ -604,6 +620,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Daily Stock Market Broadcaster Control | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Current Channel:** ${boundChannelText}\n` +
                            `> -# • **Scheduled Time:** \`09:30 AM EST (14:30 UTC)\` \u2014 Every day at US Market Open.\n\n` +
                            `### Available Directives\n` +
@@ -629,6 +646,7 @@ export const commands = [
         const channelMention = message.mentions.channels.first();
         const rawId = args[1]?.replace(/[<#>]/g, '');
         const targetChannel = channelMention || (rawId ? message.guild.channels.cache.get(rawId) || await message.guild.channels.fetch(rawId).catch(() => null) : null);
+        const dt = getFormattedDateTimeStrings();
 
         if (!targetChannel) {
           return message.reply({
@@ -639,6 +657,7 @@ export const commands = [
                   {
                     type: 10,
                     content: `## Invalid Channel Specified | <a:atheNATICK:1557841381630681106>\n` +
+                             `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> **Usage:** \`${prefix}stockchannel set <#channel>\` or \`${prefix}stockchannel set <channel_id>\`\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                   }
@@ -660,6 +679,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Daily Stock Channel Configured | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Bound Channel:** <#${targetChannel.id}> (\`${targetChannel.id}\`)\n` +
                            `> -# • **Schedule:** Athena will automatically generate and upload the high-resolution World Market Pulse dashboard image and briefing here every day at **09:30 AM EST (14:30 UTC)**.\n` +
                            `> -# • **Instant Test:** Type \`${prefix}stockchannel test\` to verify delivery right now.\n\n` +
@@ -674,6 +694,7 @@ export const commands = [
 
       if (sub === 'disable' || sub === 'off') {
         db.setStockChannel(message.guild.id, null);
+        const dt = getFormattedDateTimeStrings();
         return message.reply({
           components: [
             {
@@ -682,6 +703,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Daily Stock Broadcaster Disarmed | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> Daily stock market upload has been disabled for this server.\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
@@ -694,6 +716,7 @@ export const commands = [
 
       if (sub === 'test') {
         const boundChannelId = db.getStockChannel(message.guild.id);
+        const dt = getFormattedDateTimeStrings();
         if (!boundChannelId) {
           return message.reply({
             components: [
@@ -703,6 +726,7 @@ export const commands = [
                   {
                     type: 10,
                     content: `## No Stock Channel Configured | <a:atheNATICK:1557841381630681106>\n` +
+                             `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Please set a channel first via \`${prefix}stockchannel set <#channel>\`.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                   }
@@ -723,6 +747,7 @@ export const commands = [
                   {
                     type: 10,
                     content: `## Target Channel Not Found | <a:atheNATICK:1557841381630681106>\n` +
+                             `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Channel ID \`${boundChannelId}\` could not be resolved. Please re-bind via \`${prefix}stockchannel set <#channel>\`.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                   }
@@ -758,6 +783,7 @@ export const commands = [
                   {
                     type: 10,
                     content: `## Daily Stock Briefing Dispatched | <a:atheNATICK:1557841381630681106>\n` +
+                             `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Daily stock market intelligence image and report successfully delivered to <#${channel.id}>.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                   }
@@ -775,6 +801,7 @@ export const commands = [
                   {
                     type: 10,
                     content: `## Daily Stock Dispatch Failed | <a:atheNATICK:1557841381630681106>\n` +
+                             `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Could not post to <#${channel.id}>. Please verify bot permissions in that channel.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                   }
@@ -789,6 +816,7 @@ export const commands = [
       if (sub === 'status') {
         const boundChannelId = db.getStockChannel(message.guild.id);
         const boundChannelText = boundChannelId ? `<#${boundChannelId}> (\`${boundChannelId}\`)` : '`None (Disabled)`';
+        const dt = getFormattedDateTimeStrings();
 
         return message.reply({
           components: [
@@ -798,6 +826,7 @@ export const commands = [
                 {
                   type: 10,
                   content: `## Stock Channel Status | <a:atheNATICK:1557841381630681106>\n` +
+                           `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Bound Channel:** ${boundChannelText}\n` +
                            `> -# • **Active Schedule:** \`09:30 AM EST (14:30 UTC)\` daily.\n` +
                            `> -# • **Last Sent Date:** \`${config.lastDailyStockSentDate || 'Never'}\`\n\n` +
@@ -869,6 +898,7 @@ export async function handleStockButton(interaction) {
       });
 
       const formatted = formatAIToGreyMarkdown(aiResponse);
+      const dt = getFormattedDateTimeStrings();
 
       return await interaction.editReply({
         components: [
@@ -877,7 +907,8 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## ${stockData.name} (${stockData.symbol}) AI Analysis | <a:atheNATICK:1557841381630681106>\n\n` +
+                content: `## ${stockData.name} (${stockData.symbol}) AI Analysis | <a:atheNATICK:1557841381630681106>\n` +
+                         `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          formatted + `\n\n` +
                          `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
               }
@@ -895,6 +926,7 @@ export async function handleStockButton(interaction) {
     const symbol = customId.replace('stk_news_', '');
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     try {
+      const dt = getFormattedDateTimeStrings();
       const newsItems = await fetchStockNews(symbol);
       if (!newsItems.length) {
         return await interaction.editReply({ content: `No recent news articles found for ${symbol}.` });
@@ -912,7 +944,8 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## ${symbol} Financial News Wire | <a:atheNATICK:1557841381630681106>\n\n` +
+                content: `## ${symbol} Financial News Wire | <a:atheNATICK:1557841381630681106>\n` +
+                         `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          headlines + `\n\n` +
                          `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
               }
@@ -929,6 +962,7 @@ export async function handleStockButton(interaction) {
   if (customId === 'stk_movers') {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     try {
+      const dt = getFormattedDateTimeStrings();
       const overview = await fetchMarketOverview();
       const allAssets = [...overview.indices, ...overview.tickers].filter(a => a.price > 0);
       allAssets.sort((a, b) => b.changePct - a.changePct);
@@ -946,7 +980,8 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Market Movers Telemetry | <a:atheNATICK:1557841381630681106>\n\n` +
+                content: `## Market Movers Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+                         `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          `### Top Gainers & Momentum Leaders\n` +
                          gainersList + `\n\n` +
                          `### Top Decliners & Downward Volatility\n` +
@@ -966,6 +1001,7 @@ export async function handleStockButton(interaction) {
   if (customId === 'stk_crypto') {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     try {
+      const dt = getFormattedDateTimeStrings();
       const btc = await fetchStockData('BTC-USD');
       const eth = await fetchStockData('ETH-USD');
       const sol = await fetchStockData('SOL-USD');
@@ -977,7 +1013,8 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Crypto Asset Telemetry | <a:atheNATICK:1557841381630681106>\n\n` +
+                content: `## Crypto Asset Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+                         `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          `> -# • **Bitcoin (BTC):** \`$${btc.price.toLocaleString()}\` (${btc.change >= 0 ? '+' : ''}${btc.changePct.toFixed(2)}%)\n` +
                          `> -# • **Ethereum (ETH):** \`$${eth.price.toLocaleString()}\` (${eth.change >= 0 ? '+' : ''}${eth.changePct.toFixed(2)}%)\n` +
                          `> -# • **Solana (SOL):** \`$${sol.price.toLocaleString()}\` (${sol.change >= 0 ? '+' : ''}${sol.changePct.toFixed(2)}%)\n\n` +

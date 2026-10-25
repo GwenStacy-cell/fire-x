@@ -1,5 +1,5 @@
 import path from 'path';
-import { AttachmentBuilder } from 'discord.js';
+import { AttachmentBuilder, MessageFlags } from 'discord.js';
 import { createCanvas, registerFont } from './canvas.js';
 import cv2 from '../cv2.js';
 
@@ -11,6 +11,32 @@ try {
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36';
 
 export const DISCLAIMER_TEXT = 'Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data and consult certified financial professionals before investing.';
+
+/**
+ * Generates coordinated human-readable and Discord dynamic timestamps (IST and UTC)
+ */
+export function getFormattedDateTimeStrings(date = new Date()) {
+  const nowSec = Math.floor(date.getTime() / 1000);
+  const istStr = date.toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: true
+  }) + ' IST';
+  const utcStr = date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+  return {
+    nowSec,
+    istStr,
+    utcStr,
+    discordTimestamp: `<t:${nowSec}:F> (<t:${nowSec}:R>)`,
+    textBadge: `<t:${nowSec}:F> (<t:${nowSec}:R>) \u2022 \`${istStr}\` (\`${utcStr}\`)`,
+    canvasBadge: `DATE & TIME: ${istStr} | ${utcStr}`
+  };
+}
 
 /**
  * Searches Yahoo Finance for a company name or ticker query
@@ -194,25 +220,35 @@ export function renderSingleStockCard(stock) {
   // 3. Top Header Bar
   ctx.font = 'bold 13px Roboto, sans-serif';
   ctx.fillStyle = '#64748b';
-  ctx.fillText('ATHENA PRIME // FINANCIAL RECONNAISSANCE SYSTEM', 45, 52);
+  ctx.fillText('ATHENA PRIME // FINANCIAL RECONNAISSANCE SYSTEM', 45, 45);
 
-  ctx.beginPath();
-  ctx.arc(W - 240, 48, 5, 0, Math.PI * 2);
-  ctx.fillStyle = primaryColor;
-  ctx.fill();
+  const dt = getFormattedDateTimeStrings();
 
   ctx.font = 'bold 12px Roboto, sans-serif';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('LIVE MARKET TELEMETRY', W - 225, 52);
+  const liveW = ctx.measureText('LIVE MARKET TELEMETRY').width;
+  ctx.fillText('LIVE MARKET TELEMETRY', W - 45 - liveW, 42);
 
-  const now = new Date();
-  const dateStr = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
-  ctx.font = '11px Roboto, sans-serif';
-  ctx.fillStyle = '#475569';
-  ctx.fillText(dateStr, W - 180, 70);
+  ctx.beginPath();
+  ctx.arc(W - 45 - liveW - 10, 38, 4, 0, Math.PI * 2);
+  ctx.fillStyle = primaryColor;
+  ctx.fill();
+
+  // Prominent Date & Time Badge
+  ctx.font = 'bold 11px Roboto, sans-serif';
+  const dtW = ctx.measureText(dt.canvasBadge).width;
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+  ctx.roundRect ? ctx.roundRect(W - 45 - dtW - 16, 52, dtW + 16, 22, 4) : ctx.fillRect(W - 45 - dtW - 16, 52, dtW + 16, 22);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillText(dt.canvasBadge, W - 45 - dtW - 8, 67);
 
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-  ctx.beginPath(); ctx.moveTo(40, 80); ctx.lineTo(W - 40, 80); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(40, 82); ctx.lineTo(W - 40, 82); ctx.stroke();
 
   // 4. Stock Identity & Large Price
   ctx.font = 'bold 44px Roboto, sans-serif';
@@ -521,25 +557,35 @@ export function renderMarketOverviewCard(overview) {
   // Header
   ctx.font = 'bold 13px Roboto, sans-serif';
   ctx.fillStyle = '#64748b';
-  ctx.fillText('ATHENA PRIME // GLOBAL FINANCIAL INTELLIGENCE DASHBOARD', 45, 50);
+  ctx.fillText('ATHENA PRIME // GLOBAL FINANCIAL INTELLIGENCE DASHBOARD', 45, 45);
 
-  ctx.beginPath();
-  ctx.arc(W - 220, 46, 5, 0, Math.PI * 2);
-  ctx.fillStyle = '#38bdf8';
-  ctx.fill();
+  const dt = getFormattedDateTimeStrings();
 
   ctx.font = 'bold 12px Roboto, sans-serif';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText('WORLD MARKET PULSE', W - 205, 50);
+  const pulseW = ctx.measureText('WORLD MARKET PULSE').width;
+  ctx.fillText('WORLD MARKET PULSE', W - 45 - pulseW, 42);
 
-  const now = new Date();
-  const dateStr = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
-  ctx.font = '11px Roboto, sans-serif';
-  ctx.fillStyle = '#475569';
-  ctx.fillText(dateStr, W - 170, 68);
+  ctx.beginPath();
+  ctx.arc(W - 45 - pulseW - 10, 38, 4, 0, Math.PI * 2);
+  ctx.fillStyle = '#38bdf8';
+  ctx.fill();
+
+  // Prominent Date & Time Badge
+  ctx.font = 'bold 11px Roboto, sans-serif';
+  const dtW = ctx.measureText(dt.canvasBadge).width;
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+  ctx.roundRect ? ctx.roundRect(W - 45 - dtW - 16, 52, dtW + 16, 22, 4) : ctx.fillRect(W - 45 - dtW - 16, 52, dtW + 16, 22);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillText(dt.canvasBadge, W - 45 - dtW - 8, 67);
 
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
-  ctx.beginPath(); ctx.moveTo(40, 78); ctx.lineTo(W - 40, 78); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(40, 82); ctx.lineTo(W - 40, 82); ctx.stroke();
 
   // 6 Index Cards in 3 Columns x 2 Rows
   const startX = 45;
@@ -705,12 +751,19 @@ export function renderMarketOverviewCard(overview) {
 export function buildStockPayload(stock, imageBuffer, prefix = '!') {
   const isUp = stock.change >= 0;
   const sign = isUp ? '+' : '';
-  const attachment = new AttachmentBuilder(imageBuffer, { name: `stock_${stock.symbol.toLowerCase()}.png` });
+  const filename = `stock_${stock.symbol.toLowerCase().replace(/[^a-z0-9]/g, '_')}.png`;
+  const attachment = new AttachmentBuilder(imageBuffer, { name: filename });
+  const dt = getFormattedDateTimeStrings();
 
   const components = [
     {
+      type: 12,
+      items: [{ media: { url: `attachment://${filename}` } }]
+    },
+    {
       type: 10,
       content: `## ${stock.name} (${stock.symbol}) Stock Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+               `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                `> -# <a:uptime:1552608831060844575> **Current Price:** \`$${stock.price.toFixed(2)} ${stock.currency}\` (\`${sign}${stock.change.toFixed(2)}\` | \`${sign}${stock.changePct.toFixed(2)}%\`)\n` +
                `> -# • **Day Session Range:** \`$${stock.dayLow.toFixed(2)}\` \u2014 \`$${stock.dayHigh.toFixed(2)}\`\n` +
                `> -# • **52-Week Range:** \`$${stock.fiftyTwoWeekLow.toFixed(2)}\` \u2014 \`$${stock.fiftyTwoWeekHigh.toFixed(2)}\`\n` +
@@ -737,22 +790,19 @@ export function buildStockPayload(stock, imageBuffer, prefix = '!') {
           type: 2,
           custom_id: `stk_ref_${stock.symbol}`,
           label: 'Refresh Quotes',
-          style: 2,
-          emoji: { name: '🔄' }
+          style: 2
         },
         {
           type: 2,
           custom_id: `stk_ai_${stock.symbol}`,
           label: 'AI Market Analysis',
-          style: 2,
-          emoji: { name: '📊' }
+          style: 2
         },
         {
           type: 2,
           custom_id: `stk_news_${stock.symbol}`,
           label: 'Latest News',
-          style: 2,
-          emoji: { name: '📰' }
+          style: 2
         },
         {
           type: 2,
@@ -769,29 +819,25 @@ export function buildStockPayload(stock, imageBuffer, prefix = '!') {
           type: 2,
           custom_id: 'stk_ref_overview',
           label: 'Global Pulse',
-          style: 2,
-          emoji: { name: '🌐' }
+          style: 2
         },
         {
           type: 2,
           custom_id: 'stk_movers',
           label: 'Market Movers',
-          style: 2,
-          emoji: { name: '🔥' }
+          style: 2
         },
         {
           type: 2,
           custom_id: 'stk_crypto',
           label: 'Crypto Pulse',
-          style: 2,
-          emoji: { name: '🪙' }
+          style: 2
         },
         {
           type: 2,
           custom_id: 'stk_help',
           label: 'All Cmds Guide',
-          style: 2,
-          emoji: { name: '🧭' }
+          style: 2
         }
       ]
     },
@@ -812,7 +858,8 @@ export function buildStockPayload(stock, imageBuffer, prefix = '!') {
         components
       }
     ],
-    files: [attachment]
+    files: [attachment],
+    flags: MessageFlags.IsComponentsV2
   };
 }
 
@@ -820,7 +867,9 @@ export function buildStockPayload(stock, imageBuffer, prefix = '!') {
  * Builds Components V2 Discord payload for Global Market Overview or Daily Briefing
  */
 export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = false, prefix = '!') {
-  const attachment = new AttachmentBuilder(imageBuffer, { name: 'market_overview.png' });
+  const filename = 'market_overview.png';
+  const attachment = new AttachmentBuilder(imageBuffer, { name: filename });
+  const dt = getFormattedDateTimeStrings();
 
   const heading = isDaily 
     ? `## Athena Prime Daily Stock Market Briefing | <a:atheNATICK:1557841381630681106>` 
@@ -837,8 +886,13 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
 
   const components = [
     {
+      type: 12,
+      items: [{ media: { url: `attachment://${filename}` } }]
+    },
+    {
       type: 10,
       content: `${heading}\n` +
+               `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                `> -# <a:uptime:1552608831060844575> **Global Market Regime:** \`${bias}\` across 6 major indices.\n` +
                `> -# • **Key Indices:** ${indicesSummary}\n` +
                `> -# • **Tech Mega-Caps:** \`NVDA\` (${overview.tickers[0]?.changePct >= 0 ? '+' : ''}${overview.tickers[0]?.changePct?.toFixed(1)}%), \`AAPL\` (${overview.tickers[1]?.changePct >= 0 ? '+' : ''}${overview.tickers[1]?.changePct?.toFixed(1)}%), \`MSFT\` (${overview.tickers[2]?.changePct >= 0 ? '+' : ''}${overview.tickers[2]?.changePct?.toFixed(1)}%), \`TSLA\` (${overview.tickers[3]?.changePct >= 0 ? '+' : ''}${overview.tickers[3]?.changePct?.toFixed(1)}%)\n\n` +
@@ -862,29 +916,25 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
           type: 2,
           custom_id: 'stk_ref_overview',
           label: 'Refresh Pulse',
-          style: 2,
-          emoji: { name: '🔄' }
+          style: 2
         },
         {
           type: 2,
           custom_id: 'stk_movers',
           label: 'Market Movers',
-          style: 2,
-          emoji: { name: '🔥' }
+          style: 2
         },
         {
           type: 2,
           custom_id: 'stk_crypto',
           label: 'Crypto Pulse',
-          style: 2,
-          emoji: { name: '🪙' }
+          style: 2
         },
         {
           type: 2,
           custom_id: 'stk_help',
           label: 'All Cmds Guide',
-          style: 2,
-          emoji: { name: '🧭' }
+          style: 2
         }
       ]
     },
@@ -905,7 +955,8 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
         components
       }
     ],
-    files: [attachment]
+    files: [attachment],
+    flags: MessageFlags.IsComponentsV2
   };
 }
 
@@ -913,6 +964,8 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
  * Builds interactive guidance UI container listing all supporting financial commands
  */
 export function buildStockGuidancePayload(prefix = '!') {
+  const dt = getFormattedDateTimeStrings();
+
   return {
     components: [
       {
@@ -921,6 +974,7 @@ export function buildStockGuidancePayload(prefix = '!') {
           {
             type: 10,
             content: `## Financial Intelligence Suite & Commands Guidance | <a:atheNATICK:1557841381630681106>\n` +
+                     `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                      `> -# <a:uptime:1552608831060844575> **Overview:** Athena Prime provides real-time stock/crypto telemetry, high-resolution Canvas charts, and AI-driven financial intelligence.\n\n` +
                      `### 1. Market Telemetry & Charts\n` +
                      `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart with Bezier curves, day range, 52w range, volume, & sentiment gauge (e.g. \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock TSLA\`).\n` +
@@ -952,22 +1006,19 @@ export function buildStockGuidancePayload(prefix = '!') {
                 type: 2,
                 custom_id: 'stk_ref_overview',
                 label: 'View Global Market Pulse',
-                style: 2,
-                emoji: { name: '🌐' }
+                style: 2
               },
               {
                 type: 2,
                 custom_id: 'stk_movers',
                 label: 'View Top Movers',
-                style: 2,
-                emoji: { name: '🔥' }
+                style: 2
               },
               {
                 type: 2,
                 custom_id: 'stk_crypto',
                 label: 'View Crypto Pulse',
-                style: 2,
-                emoji: { name: '🪙' }
+                style: 2
               }
             ]
           },
@@ -981,6 +1032,7 @@ export function buildStockGuidancePayload(prefix = '!') {
           }
         ]
       }
-    ]
+    ],
+    flags: MessageFlags.IsComponentsV2
   };
 }
