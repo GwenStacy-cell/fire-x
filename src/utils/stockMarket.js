@@ -92,6 +92,40 @@ export const COMMON_MARKET_ALIASES = {
   'POWERGRID': 'POWERGRID.NS',
   'COALINDIA': 'COALINDIA.NS',
 
+  // Consumer & Tech IPOs / Demergers / Corporate Rebrands
+  'ZOMATO': 'ETERNAL.NS',
+  'ETERNAL': 'ETERNAL.NS',
+  'SWIGGY': 'SWIGGY.NS',
+  'HYUNDAI': 'HYUNDAI.NS',
+  'OLAELEC': 'OLAELEC.NS',
+  'OLA': 'OLAELEC.NS',
+  'BAJAJHFL': 'BAJAJHFL.NS',
+  'PAYTM': 'PAYTM.NS',
+  'ONE97': 'PAYTM.NS',
+  'NYKAA': 'NYKAA.NS',
+  'FSN': 'NYKAA.NS',
+  'DELHIVERY': 'DELHIVERY.NS',
+  'POLICYBZR': 'POLICYBZR.NS',
+  'POLICYBAZAAR': 'POLICYBZR.NS',
+  'PBFINTECH': 'POLICYBZR.NS',
+  'PALANTIR': 'PLTR',
+  'FB': 'META',
+  'FACEBOOK': 'META',
+  'TWTR': 'X',
+  'TWITTER': 'X',
+  'GOOGLE': 'GOOGL',
+  'ALPHABET': 'GOOGL',
+  'APPLE': 'AAPL',
+  'MICROSOFT': 'MSFT',
+  'TESLA': 'TSLA',
+  'NVIDIA': 'NVDA',
+  'AMAZON': 'AMZN',
+  'LTI': 'LTIM.NS',
+  'MINDTREE': 'LTIM.NS',
+  'LTIMINDTREE': 'LTIM.NS',
+  'IDFC': 'IDFCFIRSTB.NS',
+  'IDFCFIRST': 'IDFCFIRSTB.NS',
+
   // US Indices
   'SP500': '^GSPC',
   'S&P500': '^GSPC',
@@ -173,27 +207,141 @@ export function getCurrencySymbol(currency = 'USD') {
 }
 
 /**
- * Searches Yahoo Finance for matching symbols across equities, crypto, indices, and commodities
+ * Searches and resolves ticker symbols across SQLite dynamic cache, curated mappings, Yahoo Finance, and AI neural fallback
  */
 export async function searchTickerSymbols(query) {
   if (!query) return [];
+  const rawClean = String(query).trim();
+  const cleanUpper = rawClean.toUpperCase();
+  const results = [];
+  const seenSymbols = new Set();
+
+  const addResult = (symbol, name, exchange = 'GLOBAL', type = 'EQUITY') => {
+    if (!symbol) return;
+    const sUpper = symbol.toUpperCase();
+    if (seenSymbols.has(sUpper)) return;
+    seenSymbols.add(sUpper);
+    results.push({ symbol, name: name || symbol, exchange, type });
+  };
+
+  // 1. Check SQLite Dynamic Ticker Registry (Exact & Seed Mappings)
   try {
-    const sUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(query)}&quotesCount=12`;
-    const sRes = await fetch(sUrl, { headers: { 'User-Agent': USER_AGENT } });
-    if (!sRes.ok) return [];
-    const sData = await sRes.json().catch(() => null);
-    const quotes = sData?.quotes || [];
-    return quotes
-      .filter(q => q.symbol && (q.quoteType === 'EQUITY' || q.quoteType === 'INDEX' || q.quoteType === 'CRYPTOCURRENCY' || q.quoteType === 'ETF' || q.quoteType === 'FUTURE' || q.quoteType === 'CURRENCY'))
-      .map(q => ({
-        symbol: q.symbol,
-        name: q.shortname || q.longname || q.name || q.symbol,
-        exchange: q.exchange || 'GLOBAL',
-        type: q.quoteType || 'EQUITY'
-      }));
-  } catch {
-    return [];
+    const dynamicDirect = db.getDynamicStockSymbol(cleanUpper);
+    if (dynamicDirect && dynamicDirect.symbol) {
+      addResult(
+        dynamicDirect.symbol,
+        dynamicDirect.name || `${cleanUpper} (${dynamicDirect.symbol})`,
+        dynamicDirect.exchange || 'NSI',
+        dynamicDirect.assetType || 'EQUITY'
+      );
+    }
+
+    // Substring scanning across all registered dynamic symbols
+    const allDynamic = db.getAllDynamicStockSymbols(200);
+    for (const item of allDynamic) {
+      const qMatch = item.query && item.query.toUpperCase().includes(cleanUpper);
+      const nameMatch = item.name && item.name.toUpperCase().includes(cleanUpper);
+      const symMatch = item.symbol && item.symbol.toUpperCase().includes(cleanUpper);
+      if (qMatch || nameMatch || symMatch) {
+        addResult(item.symbol, item.name || item.symbol, item.exchange || 'GLOBAL', item.assetType || 'EQUITY');
+      }
+    }
+  } catch (err) {
+    console.error('[stockMarket] DB dynamic search error:', err);
   }
+
+  // 2. Curated Common Market Aliases Check
+  if (COMMON_MARKET_ALIASES[cleanUpper]) {
+    const mapped = COMMON_MARKET_ALIASES[cleanUpper];
+    addResult(mapped, `${cleanUpper} (${mapped})`, mapped.endsWith('.NS') ? 'NSI' : (mapped.endsWith('.BO') ? 'BSE' : 'GLOBAL'), 'EQUITY');
+  }
+
+  // 3. Live Yahoo Finance Dynamic Search
+  try {
+    const sUrl = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(rawClean)}&quotesCount=12`;
+    const sRes = await fetch(sUrl, { headers: { 'User-Agent': USER_AGENT } });
+    if (sRes.ok) {
+      const sData = await sRes.json().catch(() => null);
+      const quotes = sData?.quotes || [];
+      for (const q of quotes) {
+        if (q.symbol && ['EQUITY', 'INDEX', 'CRYPTOCURRENCY', 'ETF', 'FUTURE', 'CURRENCY'].includes(q.quoteType)) {
+          addResult(
+            q.symbol,
+            q.shortname || q.longname || q.name || q.symbol,
+            q.exchange || 'GLOBAL',
+            q.quoteType || 'EQUITY'
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.error('[stockMarket] Yahoo search error:', err);
+  }
+
+  // 4. Candidate Exchange Suffix Probing (If results are few or empty)
+  if (results.length < 5 && /^[A-Z0-9]{1,15}$/.test(cleanUpper)) {
+    const candidateSuffixes = [
+      `${cleanUpper}.NS`,
+      `${cleanUpper}.BO`,
+      `${cleanUpper}`,
+      `${cleanUpper}-USD`,
+      `${cleanUpper}=F`,
+      `${cleanUpper}=X`
+    ];
+    for (const cand of candidateSuffixes) {
+      if (!seenSymbols.has(cand.toUpperCase())) {
+        const chartData = await tryFetchChart(cand);
+        if (chartData) {
+          addResult(chartData.symbol, chartData.name, chartData.exchange, 'EQUITY');
+          db.saveDynamicStockSymbol(cleanUpper, chartData.symbol, {
+            name: chartData.name,
+            exchange: chartData.exchange,
+            currency: chartData.currency,
+            assetType: 'EQUITY'
+          });
+        }
+      }
+    }
+  }
+
+  // 5. Neural AI Rebrand & Ticker Dissector Fallback (If results are STILL empty)
+  if (results.length === 0) {
+    try {
+      const aiPrompt = `Identify the official stock or crypto ticker symbol for: "${rawClean}". ` +
+        `Return JSON only in this exact format: {"symbol": "EXACT_TICKER", "name": "Company or Asset Full Name", "exchange": "EXCHANGE", "type": "EQUITY"}. ` +
+        `Rules: If it is an Indian company (NSE/BSE), append .NS or .BO (e.g., ETERNAL.NS, TMCV.NS, RELIANCE.NS, SWIGGY.NS, HYUNDAI.NS). If US stock, use standard ticker (e.g. NVDA, PLTR, META). If crypto, append -USD (e.g. BTC-USD). Do not include markdown codeblocks or extra text.`;
+      const aiRaw = await generateAIResponse(aiPrompt, { temperature: 0.1, maxTokens: 120 });
+      let parsed = null;
+      try {
+        const cleanJson = aiRaw.replace(/```json/gi, '').replace(/```/g, '').trim();
+        parsed = JSON.parse(cleanJson);
+      } catch {}
+
+      if (parsed && parsed.symbol) {
+        const verified = await tryFetchChart(parsed.symbol);
+        if (verified) {
+          addResult(verified.symbol, verified.name, verified.exchange, parsed.type || 'EQUITY');
+          db.saveDynamicStockSymbol(cleanUpper, verified.symbol, {
+            name: verified.name,
+            exchange: verified.exchange,
+            currency: verified.currency,
+            assetType: parsed.type || 'EQUITY'
+          });
+        } else {
+          addResult(parsed.symbol, parsed.name || cleanUpper, parsed.exchange || 'GLOBAL', parsed.type || 'EQUITY');
+          db.saveDynamicStockSymbol(cleanUpper, parsed.symbol, {
+            name: parsed.name || cleanUpper,
+            exchange: parsed.exchange || 'GLOBAL',
+            assetType: parsed.type || 'EQUITY'
+          });
+        }
+      }
+    } catch (aiErr) {
+      console.warn('[stockMarket] AI symbol resolution fallback error:', aiErr);
+    }
+  }
+
+  return results;
 }
 
 /**
@@ -1594,6 +1742,60 @@ export function buildSymbolsPayload(category = 'all', prefix = '!') {
 export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!') {
   const dt = getFormattedDateTimeStrings();
 
+  const searchRow1 = {
+    type: 1,
+    components: [
+      {
+        type: 2,
+        custom_id: 'stk_cat_all',
+        label: 'Overview',
+        style: 2
+      },
+      {
+        type: 2,
+        custom_id: 'stk_cat_trending',
+        label: 'Trending & New',
+        style: 2
+      },
+      {
+        type: 2,
+        custom_id: 'stk_cat_india',
+        label: 'India NSE/BSE',
+        style: 2
+      },
+      {
+        type: 2,
+        custom_id: 'stk_cat_us',
+        label: 'US Tech & AI',
+        style: 2
+      }
+    ]
+  };
+
+  const searchRow2 = {
+    type: 1,
+    components: [
+      {
+        type: 2,
+        custom_id: 'stk_cat_crypto',
+        label: 'Crypto',
+        style: 2
+      },
+      {
+        type: 2,
+        custom_id: 'stk_cat_macro',
+        label: 'Macro & Commodities',
+        style: 2
+      },
+      {
+        type: 2,
+        custom_id: 'stk_ref_overview',
+        label: 'Global Pulse',
+        style: 2
+      }
+    ]
+  };
+
   if (!results || !results.length) {
     return {
       components: [
@@ -1615,35 +1817,8 @@ export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!
               type: 14,
               divider: true
             },
-            {
-              type: 1,
-              components: [
-                {
-                  type: 2,
-                  custom_id: 'stk_cat_all',
-                  label: 'Overview Directory',
-                  style: 2
-                },
-                {
-                  type: 2,
-                  custom_id: 'stk_cat_india',
-                  label: 'India NSE/BSE',
-                  style: 2
-                },
-                {
-                  type: 2,
-                  custom_id: 'stk_cat_us',
-                  label: 'US Tech & AI',
-                  style: 2
-                },
-                {
-                  type: 2,
-                  custom_id: 'stk_cat_crypto',
-                  label: 'Crypto',
-                  style: 2
-                }
-              ]
-            },
+            searchRow1,
+            searchRow2,
             {
               type: 14,
               divider: true
@@ -1659,11 +1834,15 @@ export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!
     };
   }
 
+  const cleanUpper = String(query || '').trim().toUpperCase();
   const items = results.slice(0, 8);
   const rows = items.map((r, idx) => {
     const baseTicker = r.symbol.replace(/\.NS$|\.BO$/, '');
-    return `> -# **${idx + 1}. ${r.name}** (\`${r.symbol}\`)\n` +
-           `> -# \u2022 Exchange: \`${r.exchange}\` \u2022 Asset Type: \`${r.type}\`\n` +
+    const displayName = (cleanUpper && !r.name.toUpperCase().includes(cleanUpper) && cleanUpper !== baseTicker)
+      ? `${r.name} (${cleanUpper})`
+      : r.name;
+    return `> -# **${idx + 1}. ${displayName}** (\`${r.symbol}\`)\n` +
+           `> -# • Exchange: \`${r.exchange}\` • Asset Type: \`${r.type}\`\n` +
            `> -# \u25b8 Telemetry: \`${prefix}stock ${baseTicker}\` or \`${prefix}stock ${r.symbol}\``;
   }).join('\n\n');
 
@@ -1686,35 +1865,8 @@ export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!
             type: 14,
             divider: true
           },
-          {
-            type: 1,
-            components: [
-              {
-                type: 2,
-                custom_id: 'stk_cat_all',
-                label: 'Overview Directory',
-                style: 2
-              },
-              {
-                type: 2,
-                custom_id: 'stk_cat_india',
-                label: 'India NSE/BSE',
-                style: 2
-              },
-              {
-                type: 2,
-                custom_id: 'stk_cat_us',
-                label: 'US Tech & AI',
-                style: 2
-              },
-              {
-                type: 2,
-                custom_id: 'stk_ref_overview',
-                label: 'Global Markets',
-                style: 2
-              }
-            ]
-          },
+          searchRow1,
+          searchRow2,
           {
             type: 14,
             divider: true
