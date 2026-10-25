@@ -190,9 +190,9 @@ export function generateWeatherWorldMap(lat, lon, locationTitle, tempC, conditio
   const targetX = (clampedLon + 180) * (width / 360);
   const targetY = (90 - clampedLat) * (height / 180);
 
-  // 6. Crosshair Target Lines
-  ctx.strokeStyle = 'rgba(0, 255, 136, 0.35)';
-  ctx.lineWidth = 1;
+  // 6. Crosshair Target Lines (crisp dashed neon lines)
+  ctx.strokeStyle = 'rgba(0, 255, 136, 0.40)';
+  ctx.lineWidth = 1.2;
   ctx.setLineDash([4, 4]);
   ctx.beginPath();
   ctx.moveTo(targetX, 0);
@@ -202,78 +202,114 @@ export function generateWeatherWorldMap(lat, lon, locationTitle, tempC, conditio
   ctx.stroke();
   ctx.setLineDash([]);
 
-  // 7. Tactical Concentric Radar Rings
-  const rings = [10, 24, 42];
+  // 7. Tactical Concentric Radar Rings & Glowing Ping
+  const rings = [6, 16, 28];
   rings.forEach((r, idx) => {
     ctx.strokeStyle = idx === 0 
       ? 'rgba(0, 255, 136, 0.95)' 
       : idx === 1 
-      ? 'rgba(0, 240, 255, 0.65)' 
-      : 'rgba(0, 240, 255, 0.3)';
-    ctx.lineWidth = 1.5;
+      ? 'rgba(0, 240, 255, 0.70)' 
+      : 'rgba(0, 240, 255, 0.35)';
+    ctx.lineWidth = idx === 0 ? 1.8 : 1;
     ctx.beginPath();
     ctx.arc(targetX, targetY, r, 0, Math.PI * 2);
     ctx.stroke();
   });
 
-  // Center Target Beacon
+  // Center Target Beacon (glowing core)
   ctx.fillStyle = '#00ff88';
   ctx.beginPath();
-  ctx.arc(targetX, targetY, 4.5, 0, Math.PI * 2);
+  ctx.arc(targetX, targetY, 3.5, 0, Math.PI * 2);
   ctx.fill();
 
-  // 8. Top-Left Tactical HUD Panel
-  const titleStr = (locationTitle || 'TARGET LOCATION').toUpperCase();
-  ctx.fillStyle = 'rgba(6, 10, 20, 0.88)';
-  ctx.fillRect(16, 16, 440, 84);
-  ctx.strokeStyle = '#00f0ff';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(16, 16, 440, 84);
+  // Compact Target Coordinate Reticle Tag
+  const tagLat = (lat >= 0 ? lat.toFixed(2) + '°N' : Math.abs(lat).toFixed(2) + '°S');
+  const tagLon = (lon >= 0 ? lon.toFixed(2) + '°E' : Math.abs(lon).toFixed(2) + '°W');
+  const coordText = `⌖ ${tagLat}, ${tagLon}`;
+  
+  const badgeWidth = 98;
+  const badgeHeight = 16;
+  let badgeX = targetX + 12;
+  let badgeY = targetY - 22;
+  if (badgeX + badgeWidth > width - 10) badgeX = targetX - badgeWidth - 12;
+  if (badgeY < 10) badgeY = targetY + 14;
 
+  ctx.fillStyle = 'rgba(6, 10, 20, 0.92)';
+  ctx.fillRect(badgeX, badgeY, badgeWidth, badgeHeight);
+  ctx.strokeStyle = '#00ff88';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(badgeX, badgeY, badgeWidth, badgeHeight);
+  ctx.fillStyle = '#00ff88';
+  ctx.font = 'bold 9px monospace';
+  ctx.fillText(coordText, badgeX + 5, badgeY + 11);
+
+  // 8. Compact Organised Text on Left Ocean (Positioned towards bottom, natural mixed casing)
+  // If target happens to be in the South Pacific (targetX < 260 && targetY > 280), shift text to South Atlantic
+  let textX = 28;
+  let textY = 345;
+  if (targetX < 260 && targetY > 280 && targetY < 480) {
+    textX = 380; // South Atlantic Ocean
+  }
+
+  const blockWidth = 220;
+  const blockHeight = 104;
+
+  // Tactical accent vertical guide bar (ultra-slim)
   ctx.fillStyle = '#00f0ff';
-  ctx.font = 'bold 11px sans-serif';
-  ctx.fillText('ATHENA PRIME // GLOBAL WEATHER RECONNAISSANCE', 30, 36);
+  ctx.fillRect(textX, textY, 2.5, blockHeight);
 
+  // Subtle translucent glass backing (no heavy opaque card blocking landmasses)
+  ctx.fillStyle = 'rgba(6, 10, 20, 0.45)';
+  ctx.fillRect(textX + 6, textY - 4, blockWidth, blockHeight + 8);
+
+  // Category header (Natural mixed case)
+  ctx.fillStyle = '#00f0ff';
+  ctx.font = 'bold 9px sans-serif';
+  ctx.fillText('Athena Prime // Global Weather Recon', textX + 12, textY + 11);
+
+  // Location Title (Natural case - not all uppercase)
+  const cleanTitle = (locationTitle || 'Target Location').trim();
+  const displayTitle = cleanTitle.length > 28 ? cleanTitle.substring(0, 26) + '...' : cleanTitle;
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 20px sans-serif';
-  const displayTitle = titleStr.length > 30 ? titleStr.substring(0, 28) + '...' : titleStr;
-  ctx.fillText(displayTitle, 30, 64);
+  ctx.font = 'bold 13.5px sans-serif';
+  ctx.fillText(displayTitle, textX + 12, textY + 30);
 
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '12px sans-serif';
+  // Coordinates Subtitle (Natural mixed case)
   const latStr = (lat >= 0 ? lat.toFixed(2) + '° N' : Math.abs(lat).toFixed(2) + '° S');
   const lonStr = (lon >= 0 ? lon.toFixed(2) + '° E' : Math.abs(lon).toFixed(2) + '° W');
-  ctx.fillText(`TARGET LOCKED: ${latStr} | ${lonStr}`, 30, 84);
+  ctx.fillStyle = '#7dd3fc';
+  ctx.font = '10px sans-serif';
+  ctx.fillText(`Target Locked: ${latStr} | ${lonStr}`, textX + 12, textY + 46);
 
-  // 9. Top-Right Weather Telemetry Badge
-  ctx.fillStyle = 'rgba(6, 10, 20, 0.88)';
-  ctx.fillRect(width - 256, 16, 240, 84);
-  ctx.strokeStyle = '#00ff88';
-  ctx.lineWidth = 1.5;
-  ctx.strokeRect(width - 256, 16, 240, 84);
-
+  // Weather telemetry: Compact Temp + Condition
   ctx.fillStyle = '#00ff88';
-  ctx.font = 'bold 34px sans-serif';
-  ctx.fillText(`${tempC}°C`, width - 240, 54);
+  ctx.font = 'bold 22px sans-serif';
+  ctx.fillText(`${tempC}°C`, textX + 12, textY + 74);
 
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 13px sans-serif';
-  const condStr = (condition || 'CLEAR').toUpperCase();
-  const displayCond = condStr.length > 20 ? condStr.substring(0, 18) + '...' : condStr;
-  ctx.fillText(displayCond, width - 240, 78);
+  // Condition (Natural case - not uppercase)
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = 'bold 11.5px sans-serif';
+  const condStr = (condition || 'Clear').trim();
+  ctx.fillText(condStr, textX + 12, textY + 90);
 
-  // 10. Bottom Telemetry Status Bar
-  ctx.fillStyle = 'rgba(6, 10, 20, 0.92)';
-  ctx.fillRect(16, height - 46, width - 32, 34);
-  ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
-  ctx.strokeRect(16, height - 46, width - 32, 34);
+  // Small telemetry metrics line (Natural mixed case)
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '9px sans-serif';
+  ctx.fillText(`Humidity: ${humidity}%  •  Wind: ${wind}`, textX + 12, textY + 102);
+
+  // 9. Ultra-sleek Bottom Telemetry Status Bar (Natural mixed case)
+  ctx.fillStyle = 'rgba(6, 10, 20, 0.88)';
+  ctx.fillRect(16, height - 32, width - 32, 22);
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.30)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(16, height - 32, width - 32, 22);
 
   ctx.fillStyle = '#94a3b8';
-  ctx.font = '12px sans-serif';
+  ctx.font = '9.5px sans-serif';
   ctx.fillText(
-    `HUMIDITY: ${humidity}%  |  WIND: ${wind}  |  PROJECTION: EQUIRECTANGULAR WGS84  |  RADAR STATUS: ACTIVE`,
-    32,
-    height - 24
+    `Equirectangular WGS84  |  Radar Status: Active  |  Tactical Satellite Telemetry`,
+    26,
+    height - 18
   );
 
   return canvas.toBuffer('image/png');
