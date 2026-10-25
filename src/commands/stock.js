@@ -68,7 +68,7 @@ export const commands = [
         } else {
           // Specific Stock / Crypto Ticker
           const stockData = await fetchStockData(input);
-          const imageBuffer = renderSingleStockCard(stockData);
+          const imageBuffer = await renderSingleStockCard(stockData);
           const payload = buildStockPayload(stockData, imageBuffer, prefix);
           return await loadingMsg.edit(payload);
         }
@@ -113,7 +113,7 @@ export const commands = [
           return await interaction.editReply(payload);
         } else {
           const stockData = await fetchStockData(input);
-          const imageBuffer = renderSingleStockCard(stockData);
+          const imageBuffer = await renderSingleStockCard(stockData);
           const payload = buildStockPayload(stockData, imageBuffer, prefix);
           return await interaction.editReply(payload);
         }
@@ -429,7 +429,7 @@ export const commands = [
 
       try {
         const stockData = await fetchStockData(coin);
-        const imageBuffer = renderSingleStockCard(stockData);
+        const imageBuffer = await renderSingleStockCard(stockData);
         const payload = buildStockPayload(stockData, imageBuffer, prefix);
         return await loadingMsg.edit(payload);
       } catch (err) {
@@ -1016,7 +1016,7 @@ export async function handleStockButton(interaction) {
     await interaction.deferUpdate();
     try {
       const stockData = await fetchStockData(symbol);
-      const imageBuffer = renderSingleStockCard(stockData);
+      const imageBuffer = await renderSingleStockCard(stockData);
       const payload = buildStockPayload(stockData, imageBuffer);
       return await interaction.editReply(payload);
     } catch (err) {

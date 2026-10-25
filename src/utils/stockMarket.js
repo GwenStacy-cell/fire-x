@@ -1,6 +1,6 @@
 import path from 'path';
 import { AttachmentBuilder, MessageFlags } from 'discord.js';
-import { createCanvas, registerFont } from './canvas.js';
+import { createCanvas, registerFont, loadImage } from './canvas.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
 import { generateAIResponse } from './ai.js';
@@ -622,9 +622,157 @@ export async function fetchStockNews(query = 'stock market') {
 }
 
 /**
- * Renders high-resolution Canvas single-stock telemetry HUD
+ * Curated brand domains for reliable official logo resolution
  */
-export function renderSingleStockCard(stock) {
+export const KNOWN_STOCK_DOMAINS = {
+  // Indian Heavyweights & Consumer Tech
+  'TCS.NS': 'tcs.com',
+  'TCS.BO': 'tcs.com',
+  'TCS': 'tcs.com',
+  'RELIANCE.NS': 'ril.com',
+  'RELIANCE': 'ril.com',
+  'INFY.NS': 'infosys.com',
+  'INFY': 'infosys.com',
+  'HDFCBANK.NS': 'hdfcbank.com',
+  'HDFCBANK': 'hdfcbank.com',
+  'ICICIBANK.NS': 'icicibank.com',
+  'ICICI': 'icicibank.com',
+  'SBIN.NS': 'sbi.co.in',
+  'SBIN': 'sbi.co.in',
+  'TATAMOTORS.NS': 'tatamotors.com',
+  'TMCV.NS': 'tatamotors.com',
+  'TMCV': 'tatamotors.com',
+  'TMPV.NS': 'tatamotors.com',
+  'TATASTEEL.NS': 'tatasteel.com',
+  'TATAPOWER.NS': 'tatapower.com',
+  'TATAELXSI.NS': 'tataelxsi.com',
+  'ETERNAL.NS': 'zomato.com',
+  'ETERNAL': 'zomato.com',
+  'ZOMATO.NS': 'zomato.com',
+  'ZOMATO': 'zomato.com',
+  'SWIGGY.NS': 'swiggy.com',
+  'SWIGGY': 'swiggy.com',
+  'HYUNDAI.NS': 'hyundai.com',
+  'HYUNDAI': 'hyundai.com',
+  'OLAELEC.NS': 'olaelectric.com',
+  'OLAELEC': 'olaelectric.com',
+  'OLA': 'olaelectric.com',
+  'BAJAJHFL.NS': 'bajajhousingfinance.in',
+  'PAYTM.NS': 'paytm.com',
+  'PAYTM': 'paytm.com',
+  'NYKAA.NS': 'nykaa.com',
+  'DELHIVERY.NS': 'delhivery.com',
+  'POLICYBZR.NS': 'policybazaar.com',
+  'ITC.NS': 'itcportal.com',
+  'BHARTIARTL.NS': 'airtel.in',
+  'WIPRO.NS': 'wipro.com',
+  'LT.NS': 'larsentoubro.com',
+  'MARUTI.NS': 'marutisuzuki.com',
+  'TITAN.NS': 'titancompany.in',
+  'BAJFINANCE.NS': 'bajajfinserv.in',
+  'HINDUNILVR.NS': 'hul.co.in',
+  'JIOFIN.NS': 'jiofinancialservices.com',
+  'ADANIENT.NS': 'adani.com',
+  'ADANIPORTS.NS': 'adani.com',
+  'SUNPHARMA.NS': 'sunpharma.com',
+  'ONGC.NS': 'ongcindia.com',
+  'NTPC.NS': 'ntpc.co.in',
+  'POWERGRID.NS': 'powergrid.in',
+  'COALINDIA.NS': 'coalindia.in',
+  'LTIM.NS': 'ltimindtree.com',
+  'IDFCFIRSTB.NS': 'idfcfirstbank.com',
+  'YESBANK.NS': 'yesbank.in',
+  'HAL.NS': 'hal-india.co.in',
+  'IRCTC.NS': 'irctc.co.in',
+
+  // US Tech & AI Titans
+  'NVDA': 'nvidia.com',
+  'AAPL': 'apple.com',
+  'MSFT': 'microsoft.com',
+  'GOOGL': 'google.com',
+  'GOOG': 'google.com',
+  'AMZN': 'amazon.com',
+  'META': 'meta.com',
+  'TSLA': 'tesla.com',
+  'AMD': 'amd.com',
+  'PLTR': 'palantir.com',
+  'NFLX': 'netflix.com',
+  'AVGO': 'broadcom.com',
+  'COIN': 'coinbase.com',
+  'INTC': 'intel.com',
+  'CRM': 'salesforce.com',
+  'ORCL': 'oracle.com',
+  'QCOM': 'qualcomm.com',
+  'UBER': 'uber.com',
+  'ABNB': 'airbnb.com',
+  'SPOT': 'spotify.com',
+  'DIS': 'thewaltdisneycompany.com',
+  'BABA': 'alibabagroup.com',
+  'PYPL': 'paypal.com',
+  'SHOP': 'shopify.com',
+  'ARM': 'arm.com'
+};
+
+const logoImageCache = new Map();
+
+/**
+ * Proactively discovers and loads official company or cryptocurrency logo
+ */
+export async function fetchCompanyLogo(symbol, companyName = '') {
+  if (!symbol) return null;
+  const clean = String(symbol).trim().toUpperCase();
+  if (logoImageCache.has(clean)) {
+    return logoImageCache.get(clean);
+  }
+
+  const base = clean.replace(/\.NS$|\.BO$|\.L$|\.TO$|\.DE$|\.AX$|\.HK$|\.T$|-USD$|-USDT$/i, '');
+  const isCrypto = clean.includes('-USD') || clean.includes('-USDT') || ['BTC', 'ETH', 'SOL', 'DOGE', 'XRP', 'ADA', 'BNB', 'AVAX', 'LINK', 'SUI', 'DOT', 'NEAR', 'SHIB', 'PEPE'].includes(base);
+
+  const urls = [];
+  if (isCrypto) {
+    urls.push(`https://assets.coincap.io/assets/icons/${base.toLowerCase()}@2x.png`);
+    urls.push(`https://raw.githubusercontent.com/spothq/cryptocurrency-icons/master/128/color/${base.toLowerCase()}.png`);
+  } else {
+    // 1. Direct verified domain from KNOWN_STOCK_DOMAINS
+    const d = KNOWN_STOCK_DOMAINS[clean] || KNOWN_STOCK_DOMAINS[base];
+    if (d) {
+      urls.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.${d}&size=128`);
+    }
+
+    // 2. Parqet global exchange symbol CDN
+    urls.push(`https://assets.parqet.com/logos/symbol/${encodeURIComponent(clean)}?format=png`);
+    urls.push(`https://assets.parqet.com/logos/symbol/${encodeURIComponent(base)}?format=png`);
+
+    // 3. Fallback: probe generic domain guessing if clean ticker is alphanumeric
+    if (!d && /^[A-Z0-9]{2,10}$/.test(base)) {
+      urls.push(`https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://www.${base.toLowerCase()}.com&size=128`);
+    }
+  }
+
+  for (const u of urls) {
+    try {
+      const loadPromise = loadImage(u);
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000));
+      const img = await Promise.race([loadPromise, timeoutPromise]);
+      if (img && img.width > 0 && img.height > 0) {
+        if (logoImageCache.size > 250) {
+          const firstKey = logoImageCache.keys().next().value;
+          logoImageCache.delete(firstKey);
+        }
+        logoImageCache.set(clean, img);
+        return img;
+      }
+    } catch {}
+  }
+
+  logoImageCache.set(clean, null);
+  return null;
+}
+
+/**
+ * Renders high-resolution Canvas single-stock telemetry HUD with integrated company logo badge
+ */
+export async function renderSingleStockCard(stock, customLogo = null) {
   const W = 1100;
   const H = 640;
   const canvas = createCanvas(W, H);
@@ -694,17 +842,67 @@ export function renderSingleStockCard(stock) {
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.beginPath(); ctx.moveTo(40, 82); ctx.lineTo(W - 40, 82); ctx.stroke();
 
-  // 4. Stock Identity & Large Price
-  ctx.font = 'bold 44px Roboto, sans-serif';
+  // 4. Company Logo Badge & Stock Identity
+  const logoImg = customLogo || await fetchCompanyLogo(stock.symbol, stock.name);
+  const logoX = 45;
+  const logoY = 98;
+  const logoSize = 62;
+  const logoR = 12;
+
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(logoX, logoY, logoSize, logoSize, logoR);
+  else ctx.rect(logoX, logoY, logoSize, logoSize);
+  ctx.fillStyle = '#0f172a';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  if (logoImg) {
+    ctx.save();
+    ctx.beginPath();
+    const pad = 5;
+    if (ctx.roundRect) ctx.roundRect(logoX + pad, logoY + pad, logoSize - pad * 2, logoSize - pad * 2, logoR - 3);
+    else ctx.rect(logoX + pad, logoY + pad, logoSize - pad * 2, logoSize - pad * 2);
+    ctx.clip();
+    const aspect = logoImg.width / logoImg.height;
+    const destW = logoSize - pad * 2;
+    const destH = logoSize - pad * 2;
+    let drawW = destW, drawH = destH, drawX = logoX + pad, drawY = logoY + pad;
+    if (aspect > 1) {
+      drawH = destW / aspect;
+      drawY += (destH - drawH) / 2;
+    } else {
+      drawW = destH * aspect;
+      drawX += (destW - drawW) / 2;
+    }
+    ctx.drawImage(logoImg, drawX, drawY, drawW, drawH);
+    ctx.restore();
+  } else {
+    const base = stock.symbol.replace(/\.NS$|\.BO$|-USD$/i, '');
+    ctx.font = 'bold 20px Roboto, sans-serif';
+    ctx.fillStyle = primaryColor;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(base.slice(0, 3), logoX + logoSize / 2, logoY + logoSize / 2);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+  }
+  ctx.restore();
+
+  // Stock Symbol & Identity
+  const textStartX = 122;
+  ctx.font = 'bold 38px Roboto, sans-serif';
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(stock.symbol, 45, 135);
+  ctx.fillText(stock.symbol, textStartX, 134);
   const symW = ctx.measureText(stock.symbol).width;
 
   // Exchange Pill
   const exText = `${stock.exchange} • ${stock.currency}`;
-  ctx.font = 'bold 12px Roboto, sans-serif';
+  ctx.font = 'bold 11px Roboto, sans-serif';
   const exW = ctx.measureText(exText).width + 16;
-  const pillExX = 45 + symW + 18;
+  const pillExX = textStartX + symW + 14;
   const pillExY = 108;
 
   ctx.beginPath();
@@ -717,10 +915,17 @@ export function renderSingleStockCard(stock) {
   ctx.fillStyle = '#94a3b8';
   ctx.fillText(exText, pillExX + 8, pillExY + 16);
 
-  // Company Name
-  ctx.font = '16px Roboto, sans-serif';
+  // Company Name (with width clamp)
+  ctx.font = '15px Roboto, sans-serif';
   ctx.fillStyle = '#94a3b8';
-  ctx.fillText(stock.name, 45, 164);
+  let displayName = stock.name;
+  if (ctx.measureText(displayName).width > 560) {
+    while (ctx.measureText(displayName + '...').width > 560 && displayName.length > 0) {
+      displayName = displayName.slice(0, -1);
+    }
+    displayName += '...';
+  }
+  ctx.fillText(displayName, textStartX, 156);
 
   const currSym = getCurrencySymbol(stock.currency);
 
