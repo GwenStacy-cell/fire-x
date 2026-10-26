@@ -1661,7 +1661,7 @@ export const commands = [
           const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId("btn_intercept_2fa").setLabel("Enter 2FA Code").setStyle(ButtonStyle.Danger)
           );
-          return message.reply({ content: "?? **Critical Security Action Blocked** ??\nAn email has been sent to your registered Gmail address. You must verify it to authorize this action.", components: [row] }).catch(() => null);
+          return message.reply({ content: "**Critical Security Action Blocked**\nAn email has been sent to your registered Gmail address. You must verify it to authorize this action.", components: [row] }).catch(() => null);
         }
 
         const result = await handleSecurityToggleAll(message.guild, message.member, false);
@@ -4712,18 +4712,14 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
   const updates = {
     antiNukeEnabled:   enable,
     antiSpamEnabled:   enable,
-    antiInviteEnabled: false,
+    antiInviteEnabled: enable,
     antiLinkEnabled:   enable,
     antinukeModules:   {}
   };
 
   const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
   for (const key of allKeys) {
-    if (key === 'antiInvite') {
-      updates.antinukeModules[key] = false;
-    } else {
-      updates.antinukeModules[key] = enable;
-    }
+    updates.antinukeModules[key] = enable;
   }
 
   db.updateGuildConfig(guild.id, updates);
