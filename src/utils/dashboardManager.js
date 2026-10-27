@@ -38,7 +38,7 @@ export async function fetchDashboardStats(guild) {
   
   // Firewall Status
   const cfg = db.getGuildConfig(guild.id);
-  const isSecured = Boolean(cfg.securityEnabled || cfg.antiNukeEnabled);
+  const isSecured = Boolean(cfg.securityEnabled && cfg.antiNukeEnabled);
   const firewall = isSecured ? 'Active' : 'Offline';
 
   // Integrity Index Calculation (0-100%)

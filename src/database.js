@@ -315,6 +315,7 @@ class Database {
         pendingTwoFactorCode: null,
         antiNukeEnabled: false,
         securityEnabled: false,
+        botOwnerBypass: false,
         antinukeModules: {
           antiRoleCreate: false,
           antiRoleDelete: false,
@@ -383,6 +384,7 @@ class Database {
 
       if (cfg.antiNukeEnabled === undefined) { cfg.antiNukeEnabled = false; updated = true; }
       if (cfg.securityEnabled === undefined) { cfg.securityEnabled = false; updated = true; }
+      if (cfg.botOwnerBypass === undefined) { cfg.botOwnerBypass = false; updated = true; }
       if (cfg.antinukeModules === undefined) {
         cfg.antinukeModules = {
           antiRoleCreate: false, antiRoleDelete: false, antiRoleUpdate: false, antiRolePermUpdate: false, antiMemberRoleUpdate: false, antiRoleReorder: false,
@@ -402,6 +404,10 @@ class Database {
       if (!cfg.securityEnabled) {
         if (cfg.antiNukeEnabled) {
           cfg.antiNukeEnabled = false;
+          updated = true;
+        }
+        if (cfg.botOwnerBypass) {
+          cfg.botOwnerBypass = false;
           updated = true;
         }
         const antinukeKeys = [

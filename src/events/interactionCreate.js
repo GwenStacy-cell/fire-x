@@ -2720,36 +2720,81 @@ async function handleSecurityInteractions(interaction, guild) {
           const isBotOwner = isBotOwnerSync(interaction.user.id);
           const isAllowed = isBotOwner || interaction.user.id === guild.ownerId;
           if (!isAllowed) {
-            return interaction.reply({ content: '-# <:cross_red:1533860128015519895> Only the **Server Owner** or **Bot Owner** can configure the Anti-Nuke Firewall.', flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: '-# Only the **Server Owner** or **Bot Owner** can configure the Anti-Nuke Firewall.', flags: MessageFlags.Ephemeral });
           }
 
           const maxPos = Math.max(...guild.roles.cache.map(r => r.position));
           const botMember = guild.members.me || await guild.members.fetch(interaction.client.user.id).catch(() => null);
           const botPos = botMember?.roles?.highest?.position ?? 0;
-          const meetsRoleHierarchy = isBotOwner || botPos >= maxPos - 2;
-          const meetsMemberCount = isBotOwner || (guild.memberCount || 0) >= 200;
+          const meetsRoleHierarchy = botPos >= maxPos - 2;
+          const meetsMemberCount = (guild.memberCount || 0) >= 200;
 
-          const isCurrentlyActive = Boolean(config.securityEnabled && config.antiNukeEnabled && meetsRoleHierarchy && meetsMemberCount);
+          const isCurrentlyActive = Boolean(config.securityEnabled && config.antiNukeEnabled);
           const isEnabling = !isCurrentlyActive;
 
           if (isEnabling) {
-            if (!meetsMemberCount) {
-              return interaction.reply({ content: `-# <:cross_red:1533860128015519895> Server requires at least **200 members** to activate Anti-Nuke firewall. (Currently: **${guild.memberCount || 0}** members).`, flags: MessageFlags.Ephemeral });
+            if (!isBotOwner) {
+              if (!meetsMemberCount) {
+                return interaction.reply({ content: `-# Server requires at least **200 members** to activate Anti-Nuke firewall. (Currently: **${guild.memberCount || 0}** members).\n-# **Only the Bot Owner can bypass this clearance criteria.**`, flags: MessageFlags.Ephemeral });
+              }
+              if (!meetsRoleHierarchy) {
+                return interaction.reply({ content: `-# **Role Hierarchy Requirement:** Move Athena's role to the top 3 highest roles in Server Settings so she can enforce bulletproof security.\n-# Currently, the highest role is at position **${maxPos}**, but Athena's role is at position **${botPos}**.\n-# **Only the Bot Owner can bypass this clearance criteria.**`, flags: MessageFlags.Ephemeral });
+              }
             }
-            if (!meetsRoleHierarchy) {
-              return interaction.reply({ content: `-# <:cross_red:1533860128015519895> **Role Hierarchy Requirement:** Move Athena's role to the top 3 highest roles in Server Settings so she can enforce bulletproof security.\n-# Currently, the highest role is at position **${maxPos}**, but Athena's role is at position **${botPos}**.`, flags: MessageFlags.Ephemeral });
-            }
+
+            const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+            await ensureUnbypassableRole(guild).catch(() => null);
+            const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
+            snapshotGuildInfrastructure(guild);
 
             updateData.securityEnabled = true;
             updateData.antiNukeEnabled = true;
+            updateData.antiNukePunishment = config.antiNukePunishment || 'ban';
+            updateData.antiNukeThreshold = 1;
+            updateData.antiSpamEnabled = true;
+            updateData.antiInviteEnabled = true;
+            updateData.antiLinkEnabled = true;
+            updateData.botOwnerBypass = isBotOwner ? true : Boolean(config.botOwnerBypass);
             updateData.antinukeModules = config.antinukeModules || {};
             const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
             for (const k of allKeys) {
               updateData.antinukeModules[k] = true;
             }
           } else {
-            updateData.antiNukeEnabled = false;
             updateData.securityEnabled = false;
+            updateData.antiNukeEnabled = false;
+            updateData.antiSpamEnabled = false;
+            updateData.antiInviteEnabled = false;
+            updateData.antiLinkEnabled = false;
+            updateData.botOwnerBypass = false;
+            updateData.antinukeModules = config.antinukeModules || {};
+            const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
+            for (const k of allKeys) {
+              updateData.antinukeModules[k] = false;
+            }
+
+            // Delete secondary & hidden persistence roles
+            await guild.roles.fetch().catch(() => null);
+            const cfg = db.getGuildConfig(guild.id);
+            const roleIdsToDelete = [
+              cfg.firewallRoleId, 
+              cfg.unbypassableRoleId, 
+              cfg.athenFirewallRoleId, 
+              cfg.athenaUnbypassableRoleId
+            ].filter(Boolean);
+            for (const rid of roleIdsToDelete) {
+              const r = guild.roles.cache.get(rid) || await guild.roles.fetch(rid).catch(() => null);
+              if (r && r.editable) await r.delete('Anti-Nuke Firewall Disabled').catch(() => null);
+            }
+            guild.roles.cache.forEach(async role => {
+              if ((role.name === 'Athena Firewall' || role.name === 'Athena Unbypassable') && role.editable) {
+                await role.delete('Anti-Nuke Firewall Disabled').catch(() => null);
+              }
+            });
+            updateData.firewallRoleId = null;
+            updateData.unbypassableRoleId = null;
+            updateData.athenFirewallRoleId = null;
+            updateData.athenaUnbypassableRoleId = null;
           }
           updated = true;
         }

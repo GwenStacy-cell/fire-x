@@ -4548,11 +4548,8 @@ async function handleConfig(guild, moderator, setting, value) {
     if (!isAllowed) {
       return cv2.danger('Access Denied', 'Only the **Server Owner** or **Bot Owner** can configure the Anti-Nuke Firewall.');
     }
+    const config = db.getGuildConfig(guild.id);
     if (enabled) {
-      const config = db.getGuildConfig(guild.id);
-      if (!config.securityEnabled) {
-        return cv2.danger('Security Not Armed', 'Security is currently disabled on this server. Please execute `!security enable all` or click `⚡ Engage All Shields` in `!ss` to arm the firewall and all 28 protection modules.');
-      }
       if (guild.memberCount < 200 && !isBotOwner) {
         return cv2.danger('Requirement Not Met', 'Your server must have at least **200 members** to enable unbypassable security.\n\n**Bot Owners bypass this restriction.**');
       }
@@ -4562,15 +4559,55 @@ async function handleConfig(guild, moderator, setting, value) {
       if (!isBotOwner && botPos < maxPos - 2) {
         return cv2.danger('Insufficient Role Hierarchy', `To guarantee uncompromised security enforcement, my highest role must be placed among the **Top 3 highest roles** in the server hierarchy.\n\n-# Currently, the highest role is position **${maxPos}**, but my highest role is only at position **${botPos}**.\n-# Please move my role higher in the server settings and try again.`);
       }
-    }
-    updates.antiNukeEnabled = enabled;
-    db.updateGuildConfig(guild.id, updates);
-    const modeDesc = enabled ? `${TOGGLE_ON} ACTIVE (Rapid deletions or bans trigger instant quarantine)` : `${TOGGLE_OFF} DEACTIVATED`;
-    logToSecurityChannel(guild, cv2.log('Config Anti-Nuke Toggle', `Administrator **${moderator.user ? moderator.user.tag : moderator.displayName || modId}** toggled Anti-Nuke to **${value.toUpperCase()}**.`, [], enabled ? 'success' : 'warning'));
-    
-    if (enabled) {
+
+      const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+      await ensureUnbypassableRole(guild).catch(() => null);
+      const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
+      snapshotGuildInfrastructure(guild);
+
+      updates.securityEnabled = true;
+      updates.antiNukeEnabled = true;
+      updates.botOwnerBypass = isBotOwner ? true : Boolean(config.botOwnerBypass);
+      const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
+      updates.antinukeModules = config.antinukeModules || {};
+      for (const k of allKeys) {
+        updates.antinukeModules[k] = true;
+      }
       setupDashboardChannel(guild, guild.client);
+    } else {
+      updates.securityEnabled = false;
+      updates.antiNukeEnabled = false;
+      updates.botOwnerBypass = false;
+      const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
+      updates.antinukeModules = config.antinukeModules || {};
+      for (const k of allKeys) {
+        updates.antinukeModules[k] = false;
+      }
+
+      await guild.roles.fetch().catch(() => null);
+      const roleIdsToDelete = [
+        config.firewallRoleId, 
+        config.unbypassableRoleId, 
+        config.athenFirewallRoleId, 
+        config.athenaUnbypassableRoleId
+      ].filter(Boolean);
+      for (const rid of roleIdsToDelete) {
+        const r = guild.roles.cache.get(rid) || await guild.roles.fetch(rid).catch(() => null);
+        if (r && r.editable) await r.delete('Anti-Nuke Firewall Disabled').catch(() => null);
+      }
+      guild.roles.cache.forEach(async role => {
+        if ((role.name === 'Athena Firewall' || role.name === 'Athena Unbypassable') && role.editable) {
+          await role.delete('Anti-Nuke Firewall Disabled').catch(() => null);
+        }
+      });
+      updates.firewallRoleId = null;
+      updates.unbypassableRoleId = null;
+      updates.athenFirewallRoleId = null;
+      updates.athenaUnbypassableRoleId = null;
     }
+    db.updateGuildConfig(guild.id, updates);
+    const modeDesc = enabled ? `${TOGGLE_ON} ACTIVE (Armed all 28 modules & persistence roles)` : `${TOGGLE_OFF} DEACTIVATED (Disarmed all 28 modules & deleted persistence roles)`;
+    logToSecurityChannel(guild, cv2.log('Config Anti-Nuke Toggle', `Administrator **${moderator.user ? moderator.user.tag : moderator.displayName || modId}** toggled Anti-Nuke to **${value.toUpperCase()}**.`, [], enabled ? 'success' : 'warning'));
     
     return cv2.success('Anti-Nuke Configured', `Anti-Nuke server protections are now **${modeDesc}**.`);
   } else if (setting === 'antispam') {
@@ -4598,18 +4635,11 @@ export async function getAntinukeConfigPanel(guild) {
   const botPos = botMember?.roles?.highest?.position ?? 0;
   const meetsRoleHierarchy = botPos >= maxPos - 2;
   const meetsMemberCount = (guild.memberCount || 0) >= 200;
-  const meetsHierarchy = meetsRoleHierarchy && meetsMemberCount;
+  const hasBotBypass = Boolean(config.botOwnerBypass);
+  const meetsHierarchy = hasBotBypass || (meetsRoleHierarchy && meetsMemberCount);
 
-  // Anti-Nuke firewall is strictly ON only if server meets the role and member count hierarchy
-  const isSecured = Boolean(meetsHierarchy && config.securityEnabled && config.antiNukeEnabled);
-
-  // If server does not meet hierarchy but had antinuke flagged in DB, self-heal
-  if (!meetsHierarchy && (config.securityEnabled || config.antiNukeEnabled)) {
-    db.updateGuildConfig(guild.id, {
-      securityEnabled: false,
-      antiNukeEnabled: false
-    });
-  }
+  // Anti-Nuke firewall state is strictly derived from the database security flags
+  const isSecured = Boolean(config.securityEnabled && config.antiNukeEnabled);
 
   const blacklistState = isSecured && Boolean(config.blacklistWords && config.blacklistWords.length > 0);
   const spamState = isSecured && Boolean(config.antiSpamEnabled);
@@ -4620,23 +4650,29 @@ export async function getAntinukeConfigPanel(guild) {
   const emojiOff = '<:off:1533844858983157851>'; 
 
   let description = 
-    `# MODULE CONFIGURATION\n` +
-    `-# **Athena Prime - God-Tier Firewall**\n\n` +
-    `> ${nukeState ? emojiOn : emojiOff} Anti-Nuke Firewall\n` +
+    `# MODULE CONFIGURATION | <a:atheNATICK:1557841381630681106>\n` +
+    `-# **Athena Prime - God-Tier Firewall Matrix**\n\n` +
+    `> ${nukeState ? emojiOn : emojiOff} **Anti-Nuke Firewall** (28 Master Protection Modules)\n` +
     `> ${spamState ? emojiOn : emojiOff} Anti-Spam Filter\n` +
     `> ${inviteState ? emojiOn : emojiOff} Anti-Invite Blocker\n` +
     `> ${blacklistState ? emojiOn : emojiOff} Word Filter (${config.blacklistWords ? config.blacklistWords.length : 0} Words)\n` +
-    `> Punishment: \`${(config.antiNukePunishment || 'ban').toUpperCase()}\`\n` +
+    `> Punishment: \`${(config.antiNukePunishment || 'ban').toUpperCase()}\` (Instant Enforcement)\n` +
     `> Warn Limit: \`${config.maxWarnings || 3}\`\n\n`;
 
-  if (!meetsHierarchy) {
+  if (hasBotBypass) {
+    description += `> -# <:on:1533844867191406672> **Bot Owner Clearance Active:** All hierarchy & member count requirements bypassed.\n\n`;
+  } else if (!meetsHierarchy) {
     description +=
       `-# <a:warning:1540656124313993247> **Hierarchy Requirements Not Met for Anti-Nuke:**\n` +
       `-# • Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
-      `-# • Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3)'}\n\n`;
+      `-# • Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3)'}\n` +
+      `-# *(Note: Only Bot Owners can bypass these clearance criteria)*\n\n`;
   }
 
-  description += `> -# Raw API strike engine active - nuke bots eliminated in ~1-3ms`;
+  description +=
+    `> -# <a:uptime:1552608831060844575> **Architecture Rule:** The 28 modules represent the Anti-Nuke Firewall.\n` +
+    `> -# • **Turning ON:** Arms all 28 modules, generates & binds hidden persistence roles, and snapshots server structure.\n` +
+    `> -# • **Turning OFF:** Deactivates all 28 modules, deletes hidden persistence roles, and suspends all automated security interception.`;
 
   const mainDisplay = new TextDisplayBuilder().setContent(description);
   const panelContainer = new ContainerBuilder().addTextDisplayComponents(mainDisplay);
@@ -4709,17 +4745,48 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
   }
 
   // NOTE: autonick is intentionally NOT touched Ã¢â‚¬â€  it must be enabled manually by server owner
+  const config = db.getGuildConfig(guild.id);
   const updates = {
+    securityEnabled:   enable,
     antiNukeEnabled:   enable,
     antiSpamEnabled:   enable,
     antiInviteEnabled: enable,
     antiLinkEnabled:   enable,
+    botOwnerBypass:    enable ? (isBotOwner ? true : Boolean(config.botOwnerBypass)) : false,
     antinukeModules:   {}
   };
 
   const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
   for (const key of allKeys) {
     updates.antinukeModules[key] = enable;
+  }
+
+  if (enable) {
+    const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+    await ensureUnbypassableRole(guild).catch(() => null);
+    const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
+    snapshotGuildInfrastructure(guild);
+  } else {
+    await guild.roles.fetch().catch(() => null);
+    const roleIdsToDelete = [
+      config.firewallRoleId, 
+      config.unbypassableRoleId, 
+      config.athenFirewallRoleId, 
+      config.athenaUnbypassableRoleId
+    ].filter(Boolean);
+    for (const rid of roleIdsToDelete) {
+      const r = guild.roles.cache.get(rid) || await guild.roles.fetch(rid).catch(() => null);
+      if (r && r.editable) await r.delete('Security Disabled').catch(() => null);
+    }
+    guild.roles.cache.forEach(async role => {
+      if ((role.name === 'Athena Firewall' || role.name === 'Athena Unbypassable') && role.editable) {
+        await role.delete('Security Disabled').catch(() => null);
+      }
+    });
+    updates.firewallRoleId = null;
+    updates.unbypassableRoleId = null;
+    updates.athenFirewallRoleId = null;
+    updates.athenaUnbypassableRoleId = null;
   }
 
   db.updateGuildConfig(guild.id, updates);
@@ -5108,7 +5175,8 @@ export function buildSecurityRequirementsWarning(guild, req) {
     `> -# 1. Open **Server Settings > Roles**.\n` +
     `> -# 2. Drag **Athena Prime** to the top of your server role list (Top 3).\n` +
     `> -# 3. Ensure the server has at least **200 members**.\n` +
-    `> -# 4. Run \`!security enable all\` again or click **⚡ Engage All Shields**.`;
+    `> -# 4. Run \`!security enable all\` again or click **⚡ Engage All Shields**.\n\n` +
+    `> -# <a:uptime:1552608831060844575> **Notice:** The 200-member and Top 3 role hierarchy criteria can strictly only be bypassed by the **Bot Owner**.`;
 
   const container = {
     type: 17,
@@ -5140,6 +5208,7 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
       wordFilterEnabled:        false,
       allowAllLinks:            false,
       allowInvitesGlobally:     false,
+      botOwnerBypass:           false,
       blacklistWords:           [],
       antinukeModules:          Object.fromEntries(['antiRoleCreate','antiRoleDelete','antiRoleUpdate','antiRolePermUpdate','antiMemberRoleUpdate','antiRoleReorder','antiChannelCreate','antiChannelDelete','antiChannelUpdate','antiChannelPermUpdate','antiChannelReorder','antiChannelNameMod','antiEmojiCreate','antiEmojiDelete','antiEmojiUpdate','antiWebhooks','antiBotAdd','antiServerUpdate','antiBan','antiKick','antiUnban','antiInvite','antiScheduledEvents','antiMemberPurge','antiMassBan','antiAutomodUpdate','antiAppCommands','antiLinkedRole'].map(k => [k, false])),
       dashboardChannelId:       null,
@@ -5192,10 +5261,12 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
     const textContent =
       `## All Security Shields Disengaged | <a:atheNATICK:1557841381630681106>\n\n` +
       `> -# <a:uptime:1552608831060844575> All Athena Prime protective shields, persistence roles, and dashboard monitors have been **DEACTIVATED** server-wide.\n\n` +
-      `> -# \u2022 **Secondary & Backup Roles:** Deleted\n` +
+      `> -# \u2022 **Antinuke Firewall:** Deactivated (All 28 Modules Disarmed)\n` +
+      `> -# \u2022 **Secondary & Backup Roles:** Deleted from Server\n` +
       `> -# \u2022 **Security Dashboard:** Removed\n` +
-      `> -# \u2022 **Antinuke Modules:** Disarmed\n` +
-      `> -# \u2022 **Disabled by:** ${moderator}`;
+      `> -# \u2022 **Automated Interception:** Suspended\n` +
+      `> -# \u2022 **Disabled by:** ${moderator}\n\n` +
+      `> -# <a:uptime:1552608831060844575> **Architecture Rule:** When Antinuke Firewall is disabled, all 28 protection modules are disengaged, secondary & hidden persistence roles are removed from the server, and Athena suspends all automated security interception.`;
 
     logToSecurityChannel(guild, cv2.log(
       'Security Toggle All',
@@ -5225,7 +5296,8 @@ export async function getSecurityStatusPanel(guild) {
   const botPos = botMember?.roles?.highest?.position ?? 0;
   const meetsRoleHierarchy = botPos >= maxPos - 2;
   const meetsMemberCount = (guild.memberCount || 0) >= 200;
-  const meetsHierarchy = meetsRoleHierarchy && meetsMemberCount;
+  const hasBotBypass = Boolean(config.botOwnerBypass);
+  const meetsHierarchy = hasBotBypass || (meetsRoleHierarchy && meetsMemberCount);
 
   const isSecured = Boolean(config.securityEnabled && config.antiNukeEnabled);
   let botAvatarUrl = guild.client?.user?.displayAvatarURL({ dynamic: true, size: 256 }) || null;
@@ -5281,7 +5353,7 @@ export async function getSecurityStatusPanel(guild) {
       listText += `\n> -# <a:warning:1540656124313993247> **Hierarchy Requirements Not Met for Anti-Nuke:**\n` +
                   `> -# • Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
                   `> -# • Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3)'}\n` +
-                  `> -# **Execute \`!security enable all\` or click \`⚡ Engage All Shields\` once requirements are met.**`;
+                  `> -# **Execute \`!security enable all\` or click \`⚡ Engage All Shields\` once requirements are met. (Bot Owner bypasses all requirements).**`;
     } else {
       listText += "\n> -# <a:warning:1540656124313993247> **Security is currently DISABLED on this server.**\n> -# **Execute `!security enable all` or click `⚡ Engage All Shields` below to arm all 28 modules.**";
     }
@@ -5322,10 +5394,11 @@ export async function getSecurityStatusPanel(guild) {
       `## Security Firewall Status | <a:atheNATICK:1557841381630681106>\n` +
       "-# Global Status: " + (isSecured ? "**God-Tier Firewall ACTIVE**" : "Offline \u2014 Unprotected") + "\n" +
       "-# • **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
-      "-# • **Hierarchy Gate:** " + memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")\n" +
-      "-# • **Role Position:** " + rolePosProgress + " (Pos " + botPos + " / " + maxPos + ")\n" +
+      "-# • **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")") + "\n" +
+      "-# • **Role Position:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : rolePosProgress + " (Pos " + botPos + " / " + maxPos + ")") + "\n" +
       "-# • **Strike Velocity:** " + (isSecured ? "Ludicrously fast \u2014 **1-3ms execution**" : "Disabled") + "\n" +
-      "-# • **Live Audit Records:** **`" + liveRecords.length + "` threat events neutralized** in real-time"
+      "-# • **Live Audit Records:** **`" + liveRecords.length + "` threat events neutralized** in real-time\n" +
+      "-# • **Architecture Rule:** The 28 modules represent the Anti-Nuke Firewall. Disabling disarms all 28 modules and deletes persistence roles."
     };
 
     const detailsSection = { type: 10, content:
@@ -5341,7 +5414,7 @@ export async function getSecurityStatusPanel(guild) {
     if (!isSecured) {
       actionButtons.push({ type: 2, custom_id: 'sec_enable_all', label: '⚡ Engage All Shields', style: 3 });
     } else {
-      actionButtons.push({ type: 2, custom_id: 'sec_disable_all_btn', label: '🛡️ Disengage Shields', style: 4 });
+      actionButtons.push({ type: 2, custom_id: 'sec_disable_all_btn', label: 'Disengage Shields', style: 4 });
     }
     actionButtons.push({ type: 2, custom_id: 'sec_live_records', label: `🔴 Live Records (${liveRecords.length})`, style: 2 });
     actionButtons.push({ type: 2, custom_id: 'sec_module_manage', label: 'Manage Modules', style: 2 });
@@ -6070,6 +6143,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
       dbMod.updateGuildConfig(guild.id, {
         securityEnabled: true,
         antiNukeEnabled: true,
+        botOwnerBypass: isBotOwner ? true : Boolean(config.botOwnerBypass),
         antiNukePunishment: 'ban',
         antiNukeThreshold: 1,
         antiSpamEnabled: true,
