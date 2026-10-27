@@ -10,7 +10,7 @@ import { setGuildContext } from '../embed.js';
 import * as downloader from '../utils/mediaDownloader.js';
 import db from '../database.js';
 
-import { isBotOwnerSync, isExtraOwner } from '../utils/helpers.js';
+import { isBotOwnerSync, isExtraOwner, isServerAdmin, getBotOwnerIds } from '../utils/helpers.js';
 const TOGGLE_ON = '<:emoji_16:1533860111704002665>';
 
 export default {
@@ -787,6 +787,154 @@ export default {
       modal.addComponents(new ActionRowBuilder().addComponents(input));
       return await interaction.showModal(modal).catch(console.error);
     }
+
+    // ==========================================
+    // SERVER JOIN APPLICATION (GATEKEEPER) BUTTONS
+    // ==========================================
+    if (interaction.customId === 'btn_entry_apply') {
+      try {
+        const guildId = interaction.guild?.id;
+        if (!guildId) return;
+
+        // Check if user already has an active pending application
+        const existing = db.getPendingEntryApp(guildId, interaction.user.id);
+        if (existing) {
+          return interaction.reply({ 
+            content: '<a:uptime:1552608831060844575> You already have a pending join application under review by server staff.', 
+            flags: 64 
+          });
+        }
+
+        const config = db.getEntryConfig(guildId);
+        const questions = config.questions?.length ? config.questions : [
+          'What brings you to our community?',
+          'How did you find this server (invite / friend)?',
+          'Have you read and agree to all server rules?'
+        ];
+
+        const modal = new ModalBuilder()
+          .setCustomId('modal_entry_submit')
+          .setTitle('Server Join Application');
+
+        questions.slice(0, 5).forEach((q, i) => {
+          const input = new TextInputBuilder()
+            .setCustomId(`entry_q_${i}`)
+            .setLabel(q.length > 45 ? q.substring(0, 42) + '...' : q)
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true);
+          modal.addComponents(new ActionRowBuilder().addComponents(input));
+        });
+
+        return await interaction.showModal(modal);
+      } catch (err) {
+        return interaction.reply({ content: `Application error: ${err.message}`, flags: 64 }).catch(() => null);
+      }
+    }
+
+    if (interaction.customId.startsWith('btn_entry_accept_')) {
+      const parts = interaction.customId.split('_');
+      const targetGuildId = parts[3];
+      const targetUserId = parts[4];
+
+      const isBotOwner = isBotOwnerSync(interaction.user.id);
+      const isDM = !interaction.guild;
+
+      // Remote permission check: Only bot owner can accept remotely (in DMs or from another server)
+      if (isDM && !isBotOwner) {
+        return interaction.reply({ content: 'Only the Bot Owner can accept applications remotely.', flags: 64 });
+      }
+      if (!isDM && !isBotOwner && interaction.guild.id !== targetGuildId) {
+        return interaction.reply({ content: 'Cross-server remote approval is restricted exclusively to the Bot Owner.', flags: 64 });
+      }
+      if (!isDM && !isBotOwner && !isServerAdmin(interaction.member, interaction.guild)) {
+        return interaction.reply({ content: 'Only Server Administrators can review join applications.', flags: 64 });
+      }
+
+      await interaction.deferUpdate().catch(() => null);
+
+      const targetGuild = interaction.client.guilds.cache.get(targetGuildId) || await interaction.client.guilds.fetch(targetGuildId).catch(() => null);
+      if (!targetGuild) {
+        return interaction.followUp({ content: `Target server \`${targetGuildId}\` was not found.`, flags: 64 }).catch(() => null);
+      }
+
+      const entryCfg = db.getEntryConfig(targetGuildId);
+      const member = targetGuild.members.cache.get(targetUserId) || await targetGuild.members.fetch(targetUserId).catch(() => null);
+
+      if (!member) {
+        db.deletePendingEntryApp(targetGuildId, targetUserId);
+        return interaction.followUp({ content: `Applicant <@${targetUserId}> is no longer in **${targetGuild.name}**. Application discarded.`, flags: 64 }).catch(() => null);
+      }
+
+      try {
+        // 1. Add verified role
+        if (entryCfg.verifiedRoleId) {
+          const vRole = targetGuild.roles.cache.get(entryCfg.verifiedRoleId);
+          if (vRole && member.manageable) {
+            await member.roles.add(vRole, `Join Application Approved by ${interaction.user.tag}`);
+          }
+        }
+
+        // 2. Remove holding role
+        if (entryCfg.holdingRoleId) {
+          const hRole = targetGuild.roles.cache.get(entryCfg.holdingRoleId);
+          if (hRole && member.roles.cache.has(hRole.id) && member.manageable) {
+            await member.roles.remove(hRole, `Join Application Approved by ${interaction.user.tag}`).catch(() => null);
+          }
+        }
+
+        // 3. Remove pending app from DB
+        db.deletePendingEntryApp(targetGuildId, targetUserId);
+
+        // 4. Send acceptance DM
+        member.send(cv2.success(
+          `Application Accepted | <a:atheNATICK:1557841381630681106>`,
+          `<a:uptime:1552608831060844575> Your join application for **${targetGuild.name}** has been **ACCEPTED**!\n\nWelcome to the community!`
+        )).catch(() => null);
+
+        // 5. Update the review card message
+        const origComponents = interaction.message.components.map(c => c.toJSON());
+        const filtered = origComponents.filter(c => c.type !== 1);
+        filtered.push({
+          type: 10,
+          content: `### Result: Accepted | <a:atheNATICK:1557841381630681106>\n> Approved by <@${interaction.user.id}> (\`${interaction.user.tag}\`)${isDM ? ' *(Remote Bot Owner Approval)*' : ''}`
+        });
+
+        await interaction.editReply({ components: filtered, flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+      } catch (err) {
+        console.error('[Entry Accept Error]', err);
+      }
+      return;
+    }
+
+    if (interaction.customId.startsWith('btn_entry_deny_')) {
+      const parts = interaction.customId.split('_');
+      const targetGuildId = parts[3];
+      const targetUserId = parts[4];
+
+      const isBotOwner = isBotOwnerSync(interaction.user.id);
+      const isDM = !interaction.guild;
+
+      if (isDM && !isBotOwner) {
+        return interaction.reply({ content: 'Only the Bot Owner can deny applications remotely.', flags: 64 });
+      }
+      if (!isDM && !isBotOwner && interaction.guild.id !== targetGuildId) {
+        return interaction.reply({ content: 'Cross-server remote approval is restricted exclusively to the Bot Owner.', flags: 64 });
+      }
+      if (!isDM && !isBotOwner && !isServerAdmin(interaction.member, interaction.guild)) {
+        return interaction.reply({ content: 'Only Server Administrators can review join applications.', flags: 64 });
+      }
+
+      const modal = new ModalBuilder()
+        .setCustomId(`modal_entry_deny_${targetGuildId}_${targetUserId}`)
+        .setTitle('Deny Join Application');
+      const input = new TextInputBuilder()
+        .setCustomId('deny_reason')
+        .setLabel('Reason for Rejection (sent to user)')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
+      modal.addComponents(new ActionRowBuilder().addComponents(input));
+      return await interaction.showModal(modal).catch(console.error);
+    }
   }
 
   // XP MODAL SUBMITS
@@ -935,6 +1083,160 @@ export default {
           target.send(cv2[action === 'accept' ? 'success' : 'danger'](title, `**Server:** ${interaction.guild.name}\n**Reason:** ${reason}`)).catch(() => null);
         }
       }).catch(()=>{});
+      return;
+    }
+
+    // ==========================================
+    // SERVER JOIN APPLICATION (GATEKEEPER) MODALS
+    // ==========================================
+    if (interaction.customId === 'modal_entry_submit') {
+      await interaction.deferReply({ flags: 64 }).catch(() => null);
+      const guild = interaction.guild;
+      if (!guild) return;
+
+      const config = db.getEntryConfig(guild.id);
+      const questions = config.questions?.length ? config.questions : [
+        'What brings you to our community?',
+        'How did you find this server (invite / friend)?',
+        'Have you read and agree to all server rules?'
+      ];
+
+      const answers = [];
+      questions.slice(0, 5).forEach((q, i) => {
+        let val = 'No answer provided';
+        try {
+          val = interaction.fields.getTextInputValue(`entry_q_${i}`) || val;
+        } catch {}
+        answers.push({ question: q, answer: val });
+      });
+
+      // Save pending app
+      db.savePendingEntryApp(guild.id, interaction.user.id, {
+        guildName: guild.name,
+        userTag: interaction.user.tag,
+        avatarUrl: interaction.user.displayAvatarURL({ extension: 'png', size: 128 }),
+        answers
+      });
+
+      // Construct interactive review card
+      const reviewEmbed = {
+        type: 17,
+        components: [
+          { type: 10, content: `# New Server Join Application | <a:uptime:1552608831060844575>` },
+          { type: 14, divider: true },
+          { 
+            type: 9, 
+            components: [
+              { type: 10, content: `**Applicant:** <@${interaction.user.id}> (\`${interaction.user.tag}\`)` },
+              { type: 10, content: `**Server:** ${guild.name} (\`${guild.id}\`)` },
+              { type: 10, content: `**Account Age:** <t:${Math.floor(interaction.user.createdTimestamp / 1000)}:R>` }
+            ], 
+            accessory: { type: 11, media: { url: interaction.user.displayAvatarURL({ extension: 'png', size: 128 }) } } 
+          },
+          { type: 14, divider: true },
+          { type: 10, content: `### Questionnaire Responses:` }
+        ]
+      };
+
+      answers.forEach(a => {
+        reviewEmbed.components.push({ type: 10, content: `**${a.question}**\n> ${a.answer}` });
+      });
+
+      reviewEmbed.components.push({ type: 14, divider: true });
+
+      const btnAccept = new ButtonBuilder()
+        .setCustomId(`btn_entry_accept_${guild.id}_${interaction.user.id}`)
+        .setLabel('Accept Entry')
+        .setStyle(ButtonStyle.Success);
+      const btnDeny = new ButtonBuilder()
+        .setCustomId(`btn_entry_deny_${guild.id}_${interaction.user.id}`)
+        .setLabel('Deny & Kick')
+        .setStyle(ButtonStyle.Danger);
+      const row = new ActionRowBuilder().addComponents(btnAccept, btnDeny);
+      reviewEmbed.components.push(row.toJSON());
+
+      // 1. Bot Owner Remote Delivery (Global DM)
+      if (db.isBotOwnerEntryRemote()) {
+        const ownerIds = getBotOwnerIds();
+        for (const ownerId of ownerIds) {
+          interaction.client.users.fetch(ownerId).then(owner => {
+            if (owner) {
+              owner.send({ components: [reviewEmbed], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+            }
+          }).catch(() => null);
+        }
+      }
+
+      // 2. Local Guild Staff Review Channel
+      if (config.logChannelId) {
+        const logChan = guild.channels.cache.get(config.logChannelId);
+        if (logChan) {
+          logChan.send({ components: [reviewEmbed], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+        }
+      }
+
+      // 3. Server Owner DM (if enabled)
+      if (config.autoDmServerOwner && guild.ownerId) {
+        guild.fetchOwner().then(owner => {
+          if (owner) {
+            owner.send({ components: [reviewEmbed], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+          }
+        }).catch(() => null);
+      }
+
+      return interaction.editReply({
+        content: '<a:atheNATICK:1557841381630681106> Your join application has been submitted successfully! Server staff will review your responses shortly.'
+      }).catch(() => null);
+    }
+
+    if (interaction.customId.startsWith('modal_entry_deny_')) {
+      const parts = interaction.customId.split('_');
+      const targetGuildId = parts[3];
+      const targetUserId = parts[4];
+      const reason = interaction.fields.getTextInputValue('deny_reason') || 'Application did not meet requirements.';
+
+      await interaction.deferUpdate().catch(() => null);
+
+      const targetGuild = interaction.client.guilds.cache.get(targetGuildId) || await interaction.client.guilds.fetch(targetGuildId).catch(() => null);
+      const isDM = !interaction.guild;
+
+      if (targetGuild) {
+        const member = targetGuild.members.cache.get(targetUserId) || await targetGuild.members.fetch(targetUserId).catch(() => null);
+        if (member) {
+          await member.send(cv2.danger(
+            'Join Application Denied',
+            `Your join application for **${targetGuild.name}** was **DENIED**.\n\n**Reason:** ${reason}`
+          )).catch(() => null);
+
+          if (member.kickable) {
+            await member.kick(`Join Application Denied by ${interaction.user.tag}: ${reason}`).catch(() => null);
+          }
+        }
+      }
+
+      db.deletePendingEntryApp(targetGuildId, targetUserId);
+
+      const origComponents = interaction.message.components.map(c => c.toJSON());
+      const filtered = origComponents.filter(c => c.type !== 1);
+      filtered.push({
+        type: 10,
+        content: `### Result: Denied & Kicked\n> Rejected by <@${interaction.user.id}> (\`${interaction.user.tag}\`)${isDM ? ' *(Remote Bot Owner)*' : ''}\n> **Reason:** ${reason}`
+      });
+
+      await interaction.editReply({ components: filtered, flags: MessageFlags.IsComponentsV2 }).catch(() => null);
+      return;
+    }
+
+    if (interaction.customId === 'modal_entry_add_q') {
+      const qText = interaction.fields.getTextInputValue('entry_q_text');
+      const config = db.getEntryConfig(interaction.guild.id);
+      if (config.questions.length >= 5) {
+        return interaction.reply({ content: 'You can only have 5 questions maximum!', flags: 64 });
+      }
+      config.questions.push(qText);
+      db.updateEntryConfig(interaction.guild.id, { questions: config.questions });
+      await interaction.reply({ content: `<a:atheNATICK:1557841381630681106> Successfully added question: **${qText}**\nRun \`!entry questions\` to review.`, flags: 64 });
+      await interaction.message.delete().catch(() => null);
       return;
     }
   }

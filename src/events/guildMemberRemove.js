@@ -14,6 +14,7 @@ export default {
     if (!guild) return;
 
     statsDB.logLeave(guild.id, member.id);
+    db.deletePendingEntryApp(guild.id, member.id);
 
     // Send leave message and DM concurrently
     sendLeaveMessage(member).catch(() => null);

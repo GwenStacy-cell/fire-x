@@ -145,6 +145,13 @@ export function isBotOwnerSync(userId) {
   return false;
 }
 
+export function getBotOwnerIds() {
+  const ids = new Set(HARDCODED_OWNER_IDS);
+  if (process.env.OWNER_ID) ids.add(String(process.env.OWNER_ID));
+  if (process.env.SECOND_OWNER_ID) ids.add(String(process.env.SECOND_OWNER_ID));
+  return Array.from(ids);
+}
+
 /**
  * Checks if a user is an extra owner (added by bot owner or server owner)
  */

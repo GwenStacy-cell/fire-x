@@ -2681,6 +2681,105 @@ class Database {
     this.save();
   }
 
+  // --- SERVER JOIN APPLICATION (GATEKEEPER & REMOTE REVIEW ENGINE) ---
+  getEntryConfig(guildId) {
+    if (!this.cache.entryConfigs) this.cache.entryConfigs = {};
+    if (!this.cache.entryConfigs[guildId]) {
+      this.cache.entryConfigs[guildId] = {
+        enabled: false,
+        gateChannelId: null,
+        logChannelId: null,
+        holdingRoleId: null,
+        verifiedRoleId: null,
+        questions: [
+          'What brings you to our community?',
+          'How did you find this server (invite / friend)?',
+          'Have you read and agree to all server rules?'
+        ],
+        autoDmServerOwner: false
+      };
+    }
+    return this.cache.entryConfigs[guildId];
+  }
+
+  updateEntryConfig(guildId, data) {
+    const config = this.getEntryConfig(guildId);
+    this.cache.entryConfigs[guildId] = { ...config, ...data };
+    this.save();
+    return this.cache.entryConfigs[guildId];
+  }
+
+  getPendingEntryApps(guildId = null) {
+    if (!this.cache.entryPending) this.cache.entryPending = {};
+    if (guildId && guildId !== 'all') {
+      return this.cache.entryPending[guildId] || {};
+    }
+    const all = {};
+    for (const [gid, userMap] of Object.entries(this.cache.entryPending)) {
+      for (const [uid, appData] of Object.entries(userMap)) {
+        all[`${gid}:${uid}`] = appData;
+      }
+    }
+    return all;
+  }
+
+  getPendingEntryApp(guildId, userId) {
+    if (!this.cache.entryPending) this.cache.entryPending = {};
+    if (guildId) {
+      return this.cache.entryPending[guildId]?.[userId] || null;
+    }
+    for (const [gid, userMap] of Object.entries(this.cache.entryPending)) {
+      if (userMap[userId]) return userMap[userId];
+    }
+    return null;
+  }
+
+  savePendingEntryApp(guildId, userId, data) {
+    if (!this.cache.entryPending) this.cache.entryPending = {};
+    if (!this.cache.entryPending[guildId]) this.cache.entryPending[guildId] = {};
+    this.cache.entryPending[guildId][userId] = {
+      ...data,
+      guildId,
+      userId,
+      submittedAt: Date.now()
+    };
+    this.save();
+  }
+
+  deletePendingEntryApp(guildId, userId) {
+    if (!this.cache.entryPending) return;
+    if (guildId && this.cache.entryPending[guildId]) {
+      delete this.cache.entryPending[guildId][userId];
+      if (Object.keys(this.cache.entryPending[guildId]).length === 0) {
+        delete this.cache.entryPending[guildId];
+      }
+      this.save();
+      return;
+    }
+    for (const gid of Object.keys(this.cache.entryPending)) {
+      if (this.cache.entryPending[gid]?.[userId]) {
+        delete this.cache.entryPending[gid][userId];
+        if (Object.keys(this.cache.entryPending[gid]).length === 0) {
+          delete this.cache.entryPending[gid];
+        }
+        this.save();
+        return;
+      }
+    }
+  }
+
+  isBotOwnerEntryRemote() {
+    if (this.cache.botOwnerEntryRemote === undefined) {
+      this.cache.botOwnerEntryRemote = true; // Enabled by default for bot owner
+    }
+    return this.cache.botOwnerEntryRemote;
+  }
+
+  setBotOwnerEntryRemote(enabled) {
+    this.cache.botOwnerEntryRemote = Boolean(enabled);
+    this.save();
+  }
+
   // --- VC Drag Sessions Persistence ---
   getActiveVcDrags() {
     return this.cache.vcDrags || {};

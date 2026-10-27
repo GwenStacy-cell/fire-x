@@ -267,6 +267,8 @@ export function snapshotGuildInfrastructure(guild) {
 
     for (const r of guild.roles.cache.values()) {
       if (r.id === guild.id || r.managed) continue;
+      // Upgrade 2: Role Member Restoration — Snapshot assigned members
+      const members = Array.from(r.members.keys());
       rolesMap.set(r.id, {
         id: r.id,
         name: r.name,
@@ -276,7 +278,8 @@ export function snapshotGuildInfrastructure(guild) {
         rawPosition: r.rawPosition,
         permissions: r.permissions.bitfield.toString(),
         mentionable: r.mentionable,
-        unicodeEmoji: r.unicodeEmoji || null
+        unicodeEmoji: r.unicodeEmoji || null,
+        members
       });
     }
 
@@ -512,14 +515,34 @@ export function triggerSnapshotSync(guild, delayMs = 30_000) {
 }
 
 // ==========================================
-// SMART TOPOLOGICAL RESTORATION QUEUE
-// 1. Categories created first
-// 2. Child channels created with resolved parent category IDs
-// 3. Exact position and rawPosition restored and locked
-// 4. Overwrites mapped properly
+// SMART TOPOLOGICAL RESTORATION QUEUE & RATE-LIMIT PRIORITIZER
+// Rate-Limit Rule: Hostile elimination (rawBan/rawRoleStrip) strictly takes 100% of API throughput.
+// Restorations NEVER consume API quotas until attacker is completely eliminated.
+// Upgrade 3: Strict 3-Tier Queue Ordering (Roles FIRST -> Categories SECOND -> Channels THIRD)
 // ==========================================
 const restorationQueue = [];
 let isRestoring = false;
+
+// In-flight punishment tracker across guilds to prevent rate limit contention
+const inFlightPunishments = new Map(); // guildId -> Set<Promise>
+
+export function trackInFlightPunishment(guildId, promise) {
+  if (!guildId || !promise) return;
+  if (!inFlightPunishments.has(guildId)) inFlightPunishments.set(guildId, new Set());
+  const set = inFlightPunishments.get(guildId);
+  set.add(promise);
+  promise.finally(() => {
+    set.delete(promise);
+    if (set.size === 0) inFlightPunishments.delete(guildId);
+  });
+}
+
+export async function waitForInFlightPunishments(guildId) {
+  const set = inFlightPunishments.get(guildId);
+  if (set && set.size > 0) {
+    await Promise.allSettled(Array.from(set));
+  }
+}
 
 export async function processRestorationQueue() {
   if (isRestoring || restorationQueue.length === 0) return;
@@ -527,16 +550,27 @@ export async function processRestorationQueue() {
   let activeGuild = null;
 
   while (restorationQueue.length > 0) {
-    // Categories MUST be restored first so children have their parent container
+    // ⚡ Upgrade 3: Strict 3-Tier Queue Ordering:
+    // Tier 0: Roles FIRST (so channel overwrites can reference restored role IDs)
+    // Tier 1: Categories SECOND (so child channels have their parent containers)
+    // Tier 2: Channels THIRD
     restorationQueue.sort((a, b) => {
-      if (a.isCategory && !b.isCategory) return -1;
-      if (!a.isCategory && b.isCategory) return 1;
-      return 0;
+      const getPriority = (task) => {
+        if (task.isRole || task.itemType === 'role') return 0;
+        if (task.isCategory || task.itemType === 'category') return 1;
+        return 2;
+      };
+      return getPriority(a) - getPriority(b);
     });
 
     const task = restorationQueue.shift();
     if (!task) continue;
     if (task.guild) activeGuild = task.guild;
+
+    // ⚡ Rate Limit Priority: Await any active punishments in this guild before calling Discord API!
+    if (task.guild?.id) {
+      await waitForInFlightPunishments(task.guild.id);
+    }
 
     try {
       await task.execute();
@@ -843,6 +877,9 @@ export async function executeIntelligentRoleRepair(guild, roleId, fallbackRole =
     const unicodeEmoji = cached?.unicodeEmoji || snap?.unicodeEmoji || fallbackRole?.unicodeEmoji || undefined;
     const rawPos = cached?.rawPosition ?? snap?.rawPosition ?? cached?.position ?? snap?.position ?? 1;
 
+    // Upgrade 2: Role Member Restoration — Gather member IDs prior to deletion
+    const membersToRestore = snap?.members || (cached?.members ? Array.from(cached.members.keys()) : []) || (fallbackRole?.members ? Array.from(fallbackRole.members.keys()) : []) || [];
+
     const newRole = await guild.roles.create({
       name,
       colors: { primaryColor: color },
@@ -857,6 +894,18 @@ export async function executeIntelligentRoleRepair(guild, roleId, fallbackRole =
     const botHighest = guild.members.me?.roles.highest.position || 1;
     const targetPos = Math.min(Math.max(1, rawPos), Math.max(1, botHighest - 1));
     await newRole.setPosition(targetPos, { relative: false, reason: 'Athena Anti-Nuke: Role Hierarchy Alignment' }).catch(() => null);
+
+    // Re-assign restored role back to previous members in parallel
+    if (membersToRestore && membersToRestore.length > 0) {
+      Promise.allSettled(membersToRestore.map(async mId => {
+        try {
+          const m = guild.members.cache.get(mId) || await guild.members.fetch(mId).catch(() => null);
+          if (m && !m.roles.cache.has(newRole.id)) {
+            await m.roles.add(newRole, 'Athena Anti-Nuke: Re-assigning restored role to member');
+          }
+        } catch {}
+      })).catch(() => null);
+    }
 
     restorationRegistry.restoredRoles.set(roleId, newRole.id);
     restorationRegistry.restored.set(roleId, Date.now());
@@ -1151,6 +1200,86 @@ async function notifyAndLog(guild, executor, eventType, punishResult, rollbackRe
 }
 
 // ==========================================
+// ⚡ UPGRADE 4: COORDINATED MULTI-ACCOUNT BURST DETECTION (2-SECOND ROLLING WINDOW)
+// Tracks server-wide destructive actions across ALL untrusted accounts.
+// If 3+ destructive actions occur within 2 SECONDS, emergency server lockdown engages immediately.
+// ==========================================
+const globalDestructiveLog = new Map(); // guildId -> [timestamps]
+const GLOBAL_BURST_WINDOW_MS = 2_000;   // ⚡ EXACTLY 2 SECONDS (User Requirement)
+const GLOBAL_BURST_THRESHOLD = 3;       // 3 destructive actions in 2s across any accounts
+
+export async function notifyMultiAccountBurst(guild, burstCount) {
+  try {
+    const alertEmbed = cv2.danger(
+      'COORDINATED BURST RAID DETECTED | <a:uptime:1552608831060844575>',
+      `<a:uptime:1552608831060844575> **EMERGENCY SERVER LOCKDOWN ACTIVATED**\n\nDetected **${burstCount} destructive actions** within **2 SECONDS** across multiple accounts!\n\nAthena Prime has engaged **Immediate Lockdown**:\n<a:uptime:1552608831060844575> All protection thresholds reduced to **1 strike instant ban**.\n<a:uptime:1552608831060844575> Any unauthorized account performing administrative changes will be banned at 0ms.\n<a:uptime:1552608831060844575> Spam channel and role sweeps executed.`
+    );
+    await logToSecurityChannel(guild, alertEmbed).catch(() => null);
+
+    const owner = guild.members.cache.get(guild.ownerId) || await guild.members.fetch(guild.ownerId).catch(() => null);
+    if (owner) {
+      await owner.send(alertEmbed).catch(() => null);
+    }
+  } catch {}
+}
+
+export function checkGlobalBurst(guild, actionType, executorId) {
+  if (!guild?.id) return false;
+  const now = Date.now();
+  const list = (globalDestructiveLog.get(guild.id) || []).filter(t => now - t < GLOBAL_BURST_WINDOW_MS);
+  list.push(now);
+  globalDestructiveLog.set(guild.id, list);
+
+  if (list.length >= GLOBAL_BURST_THRESHOLD) {
+    if (!isGuildUnderAttack(guild.id)) {
+      setGuildUnderAttack(guild.id, executorId, 15 * 60_000); // 15-minute emergency lockdown
+      console.log(`[AntiNuke BURST] ⚡ Coordinated multi-account raid on ${guild.name} (${list.length} actions in 2s)! Engaging emergency lockdown.`);
+      notifyMultiAccountBurst(guild, list.length).catch(() => null);
+      annihilateRogueChannels(guild, executorId).catch(() => null);
+      annihilateRogueRoles(guild, executorId).catch(() => null);
+    }
+    return true;
+  }
+  return false;
+}
+
+// ==========================================
+// ⚡ UPGRADE 1: CASCADE BOT INVITER PUNISHMENT
+// Tracks who invited each bot and neutralizes the inviter if the bot attacks
+// ==========================================
+export const botInviterMap = new Map(); // `${guildId}:${botId}` -> inviterId
+
+export async function cascadeToInviter(guild, botId) {
+  if (!guild || !botId || botId === guild.client.user.id) return;
+  try {
+    let inviterId = botInviterMap.get(`${guild.id}:${botId}`);
+    if (!inviterId) {
+      const logs = await guild.fetchAuditLogs({ type: AuditLogEvent.BotAdd, limit: 30 }).catch(() => null);
+      const entry = logs?.entries?.find(e => e.targetId === botId);
+      if (entry?.executorId) {
+        inviterId = entry.executorId;
+        botInviterMap.set(`${guild.id}:${botId}`, inviterId);
+      }
+    }
+
+    if (inviterId && inviterId !== guild.client.user.id && !isAuthorized(guild, { id: inviterId })) {
+      console.log(`[AntiNuke CASCADE] Malicious bot ${botId} was invited by ${inviterId}. Neutralizing inviter!`);
+      condemn(guild.id, inviterId);
+      const config = db.getGuildConfig(guild.id) || {};
+      const inviterExecutor = {
+        id: inviterId,
+        tag: `Malicious Bot Inviter (${inviterId})`,
+        username: `BotInviter_${inviterId}`,
+        bot: false
+      };
+      await punish(guild, inviterExecutor, `Cascade Punishment: Added rogue bot (${botId}) that attacked the server`, config, true);
+    }
+  } catch (err) {
+    console.error(`[AntiNuke CASCADE] Error cascading punishment to inviter of ${botId}:`, err.message);
+  }
+}
+
+// ==========================================
 // CORE PUNISHMENT ENGINE (SUB-1MS DUAL STRIKE)
 // Role strip + Raw Ban in parallel ensures permissions are revoked within 10ms!
 // ==========================================
@@ -1162,94 +1291,106 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
   if (isPunishmentActive(guild.id, executor.id)) return result;
   lockPunishment(guild.id, executor.id);
 
+  // Upgrade 1: Cascade Bot Inviter Punishment
+  const wasBot = executor?.bot || guild.members.cache.get(executor.id)?.user?.bot;
+  if (wasBot && executor.id !== guild.client.user.id) {
+    cascadeToInviter(guild, executor.id).catch(() => null);
+  }
+
   const token = guild.client.token;
 
-  try {
-    if (punishment === 'ban') {
-      // ⚡ STEP 1: Direct Raw Ban FIRST (Fastest 0ms socket execution)
-      const banOk = await rawBan(guild.id, executor.id, token, reason);
+  const executionPromise = (async () => {
+    try {
+      if (punishment === 'ban') {
+        // ⚡ STEP 1: Direct Raw Ban FIRST (Fastest 0ms socket execution)
+        const banOk = await rawBan(guild.id, executor.id, token, reason);
 
-      if (banOk) {
-        result = 'Eliminated (Direct Raw Ban — Sub-1ms)';
-      } else {
-        // Fallback chain if raw ban failed (hierarchy conflict, permission mismatch, etc.):
-        // Immediately disarm with raw role strip, then retry ban
-        await rawRoleStrip(guild.id, executor.id, token).catch(() => null);
-        try {
-          await guild.members.ban(executor.id, { reason });
-          result = 'Permanently Banned (djs fallback)';
-        } catch {
+        if (banOk) {
+          result = 'Eliminated (Direct Raw Ban — Sub-1ms)';
+        } else {
+          // Fallback chain if raw ban failed (hierarchy conflict, permission mismatch, etc.):
+          // Immediately disarm with raw role strip, then retry ban
+          await rawRoleStrip(guild.id, executor.id, token).catch(() => null);
           try {
-            const m = await guild.members.fetch(executor.id).catch(() => null);
-            if (m) {
-              await m.roles.set([], '[ATHENA] Force role strip').catch(() => null);
-              await guild.members.ban(executor.id, { reason: reason + ' [Role-stripped retry]' });
-              result = 'Permanently Banned (role-stripped retry)';
-            }
+            await guild.members.ban(executor.id, { reason });
+            result = 'Permanently Banned (djs fallback)';
           } catch {
             try {
-              const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
-              if (m?.kickable) {
-                await m.kick(reason + ' [Ban failed — kicked]');
-                result = 'Kicked (hierarchy blocked ban)';
+              const m = await guild.members.fetch(executor.id).catch(() => null);
+              if (m) {
+                await m.roles.set([], '[ATHENA] Force role strip').catch(() => null);
+                await guild.members.ban(executor.id, { reason: reason + ' [Role-stripped retry]' });
+                result = 'Permanently Banned (role-stripped retry)';
               }
-            } catch (kickErr) {
-              result = `Total failure: ${kickErr.message}`;
+            } catch {
+              try {
+                const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
+                if (m?.kickable) {
+                  await m.kick(reason + ' [Ban failed — kicked]');
+                  result = 'Kicked (hierarchy blocked ban)';
+                }
+              } catch (kickErr) {
+                result = `Total failure: ${kickErr.message}`;
+              }
             }
           }
         }
+
+        // DM fire-and-forget (ONLY if actually punished)
+        if (!result.startsWith('Total failure') && !result.startsWith('Hierarchy blocked')) {
+          guild.members.fetch(executor.id).then(m => {
+            m?.send(cv2.danger('Eliminated — Athena Prime Firewall',
+              `You have been permanently banned from **${guild.name}**.\n\n**Violation:** ${eventType}\n\n*Athena Prime detected and neutralized your attack before a second action could execute.*`
+            )).catch(() => null);
+          }).catch(() => null);
+        }
+
+      } else if (punishment === 'kick') {
+        const executorMember = await guild.members.fetch(executor.id).catch(() => null);
+        if (!executorMember) return 'Failed (User not in server)';
+        executorMember.send(cv2.danger('Kicked — Athena Prime Firewall',
+          `You have been kicked from **${guild.name}** for triggering Anti-Nuke protection.\n\n**Violation:** ${eventType}`
+        )).catch(() => null);
+        await executorMember.kick(reason);
+        result = 'Kicked';
+
+      } else {
+        const executorMember = await guild.members.fetch(executor.id).catch(() => null);
+        if (!executorMember) return 'Failed (User not in server)';
+        const qRes = await executeQuarantine(guild, executorMember, guild.members.me, reason);
+        result = qRes.success ? 'Quarantined (all roles stripped)' : 'Quarantine failed';
       }
-
-      // DM fire-and-forget (ONLY if actually punished)
-      if (!result.startsWith('Total failure') && !result.startsWith('Hierarchy blocked')) {
-        guild.members.fetch(executor.id).then(m => {
-          m?.send(cv2.danger('Eliminated — Athena Prime Firewall',
-            `You have been permanently banned from **${guild.name}**.\n\n**Violation:** ${eventType}\n\n*Athena Prime detected and neutralized your attack before a second action could execute.*`
-          )).catch(() => null);
-        }).catch(() => null);
-      }
-
-    } else if (punishment === 'kick') {
-      const executorMember = await guild.members.fetch(executor.id).catch(() => null);
-      if (!executorMember) return 'Failed (User not in server)';
-      executorMember.send(cv2.danger('Kicked — Athena Prime Firewall',
-        `You have been kicked from **${guild.name}** for triggering Anti-Nuke protection.\n\n**Violation:** ${eventType}`
-      )).catch(() => null);
-      await executorMember.kick(reason);
-      result = 'Kicked';
-
-    } else {
-      const executorMember = await guild.members.fetch(executor.id).catch(() => null);
-      if (!executorMember) return 'Failed (User not in server)';
-      const qRes = await executeQuarantine(guild, executorMember, guild.members.me, reason);
-      result = qRes.success ? 'Quarantined (all roles stripped)' : 'Quarantine failed';
+    } catch (err) {
+      console.error('[AntiNuke] Punishment failed:', err.message);
+      result = `Hierarchy blocked (${err.message})`;
     }
-  } catch (err) {
-    console.error('[AntiNuke] Punishment failed:', err.message);
-    result = `Hierarchy blocked (${err.message})`;
-  }
 
-  // ⚡ Mark guild under attack & trigger triple rogue cleanup sweep
-  setGuildUnderAttack(guild.id, executor.id, 60_000);
-  const isChannelOrNuke = eventType.toLowerCase().includes('channel') ||
-                          eventType.toLowerCase().includes('nuke') ||
-                          eventType.toLowerCase().includes('creation');
-  if (isChannelOrNuke) {
-    annihilateRogueChannels(guild, executor.id).catch(() => null);
-    setTimeout(() => annihilateRogueChannels(guild, executor.id).catch(() => null), 1200);
-    setTimeout(() => annihilateRogueChannels(guild, executor.id).catch(() => null), 3000);
-  }
+    // ⚡ Mark guild under attack & trigger triple rogue cleanup sweep
+    setGuildUnderAttack(guild.id, executor.id, 60_000);
+    const isChannelOrNuke = eventType.toLowerCase().includes('channel') ||
+                            eventType.toLowerCase().includes('nuke') ||
+                            eventType.toLowerCase().includes('creation');
+    if (isChannelOrNuke) {
+      annihilateRogueChannels(guild, executor.id).catch(() => null);
+      setTimeout(() => annihilateRogueChannels(guild, executor.id).catch(() => null), 1200);
+      setTimeout(() => annihilateRogueChannels(guild, executor.id).catch(() => null), 3000);
+    }
 
-  const isRoleOrNuke = eventType.toLowerCase().includes('role') ||
-                       eventType.toLowerCase().includes('nuke') ||
-                       eventType.toLowerCase().includes('creation');
-  if (isRoleOrNuke) {
-    annihilateRogueRoles(guild, executor.id).catch(() => null);
-    setTimeout(() => annihilateRogueRoles(guild, executor.id).catch(() => null), 1200);
-    setTimeout(() => annihilateRogueRoles(guild, executor.id).catch(() => null), 3000);
-  }
+    const isRoleOrNuke = eventType.toLowerCase().includes('role') ||
+                         eventType.toLowerCase().includes('nuke') ||
+                         eventType.toLowerCase().includes('creation');
+    if (isRoleOrNuke) {
+      annihilateRogueRoles(guild, executor.id).catch(() => null);
+      setTimeout(() => annihilateRogueRoles(guild, executor.id).catch(() => null), 1200);
+      setTimeout(() => annihilateRogueRoles(guild, executor.id).catch(() => null), 3000);
+    }
 
-  return result;
+    return result;
+  })();
+
+  // Rate Limit Prioritization: register executionPromise into inFlightPunishments
+  trackInFlightPunishment(guild.id, executionPromise);
+  return await executionPromise;
 }
 
 // ==========================================
@@ -1374,15 +1515,24 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     return;
   }
 
+  // ⚡ Check Coordinated Multi-Account Burst (2-Second Window)
+  checkGlobalBurst(guild, auditType, executor.id);
+
   // ⚡ CONDEMN — synchronous 0ms lock, subsequent attempts skip straight to repair
   const alreadyCondemned = isCondemned(guild.id, executor.id);
   condemn(guild.id, executor.id);
   setGuildUnderAttack(guild.id, executor.id, 60_000);
 
   if (alreadyCondemned) {
-    // Already eliminated — execute damage repair immediately
+    // Already eliminated — queue damage repair with strict 3-tier ordering
     if (rollbackFn) {
-      restorationQueue.push({ guild, isCategory: eventType.includes('Category'), execute: rollbackFn });
+      restorationQueue.push({ 
+        guild, 
+        isRole: eventType.includes('Role'), 
+        isCategory: eventType.includes('Category'), 
+        itemType: eventType.includes('Role') ? 'role' : (eventType.includes('Category') ? 'category' : 'channel'), 
+        execute: rollbackFn 
+      });
       processRestorationQueue();
     }
     // For rogue channel creation, ensure rogue channel is annihilated
@@ -1405,13 +1555,22 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
   // Any 2nd request sent by the nuke bot is immediately rejected by Discord with 403 Forbidden!
   const punishPromise = punish(guild, executor, eventType, config, true);
 
-  // ⚡ STEP 2: REPAIR DAMAGE SECOND
+  // ⚡ STEP 2: REPAIR DAMAGE SECOND (Strictly prioritized after attacker is eliminated)
   let rollbackResult = 'No rollback needed';
   if (rollbackFn) {
     try {
-      restorationQueue.push({ guild, isCategory: eventType.includes('Category'), execute: rollbackFn });
-      processRestorationQueue();
-      rollbackResult = 'Intelligent damage repair queued';
+      restorationQueue.push({ 
+        guild, 
+        isRole: eventType.includes('Role'), 
+        isCategory: eventType.includes('Category'), 
+        itemType: eventType.includes('Role') ? 'role' : (eventType.includes('Category') ? 'category' : 'channel'), 
+        execute: rollbackFn 
+      });
+      // Fire restoration queue ONLY AFTER the punishment call has settled over the wire
+      punishPromise.finally(() => {
+        processRestorationQueue();
+      });
+      rollbackResult = 'Intelligent damage repair queued (awaiting hostile elimination)';
     } catch (e) {
       rollbackResult = `Rollback failed: ${e.message}`;
     }
@@ -1492,7 +1651,9 @@ export async function handleAuditLogEntry(guild, entry) {
         const isCat = ch?.type === ChannelType.GuildCategory || ch?.type === 4;
         restorationQueue.push({
           guild,
+          isRole: false,
           isCategory: isCat,
+          itemType: isCat ? 'category' : 'channel',
           execute: () => executeIntelligentChannelRepair(guild, targetId, ch)
         });
         processRestorationQueue();
@@ -1507,7 +1668,9 @@ export async function handleAuditLogEntry(guild, entry) {
         const r = deletedCache.get(targetId) || getRoleSnapshot(guild.id, targetId);
         restorationQueue.push({
           guild,
+          isRole: true,
           isCategory: false,
+          itemType: 'role',
           execute: () => executeIntelligentRoleRepair(guild, targetId, r)
         });
         processRestorationQueue();
@@ -1582,6 +1745,9 @@ export async function handleAuditLogEntry(guild, entry) {
       break;
 
     case AuditLogEvent.BotAdd:
+      if (targetId && executorId) {
+        botInviterMap.set(`${guild.id}:${targetId}`, executorId);
+      }
       if (!mods.antiBotAdd) return;
       if (!isAuthorized(guild, executor, 'antibot')) {
         eventType = 'Unauthorized Bot Addition';
@@ -1633,9 +1799,16 @@ export async function handleAuditLogEntry(guild, entry) {
       break;
 
     case AuditLogEvent.GuildUpdate:
-      if (!mods.antiServerUpdate) return;
-      eventType = 'Server Settings Tampering';
-      forceBan = true;
+      const vanityChange = entry.changes?.find(c => c.key === 'vanity_url_code');
+      if (vanityChange) {
+        // Upgrade 5: Vanity URL Tampering Guard
+        eventType = 'Vanity URL Hijacking / Sniping';
+        forceBan = true;
+      } else {
+        if (!mods.antiServerUpdate) return;
+        eventType = 'Server Settings Tampering';
+        forceBan = true;
+      }
       break;
 
     case AuditLogEvent.ChannelUpdate:
@@ -1714,13 +1887,19 @@ export async function handleAuditLogEntry(guild, entry) {
   recentBans.set(`${guild.id}:${executor.id}`, Date.now());
   setTimeout(() => recentBans.delete(`${guild.id}:${executor.id}`), 30_000);
 
+  // ⚡ Check Coordinated Multi-Account Burst (2-Second Window)
+  checkGlobalBurst(guild, action, executor.id);
+
   // ⚡ STEP 1: ELIMINATE THE VIOLATOR FIRST! (0ms Delay)
   // Lock attacker and dispatch raw API role strip + ban over pre-warmed sockets immediately
   condemn(guild.id, executor.id);
   const punishPromise = punish(guild, executor, eventType, config, forceBan);
 
-  // ⚡ STEP 2: REPAIR DAMAGE SECOND
+  // ⚡ STEP 2: REPAIR DAMAGE SECOND (Strictly prioritized after hostile elimination)
   const rollbackPromise = (async () => {
+    // Wait for ban / role strip to land so restorations do not contend for Discord API rate limits
+    await punishPromise.catch(() => null);
+
     let rollbackResult = 'No rollback needed';
 
     if (action === AuditLogEvent.ChannelDelete) {
@@ -1729,7 +1908,10 @@ export async function handleAuditLogEntry(guild, entry) {
         const ch = deletedCache.get(targetId) || getChannelSnapshot(guild.id, targetId);
         const isCat = ch?.type === ChannelType.GuildCategory || ch?.type === 4;
         restorationQueue.push({
+          guild,
+          isRole: false,
           isCategory: isCat,
+          itemType: isCat ? 'category' : 'channel',
           execute: () => executeIntelligentChannelRepair(guild, targetId, ch)
         });
         processRestorationQueue();
@@ -1749,7 +1931,10 @@ export async function handleAuditLogEntry(guild, entry) {
         markRestorationQueued(targetId);
         const r = deletedCache.get(targetId) || getRoleSnapshot(guild.id, targetId);
         restorationQueue.push({
+          guild,
+          isRole: true,
           isCategory: false,
+          itemType: 'role',
           execute: () => executeIntelligentRoleRepair(guild, targetId, r)
         });
         processRestorationQueue();

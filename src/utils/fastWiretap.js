@@ -10,7 +10,8 @@ import {
   isGuildUnderAttack,
   recordAuditEntry,
   isProtectedSystemChannel,
-  isAuthorized
+  isAuthorized,
+  checkGlobalBurst
 } from './antinuke.js';
 import { PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
@@ -106,6 +107,7 @@ export function attachWiretap(client) {
                                 isServerAdmin(member, guildId);
 
       if (!isAuthorizedAdmin) {
+        checkGlobalBurst(guild, actionType, executorId);
         if (DESTRUCTIVE_AUDIT_ACTIONS.has(actionType)) {
           if (!isCondemned(guildId, executorId)) {
             condemn(guildId, executorId);

@@ -397,6 +397,23 @@ export default {
     }
 
     // ==========================================
+    // 4.1 ENTRY GATEKEEPER HOLDING ROLE
+    // ==========================================
+    if (!member.user.bot) {
+      try {
+        const entryCfg = db.getEntryConfig(guild.id);
+        if (entryCfg?.enabled && entryCfg?.holdingRoleId) {
+          const holdingRole = guild.roles.cache.get(entryCfg.holdingRoleId) || await guild.roles.fetch(entryCfg.holdingRoleId).catch(() => null);
+          if (holdingRole && member.manageable) {
+            await member.roles.add(holdingRole, 'Athena Prime: Gatekeeper Holding Role').catch(() => null);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to assign gatekeeper holding role:', err);
+      }
+    }
+
+    // ==========================================
     // 5. WELCOME MESSAGE
     // ==========================================
     await sendWelcomeMessage(member);
