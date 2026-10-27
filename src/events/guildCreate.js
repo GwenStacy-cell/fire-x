@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import db from '../database.js';
 import { setupDashboardChannel } from '../utils/dashboardManager.js';
+import { removePersistenceRoles } from '../utils/antiStrip.js';
 
 export default {
   name: 'guildCreate',
@@ -104,6 +105,8 @@ export default {
       const cfg = db.getGuildConfig(guild.id);
       if (cfg.securityEnabled && cfg.antiNukeEnabled) {
         await setupDashboardChannel(guild, client).catch(() => null);
+      } else {
+        await removePersistenceRoles(guild).catch(() => null);
       }
 
     } catch (err) {

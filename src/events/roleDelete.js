@@ -23,7 +23,7 @@ export default {
     const isPersistenceRole = (config.unbypassableRoleId && role.id === config.unbypassableRoleId) ||
                               (config.firewallRoleId && role.id === config.firewallRoleId) ||
                               role.name === UNBYPASSABLE_ROLE_NAME || role.name === FIREWALL_ROLE_NAME;
-    if ((config.securityEnabled || config.antiNukeEnabled) && isPersistenceRole) {
+    if (config.securityEnabled && config.antiNukeEnabled && isPersistenceRole) {
       await ensureUnbypassableRole(role.guild);
       await handleAntiStab(role.guild, `DELETE my persistence role (${role.name})`, AuditLogEvent.RoleDelete);
       return;

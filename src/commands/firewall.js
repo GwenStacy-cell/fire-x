@@ -43,6 +43,34 @@ async function handleUnbypassable(context, isSlash, args = []) {
       return await context.reply(errorPayload).catch(() => null);
     }
 
+    const preCfg = db.getGuildConfig(guild.id) || {};
+    const isSecActive = Boolean(preCfg.securityEnabled && preCfg.antiNukeEnabled);
+
+    if (!isSecActive) {
+      const { removePersistenceRoles } = await import('../utils/antiStrip.js');
+      await removePersistenceRoles(guild).catch(() => null);
+      const idlePayload = {
+        components: [
+          {
+            type: 17,
+            components: [
+              { type: 10, content: `## Idle Mode Active | <a:atheNATICK:1557841381630681106>` },
+              { type: 14, divider: true },
+              { type: 10, content: `> -# <a:uptime:1552608831060844575> **Server Security and Antinuke Firewall are currently inactive.**\n> -# In Idle Mode, Athena strictly does not keep or deploy secondary persistence sentinel roles.\n> -# All persistence roles have been removed. Execute \`!security enable all\` or use \`!ss\` to arm all 28 shields and deploy persistence sentinels.` },
+              { type: 14, divider: true },
+              { type: 10, content: `-# **Athena Prime • Idle Sentinel State**` }
+            ]
+          }
+        ],
+        flags: MessageFlags.IsComponentsV2
+      };
+      if (isActualSlash) {
+        if (context.deferred || context.replied) return await context.editReply(idlePayload).catch(() => null);
+        return await context.reply(idlePayload).catch(() => null);
+      }
+      return await context.reply(idlePayload).catch(() => null);
+    }
+
     if (guild.members.me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
       try {
         const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
@@ -69,21 +97,28 @@ async function handleUnbypassable(context, isSlash, args = []) {
     ? (guild.roles.cache.get(fwRoleId) || await guild.roles.fetch(fwRoleId).catch(() => null))
     : null;
 
-  // Fallback: check cache if not tracked in config yet, and persist IDs immediately per Rule 2
-  if (!unbypassableRole) {
-    unbypassableRole = (typeof guild.roles.cache?.find === 'function')
-      ? guild.roles.cache.find(r => r.name === 'Athena Unbypassable')
-      : [...(guild.roles.cache?.values?.() || [])].find(r => r.name === 'Athena Unbypassable');
-    if (unbypassableRole) {
-      db.updateGuildConfig(guild.id, { unbypassableRoleId: unbypassableRole.id, athenaUnbypassableRoleId: unbypassableRole.id });
+  if (!isSecurityEnabled) {
+    const { removePersistenceRoles } = await import('../utils/antiStrip.js');
+    await removePersistenceRoles(guild).catch(() => null);
+    unbypassableRole = null;
+    firewallRole = null;
+  } else {
+    // Fallback: check cache if not tracked in config yet, and persist IDs immediately per Rule 2
+    if (!unbypassableRole) {
+      unbypassableRole = (typeof guild.roles.cache?.find === 'function')
+        ? guild.roles.cache.find(r => r.name === 'Athena Unbypassable')
+        : [...(guild.roles.cache?.values?.() || [])].find(r => r.name === 'Athena Unbypassable');
+      if (unbypassableRole) {
+        db.updateGuildConfig(guild.id, { unbypassableRoleId: unbypassableRole.id, athenaUnbypassableRoleId: unbypassableRole.id });
+      }
     }
-  }
-  if (!firewallRole) {
-    firewallRole = (typeof guild.roles.cache?.find === 'function')
-      ? guild.roles.cache.find(r => r.name === 'Athena Firewall')
-      : [...(guild.roles.cache?.values?.() || [])].find(r => r.name === 'Athena Firewall');
-    if (firewallRole) {
-      db.updateGuildConfig(guild.id, { firewallRoleId: firewallRole.id, athenFirewallRoleId: firewallRole.id });
+    if (!firewallRole) {
+      firewallRole = (typeof guild.roles.cache?.find === 'function')
+        ? guild.roles.cache.find(r => r.name === 'Athena Firewall')
+        : [...(guild.roles.cache?.values?.() || [])].find(r => r.name === 'Athena Firewall');
+      if (firewallRole) {
+        db.updateGuildConfig(guild.id, { firewallRoleId: firewallRole.id, athenFirewallRoleId: firewallRole.id });
+      }
     }
   }
 
@@ -107,7 +142,9 @@ async function handleUnbypassable(context, isSlash, args = []) {
 
   // Real-time calculation of Section 1: Persistence Sentinel Roles Status
   let unbStatus;
-  if (!unbExists) {
+  if (!isSecurityEnabled) {
+    unbStatus = `\`Idle Mode (Disarmed)\` — ${RED_OFF} **Deleted**`;
+  } else if (!unbExists) {
     unbStatus = `\`Not Found (Run !unb deploy)\` — ${RED_OFF} **Inactive**`;
   } else if (!unbHasAdmin) {
     unbStatus = `<@&${unbypassableRole.id}> (\`${unbypassableRole.id}\`) — ${RED_OFF} **Vulnerable (Admin Missing)**`;
@@ -120,7 +157,9 @@ async function handleUnbypassable(context, isSlash, args = []) {
   }
 
   let fwStatus;
-  if (!fwExists) {
+  if (!isSecurityEnabled) {
+    fwStatus = `\`Idle Mode (Disarmed)\` — ${RED_OFF} **Deleted**`;
+  } else if (!fwExists) {
     fwStatus = `\`Not Found (Run !unb deploy)\` — ${RED_OFF} **Inactive**`;
   } else if (!fwHasAdmin) {
     fwStatus = `<@&${firewallRole.id}> (\`${firewallRole.id}\`) — ${RED_OFF} **Vulnerable (Admin Missing)**`;
@@ -138,7 +177,7 @@ async function handleUnbypassable(context, isSlash, args = []) {
   // 1. Anti-Strip Protection (Requires security enabled, bot has ManageRoles, roles exist, roles editable)
   let antiStripText;
   if (!isSecurityEnabled) {
-    antiStripText = `${RED_OFF} \`Inactive\` (Security disarmed — run \`!security enable all\`)`;
+    antiStripText = `${RED_OFF} \`Idle Mode (Disarmed)\` (Security disarmed — roles deleted)`;
   } else if (!botHasManageRoles) {
     antiStripText = `${RED_OFF} \`Inactive\` (Missing 'Manage Roles' permission)`;
   } else if (!unbExists || !fwExists) {
@@ -152,7 +191,7 @@ async function handleUnbypassable(context, isSlash, args = []) {
   // 2. Anti-Role Delete Guard (Requires security enabled and bot has ManageRoles)
   let antiDeleteText;
   if (!isSecurityEnabled) {
-    antiDeleteText = `${RED_OFF} \`Inactive\` (Security tripwire disarmed — run \`!security enable all\`)`;
+    antiDeleteText = `${RED_OFF} \`Idle Mode (Disarmed)\` (Security disarmed — roles deleted)`;
   } else if (!botHasManageRoles) {
     antiDeleteText = `${RED_OFF} \`Inactive\` (Missing 'Manage Roles' permission to recreate)`;
   } else {
@@ -162,7 +201,7 @@ async function handleUnbypassable(context, isSlash, args = []) {
   // 3. Anti-Role Perm Modification (Requires security enabled, ManageRoles, and roles currently having Admin)
   let antiPermText;
   if (!isSecurityEnabled) {
-    antiPermText = `${RED_OFF} \`Inactive\` (Security disarmed — run \`!security enable all\`)`;
+    antiPermText = `${RED_OFF} \`Idle Mode (Disarmed)\` (Security disarmed — roles deleted)`;
   } else if (!botHasManageRoles) {
     antiPermText = `${RED_OFF} \`Inactive\` (Missing 'Manage Roles' permission to restore)`;
   } else if (!unbExists || !fwExists) {
@@ -175,7 +214,9 @@ async function handleUnbypassable(context, isSlash, args = []) {
 
   // 4. Bot Role Assignment (Live state of Athena's assigned roles)
   let botAssignmentText;
-  if (hasBoth) {
+  if (!isSecurityEnabled) {
+    botAssignmentText = `${RED_OFF} \`Idle Mode (Roles Deleted)\` (Run \`!security enable all\` to engage)`;
+  } else if (hasBoth) {
     botAssignmentText = `${ON} \`Both Roles Assigned to Athena\``;
   } else if (botHasUnb && !botHasFw) {
     botAssignmentText = `${RED_OFF} \`Degraded\` (Only Athena Unbypassable Assigned)`;
@@ -205,7 +246,8 @@ async function handleUnbypassable(context, isSlash, args = []) {
           `-# • **Anti-Strip Protection:** ${antiStripText}\n` +
           `-# • **Anti-Role Delete Guard:** ${antiDeleteText}\n` +
           `-# • **Anti-Role Perm Modification:** ${antiPermText}\n` +
-          `-# • **Bot Role Assignment:** ${botAssignmentText}`
+          `-# • **Bot Role Assignment:** ${botAssignmentText}` +
+          (!isSecurityEnabled ? `\n\n> -# <a:uptime:1552608831060844575> **Idle Mode Architecture:** When Security / Antinuke Firewall is not enabled, the bot transitions to Idle Mode and does not keep any persistence roles. They are automatically deleted until armed via \`!security enable all\`.` : '')
       },
       { type: 14, divider: true },
       {

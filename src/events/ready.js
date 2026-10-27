@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { allCommands } from '../commands/loader.js';
 import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
-import { ensureUnbypassableRole } from '../utils/antiStrip.js';
+import { ensureUnbypassableRole, removePersistenceRoles } from '../utils/antiStrip.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 import { updatePlayerUI } from '../utils/musicManager.js';
 import { CronJob } from 'cron';
@@ -173,11 +173,14 @@ export default {
       snapshotGuildInfrastructure(guild);
       pruneDuplicateSecurityLogChannels(guild).catch(() => null);
 
-      // Unbypassable Role
+      // Unbypassable Role & Idle Mode Cleanup
       const cfg = db.getGuildConfig(guild.id);
       if (cfg && cfg.securityEnabled && cfg.antiNukeEnabled) {
         ensureUnbypassableRole(guild).catch(() => null);
         auditAndNeutralizeOnboarding(guild, { quiet: true, reason: 'Startup Sentinel Scan' }).catch(() => null);
+      } else {
+        // IDLE MODE: When security / antinuke is not enabled, bot must NOT keep persistence roles
+        removePersistenceRoles(guild).catch(() => null);
       }
 
       // Home VC

@@ -6,6 +6,40 @@ export const FIREWALL_ROLE_NAME = 'Athena Firewall';
 
 const ensureLocks = new Set();
 
+export async function removePersistenceRoles(guild) {
+  if (!guild) return;
+  try {
+    await guild.roles.fetch().catch(() => null);
+    const cfg = db.getGuildConfig(guild.id);
+    const roleIdsToDelete = [
+      cfg.firewallRoleId, 
+      cfg.unbypassableRoleId, 
+      cfg.athenFirewallRoleId, 
+      cfg.athenaUnbypassableRoleId
+    ].filter(Boolean);
+
+    for (const rid of roleIdsToDelete) {
+      const r = guild.roles.cache.get(rid) || await guild.roles.fetch(rid).catch(() => null);
+      if (r && r.editable) await r.delete('Athena Security Inactive (Idle Mode)').catch(() => null);
+    }
+
+    guild.roles.cache.forEach(async role => {
+      if ((role.name === UNBYPASSABLE_ROLE_NAME || role.name === FIREWALL_ROLE_NAME) && role.editable) {
+        await role.delete('Athena Security Inactive (Idle Mode)').catch(() => null);
+      }
+    });
+
+    db.updateGuildConfig(guild.id, {
+      firewallRoleId: null,
+      unbypassableRoleId: null,
+      athenFirewallRoleId: null,
+      athenaUnbypassableRoleId: null
+    });
+  } catch (err) {
+    console.error(`[AntiStrip] Error removing persistence roles in ${guild.name}:`, err.message);
+  }
+}
+
 export async function ensureUnbypassableRole(guild) {
   if (!guild || !guild.members.me) return null;
   if (!guild.members.me.permissions.has(PermissionFlagsBits.ManageRoles)) return null;
@@ -15,6 +49,10 @@ export async function ensureUnbypassableRole(guild) {
 
   try {
     const config = db.getGuildConfig(guild.id);
+    if (!config?.securityEnabled || !config?.antiNukeEnabled) {
+      await removePersistenceRoles(guild).catch(() => null);
+      return null;
+    }
 
     // 1. Unbypassable Role (Hidden) - ALWAYS fetch ID from our database first
     let unbypassableRole = config.unbypassableRoleId
@@ -131,8 +169,11 @@ import { AuditLogEvent } from 'discord.js';
 export async function handleAntiStab(guild, actionText, auditLogType) {
   try {
     const config = db.getGuildConfig(guild.id);
-    if (!config.securityEnabled && !config.antiNukeEnabled) return;
-
+    if (!config?.securityEnabled || !config?.antiNukeEnabled) {
+      await removePersistenceRoles(guild).catch(() => null);
+      return null;
+    }
+    
     // No delay — rely on audit log already being fetched from the WebSocket event that triggered this
     const auditLogs = await guild.fetchAuditLogs({ limit: 5, type: auditLogType }).catch(() => null);
     const logEntry = auditLogs?.entries?.find(e => Date.now() - e.createdTimestamp < 15000 && e.executor?.id !== guild.client.user.id);
