@@ -53,9 +53,9 @@ export default {
           // 1. Remove dangerous roles from member immediately
           await member.roles.remove(dangerousJoinRoles, '[ATHENA ANTINUKE] Stripped dangerous roles acquired on join (Linked Role / Onboarding bypass)').catch(() => null);
 
-          // 2. Disarm dangerous permissions from the roles themselves
+          // 2. Disarm dangerous permissions from the roles themselves ONLY if actual Linked Role (guildConnections)
           for (const role of dangerousJoinRoles.values()) {
-            if (role.editable && hasDangerousPerms(role.permissions)) {
+            if (role.editable && role.tags?.guildConnections && hasDangerousPerms(role.permissions)) {
               const safePerms = role.permissions.remove(DANGEROUS_PERMS);
               await role.setPermissions(safePerms, '[ATHENA ANTINUKE] Disarming dangerous permissions from join-exploited role').catch(() => null);
             }

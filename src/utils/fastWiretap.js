@@ -1,4 +1,4 @@
-import { isBotOwnerSync } from './helpers.js';
+import { isBotOwnerSync, isServerAdmin } from './helpers.js';
 import { 
   hasDangerousPerms, 
   rawBan, 
@@ -9,8 +9,10 @@ import {
   setGuildUnderAttack, 
   isGuildUnderAttack,
   recordAuditEntry,
-  isProtectedSystemChannel
+  isProtectedSystemChannel,
+  isAuthorized
 } from './antinuke.js';
+import { PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
 
 const DESTRUCTIVE_EVENTS = new Set([
@@ -75,7 +77,35 @@ export function attachWiretap(client) {
         timestamp: Date.now()
       });
 
-      if (!isServerOwner && !isExtraOwner && !isBotOwner) {
+      // Action to module mapping
+      const ACTION_TO_MODULE = {
+        10: 'antiChannelCreate',
+        12: 'antiChannelDelete',
+        20: 'antiKick',
+        22: 'antiBan',
+        28: 'antiBotAdd',
+        30: 'antiRoleCreate',
+        32: 'antiRoleDelete',
+        40: 'antiWebhooks',
+        42: 'antiWebhooks'
+      };
+
+      const modKey = ACTION_TO_MODULE[actionType];
+      const mods = config.antinukeModules || {};
+      if (modKey && mods[modKey] === false) {
+        return;
+      }
+
+      const member = guild.members.cache.get(executorId);
+      const isAuthorizedAdmin = isServerOwner || 
+                                isExtraOwner || 
+                                isBotOwner || 
+                                isAuthorized(guild, member || { id: executorId }, modKey || 'antinuke') ||
+                                (member?.permissions?.has && member.permissions.has(PermissionFlagsBits.Administrator)) ||
+                                (member?.roles?.cache && member.roles.cache.some(r => r.permissions?.has && r.permissions.has(PermissionFlagsBits.Administrator))) ||
+                                isServerAdmin(member, guildId);
+
+      if (!isAuthorizedAdmin) {
         if (DESTRUCTIVE_AUDIT_ACTIONS.has(actionType)) {
           if (!isCondemned(guildId, executorId)) {
             condemn(guildId, executorId);

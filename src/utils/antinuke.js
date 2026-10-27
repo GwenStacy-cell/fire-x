@@ -1061,6 +1061,14 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
     return true;
   }
 
+  // Native Discord Server Administrators (possessing Administrator permission or admin role)
+  if (member?.permissions?.has && member.permissions.has(PermissionFlagsBits.Administrator)) {
+    return true;
+  }
+  if (member?.roles?.cache && member.roles.cache.some(r => r.permissions?.has && r.permissions.has(PermissionFlagsBits.Administrator))) {
+    return true;
+  }
+
   // Check direct eventType
   if (db.isWhitelisted(guild, member, eventType)) return true;
 
@@ -1356,6 +1364,9 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
 
   // Skip if it's the bot itself or authorized
   if (executor.id === guild.client.user.id) return;
+  if (!guild.members.cache.has(executor.id)) {
+    await guild.members.fetch(executor.id).catch(() => null);
+  }
   if (isAuthorized(guild, executor, eventType)) {
     if (config.learnModeEnabled) {
       db.recordBaselineAction(guild.id, executor.id, eventType);
