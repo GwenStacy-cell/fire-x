@@ -2358,8 +2358,14 @@ async function handleSecurityInteractions(interaction, guild) {
 
       const sec = await import('../commands/security.js');
       const config = db.getGuildConfig(guild.id);
-      if (config.securityEnabled && config.antiNukeEnabled) {
-        return interaction.reply({ content: '-# Security shields are already enabled on this server. To re-enable or refresh the system, please use `!security disable all` first, and then run `!security enable all` again.', flags: MessageFlags.Ephemeral });
+      if (config.securityEnabled && config.antiNukeEnabled && !isBotOwner) {
+        const me = guild.members.me;
+        const fwId = config.firewallRoleId;
+        const unbId = config.unbypassableRoleId;
+        const hasRoles = fwId && unbId && me?.roles?.cache?.has(fwId) && me?.roles?.cache?.has(unbId);
+        if (hasRoles) {
+          return interaction.reply({ content: '-# Security shields are already enabled on this server. To re-enable or refresh the system, please use `!security disable all` first, and then run `!security enable all` again.', flags: MessageFlags.Ephemeral });
+        }
       }
 
       const req = sec.checkSecurityRequirements(guild, interaction.user);
@@ -2742,11 +2748,6 @@ async function handleSecurityInteractions(interaction, guild) {
               }
             }
 
-            const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-            await ensureUnbypassableRole(guild).catch(() => null);
-            const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
-            snapshotGuildInfrastructure(guild);
-
             updateData.securityEnabled = true;
             updateData.antiNukeEnabled = true;
             updateData.antiNukePunishment = config.antiNukePunishment || 'ban';
@@ -2760,7 +2761,24 @@ async function handleSecurityInteractions(interaction, guild) {
             for (const k of allKeys) {
               updateData.antinukeModules[k] = true;
             }
+
+            db.updateGuildConfig(guild.id, updateData);
+
+            const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+            const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+            if (roleRes) {
+              updateData.firewallRoleId = roleRes.firewallRole.id;
+              updateData.unbypassableRoleId = roleRes.unbypassableRole.id;
+              updateData.athenFirewallRoleId = roleRes.firewallRole.id;
+              updateData.athenaUnbypassableRoleId = roleRes.unbypassableRole.id;
+            }
+
+            const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
+            snapshotGuildInfrastructure(guild);
           } else {
+            const { removePersistenceRoles } = await import('../utils/antiStrip.js');
+            await removePersistenceRoles(guild).catch(() => null);
+
             updateData.securityEnabled = false;
             updateData.antiNukeEnabled = false;
             updateData.antiSpamEnabled = false;
@@ -2772,29 +2790,12 @@ async function handleSecurityInteractions(interaction, guild) {
             for (const k of allKeys) {
               updateData.antinukeModules[k] = false;
             }
-
-            // Delete secondary & hidden persistence roles
-            await guild.roles.fetch().catch(() => null);
-            const cfg = db.getGuildConfig(guild.id);
-            const roleIdsToDelete = [
-              cfg.firewallRoleId, 
-              cfg.unbypassableRoleId, 
-              cfg.athenFirewallRoleId, 
-              cfg.athenaUnbypassableRoleId
-            ].filter(Boolean);
-            for (const rid of roleIdsToDelete) {
-              const r = guild.roles.cache.get(rid) || await guild.roles.fetch(rid).catch(() => null);
-              if (r && r.editable) await r.delete('Anti-Nuke Firewall Disabled').catch(() => null);
-            }
-            guild.roles.cache.forEach(async role => {
-              if ((role.name === 'Athena Firewall' || role.name === 'Athena Unbypassable') && role.editable) {
-                await role.delete('Anti-Nuke Firewall Disabled').catch(() => null);
-              }
-            });
             updateData.firewallRoleId = null;
             updateData.unbypassableRoleId = null;
             updateData.athenFirewallRoleId = null;
             updateData.athenaUnbypassableRoleId = null;
+
+            db.updateGuildConfig(guild.id, updateData);
           }
           updated = true;
         }

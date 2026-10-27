@@ -400,29 +400,44 @@ class Database {
         updated = true;
       }
 
-      // If security is disabled, ensure orphaned antiNukeEnabled and modules are reset to false
-      if (!cfg.securityEnabled) {
-        if (cfg.antiNukeEnabled) {
-          cfg.antiNukeEnabled = false;
-          updated = true;
-        }
-        if (cfg.botOwnerBypass) {
-          cfg.botOwnerBypass = false;
-          updated = true;
-        }
-        const antinukeKeys = [
-          'antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder',
-          'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod',
-          'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate',
-          'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge',
-          'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'
-        ];
+      // Synchronize Antinuke Firewall & 28 Modules State
+      const antinukeKeys = [
+        'antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder',
+        'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod',
+        'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate',
+        'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge',
+        'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'
+      ];
+
+      const isSecured = Boolean(cfg.securityEnabled && cfg.antiNukeEnabled);
+
+      if (!isSecured) {
+        // IDLE MODE: When security/antinuke is not enabled, ALL 28 modules and flags are false
+        if (cfg.antiNukeEnabled) { cfg.antiNukeEnabled = false; updated = true; }
+        if (cfg.securityEnabled) { cfg.securityEnabled = false; updated = true; }
+        if (cfg.botOwnerBypass) { cfg.botOwnerBypass = false; updated = true; }
+        if (cfg.antiInviteEnabled !== false) { cfg.antiInviteEnabled = false; updated = true; }
+        if (cfg.antiSpamEnabled) { cfg.antiSpamEnabled = false; updated = true; }
+        if (cfg.antiLinkEnabled) { cfg.antiLinkEnabled = false; updated = true; }
+        if (!cfg.antinukeModules) { cfg.antinukeModules = {}; updated = true; }
         for (const k of antinukeKeys) {
           if (cfg.antinukeModules[k] !== false) {
             cfg.antinukeModules[k] = false;
             updated = true;
           }
         }
+      } else {
+        // ACTIVE MODE: When security & antinuke are enabled, ALL 28 modules ARE the Anti-Nuke Firewall
+        if (!cfg.antinukeModules) { cfg.antinukeModules = {}; updated = true; }
+        for (const k of antinukeKeys) {
+          if (cfg.antinukeModules[k] !== true) {
+            cfg.antinukeModules[k] = true;
+            updated = true;
+          }
+        }
+        if (cfg.antiInviteEnabled !== true) { cfg.antiInviteEnabled = true; updated = true; }
+        if (cfg.antiSpamEnabled !== true) { cfg.antiSpamEnabled = true; updated = true; }
+        if (cfg.antiLinkEnabled !== true) { cfg.antiLinkEnabled = true; updated = true; }
       }
       if (cfg.maxWarnings === undefined) { cfg.maxWarnings = 3; updated = true; }
       if (cfg.blacklistWords === undefined) { cfg.blacklistWords = []; updated = true; }
@@ -508,6 +523,10 @@ class Database {
 
   updateGuildConfig(guildId, updates) {
     const config = this.getGuildConfig(guildId);
+    if (updates.antinukeModules && typeof updates.antinukeModules === 'object') {
+      config.antinukeModules = { ...(config.antinukeModules || {}), ...updates.antinukeModules };
+      delete updates.antinukeModules;
+    }
     Object.assign(config, updates);
     this.save();
     return config;

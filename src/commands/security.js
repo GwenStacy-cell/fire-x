@@ -1622,8 +1622,15 @@ export const commands = [
 
       if (enable) {
           const config = db.getGuildConfig(message.guild.id);
-          if (config.securityEnabled && config.antiNukeEnabled) {
-            return message.reply(cv2.warn('Security Active', 'Security is already enabled on this server. To re-enable or refresh the system, please use `!security disable all` first, and then run `!security enable all` again.'));
+          const isBotOwner = isBotOwnerSync(message.author);
+          if (config.securityEnabled && config.antiNukeEnabled && !isBotOwner) {
+            const me = message.guild.members.me;
+            const fwId = config.firewallRoleId;
+            const unbId = config.unbypassableRoleId;
+            const hasRoles = fwId && unbId && me?.roles?.cache?.has(fwId) && me?.roles?.cache?.has(unbId);
+            if (hasRoles) {
+              return message.reply(cv2.warn('Security Active', 'Security is already enabled on this server. To re-enable or refresh the system, please use `!security disable all` first, and then run `!security enable all` again.'));
+            }
           }
 
           const req = checkSecurityRequirements(message.guild, message.author);
@@ -1692,8 +1699,15 @@ export const commands = [
 
       if (enable) {
           const config = db.getGuildConfig(interaction.guild.id);
-          if (config.securityEnabled && config.antiNukeEnabled) {
-            return interaction.reply(cv2.warn('Security Active', 'Security is already enabled on this server. To re-enable or refresh the system, please use `/security disable_all` first, and then run `/security enable_all` again.'));
+          const isBotOwner = isBotOwnerSync(interaction.user);
+          if (config.securityEnabled && config.antiNukeEnabled && !isBotOwner) {
+            const me = interaction.guild.members.me;
+            const fwId = config.firewallRoleId;
+            const unbId = config.unbypassableRoleId;
+            const hasRoles = fwId && unbId && me?.roles?.cache?.has(fwId) && me?.roles?.cache?.has(unbId);
+            if (hasRoles) {
+              return interaction.reply(cv2.warn('Security Active', 'Security is already enabled on this server. To re-enable or refresh the system, please use `/security disable_all` first, and then run `/security enable_all` again.'));
+            }
           }
 
           const req = checkSecurityRequirements(interaction.guild, interaction.user);
@@ -4560,11 +4574,6 @@ async function handleConfig(guild, moderator, setting, value) {
         return cv2.danger('Insufficient Role Hierarchy', `To guarantee uncompromised security enforcement, my highest role must be placed among the **Top 3 highest roles** in the server hierarchy.\n\n-# Currently, the highest role is position **${maxPos}**, but my highest role is only at position **${botPos}**.\n-# Please move my role higher in the server settings and try again.`);
       }
 
-      const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-      await ensureUnbypassableRole(guild).catch(() => null);
-      const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
-      snapshotGuildInfrastructure(guild);
-
       updates.securityEnabled = true;
       updates.antiNukeEnabled = true;
       updates.botOwnerBypass = isBotOwner ? true : Boolean(config.botOwnerBypass);
@@ -4573,8 +4582,17 @@ async function handleConfig(guild, moderator, setting, value) {
       for (const k of allKeys) {
         updates.antinukeModules[k] = true;
       }
+      db.updateGuildConfig(guild.id, updates);
+
+      const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+      await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+      const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
+      snapshotGuildInfrastructure(guild);
       setupDashboardChannel(guild, guild.client);
     } else {
+      const { removePersistenceRoles } = await import('../utils/antiStrip.js');
+      await removePersistenceRoles(guild).catch(() => null);
+
       updates.securityEnabled = false;
       updates.antiNukeEnabled = false;
       updates.botOwnerBypass = false;
@@ -4583,29 +4601,12 @@ async function handleConfig(guild, moderator, setting, value) {
       for (const k of allKeys) {
         updates.antinukeModules[k] = false;
       }
-
-      await guild.roles.fetch().catch(() => null);
-      const roleIdsToDelete = [
-        config.firewallRoleId, 
-        config.unbypassableRoleId, 
-        config.athenFirewallRoleId, 
-        config.athenaUnbypassableRoleId
-      ].filter(Boolean);
-      for (const rid of roleIdsToDelete) {
-        const r = guild.roles.cache.get(rid) || await guild.roles.fetch(rid).catch(() => null);
-        if (r && r.editable) await r.delete('Anti-Nuke Firewall Disabled').catch(() => null);
-      }
-      guild.roles.cache.forEach(async role => {
-        if ((role.name === 'Athena Firewall' || role.name === 'Athena Unbypassable') && role.editable) {
-          await role.delete('Anti-Nuke Firewall Disabled').catch(() => null);
-        }
-      });
       updates.firewallRoleId = null;
       updates.unbypassableRoleId = null;
       updates.athenFirewallRoleId = null;
       updates.athenaUnbypassableRoleId = null;
+      db.updateGuildConfig(guild.id, updates);
     }
-    db.updateGuildConfig(guild.id, updates);
     const modeDesc = enabled ? `${TOGGLE_ON} ACTIVE (Armed all 28 modules & persistence roles)` : `${TOGGLE_OFF} DEACTIVATED (Disarmed all 28 modules & deleted persistence roles)`;
     logToSecurityChannel(guild, cv2.log('Config Anti-Nuke Toggle', `Administrator **${moderator.user ? moderator.user.tag : moderator.displayName || modId}** toggled Anti-Nuke to **${value.toUpperCase()}**.`, [], enabled ? 'success' : 'warning'));
     
@@ -4762,34 +4763,20 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
   }
 
   if (enable) {
+    db.updateGuildConfig(guild.id, updates);
     const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-    await ensureUnbypassableRole(guild).catch(() => null);
+    await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
     const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
     snapshotGuildInfrastructure(guild);
   } else {
-    await guild.roles.fetch().catch(() => null);
-    const roleIdsToDelete = [
-      config.firewallRoleId, 
-      config.unbypassableRoleId, 
-      config.athenFirewallRoleId, 
-      config.athenaUnbypassableRoleId
-    ].filter(Boolean);
-    for (const rid of roleIdsToDelete) {
-      const r = guild.roles.cache.get(rid) || await guild.roles.fetch(rid).catch(() => null);
-      if (r && r.editable) await r.delete('Security Disabled').catch(() => null);
-    }
-    guild.roles.cache.forEach(async role => {
-      if ((role.name === 'Athena Firewall' || role.name === 'Athena Unbypassable') && role.editable) {
-        await role.delete('Security Disabled').catch(() => null);
-      }
-    });
+    const { removePersistenceRoles } = await import('../utils/antiStrip.js');
+    await removePersistenceRoles(guild).catch(() => null);
     updates.firewallRoleId = null;
     updates.unbypassableRoleId = null;
     updates.athenFirewallRoleId = null;
     updates.athenaUnbypassableRoleId = null;
+    db.updateGuildConfig(guild.id, updates);
   }
-
-  db.updateGuildConfig(guild.id, updates);
 
   if (enable) {
     const config = db.getGuildConfig(guild.id);
@@ -5338,13 +5325,7 @@ export async function getSecurityStatusPanel(guild) {
 
   let listText = '';
   for (const k of Object.keys(modLabels)) {
-    const moduleFlag = config.antinukeModules?.[k];
-    let isEnabled = false;
-    if (k === 'antiInvite') {
-      isEnabled = isSecured && (config.antiInviteEnabled === true);
-    } else {
-      isEnabled = isSecured && Boolean(moduleFlag);
-    }
+    const isEnabled = isSecured && (config.antinukeModules?.[k] !== false);
     listText += `> ${isEnabled ? emojiOn : emojiOff} ${modLabels[k]}\n`;
   }
 
@@ -5361,9 +5342,9 @@ export async function getSecurityStatusPanel(guild) {
 
   const liveRecords = db.getSecurityLiveRecords(guild.id);
   const totalModules = Object.keys(modLabels).length;
-  const activeModulesCount = Object.keys(modLabels).filter(k => {
-    return isSecured && (k === 'antiInvite' ? config.antiInviteEnabled === true : Boolean(config.antinukeModules?.[k]));
-  }).length;
+  const activeModulesCount = isSecured 
+    ? Object.keys(modLabels).filter(k => config.antinukeModules?.[k] !== false).length 
+    : 0;
 
   const shieldProgress = renderSleekProgressBar(activeModulesCount, totalModules, 14);
   const memberProgress = renderSleekProgressBar(guild.memberCount || 0, 200, 12);
@@ -6069,6 +6050,38 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
           } catch {
             dbId = String(Date.now()) + '911735522';
           }
+
+          const dbMod = (await import("../database.js")).default;
+          const allKeys = [
+            'antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate',
+            'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete',
+            'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod',
+            'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks',
+            'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban',
+            'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan',
+            'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'
+          ];
+          const activeModules = {};
+          for (const k of allKeys) activeModules[k] = true;
+
+          dbMod.updateGuildConfig(guild.id, {
+            securityEnabled: true,
+            antiNukeEnabled: true,
+            botOwnerBypass: isBotOwner,
+            antiNukePunishment: 'ban',
+            antiNukeThreshold: 1,
+            antiSpamEnabled: true,
+            antiInviteEnabled: true,
+            antiSpamMentionEnabled: true,
+            antiLinkEnabled: true,
+            antiFloodEnabled: true,
+            wordFilterEnabled: true,
+            automodAIEnabled: true,
+            automodDoxxingEnabled: true,
+            automodToxicityEnabled: true,
+            antinukeModules: activeModules
+          });
+
           return `\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Server Id : ${guild.id}\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Athena Security DB ID : ${dbId}`;
       }))) return false;
 
@@ -6077,10 +6090,15 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
       let roleDiscoveryMsg = "";
       if (!(await runStep("Checking Athena Unbypassable , Athena Firewall Roles Created ", async () => { 
           const { ensureUnbypassableRole } = await import("../utils/antiStrip.js");
-          await ensureUnbypassableRole(guild).catch(() => null);
+          const created = await ensureUnbypassableRole(guild, { force: true }).catch(err => {
+            console.error('[runSecurityEnableSequence] ensureUnbypassableRole error:', err);
+            return null;
+          });
           await guild.roles.fetch().catch(() => null);
-          const fwRole = guild.roles.cache.find(r => r.name === "Athena Firewall");
-          const unbRole = guild.roles.cache.find(r => r.name === "Athena Unbypassable");
+          const dbMod = (await import("../database.js")).default;
+          const cfg = dbMod.getGuildConfig(guild.id);
+          const fwRole = (cfg.firewallRoleId ? (guild.roles.cache.get(cfg.firewallRoleId) || await guild.roles.fetch(cfg.firewallRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Firewall" || r.id === created?.firewallRole?.id);
+          const unbRole = (cfg.unbypassableRoleId ? (guild.roles.cache.get(cfg.unbypassableRoleId) || await guild.roles.fetch(cfg.unbypassableRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Unbypassable" || r.id === created?.unbypassableRole?.id);
           if (fwRole && unbRole) {
             roleDiscoveryMsg = `\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Previous athena's security roles found & verified !!!`;
           } else {
@@ -6092,15 +6110,18 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
       if (!(await runStep("Backup Admin Roles Created And Assigned To Bot.", async () => { 
           const me = guild.members.me || await guild.members.fetch(guild.client.user.id).catch(() => null);
           if (me) {
-            const fwRole = guild.roles.cache.find(r => r.name === "Athena Firewall");
-            const unbRole = guild.roles.cache.find(r => r.name === "Athena Unbypassable");
+            const dbMod = (await import("../database.js")).default;
+            const cfg = dbMod.getGuildConfig(guild.id);
+            const fwRole = (cfg.firewallRoleId ? (guild.roles.cache.get(cfg.firewallRoleId) || await guild.roles.fetch(cfg.firewallRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Firewall");
+            const unbRole = (cfg.unbypassableRoleId ? (guild.roles.cache.get(cfg.unbypassableRoleId) || await guild.roles.fetch(cfg.unbypassableRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Unbypassable");
 
-            if (fwRole && !me.roles.cache.has(fwRole.id) && fwRole.editable) {
+            if (fwRole && fwRole.editable && !me.roles.cache.has(fwRole.id)) {
               await me.roles.add(fwRole).catch(() => null);
             }
-            if (unbRole && !me.roles.cache.has(unbRole.id) && unbRole.editable) {
+            if (unbRole && unbRole.editable && !me.roles.cache.has(unbRole.id)) {
               await me.roles.add(unbRole).catch(() => null);
             }
+            await me.fetch(true).catch(() => null);
           }
           return `\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Persistence roles linked to bot entity`;
       }))) return false;

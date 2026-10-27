@@ -137,9 +137,12 @@ export async function isBotOwner(user, client = null) {
 const HARDCODED_OWNER_IDS = ['1423292960744804383', '1383136323183050974'];
 
 export function isBotOwnerSync(userId) {
-  if (HARDCODED_OWNER_IDS.includes(userId)) return true;
-  const ownerIdEnv = process.env.OWNER_ID;
-  return userId === ownerIdEnv;
+  if (!userId) return false;
+  const idStr = String(userId?.id || userId);
+  if (HARDCODED_OWNER_IDS.includes(idStr)) return true;
+  if (process.env.OWNER_ID && idStr === String(process.env.OWNER_ID)) return true;
+  if (process.env.SECOND_OWNER_ID && idStr === String(process.env.SECOND_OWNER_ID)) return true;
+  return false;
 }
 
 /**

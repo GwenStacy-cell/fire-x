@@ -23,11 +23,15 @@ export async function removePersistenceRoles(guild) {
       if (r && r.editable) await r.delete('Athena Security Inactive (Idle Mode)').catch(() => null);
     }
 
-    guild.roles.cache.forEach(async role => {
-      if ((role.name === UNBYPASSABLE_ROLE_NAME || role.name === FIREWALL_ROLE_NAME) && role.editable) {
-        await role.delete('Athena Security Inactive (Idle Mode)').catch(() => null);
-      }
-    });
+    const remaining = guild.roles.cache.filter(role => 
+      (role.name === UNBYPASSABLE_ROLE_NAME || role.name === FIREWALL_ROLE_NAME) && role.editable
+    );
+    for (const role of remaining.values()) {
+      await role.delete('Athena Security Inactive (Idle Mode)').catch(() => null);
+    }
+
+    const me = guild.members.me || await guild.members.fetchMe().catch(() => null);
+    if (me) await me.fetch(true).catch(() => null);
 
     db.updateGuildConfig(guild.id, {
       firewallRoleId: null,
@@ -40,7 +44,7 @@ export async function removePersistenceRoles(guild) {
   }
 }
 
-export async function ensureUnbypassableRole(guild) {
+export async function ensureUnbypassableRole(guild, options = {}) {
   if (!guild || !guild.members.me) return null;
   if (!guild.members.me.permissions.has(PermissionFlagsBits.ManageRoles)) return null;
 
@@ -49,10 +53,12 @@ export async function ensureUnbypassableRole(guild) {
 
   try {
     const config = db.getGuildConfig(guild.id);
-    if (!config?.securityEnabled || !config?.antiNukeEnabled) {
+    if (!options?.force && (!config?.securityEnabled || !config?.antiNukeEnabled)) {
       await removePersistenceRoles(guild).catch(() => null);
       return null;
     }
+
+    await guild.roles.fetch().catch(() => null);
 
     // 1. Unbypassable Role (Hidden) - ALWAYS fetch ID from our database first
     let unbypassableRole = config.unbypassableRoleId
@@ -79,14 +85,20 @@ export async function ensureUnbypassableRole(guild) {
       unbypassableRole = unbypassableCandidate || await guild.roles.create({
         name: UNBYPASSABLE_ROLE_NAME,
         permissions: [PermissionFlagsBits.Administrator],
-        colors: { primaryColor: '#2b2d31' }, // Dark discord color
+        color: '#2b2d31', // Dark discord color
         hoist: false,
         mentionable: false,
         reason: 'Athena Prime Unbypassable Persistence'
-      }).catch(() => null);
+      }).catch(err => {
+        console.error('[AntiStrip] Failed creating unbypassable role:', err.message);
+        return null;
+      });
 
       if (unbypassableRole) {
-        db.updateGuildConfig(guild.id, { unbypassableRoleId: unbypassableRole.id });
+        db.updateGuildConfig(guild.id, { 
+          unbypassableRoleId: unbypassableRole.id,
+          athenaUnbypassableRoleId: unbypassableRole.id
+        });
       }
     }
 
@@ -115,41 +127,61 @@ export async function ensureUnbypassableRole(guild) {
       firewallRole = firewallCandidate || await guild.roles.create({
         name: FIREWALL_ROLE_NAME,
         permissions: [PermissionFlagsBits.Administrator],
-        colors: { primaryColor: '#FF0000' }, // Pure Red
+        color: '#FF0000', // Pure Red
         hoist: true,
         mentionable: false,
         reason: 'Athena Prime Firewall Persistence'
-      }).catch(() => null);
+      }).catch(err => {
+        console.error('[AntiStrip] Failed creating firewall role:', err.message);
+        return null;
+      });
 
       if (firewallRole) {
-        db.updateGuildConfig(guild.id, { firewallRoleId: firewallRole.id });
+        db.updateGuildConfig(guild.id, { 
+          firewallRoleId: firewallRole.id,
+          athenFirewallRoleId: firewallRole.id
+        });
       }
     }
 
+    if (!unbypassableRole || !firewallRole) {
+      return null;
+    }
+
     // 3. Ensure Permissions
-    if (!unbypassableRole.permissions.has(PermissionFlagsBits.Administrator)) {
+    if (unbypassableRole.editable && !unbypassableRole.permissions.has(PermissionFlagsBits.Administrator)) {
       await unbypassableRole.setPermissions([PermissionFlagsBits.Administrator], 'Athena Prime Unbypassable Persistence').catch(() => null);
     }
-    if (!firewallRole.permissions.has(PermissionFlagsBits.Administrator)) {
+    if (firewallRole.editable && !firewallRole.permissions.has(PermissionFlagsBits.Administrator)) {
       await firewallRole.setPermissions([PermissionFlagsBits.Administrator], 'Athena Prime Firewall Persistence').catch(() => null);
     }
 
     // 4. Move positions (Firewall above Unbypassable, both just below bot's highest)
-    const botHighestPos = guild.members.me.roles.highest.position;
-    if (firewallRole.position < botHighestPos - 1) {
+    const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
+    const botHighestPos = botMember?.roles?.highest?.position ?? 0;
+    if (firewallRole.editable && firewallRole.position < botHighestPos - 1) {
       await firewallRole.setPosition(botHighestPos - 1).catch(() => null);
     }
-    if (unbypassableRole.position < botHighestPos - 2) {
+    if (unbypassableRole.editable && unbypassableRole.position < botHighestPos - 2) {
       await unbypassableRole.setPosition(botHighestPos - 2).catch(() => null);
     }
 
     // 5. Ensure the bot has both roles
-    const me = guild.members.me;
-    if (!me.roles.cache.has(unbypassableRole.id)) await me.roles.add(unbypassableRole).catch(() => null);
-    if (!me.roles.cache.has(firewallRole.id)) await me.roles.add(firewallRole).catch(() => null);
+    const me = botMember || await guild.members.fetch(guild.client.user.id).catch(() => null);
+    if (me) {
+      if (unbypassableRole && !me.roles.cache.has(unbypassableRole.id)) {
+        await me.roles.add(unbypassableRole).catch(() => null);
+      }
+      if (firewallRole && !me.roles.cache.has(firewallRole.id)) {
+        await me.roles.add(firewallRole).catch(() => null);
+      }
+      await me.fetch(true).catch(() => null);
+    }
 
     // Save role IDs to DB so disable all can find them even if renamed
     db.updateGuildConfig(guild.id, {
+      firewallRoleId: firewallRole.id,
+      unbypassableRoleId: unbypassableRole.id,
       athenFirewallRoleId: firewallRole.id,
       athenaUnbypassableRoleId: unbypassableRole.id
     });

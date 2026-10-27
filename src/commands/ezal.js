@@ -1299,7 +1299,7 @@ async function handleSecurityGlobal(message, args) {
 
         // Initialize dashboard and backup roles silently
         const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-        await ensureUnbypassableRole(guild).catch(() => null);
+        await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
         
         const { setupDashboardChannel } = await import('../utils/dashboardManager.js');
         await setupDashboardChannel(guild, message.client).catch(() => null);
