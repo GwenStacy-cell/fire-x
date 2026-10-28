@@ -63,8 +63,8 @@ const DEFAULT_SCHEMA = {
   vcProtection: {},   // guildId -> [userIds]
   apps: {},           // guildId -> staff application config
   pingAlertBlocks: {},// userId -> [guildIds]
-  likedSongs: {},     // userId -> [song objects]
-  bannedServers: [],  // [guildIds]
+  likedSongs: {},     // userId -> [ { title, url, duration, artworkUrl } ]
+  bannedServers: [],  // global list of banned guild IDs
   tts: { users: {}, autoTts: {} },
   dbBackupChannelId: null,
   vcDrags: {},        // guildId -> { userId -> { initiatorId, targetTag, startedAt, intervalSec } }
@@ -80,7 +80,11 @@ const DEFAULT_SCHEMA = {
   studioTemplates: {},   // guildId -> { templateId -> { id, name, title, description, color, fields, footer } }
   minigamesStats: {},    // guildId -> { userId -> { blackjackWins, rouletteWins, triviaWins, totalWagered, totalWon } }
   voiceAnalytics: {},    // guildId -> { hourly: {}, channels: {}, users: {} }
-  dynamicStockSymbols: {} // cleanQuery -> { symbol, name, exchange, currency, assetType, updatedAt }
+  dynamicStockSymbols: {}, // cleanQuery -> { symbol, name, exchange, currency, assetType, updatedAt }
+  securityLiveRecords: {}, // guildId -> [ { id, timestamp, action, target, executor, latencyMs, ... } ]
+  entryConfigs: {},        // guildId -> { enabled, gateChannelId, logChannelId, holdingRoleId, verifiedRoleId, questions, autoDmServerOwner }
+  entryPending: {},        // guildId -> { userId -> { submittedAt, answers, guildId, guildName, ... } }
+  botOwnerEntryRemote: true // global toggle for Bot Owner DM join application delivery
 };
 
 class Database {
@@ -184,6 +188,11 @@ class Database {
         this.cache.voiceAnalytics = this.cache.voiceAnalytics || {};
         this.cache.bumpReminders  = this.cache.bumpReminders  || {};
         this.cache.stickyMessages = this.cache.stickyMessages || {};
+        this.cache.securityLiveRecords = this.cache.securityLiveRecords || {};
+        this.cache.entryConfigs   = this.cache.entryConfigs   || {};
+        this.cache.entryPending   = this.cache.entryPending   || {};
+        if (this.cache.botOwnerEntryRemote === undefined) this.cache.botOwnerEntryRemote = true;
+        this.cache.dynamicStockSymbols = this.cache.dynamicStockSymbols || {};
 
         // Dynamic safety: ensure every key defined in DEFAULT_SCHEMA exists in this.cache
         let needsSave = false;

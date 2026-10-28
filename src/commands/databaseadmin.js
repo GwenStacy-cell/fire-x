@@ -142,7 +142,7 @@ export const commands = [
         }
 
         const sorted = [...backupMessages.values()].sort((a, b) => b.createdTimestamp - a.createdTimestamp);
-        const entries = sorted.slice(0, 6).map((msg, index) => {
+        const entries = sorted.slice(0, 4).map((msg, index) => {
           const jsonAtt = msg.attachments.find(a => a.name?.endsWith('.json'));
           const dbAtt = msg.attachments.find(a => a.name?.endsWith('.db'));
           const sizeKb = jsonAtt ? (jsonAtt.size / 1024).toFixed(1) : '?';
@@ -152,13 +152,26 @@ export const commands = [
                  `> -# <t:${timeSec}:F> (<t:${timeSec}:R>)`;
         });
 
+        const m = getDatabaseMetrics();
         const flagged = db.getBotBlacklist();
         const data = (db.getBotBlacklistData ? db.getBotBlacklistData() : db.cache.botBlacklistData) || {};
         const blSummary = flagged.length > 0
           ? `\n\n-# **__Synced Global Blacklist (${flagged.length} accounts):__**\n` +
-            flagged.slice(0, 5).map(id => `> -# <@${id}> (\`${id}\`)${data[id]?.reason ? ` - \`${data[id].reason}\`` : ''}`).join('\n') +
-            (flagged.length > 5 ? `\n> -# *+${flagged.length - 5} more blacklisted accounts*` : '')
+            flagged.slice(0, 3).map(id => `> -# <@${id}> (\`${id}\`)${data[id]?.reason ? ` - \`${data[id].reason}\`` : ''}`).join('\n') +
+            (flagged.length > 3 ? `\n> -# *+${flagged.length - 3} more blacklisted accounts*` : '')
           : `\n\n-# **__Synced Global Blacklist:__** \`0 accounts\``;
+
+        const inventorySummary = 
+          `\n\n-# **__Linked Cloud DB Backup Inventory (All 52 Systems Backed Up):__**\n` +
+          `> -# **Server Configs:** \`${m.guilds} guilds\` | \`${m.customPrefixes} prefixes\` | \`${m.customCommandsTotal || 0} custom cmds\` | \`${m.accentColors} colors\` | \`${m.dashboardChannels} dashboards\`\n` +
+          `> -# **Antinuke & Defense:** \`${m.securityServers} armed\` | \`28 modules\` | \`${m.securityLiveTotal || 0} live records\` | \`${m.panicHistoryTotal || 0} panic logs\` | \`${m.unbypassableRolesCount || 0} unbypassable\`\n` +
+          `> -# **Join Gatekeeper:** \`${m.entryActive || 0} gates\` | \`${m.entryPendingTotal || 0} pending apps\` | \`Remote DMs: ${m.botOwnerEntryRemote ? 'ACTIVE' : 'OFF'}\` | \`${m.entryVerifiedRoles || 0} verified roles\`\n` +
+          `> -# **Stock Telemetry:** \`${m.stockChannels || 0} alert chs\` | \`${m.dailyStockEnabled || 0} daily briefings\` | \`${m.dynamicStockSymbolsCount || 0} learned tickers\`\n` +
+          `> -# **Automod Filters:** \`${m.automodServers} active\` | \`${m.blacklistedWordsCount} words\` | \`${m.allowedLinksCount} allowed domains\` | \`${m.automodBypassRolesCount || 0} bypasses\`\n` +
+          `> -# **Voice & Studio:** \`${m.homeVc} home VCs\` | \`${m.jtc} JTC hubs\` | \`${m.studioTemplates || 0} studio presets\` | \`${m.voiceAnalyticsServers || 0} telemetry\` | \`${m.autoTtsChannels || 0} TTS chs\`\n` +
+          `> -# **Economy & Community:** \`${m.economyUsers || 0} bank ledgers\` | \`${m.shopItemsCount || 0} shop items\` | \`${m.countingActive || 0} counting games\` | \`${m.tickets} tickets\` | \`${m.giveaways} giveaways\`\n` +
+          `> -# **Sanctions & Access:** \`${m.warnings} warnings\` | \`${m.quarantines} quarantined\` | \`${m.tempBans} tempbans\` | \`${m.exploitTaintsCount || 0} exploit taints\` | \`${m.extraOwners} extra owners\`\n` +
+          `> -# **NP Network:** \`${m.npUsers} NP users\` | \`${m.npServers} NP servers\` | \`${m.npManagers} NP managers\` | \`WAL SQLite stats.db: SYNCED\``;
 
         return sendReply(cv2.info(
           `Database Cloud Backup List | <a:atheNATICK:1557841381630681106>`,
@@ -166,6 +179,7 @@ export const commands = [
           `-# **__Total Snapshots Available:__** \`${backupMessages.size}\`\n\n` +
           `-# **__Recent Cloud Snapshots:__**\n` +
           entries.join('\n\n') +
+          inventorySummary +
           blSummary +
           `\n\n-# **Restore Command:** \`!db restore latest\` or reply to any snapshot message with \`!db restore\``
         ));

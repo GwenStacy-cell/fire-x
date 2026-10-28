@@ -205,6 +205,79 @@ export function getDatabaseMetrics() {
   const rateChannels = Object.keys(cache.rateChannels || {}).length;
   const stickyChannels = Object.values(cache.stickyMessages || {}).reduce((acc, g) => acc + Object.keys(g || {}).length, 0);
 
+  // Server Join Applications & Gatekeeper (!entry / !gate / !screening)
+  const entryConfigs = Object.values(cache.entryConfigs || {});
+  const entryServers = Object.keys(cache.entryConfigs || {}).length;
+  const entryActive = entryConfigs.filter(c => c && c.enabled).length;
+  const entryGateChannels = entryConfigs.filter(c => c && c.gateChannelId).length;
+  const entryLogChannels = entryConfigs.filter(c => c && c.logChannelId).length;
+  const entryVerifiedRoles = entryConfigs.filter(c => c && c.verifiedRoleId).length;
+  const entryHoldingRoles = entryConfigs.filter(c => c && c.holdingRoleId).length;
+  const entryPendingTotal = Object.values(cache.entryPending || {}).reduce((acc, userMap) => acc + Object.keys(userMap || {}).length, 0);
+  const entryPendingServers = Object.keys(cache.entryPending || {}).filter(k => Object.keys(cache.entryPending[k] || {}).length > 0).length;
+  const botOwnerEntryRemote = cache.botOwnerEntryRemote !== false;
+
+  // Stock Telemetry, Daily Briefings & Dynamically Learned Symbols (!stock / !symbols / !stockchannel)
+  const stockChannels = guilds.filter(g => g && g.stockChannelId).length;
+  const dailyStockEnabled = guilds.filter(g => g && g.dailyStockEnabled && g.stockChannelId).length;
+  const dynamicStockSymbolsCount = Object.keys(cache.dynamicStockSymbols || {}).length;
+
+  // Security Live Incident Forensic Stream (!security records / !security live)
+  const securityLiveTotal = Object.values(cache.securityLiveRecords || {}).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
+  const securityLiveServers = Object.keys(cache.securityLiveRecords || {}).filter(k => (cache.securityLiveRecords[k] || []).length > 0).length;
+
+  // Emergency Panic & Lockdown Historical Timeline (!panichistory / !lockdownhistory)
+  const panicHistoryTotal = Object.values(cache.panicHistory || {}).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
+  const panicHistoryServers = Object.keys(cache.panicHistory || {}).filter(k => (cache.panicHistory[k] || []).length > 0).length;
+  const channelLockSnapshotsCount = Object.keys(cache.channelLockSnapshots || {}).length;
+
+  // Custom Server Commands & Managers (!ccmd)
+  const customCommandsTotal = guilds.reduce((acc, g) => acc + (Array.isArray(g?.customCommands) ? g.customCommands.length : 0), 0);
+  const customCommandsServers = guilds.filter(g => Array.isArray(g?.customCommands) && g.customCommands.length > 0).length;
+  const ccmdManagersCount = guilds.reduce((acc, g) => acc + (Array.isArray(g?.ccmdManagers) ? g.ccmdManagers.length : (g?.ccmdManagers ? 1 : 0)), 0);
+
+  // Auto-VC Dynamic Statuses (!autovcstatus)
+  const autoVcStatusServers = guilds.filter(g => g && (g.autoVcStatus?.enabled || g.autoVcStatus?.channelId || g.vcStatusEnabled)).length;
+  const customVcStatusesCount = guilds.reduce((acc, g) => acc + (Array.isArray(g?.customVcStatuses) ? g.customVcStatuses.length : 0), 0);
+
+  // Auto-Delete Lists (!adel)
+  const adelChannelsCount = Object.values(cache.adelList || {}).reduce((acc, cMap) => acc + Object.keys(cMap || {}).length, 0);
+  const adelUsersCount = Object.values(cache.adelList || {}).reduce((acc, cMap) => acc + Object.values(cMap || {}).reduce((uAcc, uList) => uAcc + (Array.isArray(uList) ? uList.length : 0), 0), 0);
+
+  // Ignored Channels & Categories (!ignore)
+  const ignoredChannelsCount = guilds.reduce((acc, g) => acc + (Array.isArray(g?.ignoredChannels) ? g.ignoredChannels.length : 0), 0);
+  const ignoredCategoriesCount = guilds.reduce((acc, g) => acc + (Array.isArray(g?.ignoredCategories) ? g.ignoredCategories.length : 0), 0);
+
+  // Staff Applications (!app)
+  const appsServers = Object.keys(cache.apps || {}).length;
+  const appsActive = Object.values(cache.apps || {}).filter(a => a && (a.channelId || a.enabled)).length;
+
+  // Anti-GhostPing Sentry & Ping Alert Blocks (!antighostping / !pingalert)
+  const antiGhostPingServers = guilds.filter(g => g && g.antiGhostPing).length;
+  const pingAlertBlockedUsers = Object.keys(cache.pingAlertBlocks || {}).length;
+
+  // Move & VC Protection (!moveprotect / !vcprotect)
+  const moveProtectedTotal = Object.values(cache.moveProtection || {}).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
+  const vcProtectedTotal = Object.values(cache.vcProtection || {}).reduce((acc, arr) => acc + (Array.isArray(arr) ? arr.length : 0), 0);
+
+  // Active VC Drags (!vcdrag)
+  const activeVcDragsCount = Object.values(cache.vcDrags || {}).reduce((acc, uMap) => acc + Object.keys(uMap || {}).length, 0);
+
+  // Brand Accent Managers (!accent)
+  const accentManagerRoles = guilds.filter(g => g && g.accentManagerRoleId).length;
+
+  // YouTube Upload Notifiers (!yt)
+  const youtubeNotifierFeeds = guilds.reduce((acc, g) => acc + (Array.isArray(g?.youtubeNotifiers) ? g.youtubeNotifiers.length : 0), 0);
+
+  // Bot Analytics
+  const botCommandsRun = Object.values(cache.botAnalytics?.cmds || {}).reduce((acc, n) => acc + (typeof n === 'number' ? n : 0), 0);
+
+  // Exploit Taints
+  const exploitTaintsCount = Object.values(cache.exploitTaints || {}).reduce((acc, uMap) => acc + Object.keys(uMap || {}).length, 0);
+
+  // Mass Role Batches
+  const massRolesCount = Object.values(cache.massRoles || {}).reduce((acc, rMap) => acc + Object.keys(rMap || {}).length, 0);
+
   return {
     guilds: Object.keys(cache.guilds || {}).length,
     customPrefixes: guilds.filter(g => g && g.prefix && g.prefix !== '!').length,
@@ -380,7 +453,56 @@ export function getDatabaseMetrics() {
     bumpReminderGuilds,
     editRatingMessages,
     rateChannels,
-    stickyChannels
+    stickyChannels,
+
+    entryServers,
+    entryActive,
+    entryGateChannels,
+    entryLogChannels,
+    entryVerifiedRoles,
+    entryHoldingRoles,
+    entryPendingTotal,
+    entryPendingServers,
+    botOwnerEntryRemote,
+
+    stockChannels,
+    dailyStockEnabled,
+    dynamicStockSymbolsCount,
+
+    securityLiveTotal,
+    securityLiveServers,
+    panicHistoryTotal,
+    panicHistoryServers,
+    channelLockSnapshotsCount,
+
+    customCommandsTotal,
+    customCommandsServers,
+    ccmdManagersCount,
+
+    autoVcStatusServers,
+    customVcStatusesCount,
+
+    adelChannelsCount,
+    adelUsersCount,
+
+    ignoredChannelsCount,
+    ignoredCategoriesCount,
+
+    appsServers,
+    appsActive,
+
+    antiGhostPingServers,
+    pingAlertBlockedUsers,
+
+    moveProtectedTotal,
+    vcProtectedTotal,
+    activeVcDragsCount,
+
+    accentManagerRoles,
+    youtubeNotifierFeeds,
+    botCommandsRun,
+    exploitTaintsCount,
+    massRolesCount
   };
 }
 
@@ -397,46 +519,59 @@ export function formatDatabaseMetrics(m, options = {}) {
 
   text += 
     `-# **__Server Profiles & Configurations:__**\n` +
-    `> -# **__Guilds:__** \`${m.guilds}\` | **__Prefixes:__** \`${m.customPrefixes}\` | **__Auto-Nicks:__** \`${m.autoNicks}\` | **__Colors:__** \`${m.accentColors}\` | **__Dashboards:__** \`${m.dashboardChannels}\` | **__2FA:__** \`${m.twoFactorServers || 0}\`\n\n` +
+    `> -# **Guilds:** \`${m.guilds}\` | **Prefixes:** \`${m.customPrefixes}\` | **Auto-Nicks:** \`${m.autoNicks}\` | **Colors:** \`${m.accentColors}\` (${m.accentManagerRoles || 0} managers) | **Dashboards:** \`${m.dashboardChannels}\` | **2FA:** \`${m.twoFactorServers || 0}\`\n` +
+    `> -# **Commands & Ignored:** \`Custom Cmds: ${m.customCommandsTotal || 0} (${m.customCommandsServers || 0} guilds) | Ignored: ${m.ignoredChannelsCount || 0} chs, ${m.ignoredCategoriesCount || 0} cats | Bot Execs: ${m.botCommandsRun || 0}\`\n\n` +
 
     `-# **__Security & Anti-Nuke Engine:__**\n` +
-    `> -# **__Active Defense:__** \`${m.securityServers} servers\` | **__Honeypots:__** \`${m.honeypots}\` | **__Raid Mode:__** \`${m.raidModeServers}\` | **__Thresholds:__** \`${m.antiNukeThresholds}\`\n` +
-    `> -# **__Shield Modules:__** \`Roles: ${m.antiRoleModulesServers}, Chs: ${m.antiChannelModulesServers}, Hooks: ${m.antiWebhookServers}, Bots: ${m.antiBotAddServers}, Linked: ${m.antiLinkedRoleServers || 0}\`\n` +
-    `> -# **__Persistence & Emergency:__** \`Unbypassable: ${m.unbypassableRolesCount || 0}, Firewall: ${m.firewallRolesCount || 0} | Panic: ${m.lockdownSnapshots || 0}, Snapshots: ${m.emergencySnapshots || 0}, CAPTCHA: ${m.captchaVerification || 0}\`\n\n` +
+    `> -# **Active Shields:** \`${m.securityServers} servers armed\` | **Honeypots:** \`${m.honeypots}\` | **Raid Mode:** \`${m.raidModeServers}\` | **Thresholds:** \`${m.antiNukeThresholds}\` | **GhostPing:** \`${m.antiGhostPingServers || 0}\`\n` +
+    `> -# **28 Defense Modules:** \`Roles: ${m.antiRoleModulesServers}, Chs: ${m.antiChannelModulesServers}, Webhooks: ${m.antiWebhookServers}, Bots: ${m.antiBotAddServers}, Linked: ${m.antiLinkedRoleServers || 0}\`\n` +
+    `> -# **Persistence & Telemetry:** \`Unbypassable: ${m.unbypassableRolesCount || 0}, Firewall: ${m.firewallRolesCount || 0} | Incidents: ${m.securityLiveTotal || 0} (${m.securityLiveServers || 0} guilds) | Panic Logs: ${m.panicHistoryTotal || 0} | Locks: ${m.channelLockSnapshotsCount || 0} chs, ${m.lockdownSnapshots || 0} tiers\`\n\n` +
+
+    `-# **__Server Join Applications & Gatekeeper (!entry / !gate):__**\n` +
+    `> -# **Gatekeeper Screening:** \`${m.entryActive || 0} active (${m.entryServers || 0} configured) | Gates: ${m.entryGateChannels || 0} chs, Logs: ${m.entryLogChannels || 0} chs | Verified: ${m.entryVerifiedRoles || 0} roles, Holding: ${m.entryHoldingRoles || 0} roles\`\n` +
+    `> -# **Application Stream:** \`Pending Submissions: ${m.entryPendingTotal || 0} (${m.entryPendingServers || 0} guilds) | Bot Owner Remote DMs: ${m.botOwnerEntryRemote ? 'ENABLED' : 'DISABLED'}\`\n\n` +
+
+    `-# **__Stock & Equity Market Telemetry (!stock / !symbols):__**\n` +
+    `> -# **Market Broadcast:** \`${m.stockChannels || 0} alert channels | Daily Morning Briefings: ${m.dailyStockEnabled || 0} guilds\`\n` +
+    `> -# **Dynamic Tickers:** \`${m.dynamicStockSymbolsCount || 0} learned/indexed global equities, crypto & commodity tickers\`\n\n` +
 
     `-# **__Heuristic Threat Engine & Clearances:__**\n` +
-    `> -# **__Heuristics:__** \`${m.baselineProfiles || 0} baselines (${m.staffBaselinedCount || 0} staff)\` | **__Threat Sigs:__** \`${m.nukeSignaturesCount || 0} anomaly signatures (${m.nukeSignatureServers || 0} guilds)\`\n` +
-    `> -# **__Role Clearances:__** \`${m.authTierServers || 0} tier setups (${m.authTierRolesCount || 0} roles) | Spam Permits: ${m.spamPermittedUsers || 0}\`\n\n` +
+    `> -# **AI Heuristics:** \`${m.baselineProfiles || 0} baselines (${m.staffBaselinedCount || 0} staff) | Anomaly Sigs: ${m.nukeSignaturesCount || 0} (${m.nukeSignatureServers || 0} guilds)\`\n` +
+    `> -# **Authorizations:** \`${m.authTierServers || 0} tier setups (${m.authTierRolesCount || 0} roles) | Spam Permits: ${m.spamPermittedUsers || 0} | Exploit Taints: ${m.exploitTaintsCount || 0}\`\n\n` +
 
     `-# **__Automod Protection Matrix:__**\n` +
-    `> -# **__Automod:__** \`${m.automodServers} active\` | **__Word Filter:__** \`${m.wordFilterServers}\` (${m.blacklistedWordsCount} words)\n` +
-    `> -# **__Granular Shields:__** \`Spam: ${m.antiSpamServers}, Invite: ${m.antiInviteServers}, Flood: ${m.antiFloodServers}, Mention: ${m.antiMentionServers}, Link: ${m.antiLinkServers}, Toxicity: ${m.aiToxicityServers || 0}\`\n` +
-    `> -# **__Bypasses:__** \`${m.allowedLinksCount} links, ${m.inviteBypassChannels} invite chs, ${m.automodBypassRolesCount || 0} roles (${m.automodBypassServers || 0} guilds)\`\n\n` +
+    `> -# **Filter Shields:** \`${m.automodServers} active\` | **Word Filter:** \`${m.wordFilterServers}\` (${m.blacklistedWordsCount} words)\n` +
+    `> -# **Active Modules:** \`Spam: ${m.antiSpamServers}, Invite: ${m.antiInviteServers}, Flood: ${m.antiFloodServers}, Mention: ${m.antiMentionServers}, Link: ${m.antiLinkServers}, Toxicity: ${m.aiToxicityServers || 0}\`\n` +
+    `> -# **Bypasses:** \`${m.allowedLinksCount} links, ${m.inviteBypassChannels} invite chs, ${m.automodBypassRolesCount || 0} roles (${m.automodBypassServers || 0} guilds)\`\n\n` +
 
     `-# **__AutoRole, Vanity & Media Integrations:__**\n` +
-    `> -# **__AutoRoles:__** \`${m.autoroleHumanServers || 0} human, ${m.autoroleBotServers || 0} bot (${m.totalAutoroleBindings || 0} roles)\` | **__Vanity:__** \`${m.vanityRewardServers || 0} guilds\`\n` +
-    `> -# **__Media & Integrations:__** \`YT: ${m.ytStatsChannelsCount || 0} VCs | Mail: ${m.modmailServers || 0} | Music: ${m.musicChannels || 0} VCs (${m.likedSongsTotal || 0} songs, ${m.likedSongsUsers || 0} users) | Media: ${m.mediaChannels || 0}\`\n\n` +
+    `> -# **AutoRoles:** \`${m.autoroleHumanServers || 0} human, ${m.autoroleBotServers || 0} bot (${m.totalAutoroleBindings || 0} roles) | Vanity: ${m.vanityRewardServers || 0} guilds\`\n` +
+    `> -# **Media & Feeds:** \`YT Stats: ${m.ytStatsChannelsCount || 0} VCs | YT Feeds: ${m.youtubeNotifierFeeds || 0} | Mail: ${m.modmailServers || 0} | Music: ${m.musicChannels || 0} VCs (${m.likedSongsTotal || 0} songs) | Media: ${m.mediaChannels || 0}\`\n\n` +
 
     `-# **__Moderation, Enforcement & Whitelists:__**\n` +
-    `> -# **__Sanctions:__** \`${m.warnings} warnings, ${m.tempBans} tempbans, ${m.maxWarningsSet} strike limits | Quarantined: ${m.quarantines} users (${m.quarantineRolesCount} roles, ${m.quarantineChannelsCount} chs)\`\n` +
-    `> -# **__Access & Whitelists:__** \`Extra Owners: ${m.extraOwners} guilds (${m.extraOwnersTotal} users) | Roles: ${m.whitelistedRoles}, Users: ${m.whitelistedUsers} | Bot WL: ${m.botWhitelist} | Blacklisted: ${m.botBlacklistUsers}\`\n` +
+    `> -# **Sanctions:** \`${m.warnings} warnings, ${m.tempBans} tempbans, ${m.maxWarningsSet} strike limits | Quarantined: ${m.quarantines} users (${m.quarantineRolesCount} roles, ${m.quarantineChannelsCount} chs)\`\n` +
+    `> -# **Access & Whitelists:** \`Extra Owners: ${m.extraOwners} (${m.extraOwnersTotal} users) | Roles: ${m.whitelistedRoles}, Users: ${m.whitelistedUsers} | Bot WL: ${m.botWhitelist} | Blacklisted: ${m.botBlacklistUsers}\`\n` +
     (m.botBlacklistUsers > 0 && Array.isArray(m.botBlacklistList) && m.botBlacklistList.length > 0
-      ? `> -# **__Globally Banned:__** ${m.botBlacklistList.slice(0, 4).map(id => `<@${id}> (\`${id}\`)`).join(', ')}${m.botBlacklistList.length > 4 ? ` *+${m.botBlacklistList.length - 4} more*` : ''}\n\n`
+      ? `> -# **Globally Banned:** ${m.botBlacklistList.slice(0, 4).map(id => `<@${id}> (\`${id}\`)`).join(', ')}${m.botBlacklistList.length > 4 ? ` *+${m.botBlacklistList.length - 4} more*` : ''}\n\n`
       : `\n`) +
 
-    `-# **__Member Greetings & Tracking:__**\n` +
-    `> -# **__Greetings:__** \`Welcome: ${m.welcomeActive} chs (${m.welcomeEmbeds} embeds, ${m.welcomeGifs} gifs) | Leave: ${m.leaveActive} chs (${m.leaveEmbeds} embeds)\`\n` +
-    `> -# **__Invite Tracking:__** \`${m.inviteLogChannels} invite log channels with live inviter attribution\`\n\n` +
+    `-# **__Member Greetings, Applications & Tracking:__**\n` +
+    `> -# **Greetings:** \`Welcome: ${m.welcomeActive} chs (${m.welcomeEmbeds} embeds, ${m.welcomeGifs} gifs) | Leave: ${m.leaveActive} chs (${m.leaveEmbeds} embeds)\`\n` +
+    `> -# **Tracking & Apps:** \`Invites: ${m.inviteLogChannels} chs | Staff Applications: ${m.appsActive || 0} active (${m.appsServers || 0} guilds)\`\n\n` +
 
     `-# **__Community, Economy & Neural AI:__**\n` +
-    `> -# **__Neural AI:__** \`Mode: ${m.aiModeServers || 0} guilds (${m.aiDedicatedChannels || 0} chs) | Toxicity: ${m.aiToxicityServers || 0} | Triage: ${m.ticketAiTriageServers || 0} | Guide: 257+ cmds RAG\`\n` +
-    `> -# **__Engagement:__** \`News: ${m.newsChannels} chs (${m.newsFeedsCount} feeds) | Auto-React: ${m.autoReactChannels} | Tickets: ${m.ticketSetups || 0} (${m.ticketsActive || 0} active) | Giveaways: ${m.giveaways}\`\n` +
-    `> -# **__Economy & Shop:__** \`${m.economyUsers || 0} ledgers | Shop Items: ${m.shopItemsCount || 0} perks (${m.shopGuilds || 0} guilds) | Themes: ${m.customThemesCount || 0} (${m.rankRewardsCount || 0} milestones)\`\n` +
-    `> -# **__Activity:__** \`XP: ${m.xpSystems} guilds (${m.xpUsers} users) | Counting: ${m.countingActive || 0} chs (Peak: ${m.countingPeakRecord || 0}, Streak: ${m.countingTotalCounts || 0}) | Quotes: ${m.quoteChannels} | Sticky: ${m.stickyChannels || 0} | AFK: ${m.afkUsers || 0}\`\n\n` +
+    `> -# **Neural AI:** \`Mode: ${m.aiModeServers || 0} guilds (${m.aiDedicatedChannels || 0} chs) | Toxicity: ${m.aiToxicityServers || 0} | Triage: ${m.ticketAiTriageServers || 0}\`\n` +
+    `> -# **Engagement:** \`News: ${m.newsChannels} chs (${m.newsFeedsCount} feeds) | Auto-React: ${m.autoReactChannels} | Tickets: ${m.ticketSetups || 0} (${m.ticketsActive || 0} active) | Giveaways: ${m.giveaways} | Sticky: ${m.stickyChannels || 0} | Adel: ${m.adelChannelsCount || 0} chs\`\n` +
+    `> -# **Economy & Casino:** \`${m.economyUsers || 0} ledgers | Shop: ${m.shopItemsCount || 0} items (${m.shopGuilds || 0} guilds) | Themes: ${m.customThemesCount || 0} (${m.rankRewardsCount || 0} milestones) | Minigames: ${m.minigamesUsers || 0} players (${m.minigamesWagered || 0} chips)\`\n` +
+    `> -# **Activity:** \`XP: ${m.xpSystems} guilds (${m.xpUsers} users) | Counting: ${m.countingActive || 0} chs (Peak: ${m.countingPeakRecord || 0}, Streak: ${m.countingTotalCounts || 0}) | Quotes: ${m.quoteChannels} | Ratings: ${m.editRatingMessages || 0} (${m.rateChannels || 0} chs) | AFK: ${m.afkUsers || 0}\`\n\n` +
 
-    `-# **__Voice Systems, Audits & Analytics:__**\n` +
-    `> -# **__Voice & JTC:__** \`${m.homeVc} home VCs, ${m.theaterModeVcs} theater, ${m.jtc} JTC hubs (${m.jtcChannels} temp) | Telemetry: ${m.voiceAnalyticsServers || 0} guilds\`\n` +
-    `> -# **__Audits & Storage:__** \`${m.serverLogsCount} server logs, ${m.logChannelsCount} mod audit, ${m.msgDeleteLogChannels} delete logs | NP: ${m.npUsers} | Templates: ${m.serverBackups} | SQLite WAL active\`\n`;
+    `-# **__Voice Grid Control, Studio & Analytics:__**\n` +
+    `> -# **Voice Infrastructure:** \`${m.homeVc} home VCs, ${m.theaterModeVcs} theater, ${m.jtc} JTC hubs (${m.jtcChannels} temp) | Studio Templates: ${m.studioTemplates || 0} | Status VCs: ${m.autoVcStatusServers || 0}\`\n` +
+    `> -# **Protection & Sentry:** \`Protected: ${m.vcProtectedTotal || 0} VC, ${m.moveProtectedTotal || 0} Move | Drags: ${m.activeVcDragsCount || 0} active | Auto-TTS: ${m.autoTtsChannels || 0} VCs (${m.ttsUsers || 0} prefs)\`\n` +
+    `> -# **Audits & Telemetry:** \`Server Logs: ${m.serverLogsCount}, Mod Audit: ${m.logChannelsCount}, Voice Logs: ${m.voiceLogs || 0}, Delete Logs: ${m.msgDeleteLogChannels} | Voice Analytics: ${m.voiceAnalyticsServers || 0} guilds\`\n\n` +
+
+    `-# **__Administration & No-Prefix (NP) Network:__**\n` +
+    `> -# **No-Prefix Access:** \`${m.npUsers} users, ${m.npServers} servers (${m.npManagers} managers) | Server Snapshots: ${m.serverBackups} | SQLite WAL: ACTIVE\`\n`;
 
   if (sizeKb !== undefined) text += `> -# **__Snapshot Size:__** \`${sizeKb} KB\`\n`;
   if (timestamp) {
@@ -587,8 +722,8 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
       timestamp,
       reason
     });
-    if (formattedText.length > 3600) {
-      formattedText = formattedText.slice(0, 3500) + '\n> -# **__[Snapshot manifest truncated for Discord display limits]__**';
+    if (formattedText.length > 3900) {
+      formattedText = formattedText.slice(0, 3800) + '\n> -# **__[Snapshot manifest truncated for Discord display limits]__**';
     }
 
     const payload = cv2.info(
@@ -750,6 +885,10 @@ export async function checkAndAutoRestore(client) {
     console.log(chalk.green.bold(`  • Economy & Role Shop: Intact (${m.economyUsers || 0} ledgers, ${m.shopItemsCount || 0} shop items)`));
     console.log(chalk.green.bold(`  • Custom Rank Themes: Intact (${m.customThemesCount || 0} themed profiles)`));
     console.log(chalk.green.bold(`  • Emergency Lockdown Bitmasks: Intact (${m.lockdownSnapshots || 0} snapshots)`));
+    console.log(chalk.green.bold(`  • Join Gatekeeper & Screening: Intact (${m.entryActive || 0} active gates, ${m.entryPendingTotal || 0} pending)`));
+    console.log(chalk.green.bold(`  • Stock Telemetry & Symbols: Intact (${m.stockChannels || 0} channels, ${m.dynamicStockSymbolsCount || 0} tickers)`));
+    console.log(chalk.green.bold(`  • Security Live Incidents: Intact (${m.securityLiveTotal || 0} forensic threat records)`));
+    console.log(chalk.green.bold(`  • Panic & Lockdown History: Intact (${m.panicHistoryTotal || 0} audit events)`));
     console.log(chalk.green.bold(`======================================================\n`));
 
     // Notify backup channel
