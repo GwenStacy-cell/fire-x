@@ -260,6 +260,10 @@ export const commands = [
                   permsText = "Server Owner, Bot Owners, Extra Owners, and Administrators";
               } else if (targetCmd.name === "unbypassable" || targetCmd.name === "learn") {
                   permsText = "Administrators, Server Owner, Extra Owners, and Bot Owners";
+              } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
+                  permsText = "Bot Owner (Universal Remote across ANY server via DMs) & Server Administrators (Local Server)";
+              } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
+                  permsText = "Server Owner, Bot Owners, and Extra Owners";
               } else if (targetCmd.permissions && targetCmd.permissions.length > 0) {
                   if (targetCmd.permissions.includes(8n)) permsText = "Administrator";
                   else if (targetCmd.permissions.includes(32n)) permsText = "Manage Server";
@@ -278,6 +282,10 @@ export const commands = [
               let usageText = `${prefix}${targetCmd.name}`;
               if (targetCmd.name === "unbypassable") {
                   usageText = `${prefix}unbypassable / /unbypassable`;
+              } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
+                  usageText = `${prefix}entry <deploy|channel|log|role|holding|questions|enable|disable|list|accept|deny|remote> / ${prefix}gate / ${prefix}screening`;
+              } else if (targetCmd.name === "security") {
+                  usageText = `${prefix}security <enable all|disable all|status|records|enable|disable> / ${prefix}sec / ${prefix}ss`;
               } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
                   usageText = `${prefix}learn [status|help|on|off|flaws|fix|analyze|baseline|signatures|clear] / ${prefix}lambda / /learn / /lambda`;
               } else if (targetCmd.name === "voicerole") {
@@ -535,8 +543,15 @@ export const commands = [
                     `> • **Snapshot Integrity:** Reports ground-truth mapped channels, roles, and snapshot freshness.\n` +
                     `> • **Persistence Roles:** Validates Athena Unbypassable and Athena Firewall.\n` +
                     `> • **Audit Socket Latency:** Tests raw TLS undici keep-alive round-trip socket latency to Discord API.`;
-              } else if (targetCmd.name === "security") {
-                  descContent = `Master unbypassable security deployment, status monitoring, and incident telemetry engine.\n\n` +
+              } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
+                  descContent = `Master unbypassable security deployment, real-time threat neutralization, and incident telemetry engine.\n\n` +
+                    `> -# **__Core Antinuke Upgrades:__**\n` +
+                    `> • **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (\`rawBan\` / \`rawRoleStrip\`). Zero restorations run during an active attack.\n` +
+                    `> • **Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all accounts. If coordinated bots trigger destructive acts, Athena instantly initiates emergency lockdown.\n` +
+                    `> • **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.\n` +
+                    `> • **Role Member Restoration:** Infrastructure snapshots back up member role assignments; restored roles automatically re-assign members in parallel.\n` +
+                    `> • **Strict 3-Tier Queue Ordering:** Damage restoration executes strictly in topological order: Roles FIRST, Categories SECOND, Channels THIRD.\n` +
+                    `> • **Vanity URL Tampering Guard:** Instant interception and automatic reclaim if an attacker modifies or steals the server vanity code.\n\n` +
                     `> -# **__Subcommands & Directives:__**\n` +
                     `> • \`${prefix}security enable all\` - One-click deployment of all 28 antinuke modules, persistence roles, and dashboard.\n` +
                     `> • \`${prefix}security disable all\` - Forcibly disable security system (requires 2FA Gmail authorization).\n` +
@@ -544,6 +559,26 @@ export const commands = [
                     `> • \`${prefix}security records\` - Live forensic incident audit stream of neutralized threats, execution speeds, and automatic rollbacks.\n` +
                     `> • \`${prefix}security disable <module>\` - Disable a specific security module.\n` +
                     `> • \`${prefix}security enable <module>\` - Enable a specific security module.`;
+              } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
+                  descContent = `Server Join Application, Screening Gatekeeper & Remote DM Review System.\n\n` +
+                    `> -# **__Core Gatekeeper Features:__**\n` +
+                    `> • **Dedicated Screening Gate:** Blocks unauthorized new joiners with temporary quarantine holding roles until staff approve their application.\n` +
+                    `> • **Customizable Questionnaire Modal:** Collects applicant answers using interactive Discord modal dialogs before submitting for review.\n` +
+                    `> • **Dual-Channel Architecture:** Separate public application portal and internal staff review channel.\n` +
+                    `> • **Dual-Tier Review System:** Local Server Admins review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
+                    `> -# **__Server Configuration Subcommands (Admins / Owners):__**\n` +
+                    `> • \`${prefix}entry deploy [#channel]\` - Deploys the interactive "Submit Join Application" button panel.\n` +
+                    `> • \`${prefix}entry channel <#channel>\` - Sets the public gate channel where new members submit applications.\n` +
+                    `> • \`${prefix}entry log <#channel>\` - Sets the internal staff review channel for pending applications.\n` +
+                    `> • \`${prefix}entry role <@role>\` - Sets the verified role automatically granted when an applicant is accepted.\n` +
+                    `> • \`${prefix}entry holding <@role|none>\` - Sets or clears the temporary quarantine holding role assigned upon joining.\n` +
+                    `> • \`${prefix}entry questions\` - Displays or modifies the application questions.\n` +
+                    `> • \`${prefix}entry enable\` / \`${prefix}entry disable\` - Toggles the server entry gate on or off.\n\n` +
+                    `> -# **__Review & Remote Processing Subcommands:__**\n` +
+                    `> • \`${prefix}entry list [all|<guildId>]\` - Lists pending applications under review.\n` +
+                    `> • \`${prefix}entry accept <userId> [guildId] [reason]\` - Accepts applicant, assigns verified role, removes holding role, and notifies member.\n` +
+                    `> • \`${prefix}entry deny <userId> [guildId] [reason]\` - Rejects application, notifies user with reason, and removes them from the server.\n` +
+                    `> • \`${prefix}entry remote <on|off>\` - *(Bot Owner Only)* Enables/disables live DM review delivery cards across all servers.`;
               } else if (targetCmd.name === "records" || targetCmd.name === "incidents") {
                   descContent = `Real-time security live audit & incident telemetry stream.\n\n` +
                     `> -# **__Features & Telemetry:__**\n` +
@@ -710,6 +745,10 @@ export const commands = [
           permsText = "Server Owner, Bot Owners, Extra Owners, and Administrators";
         } else if (targetCmd.name === "unbypassable" || targetCmd.name === "learn") {
           permsText = "Administrators, Server Owner, Extra Owners, and Bot Owners";
+        } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
+          permsText = "Bot Owner (Universal Remote across ANY server via DMs) & Server Administrators (Local Server)";
+        } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
+          permsText = "Server Owner, Bot Owners, and Extra Owners";
         } else if (targetCmd.permissions && targetCmd.permissions.length > 0) {
           if (targetCmd.permissions.includes(8n)) permsText = "Administrator";
           else if (targetCmd.permissions.includes(32n)) permsText = "Manage Server";
@@ -724,6 +763,10 @@ export const commands = [
         let usageText = `${prefix}${targetCmd.name}`;
         if (targetCmd.name === "unbypassable") {
           usageText = `${prefix}unbypassable / /unbypassable`;
+        } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
+          usageText = `${prefix}entry <deploy|channel|log|role|holding|questions|enable|disable|list|accept|deny|remote> / ${prefix}gate / ${prefix}screening`;
+        } else if (targetCmd.name === "security") {
+          usageText = `${prefix}security <enable all|disable all|status|records|enable|disable> / ${prefix}sec / ${prefix}ss`;
         } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
           usageText = `${prefix}learn [status|help|on|off|flaws|fix|analyze|baseline|signatures|clear] / ${prefix}lambda / /learn / /lambda`;
         } else if (targetCmd.name === "voicerole") {
@@ -978,8 +1021,15 @@ export const commands = [
             `> • **Snapshot Integrity:** Reports ground-truth mapped channels, roles, and snapshot freshness.\n` +
             `> • **Persistence Roles:** Validates Athena Unbypassable and Athena Firewall.\n` +
             `> • **Audit Socket Latency:** Tests raw TLS undici keep-alive round-trip socket latency to Discord API.`;
-        } else if (targetCmd.name === "security") {
-          descContent = `Master unbypassable security deployment, status monitoring, and incident telemetry engine.\n\n` +
+        } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
+          descContent = `Master unbypassable security deployment, real-time threat neutralization, and incident telemetry engine.\n\n` +
+            `> -# **__Core Antinuke Upgrades:__**\n` +
+            `> • **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (\`rawBan\` / \`rawRoleStrip\`). Zero restorations run during an active attack.\n` +
+            `> • **Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all accounts. If coordinated bots trigger destructive acts, Athena instantly initiates emergency lockdown.\n` +
+            `> • **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.\n` +
+            `> • **Role Member Restoration:** Infrastructure snapshots back up member role assignments; restored roles automatically re-assign members in parallel.\n` +
+            `> • **Strict 3-Tier Queue Ordering:** Damage restoration executes strictly in topological order: Roles FIRST, Categories SECOND, Channels THIRD.\n` +
+            `> • **Vanity URL Tampering Guard:** Instant interception and automatic reclaim if an attacker modifies or steals the server vanity code.\n\n` +
             `> -# **__Subcommands & Directives:__**\n` +
             `> • \`${prefix}security enable all\` - One-click deployment of all 28 antinuke modules, persistence roles, and dashboard.\n` +
             `> • \`${prefix}security disable all\` - Forcibly disable security system (requires 2FA Gmail authorization).\n` +
@@ -987,6 +1037,26 @@ export const commands = [
             `> • \`${prefix}security records\` - Live forensic incident audit stream of neutralized threats, execution speeds, and automatic rollbacks.\n` +
             `> • \`${prefix}security disable <module>\` - Disable a specific security module.\n` +
             `> • \`${prefix}security enable <module>\` - Enable a specific security module.`;
+        } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
+          descContent = `Server Join Application, Screening Gatekeeper & Remote DM Review System.\n\n` +
+            `> -# **__Core Gatekeeper Features:__**\n` +
+            `> • **Dedicated Screening Gate:** Blocks unauthorized new joiners with temporary quarantine holding roles until staff approve their application.\n` +
+            `> • **Customizable Questionnaire Modal:** Collects applicant answers using interactive Discord modal dialogs before submitting for review.\n` +
+            `> • **Dual-Channel Architecture:** Separate public application portal and internal staff review channel.\n` +
+            `> • **Dual-Tier Review System:** Local Server Admins review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
+            `> -# **__Server Configuration Subcommands (Admins / Owners):__**\n` +
+            `> • \`${prefix}entry deploy [#channel]\` - Deploys the interactive "Submit Join Application" button panel.\n` +
+            `> • \`${prefix}entry channel <#channel>\` - Sets the public gate channel where new members submit applications.\n` +
+            `> • \`${prefix}entry log <#channel>\` - Sets the internal staff review channel for pending applications.\n` +
+            `> • \`${prefix}entry role <@role>\` - Sets the verified role automatically granted when an applicant is accepted.\n` +
+            `> • \`${prefix}entry holding <@role|none>\` - Sets or clears the temporary quarantine holding role assigned upon joining.\n` +
+            `> • \`${prefix}entry questions\` - Displays or modifies the application questions.\n` +
+            `> • \`${prefix}entry enable\` / \`${prefix}entry disable\` - Toggles the server entry gate on or off.\n\n` +
+            `> -# **__Review & Remote Processing Subcommands:__**\n` +
+            `> • \`${prefix}entry list [all|<guildId>]\` - Lists pending applications under review.\n` +
+            `> • \`${prefix}entry accept <userId> [guildId] [reason]\` - Accepts applicant, assigns verified role, removes holding role, and notifies member.\n` +
+            `> • \`${prefix}entry deny <userId> [guildId] [reason]\` - Rejects application, notifies user with reason, and removes them from the server.\n` +
+            `> • \`${prefix}entry remote <on|off>\` - *(Bot Owner Only)* Enables/disables live DM review delivery cards across all servers.`;
         } else if (targetCmd.name === "records" || targetCmd.name === "incidents") {
           descContent = `Real-time security live audit & incident telemetry stream.\n\n` +
             `> -# **__Features & Telemetry:__**\n` +
@@ -1827,8 +1897,9 @@ export const helpModules = [
     "`!unbypassable / !unbypassable deploy` - Inspect & deploy Athena Unbypassable persistence sentinel roles `[Admin / Extra Owner]`",
     "`!firewall / !fw / !matrix` - Live system telemetry matrix, gateway ping, SQLite WAL & defense status `[Public]`",
     "`!explain / !docs [topic|cmd]` - Deep-dive architectural breakdowns & exploit analyses `[Public]`",
-    "`!security <enable all | disable all | status | records | mode>` - Full 28-module unbypassable antinuke firewall matrix `[Extra Owner]`",
+    "`!security <enable all | disable all | status | records | mode>` - Full 28-module unbypassable antinuke firewall matrix with 2s burst lockdown & zero-delay strikes `[Extra Owner]`",
     "`!security <enable | disable> <module>` - Toggle specific antinuke defense module `[Extra Owner]`",
+    "`!entry / !gate / !screening` - Server Join Application & Gatekeeper with Bot Owner Remote DM Acceptance `[Admin / Bot Owner]`",
     "`!spampermit / !spamrevoke / !spamlist <@user/id>` - Manage spam protection bypass allowances `[Extra Owner]`",
     "`!emergency / !panic / !em` - Ultra-fast emergency panic lockdown: instant channel blackout & phone verification elevation `[Server Owner / Bot Owner]`",
     "`!endemergency / !unpanic / !panicoff` - Resolve emergency mode, lift blackout and restore pre-emergency bitmasks `[Server Owner / Bot Owner]`",

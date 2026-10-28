@@ -88,7 +88,15 @@ As designed for Athena Prime:
   • Automatically scans live channels and roles created within the last 60 seconds against Athena's ground-truth baseline infrastructure snapshot.
   • Executes parallel batch deletions (10 concurrent requests per batch directly over Undici) to vaporize all rogue spam channels and roles in sub-second time.
 • **In-Flight Gateway Interceptors (\`roleCreate.js\` & \`channelCreate.js\`):**
-  • When a guild is marked actively under attack (\`isGuildUnderAttack\`), newly arriving rogue spam roles and channels are intercepted and deleted at the gateway layer in sub-5ms before any permission overwrites can be written.`
+  • When a guild is marked actively under attack (\`isGuildUnderAttack\`), newly arriving rogue spam roles and channels are intercepted and deleted at the gateway layer in sub-5ms before any permission overwrites can be written.
+
+# 5 Core Antinuke Hardening Upgrades
+• **1. Hostile Elimination API Priority:** 100% of Discord REST rate limits are strictly reserved for \`rawBan\` and \`rawRoleStrip\`. Zero restorations run during an active attack so rate limits are never exhausted on restorations before eliminating the attacker.
+• **2. Coordinated Multi-Account Burst Auto-Lockdown:** A 2-second server-wide sliding window across all untrusted users triggers an immediate emergency server lockdown if multiple accounts attempt coordinated single destructive actions.
+• **3. Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.
+• **4. Parallel Role Member Restoration:** Infrastructure snapshots back up member role assignments and restore them in parallel batches alongside permissions.
+• **5. Strict 3-Tier Restoration Ordering:** Restores Roles FIRST, Categories SECOND, and Channels THIRD to ensure zero parentage or permission misconfigurations.
+• **6. Instant Vanity URL Sniping Guard:** Detects and immediately reclaims compromised vanity URLs upon unauthorized modifications.`
       },
       {
         pageTitle: 'Server Identity Rollback, Raid Defense & Diagnostics',
@@ -1158,6 +1166,13 @@ export const DETAILED_COMMANDS = {
   • Two-phase topological repair: Categories reconstructed first, then child channels linked to their respective categories by ID or name fallback.
   • Exact rawPosition preserved and locked via setPosition without misplacing channels in the tree.
   • Post-attack reconciliation pass ("reconcileGuildStructure") guarantees 100% channel parentage and hierarchy integrity.
+• **5 Advanced Hardening Upgrades:**
+  1. **Hostile Elimination API Priority:** 100% of Discord REST rate limits are strictly reserved for \`rawBan\` and \`rawRoleStrip\`. Zero restorations run during an active attack so rate limits are never exhausted on restorations before eliminating the attacker.
+  2. **Coordinated Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all untrusted users triggers an instant emergency server lockdown if multiple accounts attempt coordinated single destructive actions.
+  3. **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.
+  4. **Parallel Role Member Restoration:** Infrastructure snapshots back up member role assignments and restore them in parallel batches alongside permissions.
+  5. **Strict 3-Tier Restoration Ordering:** Restores Roles FIRST, Categories SECOND, and Channels THIRD.
+  6. **Instant Vanity URL Sniping Guard:** Detects and immediately reclaims compromised vanity URLs upon unauthorized modifications.
 • **Prerequisites:**
   • Athena's highest role must be placed among the Top 3 highest roles in Discord Server Settings (Role Hierarchy) so she can override rogue admin actions.
   • Must be executed by the Server Owner, Extra Owner, or Bot Owner. (Server requires 200+ members; Bot Owners bypass).
@@ -1178,6 +1193,13 @@ export const DETAILED_COMMANDS = {
 • **First-Action Neutralization (Stopping Nuke Bots Before 2nd Action):**
   • WebSocket audit log ring buffer delivers 0ms executor identification without REST request lag.
   • Parallel dual-strike ("rawRoleStrip" + "rawBan") strips all roles within 10ms, revoking Administrator and ManageChannels so Discord immediately returns 403 Forbidden if the nuke bot attempts to delete a second channel.
+• **5 Advanced Hardening Upgrades:**
+  1. API Rate Limit Hostile Strike Priority (eliminating the attacker takes 100% priority; restorations pause until the attacker is neutralized).
+  2. Multi-Account Burst Protection (2-second global sliding window triggering emergency lockdown).
+  3. Cascade Bot Inviter Punishment (automatically bans the member who invited a rogue bot).
+  4. Parallel Role Member Restoration (restores assigned members alongside role permissions).
+  5. Strict 3-Tier Queue Ordering (Roles 1st, Categories 2nd, Channels 3rd).
+  6. Vanity URL Sniping Guard (instant automatic reclaim upon unauthorized modification).
 • **Intelligent Damage Repair Matrix:**
   • Continuous live infrastructure snapshots track ground truth channel structures, parent categories, and role states.
   • Synchronous deduplication guarantees zero double channels or roles.
@@ -1688,6 +1710,23 @@ export const DETAILED_COMMANDS = {
 • **Bot Integration Audit:** Flags external bots holding dangerous permissions that are not registered in Athena's trusted whitelist (\`!botwhitelist\`).
 • **Actionable Report:** Outputs a structured Components V2 container detailing vulnerable roles and recommendations.`,
     example: '!scanserver'
+  },
+
+  entry: {
+    name: 'entry',
+    aliases: ['gate', 'screening', 'gatekeeper', 'serverentry'],
+    category: 'Security & Access Control',
+    clearance: 'Bot Owner (Universal Remote across ANY server via DMs) & Server Administrator (Local Server)',
+    syntax: '!entry deploy [#channel] / !entry accept <userId> [guildId] / !entry deny <userId> [guildId] / !entry remote on|off',
+    purpose: 'Complete Server Join Application & Gatekeeper screening suite with Bot Owner Remote DM acceptance across all servers.',
+    architecture: 
+`• **Screening Gate & Holding Role Quarantine:** Incoming members receive an unverified holding role denying server access until an application is approved.
+• **Interactive Modal Questionnaire:** Applicants click a deployed button to complete a customizable questionnaire modal.
+• **Dual-Tier Approval Architecture:**
+  1. **Local Server Admins:** Receive application review cards in their configured staff log channel and can accept or deny locally.
+  2. **Bot Owner Universal Remote Review:** Applications across ANY server running Athena are delivered directly to the Bot Owner's DMs with interactive Accept / Deny buttons and custom kick reason modals.
+• **100% Database Snowflake ID Binding:** All channels, verified roles, holding roles, and pending applications are tracked strictly by Snowflake IDs in SQLite.`,
+    example: '!entry deploy #welcome'
   },
 
   quarantine: {
