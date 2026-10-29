@@ -2452,7 +2452,7 @@ if (interaction.customId === "modal_2fa_setup") {
           }
 
           if (!success) {
-            await interaction.message.edit({ content: `-# **Failed to download media.**` }).catch(() => null);
+            await interaction.message.edit({ content: `-# **Failed to download media.** The requested media may be private, age-restricted, or temporarily blocked by the platform.` }).catch(() => null);
           } else {
             await interaction.message.delete().catch(() => null);
           }

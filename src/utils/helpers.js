@@ -56,7 +56,8 @@ export const PUBLIC_COMMANDS = new Set([
   'mc', 'membercount', 'stats', 'botstats', 'hud', 'dashboard', 'date',
   
   // User Utilities & Fun
-  'afk', 'calc', 'poll', 'quote', 'quotemaker', 'weather', 'image', 'pic', 
+  'afk', 'calc', 'poll', 'quote', 'quotemaker', 'weather', 'image', 'pic', 'pinterest', 'pin',
+  'media', 'mp3', 'dl', 'download', 'vid', 'video',
   'ship', 'chatlb', 'voicelb', 'invitelb', 'top', 'profile', 'rank', 'leaderboard', 
   'bump', 'rate', 'rateleaderboard', 'chess', 'chessgame', 'counting', 'countlb', 
   'minigames', 'blackjack', 'roulette', 'trivia', 'gamestats', 

@@ -114,6 +114,8 @@ process.on('uncaughtException', (error) => {
 
 // Import event handlers manually for clean compile and zero runtime FS errors
 import { connectToHomeVc } from './src/utils/voice.js';
+import { ensureYtDlp } from './src/utils/mediaDownloader.js';
+ensureYtDlp().catch(err => console.warn('[Media] yt-dlp pre-warm notice:', err.message));
 import readyEvent from './src/events/ready.js';
 import interactionCreateEvent from './src/events/interactionCreate.js';
 import messageCreateEvent from './src/events/messageCreate.js';

@@ -1,7 +1,7 @@
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import { processMp3Link } from '../utils/mediaDownloader.js';
+import { processMp3Link, processMediaLink } from '../utils/mediaDownloader.js';
 import { isAuthorized, cleanDisplayName, checkCommandClearance } from '../utils/helpers.js';
 import fs from 'fs';
 import os from 'os';
@@ -127,6 +127,45 @@ export const commands = [
           reply: async (data) => await interaction.editReply(data)
         };
         await processMp3Link(interaction.client, mockMessage, link);
+      }
+    },
+
+    // --- MEDIA EXTRACTOR COMMAND ---
+    {
+      name: 'media',
+      description: 'Download media from YouTube, TikTok, Instagram, Twitter/X, Reddit, or Pinterest',
+      aliases: ['dl', 'download', 'vid', 'video'],
+      type: 1,
+      options: [
+        { name: 'link', description: 'The video/media link to download', type: 3, required: true }
+      ],
+      async executePrefix(message, args) {
+        if (!args[0]) return message.reply(cv2.error('MISSING ARGUMENT', 'Please provide a valid media link.'));
+        const url = args[0];
+        if (!url.startsWith('http://') && !url.startsWith('https://')) {
+          return message.reply(cv2.warn('Invalid URL', `\`${url}\` is not a valid link.\n-# Provide a link from YouTube, TikTok, Instagram, Twitter/X, Reddit, or Pinterest.`));
+        }
+        const success = await processMediaLink(message.client, message, url);
+        if (!success) {
+          await message.reply(cv2.error('Download Failed', 'Failed to extract media from that link. The video may be private, age-restricted, or blocked.')).catch(() => null);
+        }
+      },
+      async executeSlash(interaction) {
+        const link = interaction.options.getString('link');
+        await interaction.deferReply();
+        const mockMessage = {
+          client: interaction.client,
+          author: interaction.user,
+          channel: interaction.channel,
+          delete: async () => {},
+          reply: async (data) => await interaction.editReply(data)
+        };
+        const success = await processMediaLink(interaction.client, mockMessage, link);
+        if (success) {
+          await interaction.deleteReply().catch(() => null);
+        } else {
+          await interaction.editReply(cv2.error('Download Failed', 'Failed to extract media from that link. The video may be private, age-restricted, or blocked.')).catch(() => null);
+        }
       }
     },
 
