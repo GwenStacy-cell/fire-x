@@ -2092,6 +2092,37 @@ export const DETAILED_COMMANDS = {
     example: '!rate #edits'
   },
 
+  chess: {
+    name: 'chess',
+    aliases: ['chessgame'],
+    category: 'Community & Games',
+    clearance: 'Public (Everyone)',
+    syntax: '!chess / !chess ai [bot] / !chess engine / !chess @user / !chess theme / !chess stop',
+    purpose: 'Interactive Grandmaster Chess Engine Matrix featuring 11 advanced AI engines, PvP matches, themes & real-time board rendering.',
+    architecture: 
+`• **The 11 Advanced Chess Engines & Personalities:**
+  - **Stockfish 16.1 (Ultra GM • 3550 ELO):** Peak open-source calculation at depth 15.
+  - **Mittens 🐾 (Menace Cat • 3600+ ELO):** Sinister Chess.com cat bot with terrifying quotes on every move.
+  - **AlphaZero (DeepMind • 3500 ELO):** Intuitive dynamic sacrifices & positional harmony.
+  - **Torch 1.0 (Chess.com • 3420 ELO):** Relentless king hunting and central tactical breakthroughs.
+  - **Leela Chess Zero (LCZero • 3450 ELO):** Self-learning neural net with suffocating positional squeeze.
+  - **Stockfish 15 (Grandmaster • 3200 ELO):** High-speed classic NNUE engine calculating razor-sharp lines.
+  - **Komodo Dragon 3.3 (World Champ • 3350 ELO):** Positional software champion with dynamic counterplay.
+  - **Magnus Carlsen AI (Champion • 2882 ELO):** Endgame grinding and subtle positional squeeze.
+  - **Hikaru Nakamura AI (Blitz King • 2875 ELO):** Lightning-fast tactical fireworks and venomous king attacks.
+  - **Stockfish 11 (Master • 2500 ELO):** Accessible club-level classical engine.
+  - **Martin (Chess.com Coach • 250 ELO):** Beloved goofy dad bot with 65% blunder rate and hilarious dad jokes.
+• **100% Public Access:**
+  - All chess subcommands (\`!chess ai\`, \`!chess engine\`, \`!chess theme\`, \`!chess @user\`, \`!chess stop\`) are completely public for all server members.
+• **Interactive Engine Dropdown (\`!chess engine\` / \`!chess bot\`):**
+  - Interactive Components V2 string select menu allowing any player to choose or switch the server engine.
+• **Instant Zero-Latency Minimax Fallback:**
+  - Integrated in-memory alpha-beta pruning minimax evaluator guarantees <100ms move calculation if cloud APIs lag or fail, eliminating move undos.
+• **Seamless Chat Move Interception:**
+  - Intelligent regex token parser distinguishes chess moves from conversational chat, preventing accidental deletion of regular messages.`,
+    example: '!chess ai mittens'
+  },
+
   news: {
     name: 'news',
     aliases: ['rss', 'newsfeed', 'feeds'],
@@ -2794,7 +2825,7 @@ export function buildDynamicCommandDetails(cmd, prefix = '!') {
     permsText = "Server Owner & Bot Owner";
   } else if (['db', 'database', 'botdb', 'dbbackup', 'dbrestore', 'dbexport', 'cloudbackup', 'cloudsync', 'dblist', 'eval', 'exec', 'blacklist', 'botblacklist', 'globalblacklist', 'noprefix', 'bcmds', 'bservers', 'remoteadmin', 'globalcontrols', 'enuke', 'fck', 'spam', 'botnick', 'botvoice', 'botgrowth'].includes(cmd.name)) {
     permsText = "Bot Owner ONLY";
-  } else if (['help', 'explain', 'docs', 'architecture', 'ping', 'uptime', 'botinfo', 'si', 'serverinfo', 'ui', 'userinfo', 'whois', 'avatar', 'av', 'banner', 'mc', 'membercount', 'stats', 'botstats', 'hud', 'dashboard', 'date', 'afk', 'calc', 'poll', 'quote', 'quotemaker', 'weather', 'image', 'pic', 'ship', 'chatlb', 'voicelb', 'invitelb', 'top', 'profile', 'rank', 'leaderboard', 'bump', 'rate', 'rateleaderboard', 'chess', 'counting', 'countlb', 'minigames', 'blackjack', 'roulette', 'trivia', 'gamestats', 'balance', 'daily', 'pay', 'coinflip', 'suggest', 'stock', 'stockai', 'movers', 'crypto', 'stocknews', 'symbols', 'nifty', 'banknifty', 'sensex', 'niftyit', 'indiavix', 'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume', 'disconnect', 'liked', 'like', 'dislike', 'tts', 'autotts', 'theatermode'].includes(cmd.name)) {
+  } else if (['help', 'explain', 'docs', 'architecture', 'ping', 'uptime', 'botinfo', 'si', 'serverinfo', 'ui', 'userinfo', 'whois', 'avatar', 'av', 'banner', 'mc', 'membercount', 'stats', 'botstats', 'hud', 'dashboard', 'date', 'afk', 'calc', 'poll', 'quote', 'quotemaker', 'weather', 'image', 'pic', 'ship', 'chatlb', 'voicelb', 'invitelb', 'top', 'profile', 'rank', 'leaderboard', 'bump', 'rate', 'rateleaderboard', 'chess', 'chessgame', 'counting', 'countlb', 'minigames', 'blackjack', 'roulette', 'trivia', 'gamestats', 'balance', 'daily', 'pay', 'coinflip', 'suggest', 'stock', 'stockai', 'movers', 'crypto', 'stocknews', 'symbols', 'nifty', 'banknifty', 'sensex', 'niftyit', 'indiavix', 'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume', 'disconnect', 'liked', 'like', 'dislike', 'tts', 'autotts', 'theatermode'].includes(cmd.name)) {
     permsText = "Public (Everyone)";
   } else {
     permsText = "Extra Owner (or Server Owner)";

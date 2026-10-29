@@ -260,8 +260,8 @@ export const commands = [
               content: 
                 `-# **Current Server Engine:** **${currentEngine.name}** (\`${currentEngine.elo} ELO\`)\n` +
                 `-# **Description:** ${currentEngine.description}\n\n` +
-                `> -# • **Extra Owners & Server Owner:** Selecting an engine updates the default bot for all \`${prefix}chess ai\` games in this server.\n` +
-                `> -# • **Players:** Challenge any engine directly: \`${prefix}chess ai <bot>\` (e.g. \`${prefix}chess ai mittens\`, \`${prefix}chess ai torch\`, \`${prefix}chess ai alphazero\`).`
+                `> -# • Selecting an engine updates the active bot for \`${prefix}chess ai\` games in this server.\n` +
+                `> -# • Anyone can also challenge any engine directly anytime: \`${prefix}chess ai <bot>\` (e.g. \`${prefix}chess ai mittens\`, \`${prefix}chess ai torch\`, \`${prefix}chess ai alphazero\`, \`${prefix}chess ai martin\`).`
             },
             { type: 14, divider: true },
             row.toJSON()
@@ -623,20 +623,12 @@ export async function handleChessMove(message) {
 export async function handleChessEngineSelect(interaction) {
   const engineId = interaction.values[0];
   const engine = CHESS_ENGINES[engineId] || CHESS_ENGINES.stockfish_16;
-  const isAuthorized = isExtraOwnerOrHigher(interaction.user.id, interaction.guild);
 
-  if (isAuthorized) {
-    db.updateGuildConfig(interaction.guild.id, { chessEngine: engineId });
-    return interaction.reply({
-      content: `-# **Server Engine Updated | ${TICK}**\n> Default chess engine for **${interaction.guild.name}** set to **${engine.name}** (\`${engine.elo} ELO\`).\n> Challenge anytime with \`!chess ai\`!`,
-      flags: 64
-    }).catch(() => null);
-  } else {
-    return interaction.reply({
-      content: `-# **Selected Engine:** **${engine.name}** (\`${engine.elo} ELO\`)\n> -# Server-wide default engine requires **Extra Owner** clearance.\n> -# You can challenge this bot right now with: \`!chess ai ${engineId}\`!`,
-      flags: 64
-    }).catch(() => null);
-  }
+  db.updateGuildConfig(interaction.guild.id, { chessEngine: engineId });
+  return interaction.reply({
+    content: `-# **Chess Engine Selected | ${TICK}**\n> Active chess engine for **${interaction.guild.name}** set to **${engine.name}** (\`${engine.elo} ELO\`).\n> Challenge anytime with \`!chess ai\` or directly challenge any bot via \`!chess ai <bot>\`!`,
+    flags: 64
+  }).catch(() => null);
 }
 
 export async function handleChessThemeSelect(interaction) {

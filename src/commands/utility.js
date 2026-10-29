@@ -662,6 +662,27 @@ export const commands = [
                     `> -# **__Usage Syntax:__**\n` +
                     `> • \`${prefix}lockdown <1|2|3>\` - Engage specified panic lockdown tier.\n` +
                     `> • \`${prefix}unlockdown\` / \`${prefix}lockdown off\` - Restore exact pre-lockdown channel permissions from DB snapshot in ~1.2s.`;
+              } else if (targetCmd.name === "chess" || targetCmd.name === "chessgame") {
+                  descContent = `Interactive Grandmaster Chess Engine Matrix featuring 11 advanced AI engines, PvP matches, themes & real-time board rendering.\n\n` +
+                    `> -# **__The 11 Chess Engines & Personalities:__**\n` +
+                    `> • **Stockfish 16.1 (Ultra GM • 3550 ELO):** Peak open-source calculation at depth 15.\n` +
+                    `> • **Mittens 🐾 (Menace Cat • 3600+ ELO):** Sinister Chess.com cat bot with terrifying philosophical quotes on every move.\n` +
+                    `> • **AlphaZero (DeepMind • 3500 ELO):** Intuitive neural sacrifices & positional piece activity.\n` +
+                    `> • **Torch 1.0 (Chess.com • 3420 ELO):** Relentless king hunting and central breakthroughs.\n` +
+                    `> • **Leela Chess Zero (LCZero • 3450 ELO):** Self-learning neural net with suffocating positional squeeze.\n` +
+                    `> • **Stockfish 15 (GM • 3200 ELO):** High-speed classic NNUE engine calculating razor-sharp lines.\n` +
+                    `> • **Komodo Dragon 3.3 (World Champ • 3350 ELO):** Blends positional mastery and dynamic counterplay.\n` +
+                    `> • **Magnus Carlsen AI (Champion • 2882 ELO):** Emulates the GOAT's endgame grinding and zero-counterplay squeeze.\n` +
+                    `> • **Hikaru Nakamura AI (Blitz King • 2875 ELO):** Lightning-fast tactical fireworks and venomous king attacks.\n` +
+                    `> • **Stockfish 11 (Master • 2500 ELO):** Accessible club-level classical engine.\n` +
+                    `> • **Martin (Chess.com Coach • 250 ELO):** Beloved goofy dad bot with 65% blunder rate and hilarious dad jokes.\n\n` +
+                    `> -# **__Public Execution & Subcommands:__**\n` +
+                    `> • \`${prefix}chess ai [bot]\` — Challenge an AI engine directly (\`!chess ai mittens\`, \`!chess ai torch\`, \`!chess ai alphazero\`, etc.) \`[Public]\`\n` +
+                    `> • \`${prefix}chess engine\` (or \`!chess bot\`) — Interactive dropdown selector to choose active chess engine \`[Public]\`\n` +
+                    `> • \`${prefix}chess @user\` — Challenge a friend to a live PvP match \`[Public]\`\n` +
+                    `> • \`${prefix}chess theme\` — Select from 20 aesthetic board styles (Walnut, Glass, Neon, Retro, etc.) \`[Public]\`\n` +
+                    `> • \`${prefix}chess stop\` — Resign or terminate active match \`[Public]\`\n` +
+                    `> • Move by simply typing standard algebraic (\`e4\`, \`Nf3\`), UCI (\`e7e5\`), or castling (\`O-O\`) in chat!`;
               }
 
               const display1 = new TextDisplayBuilder().setContent(
@@ -1081,6 +1102,27 @@ export const commands = [
             `> -# **__Usage Syntax:__**\n` +
             `> • \`${prefix}lockdown <1|2|3>\` - Engage specified panic lockdown tier.\n` +
             `> • \`${prefix}unlockdown\` / \`${prefix}lockdown off\` - Restore exact pre-lockdown channel permissions from DB snapshot in ~1.2s.`;
+        } else if (targetCmd.name === "chess" || targetCmd.name === "chessgame") {
+          descContent = `Interactive Grandmaster Chess Engine Matrix featuring 11 advanced AI engines, PvP matches, themes & real-time board rendering.\n\n` +
+            `> -# **__The 11 Chess Engines & Personalities:__**\n` +
+            `> • **Stockfish 16.1 (Ultra GM • 3550 ELO):** Peak open-source calculation at depth 15.\n` +
+            `> • **Mittens 🐾 (Menace Cat • 3600+ ELO):** Sinister Chess.com cat bot with terrifying philosophical quotes on every move.\n` +
+            `> • **AlphaZero (DeepMind • 3500 ELO):** Intuitive neural sacrifices & positional piece activity.\n` +
+            `> • **Torch 1.0 (Chess.com • 3420 ELO):** Relentless king hunting and central breakthroughs.\n` +
+            `> • **Leela Chess Zero (LCZero • 3450 ELO):** Self-learning neural net with suffocating positional squeeze.\n` +
+            `> • **Stockfish 15 (GM • 3200 ELO):** High-speed classic NNUE engine calculating razor-sharp lines.\n` +
+            `> • **Komodo Dragon 3.3 (World Champ • 3350 ELO):** Blends positional mastery and dynamic counterplay.\n` +
+            `> • **Magnus Carlsen AI (Champion • 2882 ELO):** Emulates the GOAT's endgame grinding and zero-counterplay squeeze.\n` +
+            `> • **Hikaru Nakamura AI (Blitz King • 2875 ELO):** Lightning-fast tactical fireworks and venomous king attacks.\n` +
+            `> • **Stockfish 11 (Master • 2500 ELO):** Accessible club-level classical engine.\n` +
+            `> • **Martin (Chess.com Coach • 250 ELO):** Beloved goofy dad bot with 65% blunder rate and hilarious dad jokes.\n\n` +
+            `> -# **__Public Execution & Subcommands:__**\n` +
+            `> • \`${prefix}chess ai [bot]\` — Challenge an AI engine directly (\`!chess ai mittens\`, \`!chess ai torch\`, \`!chess ai alphazero\`, etc.) \`[Public]\`\n` +
+            `> • \`${prefix}chess engine\` (or \`!chess bot\`) — Interactive dropdown selector to choose active chess engine \`[Public]\`\n` +
+            `> • \`${prefix}chess @user\` — Challenge a friend to a live PvP match \`[Public]\`\n` +
+            `> • \`${prefix}chess theme\` — Select from 20 aesthetic board styles (Walnut, Glass, Neon, Retro, etc.) \`[Public]\`\n` +
+            `> • \`${prefix}chess stop\` — Resign or terminate active match \`[Public]\`\n` +
+            `> • Move by simply typing standard algebraic (\`e4\`, \`Nf3\`), UCI (\`e7e5\`), or castling (\`O-O\`) in chat!`;
         }
 
         const display1 = new TextDisplayBuilder().setContent(
@@ -2238,7 +2280,10 @@ export const helpModules = [
     "`!media <url>` - Download TikTok/Insta/Twitter/YouTube videos directly `[Public]`",
     "`!mp3 <url>` - Extract audio from video links `[Public]`",
     "`!setmedia / !unsetmedia` - Bind Auto Media Downloader to channel `[Extra Owner]`",
-    "`!chess` - Play an interactive game of chess in chat `[Public]`",
+    "`!chess / !chess ai [bot]` - Play interactive chess against 11 engines (Stockfish 16.1, Mittens 🐾, AlphaZero, Torch, Leela, Komodo, Magnus, Hikaru, Martin) or friends `[Public]`",
+    "`!chess engine / !chess bot` - Interactive engine selector dropdown to select active chess engine `[Public]`",
+    "`!chess theme` - Customize board style & aesthetics (20 themes) `[Public]`",
+    "`!chess stop / !chess resign` - Resign or terminate active match `[Public]`",
     "`!ship @user1 @user2` - Calculate love compatibility between two users `[Public]`",
     "`!birthday` - Set your birthday and view upcoming birthdays `[Public]`",
     "`!quote / !q <msg_id>` - Quote a message beautifully `[Public]`",
