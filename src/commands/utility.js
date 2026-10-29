@@ -2,7 +2,7 @@ import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, Strin
 import db from '../database.js';
 import cv2 from '../cv2.js';
 import { processMp3Link } from '../utils/mediaDownloader.js';
-import { isAuthorized, cleanDisplayName } from '../utils/helpers.js';
+import { isAuthorized, cleanDisplayName, checkCommandClearance } from '../utils/helpers.js';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -253,22 +253,16 @@ export const commands = [
                   return message.reply({ content: `-! <:cross_red:1533860128015519895> **Command Not Found:** ` + cmdName });
               }
               
-              let permsText = "Public / Everyone";
+              const cmdClearance = checkCommandClearance(targetCmd.name, message.author.id, message.guild);
+              let permsText = "Public (Everyone)";
               if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
-                  permsText = "Server Owner and Bot Owners ONLY (Extra Owners Unauthorized)";
-              } else if (targetCmd.name === "lockdown" || targetCmd.name === "unlockdown") {
-                  permsText = "Server Owner, Bot Owners, Extra Owners, and Administrators";
-              } else if (targetCmd.name === "unbypassable" || targetCmd.name === "learn") {
-                  permsText = "Administrators, Server Owner, Extra Owners, and Bot Owners";
-              } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
-                  permsText = "Bot Owner (Universal Remote across ANY server via DMs) & Server Administrators (Local Server)";
-              } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
-                  permsText = "Server Owner, Bot Owners, and Extra Owners";
-              } else if (targetCmd.permissions && targetCmd.permissions.length > 0) {
-                  if (targetCmd.permissions.includes(8n)) permsText = "Administrator";
-                  else if (targetCmd.permissions.includes(32n)) permsText = "Manage Server";
-                  else if (targetCmd.permissions.includes(1099511627776n)) permsText = "Moderate Members";
-                  else permsText = "Elevated Permissions";
+                  permsText = "Server Owner & Bot Owner ONLY";
+              } else if (cmdClearance.requiredClearance === 'Extra Owner') {
+                  permsText = "Extra Owner (or Server Owner)";
+              } else if (cmdClearance.requiredClearance === 'Bot Owner') {
+                  permsText = "Bot Owner ONLY";
+              } else if (cmdClearance.requiredClearance === 'Server Owner') {
+                  permsText = "Server Owner & Bot Owner";
               }
               
               let catStr = targetCmd.category ? targetCmd.category.charAt(0).toUpperCase() + targetCmd.category.slice(1) : "General";
@@ -1891,38 +1885,38 @@ async function getStatusEmbed(client, guild) {
 
 export const helpModules = [
   { id: 'security', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Security', label: 'Security Commands', emoji: 'security', commands: [
-    "`!auth / !tiers` - Manage role authorization tiers (Admin, Mod, Staff) `[Admin]`",
+    "`!auth / !tiers` - Manage role authorization tiers (Admin, Mod, Staff) `[Extra Owner]`",
     "`!tier / !mytier / !perms` - Check your current authorization tier & clearance `[Public]`",
     "`!antinuke <config | status | records | guide>` - Interactive antinuke control panel, active tripwires & guide `[Extra Owner]`",
-    "`!unbypassable / !unbypassable deploy` - Inspect & deploy Athena Unbypassable persistence sentinel roles `[Admin / Extra Owner]`",
+    "`!unbypassable / !unbypassable deploy` - Inspect & deploy Athena Unbypassable persistence sentinel roles `[Extra Owner]`",
     "`!firewall / !fw / !matrix` - Live system telemetry matrix, gateway ping, SQLite WAL & defense status `[Public]`",
     "`!explain / !docs [topic|cmd]` - Deep-dive architectural breakdowns & exploit analyses `[Public]`",
     "`!security <enable all | disable all | status | records | mode>` - Full 28-module unbypassable antinuke firewall matrix with 2s burst lockdown & zero-delay strikes `[Extra Owner]`",
     "`!security <enable | disable> <module>` - Toggle specific antinuke defense module `[Extra Owner]`",
-    "`!entry / !gate / !screening` - Server Join Application & Gatekeeper with Bot Owner Remote DM Acceptance `[Admin / Bot Owner]`",
+    "`!entry / !gate / !screening` - Server Join Application & Gatekeeper with Bot Owner Remote DM Acceptance `[Extra Owner / Bot Owner]`",
     "`!spampermit / !spamrevoke / !spamlist <@user/id>` - Manage spam protection bypass allowances `[Extra Owner]`",
     "`!emergency / !panic / !em` - Ultra-fast emergency panic lockdown: instant channel blackout & phone verification elevation `[Server Owner / Bot Owner]`",
     "`!endemergency / !unpanic / !panicoff` - Resolve emergency mode, lift blackout and restore pre-emergency bitmasks `[Server Owner / Bot Owner]`",
-    "`!lockdown / !ld <1|2|3|off>` - Batched channel lockdown (Tier 1 Soft, Tier 2 Medium, Tier 3 Nuclear) `[Admin]`",
-    "`!unlockdown / !unld` - Restore exact pre-lockdown channel permissions and bitmasks from database snapshot `[Admin]`",
-    "`!serverhealth / !audit / !secscore / !health` - Real-time hierarchy integrity, permissions & audit socket diagnostics `[Admin / Extra Owner]`",
-    "`!honeypot / !hp / !raidertrap [deploy|remove|status]` - Automated honeypot channel tripwire with <15ms instant auto-ban `[Admin / Extra Owner]`",
-    "`!antighostping / !ghostping / !agp [on|off|status]` - Real-time sentry against deleted ghost mentions with instant channel alerts `[Admin / Extra Owner]`",
-    "`!simnuke / !nukesim / !antinukesim` - Zero-risk ground-truth simulation of nuke attack testing <1ms interception velocity `[Admin / Extra Owner]`",
-    "`!panichistory / !lockdownhistory / !defconhistory` - Chronological audit timeline of all DEFCON and lockdown events `[Admin / Extra Owner]`",
-    "`!raidmode [status|on|off]` - Unified Server Raid Defense Matrix dashboard & join-velocity lockdown `[Admin / Extra Owner]`",
+    "`!lockdown / !ld <1|2|3|off>` - Batched channel lockdown (Tier 1 Soft, Tier 2 Medium, Tier 3 Nuclear) `[Extra Owner]`",
+    "`!unlockdown / !unld` - Restore exact pre-lockdown channel permissions and bitmasks from database snapshot `[Extra Owner]`",
+    "`!serverhealth / !audit / !secscore / !health` - Real-time hierarchy integrity, permissions & audit socket diagnostics `[Extra Owner]`",
+    "`!honeypot / !hp / !raidertrap [deploy|remove|status]` - Automated honeypot channel tripwire with <15ms instant auto-ban `[Extra Owner]`",
+    "`!antighostping / !ghostping / !agp [on|off|status]` - Real-time sentry against deleted ghost mentions with instant channel alerts `[Extra Owner]`",
+    "`!simnuke / !nukesim / !antinukesim` - Zero-risk ground-truth simulation of nuke attack testing <1ms interception velocity `[Extra Owner]`",
+    "`!panichistory / !lockdownhistory / !defconhistory` - Chronological audit timeline of all DEFCON and lockdown events `[Extra Owner]`",
+    "`!raidmode [status|on|off]` - Unified Server Raid Defense Matrix dashboard & join-velocity lockdown `[Extra Owner]`",
     "`!lockapps / !unlockapps` - Lock or unlock server app integrations `[Extra Owner]`",
     "`!scanserver` - Scan server for dangerous bot & onboarding permissions `[Extra Owner]`",
     "`!neutralizeonboarding / !onboarding` - Audit & neutralize dangerous Onboarding roles `[Extra Owner]`",
     "`!autonick` - Interactive auto-nickname enforcer dashboard `[Extra Owner]`",
     "`!config / !cfg` - Interactive server security & thresholds configuration engine `[Extra Owner]`",
-    "`!learn / !lambda / !ai / !selflearn [status|on|off|flaws|fix|analyze|baseline|signatures|clear]` - Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics `[Admin / Extra Owner]`",
+    "`!learn / !lambda / !ai / !selflearn [status|on|off|flaws|fix|analyze|baseline|signatures|clear]` - Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics `[Extra Owner]`",
     "`!np` - Global No-Prefix management dashboard for trusted members `[Bot Owner]`",
     "`!modmode` - Temporarily pause restore for server edits `[Server Owner]`"
   ] },
   { id: 'filters', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Filters', label: 'Automod Filters', emoji: 'filters', commands: [
     "`!automod` - Open Automated Moderation & Security Dashboard `[Extra Owner]`",
-    "`!automod ai on|off` - Toggle AI Toxicity, Sentiment & Doxxing AutoMod `[Admin]`",
+    "`!automod ai on|off` - Toggle AI Toxicity, Sentiment & Doxxing AutoMod `[Extra Owner]`",
     "`!automod config / advanced` - Interactive Automod advanced configuration `[Extra Owner]`",
     "`!automod bypass add @role` - Grant role bypass for specific automod modules `[Extra Owner]`",
     "`!automod bypass remove @role` - Revoke automod bypass from role `[Extra Owner]`",
@@ -1982,9 +1976,9 @@ export const helpModules = [
   ] },
   
   { id: 'moderation', category: 'SERVER ADMINISTRATION', shortLabel: 'Mods', label: 'Moderation Tools', emoji: 'mod', commands: [
-    "`!ban / !b @user [reason]` - Ban a member from the server `[Admin Tier]`",
-    "`!tempban @user <time> [reason]` - Temporarily ban a member with auto-unban `[Admin Tier]`",
-    "`!unban <userid>` - Unban a user by User ID `[Admin Tier]`",
+    "`!ban / !b @user [reason]` - Ban a member from the server `[Extra Owner]`",
+    "`!tempban @user <time> [reason]` - Temporarily ban a member with auto-unban `[Extra Owner]`",
+    "`!unban <userid>` - Unban a user by User ID `[Extra Owner]`",
     "`!unbanall` - Removes ALL active bans from the server `[Server Owner]`",
     "`!kick / !k @user [reason]` - Kick a member from the server `[Extra Owner]`",
     "`!timeout / !to @user [time] [reason]` - Timeout a member `[Extra Owner]`",
@@ -2019,7 +2013,7 @@ export const helpModules = [
     "`!deletethread` - Delete the current thread `[Extra Owner]`",
     "`!say <message>` - Send a raw text message via bot `[Extra Owner]`",
     "`!announce` - Launch interactive announcement builder (supports direct Pinterest links) `[Extra Owner]`",
-    "`!aiannounce [prompt] [#channel] / /aiannounce` - AI Announcement Studio with Pinterest banner support, custom emojis & live preview `[Staff]`",
+    "`!aiannounce [prompt] [#channel] / /aiannounce` - AI Announcement Studio with Pinterest banner support, custom emojis & live preview `[Extra Owner]`",
     "`!fck @user <reason>` - Send direct official warning DM `[Server Owner]`"
   ] },
   { id: 'mass_actions', category: 'SERVER ADMINISTRATION', shortLabel: 'Mass Mod', label: 'Mass Actions', emoji: 'mass', commands: [
@@ -2039,12 +2033,12 @@ export const helpModules = [
   ] },
 
   { id: 'studio', category: 'SERVER ADMINISTRATION', shortLabel: 'Studio', label: 'Studio & Audits', emoji: 'config', commands: [
-    "`!aiannounce [prompt] [#channel] / /aiannounce` - Neural Announcement Studio with Pinterest banner support, live preview & channel selector `[Staff]`",
-    "`!studio create` - Interactive Container & Embed Studio builder (supports direct Pinterest links) `[Admin]`",
-    "`!studio list` - View all saved server announcement and container templates `[Admin]`",
-    "`!studio send <template_id> [#channel]` - Dispatch saved container template to channel `[Admin]`",
-    "`!studio delete <template_id>` - Permanently delete saved container template `[Admin]`",
-    "`!auditlogs / !audit [@user] [limit]` - Forensic audit log search with action classification and time filters `[Staff]`",
+    "`!aiannounce [prompt] [#channel] / /aiannounce` - Neural Announcement Studio with Pinterest banner support, live preview & channel selector `[Extra Owner]`",
+    "`!studio create` - Interactive Container & Embed Studio builder (supports direct Pinterest links) `[Extra Owner]`",
+    "`!studio list` - View all saved server announcement and container templates `[Extra Owner]`",
+    "`!studio send <template_id> [#channel]` - Dispatch saved container template to channel `[Extra Owner]`",
+    "`!studio delete <template_id>` - Permanently delete saved container template `[Extra Owner]`",
+    "`!auditlogs / !audit [@user] [limit]` - Forensic audit log search with action classification and time filters `[Extra Owner]`",
     "",
     "-# **__Studio & Forensic Architecture:__**",
     "-# • **__AI Announcement Studio:__** Neural speech enhancement transforms rough ideas into formatted Discord announcements with custom emojis, direct Pinterest banners, and live preview.",
@@ -2056,10 +2050,10 @@ export const helpModules = [
   { id: 'ai', category: 'AI & SYSTEM INTELLIGENCE', shortLabel: 'AI Guide', label: 'AI & System Intelligence', emoji: 'ai', commands: [
     "`!athena <question> / /athena <query>` - Interactive AI Specialist explaining all 257+ commands & step-by-step setups `[Public]`",
     "`!athena` (no args) - Interactive Quick-Action Guidance Hub with one-click domain explainers `[Public]`",
-    "`!aiannounce [prompt] [#channel] / /aiannounce` - AI Announcement Studio to craft, format, enhance & preview broadcasts `[Staff]`",
+    "`!aiannounce [prompt] [#channel] / /aiannounce` - AI Announcement Studio to craft, format, enhance & preview broadcasts `[Extra Owner]`",
     "`!ask <prompt> / /ask <prompt>` - Direct conversational AI query engine for general questions and server queries `[Public]`",
-    "`!aimode channel [#channel]` - Lock conversational AI auto-replies to a specific channel `[Admin]`",
-    "`!aimode on|off|status` - Toggle and check server-wide conversational AI channel mode `[Admin]`",
+    "`!aimode channel [#channel]` - Lock conversational AI auto-replies to a specific channel `[Extra Owner]`",
+    "`!aimode on|off|status` - Toggle and check server-wide conversational AI channel mode `[Extra Owner]`",
     "`!explain / !architecture [topic/cmd]` - Interactive multi-page architectural breakdowns & exploit analyses `[Public]`",
     "`!explain aiannounce` - Deep-dive architecture of AI Announcement Studio, custom emojis & live studio `[Public]`",
     "`!explain athena / !explain guide` - Deep-dive architecture of Athena's AI Guide, RAG & button generator `[Public]`",
@@ -2078,13 +2072,13 @@ export const helpModules = [
   ] },
 
   { id: 'tickets', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Tickets', label: 'Ticket System', emoji: 'tickets', commands: [
-    "`!ticket setup <#category> <@staffRole> [ai_on]` - Configure category, staff roles & optional AI triage `[Administrator]`",
-    "`!ticket ai on|off` - Toggle Smart Ban Appeals & AI Ticket Triage `[Administrator]`",
-    "`!ticketpanel` - Deploy interactive ticket panel with one-click AI triage & Pinterest banner support `[Administrator]`",
-    "`!add @user` - Add a user to an active ticket channel `[Staff]`",
-    "`!remove @user` - Remove a user from an active ticket channel `[Staff]`",
+    "`!ticket setup <#category> <@staffRole> [ai_on]` - Configure category, staff roles & optional AI triage `[Extra Owner]`",
+    "`!ticket ai on|off` - Toggle Smart Ban Appeals & AI Ticket Triage `[Extra Owner]`",
+    "`!ticketpanel` - Deploy interactive ticket panel with one-click AI triage & Pinterest banner support `[Extra Owner]`",
+    "`!add @user` - Add a user to an active ticket channel `[Extra Owner]`",
+    "`!remove @user` - Remove a user from an active ticket channel `[Extra Owner]`",
     "`!close` - Close and archive the active ticket channel `[Public]`",
-    "`!rename <name>` - Rename an active ticket channel `[Staff]`",
+    "`!rename <name>` - Rename an active ticket channel `[Extra Owner]`",
     "",
     "-# **__Ticket System Capabilities:__**",
     "-# • Features **__Dropdown Menus__**, **__Interactive Q&A Modals__**, and **__Beautiful CV2 Welcome Embeds__**.",
@@ -2144,9 +2138,9 @@ export const helpModules = [
     "`!leave` - Open interactive Leave Message Builder (supports direct Pinterest links & MP4s) `[Extra Owner]`",
     "`!autorole / !autorole-config` - Open **AutoRole & Vanity Engine** (Human/Bot join roles & vanity status rewards) `[Extra Owner]`",
     "`!autoreact` - Open **Auto-React Engine** (Add up to 5 automatic reaction emojis per channel) `[Extra Owner]`",
-    "`!verify setup <@role> [button|captcha|math]` - Deploy verification gate with Graphic CAPTCHA or Math challenges `[Admin]`",
-    "`!verify mode <button|captcha|math>` - Switch active verification challenge type `[Admin]`",
-    "`!verify disable` - Dismantle verification gate `[Admin]`",
+    "`!verify setup <@role> [button|captcha|math]` - Deploy verification gate with Graphic CAPTCHA or Math challenges `[Extra Owner]`",
+    "`!verify mode <button|captcha|math>` - Switch active verification challenge type `[Extra Owner]`",
+    "`!verify disable` - Dismantle verification gate `[Extra Owner]`",
     "",
     "-# **__Builder & Engine Features:__**",
     "-# • **__Universal Pinterest Integration:__** Paste any direct Pinterest link (`pin.it` or `pinterest.com/pin/...`) into Image, Thumbnail, Author Icon, or Footer Icon modals — Athena automatically scrapes the uncompressed master resolution image or converts MP4 videos into animated looping GIFs.",
@@ -2160,8 +2154,8 @@ export const helpModules = [
     "`!rank [@user]` - View level and XP progress `[Public]`",
     "`!ranktheme <hogwarts|athena>` - Switch personalized rank card aesthetic (Looping Animated GIF vs Obsidian Stone) `[Public]`",
     "`!rankrewards list` - View active level milestone role rewards `[Public]`",
-    "`!rankrewards add <level> <@role>` - Bind automated role reward to milestone `[Admin]`",
-    "`!rankrewards remove <level>` - Unbind milestone role reward `[Admin]`",
+    "`!rankrewards add <level> <@role>` - Bind automated role reward to milestone `[Extra Owner]`",
+    "`!rankrewards remove <level>` - Unbind milestone role reward `[Extra Owner]`",
     "`!givexp @user <amount>` - Manually grant XP `[Extra Owner]`",
     "`!removexp @user <amount>` - Manually remove XP `[Extra Owner]`",
     "",
@@ -2198,8 +2192,8 @@ export const helpModules = [
     "`!gamestats / !mgstats [@user]` - View personal casino records, wins, and net earnings `[Public]`",
     "`!shop` - Browse server role and privilege catalog `[Public]`",
     "`!shop buy <itemId>` - Purchase role perk with coins `[Public]`",
-    "`!shop add <name> <price> <@role>` - List new purchasable role perk `[Admin]`",
-    "`!shop remove <itemId>` - Purge item from catalog `[Admin]`",
+    "`!shop add <name> <price> <@role>` - List new purchasable role perk `[Extra Owner]`",
+    "`!shop remove <itemId>` - Purge item from catalog `[Extra Owner]`",
     "",
     "-# **__Commerce & Minigames Architecture:__**",
     "-# • Persistent ledger stored in SQLite & synchronized with Discord Cloud Backups.",
@@ -2212,9 +2206,9 @@ export const helpModules = [
     "`!tts voices` - Explore all 14 Celebrity & Character AI voices `[Public]`",
     "`!tts voice <name>` - Lock your default voice preference (`trump`, `modi`, `mj`, `taylor`, `ariana`, `sabrina`, `bieber`, etc.) `[Public]`",
     "`!tts <voice> <msg>` - Speak directly with on-the-fly celebrity voice `[Public]`",
-    "`!tts autovc` - Toggle global Auto-TTS for your VC `[Admin]`",
+    "`!tts autovc` - Toggle global Auto-TTS for your VC `[Extra Owner]`",
     "`!tts stop` - Immediately halt speech playback and clear queue `[Public]`",
-    "`!voiceanalytics / !va` - 24-hour diurnal voice activity heatmaps, peak windows & channel analytics `[Staff]`",
+    "`!voiceanalytics / !va` - 24-hour diurnal voice activity heatmaps, peak windows & channel analytics `[Extra Owner]`",
     "`!voicerole <@role|ID|Name|disable> / !vcrole` - Auto-assign role in VC for all members & bots `[Extra Owner]`",
     "`!jtcsetup` - Configure Join-to-Create voice channels `[Extra Owner]`",
     "`!secondaryjtc` - Setup a secondary JTC hub `[Extra Owner]`",
@@ -2260,12 +2254,12 @@ export const helpModules = [
     "`!youtube add|remove|list` - Configure YouTube video upload notification alerts `[Extra Owner]`",
     "`!ccmd / !customcmd add <trigger> <reply>` - Create a custom command response `[Extra Owner]`",
     "`!autoreply / !ar` - Custom keyword auto-replies with accent borderless CV2 embeds, GIFs & direct Pinterest links `[Extra Owner]`",
-    "`!trigger` - Opens Trigger Response Matrix with Synced Looping Animated GIF HUD & Progress Bar `[Public / Admin]`",
-    "`!trigger create <match> | <resp>` - Fast simple setup: `!trigger create hello | Hello {user}!` `[Extra Owner / Admin]`",
-    "`!trigger <match> | <resp>` - Direct shortcut syntax `[Extra Owner / Admin]`",
-    "`!trigger delete <match>` - Remove keyword trigger `[Extra Owner / Admin]`",
-    "`!trigger react <match> <emoji>` - Configure dual-action auto-reaction synergy `[Extra Owner / Admin]`",
-    "`!trigger mirror <match> <#channel>` - Configure staff alert mirroring for emergency keywords `[Extra Owner / Admin]`",
+    "`!trigger` - Opens Trigger Response Matrix with Synced Looping Animated GIF HUD & Progress Bar `[Public / Extra Owner]`",
+    "`!trigger create <match> | <resp>` - Fast simple setup: `!trigger create hello | Hello {user}!` `[Extra Owner]`",
+    "`!trigger <match> | <resp>` - Direct shortcut syntax `[Extra Owner]`",
+    "`!trigger delete <match>` - Remove keyword trigger `[Extra Owner]`",
+    "`!trigger react <match> <emoji>` - Configure dual-action auto-reaction synergy `[Extra Owner]`",
+    "`!trigger mirror <match> <#channel>` - Configure staff alert mirroring for emergency keywords `[Extra Owner]`",
     "`!trigger list` - View active keyword triggers `[Public]`",
     "`!rrsetup / !reactionrole` - Interactive Reaction Role builder `[Extra Owner]`",
     "`!giveaway / !gw` - Manage server giveaways `[Extra Owner]`",
@@ -2289,7 +2283,7 @@ export const helpModules = [
     "`!movers / !topmovers / !gainers / !losers / !marketmovers` - Real-time breakdown of top market movers across mega-caps & crypto `[Public]`",
     "`!crypto / !coin / !btc / !eth / !cryptocurrency [coin]` - Dedicated cryptocurrency market telemetry and Canvas charts `[Public]`",
     "`!stocknews / !marketnews [symbol]` - Real-time financial headlines & market catalysts wiretap `[Public]`",
-    "`!stockchannel <set #channel | disable | status | test>` - Configure automated daily morning stock market image upload channel `[Admin]`"
+    "`!stockchannel <set #channel | disable | status | test>` - Configure automated daily morning stock market image upload channel `[Extra Owner]`"
   ] },
   
   { id: 'utilities', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Utilities', label: 'General Utilities', emoji: 'utilities', commands: [
@@ -2297,12 +2291,12 @@ export const helpModules = [
     "`!weather / !wtr / !climate / !forecast / !temp <location/url>` - Live global weather with satellite world map & 3-day forecast `[Public]`",
     "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Real-time web picture retrieval with interactive pagination & source link `[Public]`",
     "`!pinterest / !pin <link>` - Extract & download master uncompressed original images or MP4 videos from Pinterest `[Public]`",
-    "`!dashboard / !commandcenter / !omni / !warroomall / !allinone` - Flagship Unified War-Room Command Center combining Telemetry & DEFCON `[Public / Admin]`",
-    "`!hud / !warroom / !corehud / !matrixhud` - Flagship Animated Cyber War-Room HUD with live mode switching `[Public / Admin]`",
+    "`!dashboard / !commandcenter / !omni / !warroomall / !allinone` - Flagship Unified War-Room Command Center combining Telemetry & DEFCON `[Public / Extra Owner]`",
+    "`!hud / !warroom / !corehud / !matrixhud` - Flagship Animated Cyber War-Room HUD with live mode switching `[Public / Extra Owner]`",
     "`!botstats / !botinfo / !bi / !binfo` - View advanced bot performance, cluster metrics & system health `[Public]`",
     "`!athena / !guide [question]` - Interactive Athena AI Specialist to explain commands, resolve doubts & instruct setups `[Public]`",
     "`!ask / !askathena / !assistant / !neural / !gemini <prompt>` - Query general AI knowledge powered by Google Gemini 3.8 Flash `[Public]`",
-    "`!aimode <status|on|off|channel>` - Configure conversational AI channel mode `[Admin]`",
+    "`!aimode <status|on|off|channel>` - Configure conversational AI channel mode `[Extra Owner]`",
     "`!dev / !developer` - Displays developer information and credits `[Public]`",
     "`!ping / !p / !latency` - View bot latency and heartbeat graph `[Public]`",
     "`!status` - Live bot engine performance, cluster health & security telemetry `[Public]`",
@@ -2392,6 +2386,9 @@ export function buildHelpContainer(client, guildId, moduleId) {
     if (moduleId === 'home') {
       let topText = `# Hey !!! , I am <@${botId}> ,\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Welcome to Athena Prime A bot which is made for unbypassable security features and community management! View down and see our srv management modules listed below:**\n\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Athena Ownership Clearance Model:**\n`;
+      topText += `> -# Commands operate strictly on: **Bot Owner** > **Server Owner** > **Extra Owner** (\`${prefix}extraowner\`) > **Public**.\n`;
+      topText += `> -# Native Discord \`Administrator\` permissions do NOT grant access to Athena server management commands. Only the **Server Owner** and designated **Extra Owners** can configure or manage the server.\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **To set Custom Prefix use <@${botId}> \`${prefix}prefix " your custom prefix "\`**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Indian Benchmarks Suite (\`${prefix}nifty\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Hint: For a detailed guide and instruction on any specific command, type \`${prefix}help <command>\` !**`;

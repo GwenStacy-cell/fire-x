@@ -19,7 +19,8 @@ import {
   syncQuarantinePermissions,
   getUserTierName,
   cleanDisplayName,
-  renderSleekProgressBar
+  renderSleekProgressBar,
+  isExtraOwnerOrHigher
 } from '../utils/helpers.js';
 import { generateCommandStatusBanner } from '../utils/canvasCards.js';
 import { connectToHomeVc, toggleBotDeafen } from '../utils/voice.js';
@@ -1825,8 +1826,8 @@ export const commands = [
     permissions: [PermissionFlagsBits.Administrator],
     options: [],
     async executePrefix(message) {
-      if (!isBotOwnerOrServerOwnerStrict(message.author.id, message.guild) && !isExtraOwner(message.guild.id, message.author.id) && !message.member.permissions?.has(PermissionFlagsBits.Administrator) && !isServerAdmin(message.member, message.guild.id)) {
-        return message.reply(cv2.danger('Access Denied', 'Only Server Admins, Extra Owners, and Bot Owners can run quarantine auto-setup.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner** or **Extra Owners** can run quarantine auto-setup.'));
       }
 
       const statusMsg = await message.reply(cv2.info('Quarantine Auto-Setup', '<a:loading:1542155051286396938> Scanning and configuring Quarantine Role, Category, Text Channel, and Voice Channel...'));
@@ -1838,8 +1839,8 @@ export const commands = [
       }
     },
     async executeSlash(interaction) {
-      if (!isBotOwnerOrServerOwnerStrict(interaction.user.id, interaction.guild) && !isExtraOwner(interaction.guild.id, interaction.user.id) && !interaction.member.permissions?.has(PermissionFlagsBits.Administrator) && !isServerAdmin(interaction.member, interaction.guild.id)) {
-        return interaction.reply(cv2.danger('Access Denied', 'Only Server Admins, Extra Owners, and Bot Owners can run quarantine auto-setup.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.danger('Access Denied', 'Only the **Server Owner** or **Extra Owners** can run quarantine auto-setup.'));
       }
 
       await interaction.reply(cv2.info('Quarantine Auto-Setup', '<a:loading:1542155051286396938> Scanning and configuring Quarantine Role, Category, Text Channel, and Voice Channel...'));
@@ -3046,9 +3047,9 @@ function getLockdownExemptIds(guild, moderator) {
 async function handleLockdown(guild, channel, moderator, mode) {
   try {
     const modTier = getUserTierName(guild, moderator);
-    const isAuthorizedAdmin = isBotOwnerSync(moderator.id) || moderator.id === guild.ownerId || isExtraOwner(guild.id, moderator.id) || moderator.permissions?.has(PermissionFlagsBits.ManageChannels);
+    const isAuthorizedAdmin = isExtraOwnerOrHigher(moderator.id, guild);
     if (!isAuthorizedAdmin) {
-      return cv2.danger('Access Denied', 'You lack authorization to manage channel lockdown. Manage Channels permission required.');
+      return cv2.danger('Access Denied', 'You lack authorization to manage channel lockdown. Extra Owner clearance required.');
     }
 
     if (mode === 'on') {
@@ -3168,9 +3169,9 @@ async function handleLockdown(guild, channel, moderator, mode) {
 }
 
 export async function handlePanicLockdown(guild, moderator, tier = '1', updateProgress) {
-  const isAuthorizedAdmin = isBotOwnerSync(moderator.id) || moderator.id === guild.ownerId || isExtraOwner(guild.id, moderator.id) || moderator.permissions.has(PermissionFlagsBits.Administrator);
+  const isAuthorizedAdmin = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorizedAdmin) {
-    return cv2.danger('Access Denied', 'You lack authorization to engage server panic lockdown. Administrator or higher clearance required.');
+    return cv2.danger('Access Denied', 'Only the Server Owner or Extra Owners can trigger emergency Tier lockdowns.');
   }
 
   const existingSnapshot = db.getLockdownSnapshot(guild.id);
@@ -3429,9 +3430,9 @@ export async function handlePanicLockdown(guild, moderator, tier = '1', updatePr
 }
 
 export async function handleUnlockdown(guild, moderator, updateProgress) {
-  const isAuthorizedAdmin = isBotOwnerSync(moderator.id) || moderator.id === guild.ownerId || isExtraOwner(guild.id, moderator.id) || moderator.permissions.has(PermissionFlagsBits.Administrator);
+  const isAuthorizedAdmin = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorizedAdmin) {
-    return cv2.danger('Access Denied', 'You lack authorization to lift server panic lockdown. Administrator or higher clearance required.');
+    return cv2.danger('Access Denied', 'Only the Server Owner or Extra Owners can restore channel lockdowns.');
   }
 
   const snapshot = db.getLockdownSnapshot(guild.id);
@@ -7364,12 +7365,9 @@ export async function handleAutonickModal(interaction) {
 // 1. HONEYPOT RAIDER TRAP SENTRY
 // ==========================================
 export async function handleHoneypotCommand(guild, moderator, action = 'status', customChannel = null) {
-  const isAuthorized = isBotOwnerSync(moderator.id) || 
-                       moderator.id === guild.ownerId || 
-                       db.isExtraOwner(guild.id, moderator.id) ||
-                       moderator.permissions.has(PermissionFlagsBits.Administrator);
+  const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied', 'Only **Administrators**, the **Server Owner**, or **Extra Owners** can configure the Honeypot Sentry.');
+    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This command is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7511,12 +7509,9 @@ export async function getHoneypotStatusPanel(guild, honeypotChannelId, notice = 
 // 2. ANTI-GHOSTPING SENTRY
 // ==========================================
 export async function handleAntiGhostPingCommand(guild, moderator, action = 'status') {
-  const isAuthorized = isBotOwnerSync(moderator.id) || 
-                       moderator.id === guild.ownerId || 
-                       db.isExtraOwner(guild.id, moderator.id) ||
-                       moderator.permissions.has(PermissionFlagsBits.Administrator);
+  const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied', 'Only **Administrators**, the **Server Owner**, or **Extra Owners** can configure the Anti-GhostPing Sentry.');
+    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This command is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7659,12 +7654,9 @@ export async function getQuarantineListPanel(guild, moderator) {
 }
 
 export async function handleMassUnquarantineAction(guild, moderator) {
-  const isAuthorized = isBotOwnerSync(moderator.id) || 
-                       moderator.id === guild.ownerId || 
-                       db.isExtraOwner(guild.id, moderator.id) ||
-                       moderator.permissions.has(PermissionFlagsBits.ModerateMembers);
+  const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied', 'You lack authorization to mass unquarantine members.');
+    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This action is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7691,12 +7683,9 @@ export async function handleMassUnquarantineAction(guild, moderator) {
 }
 
 export async function handleMassBanQuarantineAction(guild, moderator) {
-  const isAuthorized = isBotOwnerSync(moderator.id) || 
-                       moderator.id === guild.ownerId || 
-                       db.isExtraOwner(guild.id, moderator.id) ||
-                       moderator.permissions.has(PermissionFlagsBits.BanMembers);
+  const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied', 'You lack authorization to ban quarantined members.');
+    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This action is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7744,12 +7733,9 @@ export async function handleExtendQuarantineAction(guild, moderator, extraMinute
 // 4. 1-CLICK AUTO-FIX HEALTH VECTORS
 // ==========================================
 export async function handleAutoFixHealthVectors(guild, moderator) {
-  const isAuthorized = isBotOwnerSync(moderator.id) || 
-                       moderator.id === guild.ownerId || 
-                       db.isExtraOwner(guild.id, moderator.id) ||
-                       moderator.permissions.has(PermissionFlagsBits.Administrator);
+  const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied', 'Only **Administrators**, the **Server Owner**, or **Extra Owners** can execute 1-Click Auto-Fix.');
+    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This action is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7887,12 +7873,9 @@ export async function handleTacticalBriefing(guild, member, channel, targetVc = 
 // 6. ZERO-RISK NUKE ATTACK SIMULATOR
 // ==========================================
 export async function handleSimNukeCommand(guild, moderator) {
-  const isAuthorized = isBotOwnerSync(moderator.id) || 
-                       moderator.id === guild.ownerId || 
-                       db.isExtraOwner(guild.id, moderator.id) ||
-                       moderator.permissions.has(PermissionFlagsBits.Administrator);
+  const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied', 'Only **Administrators**, the **Server Owner**, or **Extra Owners** can run security simulations.');
+    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'Only the **Server Owner** or **Extra Owners** can run security simulations.');
   }
 
   const t1 = (Math.floor(Math.random() * 400 + 700) / 1000).toFixed(2);
@@ -7952,12 +7935,9 @@ export async function handleSimNukeCommand(guild, moderator) {
 // 7. DEFENSE MATRIX BLACK BOX TELEMETRY
 // ==========================================
 export async function getPanicHistoryPanel(guild, moderator) {
-  const isAuthorized = isBotOwnerSync(moderator.id) || 
-                       moderator.id === guild.ownerId || 
-                       db.isExtraOwner(guild.id, moderator.id) ||
-                       moderator.permissions.has(PermissionFlagsBits.Administrator);
+  const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied', 'Only **Administrators**, the **Server Owner**, or **Extra Owners** can view the Defense Black Box.');
+    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'Only the **Server Owner** or **Extra Owners** can view the Defense Black Box.');
   }
 
   const history = db.getPanicHistory(guild.id);

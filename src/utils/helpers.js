@@ -2,41 +2,136 @@ import { PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
 import db from '../database.js';
 
 // ==========================================
-// ROLE AUTHORIZATION TIERS
+// ATHENA OWNERSHIP CLEARANCE HIERARCHY
+// Strict 4-Tier Model:
+// 1. Bot Owner (Absolute Root)
+// 2. Server Owner (Guild Root)
+// 3. Extra Owner (All Server Management & Protection Commands: channels, roles, moderation, security, automod, setups)
+// 4. Public (Non-extra owners can ONLY use public commands)
+// Native Discord 'Administrator' or other permissions DO NOT grant access to Athena commands.
 // ==========================================
+
+export function isExtraOwnerOrHigher(userId, guildOrGuildId) {
+  if (!userId) return false;
+  const uid = typeof userId === 'object' ? (userId.id || userId.user?.id) : String(userId);
+  if (!uid) return false;
+  if (isBotOwnerSync(uid)) return true;
+  const gid = (typeof guildOrGuildId === 'object' && guildOrGuildId !== null) ? guildOrGuildId.id : guildOrGuildId;
+  const guildObj = (typeof guildOrGuildId === 'object' && guildOrGuildId !== null) ? guildOrGuildId : null;
+  if (guildObj && (guildObj.ownerId === uid || String(guildObj.ownerId) === uid)) return true;
+  if (gid && db.isExtraOwner(gid, uid)) return true;
+  return false;
+}
+
 export function isServerAdmin(member, guildId) {
   if (!member) return false;
   const gid = (typeof guildId === 'object' && guildId !== null) ? guildId.id : (guildId || member.guild?.id);
-  if (isBotOwnerOrServerOwnerStrict(member.id, member.guild)) return true;
-  if (member.permissions?.has?.(PermissionFlagsBits.Administrator)) return true;
-  if (db.isExtraOwner(gid, member.id)) return true;
-  
-  const authRoles = db.getAuthRoles(gid);
-  return authRoles.admin.some(roleId => member.roles.cache.has(roleId));
+  const uid = member.id || member.user?.id || member;
+  return isExtraOwnerOrHigher(uid, gid || member.guild);
 }
 
 export function isServerMod(member, guildId) {
-  if (isServerAdmin(member, guildId)) return true; // Higher tier inherits lower
-  const gid = (typeof guildId === 'object' && guildId !== null) ? guildId.id : (guildId || member.guild?.id);
-  const authRoles = db.getAuthRoles(gid);
-  return authRoles.mod.some(roleId => member.roles.cache.has(roleId));
+  return isServerAdmin(member, guildId);
 }
 
 export function isServerStaff(member, guildId) {
-  if (isServerMod(member, guildId)) return true; // Higher tier inherits lower
-  const gid = (typeof guildId === 'object' && guildId !== null) ? guildId.id : (guildId || member.guild?.id);
-  const authRoles = db.getAuthRoles(gid);
-  return authRoles.staff.some(roleId => member.roles.cache.has(roleId));
+  return isServerAdmin(member, guildId);
+}
+
+export const BOT_OWNER_COMMANDS = new Set([
+  'db', 'database', 'botdb', 'dbbackup', 'dbrestore', 'dbexport', 'cloudbackup', 'cloudsync', 'dblist',
+  'eval', 'exec', 'blacklist', 'botblacklist', 'globalblacklist',
+  'noprefix', 'bcmds', 'bservers', 'remoteadmin', 'globalcontrols', 
+  'enuke', 'fck', 'spam', 'botnick', 'botvoice', 'botgrowth'
+]);
+
+export const SERVER_OWNER_COMMANDS = new Set([
+  'extraowner', 'eo', 'reset', 'serverreset', 'setguildavatar', 'setguildbanner'
+]);
+
+export const PUBLIC_COMMANDS = new Set([
+  // General Info & Help
+  'help', 'explain', 'docs', 'architecture', 'ping', 'uptime', 'botinfo', 
+  'si', 'serverinfo', 'ui', 'userinfo', 'whois', 'avatar', 'av', 'banner', 
+  'mc', 'membercount', 'stats', 'botstats', 'hud', 'dashboard', 'date',
+  
+  // User Utilities & Fun
+  'afk', 'calc', 'poll', 'quote', 'quotemaker', 'weather', 'image', 'pic', 
+  'ship', 'chatlb', 'voicelb', 'invitelb', 'top', 'profile', 'rank', 'leaderboard', 
+  'bump', 'rate', 'rateleaderboard', 'chess', 'counting', 'countlb', 
+  'minigames', 'blackjack', 'roulette', 'trivia', 'gamestats', 
+  'balance', 'daily', 'pay', 'coinflip', 'suggest',
+  
+  // Public Stock Telemetry (Reading market quotes & indices)
+  'stock', 'stockai', 'movers', 'crypto', 'stocknews', 'symbols', 
+  'nifty', 'banknifty', 'sensex', 'niftyit', 'indiavix',
+
+  // Public Music Commands
+  'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying',
+  'volume', 'disconnect', 'liked', 'like', 'dislike', 'tts', 'autotts', 'theatermode'
+]);
+
+/**
+ * Checks if a command can be executed by the given user in the given guild.
+ * Enforces Athena's strict ownership policy:
+ * - Bot Owner Only
+ * - Server Owner Only
+ * - Public (Anyone in the server)
+ * - Extra Owner Only (EVERYTHING ELSE: all server management, channels, roles, moderation, security, automod, configs)
+ * Returns { allowed: boolean, reason?: string, requiredClearance: string }
+ */
+export function checkCommandClearance(cmdName, userId, guild) {
+  const name = String(cmdName || '').toLowerCase().trim();
+  const uid = typeof userId === 'object' ? (userId.id || userId.user?.id) : String(userId);
+
+  // 1. Bot Owner Commands
+  if (BOT_OWNER_COMMANDS.has(name)) {
+    const isOwner = isBotOwnerSync(uid);
+    return {
+      allowed: isOwner,
+      requiredClearance: 'Bot Owner',
+      reason: isOwner ? null : 'This command is strictly reserved for the Bot Developer / Owner.'
+    };
+  }
+
+  // 2. Server Owner Only Commands
+  if (SERVER_OWNER_COMMANDS.has(name)) {
+    const isServerOwner = (guild && guild.ownerId === uid) || isBotOwnerSync(uid);
+    return {
+      allowed: isServerOwner,
+      requiredClearance: 'Server Owner',
+      reason: isServerOwner ? null : 'This command is strictly reserved for the Server Owner.'
+    };
+  }
+
+  // 3. Public Commands (Anyone in the server can run)
+  if (PUBLIC_COMMANDS.has(name)) {
+    return {
+      allowed: true,
+      requiredClearance: 'Public'
+    };
+  }
+
+  // 4. Extra Owner Commands (EVERYTHING ELSE!)
+  // All channel management (e.g. delcat, createchannel), role management,
+  // moderation (ban, kick, warn, purge), security (antinuke, firewall, learn),
+  // automod, setups (welcome, ticket, autorole, entry), configs, etc.
+  const isAllowed = isExtraOwnerOrHigher(uid, guild);
+  return {
+    allowed: isAllowed,
+    requiredClearance: 'Extra Owner',
+    reason: isAllowed ? null : 'This command is strictly restricted to Extra Owners (or Server Owner).'
+  };
 }
 
 /**
- * Resolves the highest authorization / clearance tier of a user or guild member.
- * Returns: 'Bot Owner' | 'Server Owner' | 'Extra Owner' | 'Admin Tier' | 'Mod Tier' | 'Staff Tier' | 'Member'
+ * Resolves the clearance tier of a user or guild member.
+ * Returns: 'Bot Owner' | 'Server Owner' | 'Extra Owner' | 'Member (Public)'
  */
 export function getUserTierName(guild, userOrMember) {
-  if (!userOrMember) return 'Member';
+  if (!userOrMember) return 'Member (Public)';
   const userId = userOrMember.id || userOrMember.user?.id || (typeof userOrMember === 'string' ? userOrMember : null);
-  if (!userId) return 'Member';
+  if (!userId) return 'Member (Public)';
 
   // 1. Bot Owner
   if (isBotOwnerSync(userId)) return 'Bot Owner';
@@ -49,37 +144,7 @@ export function getUserTierName(guild, userOrMember) {
   // 3. Extra Owner (Always fetch from database)
   if (guildId && db.isExtraOwner(guildId, userId)) return 'Extra Owner';
 
-  // 4. Role-based / Permission-based tiers
-  const member = (userOrMember.roles && userOrMember.permissions)
-    ? userOrMember
-    : (guildObj?.members?.cache?.get(userId) || null);
-
-  if (member && guildId) {
-    const authRoles = db.getAuthRoles(guildId) || { admin: [], mod: [], staff: [] };
-    const memberRoles = member.roles?.cache;
-
-    // Admin Tier
-    if (member.permissions?.has?.(PermissionFlagsBits.Administrator) ||
-        (authRoles.admin && authRoles.admin.some(r => memberRoles?.has(r)))) {
-      return 'Admin Tier';
-    }
-
-    // Mod Tier
-    if ((authRoles.mod && authRoles.mod.some(r => memberRoles?.has(r))) ||
-        member.permissions?.has?.(PermissionFlagsBits.BanMembers) ||
-        member.permissions?.has?.(PermissionFlagsBits.KickMembers) ||
-        member.permissions?.has?.(PermissionFlagsBits.ModerateMembers)) {
-      return 'Mod Tier';
-    }
-
-    // Staff Tier
-    if ((authRoles.staff && authRoles.staff.some(r => memberRoles?.has(r))) ||
-        member.permissions?.has?.(PermissionFlagsBits.ManageMessages)) {
-      return 'Staff Tier';
-    }
-  }
-
-  return 'Member';
+  return 'Member (Public)';
 }
 
 

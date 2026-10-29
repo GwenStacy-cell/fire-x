@@ -1104,21 +1104,7 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
   if (executor.bot) return isBotAuthorized(guild, executor.id);
   const member = guild.members.cache.get(executor.id) || executor;
 
-  // Admin Tier roles bypass isAuthorized() (granting root bot access as defined in !auth)
-  const authRoles = db.getAuthRoles(guild.id);
-  if (member?.roles?.cache && authRoles?.admin?.some(roleId => member.roles.cache.has(roleId))) {
-    return true;
-  }
-
-  // Native Discord Server Administrators (possessing Administrator permission or admin role)
-  if (member?.permissions?.has && member.permissions.has(PermissionFlagsBits.Administrator)) {
-    return true;
-  }
-  if (member?.roles?.cache && member.roles.cache.some(r => r.permissions?.has && r.permissions.has(PermissionFlagsBits.Administrator))) {
-    return true;
-  }
-
-  // Check direct eventType
+  // Check direct eventType whitelist
   if (db.isWhitelisted(guild, member, eventType)) return true;
 
   // Check normalized module key (e.g. 'Channel Deletion' -> 'antiChannelDelete')

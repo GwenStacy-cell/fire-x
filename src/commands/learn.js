@@ -325,7 +325,7 @@ export async function handleLearnInteraction(interaction) {
 
     if (!isServerAdmin(interaction.member, interaction.guild.id)) {
       await interaction.reply({
-        content: `-# ${OFF} **Access Denied:** Only Server Administrators or Owners can manage Learn & Lambda AI Mode.`,
+        content: `-# ${OFF} **Access Denied:** Only **Extra Owners** or the **Server Owner** can manage Learn & Lambda AI Mode.`,
         flags: 64
       }).catch(() => null);
       return true;
@@ -450,7 +450,7 @@ export const commands = [
     ],
     async executePrefix(message, args) {
       if (!isServerAdmin(message.member, message.guild.id)) {
-        return message.reply(cv2.danger('Access Denied', 'The `!learn` command is restricted to **Admin Tier** roles and server administrators.')).catch(() => null);
+        return message.reply(cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'The `!learn` command is strictly restricted to **Extra Owners** and the **Server Owner**.')).catch(() => null);
       }
 
       const guild = message.guild;
@@ -538,7 +538,7 @@ export const commands = [
     async executeSlash(interaction) {
       if (!isServerAdmin(interaction.member, interaction.guild.id)) {
         return interaction.reply({
-          content: `-# ${OFF} **Access Denied:** Only Server Administrators or Owners can manage Learn & Lambda Mode.`,
+          content: `-# ${OFF} **Access Denied:** Only **Extra Owners** or the **Server Owner** can manage Learn & Lambda Mode.`,
           flags: 64
         });
       }

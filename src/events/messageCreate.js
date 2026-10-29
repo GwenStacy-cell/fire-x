@@ -8,7 +8,7 @@ import commandMap from '../commands/loader.js';
 import { executeQuarantine } from '../commands/security.js';
 import { handleEzal, handleBackup } from '../commands/ezal.js';
 import statsDB from '../statsDB.js';
-import { canModerate, logToSecurityChannel, isAuthorized, isBotOwnerSync, getPresenceStatus, findClosestCommand, getUserTierName, cleanDisplayName } from '../utils/helpers.js';
+import { canModerate, logToSecurityChannel, isAuthorized, isBotOwnerSync, getPresenceStatus, findClosestCommand, getUserTierName, cleanDisplayName, checkCommandClearance } from '../utils/helpers.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { isBotAuthorized, rawDeleteWebhook } from '../utils/antinuke.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
@@ -2406,18 +2406,21 @@ export default {
       )).catch(() => null);
     }
 
-    // Verify moderator permissions - bot owner, server owner, and extra owners bypass ALL checks
-    if (cmd.permissions && cmd.permissions.length > 0) {
-      const isBypass = isBotOwnerSync(message.author.id) ||
-        message.author.id === message.guild.ownerId ||
-        db.isExtraOwner(message.guild.id, message.author.id);
-
-      if (!isBypass) {
-        const hasPerms = cmd.permissions.every(perm => message.member.permissions.has(perm));
-        if (!hasPerms) {
-          return message.reply(cv2.danger('Access Denied', 'You do not possess the required permissions to execute this command.'));
-        }
-      }
+    // --- ATHENA CLEARANCE HIERARCHY GATE ---
+    // Strict 4-tier model:
+    // 1. Bot Owner Commands
+    // 2. Server Owner Commands
+    // 3. Public Commands (Anyone in server)
+    // 4. Extra Owner Commands (EVERYTHING ELSE: all server management, channels, roles, moderation, security, automod, configs)
+    // Native Discord 'Administrator' permissions DO NOT grant access to Athena commands.
+    const clearance = checkCommandClearance(cmd.name || commandName, message.author.id, message.guild);
+    if (!clearance.allowed) {
+      return message.reply(cv2.danger(
+        'Access Denied | <a:uptime:1552608831060844575>',
+        `You do not have permission to execute \`${usedPrefix}${commandName}\`.\n\n` +
+        `> -# **Required Clearance:** **${clearance.requiredClearance}**\n` +
+        `> -# **Athena Security Policy:** Native Discord \`Administrator\` permissions do NOT grant access to Athena management commands. Only the **Server Owner** and designated **Extra Owners** (\`!extraowner\`) can manage the server or security.`
+      )).catch(() => null);
     }
 
     try {

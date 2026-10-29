@@ -1,13 +1,10 @@
 import { ChannelType, PermissionFlagsBits } from 'discord.js';
 import cv2 from '../cv2.js';
-import { isAuthorized, isServerAdmin, logToSecurityChannel } from '../utils/helpers.js';
+import { isAuthorized, isServerAdmin, logToSecurityChannel, isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 async function checkChannelAdminPerms(member, guild) {
   if (!member) return false;
-  if (await isAuthorized(member.user || member, guild)) return true;
-  if (member.permissions?.has(PermissionFlagsBits.ManageChannels)) return true;
-  if (member.permissions?.has(PermissionFlagsBits.Administrator)) return true;
-  return isServerAdmin(member, guild.id);
+  return isExtraOwnerOrHigher(member.id || member.user?.id, guild);
 }
 
 function resolveCategory(guild, input) {

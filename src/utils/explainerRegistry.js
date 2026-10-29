@@ -1103,7 +1103,7 @@ export const DETAILED_COMMANDS = {
     name: 'trigger',
     aliases: ['trig', 'autorespond', 'customresponse'],
     category: 'Automation & Utilities',
-    clearance: 'Public (View/Test) / Server Admin & Extra Owner (Create/Delete/Clear)',
+    clearance: 'Public (View/Test) / Extra Owner (Create/Delete/Clear)',
     syntax: '!trigger / !trigger create <match> | <response> / !trigger delete <match> / !trigger react <match> <emoji> / !trigger mirror <match> <#channel>',
     purpose: 'Interactive server trigger word responder dashboard with synced animated looping GIF HUD, electric progress bar, and 4 advanced automation modules.',
     architecture:
@@ -1213,7 +1213,7 @@ export const DETAILED_COMMANDS = {
     name: 'raidmode',
     aliases: ['raid', 'rm'],
     category: 'Security & Antinuke Defense',
-    clearance: 'Administrator / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!raidmode [on|off|auto on|auto off|auto threshold <num>|auto window <sec>]',
     purpose: 'Unified Server Raid Defense Matrix with synced 1024x512 Sci-Fi War Room animated GIF HUD, manual lockdown control, and automated join-velocity burst detection.',
     architecture:
@@ -1244,7 +1244,7 @@ export const DETAILED_COMMANDS = {
     name: 'health',
     aliases: ['audit', 'securityhealth', 'antinukeaudit', 'healthcheck'],
     category: 'Security & Antinuke Defense',
-    clearance: 'Administrator / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!health / !audit',
     purpose: 'Runs real-time hierarchy, permission, persistence, and audit socket diagnostics with synced 1024x512 Sci-Fi War Room animated GIF HUD.',
     architecture:
@@ -1265,7 +1265,7 @@ export const DETAILED_COMMANDS = {
     name: 'qrmanager',
     aliases: ['quarantinemanager', 'qrsetup', 'containment'],
     category: 'Security & Antinuke Defense',
-    clearance: 'Administrator / Extra Owner / Server Owner',
+    clearance: 'Extra Owner',
     syntax: '!qrmanager setup / !qrmanager status / !qrmanager setrole <@role> / !qrmanager setchannel <#channel> / !qrmanager setvc <#vc>',
     purpose: 'Automated quarantine containment setup, role binding, voice chamber isolation, and real-time status matrix with synced 1024x512 Sci-Fi War Room GIF HUD.',
     architecture:
@@ -1321,7 +1321,7 @@ export const DETAILED_COMMANDS = {
     name: 'records',
     aliases: ['security records', 'incidents', 'threats', 'live', 'liverecords', 'logs'],
     category: 'Security & Antinuke Defense',
-    clearance: 'Administrator / Extra Owner / Server Owner',
+    clearance: 'Extra Owner',
     syntax: '!security records / !security live / !antinuke records / /security action:records',
     purpose: 'Real-time security live audit & incident telemetry stream displaying neutralized attacks, execution speeds, and automatic rollbacks.',
     architecture:
@@ -1376,7 +1376,7 @@ export const DETAILED_COMMANDS = {
     name: 'aimode',
     aliases: ['aimode'],
     category: 'Utilities & Integrations',
-    clearance: 'Administrator',
+    clearance: 'Extra Owner',
     syntax: '!aimode [status|on|off|channel #channel]',
     purpose: 'Configure conversational AI assistant mode and bind dedicated chat channels.',
     architecture:
@@ -1389,7 +1389,7 @@ export const DETAILED_COMMANDS = {
     name: 'aiannounce',
     aliases: ['aian', 'ai-announce', 'smartannounce', 'studioannounce'],
     category: 'Server Administration & AI Tools',
-    clearance: 'Manage Messages / Administrator',
+    clearance: 'Extra Owner',
     syntax: '!aiannounce [prompt] [#channel] / /aiannounce [prompt] [channel]',
     purpose: 'Launch the AI Announcement Studio to transform rough ideas, typos, or notes into stunning Discord announcements with live preview, custom emojis, and target channel selection.',
     architecture:
@@ -1444,7 +1444,7 @@ export const DETAILED_COMMANDS = {
     name: 'shop',
     aliases: ['shop'],
     category: 'Community & Engagement',
-    clearance: 'Public / Admin (for adding/removing)',
+    clearance: 'Public (View) / Extra Owner (Add/Remove)',
     syntax: '!shop [buy <id>|add <name> <price> <@role>|remove <id>]',
     purpose: 'Browse and purchase server role privileges and exclusive perks using earned Athena coins.',
     architecture:
@@ -1520,7 +1520,7 @@ export const DETAILED_COMMANDS = {
     name: 'lockdown',
     aliases: ['ld', 'paniclockdown'],
     category: 'Security & Access Control',
-    clearance: 'Administrator / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!lockdown <1|2|3|off> / /lockdown tier: <tier>',
     purpose: 'One-click emergency server panic lockdown with tiered intensity and pre-lockdown bitmask snapshots.',
     architecture:
@@ -1535,7 +1535,7 @@ export const DETAILED_COMMANDS = {
     name: 'unlockdown',
     aliases: ['unld', 'unlockserver', 'liftlockdown'],
     category: 'Security & Access Control',
-    clearance: 'Administrator / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!unlockdown / /unlockdown',
     purpose: 'Lifts panic lockdown and recovers exact pre-lockdown channels and role bitmasks from database snapshot.',
     architecture:
@@ -1547,7 +1547,7 @@ export const DETAILED_COMMANDS = {
     name: 'voiceanalytics',
     aliases: ['va', 'vcstats', 'voiceheatmap'],
     category: 'Voice Utilities',
-    clearance: 'Staff / Manage Channels',
+    clearance: 'Extra Owner',
     syntax: '!voiceanalytics / /voiceanalytics',
     purpose: '24-hour diurnal voice activity heatmaps, peak engagement windows, and channel telemetry.',
     architecture:
@@ -1599,7 +1599,7 @@ export const DETAILED_COMMANDS = {
     name: 'rankrewards',
     aliases: ['levelrewards', 'lvlaur', 'xprewards'],
     category: 'Community & Engagement',
-    clearance: 'Public / Admin',
+    clearance: 'Public / Extra Owner',
     syntax: '!rankrewards [list|add <level> <@role>|remove <level>]',
     purpose: 'Configure automatic role rewards granted upon reaching specific XP levels.',
     architecture:
@@ -1612,7 +1612,7 @@ export const DETAILED_COMMANDS = {
     name: 'unbypassable',
     aliases: ['unb', 'sentinels', 'persistenceroles'],
     category: 'Security & Access Control',
-    clearance: 'Public Telemetry / Admin Deployment',
+    clearance: 'Public Telemetry / Extra Owner Deployment',
     syntax: '!unbypassable [deploy|check|status|repair]',
     purpose: 'Inspects and auto-deploys Athena Unbypassable and Athena Firewall persistence sentinel roles.',
     architecture: 
@@ -1716,7 +1716,7 @@ export const DETAILED_COMMANDS = {
     name: 'entry',
     aliases: ['gate', 'screening', 'gatekeeper', 'serverentry'],
     category: 'Security & Access Control',
-    clearance: 'Bot Owner (Universal Remote across ANY server via DMs) & Server Administrator (Local Server)',
+    clearance: 'Bot Owner (Universal Remote via DMs) & Extra Owner (Local Server)',
     syntax: '!entry deploy [#channel] / !entry accept <userId> [guildId] / !entry deny <userId> [guildId] / !entry remote on|off',
     purpose: 'Complete Server Join Application & Gatekeeper screening suite with Bot Owner Remote DM acceptance across all servers.',
     architecture: 
@@ -1733,7 +1733,7 @@ export const DETAILED_COMMANDS = {
     name: 'quarantine',
     aliases: ['isolate'],
     category: 'Security & Access Control',
-    clearance: 'Administrator / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!quarantine <@user|id> [reason] / !quarantine setup / !quarantine release <@user|id>',
     purpose: 'Isolates suspect accounts into a dedicated, locked quarantine containment environment while backing up original roles.',
     architecture: 
@@ -1761,7 +1761,7 @@ export const DETAILED_COMMANDS = {
     name: 'kick',
     aliases: ['k'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Kick Members',
+    clearance: 'Extra Owner',
     syntax: '!kick <@user|id> [reason]',
     purpose: 'Ejects a target member from the server. The kicked member is removed from the guild but retains the ability to rejoin via a valid invite link.',
     architecture: 
@@ -1776,7 +1776,7 @@ export const DETAILED_COMMANDS = {
     name: 'ban',
     aliases: ['b'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Ban Members',
+    clearance: 'Extra Owner',
     syntax: '!ban <@user|id> [reason] / !ban <@user|id> [delete_days] [reason]',
     purpose: 'Permanently bans a member or user snowflake ID from the guild, revokes access, and optionally purges up to 7 days of message history.',
     architecture: 
@@ -1791,7 +1791,7 @@ export const DETAILED_COMMANDS = {
     name: 'unban',
     aliases: ['ub'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Ban Members',
+    clearance: 'Extra Owner',
     syntax: '!unban <userId> [reason]',
     purpose: 'Revokes an active server ban for a specified user snowflake ID, allowing them to rejoin the guild.',
     architecture: 
@@ -1805,7 +1805,7 @@ export const DETAILED_COMMANDS = {
     name: 'tempban',
     aliases: ['tb'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Ban Members',
+    clearance: 'Extra Owner',
     syntax: '!tempban <@user|id> <duration> [reason]',
     purpose: 'Bans a user temporarily for a specific duration (e.g. 1h, 1d, 7d), automatically unbanning them once the timer expires.',
     architecture: 
@@ -1819,7 +1819,7 @@ export const DETAILED_COMMANDS = {
     name: 'timeout',
     aliases: ['mute', 'm', 'to', 'silence'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Moderate Members',
+    clearance: 'Extra Owner',
     syntax: '!timeout <@user|id> <duration> [reason]',
     purpose: 'Applies Discord native communication disable on a member, restricting them from sending messages, speaking in voice, or adding reactions.',
     architecture: 
@@ -1833,7 +1833,7 @@ export const DETAILED_COMMANDS = {
     name: 'untimeout',
     aliases: ['unmute', 'um'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Moderate Members',
+    clearance: 'Extra Owner',
     syntax: '!untimeout <@user|id> [reason]',
     purpose: 'Immediately lifts an active timeout or voice mute, restoring the member\'s communication privileges.',
     architecture: 
@@ -1846,7 +1846,7 @@ export const DETAILED_COMMANDS = {
     name: 'warn',
     aliases: ['w'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Staff Tier',
+    clearance: 'Extra Owner',
     syntax: '!warn <@user|id> [reason]',
     purpose: 'Issues an official warning to a member, increments their warning count in database, and triggers automated quarantine on ceiling breach.',
     architecture: 
@@ -1859,7 +1859,7 @@ export const DETAILED_COMMANDS = {
     name: 'warnings',
     aliases: ['warns'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Staff Tier',
+    clearance: 'Extra Owner',
     syntax: '!warnings <@user|id>',
     purpose: 'Displays a comprehensive forensic report of all active warnings issued to a member.',
     architecture: 
@@ -1871,7 +1871,7 @@ export const DETAILED_COMMANDS = {
     name: 'clearwarns',
     aliases: ['cw', 'resetwarns'],
     category: 'Moderation',
-    clearance: 'Admin Tier / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!clearwarns <@user|id>',
     purpose: 'Clears all disciplinary warnings from a member\'s database record.',
     architecture: 
@@ -1883,7 +1883,7 @@ export const DETAILED_COMMANDS = {
     name: 'purge',
     aliases: ['clear', 'c'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Manage Messages',
+    clearance: 'Extra Owner',
     syntax: '!purge <count> [@user|bot|links]',
     purpose: 'Bulk deletes up to 100 messages from the channel with optional filtering for specific users, bots, or links.',
     architecture: 
@@ -1896,7 +1896,7 @@ export const DETAILED_COMMANDS = {
     name: 'slowmode',
     aliases: ['sm'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Manage Channels',
+    clearance: 'Extra Owner',
     syntax: '!slowmode <duration|off>',
     purpose: 'Sets the per-user message cooldown on the current channel from 0s up to 6 hours.',
     architecture: 
@@ -1908,7 +1908,7 @@ export const DETAILED_COMMANDS = {
     name: 'nuke',
     aliases: ['clonedelete'],
     category: 'Moderation',
-    clearance: 'Admin Tier / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!nuke',
     purpose: 'Clones the current channel with exact permissions, topic, and category placement, then purges the original channel.',
     architecture: 
@@ -1946,7 +1946,7 @@ export const DETAILED_COMMANDS = {
     name: 'hide',
     aliases: ['lockview'],
     category: 'Moderation',
-    clearance: 'Admin Tier / Manage Channels',
+    clearance: 'Extra Owner',
     syntax: '!hide [#channel]',
     purpose: 'Hides a channel from @everyone by modifying permission overwrites.',
     architecture: 
@@ -1958,7 +1958,7 @@ export const DETAILED_COMMANDS = {
     name: 'unhide',
     aliases: ['unlockview'],
     category: 'Moderation',
-    clearance: 'Admin Tier / Manage Channels',
+    clearance: 'Extra Owner',
     syntax: '!unhide [#channel]',
     purpose: 'Reveals a previously hidden channel to @everyone.',
     architecture: 
@@ -1970,7 +1970,7 @@ export const DETAILED_COMMANDS = {
     name: 'lock',
     aliases: ['lockchannel'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Manage Channels',
+    clearance: 'Extra Owner',
     syntax: '!lock [#channel] [reason]',
     purpose: 'Locks a channel from @everyone sending messages.',
     architecture: 
@@ -1982,7 +1982,7 @@ export const DETAILED_COMMANDS = {
     name: 'unlock',
     aliases: ['unlockchannel'],
     category: 'Moderation',
-    clearance: 'Mod Tier / Manage Channels',
+    clearance: 'Extra Owner',
     syntax: '!unlock [#channel]',
     purpose: 'Unlocks a channel, restoring @everyone sending permissions.',
     architecture: 
@@ -1994,7 +1994,7 @@ export const DETAILED_COMMANDS = {
     name: 'addrole',
     aliases: ['roleadd', 'giverole'],
     category: 'Server Administration',
-    clearance: 'Admin Tier / Manage Roles',
+    clearance: 'Extra Owner',
     syntax: '!addrole <@user|id> <@role|name|id>',
     purpose: 'Assigns a role to a member with hierarchy verification.',
     architecture: 
@@ -2007,7 +2007,7 @@ export const DETAILED_COMMANDS = {
     name: 'removerole',
     aliases: ['roledel', 'takerole'],
     category: 'Server Administration',
-    clearance: 'Admin Tier / Manage Roles',
+    clearance: 'Extra Owner',
     syntax: '!removerole <@user|id> <@role|name|id>',
     purpose: 'Removes a specified role from a member.',
     architecture: 
@@ -2019,7 +2019,7 @@ export const DETAILED_COMMANDS = {
     name: 'striproles',
     aliases: ['strip', 'wipeuserroles'],
     category: 'Server Administration',
-    clearance: 'Admin Tier / Manage Roles',
+    clearance: 'Extra Owner',
     syntax: '!striproles <@user|id>',
     purpose: 'Removes all assignable roles from a member and saves them into database for recovery.',
     architecture: 
@@ -2031,7 +2031,7 @@ export const DETAILED_COMMANDS = {
     name: 'autorole',
     aliases: ['joinrole'],
     category: 'Server Administration',
-    clearance: 'Admin Tier / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!autorole [add|remove|list] @role',
     purpose: 'Configures automated role assignment for new members joining the server.',
     architecture: 
@@ -2044,7 +2044,7 @@ export const DETAILED_COMMANDS = {
     name: 'ticket',
     aliases: ['newticket', 'tickets'],
     category: 'Community & Engagement',
-    clearance: 'Administrator (Setup & AI Toggle) / Public (Opening Tickets)',
+    clearance: 'Extra Owner (Setup & AI Toggle) / Public (Opening Tickets)',
     syntax: '!ticket setup <#category> <@staffRole> [@additionalRoles...] [ai_on] | !ticket ai on|off',
     purpose: 'Quick one-command ticket system deployment and AI triage configuration.',
     architecture: 
@@ -2059,7 +2059,7 @@ export const DETAILED_COMMANDS = {
     name: 'ticketpanel',
     aliases: ['tp', 'ticket-panel', 'ticketmgr'],
     category: 'Community & Engagement',
-    clearance: 'Administrator',
+    clearance: 'Extra Owner',
     syntax: '!ticketpanel',
     purpose: 'Interactive visual Ticket Panel Manager dashboard with real-time UI controls to customize and deploy bespoke ticket panels.',
     architecture: 
@@ -2080,7 +2080,7 @@ export const DETAILED_COMMANDS = {
     name: 'rate',
     aliases: ['edit', 'rateedit', 'editrate', 'rate-edit'],
     category: 'Community & Engagement',
-    clearance: 'Administrator (Channel Binding) / Public (Rating Edits)',
+    clearance: 'Extra Owner (Channel Binding) / Public (Rating Edits)',
     syntax: '!rate <#channel | channel_id> (Bind Channel) | !rate <attachment | url> (Submit Edit)',
     purpose: 'Community Edit Rating System with interactive 1-5 star voting cards, author stats, and designated channel binding.',
     architecture: 
@@ -2096,7 +2096,7 @@ export const DETAILED_COMMANDS = {
     name: 'news',
     aliases: ['rss', 'newsfeed', 'feeds'],
     category: 'Utility & Automation',
-    clearance: 'Manage Server / Administrator',
+    clearance: 'Extra Owner',
     syntax: '!news setup <#channel> [@pingRole] | !news add <preset|url> | !news list | !news remove <url> | !news disable (Also supports /news)',
     purpose: 'Automated RSS news feed syndication engine that monitors global news outlets (BBC, Tech, Al Jazeera, CNN) or custom RSS feeds and broadcasts updates with image embeds.',
     architecture: 
@@ -2112,7 +2112,7 @@ export const DETAILED_COMMANDS = {
     name: 'welcome',
     aliases: ['welcomer', 'greet'],
     category: 'Community & Engagement',
-    clearance: 'Manage Server / Admin',
+    clearance: 'Extra Owner',
     syntax: '!welcome',
     purpose: 'Interactive visual builder for join greetings with full dynamic placeholder interpolation and MP4-to-GIF conversion.',
     architecture: 
@@ -2132,7 +2132,7 @@ export const DETAILED_COMMANDS = {
     name: 'leave',
     aliases: ['farewell', 'goodbye'],
     category: 'Community & Engagement',
-    clearance: 'Manage Server / Admin',
+    clearance: 'Extra Owner',
     syntax: '!leave',
     purpose: 'Interactive visual builder for departure messages when members exit the server.',
     architecture: 
@@ -2145,7 +2145,7 @@ export const DETAILED_COMMANDS = {
     name: 'serverstats',
     aliases: ['statsvc', 'membercountvc', 'statsetup', 'membercount'],
     category: 'Utility & Statistics',
-    clearance: 'Extra Owner / Administrator',
+    clearance: 'Extra Owner',
     syntax: '!serverstats <setup|config|disable>',
     purpose: 'Deploys dynamic, locked voice channels that continuously display real-time server member counts, human counts, and bot counts.',
     architecture: 
@@ -2270,7 +2270,7 @@ export const DETAILED_COMMANDS = {
     name: 'stockchannel',
     aliases: ['dailystock', 'setstockchannel', 'stockalert'],
     category: 'Automation & Finance',
-    clearance: 'Administrator / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!stockchannel <set <#channel> | disable | status | test>',
     purpose: 'Configures an automated daily morning stock market intelligence briefing and Canvas image upload channel.',
     architecture:
@@ -2467,7 +2467,7 @@ export const DETAILED_COMMANDS = {
     name: 'snipe',
     aliases: ['s'],
     category: 'Utilities & Integrations',
-    clearance: 'Staff Tier / Mod Tier',
+    clearance: 'Extra Owner',
     syntax: '!snipe [#channel]',
     purpose: 'Retrieves the most recently deleted message in the channel.',
     architecture: 
@@ -2479,7 +2479,7 @@ export const DETAILED_COMMANDS = {
     name: 'jtc',
     aliases: ['jointocreate', 'tempvc'],
     category: 'Voice & Media',
-    clearance: 'Admin Tier / Manage Channels',
+    clearance: 'Extra Owner',
     syntax: '!jtc [setup|panel|lock|limit]',
     purpose: 'Dynamic temporary voice channel management.',
     architecture: 
@@ -2561,7 +2561,7 @@ export const DETAILED_COMMANDS = {
     name: 'learn',
     aliases: ['lambda', 'ai', 'heuristics', 'behavioral', 'lambdalearn', 'selflearn', 'autolearn'],
     category: 'Security & Access Control',
-    clearance: 'Admin Tier / Server Owner / Extra Owners',
+    clearance: 'Extra Owner',
     syntax: '!learn [status|on|off|flaws|fix|analyze|baseline|signatures|clear] (or !lambda, /learn, /lambda)',
     purpose: 'Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.',
     architecture: 
@@ -2746,7 +2746,7 @@ export const DETAILED_COMMANDS = {
     name: 'vcprotect',
     aliases: ['lockvc', 'protectvc'],
     category: 'Voice Grid Control & Security',
-    clearance: 'Admin Tier / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!vcprotect <#vc|ID>',
     purpose: 'Enforces anti-drag and anti-disconnect protection on sensitive voice channels.',
     architecture: 
@@ -2758,7 +2758,7 @@ export const DETAILED_COMMANDS = {
     name: 'setup',
     aliases: ['setlogs', 'setquarantine', 'configsetup'],
     category: 'Server Administration',
-    clearance: 'Administrator',
+    clearance: 'Extra Owner',
     syntax: '!setup [logs|role|vc] <#channel|@role|ID>',
     purpose: 'Binds and configures core server resources (Security Logs Channel, Quarantine Role, Quarantine Voice) strictly by Discord Snowflake IDs.',
     architecture: 

@@ -10,7 +10,7 @@ import { setGuildContext } from '../embed.js';
 import * as downloader from '../utils/mediaDownloader.js';
 import db from '../database.js';
 
-import { isBotOwnerSync, isExtraOwner, isServerAdmin, getBotOwnerIds } from '../utils/helpers.js';
+import { isBotOwnerSync, isExtraOwner, isServerAdmin, getBotOwnerIds, checkCommandClearance } from '../utils/helpers.js';
 const TOGGLE_ON = '<:emoji_16:1533860111704002665>';
 
 export default {
@@ -1366,14 +1366,24 @@ export default {
         return interaction.reply({ content: 'Command not found.', flags: MessageFlags.Ephemeral });
       }
 
-      if (command.ownerOnly && !isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply({ content: 'Only the bot developer can use this command.', flags: MessageFlags.Ephemeral });
-      }
-
-      if (command.permissions && command.permissions.length > 0) {
-        if (!interaction.member.permissions.has(command.permissions) && !isBotOwnerSync(interaction.user.id) && interaction.user.id !== interaction.guild.ownerId) {
-          return interaction.reply(cv2.e.danger('Access Denied', `You lack the required permissions (\`${command.permissions.join(', ')}\`) to run this command.`));
-        }
+      // --- ATHENA CLEARANCE HIERARCHY GATE ---
+      // Strict 4-tier model:
+      // 1. Bot Owner Commands
+      // 2. Server Owner Commands
+      // 3. Public Commands (Anyone in server)
+      // 4. Extra Owner Commands (EVERYTHING ELSE: all server management, channels, roles, moderation, security, automod, configs)
+      // Native Discord 'Administrator' permissions DO NOT grant access to Athena commands.
+      const clearance = checkCommandClearance(command.name || interaction.commandName, interaction.user.id, interaction.guild);
+      if (!clearance.allowed) {
+        return interaction.reply({
+          ...cv2.danger(
+            'Access Denied | <a:uptime:1552608831060844575>',
+            `You do not have permission to execute \`/${interaction.commandName}\`.\n\n` +
+            `> -# **Required Clearance:** **${clearance.requiredClearance}**\n` +
+            `> -# **Athena Security Policy:** Native Discord \`Administrator\` permissions do NOT grant access to Athena management commands. Only the **Server Owner** and designated **Extra Owners** (\`!extraowner\`) can manage the server or security.`
+          ),
+          flags: MessageFlags.Ephemeral
+        });
       }
 
       try {
