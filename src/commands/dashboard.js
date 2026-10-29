@@ -223,8 +223,8 @@ export async function buildDashboardResponse(guild, client, requester = null) {
         `> **Tactical Emergency & Panic Directives:**\n` +
         `> -# \u2022 \`${prefix}panic\` / \`${prefix}emergency\` \u2014 Instant total server blackout & verification elevation \`[Owner Only]\`\n` +
         `> -# \u2022 \`${prefix}unpanic\` / \`${prefix}endemergency\` \u2014 Lift emergency mode and restore all permissions \`[Owner Only]\`\n` +
-        `> -# \u2022 \`${prefix}lockdown <1|2|3>\` \u2014 Ultra-fast batched lockdown (Soft / Medium / Nuclear) \`[Admin]\`\n` +
-        `> -# \u2022 \`${prefix}unlockdown\` \u2014 Instant ~1.2s zero-loss restoration from database bitmask snapshot \`[Admin]\`\n` +
+        `> -# \u2022 \`${prefix}lockdown <1|2|3>\` \u2014 Ultra-fast batched lockdown (Soft / Medium / Nuclear) \`[Extra Owner]\`\n` +
+        `> -# \u2022 \`${prefix}unlockdown\` \u2014 Instant ~1.2s zero-loss restoration from database bitmask snapshot \`[Extra Owner]\`\n` +
         `> -# \u2022 **Tactical Audio Briefing:** Click **[Tactical Audio Briefing]** below to broadcast live military voice dispatch in VC or download audio.`
     },
     { type: 14, divider: true },
@@ -297,13 +297,13 @@ export function buildDefconIntelContainer(prefix = '!') {
           `### **Execution & Clearance Manual**\n` +
           `> **Emergency Activation Commands:**\n` +
           `> -# \u2022 \`${prefix}panic\` / \`${prefix}emergency\` \u2014 Total server channel blackout & verification elevation \`[Server Owner / Bot Owner]\`\n` +
-          `> -# \u2022 \`${prefix}lockdown 1\` \u2014 Soft lockdown (mutes send & voice speak) \`[Admin / Extra Owner]\`\n` +
-          `> -# \u2022 \`${prefix}lockdown 2\` \u2014 Medium lockdown (mutes send, files, reactions + arms raid mode) \`[Admin / Extra Owner]\`\n` +
-          `> -# \u2022 \`${prefix}lockdown 3\` \u2014 Nuclear lockdown (total server channel blackout) \`[Admin / Extra Owner]\`\n` +
-          `> -# \u2022 \`${prefix}raidmode on\` \u2014 Auto-quarantine incoming joins & phone verification \`[Admin / Extra Owner]\`\n\n` +
+          `> -# \u2022 \`${prefix}lockdown 1\` \u2014 Soft lockdown (mutes send & voice speak) \`[Extra Owner]\`\n` +
+          `> -# \u2022 \`${prefix}lockdown 2\` \u2014 Medium lockdown (mutes send, files, reactions + arms raid mode) \`[Extra Owner]\`\n` +
+          `> -# \u2022 \`${prefix}lockdown 3\` \u2014 Nuclear lockdown (total server channel blackout) \`[Extra Owner]\`\n` +
+          `> -# \u2022 \`${prefix}raidmode on\` \u2014 Auto-quarantine incoming joins & phone verification \`[Extra Owner]\`\n\n` +
           `> **Recovery & Restoration Commands:**\n` +
           `> -# \u2022 \`${prefix}unpanic\` / \`${prefix}endemergency\` \u2014 Lifts emergency blackout & restores permissions \`[Server Owner / Bot Owner]\`\n` +
-          `> -# \u2022 \`${prefix}unlockdown\` \u2014 Restores exact channels & bitmasks from database snapshot in ~1.2s \`[Admin / Extra Owner]\`\n` +
+          `> -# \u2022 \`${prefix}unlockdown\` \u2014 Restores exact channels & bitmasks from database snapshot in ~1.2s \`[Extra Owner]\`\n` +
           `> -# \u2022 **Interactive Action Buttons:** \`[Lift Lockdown]\` & \`[End Emergency]\` buttons attached to alert messages allow instant 1-click restoration.`
       },
       { type: 14, divider: true },

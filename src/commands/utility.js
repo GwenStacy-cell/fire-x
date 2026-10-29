@@ -597,7 +597,7 @@ export const commands = [
                     `> • \`${prefix}trigger\` - Open the interactive Response Matrix Dashboard.\n` +
                     `> • \`${prefix}trigger create <match> | <response>\` - Simple & fast usual setup.\n` +
                     `> • \`${prefix}trigger <match> | <response>\` - Direct shortcut.\n` +
-                    `> • \`${prefix}trigger delete <match>\` - Remove trigger (Server Admin & Extra Owner).\n` +
+                    `> • \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
                     `> • \`${prefix}trigger list\` - Public list of configured triggers.`;
               } else if (targetCmd.name === "whitelist" || targetCmd.name === "wl") {
                   descContent = `Interactive Whitelist Defense Matrix dashboard with synced looping animated GIF HUD, permission category clearance, and custom action limits.\n\n` +
@@ -732,22 +732,16 @@ export const commands = [
           return interaction.reply({ content: `-! <:cross_red:1533860128015519895> **Command Not Found:** ` + cmdName, flags: MessageFlags.Ephemeral });
         }
         
-        let permsText = "Public / Everyone";
+        const cmdClearance = checkCommandClearance(targetCmd.name, interaction.user.id, interaction.guild);
+        let permsText = "Public (Everyone)";
         if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
-          permsText = "Server Owner and Bot Owners ONLY (Extra Owners Unauthorized)";
-        } else if (targetCmd.name === "lockdown" || targetCmd.name === "unlockdown") {
-          permsText = "Server Owner, Bot Owners, Extra Owners, and Administrators";
-        } else if (targetCmd.name === "unbypassable" || targetCmd.name === "learn") {
-          permsText = "Administrators, Server Owner, Extra Owners, and Bot Owners";
-        } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
-          permsText = "Bot Owner (Universal Remote across ANY server via DMs) & Server Administrators (Local Server)";
-        } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
-          permsText = "Server Owner, Bot Owners, and Extra Owners";
-        } else if (targetCmd.permissions && targetCmd.permissions.length > 0) {
-          if (targetCmd.permissions.includes(8n)) permsText = "Administrator";
-          else if (targetCmd.permissions.includes(32n)) permsText = "Manage Server";
-          else if (targetCmd.permissions.includes(1099511627776n)) permsText = "Moderate Members";
-          else permsText = "Elevated Permissions";
+          permsText = "Server Owner & Bot Owner ONLY";
+        } else if (cmdClearance.requiredClearance === 'Extra Owner') {
+          permsText = "Extra Owner (or Server Owner)";
+        } else if (cmdClearance.requiredClearance === 'Bot Owner') {
+          permsText = "Bot Owner ONLY";
+        } else if (cmdClearance.requiredClearance === 'Server Owner') {
+          permsText = "Server Owner & Bot Owner";
         }
         
         let catStr = targetCmd.category ? targetCmd.category.charAt(0).toUpperCase() + targetCmd.category.slice(1) : "General";
@@ -2064,7 +2058,7 @@ export const helpModules = [
     "-# • **__Fuzzy Typo Auto-Correction:__** Powered by Damerau-Levenshtein distance. Typo variations (e.g. `!athena how to use rnkthme`, `tcikets`, `atninuke`) are automatically recognized and resolved.",
     "-# • **__Prefix-First Step-by-Step Walkthroughs:__** Guides users step-by-step with clean markdown codeblocks (`!command ...`) while clarifying if slash commands or dashboard alternatives exist.",
     "-# • **__Context-Aware Multi-Turn Thread Memory:__** Retains conversation history for 10 minutes in each channel, allowing natural follow-up questions without re-typing context.",
-    "-# • **__Clearance-Aware Adaptive Guidance:__** Dynamically checks user permissions (Owner, Extra Owner, Admin, Mod, Public) and tailors instructions to their exact clearance.",
+    "-# • **__Clearance-Aware Adaptive Guidance:__** Dynamically checks user permissions (Bot Owner, Server Owner, Extra Owner, Public) and tailors instructions to their exact clearance.",
     "-# • **__One-Click Interactive Action Buttons:__** Provides neutral grey action buttons (`style: 2`) to instantly launch setups, view statuses, or switch themes with 1 click.",
     "-# • **__On-Demand Custom Button Generator:__** Need a specific button? Ask Athena in your question or follow-up and custom grey action buttons are generated on demand.",
     "-# • **__Live Thinking Telemetry:__** Real-time progress timer showing elapsed seconds during Google Gemini 3.8 Flash neural processing.",

@@ -3,6 +3,7 @@ import db from '../database.js';
 import cv2 from '../cv2.js';
 import { calculateXpForLevel } from '../utils/xpEngine.js';
 import { generateRankCard, generateLeaderboard } from '../utils/canvasCards.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 const TROPHY = '<a:trophy:1533859922599481577>';
 const COIN = '<a:Boost2:1533859928949784776>';
@@ -343,8 +344,8 @@ export const commands = [
       const sub = (args[0] || '').toLowerCase();
 
       if (sub === 'add') {
-        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-          return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Server Administrators can add level rewards.')], flags: MessageFlags.IsComponentsV2 });
+        if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+          return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can add level rewards.')], flags: MessageFlags.IsComponentsV2 });
         }
         const level = parseInt(args[1]);
         const role = message.mentions.roles.first() || (args[2] ? message.guild.roles.cache.get(args[2]) : null);
@@ -370,8 +371,8 @@ export const commands = [
       }
 
       if (sub === 'remove' || sub === 'delete') {
-        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-          return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Server Administrators can remove level rewards.')], flags: MessageFlags.IsComponentsV2 });
+        if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+          return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can remove level rewards.')], flags: MessageFlags.IsComponentsV2 });
         }
         const level = parseInt(args[1]);
         if (isNaN(level)) {

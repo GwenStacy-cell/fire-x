@@ -439,13 +439,13 @@ export const commands = [
       // Subcommand: Help
       const helpDesc =
         `### Counting Commands Overview\n` +
-        `-# \`!counting\` - Open the interactive Counting Control Panel \`[Admin]\`\n` +
-        `-# \`!counting setup <#channel>\` - Bind counting to a specific channel \`[Admin]\`\n` +
-        `-# \`!counting reset\` - Reset the current count back to 0 \`[Admin]\`\n` +
-        `-# \`!counting setsaves <0-20>\` - Set available server saves \`[Admin]\`\n` +
-        `-# \`!counting math <on|off>\` - Toggle arithmetic math expressions \`[Admin]\`\n` +
-        `-# \`!counting autotopic <on|off>\` - Toggle auto-updating channel topic \`[Admin]\`\n` +
-        `-# \`!counting disable\` - Disable the counting system \`[Admin]\`\n` +
+        `-# \`!counting\` - Open the interactive Counting Control Panel \`[Extra Owner]\`\n` +
+        `-# \`!counting setup <#channel>\` - Bind counting to a specific channel \`[Extra Owner]\`\n` +
+        `-# \`!counting reset\` - Reset the current count back to 0 \`[Extra Owner]\`\n` +
+        `-# \`!counting setsaves <0-20>\` - Set available server saves \`[Extra Owner]\`\n` +
+        `-# \`!counting math <on|off>\` - Toggle arithmetic math expressions \`[Extra Owner]\`\n` +
+        `-# \`!counting autotopic <on|off>\` - Toggle auto-updating channel topic \`[Extra Owner]\`\n` +
+        `-# \`!counting disable\` - Disable the counting system \`[Extra Owner]\`\n` +
         `-# \`!countlb\` - Display the server counting leaderboard \`[Public]\``;
 
       return message.reply(cv2.info('Counting Help Guide', helpDesc));

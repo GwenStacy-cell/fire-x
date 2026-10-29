@@ -551,7 +551,7 @@ export const commands = [
   // â”€â”€â”€ JTCSETUP â”€â”€â”€
   {
     name: 'jtcsetup',
-    description: 'Set up the Join to Create system. (Admin only)',
+    description: 'Set up the Join to Create system. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
@@ -710,7 +710,7 @@ export const commands = [
   // â”€â”€â”€ SECONDARY JTC SETUP â”€â”€â”€
   {
     name: 'secondaryjtc',
-    description: 'Set up a secondary Join to Create lobby. (Admin only)',
+    description: 'Set up a secondary Join to Create lobby. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
@@ -785,7 +785,7 @@ export const commands = [
   // â”€â”€â”€ JTCDISABLE â”€â”€â”€
   {
     name: 'jtcdisable',
-    description: ' Disable the Join to Create system. (Admin only)',
+    description: ' Disable the Join to Create system. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [],

@@ -1453,7 +1453,7 @@ export const commands = [
     {
       name: 'automod',
         aliases: ['automoderator', 'antilink', 'filters'],
-        description: 'Opens the interactive Automated Moderation & Security Dashboard (Admin only).',
+        description: 'Opens the interactive Automated Moderation & Security Dashboard [Extra Owner].',
       category: 'security',
       permissions: [PermissionFlagsBits.Administrator],
       options: [
@@ -1759,7 +1759,7 @@ export const commands = [
   // --- QRMANAGER - Quarantine system setup and repair
   {
     name: 'qrmanager',
-    description: 'Quarantine system manager Ã¢â‚¬â€ fix permissions, set role/channel/VC. (Admin only)',
+    description: 'Quarantine system manager — fix permissions, set role/channel/VC. [Extra Owner]',
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
     options: [
@@ -1857,7 +1857,7 @@ export const commands = [
   {
     name: 'massquarantine',
     aliases: ['mq', 'massq'],
-    description: 'Quarantine ALL members who have a specific role at once. (Admin only)',
+    description: 'Quarantine ALL members who have a specific role at once. [Extra Owner]',
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
     options: [
@@ -1897,7 +1897,7 @@ export const commands = [
   {
     name: 'massunquarantine',
     aliases: ['muq', 'massunq'],
-    description: 'Release ALL currently quarantined members in this server at once. (Admin only)',
+    description: 'Release ALL currently quarantined members in this server at once. [Extra Owner]',
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
     options: [],

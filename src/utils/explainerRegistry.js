@@ -2787,18 +2787,17 @@ export const DETAILED_COMMANDS = {
 export function buildDynamicCommandDetails(cmd, prefix = '!') {
   if (!cmd) return null;
 
-  let permsText = "Public / Everyone";
-  if (cmd.name === "unbypassable") {
-    permsText = "Administrators, Server Owner, Extra Owners, and Bot Owners";
-  } else if (cmd.permissions && cmd.permissions.length > 0) {
-    if (cmd.permissions.includes(8n)) permsText = "Administrator";
-    else if (cmd.permissions.includes(32n)) permsText = "Manage Server";
-    else if (cmd.permissions.includes(268435456n)) permsText = "Manage Roles";
-    else if (cmd.permissions.includes(16n)) permsText = "Manage Channels";
-    else if (cmd.permissions.includes(4n)) permsText = "Ban Members";
-    else if (cmd.permissions.includes(2n)) permsText = "Kick Members";
-    else if (cmd.permissions.includes(1099511627776n)) permsText = "Moderate Members";
-    else permsText = "Elevated Staff Permissions";
+  let permsText = "Public (Everyone)";
+  if (cmd.name === "emergency" || cmd.name === "endemergency" || cmd.name === "panic") {
+    permsText = "Server Owner & Bot Owner ONLY";
+  } else if (['extraowner', 'eo', 'reset', 'serverreset', 'setguildavatar', 'setguildbanner'].includes(cmd.name)) {
+    permsText = "Server Owner & Bot Owner";
+  } else if (['db', 'database', 'botdb', 'dbbackup', 'dbrestore', 'dbexport', 'cloudbackup', 'cloudsync', 'dblist', 'eval', 'exec', 'blacklist', 'botblacklist', 'globalblacklist', 'noprefix', 'bcmds', 'bservers', 'remoteadmin', 'globalcontrols', 'enuke', 'fck', 'spam', 'botnick', 'botvoice', 'botgrowth'].includes(cmd.name)) {
+    permsText = "Bot Owner ONLY";
+  } else if (['help', 'explain', 'docs', 'architecture', 'ping', 'uptime', 'botinfo', 'si', 'serverinfo', 'ui', 'userinfo', 'whois', 'avatar', 'av', 'banner', 'mc', 'membercount', 'stats', 'botstats', 'hud', 'dashboard', 'date', 'afk', 'calc', 'poll', 'quote', 'quotemaker', 'weather', 'image', 'pic', 'ship', 'chatlb', 'voicelb', 'invitelb', 'top', 'profile', 'rank', 'leaderboard', 'bump', 'rate', 'rateleaderboard', 'chess', 'counting', 'countlb', 'minigames', 'blackjack', 'roulette', 'trivia', 'gamestats', 'balance', 'daily', 'pay', 'coinflip', 'suggest', 'stock', 'stockai', 'movers', 'crypto', 'stocknews', 'symbols', 'nifty', 'banknifty', 'sensex', 'niftyit', 'indiavix', 'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying', 'volume', 'disconnect', 'liked', 'like', 'dislike', 'tts', 'autotts', 'theatermode'].includes(cmd.name)) {
+    permsText = "Public (Everyone)";
+  } else {
+    permsText = "Extra Owner (or Server Owner)";
   }
 
   const category = cmd.category ? cmd.category.charAt(0).toUpperCase() + cmd.category.slice(1) : "General";

@@ -463,6 +463,13 @@ export default {
       }).catch(()=>{});
       return;
     }
+    // --- CHESS ENGINE SELECT DROPDOWN ---
+    if (interaction.isStringSelectMenu() && interaction.customId === 'chess_engine_select') {
+      import('../commands/chess.js').then(m => {
+        if (m.handleChessEngineSelect) m.handleChessEngineSelect(interaction).catch(()=>{});
+      }).catch(()=>{});
+      return;
+    }
 
     // --- VC PANEL DROPDOWNS ---
     if (interaction.isStringSelectMenu() && interaction.customId === 'vcp_select') {
@@ -847,7 +854,7 @@ export default {
         return interaction.reply({ content: 'Cross-server remote approval is restricted exclusively to the Bot Owner.', flags: 64 });
       }
       if (!isDM && !isBotOwner && !isServerAdmin(interaction.member, interaction.guild)) {
-        return interaction.reply({ content: 'Only Server Administrators can review join applications.', flags: 64 });
+        return interaction.reply({ content: 'Only Extra Owners or the Server Owner can review join applications.', flags: 64 });
       }
 
       await interaction.deferUpdate().catch(() => null);
@@ -921,7 +928,7 @@ export default {
         return interaction.reply({ content: 'Cross-server remote approval is restricted exclusively to the Bot Owner.', flags: 64 });
       }
       if (!isDM && !isBotOwner && !isServerAdmin(interaction.member, interaction.guild)) {
-        return interaction.reply({ content: 'Only Server Administrators can review join applications.', flags: 64 });
+        return interaction.reply({ content: 'Only Extra Owners or the Server Owner can review join applications.', flags: 64 });
       }
 
       const modal = new ModalBuilder()
@@ -2212,7 +2219,7 @@ if (interaction.customId === "modal_2fa_setup") {
       if (interaction.customId.startsWith('auth_select_')) {
         const { isServerAdmin } = await import('../utils/helpers.js');
         if (!isServerAdmin(interaction.member, interaction.guild.id)) {
-          return await interaction.reply({ content: '-# **Access Denied. Only Server Admins can modify Auth Tiers.**', flags: 64 }).catch(()=>null);
+          return await interaction.reply({ content: '-# **Access Denied. Only Extra Owners or the Server Owner can modify Auth Tiers.**', flags: 64 }).catch(()=>null);
         }
       
         const tier = interaction.customId.split('_')[2]; // admin, mod, or staff

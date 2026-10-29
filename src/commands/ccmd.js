@@ -2,6 +2,7 @@ import db from '../database.js';
 import cv2 from '../cv2.js';
 import commandMap from './loader.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 export const commands = [
   {
@@ -16,10 +17,11 @@ export const commands = [
 
       const config = db.getGuildConfig(message.guild.id);
       const managers = config.ccmdManagers || [];
-      const isManager = message.member.permissions.has('Administrator') || managers.includes(message.author.id) || ['1509084068619489331'].includes(message.author.id) || message.author.id === message.guild.ownerId;
+      const isExtraOwner = isExtraOwnerOrHigher(message.author.id, message.guild);
+      const isManager = isExtraOwner || managers.includes(message.author.id);
       
       if (!isManager && args[0]?.toLowerCase() !== 'list') {
-        return message.reply(cv2.danger('Access Denied', 'Only Server Admins or Granted Users can manage custom commands.'));
+        return message.reply(cv2.danger('Access Denied', 'Only Extra Owners, Server Owner, or Granted Users can manage custom commands.'));
       }
       
       if (args.length === 0) {
@@ -55,8 +57,8 @@ export const commands = [
         return message.reply(cv2.success('Shortcut Deleted', `\`!${alias}\` shortcut removed.`));
       }
       else if (action === 'grant') {
-        if (!message.member.permissions.has('Administrator') && message.author.id !== message.guild.ownerId) {
-             return message.reply(cv2.danger('Access Denied', 'Only Server Admins can grant access to custom commands.'));
+        if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+             return message.reply(cv2.danger('Access Denied', 'Only Extra Owners or the Server Owner can grant access to custom commands.'));
         }
         const target = message.mentions.users.first();
         if (!target) return message.reply(cv2.warn('Missing User', 'Please mention a user to grant access.'));
@@ -74,8 +76,8 @@ export const commands = [
         return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
       }
       else if (action === 'revoke') {
-        if (!message.member.permissions.has('Administrator') && message.author.id !== message.guild.ownerId) {
-             return message.reply(cv2.danger('Access Denied', 'Only Server Admins can revoke access to custom commands.'));
+        if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+             return message.reply(cv2.danger('Access Denied', 'Only Extra Owners or the Server Owner can revoke access to custom commands.'));
         }
         const target = message.mentions.users.first();
         if (!target) return message.reply(cv2.warn('Missing User', 'Please mention a user to revoke access.'));

@@ -44,7 +44,7 @@ export const commands = [
   {
     name: 'rate',
     slashHidden: true,
-    description: 'Post an edit to be rated, or set the designated rating channel (Admin only).',
+    description: 'Post an edit to be rated [Public], or set the designated rating channel [Extra Owner].',
     aliases: ['edit', 'rateedit', 'editrate', 'rate-edit'],
     executePrefix: async (message, args) => {
       // Admin Setup Check

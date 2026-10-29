@@ -15,6 +15,13 @@ import db from '../database.js';
 import cv2, { sanitizeCV2Payload } from '../cv2.js';
 
 import { PermissionFlagsBits } from 'discord.js';
+import { 
+  BOT_OWNER_COMMANDS, 
+  SERVER_OWNER_COMMANDS, 
+  PUBLIC_COMMANDS, 
+  isBotOwnerSync, 
+  isExtraOwnerOrHigher 
+} from './helpers.js';
 
 export { 
   getGuideSession, 
@@ -28,23 +35,9 @@ export {
 const TICK = '<a:atheNATICK:1557841381630681106>';
 const UPTIME = '<a:uptime:1552608831060844575>';
 
-export const OWNER_COMMANDS = new Set([
-  'owner', 'enuke', 'backup', 'whitelist', 'globalcontrols', 'databaseadmin', 
-  'remoteadmin', 'tier', 'botgrowth', 'learn', 'gban', 'gunban', 'gbanlist'
-]);
-
-export const ADMIN_COMMANDS = new Set([
-  'security', 'antinuke', 'automod', 'ticketpanel', 'welcome', 'autorole', 
-  'firewall', 'spam', 'customrole', 'accent', 'embed', 'logging', 'serverlogs', 
-  'jtc', 'tempvoice', 'vcpanel', 'vcprotect', 'moveprotect', 'adel', 'fck', 'ezal', 
-  'app', 'announce', 'buildserver', 'channeladmin', 'rolemanager', 'setdeletelog', 
-  'wipeemojis', 'auth', 'verify', 'news', 'incidents'
-]);
-
-export const MOD_COMMANDS = new Set([
-  'moderation', 'ban', 'kick', 'timeout', 'mute', 'warn', 'quarantine', 'snipe', 
-  'ignore', 'hide'
-]);
+export const OWNER_COMMANDS = SERVER_OWNER_COMMANDS;
+export const ADMIN_COMMANDS = new Set(); // Replaced by strict Extra Owner clearance model
+export const MOD_COMMANDS = new Set();
 
 /**
  * Resolves the executing member's permissions, ownership status, and administrative clearance.
@@ -65,69 +58,21 @@ export async function resolveMemberClearance(guild, user, member = null) {
 
   const userId = user.id;
   const isServerOwner = guild?.ownerId === userId;
-  const isBotOwner = process.env.OWNER_ID && userId === process.env.OWNER_ID;
+  const isBotOwner = isBotOwnerSync(userId);
   const isExtraOwner = (guild?.id && db?.isExtraOwner) ? db.isExtraOwner(guild.id, userId) : false;
 
-  let resolvedMember = member;
-  if (!resolvedMember && guild?.members) {
-    resolvedMember = guild.members.cache?.get(userId);
-    if (!resolvedMember && guild.members.fetch) {
-      try {
-        resolvedMember = await guild.members.fetch(userId);
-      } catch {}
-    }
-  }
+  let level = 'public';
+  let label = 'Community Member (Public)';
 
-  const permissions = [];
-  let isAdmin = false;
-  let isMod = false;
-
-  if (isServerOwner || isBotOwner || isExtraOwner) {
-    isAdmin = true;
-    isMod = true;
-    permissions.push('Server Owner / Highest Authority');
-  } else if (resolvedMember && resolvedMember.permissions) {
-    if (resolvedMember.permissions.has(PermissionFlagsBits.Administrator)) {
-      isAdmin = true;
-      isMod = true;
-      permissions.push('Administrator');
-    }
-    if (resolvedMember.permissions.has(PermissionFlagsBits.ManageGuild)) {
-      permissions.push('Manage Server');
-      isAdmin = true;
-    }
-    if (resolvedMember.permissions.has(PermissionFlagsBits.ManageRoles)) {
-      permissions.push('Manage Roles');
-    }
-    if (resolvedMember.permissions.has(PermissionFlagsBits.ManageChannels)) {
-      permissions.push('Manage Channels');
-    }
-    if (
-      resolvedMember.permissions.has(PermissionFlagsBits.ModerateMembers) ||
-      resolvedMember.permissions.has(PermissionFlagsBits.KickMembers) ||
-      resolvedMember.permissions.has(PermissionFlagsBits.BanMembers) ||
-      resolvedMember.permissions.has(PermissionFlagsBits.ManageMessages)
-    ) {
-      isMod = true;
-      permissions.push('Moderation Clearance');
-    }
-  }
-
-  let level = 'member';
-  let label = 'Community Member';
-
-  if (isServerOwner) {
-    level = 'owner';
+  if (isBotOwner) {
+    level = 'bot_owner';
+    label = 'Bot Owner';
+  } else if (isServerOwner) {
+    level = 'server_owner';
     label = 'Server Owner';
-  } else if (isBotOwner || isExtraOwner) {
-    level = 'owner';
-    label = 'Bot / Extra Owner';
-  } else if (isAdmin) {
-    level = 'admin';
-    label = 'Server Administrator';
-  } else if (isMod) {
-    level = 'moderator';
-    label = 'Server Moderator';
+  } else if (isExtraOwner) {
+    level = 'extra_owner';
+    label = 'Extra Owner';
   }
 
   return {
@@ -136,40 +81,45 @@ export async function resolveMemberClearance(guild, user, member = null) {
     isServerOwner,
     isBotOwner,
     isExtraOwner,
-    isAdmin,
-    isMod,
-    permissions
+    isAdmin: isExtraOwner || isServerOwner || isBotOwner,
+    isMod: isExtraOwner || isServerOwner || isBotOwner,
+    permissions: [label]
   };
 }
 
 /**
  * Determines required clearance level for any command or metadata.
+ * Strict 4-Tier Model:
+ * 1. Bot Owner
+ * 2. Server Owner
+ * 3. Public
+ * 4. Extra Owner (Everything else)
  */
 export function getCommandClearanceRequirement(commandName = '', commandMeta = null) {
   const clean = (commandName || '').toLowerCase().trim();
   if (!clean) return { level: 'public', label: 'Public / Everyone' };
 
-  if (OWNER_COMMANDS.has(clean)) {
-    return { level: 'owner', label: 'Server Owner' };
+  if (BOT_OWNER_COMMANDS.has(clean)) {
+    return { level: 'bot_owner', label: 'Bot Owner ONLY' };
   }
-  if (ADMIN_COMMANDS.has(clean)) {
-    return { level: 'admin', label: 'Administrator' };
+  if (SERVER_OWNER_COMMANDS.has(clean)) {
+    return { level: 'server_owner', label: 'Server Owner & Bot Owner' };
   }
-  if (MOD_COMMANDS.has(clean)) {
-    return { level: 'moderator', label: 'Moderator / Staff' };
+  if (PUBLIC_COMMANDS.has(clean)) {
+    return { level: 'public', label: 'Public (Everyone)' };
   }
 
   if (commandMeta?.category === 'owner') {
-    return { level: 'owner', label: 'Server Owner' };
+    return { level: 'bot_owner', label: 'Bot Owner ONLY' };
   }
   if (commandMeta?.clearance) {
     const clr = commandMeta.clearance.toLowerCase();
-    if (clr.includes('owner')) return { level: 'owner', label: 'Server Owner' };
-    if (clr.includes('admin')) return { level: 'admin', label: 'Administrator' };
-    if (clr.includes('mod') || clr.includes('staff')) return { level: 'moderator', label: 'Moderator / Staff' };
+    if (clr.includes('bot owner')) return { level: 'bot_owner', label: 'Bot Owner ONLY' };
+    if (clr.includes('server owner')) return { level: 'server_owner', label: 'Server Owner & Bot Owner' };
+    if (clr.includes('public')) return { level: 'public', label: 'Public (Everyone)' };
   }
 
-  return { level: 'public', label: 'Public / Everyone' };
+  return { level: 'extra_owner', label: 'Extra Owner (or Server Owner)' };
 }
 
 /**
@@ -179,14 +129,14 @@ export function canMemberExecuteCommand(memberClearance, commandRequirement) {
   if (!commandRequirement || commandRequirement.level === 'public') return true;
   if (!memberClearance) return false;
 
-  if (commandRequirement.level === 'moderator') {
-    return memberClearance.isMod || memberClearance.isAdmin || memberClearance.isServerOwner;
+  if (commandRequirement.level === 'bot_owner') {
+    return memberClearance.isBotOwner;
   }
-  if (commandRequirement.level === 'admin') {
-    return memberClearance.isAdmin || memberClearance.isServerOwner;
+  if (commandRequirement.level === 'server_owner') {
+    return memberClearance.isServerOwner || memberClearance.isBotOwner;
   }
-  if (commandRequirement.level === 'owner') {
-    return memberClearance.isServerOwner || memberClearance.isBotOwner || memberClearance.isExtraOwner;
+  if (commandRequirement.level === 'extra_owner') {
+    return memberClearance.isExtraOwner || memberClearance.isServerOwner || memberClearance.isBotOwner;
   }
   return true;
 }
@@ -1639,14 +1589,14 @@ function buildDynamicCodeGuide(prompt, knowledge, prefix = '!', codeSnippets = [
 
   if (!canExecute && memberClearance) {
     if (isTanglish) {
-      parts.push(`\n-# **__Notice:__** Indha command-ku **__${requiredClearance?.label || 'Administrator'}__** clearance thevaipPadum.`);
+      parts.push(`\n-# **__Notice:__** Indha command-ku **__${requiredClearance?.label || 'Extra Owner'}__** clearance thevaipPadum.`);
       parts.push(`-# Neenga **__${memberClearance.label}__** aaga irupadhala direct execution mudiyadhu, but server protection system epdi work aagudhu-nu kizhe paarkalam:\n`);
     } else {
-      parts.push(`\n-# **__Notice:__** This command requires **__${requiredClearance?.label || 'Administrator'}__** clearance.`);
-      parts.push(`-# As a **__${memberClearance.label}__**, you do not possess administrative permissions to execute this command directly, but here is an overview of how the system operates server-wide:\n`);
+      parts.push(`\n-# **__Notice:__** This command requires **__${requiredClearance?.label || 'Extra Owner'}__** clearance.`);
+      parts.push(`-# As a **__${memberClearance.label}__**, you do not possess Extra Owner or Server Owner clearance to execute this command directly, but here is an overview of how the system operates server-wide:\n`);
     }
-  } else if (memberClearance?.isAdmin || memberClearance?.isServerOwner) {
-    parts.push(`\n-# **__Clearance:__** **__Authorized (${memberClearance.label})__** • Full administrative privileges granted for this command.\n`);
+  } else if (memberClearance?.isExtraOwner || memberClearance?.isServerOwner || memberClearance?.isBotOwner) {
+    parts.push(`\n-# **__Clearance:__** **__Authorized (${memberClearance.label})__** • Full ownership clearance granted for this command.\n`);
   }
 
   // --- Step-by-Step Guidance ---
@@ -1654,7 +1604,7 @@ function buildDynamicCodeGuide(prompt, knowledge, prefix = '!', codeSnippets = [
 
   // Step 1: Clearance & Prerequisites
   const isElevated = primaryCmd && (primaryCmd.category === 'security' || (primaryCmd.description || '').toLowerCase().includes('owner') || (primaryCmd.description || '').toLowerCase().includes('admin'));
-  const clearanceText = requiredClearance?.label || (isElevated ? 'Server Owner / Administrator' : '@everyone (Standard User)');
+  const clearanceText = requiredClearance?.label || (isElevated ? 'Extra Owner (or Server Owner)' : '@everyone (Standard User)');
   const memberStatus = canExecute 
     ? `Authorized: ${memberClearance?.label || 'Authorized'}` 
     : `Requires elevated clearance (Your role: ${memberClearance?.label || 'Community Member'})`;

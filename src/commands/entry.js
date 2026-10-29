@@ -27,9 +27,9 @@ export const commands = [
         return message.reply(cv2.danger('Access Denied', 'Remote Join Application management is restricted exclusively to the Bot Owner.'));
       }
 
-      // In guild, non-bot-owners must be server administrators
+      // In guild, non-bot-owners must be extra owners or server owner
       if (!isDM && !isBotOwner && !isServerAdmin(message.member, message.guild)) {
-        return message.reply(cv2.danger('Access Denied', 'Only Server Administrators can configure Server Join Applications.'));
+        return message.reply(cv2.danger('Access Denied', 'Only Extra Owners or the Server Owner can configure Server Join Applications.'));
       }
 
       const subcommand = args[0]?.toLowerCase() || 'status';

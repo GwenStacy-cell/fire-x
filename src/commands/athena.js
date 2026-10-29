@@ -18,7 +18,7 @@ import { getSecurityStatusPanel, getAutoModPanel, handleUnlockdown } from './sec
 import { buildTicketManagerPayload, buildTicketPanelPayload } from './ticketpanel.js';
 import { getManagerPanel, executeWelcomeTest } from './welcome.js';
 import { gwManagers, buildManagerContainer } from './giveaway.js';
-import { isBotOwnerSync } from '../utils/helpers.js';
+import { isBotOwnerSync, isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 const TICK = '<a:atheNATICK:1557841381630681106>';
 
@@ -725,7 +725,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only server administrators can launch the Ticket Panel Manager.\n-# Non-admins can use \`${prefix}ticket\` to open a support ticket.`
+                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can launch the Ticket Panel Manager.\n-# Non-owners can use \`${prefix}ticket\` to open a support ticket.`
                 }
               ]
             }
@@ -822,7 +822,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only server administrators can configure the AutoMod Dashboard.`
+                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can configure the AutoMod Dashboard.`
                 }
               ]
             }
@@ -844,7 +844,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only server administrators can toggle AI Toxicity AutoMod.`
+                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can toggle AI Toxicity AutoMod.`
                 }
               ]
             }
@@ -886,7 +886,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only server administrators can configure the Welcome System.\n-# Run \`${prefix}welcome\` to view server greeting settings.`
+                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can configure the Welcome System.\n-# Run \`${prefix}welcome\` to view server greeting settings.`
                 }
               ]
             }
@@ -911,7 +911,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only server administrators can configure the Leave System.\n-# Run \`${prefix}leave\` to view server departure settings.`
+                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can configure the Leave System.\n-# Run \`${prefix}leave\` to view server departure settings.`
                 }
               ]
             }
@@ -1127,12 +1127,10 @@ export async function handleAthenaGuideButtons(interaction) {
 
     // 16. Toggle Verification Challenge Mode
     if (act.startsWith('verify_mode_')) {
-      const hasPerm = member?.permissions?.has(PermissionFlagsBits.Administrator) || 
-                      guild?.ownerId === user.id ||
-                      isBotOwnerSync(user.id);
+      const hasPerm = isExtraOwnerOrHigher(user.id, guild);
       if (!hasPerm) {
         return cv2.respond(interaction, {
-          components: [{ type: 17, components: [{ type: 10, content: `### Access Denied | ${TICK}\n-# Administrator permissions required.` }] }],
+          components: [{ type: 17, components: [{ type: 10, content: `### Access Denied | ${TICK}\n-# Extra Owner or Server Owner clearance required.` }] }],
           flags: MessageFlags.IsComponentsV2
         }, 7).catch(() => null);
       }
@@ -1165,12 +1163,10 @@ export async function handleAthenaGuideButtons(interaction) {
 
     // 17. Dismantle Verification Gate
     if (act === 'verify_disable') {
-      const hasPerm = member?.permissions?.has(PermissionFlagsBits.Administrator) || 
-                      guild?.ownerId === user.id ||
-                      isBotOwnerSync(user.id);
+      const hasPerm = isExtraOwnerOrHigher(user.id, guild);
       if (!hasPerm) {
         return cv2.respond(interaction, {
-          components: [{ type: 17, components: [{ type: 10, content: `### Access Denied | ${TICK}\n-# Administrator permissions required.` }] }],
+          components: [{ type: 17, components: [{ type: 10, content: `### Access Denied | ${TICK}\n-# Extra Owner or Server Owner clearance required.` }] }],
           flags: MessageFlags.IsComponentsV2
         }, 7).catch(() => null);
       }
@@ -1278,7 +1274,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only server administrators or owners can lift panic lockdown.`
+                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can lift panic lockdown.`
                 }
               ]
             }

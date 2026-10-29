@@ -1,6 +1,7 @@
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 export const commands = [
   // --- BALANCE COMMAND ---
@@ -532,10 +533,10 @@ export const commands = [
       const guildId = message.guild.id;
       const sub = (args[0] || '').toLowerCase();
 
-      // ADMIN: ADD ITEM
+      // EXTRA OWNER: ADD ITEM
       if (sub === 'add') {
-        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-          return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Server Administrators can manage the shop.')], flags: MessageFlags.IsComponentsV2 });
+        if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+          return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can manage the shop.')], flags: MessageFlags.IsComponentsV2 });
         }
         const name = args[1];
         const price = parseInt(args[2]);
@@ -571,10 +572,10 @@ export const commands = [
         });
       }
 
-      // ADMIN: REMOVE ITEM
+      // EXTRA OWNER: REMOVE ITEM
       if (sub === 'remove' || sub === 'delete') {
-        if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-          return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Server Administrators can remove items.')], flags: MessageFlags.IsComponentsV2 });
+        if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+          return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can remove items.')], flags: MessageFlags.IsComponentsV2 });
         }
         const itemId = args[1];
         if (!itemId) {

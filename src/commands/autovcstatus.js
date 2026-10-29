@@ -49,7 +49,7 @@ function getRandomStatus(guild, customStatuses) {
 export const commands = [
   {
     name: 'autovcstatus',
-    description: 'Manage random aesthetic VC statuses [Admin]',
+    description: 'Manage random aesthetic VC statuses [Extra Owner]',
     aliases: ['vcstatusauto', 'randomvc'],
     category: 'voice',
     permissions: [PermissionFlagsBits.Administrator],

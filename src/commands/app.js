@@ -11,7 +11,7 @@ export const commands = [
     options: [],
     async executePrefix(message, args) {
       if (!isServerAdmin(message.member, message.guild)) {
-        return message.reply(cv2.danger('Access Denied', 'Only Server Admins can manage applications.'));
+        return message.reply(cv2.danger('Access Denied', 'Only Extra Owners or the Server Owner can manage applications.'));
       }
 
       const subcommand = args[0]?.toLowerCase();
