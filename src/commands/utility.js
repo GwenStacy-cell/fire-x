@@ -240,7 +240,8 @@ export const commands = [
                 ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
                 ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
                 ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
-                ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy')
+                ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
+                ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess')
               );
               if (matchingModule) {
                 const container = buildHelpContainer(message.client, message.guild.id, matchingModule.id);
@@ -559,8 +560,8 @@ export const commands = [
                     `> • **Dedicated Screening Gate:** Blocks unauthorized new joiners with temporary quarantine holding roles until staff approve their application.\n` +
                     `> • **Customizable Questionnaire Modal:** Collects applicant answers using interactive Discord modal dialogs before submitting for review.\n` +
                     `> • **Dual-Channel Architecture:** Separate public application portal and internal staff review channel.\n` +
-                    `> • **Dual-Tier Review System:** Local Server Admins review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
-                    `> -# **__Server Configuration Subcommands (Admins / Owners):__**\n` +
+                    `> • **Dual-Tier Review System:** Designated Extra Owners and the Server Owner review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
+                    `> -# **__Server Configuration Subcommands (Extra Owners / Server Owner):__**\n` +
                     `> • \`${prefix}entry deploy [#channel]\` - Deploys the interactive "Submit Join Application" button panel.\n` +
                     `> • \`${prefix}entry channel <#channel>\` - Sets the public gate channel where new members submit applications.\n` +
                     `> • \`${prefix}entry log <#channel>\` - Sets the internal staff review channel for pending applications.\n` +
@@ -738,9 +739,11 @@ export const commands = [
           m.id === cmdName || 
           m.shortLabel.toLowerCase() === cmdName || 
           (cmdName === 'count' && m.id === 'counting') ||
+          ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
           ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
           ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
-          ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy')
+          ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
+          ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess')
         );
         if (matchingModule) {
           const container = buildHelpContainer(interaction.client, interaction.guild?.id, matchingModule.id);
@@ -1052,8 +1055,8 @@ export const commands = [
             `> • **Dedicated Screening Gate:** Blocks unauthorized new joiners with temporary quarantine holding roles until staff approve their application.\n` +
             `> • **Customizable Questionnaire Modal:** Collects applicant answers using interactive Discord modal dialogs before submitting for review.\n` +
             `> • **Dual-Channel Architecture:** Separate public application portal and internal staff review channel.\n` +
-            `> • **Dual-Tier Review System:** Local Server Admins review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
-            `> -# **__Server Configuration Subcommands (Admins / Owners):__**\n` +
+            `> • **Dual-Tier Review System:** Designated Extra Owners and the Server Owner review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
+            `> -# **__Server Configuration Subcommands (Extra Owners / Server Owner):__**\n` +
             `> • \`${prefix}entry deploy [#channel]\` - Deploys the interactive "Submit Join Application" button panel.\n` +
             `> • \`${prefix}entry channel <#channel>\` - Sets the public gate channel where new members submit applications.\n` +
             `> • \`${prefix}entry log <#channel>\` - Sets the internal staff review channel for pending applications.\n` +
@@ -2011,7 +2014,7 @@ export const helpModules = [
     "-# • **__Synced Looping GIF HUD:__** Features authentic 8-frame looping animated HUD banners (`wl_banner.gif` & `wl_access.gif`) with glowing progress bars drawn directly in the GIF."
   ] },
   
-  { id: 'moderation', category: 'SERVER ADMINISTRATION', shortLabel: 'Mods', label: 'Moderation Tools', emoji: 'mod', commands: [
+  { id: 'moderation', category: 'SERVER MANAGEMENT', shortLabel: 'Mods', label: 'Moderation Tools', emoji: 'mod', commands: [
     "`!ban / !b @user [reason]` - Ban a member from the server `[Extra Owner]`",
     "`!tempban @user <time> [reason]` - Temporarily ban a member with auto-unban `[Extra Owner]`",
     "`!unban <userid>` - Unban a user by User ID `[Extra Owner]`",
@@ -2052,7 +2055,7 @@ export const helpModules = [
     "`!aiannounce [prompt] [#channel] / /aiannounce` - AI Announcement Studio with Pinterest banner support, custom emojis & live preview `[Extra Owner]`",
     "`!fck @user <reason>` - Send direct official warning DM `[Server Owner]`"
   ] },
-  { id: 'mass_actions', category: 'SERVER ADMINISTRATION', shortLabel: 'Mass Mod', label: 'Mass Actions', emoji: 'mass', commands: [
+  { id: 'mass_actions', category: 'SERVER MANAGEMENT', shortLabel: 'Mass Mod', label: 'Mass Actions', emoji: 'mass', commands: [
     "`!massban` - Open interactive menu to ban multiple users `[Extra Owner]`",
     "`!masskick` - Open interactive menu to kick multiple users `[Extra Owner]`",
     "`!masstimeout` - Open interactive menu to timeout multiple users `[Extra Owner]`",
@@ -2068,7 +2071,7 @@ export const helpModules = [
     "-# These commands spawn CV2 panels that allow selecting targets from specific voice channels, roles, or text channels. Protected and whitelisted users are automatically skipped."
   ] },
 
-  { id: 'studio', category: 'SERVER ADMINISTRATION', shortLabel: 'Studio', label: 'Studio & Audits', emoji: 'config', commands: [
+  { id: 'studio', category: 'SERVER MANAGEMENT', shortLabel: 'Studio', label: 'Studio & Audits', emoji: 'config', commands: [
     "`!aiannounce [prompt] [#channel] / /aiannounce` - Neural Announcement Studio with Pinterest banner support, live preview & channel selector `[Extra Owner]`",
     "`!studio create` - Interactive Container & Embed Studio builder (supports direct Pinterest links) `[Extra Owner]`",
     "`!studio list` - View all saved server announcement and container templates `[Extra Owner]`",
@@ -2280,10 +2283,7 @@ export const helpModules = [
     "`!media <url>` - Download TikTok/Insta/Twitter/YouTube videos directly `[Public]`",
     "`!mp3 <url>` - Extract audio from video links `[Public]`",
     "`!setmedia / !unsetmedia` - Bind Auto Media Downloader to channel `[Extra Owner]`",
-    "`!chess / !chess ai [bot]` - Play interactive chess against 11 engines (Stockfish 16.1, Mittens 🐾, AlphaZero, Torch, Leela, Komodo, Magnus, Hikaru, Martin) or friends `[Public]`",
-    "`!chess engine / !chess bot` - Interactive engine selector dropdown to select active chess engine `[Public]`",
-    "`!chess theme` - Customize board style & aesthetics (20 themes) `[Public]`",
-    "`!chess stop / !chess resign` - Resign or terminate active match `[Public]`",
+    "`!chess / !chess ai / !chess engine` - Grandmaster Chess: 11 AI engines (Stockfish 16.1, Mittens 🐾, AlphaZero, Torch, Leela, etc.), PvP, themes & dropdown `[Public]`",
     "`!ship @user1 @user2` - Calculate love compatibility between two users `[Public]`",
     "`!birthday` - Set your birthday and view upcoming birthdays `[Public]`",
     "`!quote / !q <msg_id>` - Quote a message beautifully `[Public]`",
@@ -2305,6 +2305,41 @@ export const helpModules = [
     "`!date / !go-on-date @user` - Go on a special interactive date `[Public]`",
     "`!app` - Manage Staff Application system `[Extra Owner]`",
     "`!hug / !kiss / !slap / !pat` - Roleplay interactions with other users `[Public]`"
+  ] },
+
+  { id: 'chess', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Chess', label: 'Grandmaster Chess', emoji: 'chess', commands: [
+    "`!chess / !chess ai [bot]` - Play interactive chess against 11 AI engines or challenge a friend `[Public]`",
+    "`!chess engine / !chess bot` - Interactive engine selector dropdown to choose active chess engine `[Public]`",
+    "`!chess @user` - Challenge another server member to a live 1v1 PvP chess match `[Public]`",
+    "`!chess theme / !chess themes` - Customize chessboard aesthetic (20 themes & piece sets) `[Public]`",
+    "`!chess stop / !chess resign` - Resign or terminate your active chess match `[Public]`",
+    "`!help chess / /help chess` - Open the interactive Grandmaster Chess Engine Matrix dashboard `[Public]`",
+    "",
+    "-# **__Grandmaster Chess Engine Matrix (11 Engines & Personalities):__**",
+    "-# • **__Stockfish 16.1 (Ultra GM • 3550 ELO):__** The peak of open-source calculation at depth 15 with razor-sharp tactical lines.",
+    "-# • **__Mittens 🐾 (Menace Cat • 3600+ ELO):__** Chess.com's sinister cat bot that consumes all human hope with terrifying quotes on every move.",
+    "-# • **__AlphaZero (DeepMind • 3500 ELO):__** Groundbreaking neural network known for intuitive piece sacrifices and dynamic piece activity.",
+    "-# • **__Torch 1.0 (Chess.com • 3420 ELO):__** Aggressive king-hunting engine launching relentless central breakthroughs.",
+    "-# • **__Leela Chess Zero (LCZero • 3450 ELO):__** Open-source deep reinforcement learning neural net with suffocating positional squeeze.",
+    "-# • **__Stockfish 15 (Grandmaster • 3200 ELO):__** Classic high-speed NNUE engine calculating razor-sharp lines at depth 12.",
+    "-# • **__Komodo Dragon 3.3 (World Champ • 3350 ELO):__** Former computer world champion blending positional mastery with dynamic counterplay.",
+    "-# • **__Magnus Carlsen AI (Champion • 2882 ELO):__** Emulates the GOAT's legendary endgame grinding and zero-counterplay squeeze.",
+    "-# • **__Hikaru Nakamura AI (Blitz King • 2875 ELO):__** Lightning-fast tactical fireworks, sharp speed-chess complications and venomous attacks.",
+    "-# • **__Stockfish 11 (Master • 2500 ELO):__** Accessible club-level classical engine for competitive practice.",
+    "-# • **__Martin (Chess.com Coach • 250 ELO):__** Beloved goofy dad bot with a 65% blunder rate, friendly dad jokes and chaotic moves.",
+    "",
+    "-# **__Interactive Engine Selector Dropdown (`!chess engine` / `!chess bot`):__**",
+    "-# • Launch the interactive Discord Components V2 dropdown menu to switch the active engine for the server on the fly `[Public]`.",
+    "",
+    "-# **__How to Play & Move Syntax:__**",
+    "-# • **__Direct Challenge:__** Type `!chess ai <bot>` (e.g. `!chess ai mittens`, `!chess ai torch`, `!chess ai alphazero`, `!chess ai martin`).",
+    "-# • **__Move Syntax in Chat:__** When it is your turn, type your move directly in chat:",
+    "-#   - Standard Algebraic: `e4`, `Nf3`, `Bc4`, `Qxd5+`",
+    "-#   - UCI Notation: `e2e4`, `g1f3`, `b8c6`",
+    "-#   - Pawn Promotions: `e8=Q` or shorthand `e8q`, `e7e8q`",
+    "-#   - Castling: `O-O` (Kingside) or `O-O-O` (Queenside)",
+    "-# • **__Zero-Latency Minimax Fallback:__** If the cloud engine times out, local alpha-beta minimax responds in <1ms without move rollbacks.",
+    "-# • **__100% Public Access:__** All chess commands, engine selections, and matches are completely public for all server members!"
   ] },
 
   { id: 'nifty', category: 'STOCK & MARKET INTELLIGENCE', shortLabel: 'Indian Mkts', label: 'Indian Benchmarks (NIFTY 50)', emoji: 'finance', commands: [
@@ -2415,6 +2450,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
         'ai': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
         'stock': '<a:uptime:1552608831060844575>',
         'finance': '<a:uptime:1552608831060844575>',
+        'chess': '<a:uptime:1552608831060844575>',
         'home': '<:on:1533844867191406672>'
       };
       return customEmojiFallback[name] || fallback;
@@ -2430,6 +2466,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
       topText += `> -# Native Discord \`Administrator\` permissions do NOT grant access to Athena server management commands. Only the **Server Owner** and designated **Extra Owners** can configure or manage the server.\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **To set Custom Prefix use <@${botId}> \`${prefix}prefix " your custom prefix "\`**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Indian Benchmarks Suite (\`${prefix}nifty\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Grandmaster Chess Matrix: Play against 11 AI engines (Stockfish 16.1, Mittens 🐾, AlphaZero, Torch, Leela, Komodo, Magnus, Hikaru, Martin) or challenge friends via \`${prefix}chess\` & \`${prefix}chess engine\` \`[100% Public]\`!**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Hint: For a detailed guide and instruction on any specific command, type \`${prefix}help <command>\` !**`;
 
       rawComponents.push({ type: 10, content: topText });
@@ -2437,7 +2474,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
 
       const categories = [
         { name: 'SECURITY & ACCESS CONTROL', icon: '', catName: 'SECURITY & ACCESS CONTROL' },
-        { name: 'SERVER ADMINISTRATION', icon: '', catName: 'SERVER ADMINISTRATION' },
+        { name: 'SERVER MANAGEMENT', icon: '', catName: 'SERVER MANAGEMENT' },
         { name: 'STOCK & MARKET INTELLIGENCE', icon: '', catName: 'STOCK & MARKET INTELLIGENCE' },
         { name: 'AI & SYSTEM INTELLIGENCE', icon: '', catName: 'AI & SYSTEM INTELLIGENCE' },
         { name: 'COMMUNITY & ENGAGEMENT', icon: '', catName: 'COMMUNITY & ENGAGEMENT' },
