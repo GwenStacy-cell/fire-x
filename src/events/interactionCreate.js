@@ -1646,7 +1646,7 @@ export default {
           db.addExtraOwner(interaction.guild.id, targetId);
           return interaction.reply({ content: `Successfully added Extra Owner: <@${targetId}>`, flags: MessageFlags.Ephemeral });
       }
-if (interaction.customId === "modal_2fa_setup") {
+      if (interaction.customId === "modal_2fa_setup") {
         const email = interaction.fields.getTextInputValue("2fa_email");
         if (!email.includes("@")) return interaction.reply({ content: "Invalid email format.", flags: MessageFlags.Ephemeral });
         
@@ -1655,22 +1655,37 @@ if (interaction.customId === "modal_2fa_setup") {
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         try {
           const { send2FACode } = await import("../utils/mailer.js");
-          send2FACode(email, code2fa, interaction.guild.name).catch(e => console.log('SMTP Error:', e.message));
+          let emailSent = false;
+          try {
+            await send2FACode(email, code2fa, interaction.guild.name);
+            emailSent = true;
+          } catch (mailErr) {
+            console.error('[2FA Setup] SMTP Dispatch failed:', mailErr.message);
+          }
           
-          const db = (await import("../database.js")).default;
           db.updateGuildConfig(interaction.guild.id, {
             twoFactorEmail: email,
             pendingTwoFactorCode: code2fa,
             twoFactorVerified: false
           });
 
-          
           const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId("btn_verify_2fa").setLabel("Verify Code").setStyle(ButtonStyle.Success)
           );
-          return interaction.editReply({ content: "A verification code has been dispatched to **" + email + "** (Check your Pterodactyl console if it doesn't arrive). Click below to enter it.", components: [row] });
+
+          if (emailSent) {
+            return interaction.editReply({ 
+              content: `A verification code has been dispatched to **${email}** via Gmail SMTP. Click below to enter it.`, 
+              components: [row] 
+            });
+          } else {
+            return interaction.editReply({ 
+              content: `A verification code was generated, but the email could not be sent (missing or invalid \`EMAIL_USER\` / \`EMAIL_PASS\` in server \`.env\`).\n-# **Check your Pterodactyl console to view the 6-digit code.** Click below to enter it.`, 
+              components: [row] 
+            });
+          }
         } catch (err) {
-          return interaction.editReply({ content: "Failed to send email: " + err.message });
+          return interaction.editReply({ content: "Failed to process 2FA setup: " + err.message });
         }
       }
       
