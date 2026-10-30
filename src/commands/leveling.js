@@ -149,7 +149,7 @@ export const commands = [
     async executePrefix(message, args) {
       const system = db.getXpSystem(message.guild.id);
       if (!system || !system.enabled) {
-        return message.reply({ content: 'The XP system is currently disabled.' });
+        return message.reply(cv2.warn('XP System Inactive', 'The leveling and XP system is currently disabled on this server.\n-# Configure and enable it using `!xpsetup`.'));
       }
 
       // Admin Channel Configuration Subcommand (!xp channel #channel)
@@ -197,7 +197,7 @@ export const commands = [
       }
 
       if (system.cmdChannelId && message.channelId !== system.cmdChannelId) {
-        return message.reply({ content: `Please use this command in <#${system.cmdChannelId}>.` });
+        return message.reply(cv2.warn('Restricted Channel', `Please execute XP statistics commands in <#${system.cmdChannelId}>.`));
       }
 
       const targetUser = message.mentions.users.first()
@@ -224,11 +224,11 @@ export const commands = [
     async executeSlash(interaction) {
       const system = db.getXpSystem(interaction.guild.id);
       if (!system || !system.enabled) {
-        return interaction.reply({ content: 'The XP system is currently disabled.' });
+        return interaction.reply({ ...cv2.warn('XP System Inactive', 'The leveling and XP system is currently disabled on this server.\n-# Configure and enable it using `!xpsetup`.'), flags: MessageFlags.Ephemeral });
       }
 
       if (system.cmdChannelId && interaction.channelId !== system.cmdChannelId) {
-        return interaction.reply({ content: `Please use this command in <#${system.cmdChannelId}>.` });
+        return interaction.reply({ ...cv2.warn('Restricted Channel', `Please execute XP statistics commands in <#${system.cmdChannelId}>.`), flags: MessageFlags.Ephemeral });
       }
 
       await interaction.deferReply();

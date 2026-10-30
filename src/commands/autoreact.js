@@ -1,3 +1,4 @@
+import cv2 from '../cv2.js';
 ﻿import { MessageFlags, ActionRowBuilder, ChannelSelectMenuBuilder, ChannelType, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import db from '../database.js';
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
@@ -135,14 +136,14 @@ export default {
   async executePrefix(message) {
     const { isExtraOwner, isBotOwnerSync } = await import('../utils/helpers.js');
     if (message.guild.ownerId !== message.author.id && !isBotOwnerSync(message.author.id) && !isExtraOwner(message.guild.id, message.author.id)) {
-      return message.reply({ content: '-# **You do not have permission to manage this system.**', flags: 64 });
+      return message.reply(cv2.danger('Access Denied', 'You do not have permission to manage this system.\n-# Required Clearance: Server Owner, Extra Owner, or Bot Owner.'));
     }
     await message.reply(getAutoReactPanel(message.guild.id, message.client));
   },
   async executeSlash(interaction) {
     const { isExtraOwner, isBotOwnerSync } = await import('../utils/helpers.js');
     if (interaction.guild.ownerId !== interaction.user.id && !isBotOwnerSync(interaction.user.id) && !isExtraOwner(interaction.guild.id, interaction.user.id)) {
-      return interaction.reply({ content: '-# **You do not have permission to manage this system.**', flags: 64 });
+      return interaction.reply({ ...cv2.danger('Access Denied', 'You do not have permission to manage this system.\n-# Required Clearance: Server Owner, Extra Owner, or Bot Owner.'), flags: MessageFlags.Ephemeral });
     }
     await interaction.reply(getAutoReactPanel(interaction.guild.id, interaction.client));
   }

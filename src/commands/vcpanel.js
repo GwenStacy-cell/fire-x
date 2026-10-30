@@ -1,3 +1,4 @@
+import cv2 from '../cv2.js';
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { 
   ActionRowBuilder, 
@@ -21,13 +22,13 @@ export const commands = [
     async executePrefix(message, args) {
       // 1. Permission Check (Guild Owner or Bot Owner only)
       if (message.author.id !== message.guild.ownerId && !isBotOwnerSync(message.author.id) && !isExtraOwner(message.guild.id, message.author.id)) {
-        return message.reply({ content: 'Only the Server Owner, Bot Owner, and Extra Owners can use this panel.' }).catch(()=>{});
+        return message.reply(cv2.danger('Access Denied', 'Only the Server Owner, Bot Owner, and Extra Owners can use this panel.')).catch(()=>{});
       }
 
       // 2. VC Check
       const voiceChannel = message.member.voice.channel;
       if (!voiceChannel) {
-        return message.reply("You must be connected to a voice channel to use the Control Panel.");
+        return message.reply(cv2.warn("Voice Required", "You must be connected to an active voice channel to use the Voice Control Panel."));
       }
 
       // 3. Build UI Function

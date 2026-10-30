@@ -61,7 +61,7 @@ export const commands = [
     
     async executePrefix(message, args) {
       if (!message.member.permissions.has('Administrator')) {
-        return message.reply({ content: 'Only administrators can run this command.' });
+        return message.reply(cv2.danger('Access Denied', 'Only administrators, Extra Owners, or the Server Owner can run this command.'));
       }
 
       const waitMsg = await message.reply(cv2.info('Syncing...', 'Fetching past invite data from Discord...'));
