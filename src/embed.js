@@ -77,7 +77,13 @@ export const embed = {
       .setTimestamp();
 
     if (title) {
-      let finalTitle = String(title).trim().replaceAll(LEGACY_TICK, TICK_EMOJI);
+      let finalTitle = String(title)
+        .replaceAll('${BULLET_EMOJI}', BULLET_EMOJI)
+        .replaceAll('${TICK_EMOJI}', TICK_EMOJI)
+        .replaceAll('${WRONG_EMOJI}', WRONG_EMOJI)
+        .replaceAll('${WARN_EMOJI}', WARN_EMOJI)
+        .replaceAll(LEGACY_TICK, TICK_EMOJI)
+        .trim();
       finalTitle = finalTitle.replace(/^[>#\s]+/, '').trim();
       if (!hasHeadingGlyphStart(finalTitle)) {
         finalTitle = `${getRandomHeadingGlyph()} ${finalTitle}`;
@@ -86,7 +92,12 @@ export const embed = {
     }
 
     if (description) {
-      let finalDesc = String(description).replaceAll(LEGACY_TICK, TICK_EMOJI);
+      let finalDesc = String(description)
+        .replaceAll('${BULLET_EMOJI}', BULLET_EMOJI)
+        .replaceAll('${TICK_EMOJI}', TICK_EMOJI)
+        .replaceAll('${WRONG_EMOJI}', WRONG_EMOJI)
+        .replaceAll('${WARN_EMOJI}', WARN_EMOJI)
+        .replaceAll(LEGACY_TICK, TICK_EMOJI);
       finalDesc = finalDesc.replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
       builder.setDescription(finalDesc);
     }
@@ -100,10 +111,20 @@ export const embed = {
 
     if (fields && fields.length > 0) {
       builder.addFields(fields.map(f => {
-        let val = String(f.value || '').replaceAll(LEGACY_TICK, TICK_EMOJI);
+        let val = String(f.value || '')
+          .replaceAll('${BULLET_EMOJI}', BULLET_EMOJI)
+          .replaceAll('${TICK_EMOJI}', TICK_EMOJI)
+          .replaceAll('${WRONG_EMOJI}', WRONG_EMOJI)
+          .replaceAll('${WARN_EMOJI}', WARN_EMOJI)
+          .replaceAll(LEGACY_TICK, TICK_EMOJI);
         val = val.replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
+        let fName = String(f.name || '')
+          .replaceAll('${BULLET_EMOJI}', BULLET_EMOJI)
+          .replaceAll('${TICK_EMOJI}', TICK_EMOJI)
+          .replaceAll('${WRONG_EMOJI}', WRONG_EMOJI)
+          .replaceAll('${WARN_EMOJI}', WARN_EMOJI);
         return {
-          name: `${BULLET_EMOJI} ${f.name}`,
+          name: `${BULLET_EMOJI} ${fName}`,
           value: val,
           inline: !!f.inline
         };

@@ -314,8 +314,8 @@ export const commands = [
         const gainers = allAssets.filter(a => a.changePct >= 0).slice(0, 4);
         const decliners = allAssets.filter(a => a.changePct < 0).reverse().slice(0, 4);
 
-        const gainersList = gainers.map(g => `> -# ${BULLET_EMOJI} **${g.symbol || g.label}:** \`$${g.price.toFixed(2)}\` (\`+${g.changePct.toFixed(2)}%\`)`).join('\n') || '> -# ${BULLET_EMOJI} No major positive movers recorded.';
-        const declinersList = decliners.map(d => `> -# ${BULLET_EMOJI} **${d.symbol || d.label}:** \`$${d.price.toFixed(2)}\` (\`${d.changePct.toFixed(2)}%\`)`).join('\n') || '> -# ${BULLET_EMOJI} No major negative decliners recorded.';
+        const gainersList = gainers.map(g => `> -# ${BULLET_EMOJI} **${g.symbol || g.label}:** \`$${g.price.toFixed(2)}\` (\`+${g.changePct.toFixed(2)}%\`)`).join('\n') || '> -# <a:target_blink:1565667466984554588> No major positive movers recorded.';
+        const declinersList = decliners.map(d => `> -# ${BULLET_EMOJI} **${d.symbol || d.label}:** \`$${d.price.toFixed(2)}\` (\`${d.changePct.toFixed(2)}%\`)`).join('\n') || '> -# <a:target_blink:1565667466984554588> No major negative decliners recorded.';
         const dt = getFormattedDateTimeStrings();
 
         return await loadingMsg.edit({
@@ -1561,8 +1561,8 @@ export async function handleStockButton(interaction) {
       const gainers = allAssets.filter(a => a.changePct >= 0).slice(0, 4);
       const decliners = allAssets.filter(a => a.changePct < 0).reverse().slice(0, 4);
 
-      const gainersList = gainers.map(g => `> -# ${BULLET_EMOJI} **${g.symbol || g.label}:** \`$${g.price.toFixed(2)}\` (\`+${g.changePct.toFixed(2)}%\`)`).join('\n') || '> -# ${BULLET_EMOJI} No major positive movers recorded.';
-      const declinersList = decliners.map(d => `> -# ${BULLET_EMOJI} **${d.symbol || d.label}:** \`$${d.price.toFixed(2)}\` (\`${d.changePct.toFixed(2)}%\`)`).join('\n') || '> -# ${BULLET_EMOJI} No major negative decliners recorded.';
+      const gainersList = gainers.map(g => `> -# ${BULLET_EMOJI} **${g.symbol || g.label}:** \`$${g.price.toFixed(2)}\` (\`+${g.changePct.toFixed(2)}%\`)`).join('\n') || '> -# <a:target_blink:1565667466984554588> No major positive movers recorded.';
+      const declinersList = decliners.map(d => `> -# ${BULLET_EMOJI} **${d.symbol || d.label}:** \`$${d.price.toFixed(2)}\` (\`${d.changePct.toFixed(2)}%\`)`).join('\n') || '> -# <a:target_blink:1565667466984554588> No major negative decliners recorded.';
 
       return await interaction.editReply({
         components: [

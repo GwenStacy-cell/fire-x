@@ -33,8 +33,13 @@ function convertBoldToBoldUnderline(str) {
 function styleLine(line, addBullet) {
   if (!line.trim()) return line;
 
-  // Replace unicode bullets with animated target blink bullet
-  let workingLine = line.replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
+  // Replace literal interpolation leak and unicode bullets with animated target blink bullet
+  let workingLine = line
+    .replaceAll('${BULLET_EMOJI}', BULLET_EMOJI)
+    .replaceAll('${TICK_EMOJI}', TICK_EMOJI)
+    .replaceAll('${WRONG_EMOJI}', WRONG_EMOJI)
+    .replaceAll('${WARN_EMOJI}', WARN_EMOJI)
+    .replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
 
   if (isPreformatted(workingLine)) {
     const trimmed = workingLine.trim();
@@ -279,7 +284,12 @@ export function sanitizeCV2Payload(payload, maxLimit = 3800) {
 
   for (const c of textComps) {
     if (typeof c.content === 'string') {
-      c.content = c.content.replaceAll(LEGACY_TICK, TICK_EMOJI);
+      c.content = c.content
+        .replaceAll('${BULLET_EMOJI}', BULLET_EMOJI)
+        .replaceAll('${TICK_EMOJI}', TICK_EMOJI)
+        .replaceAll('${WRONG_EMOJI}', WRONG_EMOJI)
+        .replaceAll('${WARN_EMOJI}', WARN_EMOJI)
+        .replaceAll(LEGACY_TICK, TICK_EMOJI);
       c.content = c.content.replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
 
       if (c.content.startsWith('## ') || c.content.startsWith('> ## ') || c.content.startsWith('> # ')) {

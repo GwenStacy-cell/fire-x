@@ -38,14 +38,14 @@ export async function buildXpDashboard(guildId) {
     rewardsText = Object.entries(system.roleRewards)
       .sort((a, b) => Number(a[0]) - Number(b[0]))
       .map(([level, roleId]) => `Level ${level} -> <@&${roleId}>`)
-      .join('\n-# ${BULLET_EMOJI} ');
+      .join('\n-# <a:target_blink:1565667466984554588> ');
   }
 
   let multipliersText = 'None configured (1.0x default)';
   if (Object.keys(system.multipliers || {}).length > 0) {
     multipliersText = Object.entries(system.multipliers)
       .map(([roleId, mult]) => `<@&${roleId}> (${mult}x)`)
-      .join('\n-# ${BULLET_EMOJI} ');
+      .join('\n-# <a:target_blink:1565667466984554588> ');
   }
 
   const allUsers = db.getTopUsersXp(guildId, 99999);

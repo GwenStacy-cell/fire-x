@@ -1861,7 +1861,7 @@ export const commands = [
       if (!items.length) {
         return sendReply(cv2.warn(
           'No Emojis or GIFs Found',
-          'Provide a custom emoji, attach a GIF/image, or reply to a message containing one.\n\n**Usage Examples:**\n-# ${BULLET_EMOJI} Attach a `.gif` or image file with `!steal [optional_name]`\n-# ${BULLET_EMOJI} Paste custom emojis: `!steal :pog: :hype:`\n-# ${BULLET_EMOJI} Paste an image/GIF link: `!steal https://example.com/logo.gif [name]`\n-# ${BULLET_EMOJI} Reply to any GIF or emoji message with `!steal`'
+          `Provide a custom emoji, attach a GIF/image, or reply to a message containing one.\n\n**Usage Examples:**\n-# ${BULLET_EMOJI} Attach a \`.gif\` or image file with \`!steal [optional_name]\`\n-# ${BULLET_EMOJI} Paste custom emojis: \`!steal :pog: :hype:\`\n-# ${BULLET_EMOJI} Paste an image/GIF link: \`!steal https://example.com/logo.gif [name]\`\n-# ${BULLET_EMOJI} Reply to any GIF or emoji message with \`!steal\``
         ));
       }
 
@@ -2098,9 +2098,9 @@ export const helpModules = [
     "`!ignoreall / !unignoreall` - Ignore or unignore all text channels `[Extra Owner]`",
     "",
     "-# **__Filter Management:__**",
-    "-# ${BULLET_EMOJI} **__AI Toxicity AutoMod:__** Autonomous neural filtering of doxxing attempts (IPs, SSNs, phone numbers) and severe violent harassment (Optional).",
-    "-# ${BULLET_EMOJI} Whitelisting domains overrides the anti-link filter for those specific links.",
-    "-# ${BULLET_EMOJI} Automod bypass roles apply to spam, caps, and raid limits.",
+    "-# <a:target_blink:1565667466984554588> **__AI Toxicity AutoMod:__** Autonomous neural filtering of doxxing attempts (IPs, SSNs, phone numbers) and severe violent harassment (Optional).",
+    "-# <a:target_blink:1565667466984554588> Whitelisting domains overrides the anti-link filter for those specific links.",
+    "-# <a:target_blink:1565667466984554588> Automod bypass roles apply to spam, caps, and raid limits.",
     "-# **__Advanced Threat Firewall:__**",
     "-# **__Instant Anti-Spam__** and **__Malicious Link Filtering__** engineered directly into Discord event stream."
   ] },
@@ -2117,11 +2117,11 @@ export const helpModules = [
     "`!maxwarnings <amount>` - Configure warnings before auto-quarantine `[Extra Owner]`",
     "",
     "-# **__Quarantine Architecture:__**",
-    "-# ${BULLET_EMOJI} **__Smart Auto-Setup:__** Creates leftover components, aligns them under `.      You Have Been Quarantined`, and syncs permissions.",
-    "-# ${BULLET_EMOJI} **__Pure Font Naming:__** All categories and channels use clean typography without emojis.",
-    "-# ${BULLET_EMOJI} **__Role Color:__** Dedicated red `#ff0000` Quarantined role with zero global permissions.",
-    "-# ${BULLET_EMOJI} **__Full Isolation:__** Isolated users cannot view, message, or connect to any normal channel.",
-    "-# ${BULLET_EMOJI} **__Channel Sweeper:__** Automatically syncs deny overwrites across all channels to prevent evasion."
+    "-# <a:target_blink:1565667466984554588> **__Smart Auto-Setup:__** Creates leftover components, aligns them under `.      You Have Been Quarantined`, and syncs permissions.",
+    "-# <a:target_blink:1565667466984554588> **__Pure Font Naming:__** All categories and channels use clean typography without emojis.",
+    "-# <a:target_blink:1565667466984554588> **__Role Color:__** Dedicated red `#ff0000` Quarantined role with zero global permissions.",
+    "-# <a:target_blink:1565667466984554588> **__Full Isolation:__** Isolated users cannot view, message, or connect to any normal channel.",
+    "-# <a:target_blink:1565667466984554588> **__Channel Sweeper:__** Automatically syncs deny overwrites across all channels to prevent evasion."
   ] },
   { id: 'whitelist', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Whitelist', label: 'Whitelist Manager', emoji: 'whitelist', commands: [
     "`!whitelist / !wl` - Opens Whitelist Overview Panel with Synced Looping Animated GIF HUD & Progress Bar `[Extra Owner]`",
@@ -2132,9 +2132,9 @@ export const helpModules = [
     "`!extraowner list` - View current server extra owners `[Extra Owner]`",
     "",
     "-# **__The Whitelist Interface:__**",
-    "-# ${BULLET_EMOJI} Allows granting specific bypasses (e.g., allow Mass Ban but block Channel Delete).",
-    "-# ${BULLET_EMOJI} Supports **__Custom Trigger Limits__** (e.g., allowed to kick 5 members max per hour).",
-    "-# ${BULLET_EMOJI} **__Synced Looping GIF HUD:__** Features authentic 8-frame looping animated HUD banners (`wl_banner.gif` & `wl_access.gif`) with glowing progress bars drawn directly in the GIF."
+    "-# <a:target_blink:1565667466984554588> Allows granting specific bypasses (e.g., allow Mass Ban but block Channel Delete).",
+    "-# <a:target_blink:1565667466984554588> Supports **__Custom Trigger Limits__** (e.g., allowed to kick 5 members max per hour).",
+    "-# <a:target_blink:1565667466984554588> **__Synced Looping GIF HUD:__** Features authentic 8-frame looping animated HUD banners (`wl_banner.gif` & `wl_access.gif`) with glowing progress bars drawn directly in the GIF."
   ] },
   
   { id: 'moderation', category: 'SERVER MANAGEMENT', shortLabel: 'Mods', label: 'Moderation Tools', emoji: 'mod', commands: [
@@ -2203,10 +2203,10 @@ export const helpModules = [
     "`!auditlogs / !audit [@user] [limit]` - Forensic audit log search with action classification and time filters `[Extra Owner]`",
     "",
     "-# **__Studio & Forensic Architecture:__**",
-    "-# ${BULLET_EMOJI} **__AI Announcement Studio:__** Neural speech enhancement transforms rough ideas into formatted Discord announcements with custom emojis, direct Pinterest banners, and live preview.",
-    "-# ${BULLET_EMOJI} **__Universal Media Pipeline:__** Announcement banners and studio embed containers support direct Pinterest links (`pin.it` & `pinterest.com`) with uncompressed master extraction.",
-    "-# ${BULLET_EMOJI} **__Custom Container Templates:__** Create and persist reusable CV2 borderless layouts across reboots.",
-    "-# ${BULLET_EMOJI} **__Forensic Audit Logs:__** Real-time Gateway API audit log inspection with moderator/target filtering."
+    "-# <a:target_blink:1565667466984554588> **__AI Announcement Studio:__** Neural speech enhancement transforms rough ideas into formatted Discord announcements with custom emojis, direct Pinterest banners, and live preview.",
+    "-# <a:target_blink:1565667466984554588> **__Universal Media Pipeline:__** Announcement banners and studio embed containers support direct Pinterest links (`pin.it` & `pinterest.com`) with uncompressed master extraction.",
+    "-# <a:target_blink:1565667466984554588> **__Custom Container Templates:__** Create and persist reusable CV2 borderless layouts across reboots.",
+    "-# <a:target_blink:1565667466984554588> **__Forensic Audit Logs:__** Real-time Gateway API audit log inspection with moderator/target filtering."
   ] },
 
   { id: 'ai', category: 'AI & SYSTEM INTELLIGENCE', shortLabel: 'AI Guide', label: 'AI & System Intelligence', emoji: 'ai', commands: [
@@ -2221,15 +2221,15 @@ export const helpModules = [
     "`!explain athena / !explain guide` - Deep-dive architecture of Athena's AI Guide, RAG & button generator `[Public]`",
     "",
     "-# **__Athena AI Specialist Capabilities & Architecture:__**",
-    "-# ${BULLET_EMOJI} **__AI Announcement Studio:__** Turns brief, typo-laden notes into polished Discord announcements with custom emojis, live ephemeral preview, and channel targeting.",
-    "-# ${BULLET_EMOJI} **__257+ Command Deep-Dive & Knowledge Base:__** Full awareness of all command parameters, syntax variations, permission tiers, and edge cases across every bot module.",
-    "-# ${BULLET_EMOJI} **__Fuzzy Typo Auto-Correction:__** Powered by Damerau-Levenshtein distance. Typo variations (e.g. `!athena how to use rnkthme`, `tcikets`, `atninuke`) are automatically recognized and resolved.",
-    "-# ${BULLET_EMOJI} **__Prefix-First Step-by-Step Walkthroughs:__** Guides users step-by-step with clean markdown codeblocks (`!command ...`) while clarifying if slash commands or dashboard alternatives exist.",
-    "-# ${BULLET_EMOJI} **__Context-Aware Multi-Turn Thread Memory:__** Retains conversation history for 10 minutes in each channel, allowing natural follow-up questions without re-typing context.",
-    "-# ${BULLET_EMOJI} **__Clearance-Aware Adaptive Guidance:__** Dynamically checks user permissions (Bot Owner, Server Owner, Extra Owner, Public) and tailors instructions to their exact clearance.",
-    "-# ${BULLET_EMOJI} **__One-Click Interactive Action Buttons:__** Provides neutral grey action buttons (`style: 2`) to instantly launch setups, view statuses, or switch themes with 1 click.",
-    "-# ${BULLET_EMOJI} **__On-Demand Custom Button Generator:__** Need a specific button? Ask Athena in your question or follow-up and custom grey action buttons are generated on demand.",
-    "-# ${BULLET_EMOJI} **__Live Thinking Telemetry:__** Real-time progress timer showing elapsed seconds during Google Gemini 3.8 Flash neural processing.",
+    "-# <a:target_blink:1565667466984554588> **__AI Announcement Studio:__** Turns brief, typo-laden notes into polished Discord announcements with custom emojis, live ephemeral preview, and channel targeting.",
+    "-# <a:target_blink:1565667466984554588> **__257+ Command Deep-Dive & Knowledge Base:__** Full awareness of all command parameters, syntax variations, permission tiers, and edge cases across every bot module.",
+    "-# <a:target_blink:1565667466984554588> **__Fuzzy Typo Auto-Correction:__** Powered by Damerau-Levenshtein distance. Typo variations (e.g. `!athena how to use rnkthme`, `tcikets`, `atninuke`) are automatically recognized and resolved.",
+    "-# <a:target_blink:1565667466984554588> **__Prefix-First Step-by-Step Walkthroughs:__** Guides users step-by-step with clean markdown codeblocks (`!command ...`) while clarifying if slash commands or dashboard alternatives exist.",
+    "-# <a:target_blink:1565667466984554588> **__Context-Aware Multi-Turn Thread Memory:__** Retains conversation history for 10 minutes in each channel, allowing natural follow-up questions without re-typing context.",
+    "-# <a:target_blink:1565667466984554588> **__Clearance-Aware Adaptive Guidance:__** Dynamically checks user permissions (Bot Owner, Server Owner, Extra Owner, Public) and tailors instructions to their exact clearance.",
+    "-# <a:target_blink:1565667466984554588> **__One-Click Interactive Action Buttons:__** Provides neutral grey action buttons (`style: 2`) to instantly launch setups, view statuses, or switch themes with 1 click.",
+    "-# <a:target_blink:1565667466984554588> **__On-Demand Custom Button Generator:__** Need a specific button? Ask Athena in your question or follow-up and custom grey action buttons are generated on demand.",
+    "-# <a:target_blink:1565667466984554588> **__Live Thinking Telemetry:__** Real-time progress timer showing elapsed seconds during Google Gemini 3.8 Flash neural processing.",
     "-# **__Neural Intelligence Architecture:__** Powered by Google Gemini 3.8 Flash with multi-tier failover and high-speed edge reasoning."
   ] },
 
@@ -2243,12 +2243,12 @@ export const helpModules = [
     "`!rename <name>` - Rename an active ticket channel `[Extra Owner]`",
     "",
     "-# **__Ticket System Capabilities:__**",
-    "-# ${BULLET_EMOJI} Features **__Dropdown Menus__**, **__Interactive Q&A Modals__**, and **__Beautiful CV2 Welcome Embeds__**.",
-    "-# ${BULLET_EMOJI} **__Universal Media & Pinterest Support:__** Ticket panel banner and thumbnail inputs support direct Pinterest links (`pin.it` & `pinterest.com`) with automatic uncompressed extraction.",
-    "-# ${BULLET_EMOJI} **__Smart Ban Appeals & AI Triage (Optional):__** Categorizes inquiries (Ban Appeal, Store/Coins, Bugs, Harassment) and creates executive summaries for staff.",
-    "-# ${BULLET_EMOJI} Automatically creates paired Voice Channels and Text Channels per ticket.",
-    "-# ${BULLET_EMOJI} **__Step 1:__** Run `!ticket setup <#category> <@staffRole> [ai_on]` to configure category and staff roles.",
-    "-# ${BULLET_EMOJI} **__Step 2:__** Run `!ticketpanel` to deploy and customize the public interactive panel."
+    "-# <a:target_blink:1565667466984554588> Features **__Dropdown Menus__**, **__Interactive Q&A Modals__**, and **__Beautiful CV2 Welcome Embeds__**.",
+    "-# <a:target_blink:1565667466984554588> **__Universal Media & Pinterest Support:__** Ticket panel banner and thumbnail inputs support direct Pinterest links (`pin.it` & `pinterest.com`) with automatic uncompressed extraction.",
+    "-# <a:target_blink:1565667466984554588> **__Smart Ban Appeals & AI Triage (Optional):__** Categorizes inquiries (Ban Appeal, Store/Coins, Bugs, Harassment) and creates executive summaries for staff.",
+    "-# <a:target_blink:1565667466984554588> Automatically creates paired Voice Channels and Text Channels per ticket.",
+    "-# <a:target_blink:1565667466984554588> **__Step 1:__** Run `!ticket setup <#category> <@staffRole> [ai_on]` to configure category and staff roles.",
+    "-# <a:target_blink:1565667466984554588> **__Step 2:__** Run `!ticketpanel` to deploy and customize the public interactive panel."
   ] },
   { id: 'tracking', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Tracking', label: 'Tracking & Logs', emoji: 'tracking', commands: [
     "`!serverlogs` - View interactive server event logs `[Extra Owner]`",
@@ -2305,11 +2305,11 @@ export const helpModules = [
     "`!verify disable` - Dismantle verification gate `[Extra Owner]`",
     "",
     "-# **__Builder & Engine Features:__**",
-    "-# ${BULLET_EMOJI} **__Universal Pinterest Integration:__** Paste any direct Pinterest link (`pin.it` or `pinterest.com/pin/...`) into Image, Thumbnail, Author Icon, or Footer Icon modals — Athena automatically scrapes the uncompressed master resolution image or converts MP4 videos into animated looping GIFs.",
-    "-# ${BULLET_EMOJI} **__AutoRole & Vanity Engine:__** Automatically assigns human/bot roles on join and vanity URL reward roles.",
-    "-# ${BULLET_EMOJI} **__Auto-React Engine:__** Configure up to 5 custom or native reaction emojis per channel.",
-    "-# ${BULLET_EMOJI} **__Dynamic Variable Interpolation:__** Full support for `{membercount}`, `{ordinal}`, `{user}`, `{username}`, `{displayname}`, `{tag}`, `{userid}`, `{server}`, `{serverid}`, `{server.icon}`, `{avatar}`, `{created}`, `{joined}`, `{owner}`, `{boosts}`, `{tier}`, `{roles}`, `{channels}`.",
-    "-# ${BULLET_EMOJI} **__Media Pipeline:__** Supports custom hex accent colors, direct image URLs, uncompressed Pinterest links, and auto-converts MP4 video links into animated looping GIFs."
+    "-# <a:target_blink:1565667466984554588> **__Universal Pinterest Integration:__** Paste any direct Pinterest link (`pin.it` or `pinterest.com/pin/...`) into Image, Thumbnail, Author Icon, or Footer Icon modals — Athena automatically scrapes the uncompressed master resolution image or converts MP4 videos into animated looping GIFs.",
+    "-# <a:target_blink:1565667466984554588> **__AutoRole & Vanity Engine:__** Automatically assigns human/bot roles on join and vanity URL reward roles.",
+    "-# <a:target_blink:1565667466984554588> **__Auto-React Engine:__** Configure up to 5 custom or native reaction emojis per channel.",
+    "-# <a:target_blink:1565667466984554588> **__Dynamic Variable Interpolation:__** Full support for `{membercount}`, `{ordinal}`, `{user}`, `{username}`, `{displayname}`, `{tag}`, `{userid}`, `{server}`, `{serverid}`, `{server.icon}`, `{avatar}`, `{created}`, `{joined}`, `{owner}`, `{boosts}`, `{tier}`, `{roles}`, `{channels}`.",
+    "-# <a:target_blink:1565667466984554588> **__Media Pipeline:__** Supports custom hex accent colors, direct image URLs, uncompressed Pinterest links, and auto-converts MP4 video links into animated looping GIFs."
   ] },
   { id: 'leveling', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'XP', label: 'Leveling & XP', emoji: 'leveling', commands: [
     "`!xpsetup` - Open the XP Dashboard `[Extra Owner]`",
@@ -2322,10 +2322,10 @@ export const helpModules = [
     "`!removexp @user <amount>` - Manually remove XP `[Extra Owner]`",
     "",
     "-# **__XP Setup Guide:__**",
-    "-# ${BULLET_EMOJI} **__Step 1:__** Run `!xpsetup` and click **__Enable System__**.",
-    "-# ${BULLET_EMOJI} **__Step 2:__** Use `!rankrewards add <lvl> <@role>` to configure milestone role rewards.",
-    "-# ${BULLET_EMOJI} **__Step 3:__** Members choose between **__Hogwarts Looping GIF__** or **__Athena Classic__** via `!ranktheme`.",
-    "-# ${BULLET_EMOJI} **__Step 4:__** Set the **__Announce Channel__** where level-up messages will be sent."
+    "-# <a:target_blink:1565667466984554588> **__Step 1:__** Run `!xpsetup` and click **__Enable System__**.",
+    "-# <a:target_blink:1565667466984554588> **__Step 2:__** Use `!rankrewards add <lvl> <@role>` to configure milestone role rewards.",
+    "-# <a:target_blink:1565667466984554588> **__Step 3:__** Members choose between **__Hogwarts Looping GIF__** or **__Athena Classic__** via `!ranktheme`.",
+    "-# <a:target_blink:1565667466984554588> **__Step 4:__** Set the **__Announce Channel__** where level-up messages will be sent."
   ] },
   { id: 'counting', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Counting', label: 'Counting Engine', emoji: 'counting', commands: [
     "`!counting` - Open interactive Counting Control Panel `[Extra Owner]`",
@@ -2338,10 +2338,10 @@ export const helpModules = [
     "`!countlb / !counting lb` - View server counting records & top counters `[Public]`",
     "",
     "-# **__Counting Engine Guide:__**",
-    "-# ${BULLET_EMOJI} **__Step 1:__** Run `!counting setup #channel` or type `!counting` to open the interactive panel.",
-    "-# ${BULLET_EMOJI} **__Step 2:__** Members count consecutively starting from **__1__**.",
-    "-# ${BULLET_EMOJI} **__Step 3:__** If someone counts twice in a row or types the wrong number, a server save is consumed.",
-    "-# ${BULLET_EMOJI} **__Step 4:__** If no saves remain, the count ruins back to 1 and the all-time high score is updated!"
+    "-# <a:target_blink:1565667466984554588> **__Step 1:__** Run `!counting setup #channel` or type `!counting` to open the interactive panel.",
+    "-# <a:target_blink:1565667466984554588> **__Step 2:__** Members count consecutively starting from **__1__**.",
+    "-# <a:target_blink:1565667466984554588> **__Step 3:__** If someone counts twice in a row or types the wrong number, a server save is consumed.",
+    "-# <a:target_blink:1565667466984554588> **__Step 4:__** If no saves remain, the count ruins back to 1 and the all-time high score is updated!"
   ] },
   { id: 'economy', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Economy', label: 'Economy & Shop', emoji: 'coins', commands: [
     "`!balance / !bal [@user]` - View wallet, vault reserves, and net worth `[Public]`",
@@ -2358,9 +2358,9 @@ export const helpModules = [
     "`!shop remove <itemId>` - Purge item from catalog `[Extra Owner]`",
     "",
     "-# **__Commerce & Minigames Architecture:__**",
-    "-# ${BULLET_EMOJI} Persistent ledger stored in SQLite & synchronized with Discord Cloud Backups.",
-    "-# ${BULLET_EMOJI} Interactive casino buttons engineered via Discord Components V2 with instant balance reconciliation.",
-    "-# ${BULLET_EMOJI} Roles purchased via shop are fulfilled and audited instantly by Role ID."
+    "-# <a:target_blink:1565667466984554588> Persistent ledger stored in SQLite & synchronized with Discord Cloud Backups.",
+    "-# <a:target_blink:1565667466984554588> Interactive casino buttons engineered via Discord Components V2 with instant balance reconciliation.",
+    "-# <a:target_blink:1565667466984554588> Roles purchased via shop are fulfilled and audited instantly by Role ID."
   ] },
   { id: 'voice', category: 'VOICE & MEDIA', shortLabel: 'Voice', label: 'Voice Utilities', emoji: 'voice', commands: [
     "`!tts` - Interactive AI & Celebrity TTS Control Center `[Public]`",
@@ -2439,30 +2439,30 @@ export const helpModules = [
     "`!help chess / /help chess` - Open the interactive Grandmaster Chess Engine Matrix dashboard `[Public]`",
     "",
     "-# **__Grandmaster Chess Engine Matrix (11 Engines & Personalities):__**",
-    "-# ${BULLET_EMOJI} **__Stockfish 16.1 (Ultra GM • 3550 ELO):__** The peak of open-source calculation at depth 15 with razor-sharp tactical lines.",
-    "-# ${BULLET_EMOJI} **__Mittens 🐾 (Menace Cat • 3600+ ELO):__** Chess.com's sinister cat bot that consumes all human hope with terrifying quotes on every move.",
-    "-# ${BULLET_EMOJI} **__AlphaZero (DeepMind • 3500 ELO):__** Groundbreaking neural network known for intuitive piece sacrifices and dynamic piece activity.",
-    "-# ${BULLET_EMOJI} **__Torch 1.0 (Chess.com • 3420 ELO):__** Aggressive king-hunting engine launching relentless central breakthroughs.",
-    "-# ${BULLET_EMOJI} **__Leela Chess Zero (LCZero • 3450 ELO):__** Open-source deep reinforcement learning neural net with suffocating positional squeeze.",
-    "-# ${BULLET_EMOJI} **__Stockfish 15 (Grandmaster • 3200 ELO):__** Classic high-speed NNUE engine calculating razor-sharp lines at depth 12.",
-    "-# ${BULLET_EMOJI} **__Komodo Dragon 3.3 (World Champ • 3350 ELO):__** Former computer world champion blending positional mastery with dynamic counterplay.",
-    "-# ${BULLET_EMOJI} **__Magnus Carlsen AI (Champion • 2882 ELO):__** Emulates the GOAT's legendary endgame grinding and zero-counterplay squeeze.",
-    "-# ${BULLET_EMOJI} **__Hikaru Nakamura AI (Blitz King • 2875 ELO):__** Lightning-fast tactical fireworks, sharp speed-chess complications and venomous attacks.",
-    "-# ${BULLET_EMOJI} **__Stockfish 11 (Master • 2500 ELO):__** Accessible club-level classical engine for competitive practice.",
-    "-# ${BULLET_EMOJI} **__Martin (Chess.com Coach • 250 ELO):__** Beloved goofy dad bot with a 65% blunder rate, friendly dad jokes and chaotic moves.",
+    "-# <a:target_blink:1565667466984554588> **__Stockfish 16.1 (Ultra GM • 3550 ELO):__** The peak of open-source calculation at depth 15 with razor-sharp tactical lines.",
+    "-# <a:target_blink:1565667466984554588> **__Mittens 🐾 (Menace Cat • 3600+ ELO):__** Chess.com's sinister cat bot that consumes all human hope with terrifying quotes on every move.",
+    "-# <a:target_blink:1565667466984554588> **__AlphaZero (DeepMind • 3500 ELO):__** Groundbreaking neural network known for intuitive piece sacrifices and dynamic piece activity.",
+    "-# <a:target_blink:1565667466984554588> **__Torch 1.0 (Chess.com • 3420 ELO):__** Aggressive king-hunting engine launching relentless central breakthroughs.",
+    "-# <a:target_blink:1565667466984554588> **__Leela Chess Zero (LCZero • 3450 ELO):__** Open-source deep reinforcement learning neural net with suffocating positional squeeze.",
+    "-# <a:target_blink:1565667466984554588> **__Stockfish 15 (Grandmaster • 3200 ELO):__** Classic high-speed NNUE engine calculating razor-sharp lines at depth 12.",
+    "-# <a:target_blink:1565667466984554588> **__Komodo Dragon 3.3 (World Champ • 3350 ELO):__** Former computer world champion blending positional mastery with dynamic counterplay.",
+    "-# <a:target_blink:1565667466984554588> **__Magnus Carlsen AI (Champion • 2882 ELO):__** Emulates the GOAT's legendary endgame grinding and zero-counterplay squeeze.",
+    "-# <a:target_blink:1565667466984554588> **__Hikaru Nakamura AI (Blitz King • 2875 ELO):__** Lightning-fast tactical fireworks, sharp speed-chess complications and venomous attacks.",
+    "-# <a:target_blink:1565667466984554588> **__Stockfish 11 (Master • 2500 ELO):__** Accessible club-level classical engine for competitive practice.",
+    "-# <a:target_blink:1565667466984554588> **__Martin (Chess.com Coach • 250 ELO):__** Beloved goofy dad bot with a 65% blunder rate, friendly dad jokes and chaotic moves.",
     "",
     "-# **__Interactive Engine Selector Dropdown (`!chess engine` / `!chess bot`):__**",
-    "-# ${BULLET_EMOJI} Launch the interactive Discord Components V2 dropdown menu to switch the active engine for the server on the fly `[Public]`.",
+    "-# <a:target_blink:1565667466984554588> Launch the interactive Discord Components V2 dropdown menu to switch the active engine for the server on the fly `[Public]`.",
     "",
     "-# **__How to Play & Move Syntax:__**",
-    "-# ${BULLET_EMOJI} **__Direct Challenge:__** Type `!chess ai <bot>` (e.g. `!chess ai mittens`, `!chess ai torch`, `!chess ai alphazero`, `!chess ai martin`).",
-    "-# ${BULLET_EMOJI} **__Move Syntax in Chat:__** When it is your turn, type your move directly in chat:",
+    "-# <a:target_blink:1565667466984554588> **__Direct Challenge:__** Type `!chess ai <bot>` (e.g. `!chess ai mittens`, `!chess ai torch`, `!chess ai alphazero`, `!chess ai martin`).",
+    "-# <a:target_blink:1565667466984554588> **__Move Syntax in Chat:__** When it is your turn, type your move directly in chat:",
     "-#   - Standard Algebraic: `e4`, `Nf3`, `Bc4`, `Qxd5+`",
     "-#   - UCI Notation: `e2e4`, `g1f3`, `b8c6`",
     "-#   - Pawn Promotions: `e8=Q` or shorthand `e8q`, `e7e8q`",
     "-#   - Castling: `O-O` (Kingside) or `O-O-O` (Queenside)",
-    "-# ${BULLET_EMOJI} **__Zero-Latency Minimax Fallback:__** If the cloud engine times out, local alpha-beta minimax responds in <1ms without move rollbacks.",
-    "-# ${BULLET_EMOJI} **__100% Public Access:__** All chess commands, engine selections, and matches are completely public for all server members!"
+    "-# <a:target_blink:1565667466984554588> **__Zero-Latency Minimax Fallback:__** If the cloud engine times out, local alpha-beta minimax responds in <1ms without move rollbacks.",
+    "-# <a:target_blink:1565667466984554588> **__100% Public Access:__** All chess commands, engine selections, and matches are completely public for all server members!"
   ] },
 
   { id: 'nifty', category: 'STOCK & MARKET INTELLIGENCE', shortLabel: 'Indian Mkts', label: 'Indian Benchmarks (NIFTY 50)', emoji: 'finance', commands: [
@@ -3139,12 +3139,12 @@ commands.push({
       {
         type: 10,
         content: '### • Core Features\n' +
-                 '-# ${BULLET_EMOJI} **__Anti-Nuke Engine:__** **A predictive, zero-tolerance firewall that neutralizes structural threats in milliseconds and autonomously reconstructs deleted channels, roles, and server hierarchies via intelligent caching.**\n' +
-                 '-# ${BULLET_EMOJI} **__Dynamic Voice Infrastructure:__** **An auto-scaling Join-To-Create (JTC) architecture equipped with granular, real-time control panels.**\n' +
-                 '-# ${BULLET_EMOJI} **__Advanced Threat Firewall:__** **Heuristic anti-spam filtering, real-time malicious link scanning, and predictive quarantine protocols.**\n' +
-                 '-# ${BULLET_EMOJI} **__Zero-Trust Verification Gateway:__** **A strict, automated access-control layer that dynamically audits Discord Onboarding configurations and strips bypassing permissions to prevent unauthorized infiltration.**\n' +
-                 '-# ${BULLET_EMOJI} **__Asynchronous Ticket Matrix:__** **A highly-concurrent, transcript-generating support infrastructure built directly onto Discord\'s raw interaction API for seamless multi-channel thread management.**\n' +
-                 '-# ${BULLET_EMOJI} **__Omniscient Audit Telemetry:__** **A deeply-integrated logging engine that intercepts, parses, and permanently archives server mutations, deleted messages, and role hierarchy alterations.**'
+                 '-# <a:target_blink:1565667466984554588> **__Anti-Nuke Engine:__** **A predictive, zero-tolerance firewall that neutralizes structural threats in milliseconds and autonomously reconstructs deleted channels, roles, and server hierarchies via intelligent caching.**\n' +
+                 '-# <a:target_blink:1565667466984554588> **__Dynamic Voice Infrastructure:__** **An auto-scaling Join-To-Create (JTC) architecture equipped with granular, real-time control panels.**\n' +
+                 '-# <a:target_blink:1565667466984554588> **__Advanced Threat Firewall:__** **Heuristic anti-spam filtering, real-time malicious link scanning, and predictive quarantine protocols.**\n' +
+                 '-# <a:target_blink:1565667466984554588> **__Zero-Trust Verification Gateway:__** **A strict, automated access-control layer that dynamically audits Discord Onboarding configurations and strips bypassing permissions to prevent unauthorized infiltration.**\n' +
+                 '-# <a:target_blink:1565667466984554588> **__Asynchronous Ticket Matrix:__** **A highly-concurrent, transcript-generating support infrastructure built directly onto Discord\'s raw interaction API for seamless multi-channel thread management.**\n' +
+                 '-# <a:target_blink:1565667466984554588> **__Omniscient Audit Telemetry:__** **A deeply-integrated logging engine that intercepts, parses, and permanently archives server mutations, deleted messages, and role hierarchy alterations.**'
       },
       { type: 14, divider: true },
       {

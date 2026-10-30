@@ -144,9 +144,9 @@ export const commands = [
       return message.reply(cv2.info(
         'Verification System',
         'Usage Instructions:\n' +
-        '-# ${BULLET_EMOJI} `!verify setup <@role> [button|captcha|math]` - Deploy verification panel\n' +
-        '-# ${BULLET_EMOJI} `!verify mode <button|captcha|math>` - Switch challenge type\n' +
-        '-# ${BULLET_EMOJI} `!verify disable` - Dismantle verification panel'
+        '-# <a:target_blink:1565667466984554588> `!verify setup <@role> [button|captcha|math]` - Deploy verification panel\n' +
+        '-# <a:target_blink:1565667466984554588> `!verify mode <button|captcha|math>` - Switch challenge type\n' +
+        '-# <a:target_blink:1565667466984554588> `!verify disable` - Dismantle verification panel'
       ));
     },
 

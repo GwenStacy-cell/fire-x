@@ -1812,7 +1812,7 @@ async function handleWarnings(guild, target) {
         `-#   **Reason:** ${w.reason}\n` +
         `-#   **Warner:** <@${w.warnerId}> (\`${w.warnerId}\`)`
       );
-    }).join('\n-# ${BULLET_EMOJI} ──────────────────────────────\n');
+    }).join('\n-# <a:target_blink:1565667466984554588> ──────────────────────────────\n');
   }
 
   const container = {

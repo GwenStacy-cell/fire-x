@@ -165,7 +165,7 @@ export function buildAutoReplyDashboard(guild, page = 0) {
   const currentPage = Math.max(0, Math.min(page, totalPages - 1));
   const pageTriggers = triggers.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
-  let triggersContent = '-# ${BULLET_EMOJI} **No server auto-replies configured yet.** Click **Create Auto-Reply** below to add one!';
+  let triggersContent = '-# <a:target_blink:1565667466984554588> **No server auto-replies configured yet.** Click **Create Auto-Reply** below to add one!';
   if (triggers.length > 0) {
     triggersContent = pageTriggers.map((t, idx) => {
       const globalIdx = currentPage * itemsPerPage + idx + 1;
@@ -176,11 +176,11 @@ export function buildAutoReplyDashboard(guild, page = 0) {
       const mediaText = t.gif ? 'Attached' : 'None';
 
       return (
-        `-# ${BULLET_EMOJI} **[#${globalIdx}] Keyword:** \`${t.match}\`\n` +
-        `-# ${BULLET_EMOJI} **Heading:** **${headingText}** \u2022 **Footer:** **${footerText}**\n` +
-        `-# ${BULLET_EMOJI} **Content:** **${contentSnippet}** \u2022 **GIF:** **${mediaText}**`
+        `-# <a:target_blink:1565667466984554588> **[#${globalIdx}] Keyword:** \`${t.match}\`\n` +
+        `-# <a:target_blink:1565667466984554588> **Heading:** **${headingText}** \u2022 **Footer:** **${footerText}**\n` +
+        `-# <a:target_blink:1565667466984554588> **Content:** **${contentSnippet}** \u2022 **GIF:** **${mediaText}**`
       );
-    }).join('\n-# ${BULLET_EMOJI} ──────────────────────────────\n');
+    }).join('\n-# <a:target_blink:1565667466984554588> ──────────────────────────────\n');
   }
 
   const containerComps = [
@@ -188,12 +188,12 @@ export function buildAutoReplyDashboard(guild, page = 0) {
       type: 10,
       content: `# ${getRandomHeadingGlyph()} Auto-Reply Manager\n` +
         `-# **__Server Keyword Auto-Responder Matrix__**\n\n` +
-        `-# ${BULLET_EMOJI} **Total Server Replies:** **${triggers.length} configured**\n` +
-        `-# ${BULLET_EMOJI} **Global Network Replies:** **${globalTriggers.length} configured** -# *(Bot Owner Only)*\n` +
-        `-# ${BULLET_EMOJI} **Page:** **${currentPage + 1} of ${totalPages}**\n` +
-        `-# ${BULLET_EMOJI} **Theme Accent:** **${accentHex}**\n` +
-        `-# ${BULLET_EMOJI} **Format:** **Accent Borderless CV2 Container**\n` +
-        `-# ${BULLET_EMOJI} **Customization:** **Heading, Content, GIF & Footer (All 100% Optional & Unique)**`
+        `-# <a:target_blink:1565667466984554588> **Total Server Replies:** **${triggers.length} configured**\n` +
+        `-# <a:target_blink:1565667466984554588> **Global Network Replies:** **${globalTriggers.length} configured** -# *(Bot Owner Only)*\n` +
+        `-# <a:target_blink:1565667466984554588> **Page:** **${currentPage + 1} of ${totalPages}**\n` +
+        `-# <a:target_blink:1565667466984554588> **Theme Accent:** **${accentHex}**\n` +
+        `-# <a:target_blink:1565667466984554588> **Format:** **Accent Borderless CV2 Container**\n` +
+        `-# <a:target_blink:1565667466984554588> **Customization:** **Heading, Content, GIF & Footer (All 100% Optional & Unique)**`
     },
     { type: 14, divider: true },
     {
@@ -320,7 +320,7 @@ export function buildGlobalAutoReplyDashboard(guild, page = 0) {
   const currentPage = Math.max(0, Math.min(page, totalPages - 1));
   const pageTriggers = globalTriggers.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
-  let triggersContent = '-# ${BULLET_EMOJI} **No global auto-replies configured yet.** Click **Create Global Reply** below to add one across all servers!';
+  let triggersContent = '-# <a:target_blink:1565667466984554588> **No global auto-replies configured yet.** Click **Create Global Reply** below to add one across all servers!';
   if (globalTriggers.length > 0) {
     triggersContent = pageTriggers.map((t, idx) => {
       const globalIdx = currentPage * itemsPerPage + idx + 1;
@@ -331,11 +331,11 @@ export function buildGlobalAutoReplyDashboard(guild, page = 0) {
       const mediaText = t.gif ? 'Attached' : 'None';
 
       return (
-        `-# ${BULLET_EMOJI} **[#${globalIdx}] Global Keyword:** \`${t.match}\`\n` +
-        `-# ${BULLET_EMOJI} **Heading:** **${headingText}** \u2022 **Footer:** **${footerText}**\n` +
-        `-# ${BULLET_EMOJI} **Content:** **${contentSnippet}** \u2022 **GIF:** **${mediaText}**`
+        `-# <a:target_blink:1565667466984554588> **[#${globalIdx}] Global Keyword:** \`${t.match}\`\n` +
+        `-# <a:target_blink:1565667466984554588> **Heading:** **${headingText}** \u2022 **Footer:** **${footerText}**\n` +
+        `-# <a:target_blink:1565667466984554588> **Content:** **${contentSnippet}** \u2022 **GIF:** **${mediaText}**`
       );
-    }).join('\n-# ${BULLET_EMOJI} ──────────────────────────────\n');
+    }).join('\n-# <a:target_blink:1565667466984554588> ──────────────────────────────\n');
   }
 
   const containerComps = [
@@ -343,11 +343,11 @@ export function buildGlobalAutoReplyDashboard(guild, page = 0) {
       type: 10,
       content: `# ${getRandomHeadingGlyph()} Global Auto-Reply Manager\n` +
         `-# **__All-Servers Network Auto-Responder Matrix (Bot Owner Only)__**\n\n` +
-        `-# ${BULLET_EMOJI} **Total Global Replies:** **${globalTriggers.length} configured**\n` +
-        `-# ${BULLET_EMOJI} **Page:** **${currentPage + 1} of ${totalPages}**\n` +
-        `-# ${BULLET_EMOJI} **Network Scope:** **Active across ALL servers joined by Athena Prime**\n` +
-        `-# ${BULLET_EMOJI} **Access Level:** **Bot Owner Exclusive**\n` +
-        `-# ${BULLET_EMOJI} **Customization:** **Heading, Content, GIF & Footer (All 100% Optional & Unique)**`
+        `-# <a:target_blink:1565667466984554588> **Total Global Replies:** **${globalTriggers.length} configured**\n` +
+        `-# <a:target_blink:1565667466984554588> **Page:** **${currentPage + 1} of ${totalPages}**\n` +
+        `-# <a:target_blink:1565667466984554588> **Network Scope:** **Active across ALL servers joined by Athena Prime**\n` +
+        `-# <a:target_blink:1565667466984554588> **Access Level:** **Bot Owner Exclusive**\n` +
+        `-# <a:target_blink:1565667466984554588> **Customization:** **Heading, Content, GIF & Footer (All 100% Optional & Unique)**`
     },
     { type: 14, divider: true },
     {
@@ -941,9 +941,9 @@ export function buildConflictPromptPayload(guild, confKey, conf) {
     title = 'Global Auto-Reply Active';
     body =
       `A **Global Auto-Reply** set by the Bot Owner is currently active for keyword \`${conf.keyword}\` across all Athena Prime servers.\n\n` +
-      `> -# ${BULLET_EMOJI} **Active Scope:** Global Network Auto-Reply\n` +
-      `> -# ${BULLET_EMOJI} **Question:** Should I disable the global auto-reply **only for this server** in order to set a custom trigger for this server alone?\n` +
-      `> -# ${BULLET_EMOJI} **Impact:** Other servers will continue using the global auto-reply uninterrupted.`;
+      `> -# <a:target_blink:1565667466984554588> **Active Scope:** Global Network Auto-Reply\n` +
+      `> -# <a:target_blink:1565667466984554588> **Question:** Should I disable the global auto-reply **only for this server** in order to set a custom trigger for this server alone?\n` +
+      `> -# <a:target_blink:1565667466984554588> **Impact:** Other servers will continue using the global auto-reply uninterrupted.`;
 
     buttons.push(
       { type: 2, custom_id: `trig_conf_global_${confKey}`, label: 'Disable Global & Set Trigger', style: 3 },
@@ -953,9 +953,9 @@ export function buildConflictPromptPayload(guild, confKey, conf) {
     title = 'Auto-Reply Already Configured';
     body =
       `You can use only one system for this keyword! An Auto-Reply (\`!ar\`) is already configured for \`${conf.keyword}\` in this server.\n\n` +
-      `> -# ${BULLET_EMOJI} **Active System:** \`!autoreply\` / \`!ar\`\n` +
-      `> -# ${BULLET_EMOJI} **Sync Policy:** To set a Trigger for this keyword, the Auto-Reply must be replaced or removed.\n` +
-      `> -# ${BULLET_EMOJI} **Question:** Would you like to remove the existing \`!ar\` setup and set this Trigger instead?`;
+      `> -# <a:target_blink:1565667466984554588> **Active System:** \`!autoreply\` / \`!ar\`\n` +
+      `> -# <a:target_blink:1565667466984554588> **Sync Policy:** To set a Trigger for this keyword, the Auto-Reply must be replaced or removed.\n` +
+      `> -# <a:target_blink:1565667466984554588> **Question:** Would you like to remove the existing \`!ar\` setup and set this Trigger instead?`;
 
     buttons.push(
       { type: 2, custom_id: `trig_conf_replace_ar_${confKey}`, label: 'Replace !ar & Set Trigger', style: 4 },
@@ -965,8 +965,8 @@ export function buildConflictPromptPayload(guild, confKey, conf) {
     title = 'Multiple Conflicts Detected';
     body =
       `Both a local Auto-Reply (\`!ar\`) and an active Global Auto-Reply exist for \`${conf.keyword}\`.\n\n` +
-      `> -# ${BULLET_EMOJI} **Active Systems:** Local \`!ar\` + Global Network Reply\n` +
-      `> -# ${BULLET_EMOJI} **Question:** Would you like to replace the local \`!ar\` and disable the global reply for this server alone to activate this Trigger?`;
+      `> -# <a:target_blink:1565667466984554588> **Active Systems:** Local \`!ar\` + Global Network Reply\n` +
+      `> -# <a:target_blink:1565667466984554588> **Question:** Would you like to replace the local \`!ar\` and disable the global reply for this server alone to activate this Trigger?`;
 
     buttons.push(
       { type: 2, custom_id: `trig_conf_both_${confKey}`, label: 'Replace !ar, Disable Global & Set Trigger', style: 3 },
@@ -1031,7 +1031,7 @@ export async function buildTriggerDashboard(guild, page = 0) {
     animated: true
   });
 
-  let triggersContent = `-# ${BULLET_EMOJI} **No server triggers configured yet.**\n-# ${BULLET_EMOJI} For a simple usual trigger setup, use: \`${prefix}trigger create <match> | <response>\`\n-# ${BULLET_EMOJI} Or click the **Create Trigger** button below to set one up!`;
+  let triggersContent = `-# <a:target_blink:1565667466984554588> **No server triggers configured yet.**\n-# <a:target_blink:1565667466984554588> For a simple usual trigger setup, use: \`${prefix}trigger create <match> | <response>\`\n-# <a:target_blink:1565667466984554588> Or click the **Create Trigger** button below to set one up!`;
   if (triggers.length > 0) {
     triggersContent = pageTriggers.map((t, idx) => {
       const globalIdx = currentPage * itemsPerPage + idx + 1;
@@ -1048,15 +1048,15 @@ export async function buildTriggerDashboard(guild, page = 0) {
       if (t.audience && t.audience !== 'all') badges.push(`[Audience: ${t.audience}]`);
       if (t.reaction) badges.push(`[React: ${t.reaction}]`);
       if (t.mirrorChannel) badges.push(`[Mirror: <#${t.mirrorChannel}>]`);
-      const extraLine = badges.length > 0 ? `\n-# ${BULLET_EMOJI} **Modules:** **${badges.join(' • ')}**` : '';
+      const extraLine = badges.length > 0 ? `\n-# <a:target_blink:1565667466984554588> **Modules:** **${badges.join(' • ')}**` : '';
 
       return (
-        `-# ${BULLET_EMOJI} **[#${globalIdx}] Trigger Word:** \`${t.match}\`\n` +
-        `-# ${BULLET_EMOJI} **Response:** **${contentSnippet}**\n` +
-        `-# ${BULLET_EMOJI} **Heading:** **${headingText}** • **Footer:** **${footerText}** • **Media:** **${mediaText}**` +
+        `-# <a:target_blink:1565667466984554588> **[#${globalIdx}] Trigger Word:** \`${t.match}\`\n` +
+        `-# <a:target_blink:1565667466984554588> **Response:** **${contentSnippet}**\n` +
+        `-# <a:target_blink:1565667466984554588> **Heading:** **${headingText}** • **Footer:** **${footerText}** • **Media:** **${mediaText}**` +
         extraLine
       );
-    }).join('\n-# ${BULLET_EMOJI} ──────────────────────────────\n');
+    }).join('\n-# <a:target_blink:1565667466984554588> ──────────────────────────────\n');
   }
 
   const headerSection = {
@@ -1065,13 +1065,13 @@ export async function buildTriggerDashboard(guild, page = 0) {
       type: 10,
       content: `# ${getRandomHeadingGlyph()} Trigger Response Matrix\n` +
         `-# **__Server Trigger Word Responder System__**\n\n` +
-        `-# ${BULLET_EMOJI} **Capacity:** ${progressBar}\n` +
-        `-# ${BULLET_EMOJI} **Active Server Triggers:** **${triggers.length} configured**\n` +
-        `-# ${BULLET_EMOJI} **Global Network Replies:** **${globalTriggers.length} active**\n` +
-        `-# ${BULLET_EMOJI} **Page:** **${currentPage + 1} of ${totalPages}**\n` +
-        `-# ${BULLET_EMOJI} **Sync Status:** **Synchronized with Auto-Reply Matrix (${prefix}ar)**\n` +
-        `-# ${BULLET_EMOJI} **Removal Access:** **Extra Owner / Server Owner**\n` +
-        `-# ${BULLET_EMOJI} **Dynamic Tags:** **Supports {user}, {server}, {count}, etc.**`
+        `-# <a:target_blink:1565667466984554588> **Capacity:** ${progressBar}\n` +
+        `-# <a:target_blink:1565667466984554588> **Active Server Triggers:** **${triggers.length} configured**\n` +
+        `-# <a:target_blink:1565667466984554588> **Global Network Replies:** **${globalTriggers.length} active**\n` +
+        `-# <a:target_blink:1565667466984554588> **Page:** **${currentPage + 1} of ${totalPages}**\n` +
+        `-# <a:target_blink:1565667466984554588> **Sync Status:** **Synchronized with Auto-Reply Matrix (${prefix}ar)**\n` +
+        `-# <a:target_blink:1565667466984554588> **Removal Access:** **Extra Owner / Server Owner**\n` +
+        `-# <a:target_blink:1565667466984554588> **Dynamic Tags:** **Supports {user}, {server}, {count}, etc.**`
     }]
   };
   if (iconUrl) {
@@ -1090,12 +1090,12 @@ export async function buildTriggerDashboard(guild, page = 0) {
       type: 10,
       content:
         `-# **__Simple & Fast Setup Command__**\n` +
-        `-# ${BULLET_EMOJI} **For simple usual trigger setup, use the command:**\n` +
+        `-# <a:target_blink:1565667466984554588> **For simple usual trigger setup, use the command:**\n` +
         `> \`${prefix}trigger create <match> | <response>\`\n` +
-        `-# ${BULLET_EMOJI} **Example:** \`${prefix}trigger create hello | Hello {user}, welcome to {server}!\`\n` +
-        `-# ${BULLET_EMOJI} **Direct Shortcut:** \`${prefix}trigger <match> | <response>\`\n` +
-        `-# ${BULLET_EMOJI} **Quick Delete:** \`${prefix}trigger delete <match>\` • **List:** \`${prefix}trigger list\`\n` +
-        `-# ${BULLET_EMOJI} **Advanced Modules Syntax:** \`${prefix}trigger create <match> | <resp> | [options]\`\n` +
+        `-# <a:target_blink:1565667466984554588> **Example:** \`${prefix}trigger create hello | Hello {user}, welcome to {server}!\`\n` +
+        `-# <a:target_blink:1565667466984554588> **Direct Shortcut:** \`${prefix}trigger <match> | <response>\`\n` +
+        `-# <a:target_blink:1565667466984554588> **Quick Delete:** \`${prefix}trigger delete <match>\` • **List:** \`${prefix}trigger list\`\n` +
+        `-# <a:target_blink:1565667466984554588> **Advanced Modules Syntax:** \`${prefix}trigger create <match> | <resp> | [options]\`\n` +
         `> -# Settable Options: \`reaction:<emoji>\`, \`mirror:<#channel>\`, \`ghost:<sec>\`, \`xp:<amount>\`, \`time:<morning|day|night|weekend>\`, \`audience:<newbie|booster|staff>\``
     },
     { type: 14, divider: true },
@@ -1750,7 +1750,7 @@ export const autoreplyCmd = {
               message.guild,
               'Global Usage Guide',
               '`!ar global add <keyword> | [content] | [heading] | [gif] | [footer]`\n\n' +
-              'Example:\n-# ${BULLET_EMOJI} `!ar global add support | Join our support server: https://discord.gg/...`',
+              'Example:\n-# <a:target_blink:1565667466984554588> `!ar global add support | Join our support server: https://discord.gg/...`',
               false
             ));
           }
@@ -1799,8 +1799,8 @@ export const autoreplyCmd = {
             'Usage Guide',
             '`!ar add <keyword> | [content] | [heading] | [gif] | [footer]`\n\n' +
             'Note: Heading, content, GIF, and footer are 100% optional!\n' +
-            '-# ${BULLET_EMOJI} `!ar add foofwo | Welcome to our server!`\n' +
-            '-# ${BULLET_EMOJI} `!ar add foofwo | Welcome | Greeting | https://media.tenor.com/... | Custom Footer`',
+            '-# <a:target_blink:1565667466984554588> `!ar add foofwo | Welcome to our server!`\n' +
+            '-# <a:target_blink:1565667466984554588> `!ar add foofwo | Welcome | Greeting | https://media.tenor.com/... | Custom Footer`',
             false
           ));
         }
@@ -1812,8 +1812,8 @@ export const autoreplyCmd = {
             message.guild,
             'Conflict: Trigger Active',
             `You can use only one system for this keyword! A Trigger (\`!trigger\`) is already active for \`${match}\` in this server.\n\n` +
-            `> -# ${BULLET_EMOJI} **Active In:** \`!trigger\` (Trigger Response System)\n` +
-            `> -# ${BULLET_EMOJI} **Action Required:** Remove the existing trigger first (Bot Owner required) before setting up an Auto-Reply for this word.`,
+            `> -# <a:target_blink:1565667466984554588> **Active In:** \`!trigger\` (Trigger Response System)\n` +
+            `> -# <a:target_blink:1565667466984554588> **Action Required:** Remove the existing trigger first (Bot Owner required) before setting up an Auto-Reply for this word.`,
             false
           ));
         }
@@ -1838,10 +1838,10 @@ export const autoreplyCmd = {
             'Usage Guide',
             '`!ar edit <keyword> <heading|content|gif|footer> <new_value>`\n\n' +
             'Examples:\n' +
-            '-# ${BULLET_EMOJI} `!ar edit foofwo heading Announcement`\n' +
-            '-# ${BULLET_EMOJI} `!ar edit foofwo content Check out our channels!`\n' +
-            '-# ${BULLET_EMOJI} `!ar edit foofwo gif https://media.tenor.com/...`\n' +
-            '-# ${BULLET_EMOJI} `!ar edit foofwo footer Server Bot Matrix`',
+            '-# <a:target_blink:1565667466984554588> `!ar edit foofwo heading Announcement`\n' +
+            '-# <a:target_blink:1565667466984554588> `!ar edit foofwo content Check out our channels!`\n' +
+            '-# <a:target_blink:1565667466984554588> `!ar edit foofwo gif https://media.tenor.com/...`\n' +
+            '-# <a:target_blink:1565667466984554588> `!ar edit foofwo footer Server Bot Matrix`',
             false
           ));
         }
@@ -2129,7 +2129,7 @@ export const triggerCmd = {
       const match = args[1]?.trim();
       const emoji = args[2]?.trim();
       if (!match || !emoji) {
-        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger react <keyword> <emoji | none>`\n\nExample:\n-# ${BULLET_EMOJI} `!trigger react hello 👋`\n-# ${BULLET_EMOJI} `!trigger react ping none`', false));
+        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger react <keyword> <emoji | none>`\n\nExample:\n-# <a:target_blink:1565667466984554588> `!trigger react hello 👋`\n-# <a:target_blink:1565667466984554588> `!trigger react ping none`', false));
       }
       const trigger = db.getTriggerOnly(message.guild.id, match) || db.getTrigger(message.guild.id, match);
       if (!trigger) return message.reply(makeAccentResponse(message.guild, 'Not Found', `No trigger found matching \`${match}\`.`, false));
@@ -2146,7 +2146,7 @@ export const triggerCmd = {
       const match = args[1]?.trim();
       const channelRaw = args[2]?.trim();
       if (!match || !channelRaw) {
-        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger mirror <keyword> <#channel | none>`\n\nExample:\n-# ${BULLET_EMOJI} `!trigger mirror help #mod-logs`\n-# ${BULLET_EMOJI} `!trigger mirror help none`', false));
+        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger mirror <keyword> <#channel | none>`\n\nExample:\n-# <a:target_blink:1565667466984554588> `!trigger mirror help #mod-logs`\n-# <a:target_blink:1565667466984554588> `!trigger mirror help none`', false));
       }
       const trigger = db.getTriggerOnly(message.guild.id, match) || db.getTrigger(message.guild.id, match);
       if (!trigger) return message.reply(makeAccentResponse(message.guild, 'Not Found', `No trigger found matching \`${match}\`.`, false));
@@ -2163,7 +2163,7 @@ export const triggerCmd = {
       const match = args[1]?.trim();
       const secRaw = args[2]?.trim();
       if (!match || !secRaw) {
-        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger ghost <keyword> <seconds | none>`\n\nExample:\n-# ${BULLET_EMOJI} `!trigger ghost rules 10`\n-# ${BULLET_EMOJI} `!trigger ghost rules none`', false));
+        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger ghost <keyword> <seconds | none>`\n\nExample:\n-# <a:target_blink:1565667466984554588> `!trigger ghost rules 10`\n-# <a:target_blink:1565667466984554588> `!trigger ghost rules none`', false));
       }
       const trigger = db.getTriggerOnly(message.guild.id, match) || db.getTrigger(message.guild.id, match);
       if (!trigger) return message.reply(makeAccentResponse(message.guild, 'Not Found', `No trigger found matching \`${match}\`.`, false));
@@ -2182,7 +2182,7 @@ export const triggerCmd = {
       const xpRaw = args[2]?.trim();
       const maxRaw = args[3]?.trim();
       if (!match || !xpRaw) {
-        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger bounty <keyword> <xp_amount | none> [max_claims]`\n\nExample:\n-# ${BULLET_EMOJI} `!trigger bounty secret 100 5`\n-# ${BULLET_EMOJI} `!trigger bounty secret none`', false));
+        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger bounty <keyword> <xp_amount | none> [max_claims]`\n\nExample:\n-# <a:target_blink:1565667466984554588> `!trigger bounty secret 100 5`\n-# <a:target_blink:1565667466984554588> `!trigger bounty secret none`', false));
       }
       const trigger = db.getTriggerOnly(message.guild.id, match) || db.getTrigger(message.guild.id, match);
       if (!trigger) return message.reply(makeAccentResponse(message.guild, 'Not Found', `No trigger found matching \`${match}\`.`, false));
@@ -2201,7 +2201,7 @@ export const triggerCmd = {
       const match = args[1]?.trim();
       const variantRaw = args[2]?.trim().toLowerCase();
       if (!match || !variantRaw) {
-        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger time <keyword> <morning | day | night | weekend | always>`\n\nExample:\n-# ${BULLET_EMOJI} `!trigger time gm morning`\n-# ${BULLET_EMOJI} `!trigger time party weekend`', false));
+        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger time <keyword> <morning | day | night | weekend | always>`\n\nExample:\n-# <a:target_blink:1565667466984554588> `!trigger time gm morning`\n-# <a:target_blink:1565667466984554588> `!trigger time party weekend`', false));
       }
       const trigger = db.getTriggerOnly(message.guild.id, match) || db.getTrigger(message.guild.id, match);
       if (!trigger) return message.reply(makeAccentResponse(message.guild, 'Not Found', `No trigger found matching \`${match}\`.`, false));
@@ -2218,7 +2218,7 @@ export const triggerCmd = {
       const match = args[1]?.trim();
       const audRaw = args[2]?.trim().toLowerCase();
       if (!match || !audRaw) {
-        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger audience <keyword> <all | newbie | regular | booster | staff>`\n\nExample:\n-# ${BULLET_EMOJI} `!trigger audience welcome newbie`\n-# ${BULLET_EMOJI} `!trigger audience vip booster`', false));
+        return message.reply(makeAccentResponse(message.guild, 'Usage Guide', '`!trigger audience <keyword> <all | newbie | regular | booster | staff>`\n\nExample:\n-# <a:target_blink:1565667466984554588> `!trigger audience welcome newbie`\n-# <a:target_blink:1565667466984554588> `!trigger audience vip booster`', false));
       }
       const trigger = db.getTriggerOnly(message.guild.id, match) || db.getTrigger(message.guild.id, match);
       if (!trigger) return message.reply(makeAccentResponse(message.guild, 'Not Found', `No trigger found matching \`${match}\`.`, false));
@@ -2246,13 +2246,13 @@ export const triggerCmd = {
           'Trigger Usage Guide',
           '`!trigger create <match> | <response>`\n\n' +
           '**Examples:**\n' +
-          '-# ${BULLET_EMOJI} `!trigger create hello | Hello {user}, welcome to {server}!`\n' +
-          '-# ${BULLET_EMOJI} `!trigger create ping | pong`\n' +
-          '-# ${BULLET_EMOJI} `!trigger hello | Direct shortcut response!`\n' +
-          '-# ${BULLET_EMOJI} `!trigger create secret | You found it! | reaction:🎉 xp:100 ghost:10`\n\n' +
-          '> -# ${BULLET_EMOJI} **Placeholders:** `{user}`, `{server}`, `{count}`\n' +
-          '> -# ${BULLET_EMOJI} **Options:** `reaction:<emoji>`, `mirror:<#chan>`, `ghost:<sec>`, `xp:<num>`, `time:<morning|day|night|weekend>`, `audience:<newbie|booster|staff>`\n' +
-          '> -# ${BULLET_EMOJI} **Commands:** `!trigger delete <match>`, `!trigger list`, `!trigger react`, `!trigger mirror`, `!trigger ghost`, `!trigger bounty`',
+          '-# <a:target_blink:1565667466984554588> `!trigger create hello | Hello {user}, welcome to {server}!`\n' +
+          '-# <a:target_blink:1565667466984554588> `!trigger create ping | pong`\n' +
+          '-# <a:target_blink:1565667466984554588> `!trigger hello | Direct shortcut response!`\n' +
+          '-# <a:target_blink:1565667466984554588> `!trigger create secret | You found it! | reaction:🎉 xp:100 ghost:10`\n\n' +
+          '> -# <a:target_blink:1565667466984554588> **Placeholders:** `{user}`, `{server}`, `{count}`\n' +
+          '> -# <a:target_blink:1565667466984554588> **Options:** `reaction:<emoji>`, `mirror:<#chan>`, `ghost:<sec>`, `xp:<num>`, `time:<morning|day|night|weekend>`, `audience:<newbie|booster|staff>`\n' +
+          '> -# <a:target_blink:1565667466984554588> **Commands:** `!trigger delete <match>`, `!trigger list`, `!trigger react`, `!trigger mirror`, `!trigger ghost`, `!trigger bounty`',
           false
         ));
       }

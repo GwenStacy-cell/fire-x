@@ -2012,7 +2012,7 @@ export function buildSymbolsPayload(category = 'all', prefix = '!') {
       const timeStr = item.updatedAt ? `<t:${Math.floor(item.updatedAt / 1000)}:R>` : 'Active';
       return `> -# ${BULLET_EMOJI} **${item.name}** (\`${item.symbol}\`) \u2014 \`${item.exchange}\` (${timeStr})\n` +
              `> -#   \u25b8 Command: \`${prefix}stock ${baseTicker}\` or \`${prefix}stock ${item.symbol}\``;
-    }).join('\n\n') || '> -# ${BULLET_EMOJI} No dynamic tickers recorded yet. Query any ticker with `!stock <symbol>` to index it!';
+    }).join('\n\n') || '> -# <a:target_blink:1565667466984554588> No dynamic tickers recorded yet. Query any ticker with `!stock <symbol>` to index it!';
 
     bodyContent =
       `### Dynamically Registered Assets (${totalCount} Auto-Tracked)\n` +

@@ -921,7 +921,7 @@ export const commands = [
           }
         }
       }
-      return message.reply(cv2.info('Join to Create', 'Commands:\n-# ${BULLET_EMOJI} `!jtc add @user` - Permit user into locked VC\n-# ${BULLET_EMOJI} `!jtc chime on|off` - Toggle entrance chime soundboard alerts\n-# ${BULLET_EMOJI} `!jtcsetup` - Deploy primary JTC hub'));
+      return message.reply(cv2.info('Join to Create', 'Commands:\n-# <a:target_blink:1565667466984554588> `!jtc add @user` - Permit user into locked VC\n-# <a:target_blink:1565667466984554588> `!jtc chime on|off` - Toggle entrance chime soundboard alerts\n-# <a:target_blink:1565667466984554588> `!jtcsetup` - Deploy primary JTC hub'));
     },
     async executeSlash(interaction) {
       const sub = interaction.options.getSubcommand();

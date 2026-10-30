@@ -5,7 +5,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import db from '../database.js';
-import cv2 from '../cv2.js';
+import cv2, { sanitizeCV2Payload } from '../cv2.js';
 import { 
   canModerate, 
   logToSecurityChannel, 
@@ -4533,7 +4533,7 @@ export async function buildAutonickDashboard(guildId, guild = null) {
     ]
   };
 
-  return { components: [container], files: [bannerAttachment], flags: MessageFlags.IsComponentsV2 };
+  return { components: [sanitizeCV2Payload(container)], files: [bannerAttachment], flags: MessageFlags.IsComponentsV2 };
 }
 async function handleConfig(guild, moderator, setting, value) {
   const updates = {};
@@ -5383,12 +5383,12 @@ export async function getSecurityStatusPanel(guild) {
 
   const headerSection = { type: 10, content: `# ${getRandomHeadingGlyph()} Security Firewall Status | <a:03_tick_circle:1565665642084827206>\n` +
       "-# Global Status: " + (isSecured ? "**God-Tier Firewall ACTIVE**" : "Offline \u2014 Unprotected") + "\n" +
-      "-# ${BULLET_EMOJI} **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
-      "-# ${BULLET_EMOJI} **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")") + "\n" +
-      "-# ${BULLET_EMOJI} **Role Position:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : rolePosProgress + " (Pos " + botPos + " / " + maxPos + ")") + "\n" +
-      "-# ${BULLET_EMOJI} **Strike Velocity:** " + (isSecured ? "Ludicrously fast \u2014 **1-3ms execution**" : "Disabled") + "\n" +
-      "-# ${BULLET_EMOJI} **Live Audit Records:** **`" + liveRecords.length + "` threat events neutralized** in real-time\n" +
-      "-# ${BULLET_EMOJI} **Architecture Rule:** The 28 modules represent the Anti-Nuke Firewall. Disabling disarms all 28 modules and deletes persistence roles."
+      "-# " + BULLET_EMOJI + " **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
+      "-# " + BULLET_EMOJI + " **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")") + "\n" +
+      "-# " + BULLET_EMOJI + " **Role Position:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : rolePosProgress + " (Pos " + botPos + " / " + maxPos + ")") + "\n" +
+      "-# " + BULLET_EMOJI + " **Strike Velocity:** " + (isSecured ? "Ludicrously fast \u2014 **1-3ms execution**" : "Disabled") + "\n" +
+      "-# " + BULLET_EMOJI + " **Live Audit Records:** **`" + liveRecords.length + "` threat events neutralized** in real-time\n" +
+      "-# " + BULLET_EMOJI + " **Architecture Rule:** The 28 modules represent the Anti-Nuke Firewall. Disabling disarms all 28 modules and deletes persistence roles."
     };
 
     const detailsSection = { type: 10, content:
@@ -5529,44 +5529,44 @@ export async function getAntinukeArchitecturePanel(guild) {
       { type: 14, divider: true },
       {
         type: 10,
-        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**1. Zero-Delay Pre-Emptive Role Stripping (`guildMemberUpdate.js`)**\n" +
-          "-# ${BULLET_EMOJI} **0ms Strip:** Dangerous roles (`Administrator`, `ManageRoles`, `ManageChannels`, `BanMembers`, `KickMembers`) are stripped at **0 milliseconds** before audit resolution, eliminating race condition windows.\n" +
-          "-# ${BULLET_EMOJI} **Progressive Verification Loop:** Microsecond audit examination (`[0, 40, 100, 250]ms`). If authorized by staff, role is restored; if unauthorized/linked-role exploit, rogue giver is banned and recipient quarantined."
+        content: '# ' + getRandomHeadingGlyph() + " **1. Zero-Delay Pre-Emptive Role Stripping (`guildMemberUpdate.js`)**\n" +
+          "-# " + BULLET_EMOJI + " **0ms Strip:** Dangerous roles (`Administrator`, `ManageRoles`, `ManageChannels`, `BanMembers`, `KickMembers`) are stripped at **0 milliseconds** before audit resolution, eliminating race condition windows.\n" +
+          "-# " + BULLET_EMOJI + " **Progressive Verification Loop:** Microsecond audit examination (`[0, 40, 100, 250]ms`). If authorized by staff, role is restored; if unauthorized/linked-role exploit, rogue giver is banned and recipient quarantined."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**2. Gateway Permission Escalation Guard (`roleUpdate.js`)**\n" +
-          "-# ${BULLET_EMOJI} **Trigger:** Detects any role gaining dangerous bitfield permissions or name tampering.\n" +
-          "-# ${BULLET_EMOJI} **Revert & Strike:** Reverts permissions back to safe bitmasks in sub-10ms, vaporizes rogue spam roles, and executes `directStrike` against unauthorized executors."
+        content: '# ' + getRandomHeadingGlyph() + " **2. Gateway Permission Escalation Guard (`roleUpdate.js`)**\n" +
+          "-# " + BULLET_EMOJI + " **Trigger:** Detects any role gaining dangerous bitfield permissions or name tampering.\n" +
+          "-# " + BULLET_EMOJI + " **Revert & Strike:** Reverts permissions back to safe bitmasks in sub-10ms, vaporizes rogue spam roles, and executes `directStrike` against unauthorized executors."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**3. Mass Rogue Role & Channel Annihilation (`antinuke.js` & `roleCreate.js`)**\n" +
-          "-# ${BULLET_EMOJI} **Flood Interceptor:** In-flight gateway interceptor vaporizes newly arriving spam channels/roles in sub-5ms during active attacks.\n" +
-          "-# ${BULLET_EMOJI} **Parallel Sweep Workers:** Parallel batch deletions (10 concurrent requests per batch over pre-warmed Undici TLS sockets) eliminate spam entities created in the last 60s.\n" +
-          "-# ${BULLET_EMOJI} **Dual-Strike Pre-Emption:** Stripping roles clears permissions in Discord's cache within 10-15ms, forcing Discord to reject subsequent attack calls with `403 Forbidden`."
+        content: '# ' + getRandomHeadingGlyph() + " **3. Mass Rogue Role & Channel Annihilation (`antinuke.js` & `roleCreate.js`)**\n" +
+          "-# " + BULLET_EMOJI + " **Flood Interceptor:** In-flight gateway interceptor vaporizes newly arriving spam channels/roles in sub-5ms during active attacks.\n" +
+          "-# " + BULLET_EMOJI + " **Parallel Sweep Workers:** Parallel batch deletions (10 concurrent requests per batch over pre-warmed Undici TLS sockets) eliminate spam entities created in the last 60s.\n" +
+          "-# " + BULLET_EMOJI + " **Dual-Strike Pre-Emption:** Stripping roles clears permissions in Discord's cache within 10-15ms, forcing Discord to reject subsequent attack calls with `403 Forbidden`."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**4. Server Identity Rollback (`guildUpdate.js`)**\n" +
-          "-# ${BULLET_EMOJI} **Vectors Protected:** Server Name, Icon, Banner, Vanity URL, and Verification Level.\n" +
-          "-# ${BULLET_EMOJI} **Self-Healing:** Intercepts unauthorized tampering, strikes the hostile account, and automatically restores original assets from baseline."
+        content: '# ' + getRandomHeadingGlyph() + " **4. Server Identity Rollback (`guildUpdate.js`)**\n" +
+          "-# " + BULLET_EMOJI + " **Vectors Protected:** Server Name, Icon, Banner, Vanity URL, and Verification Level.\n" +
+          "-# " + BULLET_EMOJI + " **Self-Healing:** Intercepts unauthorized tampering, strikes the hostile account, and automatically restores original assets from baseline."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**5. Unified Server Raid Defense Matrix (`!raidmode`)**\n" +
-          "-# ${BULLET_EMOJI} **Manual Lockdown (`!raidmode on|off`):** Elevates server verification to VERY HIGH (Phone Required), saves pre-raid baseline, and auto-quarantines joiners.\n" +
-          "-# ${BULLET_EMOJI} **Join-Velocity Auto-Shield (`!raidmode auto on`):** Real-time join velocity tracker. If join bursts breach threshold (default: 8 joins / 5s), automatically engages Raid Mode and Phone Verification without staff intervention required."
+        content: '# ' + getRandomHeadingGlyph() + " **5. Unified Server Raid Defense Matrix (`!raidmode`)**\n" +
+          "-# " + BULLET_EMOJI + " **Manual Lockdown (`!raidmode on|off`):** Elevates server verification to VERY HIGH (Phone Required), saves pre-raid baseline, and auto-quarantines joiners.\n" +
+          "-# " + BULLET_EMOJI + " **Join-Velocity Auto-Shield (`!raidmode auto on`):** Real-time join velocity tracker. If join bursts breach threshold (default: 8 joins / 5s), automatically engages Raid Mode and Phone Verification without staff intervention required."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**6. Diagnostics & Hierarchy Health Audit (`!health` / `!audit`)**\n" +
-          "-# ${BULLET_EMOJI} **Live Audit:** Verifies bot role hierarchy, scans dangerous roles above Athena, checks all 8 core permissions, persistence roles, and measures direct Undici TLS socket latency to Discord API."
+        content: '# ' + getRandomHeadingGlyph() + " **6. Diagnostics & Hierarchy Health Audit (`!health` / `!audit`)**\n" +
+          "-# " + BULLET_EMOJI + " **Live Audit:** Verifies bot role hierarchy, scans dangerous roles above Athena, checks all 8 core permissions, persistence roles, and measures direct Undici TLS socket latency to Discord API."
       },
       { type: 14, divider: true },
       {
