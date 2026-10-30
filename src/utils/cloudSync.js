@@ -564,13 +564,13 @@ export function formatDatabaseMetrics(m, options = {}) {
       : `\n`) +
 
     `-# **__Member Greetings, Applications & Tracking:__**\n` +
-    `> -# **Greetings:** \`Welcome: ${m.welcomeActive} chs (${m.welcomeEmbeds} embeds, ${m.welcomeGifs} gifs) | Leave: ${m.leaveActive} chs (${m.leaveEmbeds} embeds)\`\n` +
+    `> -# **Greetings:** \`Welcome: ${m.welcomeActive} chs (${m.welcomeMessages} texts, ${m.welcomeEmbeds} embeds, ${m.welcomeGifs} gifs, ${m.welcomeColors} colors) | Leave: ${m.leaveActive} chs (${m.leaveMessages} texts, ${m.leaveEmbeds} embeds)\`\n` +
     `> -# **Tracking & Apps:** \`Invites: ${m.inviteLogChannels} chs | Staff Applications: ${m.appsActive || 0} active (${m.appsServers || 0} guilds)\`\n\n` +
 
     `-# **__Community, Economy & Neural AI:__**\n` +
     `> -# **Neural AI & Chess:** \`Mode: ${m.aiModeServers || 0} guilds (${m.aiDedicatedChannels || 0} chs) | Chess Engines: ${m.chessEnginesCount || 0} setups | Toxicity: ${m.aiToxicityServers || 0} | Triage: ${m.ticketAiTriageServers || 0}\`\n` +
     `> -# **Engagement:** \`News: ${m.newsChannels} chs (${m.newsFeedsCount} feeds) | Auto-React: ${m.autoReactChannels} (${m.autoReactServers || 0} guilds) | Tickets: ${m.ticketSetups || 0} (${m.ticketsActive || 0} active) | Giveaways: ${m.giveaways} | Sticky: ${m.stickyChannels || 0} | Adel: ${m.adelChannelsCount || 0} chs\`\n` +
-    `> -# **Community Setups:** \`Suggestions: ${m.suggestionChannels || 0} chs | Starboard: ${m.starboardChannels || 0} chs (${m.starboardThresholdsCount || 0} thresholds) | Quotes: ${m.quoteChannels} | Voice Roles: ${m.voiceRolesCount || 0} roles | Verification: ${m.verification} gates | Reaction Roles: ${m.reactionRoles} menus (${m.reactionRolesMappingsCount || 0} mapped)\`\n` +
+    `> -# **Community Setups:** \`Suggestions: ${m.suggestionChannels || 0} chs | Starboard: ${m.starboardChannels || 0} chs (${m.starboardThresholdsCount || 0} thresholds) | Auto-Quotes: ${m.quoteChannels} chs | Rate Channels: ${m.rateChannels || 0} chs (${m.editRatingMessages || 0} active edits) | Voice Roles: ${m.voiceRolesCount || 0} roles | Verification: ${m.verification} gates | Reaction Roles: ${m.reactionRoles} menus (${m.reactionRolesMappingsCount || 0} mapped)\`\n` +
     `> -# **Economy & Casino:** \`${m.economyUsers || 0} ledgers | Shop: ${m.shopItemsCount || 0} items (${m.shopGuilds || 0} guilds) | Themes: ${m.customThemesCount || 0} (${m.rankRewardsCount || 0} milestones) | Minigames: ${m.minigamesUsers || 0} players (${m.minigamesWagered || 0} chips)\`\n` +
     `> -# **Activity:** \`XP: ${m.xpSystems} guilds (${m.xpUsers} users) | Counting: ${m.countingActive || 0} chs (Peak: ${m.countingPeakRecord || 0}, Streak: ${m.countingTotalCounts || 0}) | Ratings: ${m.editRatingMessages || 0} (${m.rateChannels || 0} chs) | AFK: ${m.afkUsers || 0}\`\n\n` +
 
@@ -731,8 +731,8 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
       timestamp,
       reason
     });
-    if (formattedText.length > 3900) {
-      formattedText = formattedText.slice(0, 3800) + '\n> -# **__[Snapshot manifest truncated for Discord display limits]__**';
+    if (formattedText.length > 4000) {
+      formattedText = formattedText.slice(0, 3900) + '\n> -# **__[Snapshot manifest truncated for Discord display limits]__**';
     }
 
     const embed = new EmbedBuilder()

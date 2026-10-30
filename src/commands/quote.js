@@ -20,46 +20,58 @@ function formatDiscordTimestamp(date) {
 export const commands = [
   {
     name: 'quote',
-    aliases: ['q'],
-    description: 'Generate an aesthetic image quote of a message. Use !quote setchannel <#channel|none> to bind auto-quote channel.',
+    aliases: ['q', 'setquote', 'quotechannel', 'quotemaker'],
+    description: 'Generate an aesthetic image quote of a message. Use !quote setchannel <#channel|none> to bind auto-quote channel [Public / Extra Owner for setchannel].',
     category: 'community',
     options: [],
     async executePrefix(message, args) {
-      if (args.length === 0) {
+      const invoked = message.content.trim().split(/ +/)[0].toLowerCase().replace(/^!/, '');
+      const isSetquoteAlias = invoked === 'setquote' || invoked === 'quotechannel';
+
+      if (args.length === 0 && !isSetquoteAlias) {
         return message.reply(cv2.warn('Quote System', `\`!quote <message_id> [dark|light|transparent]\`\n\`!quote @user <custom text>\`\n\`!quotemaker\`\n\`!quote setchannel <#channel|none>\``));
       }
 
-      // Check for Admin setchannel Route
-      if (args[0].toLowerCase() === 'setchannel') {
-        const { isServerAdmin } = await import('../utils/helpers.js');
-        if (!isServerAdmin(message.member, message.guild.id) && !message.member.permissions?.has?.(PermissionFlagsBits.Administrator)) {
-          return message.reply(cv2.danger('Access Denied', 'Only Admins and Extra Owners can bind the Auto-Quote channel.'));
+      // Check for Admin/Extra Owner setchannel Route
+      const sub = (args[0] || '').toLowerCase();
+      if (isSetquoteAlias || sub === 'setchannel' || sub === 'channel' || sub === 'set' || sub === 'bind') {
+        const { isExtraOwnerOrHigher } = await import('../utils/helpers.js');
+        if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+          return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can bind the Auto-Quote channel.'));
         }
         
-        if (!args[1]) {
+        const channelArg = isSetquoteAlias ? args[0] : args[1];
+        if (!channelArg || channelArg.toLowerCase() === 'status') {
           const { default: db } = await import('../database.js');
           const cfg = db.getGuildConfig(message.guild.id);
-          const current = cfg?.quoteChannelId ? `<#${cfg.quoteChannelId}>` : '`None`';
-          return message.reply(cv2.info('Auto-Quote Channel', `Current bound channel: ${current}\n\n**Usage:**\n\`!quote setchannel <#channel>\` - Bind channel\n\`!quote setchannel none\` - Disable auto-quote`));
+          const current = cfg?.quoteChannelId ? `<#${cfg.quoteChannelId}> (\`${cfg.quoteChannelId}\`)` : '`None (Disabled)`';
+          return message.reply(cv2.info(
+            `Auto-Quote Channel Status | <a:atheNATICK:1557841381630681106>`,
+            `**Current Bound Channel:** ${current}\n\n` +
+            `> -# • **Set Channel:** \`!quote setchannel <#channel>\` or \`!setquote <#channel>\`\n` +
+            `> -# • **Disable:** \`!quote setchannel none\` or \`!setquote none\`\n` +
+            `> -# • **Clearance:** \`[Extra Owner]\``
+          ));
         }
 
-        if (args[1].toLowerCase() === 'none' || args[1].toLowerCase() === 'off' || args[1].toLowerCase() === 'disable') {
+        const lowerChannelArg = channelArg.toLowerCase();
+        if (lowerChannelArg === 'none' || lowerChannelArg === 'off' || lowerChannelArg === 'disable' || lowerChannelArg === 'reset') {
           const { default: db } = await import('../database.js');
           db.updateGuildConfig(message.guild.id, { quoteChannelId: null });
-          return message.reply(cv2.success('Auto-Quote Disabled', 'The dedicated Auto-Quote channel has been disabled.'));
+          return message.reply(cv2.success('Auto-Quote Disabled | <a:atheNATICK:1557841381630681106>', 'The dedicated Auto-Quote channel has been disabled.'));
         }
         
-        const channelInput = args.slice(1).join(' ').trim();
+        const channelInput = (isSetquoteAlias ? args.join(' ') : args.slice(1).join(' ')).trim();
         const rawId = channelInput.replace(/[<#>]/g, '').trim();
         const targetChannel = message.mentions.channels.first() 
           || message.guild.channels.cache.get(rawId)
           || message.guild.channels.cache.find(c => c.name.toLowerCase() === channelInput.replace(/^#/, '').toLowerCase());
         
-        if (!targetChannel) return message.reply(cv2.warn('Usage', '`!quote setchannel <#channel>` or `!quote setchannel none`'));
+        if (!targetChannel || !targetChannel.isTextBased()) return message.reply(cv2.warn('Usage', '`!quote setchannel <#channel>` or `!quote setchannel none`'));
         
         const { default: db } = await import('../database.js');
         db.updateGuildConfig(message.guild.id, { quoteChannelId: targetChannel.id });
-        return message.reply(cv2.success('Auto-Quote Channel Bound', `Any message typed in <#${targetChannel.id}> will now be automatically converted into an aesthetic canvas quote image!`));
+        return message.reply(cv2.success('Auto-Quote Channel Bound | <a:atheNATICK:1557841381630681106>', `Any message typed in <#${targetChannel.id}> will now be automatically converted into an aesthetic canvas quote image!`));
       }
 
       // Check for Mention Route: !quote @user <text>

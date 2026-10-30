@@ -20,6 +20,7 @@ import {
 } from '../utils/stockMarket.js';
 import { generateAIResponse, formatAIToGreyMarkdown } from '../utils/ai.js';
 import { dispatchDailyBriefing } from '../utils/stockBroadcaster.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 export const commands = [
   // 1. MAIN STOCK & MARKET COMMAND
@@ -604,10 +605,14 @@ export const commands = [
   {
     name: 'stockchannel',
     aliases: ['dailystock', 'setstockchannel', 'stockalert'],
-    description: 'Configure automated daily stock market image upload and briefing channel',
+    description: 'Configure automated daily stock market image upload and briefing channel [Extra Owner]',
     category: 'utility',
-    permissions: [PermissionFlagsBits.ManageGuild],
+    permissions: [],
     async executePrefix(message, args) {
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can configure the stock broadcast channel.'));
+      }
+
       const sub = (args[0] || '').toLowerCase();
       const config = db.getGuildConfig(message.guild.id);
       const prefix = config?.prefix || '!';

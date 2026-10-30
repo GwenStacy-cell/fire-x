@@ -1,6 +1,7 @@
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 const STAR = '<a:1z:1517089474369032253>';
 
@@ -45,21 +46,60 @@ export const commands = [
     name: 'rate',
     slashHidden: true,
     description: 'Post an edit to be rated [Public], or set the designated rating channel [Extra Owner].',
-    aliases: ['edit', 'rateedit', 'editrate', 'rate-edit'],
+    aliases: ['setrate', 'ratechannel', 'setratechannel', 'edit', 'rateedit', 'editrate', 'rate-edit'],
     executePrefix: async (message, args) => {
-      // Admin Setup Check
-      if (args.length > 0) {
-        const channelMatch = args[0].match(/<#(\d+)>/);
-        const isId = /^\d{17,19}$/.test(args[0]);
+      const invoked = message.content.trim().split(/ +/)[0].toLowerCase().replace(/^!/, '');
+      const isSetrateAlias = invoked === 'setrate' || invoked === 'setratechannel' || invoked === 'ratechannel';
 
-        if (channelMatch || isId) {
-          if (!message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return message.reply(cv2.danger('Permission Denied', 'You must be a Server Administrator to set the rating channel.'));
-          }
-          const channelId = channelMatch ? channelMatch[1] : args[0];
-          db.setRateChannel(message.guild.id, channelId);
-          return message.reply(cv2.success('Channel Configured | <a:atheNATICK:1557841381630681106>', `The designated edit rating channel is now <#${channelId}>.`));
+      // 1. Channel Configuration Subcommand Check (!rate setchannel, !rate channel, !setrate, or direct #channel)
+      const firstArg = (args[0] || '').toLowerCase();
+      const isConfigKeyword = isSetrateAlias || firstArg === 'setchannel' || firstArg === 'channel' || firstArg === 'set' || firstArg === 'bind' || firstArg === 'status' || firstArg === 'disable' || firstArg === 'off' || firstArg === 'none';
+      const channelMatch = (firstArg === 'setchannel' || firstArg === 'channel' || firstArg === 'set' || firstArg === 'bind' ? args[1] : args[0])?.match(/<#(\d+)>/);
+      const isDirectId = /^\d{17,19}$/.test(firstArg === 'setchannel' || firstArg === 'channel' || firstArg === 'set' || firstArg === 'bind' ? (args[1] || '') : args[0]);
+
+      if (isConfigKeyword || channelMatch || isDirectId) {
+        if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+          return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can configure the edit rating channel.'));
         }
+
+        const targetArg = (firstArg === 'setchannel' || firstArg === 'channel' || firstArg === 'set' || firstArg === 'bind') ? args[1] : (isSetrateAlias ? args[0] : (firstArg === 'status' ? 'status' : args[0]));
+        const lowerTarget = (targetArg || '').toLowerCase();
+
+        if (!targetArg || lowerTarget === 'status') {
+          const currentId = db.getRateChannel(message.guild.id);
+          const currentText = currentId ? `<#${currentId}> (\`${currentId}\`)` : '`None (Disabled)`';
+          return message.reply(cv2.info(
+            `Edit Rating Channel Status | <a:atheNATICK:1557841381630681106>`,
+            `**Current Bound Channel:** ${currentText}\n\n` +
+            `> -# • **Set Channel:** \`!rate setchannel <#channel>\` or \`!setrate <#channel>\`\n` +
+            `> -# • **Disable:** \`!rate setchannel none\` or \`!setrate none\`\n` +
+            `> -# • **Clearance:** \`[Extra Owner]\``
+          ));
+        }
+
+        if (lowerTarget === 'none' || lowerTarget === 'disable' || lowerTarget === 'off' || lowerTarget === 'reset') {
+          db.setRateChannel(message.guild.id, null);
+          return message.reply(cv2.success(
+            `Channel Disabled | <a:atheNATICK:1557841381630681106>`,
+            'The designated edit rating channel has been disabled. Users can now rate edits in any channel.'
+          ));
+        }
+
+        const targetId = channelMatch ? channelMatch[1] : (isDirectId ? (firstArg === 'setchannel' || firstArg === 'channel' ? args[1] : args[0]) : null);
+        const resolvedChannel = targetId ? (message.guild.channels.cache.get(targetId) || await message.guild.channels.fetch(targetId).catch(() => null)) : message.mentions.channels.first();
+
+        if (!resolvedChannel || !resolvedChannel.isTextBased()) {
+          return message.reply(cv2.warn(
+            'Invalid Channel',
+            'Please mention or provide a valid text channel.\n\n**Example:** `!rate setchannel #edits` or `!setrate #edits`'
+          ));
+        }
+
+        db.setRateChannel(message.guild.id, resolvedChannel.id);
+        return message.reply(cv2.success(
+          `Channel Configured | <a:atheNATICK:1557841381630681106>`,
+          `The designated edit rating channel is now <#${resolvedChannel.id}>.\nAny image or video sent in that channel will automatically receive an interactive star rating card!`
+        ));
       }
 
       const configuredChannel = db.getRateChannel(message.guild.id);
@@ -76,10 +116,10 @@ export const commands = [
       }
 
       if (!mediaUrl) {
-        const adminHint = message.member.permissions.has(PermissionFlagsBits.Administrator)
-          ? `\n-# **Admin Channel Binding:** Run \`!rate <#channel>\` (or \`!rateedit <#channel>\`) to bind the edit rating channel.`
+        const extraOwnerHint = isExtraOwnerOrHigher(message.author.id, message.guild)
+          ? `\n-# **Extra Owner Channel Binding:** Run \`!rate setchannel <#channel>\` (or \`!setrate <#channel>\`) to bind the edit rating channel.`
           : '';
-        return message.reply(`Please attach an image/video or provide a link to your edit!${adminHint}`).then(m => setTimeout(() => m.delete().catch(() => null), 7000));
+        return message.reply(`Please attach an image/video or provide a link to your edit!${extraOwnerHint}`).then(m => setTimeout(() => m.delete().catch(() => null), 7000));
       }
 
       await createRateMessage(message, mediaUrl);

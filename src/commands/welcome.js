@@ -2,7 +2,7 @@ import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, But
 import db from '../database.js';
 import cv2 from '../cv2.js';
 import { convertMp4ToGif, uploadGifToDiscord } from '../utils/mediaConverter.js';
-import { isBotOwnerSync, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon, isValidImageUrl } from '../utils/helpers.js';
+import { isBotOwnerSync, isExtraOwnerOrHigher, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon, isValidImageUrl } from '../utils/helpers.js';
 import { resolveMediaUrl, isPinterestUrl } from '../utils/pinterest.js';
 
 // ============================================================
@@ -401,13 +401,8 @@ export async function executeWelcomeTest(guild, member, type = 'welcome') {
 // INTERACTION HANDLERS
 // ============================================================
 export async function handleWelcomeManagerMenu(interaction) {
-  const isServerOwner = interaction.guild.ownerId === interaction.user.id;
-  const isBotOwner = isBotOwnerSync(interaction.user.id);
-  const isExtraOwner = db.isExtraOwner(interaction.guild.id, interaction.user.id);
-  const hasPerm = interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
-
-  if (!isServerOwner && !isBotOwner && !isExtraOwner && !hasPerm) {
-    return interaction.reply(cv2.asEphemeral(cv2.danger('Access Denied', 'You need the **Manage Server** permission to configure this system.')));
+  if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+    return interaction.reply(cv2.asEphemeral(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can configure this system.')));
   }
   const guildId = interaction.guild.id;
   const isWelcome = interaction.customId.startsWith('welcmgr_');
@@ -424,19 +419,13 @@ export async function handleWelcomeManagerMenu(interaction) {
 }
 
 export async function handleWelcomeManagerButton(interaction) {
+  if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+    return interaction.reply(cv2.asEphemeral(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can configure this system.')));
+  }
   const guildId = interaction.guild.id;
   const customId = interaction.customId;
   const isWelcome = customId.startsWith('welcmgr_');
   const action = isWelcome ? customId.replace('welcmgr_', '') : customId.replace('leavmgr_', '');
-
-  const isServerOwner = interaction.guild.ownerId === interaction.user.id;
-  const isBotOwner = isBotOwnerSync(interaction.user.id);
-  const isExtraOwner = db.isExtraOwner(interaction.guild.id, interaction.user.id);
-  const hasPerm = interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
-
-  if (!isServerOwner && !isBotOwner && !isExtraOwner && !hasPerm) {
-    return interaction.reply(cv2.asEphemeral(cv2.danger('Access Denied', 'You need the **Manage Server** permission to configure this system.')));
-  }
 
   const getConfig = isWelcome ? db.getWelcomeConfig.bind(db) : db.getLeaveConfig.bind(db);
   const setConfig = isWelcome ? db.setWelcomeConfig.bind(db) : db.setLeaveConfig.bind(db);
@@ -622,13 +611,8 @@ export async function handleWelcomeManagerButton(interaction) {
 }
 
 export async function handleWelcomeManagerModal(interaction) {
-  const isServerOwner = interaction.guild.ownerId === interaction.user.id;
-  const isBotOwner = isBotOwnerSync(interaction.user.id);
-  const isExtraOwner = db.isExtraOwner(interaction.guild.id, interaction.user.id);
-  const hasPerm = interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
-
-  if (!isServerOwner && !isBotOwner && !isExtraOwner && !hasPerm) {
-    return interaction.reply(cv2.asEphemeral(cv2.danger('Access Denied', 'You need the **Manage Server** permission to configure this system.')));
+  if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+    return interaction.reply(cv2.asEphemeral(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can configure this system.')));
   }
 
   const guildId = interaction.guild.id;
@@ -731,27 +715,39 @@ export const commands = [
   {
     name: 'welcome',
     aliases: ['welcomer', 'greet'],
-    description: '<a:uptime:1552608831060844575> Open the Welcome Message Manager.',
+    description: 'Open the Welcome Message Manager [Extra Owner].',
     category: 'utility',
-    permissions: [PermissionFlagsBits.ManageGuild],
-    options: [], // No subcommands anymore!
+    permissions: [],
+    options: [],
     async executePrefix(message) {
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can access the Welcome Manager.'));
+      }
       return message.reply(getManagerPanel(message.guild.id, 'welcome'));
     },
     async executeSlash(interaction) {
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.asEphemeral(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can access the Welcome Manager.')));
+      }
       return interaction.reply(getManagerPanel(interaction.guild.id, 'welcome'));
     }
   },
   {
     name: 'leave',
-    description: '<a:uptime:1552608831060844575> Open the Leave Message Manager.',
+    description: 'Open the Leave Message Manager [Extra Owner].',
     category: 'utility',
-    permissions: [PermissionFlagsBits.ManageGuild],
+    permissions: [],
     options: [],
     async executePrefix(message) {
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can access the Leave Manager.'));
+      }
       return message.reply(getManagerPanel(message.guild.id, 'leave'));
     },
     async executeSlash(interaction) {
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.asEphemeral(cv2.danger('Access Denied', 'Only the **Server Owner**, **Extra Owners**, and **Bot Owner** can access the Leave Manager.')));
+      }
       return interaction.reply(getManagerPanel(interaction.guild.id, 'leave'));
     }
   }
