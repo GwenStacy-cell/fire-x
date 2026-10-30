@@ -82,7 +82,7 @@ export const commands = [
         const embed = {
           type: 17,
           components: [
-            { type: 10, content: `# ${getRandomHeadingGlyph()} Pending Join Applications | <a:uptime:1552608831060844575>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Pending Join Applications | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             { type: 10, content: `<a:uptime:1552608831060844575> Total pending applications: **${keys.length}**` },
             { type: 14, divider: true }
@@ -332,7 +332,7 @@ export const commands = [
         const deployEmbed = {
           type: 17,
           components: [
-            { type: 10, content: `# ${getRandomHeadingGlyph()} Server Join Application | <a:uptime:1552608831060844575>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Server Join Application | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             { type: 10, content: `Welcome to **${message.guild.name}**!\n\nTo maintain security and verify all members before granting server access, you must submit a brief join application.` },
             { type: 10, content: `> Please click the button below to answer the application questions honestly. Staff will review your submission and grant your roles shortly.` },
@@ -353,7 +353,7 @@ export const commands = [
         const embed = {
           type: 17,
           components: [
-            { type: 10, content: `# ${getRandomHeadingGlyph()} Entry Questions Configuration | <a:uptime:1552608831060844575>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Entry Questions Configuration | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             { type: 10, content: `Configure the questions users must answer when applying to join **${message.guild.name}**.\n*(Maximum 5 questions enforced by Discord Modals)*` },
             { type: 14, divider: true }
@@ -423,7 +423,7 @@ export const commands = [
       const statusEmbed = {
         type: 17,
         components: [
-          { type: 10, content: `# ${getRandomHeadingGlyph()} Server Join Application Gatekeeper | <a:uptime:1552608831060844575>` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} Server Join Application Gatekeeper | <a:03_tick_circle:1565665642084827206>` },
           { type: 14, divider: true },
           { 
             type: 10, 

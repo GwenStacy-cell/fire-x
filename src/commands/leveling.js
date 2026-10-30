@@ -313,7 +313,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'Rank Theme Settings | <a:uptime:1552608831060844575>',
+              'Rank Theme Settings | <a:03_tick_circle:1565665642084827206>',
               `-# ${BULLET_EMOJI} **Active Theme:** \`${current.toUpperCase()}\`\n\n` +
               `-# ${BULLET_EMOJI} \`!ranktheme hogwarts\` \u2014 Cinematic Animated GIF with soaring Hedwig & flaming altar\n` +
               `-# ${BULLET_EMOJI} \`!ranktheme athena\` \u2014 Sleek Obsidian & God of War stone card`
@@ -444,7 +444,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'Level Role Milestones | <a:uptime:1552608831060844575>',
+              'Level Role Milestones | <a:03_tick_circle:1565665642084827206>',
               'No level role rewards are configured on this server yet.\n\n-# **Administrators:** Use `!rankrewards add <level> <@role>`'
             )
           ],
@@ -456,7 +456,7 @@ export const commands = [
       return message.reply({
         components: [
           cv2.buildContainer(
-            'Level Role Milestones | <a:uptime:1552608831060844575>',
+            'Level Role Milestones | <a:03_tick_circle:1565665642084827206>',
             `### **Configured Milestone Role Rewards**\n\n${listStr}`
           )
         ],
@@ -511,7 +511,7 @@ export const commands = [
         return interaction.reply({
           components: [
             cv2.buildContainer(
-              'Level Role Milestones | <a:uptime:1552608831060844575>',
+              'Level Role Milestones | <a:03_tick_circle:1565665642084827206>',
               'No level role rewards configured yet.\n\n-# **Administrators:** Use `/rankrewards add`.'
             )
           ],
@@ -523,7 +523,7 @@ export const commands = [
       return interaction.reply({
         components: [
           cv2.buildContainer(
-            'Level Role Milestones | <a:uptime:1552608831060844575>',
+            'Level Role Milestones | <a:03_tick_circle:1565665642084827206>',
             `### **Configured Milestone Role Rewards**\n\n${listStr}`
           )
         ],

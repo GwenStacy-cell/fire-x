@@ -1426,7 +1426,7 @@ export default {
             const textContent = `-# > Reason: . <@${message.author.id}> , **Maximum Warnings Exceeded**\n-# > \u2800\u2800\u2800\u2800\u2570\u203A has been automatically quarantined. ${qRes.message || ''}`;
             const section = new SectionBuilder()
                 .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(`**Security Quarantine | <a:uptime:1552608831060844575>**`),
+                    new TextDisplayBuilder().setContent(`**Security Quarantine | <a:exclamation_outline1:1565666739356827759>**`),
                     new TextDisplayBuilder().setContent(textContent)
                 )
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(message.author.displayAvatarURL({ extension: 'png', size: 128 })));
@@ -1437,7 +1437,7 @@ export default {
             const textContent = `-# > Reason: . <@${message.author.id}> , **${actionStr}**\n-# > \u2800\u2800\u2800\u2800\u2570\u203A has been warned " Your Limit is ${warns.length}/${maxWarnings} " Exceeding the limits will leads to punishments ,`;
             const section = new SectionBuilder()
                 .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent(`**${headingStr} | <a:uptime:1552608831060844575>**`),
+                    new TextDisplayBuilder().setContent(`**${headingStr} | <a:exclamation_outline1:1565666739356827759>**`),
                     new TextDisplayBuilder().setContent(textContent)
                 )
                 .setThumbnailAccessory(new ThumbnailBuilder().setURL(message.author.displayAvatarURL({ extension: 'png', size: 128 })));
@@ -1599,7 +1599,7 @@ export default {
 
           // 2. Detailed Message Delete Log
           let delInnerComps = [
-            { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:uptime:1552608831060844575>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:exclamation_outline1:1565666739356827759>` },
             { type: 14, divider: true },
             { type: 10, content: `-# **Author:** [${cleanDisplayName(message.author.displayName || message.author.username)}](https://discord.com/users/${message.author.id}) (\`${message.author.id}\`) [${authorTier}]` },
             { type: 10, content: `-# **Deleted By:** Athena Prime (Anti-Invite Auto-Mod)` },
@@ -1682,7 +1682,7 @@ export default {
 
           // 2. Detailed Message Delete Log (msgDeletes)
           let delInnerComps = [
-            { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:uptime:1552608831060844575>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:exclamation_outline1:1565666739356827759>` },
             { type: 14, divider: true },
             { type: 10, content: `-# **Author:** <@${message.author.id}> (\`${message.author.id}\`) [${authorTier}]` },
             { type: 10, content: `-# **Deleted By:** Athena Prime (Anti-Link Auto-Mod)` },
@@ -1728,7 +1728,7 @@ export default {
                  components: [{
                    type: 17,
                    components: [
-                     { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:uptime:1552608831060844575>` },
+                     { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:exclamation_outline1:1565666739356827759>` },
                      { type: 14, divider: true },
                      { type: 10, content: `-# **Author:** <@${message.author.id}> (\`${message.author.id}\`) [${authorTier}]` },
                      { type: 10, content: `-# **Deleted By:** Athena Prime (Hidden URL Filter)` },
@@ -1818,7 +1818,7 @@ export default {
 
             // 2. Comprehensive Message Delete Log
             let delInnerComps = [
-              { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:uptime:1552608831060844575>` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:exclamation_outline1:1565666739356827759>` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Author:** [${cleanDisplayName(message.author.displayName || message.author.username)}](https://discord.com/users/${message.author.id}) (\`${message.author.id}\`) [${authorTier}]` },
               { type: 10, content: `-# **Deleted By:** Athena Prime (Blacklisted Word Auto-Mod)` },
@@ -2420,7 +2420,7 @@ export default {
     const clearance = checkCommandClearance(cmd.name || commandName, message.author.id, message.guild);
     if (!clearance.allowed) {
       return message.reply(cv2.danger(
-        'Access Denied | <a:uptime:1552608831060844575>',
+        'Access Denied | <a:04_cross_circle:1565665644806934639>',
         `You do not have permission to execute \`${usedPrefix}${commandName}\`.\n\n` +
         `> -# **Required Clearance:** **${clearance.requiredClearance}**\n` +
         `> -# **Athena Security Policy:** Native Discord \`Administrator\` permissions do NOT grant access to Athena management commands. Only the **Server Owner** and designated **Extra Owners** (\`!extraowner\`) can manage the server or security.`

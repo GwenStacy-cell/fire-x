@@ -34,7 +34,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Financial Portfolio** | <a:uptime:1552608831060844575>\n` +
+              `### **Financial Portfolio** | <a:03_tick_circle:1565665642084827206>\n` +
               `-# **• Account Holder:** <@${targetUser.id}> \`(${targetUser.id})\`\n\n` +
               `-# **• Wallet Balance:** \`${wallet.toLocaleString()}\` coins\n` +
               `-# **• Vault Reserve:** \`${bank.toLocaleString()}\` coins\n` +
@@ -64,7 +64,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Financial Portfolio** | <a:uptime:1552608831060844575>\n` +
+              `### **Financial Portfolio** | <a:03_tick_circle:1565665642084827206>\n` +
               `-# **• Account Holder:** <@${targetUser.id}> \`(${targetUser.id})\`\n\n` +
               `-# **• Wallet Balance:** \`${wallet.toLocaleString()}\` coins\n` +
               `-# **• Vault Reserve:** \`${bank.toLocaleString()}\` coins\n` +
@@ -104,8 +104,8 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'Stipend Cooldown Active | <a:uptime:1552608831060844575>',
-              `You have already claimed your daily stipend.\n\n-# **Time Remaining:** \`${hours}h ${minutes}m\`\n-# **Streak Protected:** \`${eco.streak || 0} days\``
+              'Stipend Cooldown Active | <a:exclamation_outline1:1565666739356827759>',
+              `You have already claimed your daily stipend.\n\n> -# <a:target_blink:1565667466984554588> **Time Remaining:** \`${hours}h ${minutes}m\`\n> -# <a:target_blink:1565667466984554588> **Streak Protected:** \`${eco.streak || 0} days\``
             )
           ],
           flags: MessageFlags.IsComponentsV2
@@ -162,8 +162,8 @@ export const commands = [
         return interaction.reply({
           components: [
             cv2.buildContainer(
-              'Stipend Cooldown Active | <a:uptime:1552608831060844575>',
-              `You have already claimed your daily stipend.\n\n-# **Time Remaining:** \`${hours}h ${minutes}m\`\n-# **Streak Protected:** \`${eco.streak || 0} days\``
+              'Stipend Cooldown Active | <a:exclamation_outline1:1565666739356827759>',
+              `You have already claimed your daily stipend.\n\n> -# <a:target_blink:1565667466984554588> **Time Remaining:** \`${hours}h ${minutes}m\`\n> -# <a:target_blink:1565667466984554588> **Streak Protected:** \`${eco.streak || 0} days\``
             )
           ],
           flags: MessageFlags.IsComponentsV2
@@ -400,7 +400,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:uptime:1552608831060844575>'}**\n` +
+              `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:04_cross_circle:1565665644806934639>'}**\n` +
               `-# **• Player:** <@${message.author.id}>\n` +
               `-# ${BULLET_EMOJI} **Your Call:** \`${normalizedChoice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
               `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
@@ -448,7 +448,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:uptime:1552608831060844575>'}**\n` +
+              `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:04_cross_circle:1565665644806934639>'}**\n` +
               `-# **• Player:** <@${interaction.user.id}>\n` +
               `-# ${BULLET_EMOJI} **Your Call:** \`${choice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
               `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
@@ -658,7 +658,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'Server Commerce Catalog | <a:uptime:1552608831060844575>',
+              'Server Commerce Catalog | <a:03_tick_circle:1565665642084827206>',
               'The server shop is currently empty.\n\n-# **Administrators:** Add items with `!shop add <name> <price> <@role>`'
             )
           ],
@@ -678,7 +678,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Server Commerce Catalog | <a:uptime:1552608831060844575>**\n` +
+              `### **Server Commerce Catalog | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **Use \`!shop buy <item_id>\` to purchase an item.**\n\n` +
               itemList
           },
@@ -795,7 +795,7 @@ export const commands = [
         return interaction.reply({
           components: [
             cv2.buildContainer(
-              'Server Commerce Catalog | <a:uptime:1552608831060844575>',
+              'Server Commerce Catalog | <a:03_tick_circle:1565665642084827206>',
               'The server shop is currently empty.\n\n-# **Administrators:** Use `/shop add` to list items.'
             )
           ],
@@ -815,7 +815,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Server Commerce Catalog | <a:uptime:1552608831060844575>**\n` +
+              `### **Server Commerce Catalog | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **Use \`/shop buy <item_id>\` to purchase an item.**\n\n` +
               itemList
           },

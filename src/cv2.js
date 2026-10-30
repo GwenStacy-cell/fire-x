@@ -72,6 +72,16 @@ function buildContainer(title, description, fields, customFooter, accentColor = 
     let headerTitle = String(title).trim();
     // Auto-upgrade legacy tick
     headerTitle = headerTitle.replaceAll(LEGACY_TICK, TICK_EMOJI);
+    if (headerTitle.includes('<a:uptime:1552608831060844575>')) {
+      const lower = headerTitle.toLowerCase();
+      if (/cooldown|advisory|warning|caution|notice|audit|limit|deleted/i.test(lower)) {
+        headerTitle = headerTitle.replace('<a:uptime:1552608831060844575>', WARN_EMOJI);
+      } else if (/denied|blocked|banned|defeat|error|danger|threat|raid|failed/i.test(lower)) {
+        headerTitle = headerTitle.replace('<a:uptime:1552608831060844575>', WRONG_EMOJI);
+      } else {
+        headerTitle = headerTitle.replace('<a:uptime:1552608831060844575>', TICK_EMOJI);
+      }
+    }
 
     // Strip any existing markdown headers or quotes (#, ##, ###, > #, etc.)
     headerTitle = headerTitle.replace(/^[>#\s]+/, '').trim();

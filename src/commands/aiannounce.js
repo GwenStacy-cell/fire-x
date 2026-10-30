@@ -253,7 +253,7 @@ export function buildPromptIntakeContainer(draft = null) {
   const comps = [
     {
       type: 10,
-      content: `# ${getRandomHeadingGlyph()} Athena AI Announcement Studio | <a:uptime:1552608831060844575>\n-# Transform rough ideas, typo-filled notes, or brief human bullet points into stunning server announcements.\n-# Powered by Google Gemini 3.8 Flash High Intelligence Pipeline.`
+      content: `# ${getRandomHeadingGlyph()} Athena AI Announcement Studio | <a:03_tick_circle:1565665642084827206>\n-# Transform rough ideas, typo-filled notes, or brief human bullet points into stunning server announcements.\n-# Powered by Google Gemini 3.8 Flash High Intelligence Pipeline.`
     },
     { type: 14, divider: true },
     {

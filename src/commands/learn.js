@@ -451,7 +451,7 @@ export const commands = [
     ],
     async executePrefix(message, args) {
       if (!isServerAdmin(message.member, message.guild.id)) {
-        return message.reply(cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'The `!learn` command is strictly restricted to **Extra Owners** and the **Server Owner**.')).catch(() => null);
+        return message.reply(cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'The `!learn` command is strictly restricted to **Extra Owners** and the **Server Owner**.')).catch(() => null);
       }
 
       const guild = message.guild;

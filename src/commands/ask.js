@@ -17,7 +17,7 @@ function resolveLoadingEmoji() {
 export function buildAICV2Container(user, prompt, aiResult, accentColor = '#00e5ff') {
   const content = formatAIToGreyMarkdown(aiResult.text || 'No response generated.');
   const headerText =
-    `### **Athena Prime Neural Engine** | <a:uptime:1552608831060844575>\n` +
+    `### **Athena Prime Neural Engine** | <a:03_tick_circle:1565665642084827206>\n` +
     `-# ${BULLET_EMOJI} **__Member:__** <@${user.id}> \`(${user.id})\` \u00b7 **__Model:__** \`${aiResult.model}\` \u00b7 **__Latency:__** \`${aiResult.latencyMs}ms\`\n` +
     `-# ${BULLET_EMOJI} **__Prompt:__** *${prompt.length > 120 ? prompt.slice(0, 117) + '...' : prompt}*`;
 
@@ -138,7 +138,7 @@ export const commands = [
             {
               type: 10,
               content:
-                `### **Neural Engine Advisory** | <a:uptime:1552608831060844575>\n` +
+                `### **Neural Engine Advisory** | <a:exclamation_outline1:1565666739356827759>\n` +
                 `-# ${BULLET_EMOJI} **__Status:__** \`Failed to synthesize\`\n` +
                 `-# ${BULLET_EMOJI} **__Error:__** ${aiResult.error || 'Connection timed out'}`
             }
@@ -207,7 +207,7 @@ export const commands = [
             {
               type: 10,
               content:
-                `### **Neural Engine Advisory** | <a:uptime:1552608831060844575>\n` +
+                `### **Neural Engine Advisory** | <a:exclamation_outline1:1565666739356827759>\n` +
                 `-# ${BULLET_EMOJI} **__Status:__** \`Failed to synthesize\`\n` +
                 `-# ${BULLET_EMOJI} **__Error:__** ${aiResult.error || 'Connection timed out'}`
             }

@@ -2630,7 +2630,7 @@ export async function executeUnquarantine(guild, targetMember, moderator, contex
     }
 
         const c = new ContainerBuilder();
-    const textContent = `**Quarantine Lifted | <a:uptime:1552608831060844575>**\n-# > Successfully restored **${cleanDisplayName(targetMember.displayName)}** and recovered their original role structure.\n-# > \u2800\u2800\u2800\u2800\u2570\u203A User: [${cleanDisplayName(targetMember.displayName)}](https://discord.com/users/${targetMember.id}) • Moderator: [${cleanDisplayName(moderator.displayName || moderator.user?.username || 'System')}](https://discord.com/users/${moderator.id || moderator.user?.id})`;
+    const textContent = `**Quarantine Lifted | <a:03_tick_circle:1565665642084827206>**\n-# > Successfully restored **${cleanDisplayName(targetMember.displayName)}** and recovered their original role structure.\n-# > \u2800\u2800\u2800\u2800\u2570\u203A User: [${cleanDisplayName(targetMember.displayName)}](https://discord.com/users/${targetMember.id}) • Moderator: [${cleanDisplayName(moderator.displayName || moderator.user?.username || 'System')}](https://discord.com/users/${moderator.id || moderator.user?.id})`;
     c.addTextDisplayComponents(new TextDisplayBuilder().setContent(textContent));
     
     const responseEmbed = { components: [c.toJSON ? c.toJSON() : c], flags: MessageFlags.IsComponentsV2 };
@@ -3629,7 +3629,7 @@ async function buildRaidModeStatusPanel(guild) {
             type: 12,
             items: [{ media: { url: 'attachment://raid_banner.gif' } }]
           },
-          { type: 10, content: `# ${getRandomHeadingGlyph()} Server Raid Defense Matrix | <a:uptime:1552608831060844575>` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} Server Raid Defense Matrix | <a:03_tick_circle:1565665642084827206>` },
           { type: 14, divider: true },
           {
             type: 10,
@@ -5758,7 +5758,7 @@ async function handleQrManager(guild, moderator, action, roleArg, channelArg) {
           type: 12,
           items: [{ media: { url: 'attachment://qr_banner.gif' } }]
         },
-        { type: 10, content: `# ${getRandomHeadingGlyph()} Quarantine System Status | <a:uptime:1552608831060844575>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Quarantine System Status | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -7384,7 +7384,7 @@ export async function handleAutonickModal(interaction) {
 export async function handleHoneypotCommand(guild, moderator, action = 'status', customChannel = null) {
   const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This command is strictly restricted to **Extra Owners** and the **Server Owner**.');
+    return cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'This command is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7528,7 +7528,7 @@ export async function getHoneypotStatusPanel(guild, honeypotChannelId, notice = 
 export async function handleAntiGhostPingCommand(guild, moderator, action = 'status') {
   const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This command is strictly restricted to **Extra Owners** and the **Server Owner**.');
+    return cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'This command is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7673,7 +7673,7 @@ export async function getQuarantineListPanel(guild, moderator) {
 export async function handleMassUnquarantineAction(guild, moderator) {
   const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This action is strictly restricted to **Extra Owners** and the **Server Owner**.');
+    return cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'This action is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7702,7 +7702,7 @@ export async function handleMassUnquarantineAction(guild, moderator) {
 export async function handleMassBanQuarantineAction(guild, moderator) {
   const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This action is strictly restricted to **Extra Owners** and the **Server Owner**.');
+    return cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'This action is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7752,7 +7752,7 @@ export async function handleExtendQuarantineAction(guild, moderator, extraMinute
 export async function handleAutoFixHealthVectors(guild, moderator) {
   const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'This action is strictly restricted to **Extra Owners** and the **Server Owner**.');
+    return cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'This action is strictly restricted to **Extra Owners** and the **Server Owner**.');
   }
 
   const config = db.getGuildConfig(guild.id);
@@ -7892,7 +7892,7 @@ export async function handleTacticalBriefing(guild, member, channel, targetVc = 
 export async function handleSimNukeCommand(guild, moderator) {
   const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'Only the **Server Owner** or **Extra Owners** can run security simulations.');
+    return cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'Only the **Server Owner** or **Extra Owners** can run security simulations.');
   }
 
   const t1 = (Math.floor(Math.random() * 400 + 700) / 1000).toFixed(2);
@@ -7954,7 +7954,7 @@ export async function handleSimNukeCommand(guild, moderator) {
 export async function getPanicHistoryPanel(guild, moderator) {
   const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
   if (!isAuthorized) {
-    return cv2.danger('Access Denied | <a:uptime:1552608831060844575>', 'Only the **Server Owner** or **Extra Owners** can view the Defense Black Box.');
+    return cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'Only the **Server Owner** or **Extra Owners** can view the Defense Black Box.');
   }
 
   const history = db.getPanicHistory(guild.id);

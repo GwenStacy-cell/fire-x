@@ -1280,7 +1280,7 @@ const GLOBAL_BURST_THRESHOLD = 3;       // 3 destructive actions in 2s across an
 export async function notifyMultiAccountBurst(guild, burstCount) {
   try {
     const alertEmbed = cv2.danger(
-      'COORDINATED BURST RAID DETECTED | <a:uptime:1552608831060844575>',
+      'COORDINATED BURST RAID DETECTED | <a:04_cross_circle:1565665644806934639>',
       `<a:uptime:1552608831060844575> **EMERGENCY SERVER LOCKDOWN ACTIVATED**\n\nDetected **${burstCount} destructive actions** within **2 SECONDS** across multiple accounts!\n\nAthena Prime has engaged **Immediate Lockdown**:\n<a:uptime:1552608831060844575> All protection thresholds reduced to **1 strike instant ban**.\n<a:uptime:1552608831060844575> Any unauthorized account performing administrative changes will be banned at 0ms.\n<a:uptime:1552608831060844575> Spam channel and role sweeps executed.`
     );
     await logToSecurityChannel(guild, alertEmbed).catch(() => null);

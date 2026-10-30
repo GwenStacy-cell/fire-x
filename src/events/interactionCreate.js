@@ -112,7 +112,7 @@ export default {
           return interaction.reply({ content: '-# No active panic lockdown snapshot in database. Server is operating under normal defense parameters.', flags: MessageFlags.Ephemeral });
         }
         return interaction.reply({
-          content: `### Active Panic Lockdown Audit | <a:uptime:1552608831060844575>\n` +
+          content: `### Active Panic Lockdown Audit | <a:exclamation_outline1:1565666739356827759>\n` +
             `> **Tier:** \`${snapshot.tierLabel || 'Tier ' + snapshot.tier}\`\n` +
             `> **Channels Secured:** \`${snapshot.channels?.length || 0} channels\`\n` +
             `> **Enforcer:** <@${snapshot.moderatorId}>\n` +
@@ -1177,7 +1177,7 @@ if (interaction.customId.startsWith('xp_view_rank_')) {
       const reviewEmbed = {
         type: 17,
         components: [
-          { type: 10, content: `# New Server Join Application | <a:uptime:1552608831060844575>` },
+          { type: 10, content: `# New Server Join Application | <a:03_tick_circle:1565665642084827206>` },
           { type: 14, divider: true },
           { 
             type: 9, 
@@ -1432,7 +1432,7 @@ if (interaction.customId.startsWith('xp_view_rank_')) {
       if (!clearance.allowed) {
         return interaction.reply({
           ...cv2.danger(
-            'Access Denied | <a:uptime:1552608831060844575>',
+            'Access Denied | <a:04_cross_circle:1565665644806934639>',
             `You do not have permission to execute \`/${interaction.commandName}\`.\n\n` +
             `> -# **Required Clearance:** **${clearance.requiredClearance}**\n` +
             `> -# **Athena Security Policy:** Native Discord \`Administrator\` permissions do NOT grant access to Athena management commands. Only the **Server Owner** and designated **Extra Owners** (\`!extraowner\`) can manage the server or security.`
@@ -2475,7 +2475,7 @@ if (interaction.customId.startsWith('xp_view_rank_')) {
         const container = {
           type: 17,
           components: [
-            { type: 10, content: `## Voice Recording Status | <a:uptime:1552608831060844575>\n-# Status: ${isActive ? '<a:uptime:1552608831060844575> **Recording Active**' : '<:off:1533844858983157851> **Inactive**'}` },
+            { type: 10, content: `## Voice Recording Status | <a:03_tick_circle:1565665642084827206>\n-# Status: ${isActive ? '<a:uptime:1552608831060844575> **Recording Active**' : '<:off:1533844858983157851> **Inactive**'}` },
             { type: 14, divider: true },
             { type: 10, content: '-# Athena Bulletproof Security' }
           ]

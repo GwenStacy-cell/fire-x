@@ -54,7 +54,7 @@ export default {
         try {
           const targetTextCh = activeJtc.textChannelId ? (guild.channels.cache.get(activeJtc.textChannelId) || await guild.channels.fetch(activeJtc.textChannelId).catch(() => null)) : newState.channel;
           if (targetTextCh && targetTextCh.isTextBased()) {
-            const chimeMsg = `**Entrance Chime | <a:uptime:1552608831060844575>**\n-# > Welcome <@${userId}> to **${newState.channel.name}**!`;
+            const chimeMsg = `**Entrance Chime | <a:03_tick_circle:1565665642084827206>**\n-# > Welcome <@${userId}> to **${newState.channel.name}**!`;
             targetTextCh.send({ content: chimeMsg }).catch(() => null);
           }
         } catch {}

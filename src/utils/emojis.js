@@ -80,6 +80,16 @@ export function formatHeading(title, status = null) {
 
   // Upgrade legacy tick
   str = str.replaceAll(LEGACY_TICK, TICK_EMOJI);
+  if (str.includes(UPTIME_EMOJI)) {
+    const lower = str.toLowerCase();
+    if (/cooldown|advisory|warning|caution|notice|audit|limit|deleted/i.test(lower)) {
+      str = str.replace(UPTIME_EMOJI, WARN_EMOJI);
+    } else if (/denied|blocked|banned|defeat|error|danger|threat|raid|failed/i.test(lower)) {
+      str = str.replace(UPTIME_EMOJI, WRONG_EMOJI);
+    } else {
+      str = str.replace(UPTIME_EMOJI, TICK_EMOJI);
+    }
+  }
 
   // Status badge appending
   if (status === 'success') {
