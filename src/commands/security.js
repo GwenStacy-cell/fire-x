@@ -5400,6 +5400,23 @@ export async function getSecurityStatusPanel(guild) {
       "-# **Flawless Restoration:** Re-engineers exact channel/category raw positions and permissions post-nuke."
     };
 
+    const offModulesCount = totalModules - activeModulesCount;
+    const resultText = (activeModulesCount === totalModules && isSecured) 
+      ? '100% Armed & Active' 
+      : (isSecured ? `${Math.round((activeModulesCount/totalModules)*100)}% Armed & Active` : '0% Armed — Security Disarmed');
+    const auditTick = (activeModulesCount === totalModules && isSecured) ? '<a:03_tick_circle:1565665642084827206>' : '<a:exclamation_outline1:1565666739356827759>';
+
+    const auditTelemetrySection = {
+      type: 10,
+      content: `# ${getRandomHeadingGlyph()} Anti-Nuke Shield Matrix Audit | ${auditTick}\n` +
+        "```yaml\n" +
+        `Total modules rendered: ${totalModules}\n` +
+        `ON modules: ${activeModulesCount}  (<:on:1533844867191406672>)\n` +
+        `OFF modules: ${offModulesCount}\n` +
+        `Result: ${resultText}\n` +
+        "```"
+    };
+
     const actionButtons = [];
     if (!isSecured) {
       actionButtons.push({ type: 2, custom_id: 'sec_enable_all', label: '⚡ Engage All Shields', style: 3 });
@@ -5422,6 +5439,8 @@ export async function getSecurityStatusPanel(guild) {
       headerSection,
       { type: 14, divider: true },
       detailsSection,
+      { type: 14, divider: true },
+      auditTelemetrySection,
       { type: 14, divider: true },
       { type: 10, content: listText.trimEnd() },
       { type: 14, divider: true },

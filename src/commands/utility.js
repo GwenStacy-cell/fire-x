@@ -1603,6 +1603,7 @@ export const commands = [
   // --- STATUS COMMAND ---
   {
     name: 'status',
+    aliases: ['ss', 'secstatus', 'botstatus'],
     description: 'Displays the Athena Prime security status overview and bot health.',
     category: 'utility',
     permissions: [],
