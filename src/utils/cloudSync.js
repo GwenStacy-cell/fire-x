@@ -390,6 +390,9 @@ export function getDatabaseMetrics(client = null) {
     xpUsers: Object.values(cache.usersXp || {}).reduce((acc, curr) => acc + Object.keys(curr || {}).length, 0),
     serverStats: Object.keys(cache.serverStats || {}).length,
     triggers: Object.keys(cache.triggers || {}).length + (cache.globalTriggers || []).length,
+    autoRepliesCount: Object.values(cache.triggers || {}).reduce((acc, list) => acc + (Array.isArray(list) ? list.filter(t => t.type !== 'trigger').length : 0), 0),
+    triggersOnlyCount: Object.values(cache.triggers || {}).reduce((acc, list) => acc + (Array.isArray(list) ? list.filter(t => t.type === 'trigger').length : 0), 0),
+    triggersGuilds: Object.keys(cache.triggers || {}).filter(k => (cache.triggers[k] || []).length > 0).length,
     tickets: Object.keys(cache.tickets || {}).length,
     verification: Object.keys(cache.verification || {}).length,
     giveaways: Object.keys(cache.giveaways || {}).length,
@@ -532,7 +535,7 @@ export function formatDatabaseMetrics(m, options = {}) {
   text += 
     `-# **__Server Profiles & Configurations:__**\n` +
     `> -# Guilds: \`${m.guilds}\` | Prefixes: \`${m.customPrefixes}\` | Auto-Nicks: \`${m.autoNicks}\` | Colors: \`${m.accentColors}\` (${m.accentManagerRoles || 0} mgrs) | Dashboards: \`${m.dashboardChannels}\` | 2FA: \`${m.twoFactorServers || 0}\`\n` +
-    `> -# Cmds & Triggers: \`Custom: ${m.customCommandsTotal || 0} (${m.customCommandsServers || 0}g) | Triggers: ${m.triggers || 0} | Ignored: ${m.ignoredChannelsCount || 0} chs, ${m.ignoredCategoriesCount || 0} cats | Execs: ${m.botCommandsRun || 0}\`\n\n` +
+    `> -# Cmds & Responses: \`Custom: ${m.customCommandsTotal || 0} (${m.customCommandsServers || 0}g) | Auto-Replies (!ar): ${m.autoRepliesCount || 0} | Triggers: ${m.triggersOnlyCount || 0} (${m.triggersGuilds || 0}g) | Ignored: ${m.ignoredChannelsCount || 0} chs | Execs: ${m.botCommandsRun || 0}\`\n\n` +
 
     `-# **__Server Channel Setups & Grandmaster Chess Matrix:__**\n` +
     `> -# Chess Engine: \`${m.chessEnginesCount || 0} engines | ${m.chessThemesCount || 0} themes | ${m.chessGamesActive || 0} active games\`\n` +
@@ -734,7 +737,7 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
       formattedText = formattedText.slice(0, 3800) + '\n> -# **__[Snapshot manifest truncated for Discord display limits]__**';
     }
 
-    // 1. Send the signature Accent Borderless CV2 manifest container
+    // 1. Send the signature Accent Borderless CV2 manifest container ONLY
     const cv2Payload = cv2.info(
       `Database Cloud Backup | <a:atheNATICK:1557841381630681106>`,
       formattedText,
@@ -742,13 +745,7 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
       'Athena Bulletproof Defense Matrix • V1.0.0',
       0x5865F2
     );
-    await channel.send(cv2Payload);
-
-    // 2. Send downloadable snapshot archive files (flags: 0 ensures Discord attaches both files without dropping them)
-    const sentMsg = await channel.send({
-      content: `**Database Cloud Snapshot Files | <a:atheNATICK:1557841381630681106>**\n-# Created: <t:${Math.floor(timestamp / 1000)}:F> (<t:${Math.floor(timestamp / 1000)}:R>) | Trigger: \`${reason}\` | Snapshot Size: \`${sizeKb} KB\`\n-# Hot-reload snapshot archives for instant zero-loss migration:`,
-      files
-    });
+    const sentMsg = await channel.send(cv2Payload);
 
     // Save metadata
     db.cache.lastCloudBackup = timestamp;
@@ -756,18 +753,16 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
     db.save();
 
     // Rotate and prune old backup messages to avoid channel bloat (keep latest 30)
-    // Only clean up truly broken messages (0 attachments, 0 components, 0 embeds, empty text)
+    // Clean up any leftover file messages and keep strictly Accent Borderless CV2 manifests
     try {
       const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
       if (messages) {
-        const brokenMsgs = messages.filter(msg =>
+        // Prune any unwanted file attachment messages from the backup channel
+        const fileMsgs = messages.filter(msg =>
           msg.author.id === client.user.id &&
-          msg.attachments.size === 0 &&
-          (!msg.components || msg.components.length === 0) &&
-          (!msg.embeds || msg.embeds.length === 0) &&
-          (!msg.content || msg.content.trim() === '')
+          (msg.attachments.size > 0 || msg.content?.includes('Database Cloud Snapshot Files'))
         );
-        for (const msg of brokenMsgs.values()) {
+        for (const msg of fileMsgs.values()) {
           await msg.delete().catch(() => null);
         }
 
@@ -777,16 +772,6 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
           .sort((a, b) => b.createdTimestamp - a.createdTimestamp);
         const manifestsToDelete = [...cv2Manifests.values()].slice(30);
         for (const msg of manifestsToDelete) {
-          await msg.delete().catch(() => null);
-        }
-
-        // Keep latest 30 snapshot file messages
-        const backupMessages = messages
-          .filter(m => m.author.id === client.user.id && m.attachments.some(a => a.name?.startsWith('athena_db_')))
-          .sort((a, b) => b.createdTimestamp - a.createdTimestamp);
-
-        const toDelete = [...backupMessages.values()].slice(30);
-        for (const msg of toDelete) {
           await msg.delete().catch(() => null);
         }
       }

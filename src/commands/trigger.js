@@ -926,10 +926,6 @@ export function canManageTriggers(guild, userOrMember) {
   if (isBotOwnerSync(userId)) return true;
   if (guild.ownerId === userId) return true;
   if (db.isExtraOwner(guild.id, userId)) return true;
-  const member = guild.members.cache.get(userId) || (userOrMember.permissions ? userOrMember : null);
-  if (member?.permissions?.has(PermissionFlagsBits.ManageGuild) || member?.permissions?.has(PermissionFlagsBits.Administrator)) {
-    return true;
-  }
   return false;
 }
 
@@ -1076,7 +1072,7 @@ export async function buildTriggerDashboard(guild, page = 0) {
         `-# • **Global Network Replies:** **${globalTriggers.length} active**\n` +
         `-# • **Page:** **${currentPage + 1} of ${totalPages}**\n` +
         `-# • **Sync Status:** **Synchronized with Auto-Reply Matrix (${prefix}ar)**\n` +
-        `-# • **Removal Access:** **Server Admins / Extra Owner**\n` +
+        `-# • **Removal Access:** **Extra Owner / Server Owner**\n` +
         `-# • **Dynamic Tags:** **Supports {user}, {server}, {count}, etc.**`
     }]
   };
@@ -1346,11 +1342,11 @@ export async function handleTriggerInteractions(interaction) {
           flags: 64
         });
       }
-      // Direct Delete button for a trigger (Server Admins / Extra Owner)
+      // Direct Delete button for a trigger (Extra Owner / Server Owner)
       if (interaction.customId.startsWith('trig_btn_del_')) {
         if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
           return interaction.reply({
-            content: '-# **Access Denied:** Removing trigger setups requires **Server Admin** or **Extra Owner** permissions.',
+            content: '-# **Access Denied:** Removing trigger setups requires **Extra Owner** or **Server Owner** permissions.',
             flags: 64
           });
         }
@@ -1383,11 +1379,11 @@ export async function handleTriggerInteractions(interaction) {
         return cv2.respond(interaction, panel, 7);
       }
 
-      // Clear All (Server Admins / Extra Owner)
+      // Clear All (Extra Owner / Server Owner)
       if (interaction.customId === 'trig_btn_clear_all') {
         if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
           return interaction.reply({
-            content: '-# **Access Denied:** Clearing trigger setups requires **Server Admin** or **Extra Owner** permissions.',
+            content: '-# **Access Denied:** Clearing trigger setups requires **Extra Owner** or **Server Owner** permissions.',
             flags: 64
           });
         }
@@ -1416,7 +1412,7 @@ export async function handleTriggerInteractions(interaction) {
       if (interaction.customId === 'trig_btn_create') {
         if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
           return interaction.reply({
-            content: '-# **Access Denied:** Creating triggers requires **Server Admin** or **Extra Owner** permissions.',
+            content: '-# **Access Denied:** Creating triggers requires **Extra Owner** or **Server Owner** permissions.',
             flags: 64
           });
         }
@@ -1473,7 +1469,7 @@ export async function handleTriggerInteractions(interaction) {
       if (interaction.customId === 'trig_select_edit') {
         if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
           return interaction.reply({
-            content: '-# **Access Denied:** Editing triggers requires **Server Admin** or **Extra Owner** permissions.',
+            content: '-# **Access Denied:** Editing triggers requires **Extra Owner** or **Server Owner** permissions.',
             flags: 64
           });
         }
@@ -1532,11 +1528,11 @@ export async function handleTriggerInteractions(interaction) {
         return interaction.showModal(modal);
       }
 
-      // Select menu to delete (Server Admins / Extra Owner)
+      // Select menu to delete (Extra Owner / Server Owner)
       if (interaction.customId === 'trig_select_delete') {
         if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
           return interaction.reply({
-            content: '-# **Access Denied:** Removing trigger setups requires **Server Admin** or **Extra Owner** permissions.',
+            content: '-# **Access Denied:** Removing trigger setups requires **Extra Owner** or **Server Owner** permissions.',
             flags: 64
           });
         }
@@ -1553,7 +1549,7 @@ export async function handleTriggerInteractions(interaction) {
       if (interaction.customId === 'trig_modal_create') {
         if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
           return interaction.reply({
-            content: '-# **Access Denied:** Creating triggers requires **Server Admin** or **Extra Owner** permissions.',
+            content: '-# **Access Denied:** Creating triggers requires **Extra Owner** or **Server Owner** permissions.',
             flags: 64
           });
         }
@@ -1598,7 +1594,7 @@ export async function handleTriggerInteractions(interaction) {
       if (interaction.customId.startsWith('trig_modal_edit_')) {
         if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
           return interaction.reply({
-            content: '-# **Access Denied:** Editing triggers requires **Server Admin** or **Extra Owner** permissions.',
+            content: '-# **Access Denied:** Editing triggers requires **Extra Owner** or **Server Owner** permissions.',
             flags: 64
           });
         }
@@ -1717,12 +1713,20 @@ export const autoreplyCmd = {
     ],
 
     async executePrefix(message, args) {
+      const sub = args[0]?.toLowerCase();
+      if (sub !== 'list' && !canManageTriggers(message.guild, message.member || message.author)) {
+        return message.reply(makeAccentResponse(
+          message.guild,
+          'Access Denied',
+          'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can manage auto-replies.',
+          false
+        ));
+      }
+
       if (args.length === 0) {
         const payload = buildAutoReplyDashboard(message.guild);
         return message.reply(payload);
       }
-
-      const sub = args[0].toLowerCase();
 
       if (sub === 'global') {
         if (!isBotOwnerSync(message.author.id)) {
@@ -2027,7 +2031,7 @@ export const triggerCmd = {
     },
     {
       name: 'delete',
-      description: 'Delete a trigger word response (Server Admins / Extra Owner)',
+      description: 'Delete a trigger word response (Extra Owner)',
       type: 1, // SUB_COMMAND
       options: [
         { name: 'keyword', description: 'Keyword to delete', type: 3, required: true }
@@ -2040,7 +2044,7 @@ export const triggerCmd = {
     },
     {
       name: 'clear',
-      description: 'Clear all triggers in this server (Server Admins / Extra Owner)',
+      description: 'Clear all triggers in this server (Extra Owner)',
       type: 1 // SUB_COMMAND
     },
     {
@@ -2101,7 +2105,7 @@ export const triggerCmd = {
     },
     {
       name: 'remove',
-      description: 'Remove a trigger word response (Server Admins / Extra Owner)',
+      description: 'Remove a trigger word response (Extra Owner)',
       type: 1, // SUB_COMMAND
       options: [
         { name: 'keyword', description: 'Keyword to remove', type: 3, required: true }
@@ -2122,7 +2126,7 @@ export const triggerCmd = {
     // 1. Manually Settable Reaction Synergy: !trigger react <keyword> <emoji | none>
     if (sub === 'react' || sub === 'reaction') {
       if (!canManageTriggers(message.guild, message.member || message.author)) {
-        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Server Admins**, **Extra Owners**, or the **Server Owner** can configure trigger reactions.', false));
+        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can configure trigger reactions.', false));
       }
       const match = args[1]?.trim();
       const emoji = args[2]?.trim();
@@ -2139,7 +2143,7 @@ export const triggerCmd = {
     // 2. Manually Settable Channel Mirroring: !trigger mirror <keyword> <#channel | none>
     if (sub === 'mirror' || sub === 'escalate') {
       if (!canManageTriggers(message.guild, message.member || message.author)) {
-        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Server Admins**, **Extra Owners**, or the **Server Owner** can configure trigger mirroring.', false));
+        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can configure trigger mirroring.', false));
       }
       const match = args[1]?.trim();
       const channelRaw = args[2]?.trim();
@@ -2156,7 +2160,7 @@ export const triggerCmd = {
     // 3. Ghost / Self-Destruct Triggers: !trigger ghost <keyword> <seconds | none>
     if (sub === 'ghost' || sub === 'autodelete') {
       if (!canManageTriggers(message.guild, message.member || message.author)) {
-        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Server Admins**, **Extra Owners**, or the **Server Owner** can configure ghost triggers.', false));
+        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can configure ghost triggers.', false));
       }
       const match = args[1]?.trim();
       const secRaw = args[2]?.trim();
@@ -2174,7 +2178,7 @@ export const triggerCmd = {
     // 4. Gamified Easter Egg & Bounty: !trigger bounty <keyword> <xp> [maxClaims]
     if (sub === 'bounty' || sub === 'xp' || sub === 'easteregg') {
       if (!canManageTriggers(message.guild, message.member || message.author)) {
-        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Server Admins**, **Extra Owners**, or the **Server Owner** can configure Easter Egg bounties.', false));
+        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can configure Easter Egg bounties.', false));
       }
       const match = args[1]?.trim();
       const xpRaw = args[2]?.trim();
@@ -2194,7 +2198,7 @@ export const triggerCmd = {
     // 5. Day / Night & Clock-Aware: !trigger time <keyword> <morning | day | night | weekend | always>
     if (sub === 'time' || sub === 'clock') {
       if (!canManageTriggers(message.guild, message.member || message.author)) {
-        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Server Admins**, **Extra Owners**, or the **Server Owner** can configure time-sensitive triggers.', false));
+        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can configure time-sensitive triggers.', false));
       }
       const match = args[1]?.trim();
       const variantRaw = args[2]?.trim().toLowerCase();
@@ -2211,7 +2215,7 @@ export const triggerCmd = {
     // 6. Dynamic Tier-Adaptive Responses: !trigger audience <keyword> <all | newbie | regular | booster | staff>
     if (sub === 'audience' || sub === 'tier') {
       if (!canManageTriggers(message.guild, message.member || message.author)) {
-        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Server Admins**, **Extra Owners**, or the **Server Owner** can configure audience filters.', false));
+        return message.reply(makeAccentResponse(message.guild, 'Access Denied', 'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can configure audience filters.', false));
       }
       const match = args[1]?.trim();
       const audRaw = args[2]?.trim().toLowerCase();
@@ -2230,7 +2234,7 @@ export const triggerCmd = {
         return message.reply(makeAccentResponse(
           message.guild,
           'Access Denied',
-          'Only **Server Admins**, **Extra Owners**, or the **Server Owner** can create triggers.',
+          'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can create triggers.',
           false
         ));
       }
@@ -2309,7 +2313,7 @@ export const triggerCmd = {
         return message.reply(makeAccentResponse(
           message.guild,
           'Access Denied',
-          'Only **Server Admins**, **Extra Owners**, or the **Server Owner** can delete triggers.',
+          'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can delete triggers.',
           false
         ));
       }
@@ -2331,7 +2335,7 @@ export const triggerCmd = {
         return message.reply(makeAccentResponse(
           message.guild,
           'Access Denied',
-          'Only **Server Admins**, **Extra Owners**, or the **Server Owner** can clear triggers.',
+          'Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can clear triggers.',
           false
         ));
       }
@@ -2373,7 +2377,7 @@ export const triggerCmd = {
     if (sub === 'create' || sub === 'add') {
       if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
         return interaction.reply({
-          content: '-# **Access Denied:** Only **Server Admins**, **Extra Owners**, or the **Server Owner** can create triggers.',
+          content: '-# **Access Denied:** Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can create triggers.',
           flags: 64
         });
       }
@@ -2441,7 +2445,7 @@ export const triggerCmd = {
     if (sub === 'delete' || sub === 'remove') {
       if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
         return interaction.reply({
-          content: '-# **Access Denied:** Only **Server Admins**, **Extra Owners**, or the **Server Owner** can delete triggers.',
+          content: '-# **Access Denied:** Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can delete triggers.',
           flags: 64
         });
       }
@@ -2459,7 +2463,7 @@ export const triggerCmd = {
     if (sub === 'clear') {
       if (!canManageTriggers(interaction.guild, interaction.member || interaction.user)) {
         return interaction.reply({
-          content: '-# **Access Denied:** Only **Server Admins**, **Extra Owners**, or the **Server Owner** can clear triggers.',
+          content: '-# **Access Denied:** Only **Extra Owners**, the **Server Owner**, or the **Bot Owner** can clear triggers.',
           flags: 64
         });
       }

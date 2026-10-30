@@ -346,6 +346,10 @@ export const commands = [
                   usageText = `${prefix}symbols [query/category] / ${prefix}symbollist / ${prefix}tickers / ${prefix}tickerlist / ${prefix}stocksymbols / ${prefix}marketlist / ${prefix}symlist / /symbols [query]`;
               } else if (targetCmd.name === "nifty" || targetCmd.name === "banknifty" || targetCmd.name === "sensex" || targetCmd.name === "niftyit" || targetCmd.name === "indiavix") {
                   usageText = `${prefix}nifty [50|bank|sensex|it|vix] / ${prefix}banknifty / ${prefix}sensex / ${prefix}niftyit / ${prefix}indiavix / /nifty [index]`;
+              } else if (targetCmd.name === "autoreply" || targetCmd.name === "ar") {
+                  usageText = `${prefix}ar [add|edit|remove|list|dashboard] / ${prefix}autoreply`;
+              } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
+                  usageText = `${prefix}trigger [create|delete|list|react|mirror|ghost|bounty|time|audience|dashboard] / ${prefix}trig`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -620,6 +624,19 @@ export const commands = [
                     `> • Shows perpetrator tag, user ID, countermeasure verdict (BAN_APPLIED, ROLES_STRIPPED), and strike latency in ms.\n` +
                     `> • Reports automatic channel/category recreation and permission rollbacks.\n` +
                     `> • Interactive components: Page navigation (Previous / Next), live Refresh, and Clear History.`;
+              } else if (targetCmd.name === "autoreply" || targetCmd.name === "ar" || targetCmd.name === "customreply") {
+                  descContent = `Interactive server auto-reply manager with accent borderless CV2 embeds, dynamic variables, and media support.\n\n` +
+                    `> -# **__Features & Capabilities:__**\n` +
+                    `> • **Accent Borderless CV2 Embeds:** Delivers rich responses formatted with server theme colors and clean modern borders.\n` +
+                    `> • **Universal Media Support:** Direct support for GIFs and Pinterest links (\`pin.it\` & \`pinterest.com\`) with uncompressed media resolution.\n` +
+                    `> • **Dynamic Placeholders:** Supports \`{user}\`, \`{server}\`, \`{count}\`, \`{channel}\`, \`{avatar}\`, and more.\n` +
+                    `> • **Clearance Policy:** Strictly restricted to Extra Owners, the Server Owner, or the Bot Owner.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> • \`${prefix}ar dashboard\` (or \`${prefix}ar\`) - Opens the interactive Auto-Reply Control Matrix.\n` +
+                    `> • \`${prefix}ar add <keyword> <reply>\` - Quickly register an automated keyword reply \`[Extra Owner]\`.\n` +
+                    `> • \`${prefix}ar edit <keyword> <reply>\` - Edit an existing auto-reply response \`[Extra Owner]\`.\n` +
+                    `> • \`${prefix}ar remove <keyword>\` - Delete a keyword auto-reply \`[Extra Owner]\`.\n` +
+                    `> • \`${prefix}ar list\` - List all active auto-replies in the server.`;
               } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
                   descContent = `Interactive server trigger word responder dashboard with synced animated looping GIF HUD, electric progress bar, and 4 advanced automation modules.\n\n` +
                     `> -# **__Synced Looping Animated GIF HUD:__**\n` +
@@ -844,6 +861,10 @@ export const commands = [
           usageText = `${prefix}symbols [query/category] / ${prefix}symbollist / ${prefix}tickers / ${prefix}tickerlist / ${prefix}stocksymbols / ${prefix}marketlist / ${prefix}symlist / /symbols [query]`;
         } else if (targetCmd.name === "nifty" || targetCmd.name === "banknifty" || targetCmd.name === "sensex" || targetCmd.name === "niftyit" || targetCmd.name === "indiavix") {
           usageText = `${prefix}nifty [50|bank|sensex|it|vix] / ${prefix}banknifty / ${prefix}sensex / ${prefix}niftyit / ${prefix}indiavix / /nifty [index]`;
+        } else if (targetCmd.name === "autoreply" || targetCmd.name === "ar") {
+          usageText = `${prefix}ar [add|edit|remove|list|dashboard] / ${prefix}autoreply`;
+        } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
+          usageText = `${prefix}trigger [create|delete|list|react|mirror|ghost|bounty|time|audience|dashboard] / ${prefix}trig`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -1165,6 +1186,38 @@ export const commands = [
             `> • \`${prefix}chess theme\` — Select from 20 aesthetic board styles (Walnut, Glass, Neon, Retro, etc.) \`[Public]\`\n` +
             `> • \`${prefix}chess stop\` — Resign or terminate active match \`[Public]\`\n` +
             `> • Move by simply typing standard algebraic (\`e4\`, \`Nf3\`), UCI (\`e7e5\`), or castling (\`O-O\`) in chat!`;
+        } else if (targetCmd.name === "autoreply" || targetCmd.name === "ar" || targetCmd.name === "customreply") {
+          descContent = `Interactive server auto-reply manager with accent borderless CV2 embeds, dynamic variables, and media support.\n\n` +
+            `> -# **__Features & Capabilities:__**\n` +
+            `> • **Accent Borderless CV2 Embeds:** Delivers rich responses formatted with server theme colors and clean modern borders.\n` +
+            `> • **Universal Media Support:** Direct support for GIFs and Pinterest links (\`pin.it\` & \`pinterest.com\`) with uncompressed media resolution.\n` +
+            `> • **Dynamic Placeholders:** Supports \`{user}\`, \`{server}\`, \`{count}\`, \`{channel}\`, \`{avatar}\`, and more.\n` +
+            `> • **Clearance Policy:** Strictly restricted to Extra Owners, the Server Owner, or the Bot Owner.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> • \`${prefix}ar dashboard\` (or \`${prefix}ar\`) - Opens the interactive Auto-Reply Control Matrix.\n` +
+            `> • \`${prefix}ar add <keyword> <reply>\` - Quickly register an automated keyword reply \`[Extra Owner]\`.\n` +
+            `> • \`${prefix}ar edit <keyword> <reply>\` - Edit an existing auto-reply response \`[Extra Owner]\`.\n` +
+            `> • \`${prefix}ar remove <keyword>\` - Delete a keyword auto-reply \`[Extra Owner]\`.\n` +
+            `> • \`${prefix}ar list\` - List all active auto-replies in the server.`;
+        } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
+          descContent = `Interactive server trigger word responder dashboard with synced animated looping GIF HUD, electric progress bar, and 4 advanced automation modules.\n\n` +
+            `> -# **__Synced Looping Animated GIF HUD:__**\n` +
+            `> • **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`trigger_banner.gif\`) with real-time glowing capacity progress bar drawn directly in the GIF.\n` +
+            `> • **Metrics Tracked:** Server trigger count vs 50-slot capacity, global network auto-responses, and synchronization state.\n\n` +
+            `> -# **__The 4 Advanced Trigger Engines:__**\n` +
+            `> • **Ghost / Auto-Destruct (\`ghost:<sec>\`):** Automatically purges response after N seconds to prevent channel clutter.\n` +
+            `> • **Bounty XP Rewards (\`xp:<amount>\` & \`maxclaims:<limit>\`):** Awards dynamic XP to the first N users who trigger the response.\n` +
+            `> • **Time / Clock Variant (\`time:<morning|day|night|weekend>\`):** Daypart-dependent response matching current server clock.\n` +
+            `> • **Audience & Tier Adaptive (\`audience:<newbie|booster|staff>\`):** Personalizes responses based on user tenure, booster status, or staff tier.\n\n` +
+            `> -# **__Cross-Action Synergy:__**\n` +
+            `> • **Dual-Action Emoji Reaction Synergy (\`reaction:<emoji>\`):** Reacts with custom/unicode emoji on the triggering message while responding.\n` +
+            `> • **Staff Alert Mirroring (\`mirror:<#channel>\`):** Escalates emergency keywords directly to staff channels in real time.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> • \`${prefix}trigger\` - Open the interactive Response Matrix Dashboard.\n` +
+            `> • \`${prefix}trigger create <match> | <response>\` - Simple & fast usual setup.\n` +
+            `> • \`${prefix}trigger <match> | <response>\` - Direct shortcut.\n` +
+            `> • \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
+            `> • \`${prefix}trigger list\` - Public list of configured triggers.`;
         }
 
         const display1 = new TextDisplayBuilder().setContent(
