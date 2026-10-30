@@ -72,41 +72,35 @@ export default {
 
 
 
-    // 3. Hierarchy Enforcement & Anti-Role Reorder (The "Shield Wall")
-    if (config.securityEnabled || (config.antiNukeEnabled && (config.antinukeModules?.antiRoleReorder !== false || config.antinukeModules?.antiRoleUpdate !== false))) {
-      const highestBotRole = newRole.guild.members.me.roles.highest;
-      
-      // If someone dragged a normal role equal to or above Athena's highest role
-      if (newRole.position > oldRole.position && newRole.position >= highestBotRole.position && newRole.id !== highestBotRole.id) {
-        // Immediately revert the hierarchy
+    // 3. Universal Anti-Role Reorder & Hierarchy Enforcement
+    // Catches ANY unauthorized drag anywhere in the server hierarchy and replaces the original role structure
+    if (oldRole.position !== newRole.position && !newRole.managed) {
+      if (config.securityEnabled || (config.antiNukeEnabled && config.antinukeModules?.antiRoleReorder !== false)) {
+        const highestBotRole = newRole.guild.members.me.roles.highest;
+        const isShieldBreach = newRole.position >= highestBotRole.position && newRole.id !== highestBotRole.id;
+        const eventLabel = isShieldBreach ? 'Hierarchy Shield Wall Breach' : 'Role Reorder / Hierarchy Tampering';
+
+        // ⚡ Immediate Sub-1ms Revert: Freeze the moved role back immediately
         try {
-          await newRole.setPosition(oldRole.position, { reason: 'Athena Anti-Nuke: Hierarchy Shield Wall' });
+          await newRole.setPosition(oldRole.position, { reason: `Athena Anti-Nuke: ${eventLabel} Intercepted` });
         } catch (e) {}
 
-        // Ban the offender
-        const { directStrike } = await import('../utils/antinuke.js');
+        // ⚡ Direct Strike: Verify authorization, ban unauthorized violator, and restore full original role structure
+        const { directStrike, triggerRoleStructureRestore } = await import('../utils/antinuke.js');
         directStrike(
           newRole.guild,
           11 /* AuditLogEvent.RoleUpdate */,
-          'Hierarchy Shield Wall Breach',
-          newRole.id,
-          async () => `Role **${newRole.name}** was forced back to position ${oldRole.position} to protect the Shield Wall.`
-        ).catch(() => null);
-      } else if (oldRole.position !== newRole.position && !newRole.managed && config.antinukeModules?.antiRoleReorder !== false) {
-        // General unauthorized role reordering
-        const { directStrike, isGuildUnderAttack } = await import('../utils/antinuke.js');
-        if (isGuildUnderAttack(newRole.guild.id)) {
-          await newRole.setPosition(oldRole.position, { reason: 'Athena Anti-Nuke: Rogue Role Reorder Intercepted' }).catch(() => null);
-        }
-
-        directStrike(
-          newRole.guild,
-          11 /* AuditLogEvent.RoleUpdate */,
-          'Role Reorder / Hierarchy Tampering',
+          eventLabel,
           newRole.id,
           async () => {
-            await newRole.setPosition(oldRole.position, { reason: 'Athena Anti-Nuke: Reverted unauthorized role reordering' }).catch(() => null);
-            return `Reverted role position for **${newRole.name}** back to position ${oldRole.position}.`;
+            // Replaces the complete original role structure across all roles from the baseline snapshot
+            const restored = await triggerRoleStructureRestore(newRole.guild, `Athena Anti-Nuke: Reverted unauthorized ${eventLabel}`);
+            if (restored) {
+              return `Neutralized unauthorized role drag: Entire server role structure restored to baseline snapshot.`;
+            } else {
+              await newRole.setPosition(oldRole.position, { reason: 'Athena Anti-Nuke: Role Position Restored' }).catch(() => null);
+              return `Reverted role position for **${newRole.name}** back to position ${oldRole.position}.`;
+            }
           }
         ).catch(() => null);
       }

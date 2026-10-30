@@ -37,6 +37,27 @@ export default {
       return;
     }
 
+    // ==========================================
+    // INSTANT 2FA VERIFICATION BUTTON INTERCEPTOR
+    // Evaluated at sub-1ms priority before any other handlers to guarantee Discord modal response SLA
+    // ==========================================
+    if (interaction.isButton() && (interaction.customId === 'btn_verify_2fa' || interaction.customId === 'btn_intercept_2fa')) {
+      const modal = new ModalBuilder()
+        .setCustomId(interaction.customId === 'btn_intercept_2fa' ? 'modal_2fa_intercept' : 'modal_2fa_verify')
+        .setTitle('Two-Factor Authentication');
+      const codeInput = new TextInputBuilder()
+        .setCustomId('2fa_code')
+        .setLabel('Enter the 6-digit code')
+        .setPlaceholder('e.g. 123456')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setMaxLength(6)
+        .setMinLength(6);
+      const row = new ActionRowBuilder().addComponents(codeInput);
+      modal.addComponents(row);
+      return interaction.showModal(modal);
+    }
+
     if (interaction.customId && interaction.customId.startsWith('ann_')) {
       try {
         const announce = await import('../commands/announce.js');

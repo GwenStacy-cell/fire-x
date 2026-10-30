@@ -302,6 +302,89 @@ export function getRoleSnapshot(guildId, roleId) {
 }
 
 // ==========================================
+// ⚡ FULL ROLE STRUCTURE RESTORATION
+// Re-applies the complete baseline role structure / positions from infrastructure snapshot
+// following ANY unauthorized role reordering or hierarchy tampering.
+// ==========================================
+export async function restoreRoleStructure(guild, reason = 'Athena Anti-Nuke: Full Role Hierarchy Restored') {
+  if (!guild || !guild.id) return false;
+  const me = guild.members.me || await guild.members.fetch(guild.client.user.id).catch(() => null);
+  if (!me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
+    console.error(`[AntiNuke] Cannot restore role structure in ${guild.name}: Missing ManageRoles permission.`);
+    return false;
+  }
+
+  const snap = infrastructureSnapshots.get(guild.id);
+  if (!snap || !snap.roles || snap.roles.size === 0) {
+    console.warn(`[AntiNuke] No role snapshot found for ${guild.name}; baseline not yet indexed.`);
+    return false;
+  }
+
+  const highestBotRole = me.roles.highest;
+  const config = db.getGuildConfig(guild.id) || {};
+  const protectedRoleIds = new Set([
+    config.unbypassableRoleId,
+    config.firewallRoleId,
+    guild.roles.everyone?.id,
+    highestBotRole?.id
+  ].filter(Boolean));
+
+  // Build target position list from saved baseline snapshot
+  const rolePositions = [];
+  for (const [roleId, roleSnap] of snap.roles.entries()) {
+    const liveRole = guild.roles.cache.get(roleId);
+    if (!liveRole || liveRole.managed || liveRole.id === guild.id) continue;
+    
+    // We can only position roles strictly below our highest role
+    if (liveRole.position >= highestBotRole.position && !protectedRoleIds.has(liveRole.id)) {
+      // Force any unauthorized role back below Athena
+      rolePositions.push({
+        role: liveRole.id,
+        position: Math.max(1, Math.min(roleSnap.position, highestBotRole.position - 1))
+      });
+    } else if (liveRole.editable) {
+      rolePositions.push({
+        role: liveRole.id,
+        position: Math.max(1, roleSnap.position)
+      });
+    }
+  }
+
+  if (rolePositions.length === 0) return false;
+
+  // Sort by position ascending for Discord API
+  rolePositions.sort((a, b) => a.position - b.position);
+
+  try {
+    await guild.roles.setPositions(rolePositions, reason);
+    return true;
+  } catch (err) {
+    console.error(`[AntiNuke] Failed to restore role structure for ${guild.name}:`, err.message);
+    return false;
+  }
+}
+
+const roleRestoreDebounceTimers = new Map(); // guildId -> timer
+
+export function triggerRoleStructureRestore(guild, reason = 'Athena Anti-Nuke: Full Role Hierarchy Restored', delayMs = 60) {
+  if (!guild || !guild.id) return Promise.resolve(false);
+
+  return new Promise((resolve) => {
+    if (roleRestoreDebounceTimers.has(guild.id)) {
+      clearTimeout(roleRestoreDebounceTimers.get(guild.id));
+    }
+
+    const timer = setTimeout(async () => {
+      roleRestoreDebounceTimers.delete(guild.id);
+      const res = await restoreRoleStructure(guild, reason).catch(() => false);
+      resolve(res);
+    }, delayMs);
+
+    roleRestoreDebounceTimers.set(guild.id, timer);
+  });
+}
+
+// ==========================================
 // ZERO-DUPLICATE RESTORATION REGISTRY
 // Completely prevents creating double channels or roles
 // ==========================================
@@ -1765,6 +1848,7 @@ export async function handleAuditLogEntry(guild, entry) {
         eventType = 'Role Name Modification';
       } else if (posChange && mods.antiRoleReorder) {
         eventType = 'Role Reorder / Hierarchy Tampering';
+        forceBan = true;
       }
       break;
 
@@ -1969,20 +2053,25 @@ export async function handleAuditLogEntry(guild, entry) {
     }
 
     if (action === AuditLogEvent.RoleUpdate) {
-      const r = guild.roles.cache.get(targetId);
-      if (r) {
-        const edits = {};
-        for (const change of entry.changes || []) {
-          if (change.key === 'permissions') edits.permissions = BigInt(change.old || 0);
-          if (change.key === 'name') edits.name = change.old;
-          if (change.key === 'color') edits.color = change.old;
-          if (change.key === 'hoist') edits.hoist = change.old;
-          if (change.key === 'mentionable') edits.mentionable = change.old;
-          if (change.key === 'position') edits.position = change.old;
-        }
-        if (Object.keys(edits).length > 0) {
-          await r.edit(edits, 'Athena Anti-Nuke: Reverted unauthorized role modifications').catch(() => null);
-          rollbackResult = ` Reverted modifications for role **${r.name}**`;
+      const posChange = entry.changes?.find(c => c.key === 'position');
+      if (posChange && mods.antiRoleReorder) {
+        await triggerRoleStructureRestore(guild, 'Athena Anti-Nuke: Restored full role structure after unauthorized reordering');
+        rollbackResult = `Restored full server role structure to baseline snapshot`;
+      } else {
+        const r = guild.roles.cache.get(targetId);
+        if (r) {
+          const edits = {};
+          for (const change of entry.changes || []) {
+            if (change.key === 'permissions') edits.permissions = BigInt(change.old || 0);
+            if (change.key === 'name') edits.name = change.old;
+            if (change.key === 'color') edits.color = change.old;
+            if (change.key === 'hoist') edits.hoist = change.old;
+            if (change.key === 'mentionable') edits.mentionable = change.old;
+          }
+          if (Object.keys(edits).length > 0) {
+            await r.edit(edits, 'Athena Anti-Nuke: Reverted unauthorized role modifications').catch(() => null);
+            rollbackResult = ` Reverted modifications for role **${r.name}**`;
+          }
         }
       }
     }
