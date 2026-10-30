@@ -1691,66 +1691,73 @@ export default {
         }
       }
       
-              if (interaction.customId === "btn_intercept_2fa") {
-            const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = await import("discord.js");
-            const modal = new ModalBuilder()
-                .setCustomId("modal_2fa_verify")
-                .setTitle("Two-Factor Authentication");
-            const codeInput = new TextInputBuilder()
-                .setCustomId("2fa_code")
-                .setLabel("Enter the 6-digit code sent to your email")
-                .setStyle(TextInputStyle.Short)
-                .setRequired(true)
-                .setMaxLength(6)
-                .setMinLength(6);
-            const row = new ActionRowBuilder().addComponents(codeInput);
-            modal.addComponents(row);
-            return interaction.showModal(modal);
-        }
-
         if (interaction.customId === "modal_2fa_verify") {
-        const inputCode = interaction.fields.getTextInputValue("2fa_code");
-        const db = (await import("../database.js")).default;
-        const config = db.getGuildConfig(interaction.guild.id);
-        
-        if (config.pendingTwoFactorCode && config.pendingTwoFactorCode === inputCode) {
-          db.updateGuildConfig(interaction.guild.id, {
-            twoFactorVerified: true,
-            pendingTwoFactorCode: null
-          });
+          const inputCode = interaction.fields.getTextInputValue("2fa_code").trim();
+          const config = db.getGuildConfig(interaction.guild.id);
           
-          return interaction.reply({ content: "? **Gmail 2FA Successfully Configured!** Your server is now heavily protected.", flags: MessageFlags.Ephemeral });
-        } else {
-          return interaction.reply({ content: "? Incorrect verification code.", flags: MessageFlags.Ephemeral });
+          if (config.pendingTwoFactorCode && String(config.pendingTwoFactorCode).trim() === inputCode) {
+            db.updateGuildConfig(interaction.guild.id, {
+              twoFactorVerified: true,
+              pendingTwoFactorCode: null
+            });
+            
+            return interaction.reply({ 
+              content: "<a:03_tick_circle:1565665642084827206> **Gmail 2FA Successfully Configured!** High-risk actions will now require an email authorization code sent to **" + config.twoFactorEmail + "**.", 
+              flags: MessageFlags.Ephemeral 
+            });
+          } else {
+            return interaction.reply({ 
+              content: "<a:04_cross_circle:1565665644806934639> **Incorrect verification code.** Please verify the 6-digit code in your email or Pterodactyl live console and try again.", 
+              flags: MessageFlags.Ephemeral 
+            });
+          }
         }
-      }
 
-      if (interaction.customId === "modal_2fa_intercept") {
-        const inputCode = interaction.fields.getTextInputValue("2fa_code");
-        const db = (await import("../database.js")).default;
-        const config = db.getGuildConfig(interaction.guild.id);
-        
-        if (config.pendingTwoFactorCode && config.pendingTwoFactorCode === inputCode) {
-           db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorCode: null });
-           
-           const sec = await import("../commands/security.js");
-           if (sec.executeInterceptedAction) {
-             return sec.executeInterceptedAction(interaction);
-           } else {
-             return interaction.reply({ content: "? Code verified. You may proceed.", flags: MessageFlags.Ephemeral });
-           }
-        } else {
-           return interaction.reply({ content: "? Incorrect 2FA code. Action permanently blocked.", flags: MessageFlags.Ephemeral });
+        if (interaction.customId === "modal_2fa_intercept") {
+          const inputCode = interaction.fields.getTextInputValue("2fa_code").trim();
+          const config = db.getGuildConfig(interaction.guild.id);
+          
+          if (config.pendingTwoFactorCode && String(config.pendingTwoFactorCode).trim() === inputCode) {
+            db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorCode: null });
+            
+            const sec = await import("../commands/security.js");
+            if (sec.executeInterceptedAction) {
+              return sec.executeInterceptedAction(interaction);
+            } else {
+              return interaction.reply({ 
+                content: "<a:03_tick_circle:1565665642084827206> **2FA Code Verified.** You may proceed.", 
+                flags: MessageFlags.Ephemeral 
+              });
+            }
+          } else {
+            return interaction.reply({ 
+              content: "<a:04_cross_circle:1565665644806934639> **Incorrect 2FA code.** Action permanently blocked.", 
+              flags: MessageFlags.Ephemeral 
+            });
+          }
         }
-      }
     }
 
-    
-    
-    
-    
     if (interaction.isButton() || interaction.isAnySelectMenu()) {
 
+      // Two-Factor Authentication Prompt Button Handler
+      if (interaction.isButton() && (interaction.customId === "btn_verify_2fa" || interaction.customId === "btn_intercept_2fa")) {
+        const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = await import("discord.js");
+        const modal = new ModalBuilder()
+          .setCustomId(interaction.customId === "btn_intercept_2fa" ? "modal_2fa_intercept" : "modal_2fa_verify")
+          .setTitle("Two-Factor Authentication");
+        const codeInput = new TextInputBuilder()
+          .setCustomId("2fa_code")
+          .setLabel("Enter the 6-digit code")
+          .setPlaceholder("e.g. 123456")
+          .setStyle(TextInputStyle.Short)
+          .setRequired(true)
+          .setMaxLength(6)
+          .setMinLength(6);
+        const row = new ActionRowBuilder().addComponents(codeInput);
+        modal.addComponents(row);
+        return interaction.showModal(modal);
+      }
 
       if (interaction.customId === 'ytstats_refresh') {
         // Use a direct reply to bypass the buggy deferReply prototype
