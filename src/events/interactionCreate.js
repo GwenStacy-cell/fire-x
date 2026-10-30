@@ -1656,11 +1656,13 @@ export default {
         try {
           const { send2FACode } = await import("../utils/mailer.js");
           let emailSent = false;
+          let mailErrorMsg = null;
           try {
             await send2FACode(email, code2fa, interaction.guild.name);
             emailSent = true;
           } catch (mailErr) {
-            console.error('[2FA Setup] SMTP Dispatch failed:', mailErr.message);
+            mailErrorMsg = mailErr.message;
+            console.error('[2FA Setup] SMTP Dispatch failed:', mailErr);
           }
           
           db.updateGuildConfig(interaction.guild.id, {
@@ -1675,12 +1677,12 @@ export default {
 
           if (emailSent) {
             return interaction.editReply({ 
-              content: `A verification code has been dispatched to **${email}** via Gmail SMTP. Click below to enter it.`, 
+              content: `A verification code has been dispatched to **${email}** via Gmail SMTP.\n-# **Check your Inbox, Spam, and Promotions folder.** Click below to enter it.`, 
               components: [row] 
             });
           } else {
             return interaction.editReply({ 
-              content: `A verification code was generated, but the email could not be sent (missing or invalid \`EMAIL_USER\` / \`EMAIL_PASS\` in server \`.env\`).\n-# **Check your Pterodactyl console to view the 6-digit code.** Click below to enter it.`, 
+              content: `A verification code was generated, but email dispatch failed: \`${mailErrorMsg || 'Connection error'}\`.\n-# **Check your Pterodactyl console to view the 6-digit code.** Click below to enter it.`, 
               components: [row] 
             });
           }
@@ -2787,7 +2789,7 @@ async function handleSecurityInteractions(interaction, guild) {
         .setLabel("Your Email Address (To Receive 2FA)")
         .setStyle(TextInputStyle.Short)
         .setRequired(true)
-        .setPlaceholder("e.g. hathimreigns1200@gmail.com");
+        .setPlaceholder("yourname@gmail.com");
       modal.addComponents(new ActionRowBuilder().addComponents(emailInput));
       return interaction.showModal(modal);
     }
