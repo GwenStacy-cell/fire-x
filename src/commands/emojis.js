@@ -209,6 +209,14 @@ export function buildSingleEmojiCard(emoji, guild) {
 export async function handleEmojiInteractions(interaction) {
   if (!interaction.customId || !interaction.customId.startsWith('emoj_')) return false;
 
+  const isServerOwner = (interaction.guild && interaction.guild.ownerId === interaction.user.id) || isBotOwnerSync(interaction.user.id);
+  if (!isServerOwner) {
+    return interaction.reply({
+      content: '-# **Access Denied:** Only the **Server Owner** or **Bot Owner** can interact with the Emoji Matrix.',
+      flags: MessageFlags.Ephemeral
+    });
+  }
+
   const [action, p1, p2, p3, p4, p5] = interaction.customId.split(':');
 
   if (action === 'emoj_noop') {
@@ -307,6 +315,11 @@ export const commands = [
         return message.reply(cv2.warn('Guild Only', 'This command can only be used in a server.'));
       }
 
+      const isServerOwner = (message.guild && message.guild.ownerId === message.author.id) || isBotOwnerSync(message.author.id);
+      if (!isServerOwner) {
+        return message.reply(cv2.danger('Access Denied', 'This command is strictly reserved for the **Server Owner** or **Bot Owner**.', false));
+      }
+
       const q = (args[0] || '').trim().toLowerCase();
 
       // Check if user is inspecting a specific emoji or raw ID
@@ -362,6 +375,14 @@ export const commands = [
     async executeSlash(interaction) {
       if (!interaction.guild) {
         return interaction.reply({ content: '-# This command can only be used in a server.', flags: MessageFlags.Ephemeral });
+      }
+
+      const isServerOwner = (interaction.guild && interaction.guild.ownerId === interaction.user.id) || isBotOwnerSync(interaction.user.id);
+      if (!isServerOwner) {
+        return interaction.reply({
+          ...cv2.danger('Access Denied', 'This command is strictly reserved for the **Server Owner** or **Bot Owner**.', false),
+          flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+        });
       }
 
       const typeOpt = interaction.options.getString('type') || 'animated';

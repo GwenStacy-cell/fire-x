@@ -664,9 +664,10 @@ export const commands = [
                     `> • **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
                     `> • **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
                     `> • **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
-                    `> • **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n\n` +
+                    `> • **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n` +
+                    `> • **Clearance Policy:** Strictly reserved for the **Server Owner** and **Bot Owner**.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix.\n` +
+                    `> • \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
                     `> • \`${prefix}emojis static\` - View all static emojis in the server.\n` +
                     `> • \`${prefix}emojis all\` - View all emojis in the server.\n` +
                     `> • \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
@@ -1241,9 +1242,10 @@ export const commands = [
             `> • **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
             `> • **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
             `> • **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
-            `> • **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n\n` +
+            `> • **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n` +
+            `> • **Clearance Policy:** Strictly reserved for the **Server Owner** and **Bot Owner**.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix.\n` +
+            `> • \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
             `> • \`${prefix}emojis static\` - View all static emojis in the server.\n` +
             `> • \`${prefix}emojis all\` - View all emojis in the server.\n` +
             `> • \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
@@ -2510,7 +2512,7 @@ export const helpModules = [
     "`!tts / !tts <text> / !tts voices / !tts voice <name> / !tts stop` - Interactive AI & Celebrity TTS Control Center `[Public]`",
     "`!qrcode / !qrc / !qrmanager <text/link>` - Generate high-resolution QR code `[Public]`",
     "`!steal / !stealemoji / !emojisteal / !steal-emoji / !addemoji <emoji/link>` - Steal an emoji to this server `[Extra Owner]`",
-    "`!emojis / !animatedemojis / !emojilist` - Interactive animated & static emoji inventory with raw IDs (<a:name:id>), previews & copyable codeblocks `[Public]`",
+    "`!emojis / !animatedemojis / !emojilist` - Interactive animated & static emoji inventory with raw IDs (<a:name:id>), previews & copyable codeblocks `[Server Owner]`",
     "`!afk / !brb [reason]` - Set an AFK status that replies when pinged `[Public]`",
     "`!bump` - Bump the server (Disboard integration) `[Public]`",
     "`!sticky / !stick <message>` - Keep a message stuck at bottom of chat `[Extra Owner]`",

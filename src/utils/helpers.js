@@ -46,7 +46,8 @@ export const BOT_OWNER_COMMANDS = new Set([
 ]);
 
 export const SERVER_OWNER_COMMANDS = new Set([
-  'extraowner', 'eo', 'reset', 'serverreset', 'setguildavatar', 'setguildbanner'
+  'extraowner', 'eo', 'reset', 'serverreset', 'setguildavatar', 'setguildbanner',
+  'emojis', 'animatedemojis', 'emojilist', 'emojids', 'emojid', 'getemojis', 'allemojis', 'emojirole'
 ]);
 
 export const PUBLIC_COMMANDS = new Set([
@@ -56,7 +57,6 @@ export const PUBLIC_COMMANDS = new Set([
   'mc', 'membercount', 'stats', 'botstats', 'hud', 'dashboard', 'date',
   
   // User Utilities & Fun
-  'emojis', 'animatedemojis', 'emojilist', 'emojids', 'emojid', 'getemojis', 'allemojis', 'emojirole',
   'afk', 'calc', 'poll', 'quote', 'quotemaker', 'weather', 'image', 'pic', 'pinterest', 'pin',
   'media', 'mp3', 'dl', 'download', 'vid', 'video',
   'ship', 'chatlb', 'voicelb', 'invitelb', 'top', 'profile', 'rank', 'leaderboard', 
