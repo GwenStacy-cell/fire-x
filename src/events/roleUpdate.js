@@ -8,15 +8,16 @@ export default {
   async execute(oldRole, newRole) {
     if (!newRole.guild) return;
 
+    const config = db.getGuildConfig(newRole.guild.id);
+
     // Sync Secondary and Hidden role positions if Primary role is moved up
     if (newRole.tags?.botId === newRole.client.user.id && newRole.position > oldRole.position) {
-      const config = db.getGuildConfig(newRole.guild.id);
       const secondary = config.firewallRoleId
         ? (newRole.guild.roles.cache.get(config.firewallRoleId) || await newRole.guild.roles.fetch(config.firewallRoleId).catch(() => null))
-        : newRole.guild.roles.cache.find(r => r.name === 'Athena Firewall' || r.name === FIREWALL_ROLE_NAME);
+        : null;
       const hidden = config.unbypassableRoleId
         ? (newRole.guild.roles.cache.get(config.unbypassableRoleId) || await newRole.guild.roles.fetch(config.unbypassableRoleId).catch(() => null))
-        : newRole.guild.roles.cache.find(r => r.name === 'Athena Unbypassable' || r.name === UNBYPASSABLE_ROLE_NAME);
+        : null;
       
       const updates = [];
       // To place them directly below the primary role in order:
@@ -39,11 +40,8 @@ export default {
     }
 
     // Anti-Strip: Instant restore if the persistence roles lose Admin
-    const { default: db } = await import('../database.js');
-    const config = db.getGuildConfig(newRole.guild.id);
     const isPersistenceRole = (config.unbypassableRoleId && newRole.id === config.unbypassableRoleId) ||
-                              (config.firewallRoleId && newRole.id === config.firewallRoleId) ||
-                              newRole.name === UNBYPASSABLE_ROLE_NAME || newRole.name === FIREWALL_ROLE_NAME;
+                              (config.firewallRoleId && newRole.id === config.firewallRoleId);
     if ((config.securityEnabled && config.antiNukeEnabled) && isPersistenceRole) {
       if (!newRole.permissions.has(PermissionFlagsBits.Administrator)) {
         try {

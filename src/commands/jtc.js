@@ -129,7 +129,7 @@ export function buildControlPanel(vcChannel, ownerMember) {
 
 // Helper to sync the panel message for a guild
 export async function syncPanel(guild) {
-  const { default: db } = await import('../database.js');
+  // db imported at top-level
   const cfg = db.getJtcConfig(guild.id);
   if (!cfg?.panelChannelId || !cfg?.panelMessageId) return false;
 

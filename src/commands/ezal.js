@@ -860,7 +860,6 @@ async function handleFixJtc(message) {
 
   try {
     const { syncPanel, buildSharedPanel } = await import('./jtc.js');
-    const { default: db } = await import('../database.js');
     
     for (const guild of message.client.guilds.cache.values()) {
       try {
