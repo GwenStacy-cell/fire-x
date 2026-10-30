@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import {
   PermissionFlagsBits,
   ChannelType,
@@ -104,8 +105,7 @@ export function buildControlPanel(vcChannel, ownerMember) {
     .addSectionComponents(
       new SectionBuilder()
         .addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(
-            `# <a:emoji_85:1517491799696867358> Voice Channel Control Panel\n\n` +
+          new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} <a:emoji_85:1517491799696867358> Voice Channel Control Panel\n\n` +
             `**Manage your temporary voice channel using the menus below.**\n\n` +
             `<a:Dark4luvontop:1518275045963726949> **Take control:** Use the dropdowns to manage your room\n` +
             `<a:Dark4luvontop:1518275045963726949> **Quick access:** Alternatively use \`/vc\` slash commands\n\n` +
@@ -188,8 +188,7 @@ export function buildSharedPanel(guild) {
     .addSectionComponents(
       new SectionBuilder()
         .addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(
-            `# <a:emoji_85:1517491799696867358> Voice Channel Control Panel\n\n` +
+          new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} <a:emoji_85:1517491799696867358> Voice Channel Control Panel\n\n` +
             `**Manage your temporary voice channel using the menus below.**\n\n` +
             `<a:Dark4luvontop:1518275045963726949> **Join first:** Connect to the **Join to Create** lobby\n` +
             `<a:Dark4luvontop:1518275045963726949> **Take control:** Use the dropdowns to manage your room\n` +
@@ -922,7 +921,7 @@ export const commands = [
           }
         }
       }
-      return message.reply(cv2.info('Join to Create', 'Commands:\n-# \u2022 `!jtc add @user` - Permit user into locked VC\n-# \u2022 `!jtc chime on|off` - Toggle entrance chime soundboard alerts\n-# \u2022 `!jtcsetup` - Deploy primary JTC hub'));
+      return message.reply(cv2.info('Join to Create', 'Commands:\n-# ${BULLET_EMOJI} `!jtc add @user` - Permit user into locked VC\n-# ${BULLET_EMOJI} `!jtc chime on|off` - Toggle entrance chime soundboard alerts\n-# ${BULLET_EMOJI} `!jtcsetup` - Deploy primary JTC hub'));
     },
     async executeSlash(interaction) {
       const sub = interaction.options.getSubcommand();

@@ -60,6 +60,15 @@ export function getRandomHeadingGlyph() {
 }
 
 /**
+ * Checks if a string starts with one of the animated heading glyphs
+ */
+export function hasHeadingGlyphStart(str) {
+  if (!str || typeof str !== 'string') return false;
+  const trimmed = str.trim();
+  return HEADING_GLYPHS.some(g => trimmed.startsWith(g));
+}
+
+/**
  * Formats a heading string:
  * 1. Prepend a random animated glyph if no emoji is at start
  * 2. Replaces legacy tick with the new tick

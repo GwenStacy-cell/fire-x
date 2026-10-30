@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -526,11 +527,10 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Temporary Ban Error\n` +
-                `-# • **Issue:** **__Missing Target Member or Duration__**\n` +
-                `-# • **Usage:** \`!tempban <@user|id> <duration> [reason]\`\n` +
-                `-# • **Examples:** \`!tempban @user 2h Toxicity\`, \`!tempban @user 7d Raid Attempt\``
+              content: `# ${getRandomHeadingGlyph()} Temporary Ban Error\n` +
+                `-# ${BULLET_EMOJI} **Issue:** **__Missing Target Member or Duration__**\n` +
+                `-# ${BULLET_EMOJI} **Usage:** \`!tempban <@user|id> <duration> [reason]\`\n` +
+                `-# ${BULLET_EMOJI} **Examples:** \`!tempban @user 2h Toxicity\`, \`!tempban @user 7d Raid Attempt\``
             }
           ]
         };
@@ -550,9 +550,8 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Invalid Target\n` +
-                `-# • **Issue:** **__Please specify a valid @mention or User ID__**`
+              content: `# ${getRandomHeadingGlyph()} Invalid Target\n` +
+                `-# ${BULLET_EMOJI} **Issue:** **__Please specify a valid @mention or User ID__**`
             }
           ]
         };
@@ -567,10 +566,9 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Invalid Duration\n` +
-                `-# • **Issue:** **__Unsupported or missing duration format__**\n` +
-                `-# • **Valid Formats:** \`10m\` (10 mins), \`2h\` (2 hours), \`1d\` (1 day), \`7d\` (7 days)`
+              content: `# ${getRandomHeadingGlyph()} Invalid Duration\n` +
+                `-# ${BULLET_EMOJI} **Issue:** **__Unsupported or missing duration format__**\n` +
+                `-# ${BULLET_EMOJI} **Valid Formats:** \`10m\` (10 mins), \`2h\` (2 hours), \`1d\` (1 day), \`7d\` (7 days)`
             }
           ]
         };
@@ -588,9 +586,8 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Untouchable Entity\n` +
-                `-# • **Status:** **__User is shielded by Athena Prime authorization tier__**`
+              content: `# ${getRandomHeadingGlyph()} Untouchable Entity\n` +
+                `-# ${BULLET_EMOJI} **Status:** **__User is shielded by Athena Prime authorization tier__**`
             }
           ]
         };
@@ -603,9 +600,8 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Hierarchy Blocked\n` +
-                `-# • **Status:** **__Target possesses higher or equal role permissions__**`
+              content: `# ${getRandomHeadingGlyph()} Hierarchy Blocked\n` +
+                `-# ${BULLET_EMOJI} **Status:** **__Target possesses higher or equal role permissions__**`
             }
           ]
         };
@@ -622,13 +618,12 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Member Temporarily Banned | <a:03_tick_circle:1565665642084827206>\n` +
-                `-# • **Target:** <@${finalId}> (\`${finalId}\`)\n` +
-                `-# • **Duration:** \`${durationStr}\`\n` +
-                `-# • **Unban Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
-                `-# • **Reason:** ${reason}\n` +
-                `-# • **Moderator:** ${message.author}`
+              content: `# ${getRandomHeadingGlyph()} Member Temporarily Banned | <a:03_tick_circle:1565665642084827206>\n` +
+                `-# ${BULLET_EMOJI} **Target:** <@${finalId}> (\`${finalId}\`)\n` +
+                `-# ${BULLET_EMOJI} **Duration:** \`${durationStr}\`\n` +
+                `-# ${BULLET_EMOJI} **Unban Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
+                `-# ${BULLET_EMOJI} **Reason:** ${reason}\n` +
+                `-# ${BULLET_EMOJI} **Moderator:** ${message.author}`
             }
           ]
         };
@@ -639,9 +634,8 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Execution Failed\n` +
-                `-# • **Error:** \`${err.message}\``
+              content: `# ${getRandomHeadingGlyph()} Execution Failed\n` +
+                `-# ${BULLET_EMOJI} **Error:** \`${err.message}\``
             }
           ]
         };
@@ -665,10 +659,9 @@ export const commands = [
             type: 17,
             components: [{
               type: 10,
-              content:
-                `# Invalid Duration\n` +
-                `-# • **Issue:** **__Unsupported duration format__**\n` +
-                `-# • **Valid Formats:** \`10m\`, \`2h\`, \`1d\`, \`7d\``
+              content: `# ${getRandomHeadingGlyph()} Invalid Duration\n` +
+                `-# ${BULLET_EMOJI} **Issue:** **__Unsupported duration format__**\n` +
+                `-# ${BULLET_EMOJI} **Valid Formats:** \`10m\`, \`2h\`, \`1d\`, \`7d\``
             }]
           }],
           flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
@@ -681,9 +674,8 @@ export const commands = [
             type: 17,
             components: [{
               type: 10,
-              content:
-                `# Untouchable Entity\n` +
-                `-# • **Status:** **__User is shielded by Athena Prime authorization tier__**`
+              content: `# ${getRandomHeadingGlyph()} Untouchable Entity\n` +
+                `-# ${BULLET_EMOJI} **Status:** **__User is shielded by Athena Prime authorization tier__**`
             }]
           }],
           flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
@@ -701,13 +693,12 @@ export const commands = [
             type: 17,
             components: [{
               type: 10,
-              content:
-                `# Member Temporarily Banned | <a:03_tick_circle:1565665642084827206>\n` +
-                `-# • **Target:** <@${targetUser.id}> (\`${targetUser.id}\`)\n` +
-                `-# • **Duration:** \`${durationStr}\`\n` +
-                `-# • **Unban Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
-                `-# • **Reason:** ${reason}\n` +
-                `-# • **Moderator:** ${interaction.user}`
+              content: `# ${getRandomHeadingGlyph()} Member Temporarily Banned | <a:03_tick_circle:1565665642084827206>\n` +
+                `-# ${BULLET_EMOJI} **Target:** <@${targetUser.id}> (\`${targetUser.id}\`)\n` +
+                `-# ${BULLET_EMOJI} **Duration:** \`${durationStr}\`\n` +
+                `-# ${BULLET_EMOJI} **Unban Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
+                `-# ${BULLET_EMOJI} **Reason:** ${reason}\n` +
+                `-# ${BULLET_EMOJI} **Moderator:** ${interaction.user}`
             }]
           }],
           flags: (MessageFlags.IsComponentsV2 || 32768)
@@ -718,7 +709,7 @@ export const commands = [
             type: 17,
             components: [{
               type: 10,
-              content: `# Execution Failed\n-# • **Error:** \`${err.message}\``
+              content: `# ${getRandomHeadingGlyph()} Execution Failed\n-# ${BULLET_EMOJI} **Error:** \`${err.message}\``
             }]
           }],
           flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
@@ -747,11 +738,10 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Temporary Timeout Error\n` +
-                `-# • **Issue:** **__Missing Target Member__**\n` +
-                `-# • **Usage:** \`!temptimeout <@user> <duration> [reason]\`\n` +
-                `-# • **Examples:** \`!temptimeout @user 10m Spamming\``
+              content: `# ${getRandomHeadingGlyph()} Temporary Timeout Error\n` +
+                `-# ${BULLET_EMOJI} **Issue:** **__Missing Target Member__**\n` +
+                `-# ${BULLET_EMOJI} **Usage:** \`!temptimeout <@user> <duration> [reason]\`\n` +
+                `-# ${BULLET_EMOJI} **Examples:** \`!temptimeout @user 10m Spamming\``
             }
           ]
         };
@@ -766,10 +756,9 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Invalid Duration\n` +
-                `-# • **Issue:** **__Duration must be between 10s and 28 days__**\n` +
-                `-# • **Valid Formats:** \`10m\`, \`2h\`, \`1d\`, \`7d\``
+              content: `# ${getRandomHeadingGlyph()} Invalid Duration\n` +
+                `-# ${BULLET_EMOJI} **Issue:** **__Duration must be between 10s and 28 days__**\n` +
+                `-# ${BULLET_EMOJI} **Valid Formats:** \`10m\`, \`2h\`, \`1d\`, \`7d\``
             }
           ]
         };
@@ -784,9 +773,8 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Hierarchy Blocked\n` +
-                `-# • **Status:** **__Target possesses higher or equal role permissions__**`
+              content: `# ${getRandomHeadingGlyph()} Hierarchy Blocked\n` +
+                `-# ${BULLET_EMOJI} **Status:** **__Target possesses higher or equal role permissions__**`
             }
           ]
         };
@@ -801,13 +789,12 @@ export const commands = [
           components: [
             {
               type: 10,
-              content:
-                `# Member Timed Out | <a:03_tick_circle:1565665642084827206>\n` +
-                `-# • **Target:** ${target} (\`${target.id}\`)\n` +
-                `-# • **Duration:** \`${durationStr}\`\n` +
-                `-# • **Lift Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
-                `-# • **Reason:** ${reason}\n` +
-                `-# • **Moderator:** ${message.author}`
+              content: `# ${getRandomHeadingGlyph()} Member Timed Out | <a:03_tick_circle:1565665642084827206>\n` +
+                `-# ${BULLET_EMOJI} **Target:** ${target} (\`${target.id}\`)\n` +
+                `-# ${BULLET_EMOJI} **Duration:** \`${durationStr}\`\n` +
+                `-# ${BULLET_EMOJI} **Lift Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
+                `-# ${BULLET_EMOJI} **Reason:** ${reason}\n` +
+                `-# ${BULLET_EMOJI} **Moderator:** ${message.author}`
             }
           ]
         };
@@ -818,7 +805,7 @@ export const commands = [
           components: [
             {
               type: 10,
-              content: `# Execution Failed\n-# • **Error:** \`${err.message}\``
+              content: `# ${getRandomHeadingGlyph()} Execution Failed\n-# ${BULLET_EMOJI} **Error:** \`${err.message}\``
             }
           ]
         };
@@ -837,7 +824,7 @@ export const commands = [
             type: 17,
             components: [{
               type: 10,
-              content: `# Member Not Found\n-# • **Issue:** **__Target is not present in this server__**`
+              content: `# ${getRandomHeadingGlyph()} Member Not Found\n-# ${BULLET_EMOJI} **Issue:** **__Target is not present in this server__**`
             }]
           }],
           flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
@@ -851,10 +838,9 @@ export const commands = [
             type: 17,
             components: [{
               type: 10,
-              content:
-                `# Invalid Duration\n` +
-                `-# • **Issue:** **__Duration must be between 10s and 28 days__**\n` +
-                `-# • **Valid Formats:** \`10m\`, \`2h\`, \`1d\`, \`7d\``
+              content: `# ${getRandomHeadingGlyph()} Invalid Duration\n` +
+                `-# ${BULLET_EMOJI} **Issue:** **__Duration must be between 10s and 28 days__**\n` +
+                `-# ${BULLET_EMOJI} **Valid Formats:** \`10m\`, \`2h\`, \`1d\`, \`7d\``
             }]
           }],
           flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
@@ -867,9 +853,8 @@ export const commands = [
             type: 17,
             components: [{
               type: 10,
-              content:
-                `# Hierarchy Blocked\n` +
-                `-# • **Status:** **__Target possesses higher or equal role permissions__**`
+              content: `# ${getRandomHeadingGlyph()} Hierarchy Blocked\n` +
+                `-# ${BULLET_EMOJI} **Status:** **__Target possesses higher or equal role permissions__**`
             }]
           }],
           flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
@@ -884,13 +869,12 @@ export const commands = [
             type: 17,
             components: [{
               type: 10,
-              content:
-                `# Member Timed Out | <a:03_tick_circle:1565665642084827206>\n` +
-                `-# • **Target:** ${target} (\`${target.id}\`)\n` +
-                `-# • **Duration:** \`${durationStr}\`\n` +
-                `-# • **Lift Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
-                `-# • **Reason:** ${reason}\n` +
-                `-# • **Moderator:** ${interaction.user}`
+              content: `# ${getRandomHeadingGlyph()} Member Timed Out | <a:03_tick_circle:1565665642084827206>\n` +
+                `-# ${BULLET_EMOJI} **Target:** ${target} (\`${target.id}\`)\n` +
+                `-# ${BULLET_EMOJI} **Duration:** \`${durationStr}\`\n` +
+                `-# ${BULLET_EMOJI} **Lift Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
+                `-# ${BULLET_EMOJI} **Reason:** ${reason}\n` +
+                `-# ${BULLET_EMOJI} **Moderator:** ${interaction.user}`
             }]
           }],
           flags: (MessageFlags.IsComponentsV2 || 32768)
@@ -901,7 +885,7 @@ export const commands = [
             type: 17,
             components: [{
               type: 10,
-              content: `# Execution Failed\n-# • **Error:** \`${err.message}\``
+              content: `# ${getRandomHeadingGlyph()} Execution Failed\n-# ${BULLET_EMOJI} **Error:** \`${err.message}\``
             }]
           }],
           flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
@@ -1820,15 +1804,15 @@ async function handleWarnings(guild, target) {
 
   let warnDetails = '';
   if (warns.length === 0) {
-    warnDetails = `-# • **Member has a clean disciplinary record with zero active warnings.**`;
+    warnDetails = `-# ${BULLET_EMOJI} **Member has a clean disciplinary record with zero active warnings.**`;
   } else {
     warnDetails = warns.map((w, index) => {
       return (
-        `-# • **[Strike #${index + 1}] <t:${Math.floor(w.timestamp / 1000)}:R>**\n` +
+        `-# ${BULLET_EMOJI} **[Strike #${index + 1}] <t:${Math.floor(w.timestamp / 1000)}:R>**\n` +
         `-#   **Reason:** ${w.reason}\n` +
         `-#   **Warner:** <@${w.warnerId}> (\`${w.warnerId}\`)`
       );
-    }).join('\n-# • ──────────────────────────────\n');
+    }).join('\n-# ${BULLET_EMOJI} ──────────────────────────────\n');
   }
 
   const container = {
@@ -1841,12 +1825,11 @@ async function handleWarnings(guild, target) {
       { type: 14, divider: true },
       {
         type: 10,
-        content:
-          `# INFRACTION AUDIT: ${targetTag}\n` +
-          `-# • **Disciplinary Strike Meter:** ${warnProgress} (${warns.length}/${maxWarnings} Limit)\n` +
-          `-# • **Member ID:** \`${target.id}\`\n` +
-          `-# • **Escalation Threshold:** \`${maxWarnings}\` (Use \`!maxwarnings <amount>\` to configure)\n` +
-          `-# • **Disciplinary Escalation:** \`${config.warnAction || 'Quarantine Isolation'}\``
+        content: `# ${getRandomHeadingGlyph()} INFRACTION AUDIT: ${targetTag}\n` +
+          `-# ${BULLET_EMOJI} **Disciplinary Strike Meter:** ${warnProgress} (${warns.length}/${maxWarnings} Limit)\n` +
+          `-# ${BULLET_EMOJI} **Member ID:** \`${target.id}\`\n` +
+          `-# ${BULLET_EMOJI} **Escalation Threshold:** \`${maxWarnings}\` (Use \`!maxwarnings <amount>\` to configure)\n` +
+          `-# ${BULLET_EMOJI} **Disciplinary Escalation:** \`${config.warnAction || 'Quarantine Isolation'}\``
       },
       { type: 14, divider: true },
       {

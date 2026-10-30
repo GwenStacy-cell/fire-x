@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import db from '../database.js';
 import os from 'os';
@@ -177,17 +178,17 @@ export async function buildDashboardResponse(guild, client, requester = null) {
   // 6. Build Discord Components V2 Container
   const containerComponents = [
     ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://command_center.gif' } }] }] : []),
-    { type: 10, content: `## Athena Prime Unified Command Center | <a:03_tick_circle:1565665642084827206>` },
+    { type: 10, content: `# ${getRandomHeadingGlyph()} Athena Prime Unified Command Center | <a:03_tick_circle:1565665642084827206>` },
     { type: 14, divider: true },
     {
       type: 10,
       content:
         `### **I. Core Bot Telemetry**\n` +
-        `> -# \u2022 **Gateway Ping:** \`${client.ws.ping}ms\` latency\n` +
-        `> -# \u2022 **Active Clusters:** \`${totalGuilds.toLocaleString()}\` guilds connected \u2022 \`${totalCachedMembers.toLocaleString()}\` members\n` +
-        `> -# \u2022 **Memory Usage:** \`${heapMB} MB\` heap used / \`${heapTotalMB} MB\` total (\`${totalMemMB} MB\` system RAM)\n` +
-        `> -# \u2022 **Continuous Uptime:** \`${d}d ${h}h ${m}m ${s}s\`\n` +
-        `> -# \u2022 **Runtime:** Node \`${process.version}\` on \`${os.platform()} (${os.arch()})\``
+        `> -# ${BULLET_EMOJI} **Gateway Ping:** \`${client.ws.ping}ms\` latency\n` +
+        `> -# ${BULLET_EMOJI} **Active Clusters:** \`${totalGuilds.toLocaleString()}\` guilds connected \u2022 \`${totalCachedMembers.toLocaleString()}\` members\n` +
+        `> -# ${BULLET_EMOJI} **Memory Usage:** \`${heapMB} MB\` heap used / \`${heapTotalMB} MB\` total (\`${totalMemMB} MB\` system RAM)\n` +
+        `> -# ${BULLET_EMOJI} **Continuous Uptime:** \`${d}d ${h}h ${m}m ${s}s\`\n` +
+        `> -# ${BULLET_EMOJI} **Runtime:** Node \`${process.version}\` on \`${os.platform()} (${os.arch()})\``
     },
     { type: 14, divider: true }
   ];
@@ -198,12 +199,12 @@ export async function buildDashboardResponse(guild, client, requester = null) {
         type: 10,
         content:
           `### **II. Guild Operations & Capacity**\n` +
-          `> -# \u2022 **Server:** **${cleanDisplayName(guild.name)}** (\`${guild.id}\`)\n` +
-          `> -# \u2022 **Owner:** ${owner ? `<@${owner.id}> (\`${owner.user?.tag || owner.id}\`)` : `<@${guild.ownerId}>`}\n` +
-          `> -# \u2022 **Member Count:** \`${guild.memberCount.toLocaleString()}\` total (\`${humans.toLocaleString()}\` humans \u2022 \`${bots.toLocaleString()}\` bots)\n` +
-          `> -# \u2022 **Channels:** \`${totalChannels}\` total (\`${textChannels}\` text \u2022 \`${voiceChannels}\` voice \u2022 \`${categories}\` cat \u2022 \`${stageChannels}\` stage)\n` +
-          `> -# \u2022 **Roles & Boosts:** \`${totalRoles}\` roles \u2022 \`Level ${boostLevel}\` (${boostCount} boosts)\n` +
-          `> -# \u2022 **Server Assets:** \`${emojisCount}\` custom emojis \u2022 \`${stickersCount}\` stickers`
+          `> -# ${BULLET_EMOJI} **Server:** **${cleanDisplayName(guild.name)}** (\`${guild.id}\`)\n` +
+          `> -# ${BULLET_EMOJI} **Owner:** ${owner ? `<@${owner.id}> (\`${owner.user?.tag || owner.id}\`)` : `<@${guild.ownerId}>`}\n` +
+          `> -# ${BULLET_EMOJI} **Member Count:** \`${guild.memberCount.toLocaleString()}\` total (\`${humans.toLocaleString()}\` humans \u2022 \`${bots.toLocaleString()}\` bots)\n` +
+          `> -# ${BULLET_EMOJI} **Channels:** \`${totalChannels}\` total (\`${textChannels}\` text \u2022 \`${voiceChannels}\` voice \u2022 \`${categories}\` cat \u2022 \`${stageChannels}\` stage)\n` +
+          `> -# ${BULLET_EMOJI} **Roles & Boosts:** \`${totalRoles}\` roles \u2022 \`Level ${boostLevel}\` (${boostCount} boosts)\n` +
+          `> -# ${BULLET_EMOJI} **Server Assets:** \`${emojisCount}\` custom emojis \u2022 \`${stickersCount}\` stickers`
       },
       { type: 14, divider: true }
     );
@@ -214,18 +215,18 @@ export async function buildDashboardResponse(guild, client, requester = null) {
       type: 10,
       content:
         `### **III. DEFCON Defense Matrix & Security Posture**\n` +
-        `> -# \u2022 **DEFCON State:** ${isAlert ? '`DEFCON 1 (CRITICAL THREAT ALERT)`' : '`DEFCON 5 (PEACETIME / NOMINAL)`'}\n` +
-        `> -# \u2022 **Emergency Blackout:** ${isEmergency ? '`ENGAGED (Total Server Blackout)`' : '`Standby (Disengaged)`'}\n` +
-        `> -# \u2022 **Panic Lockdown:** ${lockdown ? `\`ENGAGED (${lockdown.tierLabel || 'Tier ' + lockdown.tier})\` \u2022 \`${lockdown.channels?.length || 0} channels locked\`` : '`Standby (Disengaged)`'}\n` +
-        `> -# \u2022 **Anti-Raid Auto-Quarantine:** ${raidActive ? '`ARMED (Isolating Incoming Accounts)`' : '`Standby (Passive Wiretap)`'}\n` +
-        `> -# \u2022 **Gate Verification:** \`${verifStr}\`\n` +
-        `> -# \u2022 **Whitelists & Staff:** \`${extraOwnersCount}\` extra owners \u2022 \`${spamPermittedCount}\` bypass entries\n\n` +
+        `> -# ${BULLET_EMOJI} **DEFCON State:** ${isAlert ? '`DEFCON 1 (CRITICAL THREAT ALERT)`' : '`DEFCON 5 (PEACETIME / NOMINAL)`'}\n` +
+        `> -# ${BULLET_EMOJI} **Emergency Blackout:** ${isEmergency ? '`ENGAGED (Total Server Blackout)`' : '`Standby (Disengaged)`'}\n` +
+        `> -# ${BULLET_EMOJI} **Panic Lockdown:** ${lockdown ? `\`ENGAGED (${lockdown.tierLabel || 'Tier ' + lockdown.tier})\` \u2022 \`${lockdown.channels?.length || 0} channels locked\`` : '`Standby (Disengaged)`'}\n` +
+        `> -# ${BULLET_EMOJI} **Anti-Raid Auto-Quarantine:** ${raidActive ? '`ARMED (Isolating Incoming Accounts)`' : '`Standby (Passive Wiretap)`'}\n` +
+        `> -# ${BULLET_EMOJI} **Gate Verification:** \`${verifStr}\`\n` +
+        `> -# ${BULLET_EMOJI} **Whitelists & Staff:** \`${extraOwnersCount}\` extra owners \u2022 \`${spamPermittedCount}\` bypass entries\n\n` +
         `> **Tactical Emergency & Panic Directives:**\n` +
-        `> -# \u2022 \`${prefix}panic\` / \`${prefix}emergency\` \u2014 Instant total server blackout & verification elevation \`[Owner Only]\`\n` +
-        `> -# \u2022 \`${prefix}unpanic\` / \`${prefix}endemergency\` \u2014 Lift emergency mode and restore all permissions \`[Owner Only]\`\n` +
-        `> -# \u2022 \`${prefix}lockdown <1|2|3>\` \u2014 Ultra-fast batched lockdown (Soft / Medium / Nuclear) \`[Extra Owner]\`\n` +
-        `> -# \u2022 \`${prefix}unlockdown\` \u2014 Instant ~1.2s zero-loss restoration from database bitmask snapshot \`[Extra Owner]\`\n` +
-        `> -# \u2022 **Tactical Audio Briefing:** Click **[Tactical Audio Briefing]** below to broadcast live military voice dispatch in VC or download audio.`
+        `> -# ${BULLET_EMOJI} \`${prefix}panic\` / \`${prefix}emergency\` \u2014 Instant total server blackout & verification elevation \`[Owner Only]\`\n` +
+        `> -# ${BULLET_EMOJI} \`${prefix}unpanic\` / \`${prefix}endemergency\` \u2014 Lift emergency mode and restore all permissions \`[Owner Only]\`\n` +
+        `> -# ${BULLET_EMOJI} \`${prefix}lockdown <1|2|3>\` \u2014 Ultra-fast batched lockdown (Soft / Medium / Nuclear) \`[Extra Owner]\`\n` +
+        `> -# ${BULLET_EMOJI} \`${prefix}unlockdown\` \u2014 Instant ~1.2s zero-loss restoration from database bitmask snapshot \`[Extra Owner]\`\n` +
+        `> -# ${BULLET_EMOJI} **Tactical Audio Briefing:** Click **[Tactical Audio Briefing]** below to broadcast live military voice dispatch in VC or download audio.`
     },
     { type: 14, divider: true },
     { type: 10, content: `-# **Athena Prime Tactical Command Center \u2022 Unified Operations**` }
@@ -244,7 +245,7 @@ export function buildDefconIntelContainer(prefix = '!') {
   return {
     type: 17,
     components: [
-      { type: 10, content: `## Athena Prime DEFCON Defense Matrix Intel | <a:03_tick_circle:1565665642084827206>` },
+      { type: 10, content: `# ${getRandomHeadingGlyph()} Athena Prime DEFCON Defense Matrix Intel | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
         type: 10,
@@ -260,35 +261,35 @@ export function buildDefconIntelContainer(prefix = '!') {
         content:
           `### **The 5 DEFCON Readiness Levels**\n` +
           `> **DEFCON 5 \u2022 PEACETIME (Normal Operations)**\n` +
-          `> -# \u2022 Standard community operations; all bot sub-systems monitoring in passive standby.\n` +
-          `> -# \u2022 Raw WebSocket wiretap running in background (<1ms processing).\n` +
-          `> -# \u2022 60-second Linked Role audit log cross-examination active.\n\n` +
+          `> -# ${BULLET_EMOJI} Standard community operations; all bot sub-systems monitoring in passive standby.\n` +
+          `> -# ${BULLET_EMOJI} Raw WebSocket wiretap running in background (<1ms processing).\n` +
+          `> -# ${BULLET_EMOJI} 60-second Linked Role audit log cross-examination active.\n\n` +
           `> **DEFCON 4 \u2022 GUARDED (Elevated Surveillance)**\n` +
-          `> -# \u2022 Passive anomaly heuristics tracking staff velocity; automod strictness raised.\n` +
-          `> -# \u2022 Phishing, token stealer, and fake nitro domain filters active.\n` +
-          `> -# \u2022 Zero-day invite inspection verifies no dangerous permissions on invite links.\n\n` +
+          `> -# ${BULLET_EMOJI} Passive anomaly heuristics tracking staff velocity; automod strictness raised.\n` +
+          `> -# ${BULLET_EMOJI} Phishing, token stealer, and fake nitro domain filters active.\n` +
+          `> -# ${BULLET_EMOJI} Zero-day invite inspection verifies no dangerous permissions on invite links.\n\n` +
           `> **DEFCON 3 \u2022 ELEVATED (Heightened Raid Alert)**\n` +
-          `> -# \u2022 Join-velocity burst monitoring triggered (default: 8 joins in 5 seconds).\n` +
-          `> -# \u2022 Account age restrictions & anti-alt heuristics active.\n` +
-          `> -# \u2022 Pre-lockdown bitmask snapshotting primed in database memory.\n\n` +
+          `> -# ${BULLET_EMOJI} Join-velocity burst monitoring triggered (default: 8 joins in 5 seconds).\n` +
+          `> -# ${BULLET_EMOJI} Account age restrictions & anti-alt heuristics active.\n` +
+          `> -# ${BULLET_EMOJI} Pre-lockdown bitmask snapshotting primed in database memory.\n\n` +
           `> **DEFCON 2 \u2022 SEVERE (Active Incursion / Raid Mode)**\n` +
-          `> -# \u2022 Server Raid Mode armed (\`${prefix}raidmode on\`).\n` +
-          `> -# \u2022 Verification level elevated to **Very High (Verified Phone Required)**.\n` +
-          `> -# \u2022 Incoming members instantly stripped of roles & isolated in \`.   You Have Been Quarantined\`.\n\n` +
+          `> -# ${BULLET_EMOJI} Server Raid Mode armed (\`${prefix}raidmode on\`).\n` +
+          `> -# ${BULLET_EMOJI} Verification level elevated to **Very High (Verified Phone Required)**.\n` +
+          `> -# ${BULLET_EMOJI} Incoming members instantly stripped of roles & isolated in \`.   You Have Been Quarantined\`.\n\n` +
           `> **DEFCON 1 \u2022 MAXIMUM CRITICAL (Emergency Blackout / Panic Lockdown)**\n` +
-          `> -# \u2022 Triggered via \`${prefix}panic\`, \`${prefix}emergency\`, or \`${prefix}lockdown 3\`.\n` +
-          `> -# \u2022 Total server blackout: all public channels hidden or muted for \`@everyone\`.\n` +
-          `> -# \u2022 Micro-batched parallel REST execution (chunks of 8) completes in **~1.2 seconds**.\n` +
-          `> -# \u2022 Server verification elevated to Phone Required to block attacker alternate accounts.`
+          `> -# ${BULLET_EMOJI} Triggered via \`${prefix}panic\`, \`${prefix}emergency\`, or \`${prefix}lockdown 3\`.\n` +
+          `> -# ${BULLET_EMOJI} Total server blackout: all public channels hidden or muted for \`@everyone\`.\n` +
+          `> -# ${BULLET_EMOJI} Micro-batched parallel REST execution (chunks of 8) completes in **~1.2 seconds**.\n` +
+          `> -# ${BULLET_EMOJI} Server verification elevated to Phone Required to block attacker alternate accounts.`
       },
       { type: 14, divider: true },
       {
         type: 10,
         content:
           `### **How It Works Under the Hood (Architecture & Mechanics)**\n` +
-          `> -# \u2022 **1. Zero-Loss Bitmask Snapshots:** Before any channel is touched, Athena serializes exact bitmask integers (\`allow\` / \`deny\` BigInts) into database cache. Nothing is lost.\n` +
-          `> -# \u2022 **2. Parallel Batched REST Engine:** Instead of sequential loops taking 20+ seconds, channels are processed in concurrent chunks of 8 using \`Promise.allSettled\`. Lockdown or rollback finishes in **~1.2 seconds**.\n` +
-          `> -# \u2022 **3. Phone Verification Shield:** In DEFCON 1 and Tier 2/3 lockdowns, verification is elevated so attackers cannot bypass channel permissions using unverified alt accounts.`
+          `> -# ${BULLET_EMOJI} **1. Zero-Loss Bitmask Snapshots:** Before any channel is touched, Athena serializes exact bitmask integers (\`allow\` / \`deny\` BigInts) into database cache. Nothing is lost.\n` +
+          `> -# ${BULLET_EMOJI} **2. Parallel Batched REST Engine:** Instead of sequential loops taking 20+ seconds, channels are processed in concurrent chunks of 8 using \`Promise.allSettled\`. Lockdown or rollback finishes in **~1.2 seconds**.\n` +
+          `> -# ${BULLET_EMOJI} **3. Phone Verification Shield:** In DEFCON 1 and Tier 2/3 lockdowns, verification is elevated so attackers cannot bypass channel permissions using unverified alt accounts.`
       },
       { type: 14, divider: true },
       {
@@ -296,15 +297,15 @@ export function buildDefconIntelContainer(prefix = '!') {
         content:
           `### **Execution & Clearance Manual**\n` +
           `> **Emergency Activation Commands:**\n` +
-          `> -# \u2022 \`${prefix}panic\` / \`${prefix}emergency\` \u2014 Total server channel blackout & verification elevation \`[Server Owner / Bot Owner]\`\n` +
-          `> -# \u2022 \`${prefix}lockdown 1\` \u2014 Soft lockdown (mutes send & voice speak) \`[Extra Owner]\`\n` +
-          `> -# \u2022 \`${prefix}lockdown 2\` \u2014 Medium lockdown (mutes send, files, reactions + arms raid mode) \`[Extra Owner]\`\n` +
-          `> -# \u2022 \`${prefix}lockdown 3\` \u2014 Nuclear lockdown (total server channel blackout) \`[Extra Owner]\`\n` +
-          `> -# \u2022 \`${prefix}raidmode on\` \u2014 Auto-quarantine incoming joins & phone verification \`[Extra Owner]\`\n\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}panic\` / \`${prefix}emergency\` \u2014 Total server channel blackout & verification elevation \`[Server Owner / Bot Owner]\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}lockdown 1\` \u2014 Soft lockdown (mutes send & voice speak) \`[Extra Owner]\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}lockdown 2\` \u2014 Medium lockdown (mutes send, files, reactions + arms raid mode) \`[Extra Owner]\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}lockdown 3\` \u2014 Nuclear lockdown (total server channel blackout) \`[Extra Owner]\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}raidmode on\` \u2014 Auto-quarantine incoming joins & phone verification \`[Extra Owner]\`\n\n` +
           `> **Recovery & Restoration Commands:**\n` +
-          `> -# \u2022 \`${prefix}unpanic\` / \`${prefix}endemergency\` \u2014 Lifts emergency blackout & restores permissions \`[Server Owner / Bot Owner]\`\n` +
-          `> -# \u2022 \`${prefix}unlockdown\` \u2014 Restores exact channels & bitmasks from database snapshot in ~1.2s \`[Extra Owner]\`\n` +
-          `> -# \u2022 **Interactive Action Buttons:** \`[Lift Lockdown]\` & \`[End Emergency]\` buttons attached to alert messages allow instant 1-click restoration.`
+          `> -# ${BULLET_EMOJI} \`${prefix}unpanic\` / \`${prefix}endemergency\` \u2014 Lifts emergency blackout & restores permissions \`[Server Owner / Bot Owner]\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}unlockdown\` \u2014 Restores exact channels & bitmasks from database snapshot in ~1.2s \`[Extra Owner]\`\n` +
+          `> -# ${BULLET_EMOJI} **Interactive Action Buttons:** \`[Lift Lockdown]\` & \`[End Emergency]\` buttons attached to alert messages allow instant 1-click restoration.`
       },
       { type: 14, divider: true },
       { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 DEFCON Architectural Manual**` }

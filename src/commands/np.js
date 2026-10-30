@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -182,12 +183,12 @@ export const commands = [
 
       const cfg = db.getGuildConfig(message.guild?.id || '0');
             const comps = [];
-      comps.push({ type: 10, content: `# GLOBAL NO-PREFIX STATUS PANEL` });
+      comps.push({ type: 10, content: `# ${getRandomHeadingGlyph()} GLOBAL NO-PREFIX STATUS PANEL` });
       comps.push({ type: 14, divider: true });
       
-      comps.push({ type: 10, content: `## **Granted Users (${userLines.length})**\n` + (userLines.join('\n\n') || '**None**') });
-      comps.push({ type: 10, content: `## **Granted Servers (${serverLines.length})**\n` + (serverLines.join('\n\n') || '**None**') });
-      comps.push({ type: 10, content: `## **Banned Users (0)**\n**None**` });
+      comps.push({ type: 10, content: `# ${getRandomHeadingGlyph()} **Granted Users (${userLines.length})**\n` + (userLines.join('\n\n') || '**None**') });
+      comps.push({ type: 10, content: `# ${getRandomHeadingGlyph()} **Granted Servers (${serverLines.length})**\n` + (serverLines.join('\n\n') || '**None**') });
+      comps.push({ type: 10, content: `# ${getRandomHeadingGlyph()} **Banned Users (0)**\n**None**` });
       
       comps.push({ type: 14, divider: true });
       comps.push({ type: 10, content: '-# **Athena Bulletproof Security !!!**' });
@@ -206,7 +207,7 @@ export const commands = [
 
       const cfg = db.getGuildConfig(message.guild?.id || '0');
             const comps = [];
-      comps.push({ type: 10, content: `# NP Managers List\n## **Active & Configured NP Managers**` });
+      comps.push({ type: 10, content: `# ${getRandomHeadingGlyph()} NP Managers List\n## **Active & Configured NP Managers**` });
       comps.push({ type: 14, divider: true });
       comps.push({ type: 10, content: lines.join('\n') || 'No NP Managers configured.' });
       comps.push({ type: 14, divider: true });
@@ -220,13 +221,13 @@ export const commands = [
             const buildGuideContainer = (page) => {
         const comps = [];
         
-        comps.push({ type: 10, content: `# NP Manager Guide (Page ${page}/2)\nOfficial Control & Analytics Guide for NP Managers` });
+        comps.push({ type: 10, content: `# ${getRandomHeadingGlyph()} NP Manager Guide (Page ${page}/2)\nOfficial Control & Analytics Guide for NP Managers` });
         comps.push({ type: 14, divider: true });
         
         if (page === 1) {
-          comps.push({ type: 10, content: '## **NP Access Management**\n> `np add user <@user | id> [duration]` — Grant No-Prefix to user\n> `np add server <guild_id> [duration]` — Grant No-Prefix to server\n> `np reset user <id>` — Remove No-Prefix from user\n> `np reset server <id>` — Remove No-Prefix from server\n> `np list` / `np active` — View global active NP users & servers\n\n## **Command Ban Controls**\n> `np cmds ban <command>` — Ban a command from NP\n> `np cmds unban <command>` — Unban a command from NP\n> `np cmds pause` / `unpause` — Pause or unpause NP system\n\n## **Bot Server Assets**\n> `!setguildavatar <url | attachment>` — Set server bot avatar\n> `!setguildbanner <url | attachment>` — Set server bot banner' });
+          comps.push({ type: 10, content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + '**NP Access Management**\n> `np add user <@user | id> [duration]` — Grant No-Prefix to user\n> `np add server <guild_id> [duration]` — Grant No-Prefix to server\n> `np reset user <id>` — Remove No-Prefix from user\n> `np reset server <id>` — Remove No-Prefix from server\n> `np list` / `np active` — View global active NP users & servers\n\n## **Command Ban Controls**\n> `np cmds ban <command>` — Ban a command from NP\n> `np cmds unban <command>` — Unban a command from NP\n> `np cmds pause` / `unpause` — Pause or unpause NP system\n\n## **Bot Server Assets**\n> `!setguildavatar <url | attachment>` — Set server bot avatar\n> `!setguildbanner <url | attachment>` — Set server bot banner' });
         } else {
-          comps.push({ type: 10, content: '## **Bot Growth & Analytics Commands**\n> `bjoins` / `bjoin` / `botjoins` — View recent bot join statistics\n> `bleaves` / `bleave` / `botleaves` — View recent bot leave statistics\n> `bsummary` / `bjoinssummary` / `bgrowth` — View bot join & growth summary\n> `bcmds` / `bcmd` / `botcmds` — View command usage analytics & execution logs\n> `btopcmds` / `btop` / `bcmdusers` — View top executed commands & active users\n> `bservers` / `bmem` / `bping` — View active bot servers, memory & latency\n\n## **View & Inspection Controls**\n> `ss` / `security status` — View security status (View Only)\n> `np actions [@user]` — View audit log of manager actions\n> `np manager list` / `np manager` — View active NP Managers\n> `np check <@user | id>` — Check a specific user\'s NP status\n\n**Restrictions:** Cannot restart the bot, modify NP Managers, or edit security settings.' });
+          comps.push({ type: 10, content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + '**Bot Growth & Analytics Commands**\n> `bjoins` / `bjoin` / `botjoins` — View recent bot join statistics\n> `bleaves` / `bleave` / `botleaves` — View recent bot leave statistics\n> `bsummary` / `bjoinssummary` / `bgrowth` — View bot join & growth summary\n> `bcmds` / `bcmd` / `botcmds` — View command usage analytics & execution logs\n> `btopcmds` / `btop` / `bcmdusers` — View top executed commands & active users\n> `bservers` / `bmem` / `bping` — View active bot servers, memory & latency\n\n## **View & Inspection Controls**\n> `ss` / `security status` — View security status (View Only)\n> `np actions [@user]` — View audit log of manager actions\n> `np manager list` / `np manager` — View active NP Managers\n> `np check <@user | id>` — Check a specific user\'s NP status\n\n**Restrictions:** Cannot restart the bot, modify NP Managers, or edit security settings.' });
         }
 
         comps.push({ type: 14, divider: true });

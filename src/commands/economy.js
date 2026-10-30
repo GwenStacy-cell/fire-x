@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -37,8 +38,8 @@ export const commands = [
               `-# **• Account Holder:** <@${targetUser.id}> \`(${targetUser.id})\`\n\n` +
               `-# **• Wallet Balance:** \`${wallet.toLocaleString()}\` coins\n` +
               `-# **• Vault Reserve:** \`${bank.toLocaleString()}\` coins\n` +
-              `-# • **Net Worth:** **\`${netWorth.toLocaleString()}\` Athena Coins**\n` +
-              `-# • **Daily Streak:** \`${eco.streak || 0}\` days`
+              `-# ${BULLET_EMOJI} **Net Worth:** **\`${netWorth.toLocaleString()}\` Athena Coins**\n` +
+              `-# ${BULLET_EMOJI} **Daily Streak:** \`${eco.streak || 0}\` days`
           },
           { type: 14, divider: true },
           {
@@ -67,8 +68,8 @@ export const commands = [
               `-# **• Account Holder:** <@${targetUser.id}> \`(${targetUser.id})\`\n\n` +
               `-# **• Wallet Balance:** \`${wallet.toLocaleString()}\` coins\n` +
               `-# **• Vault Reserve:** \`${bank.toLocaleString()}\` coins\n` +
-              `-# • **Net Worth:** **\`${netWorth.toLocaleString()}\` Athena Coins**\n` +
-              `-# • **Daily Streak:** \`${eco.streak || 0}\` days`
+              `-# ${BULLET_EMOJI} **Net Worth:** **\`${netWorth.toLocaleString()}\` Athena Coins**\n` +
+              `-# ${BULLET_EMOJI} **Daily Streak:** \`${eco.streak || 0}\` days`
           },
           { type: 14, divider: true },
           {
@@ -131,10 +132,10 @@ export const commands = [
             content:
               `### **Daily Stipend Disbursed | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **• Recipient:** <@${userId}>\n\n` +
-              `-# • **Base Stipend:** \`+${baseReward}\` coins\n` +
-              `-# • **Streak Multiplier (Day ${streak}):** \`+${streakBonus}\` bonus coins\n` +
-              `-# • **Total Deposited:** **\`+${totalClaim}\` Athena Coins**\n` +
-              `-# • **New Wallet Balance:** \`${((eco.wallet || 0) + totalClaim).toLocaleString()}\` coins`
+              `-# ${BULLET_EMOJI} **Base Stipend:** \`+${baseReward}\` coins\n` +
+              `-# ${BULLET_EMOJI} **Streak Multiplier (Day ${streak}):** \`+${streakBonus}\` bonus coins\n` +
+              `-# ${BULLET_EMOJI} **Total Deposited:** **\`+${totalClaim}\` Athena Coins**\n` +
+              `-# ${BULLET_EMOJI} **New Wallet Balance:** \`${((eco.wallet || 0) + totalClaim).toLocaleString()}\` coins`
           },
           { type: 14, divider: true },
           {
@@ -188,10 +189,10 @@ export const commands = [
             content:
               `### **Daily Stipend Disbursed | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **• Recipient:** <@${userId}>\n\n` +
-              `-# • **Base Stipend:** \`+${baseReward}\` coins\n` +
-              `-# • **Streak Multiplier (Day ${streak}):** \`+${streakBonus}\` bonus coins\n` +
-              `-# • **Total Deposited:** **\`+${totalClaim}\` Athena Coins**\n` +
-              `-# • **New Wallet Balance:** \`${((eco.wallet || 0) + totalClaim).toLocaleString()}\` coins`
+              `-# ${BULLET_EMOJI} **Base Stipend:** \`+${baseReward}\` coins\n` +
+              `-# ${BULLET_EMOJI} **Streak Multiplier (Day ${streak}):** \`+${streakBonus}\` bonus coins\n` +
+              `-# ${BULLET_EMOJI} **Total Deposited:** **\`+${totalClaim}\` Athena Coins**\n` +
+              `-# ${BULLET_EMOJI} **New Wallet Balance:** \`${((eco.wallet || 0) + totalClaim).toLocaleString()}\` coins`
           },
           { type: 14, divider: true },
           {
@@ -268,9 +269,9 @@ export const commands = [
             content:
               `### **Funds Transferred | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **• Sender:** <@${message.author.id}>\n` +
-              `-# • **Recipient:** <@${targetUser.id}>\n` +
-              `-# • **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
-              `-# • **Status:** \`Settled instantly on local ledger\``
+              `-# ${BULLET_EMOJI} **Recipient:** <@${targetUser.id}>\n` +
+              `-# ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
+              `-# ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
           }
         ]
       };
@@ -319,9 +320,9 @@ export const commands = [
             content:
               `### **Funds Transferred | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **• Sender:** <@${interaction.user.id}>\n` +
-              `-# • **Recipient:** <@${targetUser.id}>\n` +
-              `-# • **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
-              `-# • **Status:** \`Settled instantly on local ledger\``
+              `-# ${BULLET_EMOJI} **Recipient:** <@${targetUser.id}>\n` +
+              `-# ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
+              `-# ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
           }
         ]
       };
@@ -401,9 +402,9 @@ export const commands = [
             content:
               `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:uptime:1552608831060844575>'}**\n` +
               `-# **• Player:** <@${message.author.id}>\n` +
-              `-# • **Your Call:** \`${normalizedChoice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
-              `-# • **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
-              `-# • **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+              `-# ${BULLET_EMOJI} **Your Call:** \`${normalizedChoice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
+              `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
           }
         ]
       };
@@ -449,9 +450,9 @@ export const commands = [
             content:
               `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:uptime:1552608831060844575>'}**\n` +
               `-# **• Player:** <@${interaction.user.id}>\n` +
-              `-# • **Your Call:** \`${choice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
-              `-# • **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
-              `-# • **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+              `-# ${BULLET_EMOJI} **Your Call:** \`${choice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
+              `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
           }
         ]
       };
@@ -562,10 +563,10 @@ export const commands = [
             cv2.buildContainer(
               'Shop Item Created | <a:03_tick_circle:1565665642084827206>',
               `Item **${item.name}** registered successfully!\n\n` +
-              `-# • **Item ID:** \`${item.id}\`\n` +
-              `-# • **Price:** \`${item.price.toLocaleString()}\` coins\n` +
-              `-# • **Role:** <@&${item.roleId}>\n` +
-              `-# • **Description:** ${item.description}`
+              `-# ${BULLET_EMOJI} **Item ID:** \`${item.id}\`\n` +
+              `-# ${BULLET_EMOJI} **Price:** \`${item.price.toLocaleString()}\` coins\n` +
+              `-# ${BULLET_EMOJI} **Role:** <@&${item.roleId}>\n` +
+              `-# ${BULLET_EMOJI} **Description:** ${item.description}`
             )
           ],
           flags: MessageFlags.IsComponentsV2
@@ -641,9 +642,9 @@ export const commands = [
               content:
                 `### **Item Purchased | <a:03_tick_circle:1565665642084827206>**\n` +
                 `-# **• Buyer:** <@${message.author.id}>\n` +
-                `-# • **Item:** **${item.name}**\n` +
-                `-# • **Role Granted:** <@&${role.id}>\n` +
-                `-# • **Price Paid:** \`${item.price.toLocaleString()}\` Athena Coins`
+                `-# ${BULLET_EMOJI} **Item:** **${item.name}**\n` +
+                `-# ${BULLET_EMOJI} **Role Granted:** <@&${role.id}>\n` +
+                `-# ${BULLET_EMOJI} **Price Paid:** \`${item.price.toLocaleString()}\` Athena Coins`
             }
           ]
         };
@@ -667,8 +668,8 @@ export const commands = [
 
       let itemList = items.map((it, idx) =>
         `**${idx + 1}. ${it.name}** \u2014 \`${it.price.toLocaleString()}\` coins\n` +
-        `-# • **Role:** <@&${it.roleId}> \u00b7 **ID:** \`${it.id}\`\n` +
-        `-# • *${it.description || 'Exclusive server role perk'}*`
+        `-# ${BULLET_EMOJI} **Role:** <@&${it.roleId}> \u00b7 **ID:** \`${it.id}\`\n` +
+        `-# ${BULLET_EMOJI} *${it.description || 'Exclusive server role perk'}*`
       ).join('\n\n');
 
       const container = {
@@ -778,9 +779,9 @@ export const commands = [
               content:
                 `### **Item Purchased | <a:03_tick_circle:1565665642084827206>**\n` +
                 `-# **• Buyer:** <@${interaction.user.id}>\n` +
-                `-# • **Item:** **${item.name}**\n` +
-                `-# • **Role Granted:** <@&${role.id}>\n` +
-                `-# • **Price Paid:** \`${item.price.toLocaleString()}\` coins`
+                `-# ${BULLET_EMOJI} **Item:** **${item.name}**\n` +
+                `-# ${BULLET_EMOJI} **Role Granted:** <@&${role.id}>\n` +
+                `-# ${BULLET_EMOJI} **Price Paid:** \`${item.price.toLocaleString()}\` coins`
             }
           ]
         };
@@ -804,8 +805,8 @@ export const commands = [
 
       let itemList = items.map((it, idx) =>
         `**${idx + 1}. ${it.name}** \u2014 \`${it.price.toLocaleString()}\` coins\n` +
-        `-# • **Role:** <@&${it.roleId}> \u00b7 **ID:** \`${it.id}\`\n` +
-        `-# • *${it.description || 'Exclusive server role perk'}*`
+        `-# ${BULLET_EMOJI} **Role:** <@&${it.roleId}> \u00b7 **ID:** \`${it.id}\`\n` +
+        `-# ${BULLET_EMOJI} *${it.description || 'Exclusive server role perk'}*`
       ).join('\n\n');
 
       const container = {

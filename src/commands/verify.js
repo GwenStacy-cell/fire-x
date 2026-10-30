@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -108,7 +109,7 @@ export const commands = [
           components: [
             {
               type: 17,
-              components: [{ type: 10, content: `## **System Authentication**\n\n-# **Welcome to the server! Access to standard channels is currently restricted.**\n-# **To gain entry, you must verify your identity by clicking the authentication button below.**\n\n<:info_jtc:1524111455404953663> **__Authentication Details__**\n-# **\u2022 Verification Challenge: ${mode.toUpperCase()}**\n-# **\u2022 Role Granted: ${role.name}**\n-# **\u2022 Blocks automated bot raids and malicious accounts.**` }]
+              components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **System Authentication**\n\n-# **Welcome to the server! Access to standard channels is currently restricted.**\n-# **To gain entry, you must verify your identity by clicking the authentication button below.**\n\n<:info_jtc:1524111455404953663> **__Authentication Details__**\n-# **\u2022 Verification Challenge: ${mode.toUpperCase()}**\n-# **\u2022 Role Granted: ${role.name}**\n-# **\u2022 Blocks automated bot raids and malicious accounts.**` }]
             },
             {
               type: 1,
@@ -143,9 +144,9 @@ export const commands = [
       return message.reply(cv2.info(
         'Verification System',
         'Usage Instructions:\n' +
-        '-# \u2022 `!verify setup <@role> [button|captcha|math]` - Deploy verification panel\n' +
-        '-# \u2022 `!verify mode <button|captcha|math>` - Switch challenge type\n' +
-        '-# \u2022 `!verify disable` - Dismantle verification panel'
+        '-# ${BULLET_EMOJI} `!verify setup <@role> [button|captcha|math]` - Deploy verification panel\n' +
+        '-# ${BULLET_EMOJI} `!verify mode <button|captcha|math>` - Switch challenge type\n' +
+        '-# ${BULLET_EMOJI} `!verify disable` - Dismantle verification panel'
       ));
     },
 
@@ -189,7 +190,7 @@ export const commands = [
           components: [
             {
               type: 17,
-              components: [{ type: 10, content: `## **System Authentication**\n\n-# **Welcome to the server! Access to standard channels is currently restricted.**\n-# **To gain entry, you must verify your identity by clicking the authentication button below.**\n\n<:info_jtc:1524111455404953663> **__Authentication Details__**\n-# **\u2022 Verification Challenge: ${mode.toUpperCase()}**\n-# **\u2022 Role Granted: ${role.name}**\n-# **\u2022 Blocks automated bot raids and malicious accounts.**` }]
+              components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **System Authentication**\n\n-# **Welcome to the server! Access to standard channels is currently restricted.**\n-# **To gain entry, you must verify your identity by clicking the authentication button below.**\n\n<:info_jtc:1524111455404953663> **__Authentication Details__**\n-# **\u2022 Verification Challenge: ${mode.toUpperCase()}**\n-# **\u2022 Role Granted: ${role.name}**\n-# **\u2022 Blocks automated bot raids and malicious accounts.**` }]
             },
             {
               type: 1,
@@ -224,7 +225,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## **Verification Panel Deployed!**\n\n-# **The panel is live in ${mode.toUpperCase()} mode. Users clicking the button will receive ${role}.**\n\n**Would you like Athena Prime to automatically configure the server permissions for you?**\n\n-# **If you select Auto-Configure, I will:**\n-# **• Disable \`View Channels\` globally for \`@everyone\`.**\n-# **• Disable \`View Channels\` for all roles assigned in Onboarding.**\n-# **• Enable \`View Channels\` globally for the ${role} role.**\n-# **• Make sure this verification channel remains visible to everyone.**`
+                  content: `# ${getRandomHeadingGlyph()} **Verification Panel Deployed!**\n\n-# **The panel is live in ${mode.toUpperCase()} mode. Users clicking the button will receive ${role}.**\n\n**Would you like Athena Prime to automatically configure the server permissions for you?**\n\n-# **If you select Auto-Configure, I will:**\n-# **• Disable \`View Channels\` globally for \`@everyone\`.**\n-# **• Disable \`View Channels\` for all roles assigned in Onboarding.**\n-# **• Enable \`View Channels\` globally for the ${role} role.**\n-# **• Make sure this verification channel remains visible to everyone.**`
                 },
                 { type: 14, divider: true },
                 { type: 10, content: '-# **Athena Bulletproof Security Matrix**' }
@@ -286,7 +287,7 @@ export const commands = [
               const successPayload = {
                 content: "",
                 components: [{ type: 17, components: [
-                  { type: 10, content: `## **Auto-Configuration Complete**\n\n-# **The server is now securely locked behind the verification gate (${mode.toUpperCase()} mode).**\n-# **• \`View Channels\` has been stripped from @everyone and all Discord Onboarding roles.**` },
+                  { type: 10, content: `# ${getRandomHeadingGlyph()} **Auto-Configuration Complete**\n\n-# **The server is now securely locked behind the verification gate (${mode.toUpperCase()} mode).**\n-# **• \`View Channels\` has been stripped from @everyone and all Discord Onboarding roles.**` },
                   { type: 14, divider: true },
                   { type: 10, content: '-# **Athena Bulletproof Security Matrix**' }
                 ] }],
@@ -297,7 +298,7 @@ export const commands = [
               const errorPayload = {
                 content: "",
                 components: [{ type: 17, components: [
-                  { type: 10, content: `## **Configuration Failed**\n\n-# **I do not have enough permissions to modify server roles or channel overwrites.**\n-# **\`${err.message}\`**` },
+                  { type: 10, content: `# ${getRandomHeadingGlyph()} **Configuration Failed**\n\n-# **I do not have enough permissions to modify server roles or channel overwrites.**\n-# **\`${err.message}\`**` },
                   { type: 14, divider: true },
                   { type: 10, content: '-# **Athena Bulletproof Security Matrix**' }
                 ] }],
@@ -309,7 +310,7 @@ export const commands = [
             const manualPayload = {
               content: "",
               components: [{ type: 17, components: [
-                { type: 10, content: `## **Manual Configuration**\n\n-# **You chose to do it manually. Please remember to restrict \`@everyone\` and allow ${role} to view channels.**` },
+                { type: 10, content: `# ${getRandomHeadingGlyph()} **Manual Configuration**\n\n-# **You chose to do it manually. Please remember to restrict \`@everyone\` and allow ${role} to view channels.**` },
                 { type: 14, divider: true },
                 { type: 10, content: '-# **Athena Bulletproof Security Matrix**' }
               ] }],
@@ -350,7 +351,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## **Verification Disabled**\n\n-# **The verification system has been disabled and the panel was removed.**\n-# **• Server visibility permissions have been restored for @everyone.**`
+                  content: `# ${getRandomHeadingGlyph()} **Verification Disabled**\n\n-# **The verification system has been disabled and the panel was removed.**\n-# **• Server visibility permissions have been restored for @everyone.**`
                 },
                 { type: 14, divider: true },
                 { type: 10, content: '-# **Athena Bulletproof Security Matrix**' }

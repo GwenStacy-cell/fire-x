@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { 
   PermissionFlagsBits, 
   ActionRowBuilder, 
@@ -167,7 +168,7 @@ export async function handleCountingButton(interaction) {
           components: [{
             type: 17,
             components: [
-              { type: 10, content: `## Count Reset | <a:03_tick_circle:1565665642084827206>` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Count Reset | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               { type: 10, content: `-# The count was reset back to **0** by ${interaction.user}.\n-# Next count is **1**!` }
             ]
@@ -243,7 +244,7 @@ export async function handleCountingMenu(interaction) {
     const welcomeContainer = {
       type: 17,
       components: [
-        { type: 10, content: `## Counting Channel Active | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Counting Channel Active | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         { 
           type: 10, 
@@ -346,7 +347,7 @@ export const commands = [
         const welcomeContainer = {
           type: 17,
           components: [
-            { type: 10, content: `## Counting Channel Active | <a:03_tick_circle:1565665642084827206>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Counting Channel Active | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             { 
               type: 10, 
@@ -380,7 +381,7 @@ export const commands = [
               components: [{
                 type: 17,
                 components: [
-                  { type: 10, content: `## Count Reset | <a:03_tick_circle:1565665642084827206>` },
+                  { type: 10, content: `# ${getRandomHeadingGlyph()} Count Reset | <a:03_tick_circle:1565665642084827206>` },
                   { type: 14, divider: true },
                   { type: 10, content: `-# The count was reset back to **0** by ${message.author}.\n-# Next count is **1**!` }
                 ]

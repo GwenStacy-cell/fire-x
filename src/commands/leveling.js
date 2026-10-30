@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, AttachmentBuilder, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -37,14 +38,14 @@ export async function buildXpDashboard(guildId) {
     rewardsText = Object.entries(system.roleRewards)
       .sort((a, b) => Number(a[0]) - Number(b[0]))
       .map(([level, roleId]) => `Level ${level} -> <@&${roleId}>`)
-      .join('\n-# • ');
+      .join('\n-# ${BULLET_EMOJI} ');
   }
 
   let multipliersText = 'None configured (1.0x default)';
   if (Object.keys(system.multipliers || {}).length > 0) {
     multipliersText = Object.entries(system.multipliers)
       .map(([roleId, mult]) => `<@&${roleId}> (${mult}x)`)
-      .join('\n-# • ');
+      .join('\n-# ${BULLET_EMOJI} ');
   }
 
   const allUsers = db.getTopUsersXp(guildId, 99999);
@@ -55,22 +56,21 @@ export async function buildXpDashboard(guildId) {
     components: [
       {
         type: 10,
-        content:
-          `# XP Manager\n` +
+        content: `# ${getRandomHeadingGlyph()} XP Manager\n` +
           `-# **__Interactive Leveling & XP Control Matrix__**\n\n` +
-          `-# • **System Status:** ${statusIcon} **${statusLabel}**\n` +
-          `-# • **Announcement Mode / Destination:** **${announceSettingText}**\n` +
-          `-# • **Commands Channel:** **${cmdChannelText}**\n` +
-          `-# • **Active Tracked Members:** **${totalTracked} users**\n` +
-          `-# • **Base XP Rate:** **15 - 25 XP / msg (60s cooldown)**`
+          `-# ${BULLET_EMOJI} **System Status:** ${statusIcon} **${statusLabel}**\n` +
+          `-# ${BULLET_EMOJI} **Announcement Mode / Destination:** **${announceSettingText}**\n` +
+          `-# ${BULLET_EMOJI} **Commands Channel:** **${cmdChannelText}**\n` +
+          `-# ${BULLET_EMOJI} **Active Tracked Members:** **${totalTracked} users**\n` +
+          `-# ${BULLET_EMOJI} **Base XP Rate:** **15 - 25 XP / msg (60s cooldown)**`
       },
       { type: 14, divider: true },
       {
         type: 10,
         content:
           `-# **__Current Rewards & Multipliers__**\n` +
-          `-# • **Level Role Rewards:**\n-# • ${rewardsText}\n\n` +
-          `-# • **Role XP Boost Multipliers:**\n-# • ${multipliersText}`
+          `-# ${BULLET_EMOJI} **Level Role Rewards:**\n-# ${BULLET_EMOJI} ${rewardsText}\n\n` +
+          `-# ${BULLET_EMOJI} **Role XP Boost Multipliers:**\n-# ${BULLET_EMOJI} ${multipliersText}`
       },
       { type: 14, divider: true },
       {
@@ -270,9 +270,9 @@ export const commands = [
           components: [
             cv2.buildContainer(
               'Rank Theme Settings | <a:uptime:1552608831060844575>',
-              `-# • **Active Theme:** \`${current.toUpperCase()}\`\n\n` +
-              `-# • \`!ranktheme hogwarts\` \u2014 Cinematic Animated GIF with soaring Hedwig & flaming altar\n` +
-              `-# • \`!ranktheme athena\` \u2014 Sleek Obsidian & God of War stone card`
+              `-# ${BULLET_EMOJI} **Active Theme:** \`${current.toUpperCase()}\`\n\n` +
+              `-# ${BULLET_EMOJI} \`!ranktheme hogwarts\` \u2014 Cinematic Animated GIF with soaring Hedwig & flaming altar\n` +
+              `-# ${BULLET_EMOJI} \`!ranktheme athena\` \u2014 Sleek Obsidian & God of War stone card`
             )
           ],
           flags: MessageFlags.IsComponentsV2
@@ -408,7 +408,7 @@ export const commands = [
         });
       }
 
-      const listStr = entries.map(([lvl, roleId]) => `-# • **Level ${lvl}** \u2192 <@&${roleId}> \`(${roleId})\``).join('\n');
+      const listStr = entries.map(([lvl, roleId]) => `-# ${BULLET_EMOJI} **Level ${lvl}** \u2192 <@&${roleId}> \`(${roleId})\``).join('\n');
       return message.reply({
         components: [
           cv2.buildContainer(
@@ -475,7 +475,7 @@ export const commands = [
         });
       }
 
-      const listStr = entries.map(([lvl, roleId]) => `-# • **Level ${lvl}** \u2192 <@&${roleId}> \`(${roleId})\``).join('\n');
+      const listStr = entries.map(([lvl, roleId]) => `-# ${BULLET_EMOJI} **Level ${lvl}** \u2192 <@&${roleId}> \`(${roleId})\``).join('\n');
       return interaction.reply({
         components: [
           cv2.buildContainer(

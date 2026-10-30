@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { SlashCommandBuilder, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ChannelType, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -95,7 +96,7 @@ export const commands = [
         const container = {
           type: 17,
           components: [
-            { type: 10, content: '## **Support Tickets**' },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} **Support Tickets**` },
             { type: 14, divider: true },
             { type: 10, content: 'Need help? Click the button below to open a private ticket. A text and voice channel will be created for you.' },
             { type: 14, divider: true },
@@ -175,7 +176,7 @@ export const commands = [
         const container = {
           type: 17,
           components: [
-            { type: 10, content: '## **Support Tickets**' },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} **Support Tickets**` },
             { type: 14, divider: true },
             { type: 10, content: 'Need help? Click the button below to open a private ticket. A text and voice channel will be created for you.' },
             { type: 14, divider: true },
@@ -372,7 +373,7 @@ export async function handleTicketButtons(interaction) {
       const container = {
         type: 17,
         components: [
-          { type: 10, content: '## **Support Ticket**' },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} **Support Ticket**` },
           { type: 14, divider: true },
           { type: 10, content: `${pings}\n\n**Welcome <@${user.id}>!** Please describe your issue.\nSupport will be with you shortly.\n\n-# **Voice Channel:** <#${voiceChannel.id}>` },
           { type: 14, divider: true },
@@ -599,7 +600,7 @@ export async function handleTicketModals(interaction) {
       const container = {
         type: 17,
         components: [
-          { type: 10, content: `## <:emoji_30:1527715694240731177> **${reason} Ticket**` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} <:emoji_30:1527715694240731177> **${reason} Ticket**` },
           { type: 14, divider: true },
           { type: 10, content: infoContent },
           { type: 14, divider: true },

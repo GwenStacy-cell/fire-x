@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2, { sanitizeCV2Payload } from '../cv2.js';
@@ -17,8 +18,8 @@ export function buildAICV2Container(user, prompt, aiResult, accentColor = '#00e5
   const content = formatAIToGreyMarkdown(aiResult.text || 'No response generated.');
   const headerText =
     `### **Athena Prime Neural Engine** | <a:uptime:1552608831060844575>\n` +
-    `-# • **__Member:__** <@${user.id}> \`(${user.id})\` \u00b7 **__Model:__** \`${aiResult.model}\` \u00b7 **__Latency:__** \`${aiResult.latencyMs}ms\`\n` +
-    `-# • **__Prompt:__** *${prompt.length > 120 ? prompt.slice(0, 117) + '...' : prompt}*`;
+    `-# ${BULLET_EMOJI} **__Member:__** <@${user.id}> \`(${user.id})\` \u00b7 **__Model:__** \`${aiResult.model}\` \u00b7 **__Latency:__** \`${aiResult.latencyMs}ms\`\n` +
+    `-# ${BULLET_EMOJI} **__Prompt:__** *${prompt.length > 120 ? prompt.slice(0, 117) + '...' : prompt}*`;
 
   const footerText = `-# **Athena Intelligence Matrix \u00b7 Accelerated Neural Core \u00b7 Gemini 3.8 Flash**`;
 
@@ -138,8 +139,8 @@ export const commands = [
               type: 10,
               content:
                 `### **Neural Engine Advisory** | <a:uptime:1552608831060844575>\n` +
-                `-# • **__Status:__** \`Failed to synthesize\`\n` +
-                `-# • **__Error:__** ${aiResult.error || 'Connection timed out'}`
+                `-# ${BULLET_EMOJI} **__Status:__** \`Failed to synthesize\`\n` +
+                `-# ${BULLET_EMOJI} **__Error:__** ${aiResult.error || 'Connection timed out'}`
             }
           ]
         };
@@ -207,8 +208,8 @@ export const commands = [
               type: 10,
               content:
                 `### **Neural Engine Advisory** | <a:uptime:1552608831060844575>\n` +
-                `-# • **__Status:__** \`Failed to synthesize\`\n` +
-                `-# • **__Error:__** ${aiResult.error || 'Connection timed out'}`
+                `-# ${BULLET_EMOJI} **__Status:__** \`Failed to synthesize\`\n` +
+                `-# ${BULLET_EMOJI} **__Error:__** ${aiResult.error || 'Connection timed out'}`
             }
           ]
         };
@@ -324,13 +325,13 @@ export const commands = [
       const isEnabled = Boolean(cfg.aiModeEnabled);
       const chId = cfg.aiChannelId;
       const statusText =
-        `-# • **__System Status:__** \`${isEnabled ? 'ACTIVE' : 'STANDBY'}\`\n` +
-        `-# • **__Dedicated Channel:__** ${chId ? `<#${chId}> (\`${chId}\`)` : '`None (Restricted to !ask only)`'}\n` +
-        `-# • **__Container Styling:__** \`Accent Borderless CV2 Container\`\n\n` +
+        `-# ${BULLET_EMOJI} **__System Status:__** \`${isEnabled ? 'ACTIVE' : 'STANDBY'}\`\n` +
+        `-# ${BULLET_EMOJI} **__Dedicated Channel:__** ${chId ? `<#${chId}> (\`${chId}\`)` : '`None (Restricted to !ask only)`'}\n` +
+        `-# ${BULLET_EMOJI} **__Container Styling:__** \`Accent Borderless CV2 Container\`\n\n` +
         `-# **__Commands:__**\n` +
-        `-# • \`!ask <prompt>\` - Direct query to Athena Neural Engine\n` +
-        `-# • \`!aimode on / off\` - Toggle conversational mode\n` +
-        `-# • \`!aimode channel #channel\` - Bind dedicated AI chat channel`;
+        `-# ${BULLET_EMOJI} \`!ask <prompt>\` - Direct query to Athena Neural Engine\n` +
+        `-# ${BULLET_EMOJI} \`!aimode on / off\` - Toggle conversational mode\n` +
+        `-# ${BULLET_EMOJI} \`!aimode channel #channel\` - Bind dedicated AI chat channel`;
 
       return message.reply({
         components: [
@@ -391,9 +392,9 @@ export const commands = [
       const isEnabled = Boolean(cfg.aiModeEnabled);
       const chId = cfg.aiChannelId;
       const statusText =
-        `-# • **__System Status:__** \`${isEnabled ? 'ACTIVE' : 'STANDBY'}\`\n` +
-        `-# • **__Dedicated Channel:__** ${chId ? `<#${chId}>` : '`None (Restricted to /ask only)`'}\n` +
-        `-# • **__Container Styling:__** \`Accent Borderless CV2 Container\``;
+        `-# ${BULLET_EMOJI} **__System Status:__** \`${isEnabled ? 'ACTIVE' : 'STANDBY'}\`\n` +
+        `-# ${BULLET_EMOJI} **__Dedicated Channel:__** ${chId ? `<#${chId}>` : '`None (Restricted to /ask only)`'}\n` +
+        `-# ${BULLET_EMOJI} **__Container Styling:__** \`Accent Borderless CV2 Container\``;
 
       return interaction.reply({
         components: [

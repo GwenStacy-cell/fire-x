@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -54,7 +55,7 @@ async function handleUnbypassable(context, isSlash, args = []) {
           {
             type: 17,
             components: [
-              { type: 10, content: `## Idle Mode Active | <a:03_tick_circle:1565665642084827206>` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Idle Mode Active | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               { type: 10, content: `> -# <a:uptime:1552608831060844575> **Server Security and Antinuke Firewall are currently inactive.**\n> -# In Idle Mode, Athena strictly does not keep or deploy secondary persistence sentinel roles.\n> -# All persistence roles have been removed. Execute \`!security enable all\` or use \`!ss\` to arm all 28 shields and deploy persistence sentinels.` },
               { type: 14, divider: true },
@@ -233,20 +234,20 @@ async function handleUnbypassable(context, isSlash, args = []) {
     components: [
       {
         type: 10,
-        content: `## Athena Unbypassable Sentinel | ${TICK}`
+        content: `# ${getRandomHeadingGlyph()} Athena Unbypassable Sentinel | ${TICK}`
       },
       { type: 14, divider: true },
       {
         type: 10,
         content:
           `> -# **Persistence Sentinel Roles Status:**\n` +
-          `-# • **Athena Unbypassable:** ${unbStatus}\n` +
-          `-# • **Athena Firewall:** ${fwStatus}\n\n` +
+          `-# ${BULLET_EMOJI} **Athena Unbypassable:** ${unbStatus}\n` +
+          `-# ${BULLET_EMOJI} **Athena Firewall:** ${fwStatus}\n\n` +
           `> -# **Sentinel Integrity & Protection:**\n` +
-          `-# • **Anti-Strip Protection:** ${antiStripText}\n` +
-          `-# • **Anti-Role Delete Guard:** ${antiDeleteText}\n` +
-          `-# • **Anti-Role Perm Modification:** ${antiPermText}\n` +
-          `-# • **Bot Role Assignment:** ${botAssignmentText}` +
+          `-# ${BULLET_EMOJI} **Anti-Strip Protection:** ${antiStripText}\n` +
+          `-# ${BULLET_EMOJI} **Anti-Role Delete Guard:** ${antiDeleteText}\n` +
+          `-# ${BULLET_EMOJI} **Anti-Role Perm Modification:** ${antiPermText}\n` +
+          `-# ${BULLET_EMOJI} **Bot Role Assignment:** ${botAssignmentText}` +
           (!isSecurityEnabled ? `\n\n> -# <a:uptime:1552608831060844575> **Idle Mode Architecture:** When Security / Antinuke Firewall is not enabled, the bot transitions to Idle Mode and does not keep any persistence roles. They are automatically deleted until armed via \`!security enable all\`.` : '')
       },
       { type: 14, divider: true },
@@ -391,7 +392,7 @@ async function handleFirewall(context, isSlash, args = []) {
   const container = {
     type: 17,
     components: [
-      { type: 10, content: `## ${FIRE} **ATHENA FIREWALL MATRIX** | ${TICK}` },
+      { type: 10, content: `# ${getRandomHeadingGlyph()} ${FIRE} **ATHENA FIREWALL MATRIX** | ${TICK}` },
       { type: 14, divider: true },
       { type: 10, content: list },
       { type: 14, divider: true },

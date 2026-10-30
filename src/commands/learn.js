@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { MessageFlags, PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -43,7 +44,7 @@ export function buildLearnDashboard(guild, config, prefix = '!') {
     components: [
       {
         type: 10,
-        content: `# Autonomous Self-Learning & Lambda AI Threat Matrix | ${TICK}\n${statusLine}${flawWarning}`
+        content: `# ${getRandomHeadingGlyph()} Autonomous Self-Learning & Lambda AI Threat Matrix | ${TICK}\n${statusLine}${flawWarning}`
       },
       { type: 14, divider: true },
       {
@@ -120,10 +121,10 @@ export function buildLearnGuidancePayload(prefix = '!') {
     components: [
       {
         type: 10,
-        content: `# Autonomous Self-Learning & Lambda AI Guidance | ${TICK}\n` +
+        content: `# ${getRandomHeadingGlyph()} Autonomous Self-Learning & Lambda AI Guidance | ${TICK}\n` +
                  `> ${UPTIME} **Zero Security Disruption Guarantee:**\n` +
-                 `> • **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
-                 `> • **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.`
+                 `> ${BULLET_EMOJI} **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
+                 `> ${BULLET_EMOJI} **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.`
       },
       { type: 14, divider: true },
       {
@@ -180,7 +181,7 @@ export function buildSignaturesContainer(guild, prefix = '!') {
       components: [
         {
           type: 10,
-          content: `# Threat Signature Registry | ${TICK}\n> ${OFF} **No rogue attack signatures recorded yet.**\n> -# Enable Learn Mode with \`${prefix}learn on\` to begin logging anomaly fingerprints.`
+          content: `# ${getRandomHeadingGlyph()} Threat Signature Registry | ${TICK}\n> ${OFF} **No rogue attack signatures recorded yet.**\n> -# Enable Learn Mode with \`${prefix}learn on\` to begin logging anomaly fingerprints.`
         },
         { type: 14, divider: true },
         {
@@ -200,9 +201,9 @@ export function buildSignaturesContainer(guild, prefix = '!') {
     const exec = sig.executorId ? `<@${sig.executorId}> (\`${sig.executorTag || sig.executorId}\`) ${sig.isBot ? '`[BOT]`' : '`[USER]`'}` : 'Unknown Actor';
     const flawBadge = sig.flawDetected ? '`[FLAW DETECTED]`' : '`[BLOCKED]`';
     return `**${idx + 1}. ${sig.eventType || 'Threat Anomaly'}** ${flawBadge}\n` +
-           `-# • **Executor:** ${exec}\n` +
-           `-# • **Action:** \`${sig.action || 'Unknown'}\` • **Verdict:** \`${sig.verdict || 'Processed'}\` • **Logged:** ${ts}` +
-           (sig.flawDetected ? `\n-# • **Flaw:** ${sig.flawReason ? sig.flawReason.slice(0, 90) + '...' : 'Hierarchy/Permission conflict.'}` : '');
+           `-# ${BULLET_EMOJI} **Executor:** ${exec}\n` +
+           `-# ${BULLET_EMOJI} **Action:** \`${sig.action || 'Unknown'}\` • **Verdict:** \`${sig.verdict || 'Processed'}\` • **Logged:** ${ts}` +
+           (sig.flawDetected ? `\n-# ${BULLET_EMOJI} **Flaw:** ${sig.flawReason ? sig.flawReason.slice(0, 90) + '...' : 'Hierarchy/Permission conflict.'}` : '');
   }).join('\n\n');
 
   const container = {
@@ -210,7 +211,7 @@ export function buildSignaturesContainer(guild, prefix = '!') {
     components: [
       {
         type: 10,
-        content: `# Threat Signature Registry | ${TICK}\n> -# Displaying the **${recent.length}** most recent heuristic anomaly patterns recorded for **${guild.name}**:`
+        content: `# ${getRandomHeadingGlyph()} Threat Signature Registry | ${TICK}\n> -# Displaying the **${recent.length}** most recent heuristic anomaly patterns recorded for **${guild.name}**:`
       },
       { type: 14, divider: true },
       {
@@ -271,7 +272,7 @@ export async function executeBaselineScan(guild) {
       components: [
         {
           type: 10,
-          content: `# Heuristic Baseline Profile Initialized | ${TICK}\n> ${UPTIME} **Audit Scan Complete for ${guild.name}**`
+          content: `# ${getRandomHeadingGlyph()} Heuristic Baseline Profile Initialized | ${TICK}\n> ${UPTIME} **Audit Scan Complete for ${guild.name}**`
         },
         { type: 14, divider: true },
         {
@@ -307,7 +308,7 @@ export async function executeBaselineScan(guild) {
       components: [
         {
           type: 10,
-          content: `# Baseline Scan Failed\n> ${OFF} **Encountered error during audit:** \`${err.message}\``
+          content: `# ${getRandomHeadingGlyph()} Baseline Scan Failed\n> ${OFF} **Encountered error during audit:** \`${err.message}\``
         }
       ]
     };
@@ -510,7 +511,7 @@ export const commands = [
           components: [
             {
               type: 10,
-              content: `# Threat Signatures Cleared | ${TICK}\n> -# All captured anomaly logs, bot attack patterns, and flaw records for **${guild.name}** have been reset.`
+              content: `# ${getRandomHeadingGlyph()} Threat Signatures Cleared | ${TICK}\n> -# All captured anomaly logs, bot attack patterns, and flaw records for **${guild.name}** have been reset.`
             }
           ]
         };
@@ -524,7 +525,7 @@ export const commands = [
           components: [
             {
               type: 10,
-              content: `# Defense Flaws Cleared | ${TICK}\n> -# All historical flaw flags for **${guild.name}** have been cleared.`
+              content: `# ${getRandomHeadingGlyph()} Defense Flaws Cleared | ${TICK}\n> -# All historical flaw flags for **${guild.name}** have been cleared.`
             }
           ]
         };
@@ -602,7 +603,7 @@ export const commands = [
           components: [
             {
               type: 10,
-              content: `# Threat Signatures Cleared | ${TICK}\n> -# All captured anomaly logs and attack patterns for **${guild.name}** have been reset.`
+              content: `# ${getRandomHeadingGlyph()} Threat Signatures Cleared | ${TICK}\n> -# All captured anomaly logs and attack patterns for **${guild.name}** have been reset.`
             }
           ]
         };

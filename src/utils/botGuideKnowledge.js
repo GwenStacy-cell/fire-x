@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from './emojis.js';
 import { ARCHITECTURE_TOPICS, COMMAND_EXPLAINERS } from './explainerRegistry.js';
 import { helpModules } from '../commands/utility.js';
 import { generateAIResponse, formatAIToGreyMarkdown } from './ai.js';
@@ -1619,15 +1620,15 @@ function buildDynamicCodeGuide(prompt, knowledge, prefix = '!', codeSnippets = [
     ? `Authorized: ${memberClearance?.label || 'Authorized'}` 
     : `Requires elevated clearance (Your role: ${memberClearance?.label || 'Community Member'})`;
   parts.push(isTanglish
-    ? `  -# • **__Step 1: Clearance & Role Hierarchy:__** Thevaipadum clearance: \`${clearanceText}\` • [${memberStatus}]. Server Settings-la Athena-voda bot role managed roles-ku mela irukkanum.`
-    : `  -# • **__Step 1: Clearance & Role Hierarchy:__** Requires clearance: \`${clearanceText}\` • [${memberStatus}]. Ensure Athena's bot role is positioned above target managed roles in Server Settings.`);
+    ? `  -# ${BULLET_EMOJI} **__Step 1: Clearance & Role Hierarchy:__** Thevaipadum clearance: \`${clearanceText}\` • [${memberStatus}]. Server Settings-la Athena-voda bot role managed roles-ku mela irukkanum.`
+    : `  -# ${BULLET_EMOJI} **__Step 1: Clearance & Role Hierarchy:__** Requires clearance: \`${clearanceText}\` • [${memberStatus}]. Ensure Athena's bot role is positioned above target managed roles in Server Settings.`);
 
   // Step 2: Running command & choices
   if (primaryCmd) {
     const cmdSyntax = primaryCmd.primaryPrefixSyntax || (primaryCmd.syntax ? primaryCmd.syntax.replace(/!/g, prefix) : `${prefix}${primaryCmd.name}`);
-    parts.push(`  -# • **__Step 2: Primary Execution (Prefix First):__** \`${cmdSyntax}\``);
-    parts.push(`    -# • **__Execution Modality:__** \`${primaryCmd.executionMode || 'Prefix Supported'}\``);
-    parts.push(`    -# • **__Slash Command Availability:__** \`${primaryCmd.slashAlternative || (primaryCmd.hasSlash ? `/${primaryCmd.name}` : (isTanglish ? 'Slash Command illai (Prefix Only)' : 'Not Available as a Slash Command (Prefix Only)'))}\``);
+    parts.push(`  -# ${BULLET_EMOJI} **__Step 2: Primary Execution (Prefix First):__** \`${cmdSyntax}\``);
+    parts.push(`    -# ${BULLET_EMOJI} **__Execution Modality:__** \`${primaryCmd.executionMode || 'Prefix Supported'}\``);
+    parts.push(`    -# ${BULLET_EMOJI} **__Slash Command Availability:__** \`${primaryCmd.slashAlternative || (primaryCmd.hasSlash ? `/${primaryCmd.name}` : (isTanglish ? 'Slash Command illai (Prefix Only)' : 'Not Available as a Slash Command (Prefix Only)'))}\``);
 
     if (primaryCmd.choices && primaryCmd.choices.length > 0) {
       parts.push(`    -# Supported choices & subcommands: ${primaryCmd.choices.map(c => `\`${c}\``).join(', ')}.`);
@@ -1638,30 +1639,30 @@ function buildDynamicCodeGuide(prompt, knowledge, prefix = '!', codeSnippets = [
     }
   } else if (knowledge.matchedCommands.length > 0) {
     const cmd = knowledge.matchedCommands[0];
-    parts.push(`  -# • **__Step 2: Primary Execution (Prefix First):__** \`${(cmd.primaryPrefixSyntax || cmd.syntax).replace(/!/g, prefix)}\` \u2014 ${cmd.purpose}`);
-    parts.push(`    -# • **__Execution Modality:__** \`${cmd.executionMode || 'Prefix Supported'}\``);
-    parts.push(`    -# • **__Slash Command Availability:__** \`${cmd.slashAlternative || (cmd.hasSlash ? `/${cmd.name}` : (isTanglish ? 'Slash Command illai (Prefix Only)' : 'Not Available as a Slash Command (Prefix Only)'))}\``);
+    parts.push(`  -# ${BULLET_EMOJI} **__Step 2: Primary Execution (Prefix First):__** \`${(cmd.primaryPrefixSyntax || cmd.syntax).replace(/!/g, prefix)}\` \u2014 ${cmd.purpose}`);
+    parts.push(`    -# ${BULLET_EMOJI} **__Execution Modality:__** \`${cmd.executionMode || 'Prefix Supported'}\``);
+    parts.push(`    -# ${BULLET_EMOJI} **__Slash Command Availability:__** \`${cmd.slashAlternative || (cmd.hasSlash ? `/${cmd.name}` : (isTanglish ? 'Slash Command illai (Prefix Only)' : 'Not Available as a Slash Command (Prefix Only)'))}\``);
   } else {
-    parts.push(`  -# • **__Step 2: Command Execution:__** Execute the relevant module command using the server prefix \`${prefix}\` as identified in the source snippets below.`);
+    parts.push(`  -# ${BULLET_EMOJI} **__Step 2: Command Execution:__** Execute the relevant module command using the server prefix \`${prefix}\` as identified in the source snippets below.`);
   }
 
   // Step 3: Verification & Inspection
   if (primaryCmd && primaryCmd.name === 'security') {
     parts.push(isTanglish
-      ? `  -# • **__Step 3: Verification:__** Real-time shield tripwires and backup roles check panna \`${prefix}security status\` run pannunga.`
-      : `  -# • **__Step 3: Verification:__** Run \`${prefix}security status\` to inspect real-time shield tripwires and backup admin roles.`);
+      ? `  -# ${BULLET_EMOJI} **__Step 3: Verification:__** Real-time shield tripwires and backup roles check panna \`${prefix}security status\` run pannunga.`
+      : `  -# ${BULLET_EMOJI} **__Step 3: Verification:__** Run \`${prefix}security status\` to inspect real-time shield tripwires and backup admin roles.`);
   } else if (primaryCmd && (primaryCmd.name === 'ranktheme' || primaryCmd.name === 'rank')) {
     parts.push(isTanglish
-      ? `  -# • **__Step 3: Verification:__** Canvas card preview paakka \`${prefix}rank\` or \`${prefix}profile\` run pannunga.`
-      : `  -# • **__Step 3: Verification:__** Run \`${prefix}rank\` or \`${prefix}profile\` to preview the updated card on canvas.`);
+      ? `  -# ${BULLET_EMOJI} **__Step 3: Verification:__** Canvas card preview paakka \`${prefix}rank\` or \`${prefix}profile\` run pannunga.`
+      : `  -# ${BULLET_EMOJI} **__Step 3: Verification:__** Run \`${prefix}rank\` or \`${prefix}profile\` to preview the updated card on canvas.`);
   } else if (primaryCmd && primaryCmd.name === 'learn') {
     parts.push(isTanglish
-      ? `  -# • **__Step 3: Verification:__** Velocity audit scan execute panna \`${prefix}learn baseline\` run pannunga.`
-      : `  -# • **__Step 3: Verification:__** Run \`${prefix}learn baseline\` to execute an immediate staff velocity audit scan.`);
+      ? `  -# ${BULLET_EMOJI} **__Step 3: Verification:__** Velocity audit scan execute panna \`${prefix}learn baseline\` run pannunga.`
+      : `  -# ${BULLET_EMOJI} **__Step 3: Verification:__** Run \`${prefix}learn baseline\` to execute an immediate staff velocity audit scan.`);
   } else {
     parts.push(isTanglish
-      ? `  -# • **__Step 3: Verification:__** Changes verify panna inspection command run pannunga or dashboard check pannunga.`
-      : `  -# • **__Step 3: Verification:__** Run the corresponding status inspection command or inspect the interactive Components V2 dashboard.`);
+      ? `  -# ${BULLET_EMOJI} **__Step 3: Verification:__** Changes verify panna inspection command run pannunga or dashboard check pannunga.`
+      : `  -# ${BULLET_EMOJI} **__Step 3: Verification:__** Run the corresponding status inspection command or inspect the interactive Components V2 dashboard.`);
   }
 
   // --- Under-the-Hood Architecture ---
@@ -1693,7 +1694,7 @@ function buildDynamicCodeGuide(prompt, knowledge, prefix = '!', codeSnippets = [
   if (codeSnippets && codeSnippets.length > 0) {
     parts.push(`\n• **__Source Code Deep Dive & Analysis:__**`);
     for (const snip of codeSnippets.slice(0, 4)) {
-      parts.push(`  -# • **\`${snip.file}\` (Lines ${snip.startLine}–${snip.endLine}):** ${snip.role} \u2014 Analyzed logic for ${snip.reason}.`);
+      parts.push(`  -# ${BULLET_EMOJI} **\`${snip.file}\` (Lines ${snip.startLine}–${snip.endLine}):** ${snip.role} \u2014 Analyzed logic for ${snip.reason}.`);
     }
   }
 
@@ -1704,8 +1705,8 @@ function buildDynamicCodeGuide(prompt, knowledge, prefix = '!', codeSnippets = [
     : '`[Inspect Status]`';
 
   parts.push(`\n• **__Interactive One-Click Action Buttons:__**`);
-  parts.push(`  -# • **__Available Buttons:__** I've attached one-click grey action buttons below: ${buttonLabels}. Click any button to execute or open the setup panel on the spot.`);
-  parts.push(`  -# • **__Need a Custom Button?__** Even if you didn't ask, I can generate one-click buttons for any specific action or setting of \`!${cmdName}\`. Click **__Ask Follow-Up Doubt__** or tell me what action button you want (e.g. *"Give me a button to apply Hogwarts theme"* or *"Provide a button for ticket manager"*), and I'll generate the interactive button directly for you!`);
+  parts.push(`  -# ${BULLET_EMOJI} **__Available Buttons:__** I've attached one-click grey action buttons below: ${buttonLabels}. Click any button to execute or open the setup panel on the spot.`);
+  parts.push(`  -# ${BULLET_EMOJI} **__Need a Custom Button?__** Even if you didn't ask, I can generate one-click buttons for any specific action or setting of \`!${cmdName}\`. Click **__Ask Follow-Up Doubt__** or tell me what action button you want (e.g. *"Give me a button to apply Hogwarts theme"* or *"Provide a button for ticket manager"*), and I'll generate the interactive button directly for you!`);
 
   return parts.join('\n');
 }
@@ -1719,8 +1720,7 @@ export function buildGuideHubContainer(guild, user, prefix = '!') {
     components: [
       {
         type: 10,
-        content:
-          `# Athena Prime System Guide & Intelligence Hub | ${TICK}\n` +
+        content: `# ${getRandomHeadingGlyph()} Athena Prime System Guide & Intelligence Hub | ${TICK}\n` +
           `-# Greetings, <@${user.id}>. I am **Athena Prime**, your server's autonomous guardian and system intelligence.\n` +
           `-# Ask me anything about my **245+ commands**, server configurations, or security architectures to receive step-by-step instructions tailored to your needs.`
       },
@@ -1729,12 +1729,12 @@ export function buildGuideHubContainer(guild, user, prefix = '!') {
         type: 10,
         content:
           `### **How to Ask Me Anything:**\n` +
-          `> -# • \`${prefix}athena how do I set up tickets with AI triage?\`\n` +
-          `> -# • \`${prefix}athena how to protect against rogue admins deleting channels?\`\n` +
-          `> -# • \`${prefix}athena how to enable AI toxicity and doxxing automod?\`\n` +
-          `> -# • \`${prefix}athena what does panic lockdown tier 3 do?\`\n` +
-          `> -# • \`${prefix}athena how does the casino minigames economy work?\`\n` +
-          `> -# • \`${prefix}athena how to setup verification with graphic captcha?\`\n\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}athena how do I set up tickets with AI triage?\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}athena how to protect against rogue admins deleting channels?\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}athena how to enable AI toxicity and doxxing automod?\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}athena what does panic lockdown tier 3 do?\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}athena how does the casino minigames economy work?\`\n` +
+          `> -# ${BULLET_EMOJI} \`${prefix}athena how to setup verification with graphic captcha?\`\n\n` +
           `### **Explore Core System Domains:**\n` +
           `-# Click any quick button below for instant guidance on that feature matrix:`
       },
@@ -1778,21 +1778,21 @@ export function buildAthenaGuideContainer(user, query, aiResult, accentColor = '
   const content = formatAIToGreyMarkdown(aiResult.text || 'No instructions generated.');
   const sources = aiResult.sourceReferences || [];
   const sourceLine = sources.length > 0 
-    ? `\n-# • **__Codebase Deep Dive:__** ${sources.map(s => `\`${s.file.replace(/^src\//, '')}#L${s.lines}\``).slice(0, 3).join(', ')}` 
+    ? `\n-# ${BULLET_EMOJI} **__Codebase Deep Dive:__** ${sources.map(s => `\`${s.file.replace(/^src\//, '')}#L${s.lines}\``).slice(0, 3).join(', ')}` 
     : '';
 
   const threadLine = currentSession
-    ? `\n-# • **__Conversation Thread:__** ${formatSessionHeader(currentSession)}`
+    ? `\n-# ${BULLET_EMOJI} **__Conversation Thread:__** ${formatSessionHeader(currentSession)}`
     : '';
 
   const memberClearance = aiResult.clearance;
   const clearanceBadge = memberClearance?.label ? ` (${memberClearance.label})` : '';
   const permissionNotice = (aiResult.canExecute === false && aiResult.requiredClearance)
-    ? `\n-# • **__Clearance Notice:__** Requires \`${aiResult.requiredClearance.label}\` (Viewing as ${memberClearance?.label || 'Community Member'})`
+    ? `\n-# ${BULLET_EMOJI} **__Clearance Notice:__** Requires \`${aiResult.requiredClearance.label}\` (Viewing as ${memberClearance?.label || 'Community Member'})`
     : '';
 
   const typoLine = (aiResult.typoCorrection && aiResult.typoCorrection.hasTypo)
-    ? `\n-# • **__Typo Auto-Corrected:__** Interpreted \`${aiResult.typoCorrection.originalToken}\` as \`!${aiResult.typoCorrection.correctedCommand}\``
+    ? `\n-# ${BULLET_EMOJI} **__Typo Auto-Corrected:__** Interpreted \`${aiResult.typoCorrection.originalToken}\` as \`!${aiResult.typoCorrection.correctedCommand}\``
     : '';
 
   const langBadge = (aiResult.language && aiResult.language !== 'English')
@@ -1801,8 +1801,8 @@ export function buildAthenaGuideContainer(user, query, aiResult, accentColor = '
 
   const headerText =
     `## Athena System Guide & Intelligence | ${TICK}\n` +
-    `-# • **__Member:__** <@${user.id}>${clearanceBadge} \u00b7 **__Model:__** \`${aiResult.model}\` \u00b7 **__Latency:__** \`${aiResult.latencyMs}ms\`\n` +
-    `-# • **__Question:__** *${query.length > 130 ? query.slice(0, 127) + '...' : query}*${sourceLine}${threadLine}${permissionNotice}${typoLine}`;
+    `-# ${BULLET_EMOJI} **__Member:__** <@${user.id}>${clearanceBadge} \u00b7 **__Model:__** \`${aiResult.model}\` \u00b7 **__Latency:__** \`${aiResult.latencyMs}ms\`\n` +
+    `-# ${BULLET_EMOJI} **__Question:__** *${query.length > 130 ? query.slice(0, 127) + '...' : query}*${sourceLine}${threadLine}${permissionNotice}${typoLine}`;
 
   const comps = [
     {
@@ -1935,7 +1935,7 @@ export function buildThinkingContainer(title, detail = '', session = null) {
   const loadingEmoji = '<a:loading:1542155051286396938>';
   let text = `-# ${loadingEmoji} **${title}**`;
   if (session && session.turnCount >= 1) {
-    text += `\n-# • **__Thread Context Active (Turn #${session.turnCount + 1}):__** Rolling session expires <t:${Math.floor(session.expiresAt / 1000)}:R>`;
+    text += `\n-# ${BULLET_EMOJI} **__Thread Context Active (Turn #${session.turnCount + 1}):__** Rolling session expires <t:${Math.floor(session.expiresAt / 1000)}:R>`;
   }
   if (detail) {
     text += `\n-# ${detail}`;
@@ -1961,11 +1961,11 @@ export function buildFeatureNotFoundResponse(query, prefix = '!') {
     ``,
     `• **__System Matrix Scope & Closest Capabilities:__**`,
     `Athena's core architecture does not implement external features outside of Discord management. If you are looking to configure related server capabilities:`,
-    `> -# • **__Server Protection:__** \`${prefix}security enable all\` (Deploy 28 antinuke modules and unbypassable firewall)`,
-    `> -# • **__Automated Alerts & Feeds:__** \`${prefix}news setup\` (Automated RSS news syndication) / \`${prefix}setmedia\` (Social media auto-embed)`,
-    `> -# • **__Community & Games:__** \`${prefix}rank\` (Cinematic XP cards) / \`${prefix}rate\` (Edit rating) / \`${prefix}casino\` (Minigames)`,
-    `> -# • **__Support & Staff:__** \`${prefix}ticketpanel\` (Interactive tickets with smart AI triage) / \`${prefix}automod\` (AI toxic shield)`,
-    `> -# • **__Full Command Catalog:__** Run \`${prefix}help\` to explore all 250+ supported commands categorized by domain.`,
+    `> -# ${BULLET_EMOJI} **__Server Protection:__** \`${prefix}security enable all\` (Deploy 28 antinuke modules and unbypassable firewall)`,
+    `> -# ${BULLET_EMOJI} **__Automated Alerts & Feeds:__** \`${prefix}news setup\` (Automated RSS news syndication) / \`${prefix}setmedia\` (Social media auto-embed)`,
+    `> -# ${BULLET_EMOJI} **__Community & Games:__** \`${prefix}rank\` (Cinematic XP cards) / \`${prefix}rate\` (Edit rating) / \`${prefix}casino\` (Minigames)`,
+    `> -# ${BULLET_EMOJI} **__Support & Staff:__** \`${prefix}ticketpanel\` (Interactive tickets with smart AI triage) / \`${prefix}automod\` (AI toxic shield)`,
+    `> -# ${BULLET_EMOJI} **__Full Command Catalog:__** Run \`${prefix}help\` to explore all 250+ supported commands categorized by domain.`,
     ``,
     `• **__Source Code Deep Dive & Analysis:__**`,
     `• **__Repository Verification:__** Full deep-dive scan conducted across 254 registered bot commands and core engines in \`src/\`.`,

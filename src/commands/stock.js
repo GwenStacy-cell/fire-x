@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { MessageFlags, PermissionFlagsBits } from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
@@ -84,11 +85,11 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Financial Reconnaissance Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Financial Reconnaissance Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Telemetry Fault:** ${err.message || 'Unable to resolve market data.'}\n` +
-                           `> -# • **Try:** \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock BTC\`, or \`${prefix}market\` for global overview.\n` +
-                           `> -# • **All Features Guide:** Type \`${prefix}stock help\` for complete commands guidance.\n\n` +
+                           `> -# ${BULLET_EMOJI} **Try:** \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock BTC\`, or \`${prefix}market\` for global overview.\n` +
+                           `> -# ${BULLET_EMOJI} **All Features Guide:** Type \`${prefix}stock help\` for complete commands guidance.\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
               ]
@@ -129,7 +130,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Financial Reconnaissance Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Financial Reconnaissance Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Telemetry Fault:** ${err.message || 'Unable to resolve market data.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -168,11 +169,11 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Athena Stock AI Guidance | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Athena Stock AI Guidance | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Usage:** \`!stockai <question / topic / symbol>\`\n` +
-                           `> -# • **Examples:** \`!stockai why did tech drop today?\`, \`!stockai explain NVDA earnings\`, \`!stockai what is market cap?\`\n` +
-                           `> -# • **All Aliases:** \`!stockai\`, \`!stockexplain\`, \`!marketai\`, \`!stai\`\n\n` +
+                           `> -# ${BULLET_EMOJI} **Examples:** \`!stockai why did tech drop today?\`, \`!stockai explain NVDA earnings\`, \`!stockai what is market cap?\`\n` +
+                           `> -# ${BULLET_EMOJI} **All Aliases:** \`!stockai\`, \`!stockexplain\`, \`!marketai\`, \`!stai\`\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
                 }
               ]
@@ -242,7 +243,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Financial Intelligence Analysis | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Financial Intelligence Analysis | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Inquiry:** \`${query}\`\n\n` +
                            formatted + `\n\n` +
@@ -267,7 +268,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Financial AI Generation Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Financial AI Generation Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to generate analysis.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -313,8 +314,8 @@ export const commands = [
         const gainers = allAssets.filter(a => a.changePct >= 0).slice(0, 4);
         const decliners = allAssets.filter(a => a.changePct < 0).reverse().slice(0, 4);
 
-        const gainersList = gainers.map(g => `> -# • **${g.symbol || g.label}:** \`$${g.price.toFixed(2)}\` (\`+${g.changePct.toFixed(2)}%\`)`).join('\n') || '> -# • No major positive movers recorded.';
-        const declinersList = decliners.map(d => `> -# • **${d.symbol || d.label}:** \`$${d.price.toFixed(2)}\` (\`${d.changePct.toFixed(2)}%\`)`).join('\n') || '> -# • No major negative decliners recorded.';
+        const gainersList = gainers.map(g => `> -# ${BULLET_EMOJI} **${g.symbol || g.label}:** \`$${g.price.toFixed(2)}\` (\`+${g.changePct.toFixed(2)}%\`)`).join('\n') || '> -# ${BULLET_EMOJI} No major positive movers recorded.';
+        const declinersList = decliners.map(d => `> -# ${BULLET_EMOJI} **${d.symbol || d.label}:** \`$${d.price.toFixed(2)}\` (\`${d.changePct.toFixed(2)}%\`)`).join('\n') || '> -# ${BULLET_EMOJI} No major negative decliners recorded.';
         const dt = getFormattedDateTimeStrings();
 
         return await loadingMsg.edit({
@@ -324,19 +325,19 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Market Movers Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Market Movers Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                            `### Top Gainers & Momentum Leaders\n` +
                            gainersList + `\n\n` +
                            `### Top Decliners & Downward Volatility\n` +
                            declinersList + `\n\n` +
                            `### Supporting Commands Guidance\n` +
-                           `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry\n` +
-                           `> -# • \`${prefix}market\` \u2014 Global 6-index world market pulse\n` +
-                           `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown\n` +
-                           `> -# • \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL)\n` +
-                           `> -# • \`${prefix}stocknews [symbol]\` \u2014 Real-time press wiretap & headlines\n` +
-                           `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload\n\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}market\` \u2014 Global 6-index world market pulse\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL)\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stocknews [symbol]\` \u2014 Real-time press wiretap & headlines\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
                 },
                 { type: 14, divider: true },
@@ -382,7 +383,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Market Movers Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Market Movers Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -444,11 +445,11 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Crypto Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Crypto Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Crypto coin not found.'}\n` +
-                           `> -# • **Try:** \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`, \`${prefix}crypto DOGE\`\n` +
-                           `> -# • **All Features Guide:** Type \`${prefix}stock help\` for complete commands guidance.\n\n` +
+                           `> -# ${BULLET_EMOJI} **Try:** \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`, \`${prefix}crypto DOGE\`\n` +
+                           `> -# ${BULLET_EMOJI} **All Features Guide:** Type \`${prefix}stock help\` for complete commands guidance.\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
               ]
@@ -501,7 +502,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## No Headlines Found | <a:03_tick_circle:1565665642084827206>\n` +
+                    content: `# ${getRandomHeadingGlyph()} No Headlines Found | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> No recent articles found for \`${query}\`.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -515,7 +516,7 @@ export const commands = [
 
         const headlines = newsItems.map((n, i) => {
           const dateStr = n.providerPublishTime ? `<t:${Math.floor(n.providerPublishTime.getTime() / 1000)}:R>` : '';
-          return `> -# • **[${n.title}](${n.link})**\n> -#   *Source:* \`${n.publisher}\` ${dateStr}`;
+          return `> -# ${BULLET_EMOJI} **[${n.title}](${n.link})**\n> -#   *Source:* \`${n.publisher}\` ${dateStr}`;
         }).join('\n\n');
 
         return await loadingMsg.edit({
@@ -525,17 +526,17 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Live Financial News Wire | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Live Financial News Wire | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Subject:** \`${query}\`\n\n` +
                            headlines + `\n\n` +
                            `### Supporting Commands Guidance\n` +
-                           `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry\n` +
-                           `> -# • \`${prefix}market\` \u2014 Global 6-index world market pulse\n` +
-                           `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown\n` +
-                           `> -# • \`${prefix}movers\` \u2014 Top market gainers & decliners\n` +
-                           `> -# • \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency telemetry\n` +
-                           `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload\n\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}market\` \u2014 Global 6-index world market pulse\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}movers\` \u2014 Top market gainers & decliners\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency telemetry\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
                 },
                 { type: 14, divider: true },
@@ -587,7 +588,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## News Retrieval Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} News Retrieval Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -629,15 +630,15 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Daily Stock Market Broadcaster Control | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Daily Stock Market Broadcaster Control | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Current Channel:** ${boundChannelText}\n` +
-                           `> -# • **Scheduled Time:** \`09:30 AM EST (14:30 UTC)\` \u2014 Every day at US Market Open.\n\n` +
+                           `> -# ${BULLET_EMOJI} **Scheduled Time:** \`09:30 AM EST (14:30 UTC)\` \u2014 Every day at US Market Open.\n\n` +
                            `### Available Directives\n` +
-                           `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Bind daily stock market briefing upload channel.\n` +
-                           `> -# • \`${prefix}stockchannel disable\` \u2014 Disarm automated daily market briefing.\n` +
-                           `> -# • \`${prefix}stockchannel test\` \u2014 Immediately generate and dispatch today's market briefing into the configured channel.\n` +
-                           `> -# • \`${prefix}stockchannel status\` \u2014 Check current broadcast channel ID & delivery state.\n\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stockchannel set <#channel>\` \u2014 Bind daily stock market briefing upload channel.\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stockchannel disable\` \u2014 Disarm automated daily market briefing.\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stockchannel test\` \u2014 Immediately generate and dispatch today's market briefing into the configured channel.\n` +
+                           `> -# ${BULLET_EMOJI} \`${prefix}stockchannel status\` \u2014 Check current broadcast channel ID & delivery state.\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
                 },
                 { type: 14, divider: true },
@@ -666,7 +667,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## Invalid Channel Specified | <a:03_tick_circle:1565665642084827206>\n` +
+                    content: `# ${getRandomHeadingGlyph()} Invalid Channel Specified | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> **Usage:** \`${prefix}stockchannel set <#channel>\` or \`${prefix}stockchannel set <channel_id>\`\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -688,11 +689,11 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Daily Stock Channel Configured | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Daily Stock Channel Configured | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Bound Channel:** <#${targetChannel.id}> (\`${targetChannel.id}\`)\n` +
-                           `> -# • **Schedule:** Athena will automatically generate and upload the high-resolution World Market Pulse dashboard image and briefing here every day at **09:30 AM EST (14:30 UTC)**.\n` +
-                           `> -# • **Instant Test:** Type \`${prefix}stockchannel test\` to verify delivery right now.\n\n` +
+                           `> -# ${BULLET_EMOJI} **Schedule:** Athena will automatically generate and upload the high-resolution World Market Pulse dashboard image and briefing here every day at **09:30 AM EST (14:30 UTC)**.\n` +
+                           `> -# ${BULLET_EMOJI} **Instant Test:** Type \`${prefix}stockchannel test\` to verify delivery right now.\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
                 }
               ]
@@ -712,7 +713,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Daily Stock Broadcaster Disarmed | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Daily Stock Broadcaster Disarmed | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> Daily stock market upload has been disabled for this server.\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -735,7 +736,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## No Stock Channel Configured | <a:03_tick_circle:1565665642084827206>\n` +
+                    content: `# ${getRandomHeadingGlyph()} No Stock Channel Configured | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Please set a channel first via \`${prefix}stockchannel set <#channel>\`.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -756,7 +757,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## Target Channel Not Found | <a:03_tick_circle:1565665642084827206>\n` +
+                    content: `# ${getRandomHeadingGlyph()} Target Channel Not Found | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Channel ID \`${boundChannelId}\` could not be resolved. Please re-bind via \`${prefix}stockchannel set <#channel>\`.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -792,7 +793,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## Daily Stock Briefing Dispatched | <a:03_tick_circle:1565665642084827206>\n` +
+                    content: `# ${getRandomHeadingGlyph()} Daily Stock Briefing Dispatched | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Daily stock market intelligence image and report successfully delivered to <#${channel.id}>.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -810,7 +811,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## Daily Stock Dispatch Failed | <a:03_tick_circle:1565665642084827206>\n` +
+                    content: `# ${getRandomHeadingGlyph()} Daily Stock Dispatch Failed | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Could not post to <#${channel.id}>. Please verify bot permissions in that channel.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -835,11 +836,11 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Stock Channel Status | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Stock Channel Status | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Bound Channel:** ${boundChannelText}\n` +
-                           `> -# • **Active Schedule:** \`09:30 AM EST (14:30 UTC)\` daily.\n` +
-                           `> -# • **Last Sent Date:** \`${config.lastDailyStockSentDate || 'Never'}\`\n\n` +
+                           `> -# ${BULLET_EMOJI} **Active Schedule:** \`09:30 AM EST (14:30 UTC)\` daily.\n` +
+                           `> -# ${BULLET_EMOJI} **Last Sent Date:** \`${config.lastDailyStockSentDate || 'Never'}\`\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
                 }
               ]
@@ -926,7 +927,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Symbol Search Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Symbol Search Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Symbol search failed.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -984,7 +985,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Symbol Search Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Symbol Search Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Symbol search failed.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1051,7 +1052,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Indian Benchmark Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Indian Benchmark Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve benchmark telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1080,7 +1081,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Indian Benchmark Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Indian Benchmark Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve benchmark telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1131,7 +1132,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Bank Nifty Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Bank Nifty Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Bank Nifty telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1158,7 +1159,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Bank Nifty Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Bank Nifty Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Bank Nifty telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1209,7 +1210,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## BSE Sensex Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} BSE Sensex Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve BSE Sensex telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1236,7 +1237,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## BSE Sensex Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} BSE Sensex Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve BSE Sensex telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1287,7 +1288,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Nifty IT Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Nifty IT Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Nifty IT telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1314,7 +1315,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Nifty IT Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Nifty IT Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Nifty IT telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1365,7 +1366,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## India VIX Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} India VIX Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve India VIX telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1392,7 +1393,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## India VIX Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} India VIX Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve India VIX telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1497,7 +1498,7 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## ${stockData.name} (${stockData.symbol}) AI Analysis | <a:03_tick_circle:1565665642084827206>\n` +
+                content: `# ${getRandomHeadingGlyph()} ${stockData.name} (${stockData.symbol}) AI Analysis | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          formatted + `\n\n` +
                          `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
@@ -1524,7 +1525,7 @@ export async function handleStockButton(interaction) {
 
       const headlines = newsItems.map((n, i) => {
         const dateStr = n.providerPublishTime ? `<t:${Math.floor(n.providerPublishTime.getTime() / 1000)}:R>` : '';
-        return `> -# • **[${n.title}](${n.link})**\n> -#   *Source:* \`${n.publisher}\` ${dateStr}`;
+        return `> -# ${BULLET_EMOJI} **[${n.title}](${n.link})**\n> -#   *Source:* \`${n.publisher}\` ${dateStr}`;
       }).join('\n\n');
 
       return await interaction.editReply({
@@ -1534,7 +1535,7 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## ${symbol} Financial News Wire | <a:03_tick_circle:1565665642084827206>\n` +
+                content: `# ${getRandomHeadingGlyph()} ${symbol} Financial News Wire | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          headlines + `\n\n` +
                          `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
@@ -1560,8 +1561,8 @@ export async function handleStockButton(interaction) {
       const gainers = allAssets.filter(a => a.changePct >= 0).slice(0, 4);
       const decliners = allAssets.filter(a => a.changePct < 0).reverse().slice(0, 4);
 
-      const gainersList = gainers.map(g => `> -# • **${g.symbol || g.label}:** \`$${g.price.toFixed(2)}\` (\`+${g.changePct.toFixed(2)}%\`)`).join('\n') || '> -# • No major positive movers recorded.';
-      const declinersList = decliners.map(d => `> -# • **${d.symbol || d.label}:** \`$${d.price.toFixed(2)}\` (\`${d.changePct.toFixed(2)}%\`)`).join('\n') || '> -# • No major negative decliners recorded.';
+      const gainersList = gainers.map(g => `> -# ${BULLET_EMOJI} **${g.symbol || g.label}:** \`$${g.price.toFixed(2)}\` (\`+${g.changePct.toFixed(2)}%\`)`).join('\n') || '> -# ${BULLET_EMOJI} No major positive movers recorded.';
+      const declinersList = decliners.map(d => `> -# ${BULLET_EMOJI} **${d.symbol || d.label}:** \`$${d.price.toFixed(2)}\` (\`${d.changePct.toFixed(2)}%\`)`).join('\n') || '> -# ${BULLET_EMOJI} No major negative decliners recorded.';
 
       return await interaction.editReply({
         components: [
@@ -1570,7 +1571,7 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Market Movers Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
+                content: `# ${getRandomHeadingGlyph()} Market Movers Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          `### Top Gainers & Momentum Leaders\n` +
                          gainersList + `\n\n` +
@@ -1603,11 +1604,11 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Crypto Asset Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
+                content: `# ${getRandomHeadingGlyph()} Crypto Asset Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
-                         `> -# • **Bitcoin (BTC):** \`$${btc.price.toLocaleString()}\` (${btc.change >= 0 ? '+' : ''}${btc.changePct.toFixed(2)}%)\n` +
-                         `> -# • **Ethereum (ETH):** \`$${eth.price.toLocaleString()}\` (${eth.change >= 0 ? '+' : ''}${eth.changePct.toFixed(2)}%)\n` +
-                         `> -# • **Solana (SOL):** \`$${sol.price.toLocaleString()}\` (${sol.change >= 0 ? '+' : ''}${sol.changePct.toFixed(2)}%)\n\n` +
+                         `> -# ${BULLET_EMOJI} **Bitcoin (BTC):** \`$${btc.price.toLocaleString()}\` (${btc.change >= 0 ? '+' : ''}${btc.changePct.toFixed(2)}%)\n` +
+                         `> -# ${BULLET_EMOJI} **Ethereum (ETH):** \`$${eth.price.toLocaleString()}\` (${eth.change >= 0 ? '+' : ''}${eth.changePct.toFixed(2)}%)\n` +
+                         `> -# ${BULLET_EMOJI} **Solana (SOL):** \`$${sol.price.toLocaleString()}\` (${sol.change >= 0 ? '+' : ''}${sol.changePct.toFixed(2)}%)\n\n` +
                          `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
               }
             ]

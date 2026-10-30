@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { MessageFlags } from 'discord.js';
 import db from '../database.js';
 import os from 'os';
@@ -109,7 +110,7 @@ export const commands = [
       const container1 = {
         type: 17,
         components: [
-          { type: 10, content: `## **${client.user.username} Information.**` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} **${client.user.username} Information.**` },
           {
             type: 9,
             components: [{
@@ -118,7 +119,7 @@ export const commands = [
             }],
             accessory: { type: 11, media: { url: client.user.displayAvatarURL() } }
           },
-          { type: 10, content: `## **Server & User Stats**` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} **Server & User Stats**` },
           {
             type: 10,
             content: `-# **Total Servers :** **${totalServers.toLocaleString()}**\n-# **Total Users :** **${totalUsers.toLocaleString()}**\n-# **Total Channels :** **${totalChannels.toLocaleString()}**\n-# **Emojis Tracked :** **${emojis.toLocaleString()}**\n-# **Stickers Tracked :** **${stickers.toLocaleString()}**\n-# **Total Commands :** **${uniqueCommands}**\n-# **Daily Usage :** **Active**`
@@ -129,7 +130,7 @@ export const commands = [
       const container2 = {
         type: 17,
         components: [
-          { type: 10, content: `## **Active Modules**` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} **Active Modules**` },
           {
             type: 10,
             content: `-# **Defense & AntiNuke :** **Active (${totalServers} Servers Enabled)**\n-# **AutoLogging System :** **Active (21 Log Categories)**\n-# **AutoMod Engine :** **Active (Anti-Spam & Honeypot)**\n-# **Ticket Management :** **Active (Panels & Transcripts)**\n-# **Giveaway System :** **Active (Auto-Roll & Reroll)**\n-# **Reaction & Activity Roles :** **Active (Auto-Assign & VC)**\n-# **Custom Triggers & AutoResponder :** **Active (Prefix & Keywords)**\n-# **Voice & VC Controls :** **Active (J2C & Panel Controls)**\n-# **Leveling & XP System :** **Active (XP Gain & Rewards)**\n-# **YouTube & Media Notifications :** **Active (Auto-Post & Feeds)**\n-# **Backup & Restore Manager :** **Active (Server Cloner & Backups)**\n-# **Blacklist & Quarantine :** **Active (User & Domain Protection)**`
@@ -141,12 +142,12 @@ export const commands = [
       const container3 = {
         type: 17,
         components: [
-          { type: 10, content: `## **System Resources**` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} **System Resources**` },
           {
             type: 10,
             content: `-# **Node.js :** **${process.version}**\n-# **Discord.js :** **v14.14.1**\n-# **Heap Memory :** **${heapUsed} MB**\n-# **Free RAM :** **${freeMem}/${totalMem} MB**\n-# **CPU Cores :** **${os.cpus().length} Cores**\n-# **Architecture :** **${os.arch()}**`
           },
-          { type: 10, content: `## **Codebase**` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} **Codebase**` },
           {
             type: 10,
             content: `-# **Total Files :** **${cb.files}**\n-# **Total Languages :** **1 (JavaScript)**\n-# **JS Files :** **${cb.js} JS**\n-# **JSON Configs :** **${cb.json}**\n-# **Markdown Docs :** **${cb.md}**\n-# **Total Lines :** **${cb.linesStr}**\n-# **Total Words :** **${cb.wordsStr}**`

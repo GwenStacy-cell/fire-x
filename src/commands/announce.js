@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import cv2 from '../cv2.js';
 import { setGuildContext } from '../embed.js';
@@ -175,12 +176,12 @@ export async function handleAnnouncementInteractions(interaction) {
       if (embed.data.title && embed.data.thumbnail?.url) {
          container.components.push({
            type: 9,
-           components: [{ type: 10, content: `## ${embed.data.title}` }],
+           components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} ${embed.data.title}` }],
            accessory: { type: 11, media: { url: embed.data.thumbnail.url } }
          });
          hasHeader = true;
       } else if (embed.data.title) {
-         container.components.push({ type: 10, content: `## ${embed.data.title}` });
+         container.components.push({ type: 10, content: `# ${getRandomHeadingGlyph()} ${embed.data.title}` });
          hasHeader = true;
       } else if (embed.data.thumbnail?.url) {
          container.components.push({

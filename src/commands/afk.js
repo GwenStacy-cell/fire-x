@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
 import { MessageFlags } from 'discord.js';
 
@@ -18,7 +19,7 @@ export const commands = [{
       components: [
         {
           type: 9,
-          components: [{ type: 10, content: `## **AFK Set**\n-# **${message.member?.displayName || message.author.displayName} is now AFK**\n-# **Reason: ${reason}**` }],
+          components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **AFK Set**\n-# **${message.member?.displayName || message.author.displayName} is now AFK**\n-# **Reason: ${reason}**` }],
           accessory: { type: 11, media: { url: avatarUrl } }
         },
         { type: 14, divider: true }, { type: 10, content: "-# **Athena Bulletproof Security !!!**" }

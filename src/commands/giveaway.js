@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from 'discord.js';
 import db from '../database.js';
 import statsDB from '../statsDB.js';
@@ -31,7 +32,7 @@ export function buildManagerContainer(managerId) {
   }
 
   const components = [
-    { type: 10, content: `## ${EMOJI_HEADER} GIVEAWAY MANAGER` },
+    { type: 10, content: `# ${getRandomHeadingGlyph()} ${EMOJI_HEADER} GIVEAWAY MANAGER` },
     { type: 14, divider: true },
     { type: 10, content: `-# **Configure your giveaway below. Use the dropdown to select the winner selection mode, and the buttons to set the prize and duration.**` },
     { type: 14, divider: true },

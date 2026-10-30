@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import {
   PermissionFlagsBits,
   MessageFlags,
@@ -205,8 +206,7 @@ export function buildTtsControlPanel(member, guild) {
     components: [
       {
         type: 10,
-        content:
-          `# Athena Voice Studio // TTS Control Center | <a:03_tick_circle:1565665642084827206>\n` +
+        content: `# ${getRandomHeadingGlyph()} Athena Voice Studio // TTS Control Center | <a:03_tick_circle:1565665642084827206>\n` +
           `-# Zero-latency celebrity speech synthesis, real-time acoustic DSP transformations, and voice channel broadcasting.\n\n` +
           `> **Current Voice Profile:** ${voiceName}\n` +
           `> **Vocal Characteristics:** *${voiceDesc}*\n` +

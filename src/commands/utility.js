@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -364,402 +365,401 @@ export const commands = [
               if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
                   descContent = `Extracts and downloads uncompressed original master-resolution images and MP4 videos from any Pinterest link or short URL (pin.it).\n\n` +
                     `> -# **__Features & Pipeline:__**\n` +
-                    `> • **Full Master Resolution:** Automatically expands shortened \`pin.it\` redirects and upgrades 736x/564x preview thumbnails to uncompressed master quality (/originals/).\n` +
-                    `> • **Video & GIF Extraction:** Automatically extracts full MP4 videos (v.pinimg.com) and animated assets.\n` +
-                    `> • **1-Click Download Button:** Attaches an instant direct button to download the media asset directly to your device.\n` +
-                    `> • **Universal Cross-Bot Media Integration:** Any command with an image prompt or button (\`${prefix}welcome\`, \`${prefix}leave\`, \`${prefix}ticketpanel\`, \`${prefix}announce\`, \`${prefix}aiannounce\`, \`${prefix}autoreply\`, and Studio) accepts direct Pinterest links (\`pin.it\` or \`pinterest.com\`) and Athena will automatically extract and resolve the raw high-resolution media!\n\n` +
+                    `> ${BULLET_EMOJI} **Full Master Resolution:** Automatically expands shortened \`pin.it\` redirects and upgrades 736x/564x preview thumbnails to uncompressed master quality (/originals/).\n` +
+                    `> ${BULLET_EMOJI} **Video & GIF Extraction:** Automatically extracts full MP4 videos (v.pinimg.com) and animated assets.\n` +
+                    `> ${BULLET_EMOJI} **1-Click Download Button:** Attaches an instant direct button to download the media asset directly to your device.\n` +
+                    `> ${BULLET_EMOJI} **Universal Cross-Bot Media Integration:** Any command with an image prompt or button (\`${prefix}welcome\`, \`${prefix}leave\`, \`${prefix}ticketpanel\`, \`${prefix}announce\`, \`${prefix}aiannounce\`, \`${prefix}autoreply\`, and Studio) accepts direct Pinterest links (\`pin.it\` or \`pinterest.com\`) and Athena will automatically extract and resolve the raw high-resolution media!\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}pinterest <link>\` - Download media from Pinterest link.\n` +
-                    `> • \`${prefix}pin <link>\` - Short alias for quick downloads.\n` +
-                    `> • Reply to any Pinterest link with \`${prefix}pin\` to download it instantly.`;
+                    `> ${BULLET_EMOJI} \`${prefix}pinterest <link>\` - Download media from Pinterest link.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}pin <link>\` - Short alias for quick downloads.\n` +
+                    `> ${BULLET_EMOJI} Reply to any Pinterest link with \`${prefix}pin\` to download it instantly.`;
               } else if (targetCmd.name === "welcome" || targetCmd.name === "leave") {
                   descContent = `Interactive visual builder for join greetings and departures featuring borderless CV2 embeds, dynamic placeholders, and full media pipeline.\n\n` +
                     `> -# **__Media & Universal Pinterest Support:__**\n` +
-                    `> • **Direct Pinterest Links:** Paste any Pinterest link (\`pin.it\` or \`pinterest.com/pin/...\`) into Image, Thumbnail, Author Icon, or Footer Icon modals — Athena automatically extracts the uncompressed master resolution media.\n` +
-                    `> • **MP4-to-GIF Conversion:** Video links are automatically converted into animated looping Discord GIFs.\n` +
-                    `> • **Dynamic Variables:** Full support for \`{membercount}\`, \`{ordinal}\`, \`{user}\`, \`{avatar}\`, \`{server}\`, and 15+ guild metadata tokens.\n\n` +
+                    `> ${BULLET_EMOJI} **Direct Pinterest Links:** Paste any Pinterest link (\`pin.it\` or \`pinterest.com/pin/...\`) into Image, Thumbnail, Author Icon, or Footer Icon modals — Athena automatically extracts the uncompressed master resolution media.\n` +
+                    `> ${BULLET_EMOJI} **MP4-to-GIF Conversion:** Video links are automatically converted into animated looping Discord GIFs.\n` +
+                    `> ${BULLET_EMOJI} **Dynamic Variables:** Full support for \`{membercount}\`, \`{ordinal}\`, \`{user}\`, \`{avatar}\`, \`{server}\`, and 15+ guild metadata tokens.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}${targetCmd.name}\` - Open the interactive visual configuration dashboard.`;
+                    `> ${BULLET_EMOJI} \`${prefix}${targetCmd.name}\` - Open the interactive visual configuration dashboard.`;
               } else if (targetCmd.name === "ticketpanel") {
                   descContent = `Interactive visual ticket panel deployment dashboard with AI triage and custom media integration.\n\n` +
                     `> -# **__Features & Media Support:__**\n` +
-                    `> • **Universal Pinterest Support:** Panel banner and thumbnail inputs support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic uncompressed extraction.\n` +
-                    `> • **Smart AI Triage:** Classifies incoming inquiries into urgency tiers with staff executive summaries.\n` +
-                    `> • **Interactive Customization:** Buttons, dropdown reasons, target channels, and closing roles.\n\n` +
+                    `> ${BULLET_EMOJI} **Universal Pinterest Support:** Panel banner and thumbnail inputs support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic uncompressed extraction.\n` +
+                    `> ${BULLET_EMOJI} **Smart AI Triage:** Classifies incoming inquiries into urgency tiers with staff executive summaries.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Customization:** Buttons, dropdown reasons, target channels, and closing roles.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}ticketpanel\` - Open the interactive panel manager.`;
+                    `> ${BULLET_EMOJI} \`${prefix}ticketpanel\` - Open the interactive panel manager.`;
               } else if (targetCmd.name === "announce" || targetCmd.name === "aiannounce") {
                   descContent = `Interactive announcement studio to craft, format, preview, and dispatch server broadcasts.\n\n` +
                     `> -# **__Features & Media Support:__**\n` +
-                    `> • **Universal Pinterest Support:** Announcement banners and images support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic master extraction.\n` +
-                    `> • **AI Polish & Formatting:** Converts rough notes into beautifully formatted broadcasts with custom emojis.\n` +
-                    `> • **Live Ephemeral Preview:** Preview your broadcast before sending it to the target channel.\n\n` +
+                    `> ${BULLET_EMOJI} **Universal Pinterest Support:** Announcement banners and images support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic master extraction.\n` +
+                    `> ${BULLET_EMOJI} **AI Polish & Formatting:** Converts rough notes into beautifully formatted broadcasts with custom emojis.\n` +
+                    `> ${BULLET_EMOJI} **Live Ephemeral Preview:** Preview your broadcast before sending it to the target channel.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}${targetCmd.name} [prompt] [#channel]\` - Launch announcement builder.`;
+                    `> ${BULLET_EMOJI} \`${prefix}${targetCmd.name} [prompt] [#channel]\` - Launch announcement builder.`;
               } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
                   descContent = `Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Zero Security Disruption Guarantee:__**\n` +
-                    `> • **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
-                    `> • **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.\n\n` +
+                    `> ${BULLET_EMOJI} **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
+                    `> ${BULLET_EMOJI} **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.\n\n` +
                     `> -# **__Autonomous Bot Self-Learning & Neural Autopsy:__**\n` +
-                    `> • **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
-                    `> • **Autonomous Defense Flaw Diagnosis:** If antinuke fails or is blocked from eliminating a hostile actor or rolling back damage, Athena autonomously analyzes the exact architectural flaw (Discord Role Hierarchy Inversion, Missing Core Permissions, Server Owner Immunity) and formulates step-by-step remediation fixes!\n` +
-                    `> • **Lambda AI Incident Autopsy:** Powered by Google Gemini 3.8 Flash Neural Pipeline to dissect attack vectors and generate professional forensic reports.\n\n` +
+                    `> ${BULLET_EMOJI} **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
+                    `> ${BULLET_EMOJI} **Autonomous Defense Flaw Diagnosis:** If antinuke fails or is blocked from eliminating a hostile actor or rolling back damage, Athena autonomously analyzes the exact architectural flaw (Discord Role Hierarchy Inversion, Missing Core Permissions, Server Owner Immunity) and formulates step-by-step remediation fixes!\n` +
+                    `> ${BULLET_EMOJI} **Lambda AI Incident Autopsy:** Powered by Google Gemini 3.8 Flash Neural Pipeline to dissect attack vectors and generate professional forensic reports.\n\n` +
                     `> -# **__Rate Limit & Emergency Resilience:__**\n` +
-                    `> • **Discord Rate Limits (429):** Identifies API congestion and shifts restoration into background ring buffers.\n` +
-                    `> • **Emergency Dispatch:** Automatically sends high-priority flaw alerts to the security log channel and DMs the Server Owner with the exact flaw reason and step-by-step fix.\n\n` +
+                    `> ${BULLET_EMOJI} **Discord Rate Limits (429):** Identifies API congestion and shifts restoration into background ring buffers.\n` +
+                    `> ${BULLET_EMOJI} **Emergency Dispatch:** Automatically sends high-priority flaw alerts to the security log channel and DMs the Server Owner with the exact flaw reason and step-by-step fix.\n\n` +
                     `> -# **__Subcommands & Directives:__**\n` +
-                    `> • \`${prefix}learn status\` (or \`${prefix}lambda\`) — Interactive Component V2 learning & flaw dashboard.\n` +
-                    `> • \`${prefix}learn help\` (or \`${prefix}lambda help\`) — Interactive Component V2 commands & architecture guidance.\n` +
-                    `> • \`${prefix}learn flaws\` — View historical defense block failures, root causes, and fixes.\n` +
-                    `> • \`${prefix}learn fix\` — Live server hierarchy & permission audit with immediate step-by-step fixes.\n` +
-                    `> • \`${prefix}learn analyze [id]\` — Deep Lambda Neural AI forensic breakdown of any threat signature.\n` +
-                    `> • \`${prefix}learn on / off\` — Toggle continuous autonomous self-learning.\n` +
-                    `> • \`${prefix}learn baseline\` — Audit staff accounts, elevated roles & webhooks to establish normal baselines.\n` +
-                    `> • \`${prefix}learn signatures\` — Display captured rogue bot fingerprints and velocity patterns.\n` +
-                    `> • \`${prefix}learn clear\` — Reset captured signature history.`;
+                    `> ${BULLET_EMOJI} \`${prefix}learn status\` (or \`${prefix}lambda\`) — Interactive Component V2 learning & flaw dashboard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}learn help\` (or \`${prefix}lambda help\`) — Interactive Component V2 commands & architecture guidance.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}learn flaws\` — View historical defense block failures, root causes, and fixes.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}learn fix\` — Live server hierarchy & permission audit with immediate step-by-step fixes.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}learn analyze [id]\` — Deep Lambda Neural AI forensic breakdown of any threat signature.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}learn on / off\` — Toggle continuous autonomous self-learning.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}learn baseline\` — Audit staff accounts, elevated roles & webhooks to establish normal baselines.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}learn signatures\` — Display captured rogue bot fingerprints and velocity patterns.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}learn clear\` — Reset captured signature history.`;
               } else if (targetCmd.name === "voicerole") {
                   descContent = `Automatically assigns a designated role to members the instant they connect to ANY voice channel, and strips it when they disconnect.\n\n` +
                     `> -# **__Universal Scope:__**\n` +
-                    `> • Enforces role assignment & revocation for **ALL** entities: Server Owner, Bot Owner, Extra Owners, standard members, and integration bots.\n` +
-                    `> • Real-time live synchronization: instantly grants role to everyone sitting in VCs when configured, and instantly cleans up when disabled or when members leave.\n\n` +
+                    `> ${BULLET_EMOJI} Enforces role assignment & revocation for **ALL** entities: Server Owner, Bot Owner, Extra Owners, standard members, and integration bots.\n` +
+                    `> ${BULLET_EMOJI} Real-time live synchronization: instantly grants role to everyone sitting in VCs when configured, and instantly cleans up when disabled or when members leave.\n\n` +
                     `> -# **__Subcommands & Syntax:__**\n` +
-                    `> • \`${prefix}voicerole\` - Open the interactive Components V2 Control Panel.\n` +
-                    `> • \`${prefix}voicerole <@role / ID / Name>\` - Bind a specific voice role.\n` +
-                    `> • \`${prefix}voicerole disable\` - Disable system & strip role from all active members.\n` +
-                    `> • \`/voicerole [role] [disable]\` - Slash command equivalent.`;
+                    `> ${BULLET_EMOJI} \`${prefix}voicerole\` - Open the interactive Components V2 Control Panel.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}voicerole <@role / ID / Name>\` - Bind a specific voice role.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}voicerole disable\` - Disable system & strip role from all active members.\n` +
+                    `> ${BULLET_EMOJI} \`/voicerole [role] [disable]\` - Slash command equivalent.`;
               } else if (targetCmd.name === "raidmode") {
                   descContent = `Unified Server Raid Defense Matrix providing manual lockdown control and automated join-velocity burst detection.\n\n` +
                     `> -# **__Subcommands & Directives:__**\n` +
-                    `> • \`${prefix}raidmode\` - Displays the live Server Raid Defense Matrix dashboard.\n` +
-                    `> • \`${prefix}raidmode on\` - Immediately locks down server, elevates verification to VERY HIGH (Phone Required), and auto-quarantines incoming accounts.\n` +
-                    `> • \`${prefix}raidmode off\` - Disengages lockdown, restores baseline verification level, and mass-releases quarantined members.\n` +
-                    `> • \`${prefix}raidmode auto on\` - Arms automated join-velocity burst detection.\n` +
-                    `> • \`${prefix}raidmode auto off\` - Disarms automated join-velocity burst detection.\n` +
-                    `> • \`${prefix}raidmode auto threshold <number>\` - Configures how many joins trigger the auto-shield (default: 8).\n` +
-                    `> • \`${prefix}raidmode auto window <seconds>\` - Configures time window in seconds (default: 5s).`;
+                    `> ${BULLET_EMOJI} \`${prefix}raidmode\` - Displays the live Server Raid Defense Matrix dashboard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}raidmode on\` - Immediately locks down server, elevates verification to VERY HIGH (Phone Required), and auto-quarantines incoming accounts.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}raidmode off\` - Disengages lockdown, restores baseline verification level, and mass-releases quarantined members.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}raidmode auto on\` - Arms automated join-velocity burst detection.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}raidmode auto off\` - Disarms automated join-velocity burst detection.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}raidmode auto threshold <number>\` - Configures how many joins trigger the auto-shield (default: 8).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}raidmode auto window <seconds>\` - Configures time window in seconds (default: 5s).`;
               } else if (targetCmd.name === "weather" || targetCmd.name === "wtr") {
                   descContent = `Live global weather reconnaissance with generated satellite world map projection and 3-day forecast.\n\n` +
                     `> -# **__Features & Projection Engine:__**\n` +
-                    `> • **Universal Location Support:** Works for any location globally — city names, countries, coordinates, or Google Maps links.\n` +
-                    `> • **Google Maps Link Support:** Paste any Google Maps URL (\`https://maps.google.com/...\` or \`https://maps.app.goo.gl/...\`) and Athena will automatically extract and pinpoint the exact coordinates.\n` +
-                    `> • **Generated World Map:** Renders an Equirectangular satellite world map on Canvas with locked radar crosshairs, target beacon, and telemetry.\n` +
-                    `> • **Atmospheric Telemetry:** Current temperature (°C and °F), feels-like index, humidity, wind velocity and direction, UV index, pressure, and visibility.\n` +
-                    `> • **3-Day Meteorological Forecast:** Max/min temperatures and daily condition summaries.\n` +
-                    `> • **Solar & Lunar Telemetry:** Sunrise, sunset, and moon phase illumination.\n\n` +
+                    `> ${BULLET_EMOJI} **Universal Location Support:** Works for any location globally — city names, countries, coordinates, or Google Maps links.\n` +
+                    `> ${BULLET_EMOJI} **Google Maps Link Support:** Paste any Google Maps URL (\`https://maps.google.com/...\` or \`https://maps.app.goo.gl/...\`) and Athena will automatically extract and pinpoint the exact coordinates.\n` +
+                    `> ${BULLET_EMOJI} **Generated World Map:** Renders an Equirectangular satellite world map on Canvas with locked radar crosshairs, target beacon, and telemetry.\n` +
+                    `> ${BULLET_EMOJI} **Atmospheric Telemetry:** Current temperature (°C and °F), feels-like index, humidity, wind velocity and direction, UV index, pressure, and visibility.\n` +
+                    `> ${BULLET_EMOJI} **3-Day Meteorological Forecast:** Max/min temperatures and daily condition summaries.\n` +
+                    `> ${BULLET_EMOJI} **Solar & Lunar Telemetry:** Sunrise, sunset, and moon phase illumination.\n\n` +
                     `> -# **__All Aliases & Usage Syntax:__**\n` +
-                    `> • \`${prefix}weather <city>\` / \`${prefix}wtr <city>\` - Quick weather search (e.g. \`${prefix}wtr London\`, \`${prefix}wtr Tokyo\`).\n` +
-                    `> • \`${prefix}climate <city>\` / \`${prefix}forecast <city>\` - Detailed regional meteorological forecast.\n` +
-                    `> • \`${prefix}temp <city>\` / \`${prefix}temperature <city>\` - Temperature and atmospheric condition lookup.\n` +
-                    `> • \`${prefix}wtr <coordinates>\` - Coordinate search (e.g. \`${prefix}wtr 13.0827, 80.2707\`).\n` +
-                    `> • \`${prefix}wtr <google_maps_url>\` - Extract weather directly from any Google Maps link.\n` +
-                    `> • \`/weather [location]\` - Slash command equivalent.`;
+                    `> ${BULLET_EMOJI} \`${prefix}weather <city>\` / \`${prefix}wtr <city>\` - Quick weather search (e.g. \`${prefix}wtr London\`, \`${prefix}wtr Tokyo\`).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}climate <city>\` / \`${prefix}forecast <city>\` - Detailed regional meteorological forecast.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}temp <city>\` / \`${prefix}temperature <city>\` - Temperature and atmospheric condition lookup.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}wtr <coordinates>\` - Coordinate search (e.g. \`${prefix}wtr 13.0827, 80.2707\`).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}wtr <google_maps_url>\` - Extract weather directly from any Google Maps link.\n` +
+                    `> ${BULLET_EMOJI} \`/weather [location]\` - Slash command equivalent.`;
               } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
                   descContent = `Real-time web image search retrieving actual high-resolution pictures from the internet.\n\n` +
                     `> -# **__Features & Intelligence:__**\n` +
-                    `> • **Real Web Pictures:** Queries live net search engines to retrieve actual authentic pictures matching any topic (e.g. \`cat\`, \`worldmap\`, \`fog\`, \`mist\`, \`car\`, \`cm of tn\`, \`biden\`).\n` +
-                    `> • **Multi-Page 70+ Pool & Fresh Batches:** Concurrently pools dozens of high-res pictures per search with automatic unblocked resolution.\n` +
-                    `> • **Interactive Pagination:** Browse results with \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.\n` +
-                    `> • **Random Shuffle Button:** Click \`[Random]\` to discover unexpected high-res pictures.\n` +
-                    `> • **1-Click Fresh Batch Button:** Click \`[Fresh Batch]\` to fetch brand new pictures on demand.\n` +
-                    `> • **Direct Source Link:** 1-click button to view the original full-resolution image on the hosting website.\n` +
-                    `> • **Fail-Safe Session Recovery:** Sessions never expire; Athena seamlessly re-queries in the background.\n` +
-                    `> • **Conversational AI Integration:** You can also ask Athena in chat (e.g. \`@Athena picture of cat\` or \`${prefix}ask give me a picture of biden\`) and Athena will automatically fetch and provide the picture.\n\n` +
+                    `> ${BULLET_EMOJI} **Real Web Pictures:** Queries live net search engines to retrieve actual authentic pictures matching any topic (e.g. \`cat\`, \`worldmap\`, \`fog\`, \`mist\`, \`car\`, \`cm of tn\`, \`biden\`).\n` +
+                    `> ${BULLET_EMOJI} **Multi-Page 70+ Pool & Fresh Batches:** Concurrently pools dozens of high-res pictures per search with automatic unblocked resolution.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Pagination:** Browse results with \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.\n` +
+                    `> ${BULLET_EMOJI} **Random Shuffle Button:** Click \`[Random]\` to discover unexpected high-res pictures.\n` +
+                    `> ${BULLET_EMOJI} **1-Click Fresh Batch Button:** Click \`[Fresh Batch]\` to fetch brand new pictures on demand.\n` +
+                    `> ${BULLET_EMOJI} **Direct Source Link:** 1-click button to view the original full-resolution image on the hosting website.\n` +
+                    `> ${BULLET_EMOJI} **Fail-Safe Session Recovery:** Sessions never expire; Athena seamlessly re-queries in the background.\n` +
+                    `> ${BULLET_EMOJI} **Conversational AI Integration:** You can also ask Athena in chat (e.g. \`@Athena picture of cat\` or \`${prefix}ask give me a picture of biden\`) and Athena will automatically fetch and provide the picture.\n\n` +
                     `> -# **__All Aliases & Usage Syntax:__**\n` +
-                    `> • \`${prefix}image <query>\` - Primary image search directive.\n` +
-                    `> • \`${prefix}pic <query>\` - Short quick-alias (e.g. \`${prefix}pic cat\`, \`${prefix}pic car\`).\n` +
-                    `> • \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
-                    `> • \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
-                    `> • \`/image [query]\` - Slash command equivalent.`;
+                    `> ${BULLET_EMOJI} \`${prefix}image <query>\` - Primary image search directive.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}pic <query>\` - Short quick-alias (e.g. \`${prefix}pic cat\`, \`${prefix}pic car\`).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
+                    `> ${BULLET_EMOJI} \`/image [query]\` - Slash command equivalent.`;
               } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
                   descContent = `Universal real-time stock, ETF, and cryptocurrency telemetry engine with terminal-grade Canvas charts, autonomous self-learning database, and market intelligence.\n\n` +
                     `> -# **__Features & Telemetry Pipeline:__**\n` +
-                    `> • **Global Market Pulse Dashboard:** Run without arguments (\`${prefix}stock\` or \`${prefix}market\`) to generate a master 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) plus mega-caps ticker tape.\n` +
-                    `> • **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock TCS\`, \`${prefix}stock ZOMATO\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
-                    `> • **Universal Global Market Resolution:** Resolves any publicly traded asset worldwide without forcing exchange extensions (Indian NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, SWIGGY; US tech titans NVDA, AAPL, TSLA; crypto BTC, ETH, SOL; commodities GOLD, CRUDE; and global indices).\n` +
-                    `> • **Autonomous Self-Learning & Auto-Updating Registry:** Automatically detects, indexes, and edits any new stock, recent IPO, or corporate ticker renaming (e.g. Zomato -> ETERNAL.NS, Tata Motors -> TMCV.NS, FB -> META) and permanently caches it in SQLite.\n` +
-                    `> • **Dynamic Multi-Currency Auto-Formatting:** Dynamically detects and formats quotes with appropriate currency symbols (₹ for INR, $ for USD, € for EUR, £ for GBP, ¥ for JPY).\n` +
-                    `> • **Interactive Components V2 Controls:** 1-click buttons to browse Symbols Directory, refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
+                    `> ${BULLET_EMOJI} **Global Market Pulse Dashboard:** Run without arguments (\`${prefix}stock\` or \`${prefix}market\`) to generate a master 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) plus mega-caps ticker tape.\n` +
+                    `> ${BULLET_EMOJI} **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock TCS\`, \`${prefix}stock ZOMATO\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
+                    `> ${BULLET_EMOJI} **Universal Global Market Resolution:** Resolves any publicly traded asset worldwide without forcing exchange extensions (Indian NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, SWIGGY; US tech titans NVDA, AAPL, TSLA; crypto BTC, ETH, SOL; commodities GOLD, CRUDE; and global indices).\n` +
+                    `> ${BULLET_EMOJI} **Autonomous Self-Learning & Auto-Updating Registry:** Automatically detects, indexes, and edits any new stock, recent IPO, or corporate ticker renaming (e.g. Zomato -> ETERNAL.NS, Tata Motors -> TMCV.NS, FB -> META) and permanently caches it in SQLite.\n` +
+                    `> ${BULLET_EMOJI} **Dynamic Multi-Currency Auto-Formatting:** Dynamically detects and formats quotes with appropriate currency symbols (₹ for INR, $ for USD, € for EUR, £ for GBP, ¥ for JPY).\n` +
+                    `> ${BULLET_EMOJI} **Interactive Components V2 Controls:** 1-click buttons to browse Symbols Directory, refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
                     `> -# **__All Aliases & Directives:__**\n` +
-                    `> • \`${prefix}stock [symbol]\` - Primary stock command.\n` +
-                    `> • \`${prefix}market\` / \`${prefix}stocks\` / \`${prefix}stockmarket\` - Global market overview shortcuts.\n` +
-                    `> • \`${prefix}ticker <symbol>\` / \`${prefix}share <symbol>\` / \`${prefix}shares <symbol>\` - Direct ticker lookup.\n` +
-                    `> • \`${prefix}symbols [query]\` - Universal symbol directory & search.\n` +
-                    `> • \`${prefix}stockai <query>\` - Ask Athena AI for detailed financial and earnings analysis.\n` +
-                    `> • \`${prefix}movers\` - Real-time market gainers and decliners.\n` +
-                    `> • \`${prefix}crypto [coin]\` - Dedicated cryptocurrency asset telemetry.\n` +
-                    `> • \`${prefix}stocknews [symbol]\` - Recent headlines and financial catalysts.\n` +
-                    `> • \`${prefix}stockchannel <set|disable|status|test>\` - Configure daily automated market upload channel.\n\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stock [symbol]\` - Primary stock command.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}market\` / \`${prefix}stocks\` / \`${prefix}stockmarket\` - Global market overview shortcuts.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ticker <symbol>\` / \`${prefix}share <symbol>\` / \`${prefix}shares <symbol>\` - Direct ticker lookup.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}symbols [query]\` - Universal symbol directory & search.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stockai <query>\` - Ask Athena AI for detailed financial and earnings analysis.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}movers\` - Real-time market gainers and decliners.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}crypto [coin]\` - Dedicated cryptocurrency asset telemetry.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stocknews [symbol]\` - Recent headlines and financial catalysts.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stockchannel <set|disable|status|test>\` - Configure daily automated market upload channel.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data before investing.`;
               } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
                   descContent = `AI-powered quantitative financial analyst providing in-depth market explanations, earnings breakdowns, and valuation concepts.\n\n` +
                     `> -# **__Capabilities:__**\n` +
-                    `> • Injects live exchange prices and recent press headlines into query context.\n` +
-                    `> • Dissects macroeconomic trends, Federal Reserve rate decisions, technical levels, and earnings drivers.\n` +
-                    `> • Formats all responses in sleek grey markdown with clear bold-underlined headers.\n\n` +
+                    `> ${BULLET_EMOJI} Injects live exchange prices and recent press headlines into query context.\n` +
+                    `> ${BULLET_EMOJI} Dissects macroeconomic trends, Federal Reserve rate decisions, technical levels, and earnings drivers.\n` +
+                    `> ${BULLET_EMOJI} Formats all responses in sleek grey markdown with clear bold-underlined headers.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}stockai why did tech drop today?\`\n` +
-                    `> • \`${prefix}stockai explain NVDA valuation\`\n` +
-                    `> • \`${prefix}stockexplain TSLA\`\n\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stockai why did tech drop today?\`\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stockai explain NVDA valuation\`\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stockexplain TSLA\`\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. AI insights are for educational purposes only. Not financial advice. Always double check data.`;
               } else if (targetCmd.name === "stockchannel") {
                   descContent = `Configures an automated channel for daily stock market intelligence briefings and high-resolution Canvas image uploads.\n\n` +
                     `> -# **__Automated Dispatch System:__**\n` +
-                    `> • Automatically posts every morning at **09:30 AM EST (14:30 UTC)** coinciding with US Market Open.\n` +
-                    `> • Generates and attaches the high-resolution World Market Pulse dashboard image.\n` +
-                    `> • Strictly tracks and fetches channels via database Snowflake ID.\n\n` +
+                    `> ${BULLET_EMOJI} Automatically posts every morning at **09:30 AM EST (14:30 UTC)** coinciding with US Market Open.\n` +
+                    `> ${BULLET_EMOJI} Generates and attaches the high-resolution World Market Pulse dashboard image.\n` +
+                    `> ${BULLET_EMOJI} Strictly tracks and fetches channels via database Snowflake ID.\n\n` +
                     `> -# **__Directives:__**\n` +
-                    `> • \`${prefix}stockchannel set <#channel>\` - Bind broadcast channel.\n` +
-                    `> • \`${prefix}stockchannel disable\` - Turn off automated daily upload.\n` +
-                    `> • \`${prefix}stockchannel test\` - Immediately post today's briefing to verify.\n` +
-                    `> • \`${prefix}stockchannel status\` - View current configuration.\n\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stockchannel set <#channel>\` - Bind broadcast channel.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stockchannel disable\` - Turn off automated daily upload.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stockchannel test\` - Immediately post today's briefing to verify.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stockchannel status\` - View current configuration.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
               } else if (targetCmd.name === "movers") {
                   descContent = `Real-time market volatility and momentum scanner across mega-cap equities and major cryptocurrencies.\n\n` +
                     `> -# **__Features & Intelligence:__**\n` +
-                    `> • **Top Gainers:** Identifies the strongest positive price velocity across global equities and crypto.\n` +
-                    `> • **Top Decliners:** Highlights major downward volatility and market pullbacks.\n` +
-                    `> • **Supporting Ecosystem:** Seamless integration with \`${prefix}stock <symbol>\`, \`${prefix}market\`, and \`${prefix}stockai <query>\`.\n\n` +
+                    `> ${BULLET_EMOJI} **Top Gainers:** Identifies the strongest positive price velocity across global equities and crypto.\n` +
+                    `> ${BULLET_EMOJI} **Top Decliners:** Highlights major downward volatility and market pullbacks.\n` +
+                    `> ${BULLET_EMOJI} **Supporting Ecosystem:** Seamless integration with \`${prefix}stock <symbol>\`, \`${prefix}market\`, and \`${prefix}stockai <query>\`.\n\n` +
                     `> -# **__All Aliases & Directives:__**\n` +
-                    `> • \`${prefix}movers\` - Full market gainers & decliners breakdown.\n` +
-                    `> • \`${prefix}topmovers\` / \`${prefix}gainers\` / \`${prefix}losers\` / \`${prefix}marketmovers\` - Direct aliases.\n\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}movers\` - Full market gainers & decliners breakdown.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}topmovers\` / \`${prefix}gainers\` / \`${prefix}losers\` / \`${prefix}marketmovers\` - Direct aliases.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
               } else if (targetCmd.name === "crypto") {
                   descContent = `Dedicated cryptocurrency market telemetry and Canvas price action charts.\n\n` +
                     `> -# **__Features & Visual Telemetry:__**\n` +
-                    `> • **Widescreen Canvas Charts:** Generates high-resolution price action curves with 24h range, 52-week range, volume, and sentiment gauge.\n` +
-                    `> • **Universal Coin Support:** Supports Bitcoin (\`BTC\`), Ethereum (\`ETH\`), Solana (\`SOL\`), Dogecoin (\`DOGE\`), XRP, and 100+ crypto assets.\n` +
-                    `> • **Default Asset:** Running \`${prefix}crypto\` without arguments defaults to Bitcoin (BTC-USD).\n\n` +
+                    `> ${BULLET_EMOJI} **Widescreen Canvas Charts:** Generates high-resolution price action curves with 24h range, 52-week range, volume, and sentiment gauge.\n` +
+                    `> ${BULLET_EMOJI} **Universal Coin Support:** Supports Bitcoin (\`BTC\`), Ethereum (\`ETH\`), Solana (\`SOL\`), Dogecoin (\`DOGE\`), XRP, and 100+ crypto assets.\n` +
+                    `> ${BULLET_EMOJI} **Default Asset:** Running \`${prefix}crypto\` without arguments defaults to Bitcoin (BTC-USD).\n\n` +
                     `> -# **__All Aliases & Directives:__**\n` +
-                    `> • \`${prefix}crypto [coin]\` - e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`\n` +
-                    `> • \`${prefix}btc\` / \`${prefix}eth\` / \`${prefix}coin <symbol>\` - Quick crypto shortcuts.\n\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}crypto [coin]\` - e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}btc\` / \`${prefix}eth\` / \`${prefix}coin <symbol>\` - Quick crypto shortcuts.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Crypto markets are highly volatile. Not financial advice. Always double check live data.`;
               } else if (targetCmd.name === "stocknews") {
                   descContent = `Real-time financial press wiretap aggregating breaking news and market catalysts.\n\n` +
                     `> -# **__Features & Syndicate:__**\n` +
-                    `> • **Direct Publisher Links:** Real-time articles with direct links to verified financial press (Yahoo Finance, Bloomberg, Reuters, Motley Fool, MarketWatch).\n` +
-                    `> • **Targeted Ticker News:** Query news for any specific stock (\`${prefix}stocknews NVDA\`, \`${prefix}stocknews TSLA\`) or general market (\`${prefix}stocknews\`).\n` +
-                    `> • **Relative Timestamps:** Displays when articles were published (<t:...:R>).\n\n` +
+                    `> ${BULLET_EMOJI} **Direct Publisher Links:** Real-time articles with direct links to verified financial press (Yahoo Finance, Bloomberg, Reuters, Motley Fool, MarketWatch).\n` +
+                    `> ${BULLET_EMOJI} **Targeted Ticker News:** Query news for any specific stock (\`${prefix}stocknews NVDA\`, \`${prefix}stocknews TSLA\`) or general market (\`${prefix}stocknews\`).\n` +
+                    `> ${BULLET_EMOJI} **Relative Timestamps:** Displays when articles were published (<t:...:R>).\n\n` +
                     `> -# **__All Aliases & Directives:__**\n` +
-                    `> • \`${prefix}stocknews [symbol]\` - Primary news wiretap.\n` +
-                    `> • \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stocknews [symbol]\` - Primary news wiretap.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market news is for informational purposes only. Always double check live data.`;
               } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
                   descContent = `Universal symbol directory, autonomous self-learning ticker registry, and real-time search covering every publicly traded asset worldwide.\n\n` +
                     `> -# **__Primary & Aliases:__**\n` +
-                    `> • \`${prefix}symbols\`, \`${prefix}symbollist\`, \`${prefix}tickers\`, \`${prefix}tickerlist\`, \`${prefix}stocksymbols\`, \`${prefix}marketlist\`, \`${prefix}symlist\`, \`/symbols [query]\`.\n\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}symbols\`, \`${prefix}symbollist\`, \`${prefix}tickers\`, \`${prefix}tickerlist\`, \`${prefix}stocksymbols\`, \`${prefix}marketlist\`, \`${prefix}symlist\`, \`/symbols [query]\`.\n\n` +
                     `> -# **__Interactive Categorized Directory:__**\n` +
-                    `> • **Overview Directory:** Master cross-asset directory of top world equities, tech giants, crypto assets, and benchmark indices.\n` +
-                    `> • **Trending & Newly Discovered Tickers:** Real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
-                    `> • **India (NSE / BSE):** Benchmark indices (\`NIFTY\`, \`SENSEX\`, \`BANKNIFTY\`) and heavyweights (\`TCS\`, \`RELIANCE\`, \`INFY\`, \`TATAMOTORS\`, \`SBIN\`, \`ETERNAL\` [Zomato], \`SWIGGY\`, \`HYUNDAI\`).\n` +
-                    `> • **US Tech & AI Titans:** Mega-caps and semiconductor giants (\`NVDA\`, \`AAPL\`, \`MSFT\`, \`GOOGL\`, \`AMZN\`, \`META\`, \`TSLA\`, \`AMD\`, \`PLTR\`).\n` +
-                    `> • **Cryptocurrencies:** Major digital blockchain assets (\`BTC\`, \`ETH\`, \`SOL\`, \`BNB\`, \`XRP\`, \`DOGE\`, \`ADA\`, \`AVAX\`, \`LINK\`, \`SUI\`).\n` +
-                    `> • **Macro & Commodities:** Raw materials, international market indices & forex (\`GOLD\`, \`SILVER\`, \`CRUDE\`, \`NATGAS\`, \`NIKKEI\`, \`FTSE\`, \`DAX\`, \`USDINR\`, \`EURUSD\`).\n\n` +
+                    `> ${BULLET_EMOJI} **Overview Directory:** Master cross-asset directory of top world equities, tech giants, crypto assets, and benchmark indices.\n` +
+                    `> ${BULLET_EMOJI} **Trending & Newly Discovered Tickers:** Real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
+                    `> ${BULLET_EMOJI} **India (NSE / BSE):** Benchmark indices (\`NIFTY\`, \`SENSEX\`, \`BANKNIFTY\`) and heavyweights (\`TCS\`, \`RELIANCE\`, \`INFY\`, \`TATAMOTORS\`, \`SBIN\`, \`ETERNAL\` [Zomato], \`SWIGGY\`, \`HYUNDAI\`).\n` +
+                    `> ${BULLET_EMOJI} **US Tech & AI Titans:** Mega-caps and semiconductor giants (\`NVDA\`, \`AAPL\`, \`MSFT\`, \`GOOGL\`, \`AMZN\`, \`META\`, \`TSLA\`, \`AMD\`, \`PLTR\`).\n` +
+                    `> ${BULLET_EMOJI} **Cryptocurrencies:** Major digital blockchain assets (\`BTC\`, \`ETH\`, \`SOL\`, \`BNB\`, \`XRP\`, \`DOGE\`, \`ADA\`, \`AVAX\`, \`LINK\`, \`SUI\`).\n` +
+                    `> ${BULLET_EMOJI} **Macro & Commodities:** Raw materials, international market indices & forex (\`GOLD\`, \`SILVER\`, \`CRUDE\`, \`NATGAS\`, \`NIKKEI\`, \`FTSE\`, \`DAX\`, \`USDINR\`, \`EURUSD\`).\n\n` +
                     `> -# **__Dynamic Search & Telemetry Commands:__**\n` +
-                    `> • **Real-Time Live Search:** Run \`${prefix}symbols <query>\` or \`${prefix}symbols search <query>\` to instantly search global exchanges (e.g. \`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`, \`${prefix}symbols Zomato\`).\n` +
-                    `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n` +
-                    `> • **1-Click Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
+                    `> ${BULLET_EMOJI} **Real-Time Live Search:** Run \`${prefix}symbols <query>\` or \`${prefix}symbols search <query>\` to instantly search global exchanges (e.g. \`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`, \`${prefix}symbols Zomato\`).\n` +
+                    `> ${BULLET_EMOJI} **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n` +
+                    `> ${BULLET_EMOJI} **1-Click Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
               } else if (targetCmd.name === "nifty" || targetCmd.name === "banknifty" || targetCmd.name === "sensex" || targetCmd.name === "niftyit" || targetCmd.name === "indiavix") {
                   descContent = `Real-time Indian Benchmark Indices & Dalal Street telemetry engine with terminal-grade Canvas charts, Classic Pivot points (P, R1, S1), and interactive sector switches.\n\n` +
                     `> -# **__Primary & Dedicated Sector Commands:__**\n` +
-                    `> • \`${prefix}nifty [50|bank|sensex|it|vix]\` - Primary Indian market benchmark terminal (defaults to NIFTY 50).\n` +
-                    `> • \`${prefix}banknifty\` (\`${prefix}niftybank\`, \`${prefix}bnifty\`) - Dedicated Bank Nifty index telemetry & banking sector health.\n` +
-                    `> • \`${prefix}sensex\` (\`${prefix}bse\`, \`${prefix}bsesensex\`) - Dedicated Bombay Stock Exchange Dalal Street 30 benchmark.\n` +
-                    `> • \`${prefix}niftyit\` (\`${prefix}itnifty\`, \`${prefix}cnxit\`) - Dedicated Nifty IT index & tech exporter telemetry.\n` +
-                    `> • \`${prefix}indiavix\` (\`${prefix}vixindia\`, \`${prefix}vix\`) - Dedicated India Volatility Index (Fear & Greed gauge).\n\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}nifty [50|bank|sensex|it|vix]\` - Primary Indian market benchmark terminal (defaults to NIFTY 50).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}banknifty\` (\`${prefix}niftybank\`, \`${prefix}bnifty\`) - Dedicated Bank Nifty index telemetry & banking sector health.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}sensex\` (\`${prefix}bse\`, \`${prefix}bsesensex\`) - Dedicated Bombay Stock Exchange Dalal Street 30 benchmark.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}niftyit\` (\`${prefix}itnifty\`, \`${prefix}cnxit\`) - Dedicated Nifty IT index & tech exporter telemetry.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}indiavix\` (\`${prefix}vixindia\`, \`${prefix}vix\`) - Dedicated India Volatility Index (Fear & Greed gauge).\n\n` +
                     `> -# **__Canvas Cards & Analytical Telemetry:__**\n` +
-                    `> • **Custom Index Badges & Logos:** Official badges (\`N50\`, \`BNK\`, \`BSE\`, \`IT\`, \`VIX\`) and official NSE / BSE branding.\n` +
-                    `> • **Classic Pivot Points Calculation:** Live mathematical Intraday Pivot Points (\`P\`, \`R1\`, \`S1\`) derived from High, Low, and Close.\n` +
-                    `> • **Live Operational Market Hours Detector:** Pre-Market (09:00 - 09:15 IST), Regular Trading (09:15 - 15:30 IST), Post-Market (15:40 - 16:00 IST), and Off-Market/Weekend countdowns.\n` +
-                    `> • **Interactive 1-Click Buttons:** Switch between Nifty 50, Bank Nifty, Sensex, Nifty IT, and India VIX instantly.\n\n` +
+                    `> ${BULLET_EMOJI} **Custom Index Badges & Logos:** Official badges (\`N50\`, \`BNK\`, \`BSE\`, \`IT\`, \`VIX\`) and official NSE / BSE branding.\n` +
+                    `> ${BULLET_EMOJI} **Classic Pivot Points Calculation:** Live mathematical Intraday Pivot Points (\`P\`, \`R1\`, \`S1\`) derived from High, Low, and Close.\n` +
+                    `> ${BULLET_EMOJI} **Live Operational Market Hours Detector:** Pre-Market (09:00 - 09:15 IST), Regular Trading (09:15 - 15:30 IST), Post-Market (15:40 - 16:00 IST), and Off-Market/Weekend countdowns.\n` +
+                    `> ${BULLET_EMOJI} **Interactive 1-Click Buttons:** Switch between Nifty 50, Bank Nifty, Sensex, Nifty IT, and India VIX instantly.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Index market data is for informational purposes only. Not financial advice.`;
               } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
                   descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
                     `> -# **__Diagnostics Evaluated:__**\n` +
-                    `> • **Hierarchy Health:** Bot highest role position vs all other roles; alerts if any roles above Athena have dangerous permissions.\n` +
-                    `> • **Core Permissions:** Validates all 8 critical bot permissions (Admin, Manage Server, Manage Roles, Manage Channels, Ban, Kick, View Audit Log, Manage Webhooks).\n` +
-                    `> • **Defense Modules:** Reports master antinuke status, security state, raid mode, and auto-shield.\n` +
-                    `> • **Snapshot Integrity:** Reports ground-truth mapped channels, roles, and snapshot freshness.\n` +
-                    `> • **Persistence Roles:** Validates Athena Unbypassable and Athena Firewall.\n` +
-                    `> • **Audit Socket Latency:** Tests raw TLS undici keep-alive round-trip socket latency to Discord API.`;
+                    `> ${BULLET_EMOJI} **Hierarchy Health:** Bot highest role position vs all other roles; alerts if any roles above Athena have dangerous permissions.\n` +
+                    `> ${BULLET_EMOJI} **Core Permissions:** Validates all 8 critical bot permissions (Admin, Manage Server, Manage Roles, Manage Channels, Ban, Kick, View Audit Log, Manage Webhooks).\n` +
+                    `> ${BULLET_EMOJI} **Defense Modules:** Reports master antinuke status, security state, raid mode, and auto-shield.\n` +
+                    `> ${BULLET_EMOJI} **Snapshot Integrity:** Reports ground-truth mapped channels, roles, and snapshot freshness.\n` +
+                    `> ${BULLET_EMOJI} **Persistence Roles:** Validates Athena Unbypassable and Athena Firewall.\n` +
+                    `> ${BULLET_EMOJI} **Audit Socket Latency:** Tests raw TLS undici keep-alive round-trip socket latency to Discord API.`;
               } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
                   descContent = `Master unbypassable security deployment, real-time threat neutralization, and incident telemetry engine.\n\n` +
                     `> -# **__Core Antinuke Upgrades:__**\n` +
-                    `> • **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (\`rawBan\` / \`rawRoleStrip\`). Zero restorations run during an active attack.\n` +
-                    `> • **Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all accounts. If coordinated bots trigger destructive acts, Athena instantly initiates emergency lockdown.\n` +
-                    `> • **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.\n` +
-                    `> • **Role Member Restoration:** Infrastructure snapshots back up member role assignments; restored roles automatically re-assign members in parallel.\n` +
-                    `> • **Strict 3-Tier Queue Ordering:** Damage restoration executes strictly in topological order: Roles FIRST, Categories SECOND, Channels THIRD.\n` +
-                    `> • **Vanity URL Tampering Guard:** Instant interception and automatic reclaim if an attacker modifies or steals the server vanity code.\n\n` +
+                    `> ${BULLET_EMOJI} **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (\`rawBan\` / \`rawRoleStrip\`). Zero restorations run during an active attack.\n` +
+                    `> ${BULLET_EMOJI} **Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all accounts. If coordinated bots trigger destructive acts, Athena instantly initiates emergency lockdown.\n` +
+                    `> ${BULLET_EMOJI} **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.\n` +
+                    `> ${BULLET_EMOJI} **Role Member Restoration:** Infrastructure snapshots back up member role assignments; restored roles automatically re-assign members in parallel.\n` +
+                    `> ${BULLET_EMOJI} **Strict 3-Tier Queue Ordering:** Damage restoration executes strictly in topological order: Roles FIRST, Categories SECOND, Channels THIRD.\n` +
+                    `> ${BULLET_EMOJI} **Vanity URL Tampering Guard:** Instant interception and automatic reclaim if an attacker modifies or steals the server vanity code.\n\n` +
                     `> -# **__Subcommands & Directives:__**\n` +
-                    `> • \`${prefix}security enable all\` - One-click deployment of all 28 antinuke modules, persistence roles, and dashboard.\n` +
-                    `> • \`${prefix}security disable all\` - Forcibly disable security system (requires 2FA Gmail authorization).\n` +
-                    `> • \`${prefix}security status\` - Real-time active/offline matrix view across all 28 security modules.\n` +
-                    `> • \`${prefix}security records\` - Live forensic incident audit stream of neutralized threats, execution speeds, and automatic rollbacks.\n` +
-                    `> • \`${prefix}security disable <module>\` - Disable a specific security module.\n` +
-                    `> • \`${prefix}security enable <module>\` - Enable a specific security module.`;
+                    `> ${BULLET_EMOJI} \`${prefix}security enable all\` - One-click deployment of all 28 antinuke modules, persistence roles, and dashboard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}security disable all\` - Forcibly disable security system (requires 2FA Gmail authorization).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}security status\` - Real-time active/offline matrix view across all 28 security modules.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}security records\` - Live forensic incident audit stream of neutralized threats, execution speeds, and automatic rollbacks.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}security disable <module>\` - Disable a specific security module.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}security enable <module>\` - Enable a specific security module.`;
               } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
                   descContent = `Server Join Application, Screening Gatekeeper & Remote DM Review System.\n\n` +
                     `> -# **__Core Gatekeeper Features:__**\n` +
-                    `> • **Dedicated Screening Gate:** Blocks unauthorized new joiners with temporary quarantine holding roles until staff approve their application.\n` +
-                    `> • **Customizable Questionnaire Modal:** Collects applicant answers using interactive Discord modal dialogs before submitting for review.\n` +
-                    `> • **Dual-Channel Architecture:** Separate public application portal and internal staff review channel.\n` +
-                    `> • **Dual-Tier Review System:** Designated Extra Owners and the Server Owner review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
+                    `> ${BULLET_EMOJI} **Dedicated Screening Gate:** Blocks unauthorized new joiners with temporary quarantine holding roles until staff approve their application.\n` +
+                    `> ${BULLET_EMOJI} **Customizable Questionnaire Modal:** Collects applicant answers using interactive Discord modal dialogs before submitting for review.\n` +
+                    `> ${BULLET_EMOJI} **Dual-Channel Architecture:** Separate public application portal and internal staff review channel.\n` +
+                    `> ${BULLET_EMOJI} **Dual-Tier Review System:** Designated Extra Owners and the Server Owner review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
                     `> -# **__Server Configuration Subcommands (Extra Owners / Server Owner):__**\n` +
-                    `> • \`${prefix}entry deploy [#channel]\` - Deploys the interactive "Submit Join Application" button panel.\n` +
-                    `> • \`${prefix}entry channel <#channel>\` - Sets the public gate channel where new members submit applications.\n` +
-                    `> • \`${prefix}entry log <#channel>\` - Sets the internal staff review channel for pending applications.\n` +
-                    `> • \`${prefix}entry role <@role>\` - Sets the verified role automatically granted when an applicant is accepted.\n` +
-                    `> • \`${prefix}entry holding <@role|none>\` - Sets or clears the temporary quarantine holding role assigned upon joining.\n` +
-                    `> • \`${prefix}entry questions\` - Displays or modifies the application questions.\n` +
-                    `> • \`${prefix}entry enable\` / \`${prefix}entry disable\` - Toggles the server entry gate on or off.\n\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry deploy [#channel]\` - Deploys the interactive "Submit Join Application" button panel.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry channel <#channel>\` - Sets the public gate channel where new members submit applications.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry log <#channel>\` - Sets the internal staff review channel for pending applications.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry role <@role>\` - Sets the verified role automatically granted when an applicant is accepted.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry holding <@role|none>\` - Sets or clears the temporary quarantine holding role assigned upon joining.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry questions\` - Displays or modifies the application questions.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry enable\` / \`${prefix}entry disable\` - Toggles the server entry gate on or off.\n\n` +
                     `> -# **__Review & Remote Processing Subcommands:__**\n` +
-                    `> • \`${prefix}entry list [all|<guildId>]\` - Lists pending applications under review.\n` +
-                    `> • \`${prefix}entry accept <userId> [guildId] [reason]\` - Accepts applicant, assigns verified role, removes holding role, and notifies member.\n` +
-                    `> • \`${prefix}entry deny <userId> [guildId] [reason]\` - Rejects application, notifies user with reason, and removes them from the server.\n` +
-                    `> • \`${prefix}entry remote <on|off>\` - *(Bot Owner Only)* Enables/disables live DM review delivery cards across all servers.`;
+                    `> ${BULLET_EMOJI} \`${prefix}entry list [all|<guildId>]\` - Lists pending applications under review.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry accept <userId> [guildId] [reason]\` - Accepts applicant, assigns verified role, removes holding role, and notifies member.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry deny <userId> [guildId] [reason]\` - Rejects application, notifies user with reason, and removes them from the server.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}entry remote <on|off>\` - *(Bot Owner Only)* Enables/disables live DM review delivery cards across all servers.`;
               } else if (targetCmd.name === "records" || targetCmd.name === "incidents") {
                   descContent = `Real-time security live audit & incident telemetry stream.\n\n` +
                     `> -# **__Features & Telemetry:__**\n` +
-                    `> • Displays all intercepted threats in real time with relative timestamps (<t:...:R>).\n` +
-                    `> • Shows perpetrator tag, user ID, countermeasure verdict (BAN_APPLIED, ROLES_STRIPPED), and strike latency in ms.\n` +
-                    `> • Reports automatic channel/category recreation and permission rollbacks.\n` +
-                    `> • Interactive components: Page navigation (Previous / Next), live Refresh, and Clear History.`;
+                    `> ${BULLET_EMOJI} Displays all intercepted threats in real time with relative timestamps (<t:...:R>).\n` +
+                    `> ${BULLET_EMOJI} Shows perpetrator tag, user ID, countermeasure verdict (BAN_APPLIED, ROLES_STRIPPED), and strike latency in ms.\n` +
+                    `> ${BULLET_EMOJI} Reports automatic channel/category recreation and permission rollbacks.\n` +
+                    `> ${BULLET_EMOJI} Interactive components: Page navigation (Previous / Next), live Refresh, and Clear History.`;
               } else if (targetCmd.name === "autoreply" || targetCmd.name === "ar" || targetCmd.name === "customreply") {
                   descContent = `Interactive server auto-reply manager with accent borderless CV2 embeds, dynamic variables, and media support.\n\n` +
                     `> -# **__Features & Capabilities:__**\n` +
-                    `> • **Accent Borderless CV2 Embeds:** Delivers rich responses formatted with server theme colors and clean modern borders.\n` +
-                    `> • **Universal Media Support:** Direct support for GIFs and Pinterest links (\`pin.it\` & \`pinterest.com\`) with uncompressed media resolution.\n` +
-                    `> • **Dynamic Placeholders:** Supports \`{user}\`, \`{server}\`, \`{count}\`, \`{channel}\`, \`{avatar}\`, and more.\n` +
-                    `> • **Clearance Policy:** Strictly restricted to Extra Owners, the Server Owner, or the Bot Owner.\n\n` +
+                    `> ${BULLET_EMOJI} **Accent Borderless CV2 Embeds:** Delivers rich responses formatted with server theme colors and clean modern borders.\n` +
+                    `> ${BULLET_EMOJI} **Universal Media Support:** Direct support for GIFs and Pinterest links (\`pin.it\` & \`pinterest.com\`) with uncompressed media resolution.\n` +
+                    `> ${BULLET_EMOJI} **Dynamic Placeholders:** Supports \`{user}\`, \`{server}\`, \`{count}\`, \`{channel}\`, \`{avatar}\`, and more.\n` +
+                    `> ${BULLET_EMOJI} **Clearance Policy:** Strictly restricted to Extra Owners, the Server Owner, or the Bot Owner.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}ar dashboard\` (or \`${prefix}ar\`) - Opens the interactive Auto-Reply Control Matrix.\n` +
-                    `> • \`${prefix}ar add <keyword> <reply>\` - Quickly register an automated keyword reply \`[Extra Owner]\`.\n` +
-                    `> • \`${prefix}ar edit <keyword> <reply>\` - Edit an existing auto-reply response \`[Extra Owner]\`.\n` +
-                    `> • \`${prefix}ar remove <keyword>\` - Delete a keyword auto-reply \`[Extra Owner]\`.\n` +
-                    `> • \`${prefix}ar list\` - List all active auto-replies in the server.`;
+                    `> ${BULLET_EMOJI} \`${prefix}ar dashboard\` (or \`${prefix}ar\`) - Opens the interactive Auto-Reply Control Matrix.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ar add <keyword> <reply>\` - Quickly register an automated keyword reply \`[Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ar edit <keyword> <reply>\` - Edit an existing auto-reply response \`[Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ar remove <keyword>\` - Delete a keyword auto-reply \`[Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ar list\` - List all active auto-replies in the server.`;
               } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
                   descContent = `Interactive server trigger word responder dashboard with synced animated looping GIF HUD, electric progress bar, and 4 advanced automation modules.\n\n` +
                     `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> • **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`trigger_banner.gif\`) with real-time glowing capacity progress bar drawn directly in the GIF.\n` +
-                    `> • **Metrics Tracked:** Server trigger count vs 50-slot capacity, global network auto-responses, and synchronization state.\n\n` +
+                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`trigger_banner.gif\`) with real-time glowing capacity progress bar drawn directly in the GIF.\n` +
+                    `> ${BULLET_EMOJI} **Metrics Tracked:** Server trigger count vs 50-slot capacity, global network auto-responses, and synchronization state.\n\n` +
                     `> -# **__The 4 Advanced Trigger Engines:__**\n` +
-                    `> • **Ghost / Auto-Destruct (\`ghost:<sec>\`):** Automatically purges response after N seconds to prevent channel clutter.\n` +
-                    `> • **Bounty XP Rewards (\`xp:<amount>\` & \`maxclaims:<limit>\`):** Awards dynamic XP to the first N users who trigger the response.\n` +
-                    `> • **Time / Clock Variant (\`time:<morning|day|night|weekend>\`):** Daypart-dependent response matching current server clock.\n` +
-                    `> • **Audience & Tier Adaptive (\`audience:<newbie|booster|staff>\`):** Personalizes responses based on user tenure, booster status, or staff tier.\n\n` +
+                    `> ${BULLET_EMOJI} **Ghost / Auto-Destruct (\`ghost:<sec>\`):** Automatically purges response after N seconds to prevent channel clutter.\n` +
+                    `> ${BULLET_EMOJI} **Bounty XP Rewards (\`xp:<amount>\` & \`maxclaims:<limit>\`):** Awards dynamic XP to the first N users who trigger the response.\n` +
+                    `> ${BULLET_EMOJI} **Time / Clock Variant (\`time:<morning|day|night|weekend>\`):** Daypart-dependent response matching current server clock.\n` +
+                    `> ${BULLET_EMOJI} **Audience & Tier Adaptive (\`audience:<newbie|booster|staff>\`):** Personalizes responses based on user tenure, booster status, or staff tier.\n\n` +
                     `> -# **__Cross-Action Synergy:__**\n` +
-                    `> • **Dual-Action Emoji Reaction Synergy (\`reaction:<emoji>\`):** Reacts with custom/unicode emoji on the triggering message while responding.\n` +
-                    `> • **Staff Alert Mirroring (\`mirror:<#channel>\`):** Escalates emergency keywords directly to staff channels in real time.\n\n` +
+                    `> ${BULLET_EMOJI} **Dual-Action Emoji Reaction Synergy (\`reaction:<emoji>\`):** Reacts with custom/unicode emoji on the triggering message while responding.\n` +
+                    `> ${BULLET_EMOJI} **Staff Alert Mirroring (\`mirror:<#channel>\`):** Escalates emergency keywords directly to staff channels in real time.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}trigger\` - Open the interactive Response Matrix Dashboard.\n` +
-                    `> • \`${prefix}trigger create <match> | <response>\` - Simple & fast usual setup.\n` +
-                    `> • \`${prefix}trigger <match> | <response>\` - Direct shortcut.\n` +
-                    `> • \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
-                    `> • \`${prefix}trigger list\` - Public list of configured triggers.`;
+                    `> ${BULLET_EMOJI} \`${prefix}trigger\` - Open the interactive Response Matrix Dashboard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}trigger create <match> | <response>\` - Simple & fast usual setup.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}trigger <match> | <response>\` - Direct shortcut.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}trigger list\` - Public list of configured triggers.`;
               } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis" || targetCmd.name === "emojilist") {
                   descContent = `Interactive server emoji explorer, raw ID extractor, and copyable asset terminal.\n\n` +
                     `> -# **__Features & Capabilities:__**\n` +
-                    `> • **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
-                    `> • **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
-                    `> • **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
-                    `> • **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n` +
-                    `> • **Clearance Policy:** Strictly reserved for the **Server Owner** and **Bot Owner**.\n\n` +
+                    `> ${BULLET_EMOJI} **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
+                    `> ${BULLET_EMOJI} **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
+                    `> ${BULLET_EMOJI} **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
+                    `> ${BULLET_EMOJI} **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n` +
+                    `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner** and **Bot Owner**.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
-                    `> • \`${prefix}emojis static\` - View all static emojis in the server.\n` +
-                    `> • \`${prefix}emojis all\` - View all emojis in the server.\n` +
-                    `> • \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
-                    `> • \`${prefix}emojid <emoji/id/name>\` - Inspect a specific emoji's details and raw ID.`;
+                    `> ${BULLET_EMOJI} \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}emojis static\` - View all static emojis in the server.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}emojis all\` - View all emojis in the server.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}emojid <emoji/id/name>\` - Inspect a specific emoji's details and raw ID.`;
               } else if (targetCmd.name === "whitelist" || targetCmd.name === "wl") {
                   descContent = `Interactive Whitelist Defense Matrix dashboard with synced looping animated GIF HUD, permission category clearance, and custom action limits.\n\n` +
                     `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> • **In-GIF Progress Bar:** 8-frame looping animated HUD banners (\`wl_banner.gif\` & \`wl_access.gif\`) with real-time glowing electric progress bars drawn directly in the GIF.\n` +
-                    `> • **Overview Metrics:** Total whitelisted users and roles vs 25 trusted cap.\n` +
-                    `> • **Clearance Metrics:** Individual user/role authorized categories vs total defense categories.\n\n` +
+                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banners (\`wl_banner.gif\` & \`wl_access.gif\`) with real-time glowing electric progress bars drawn directly in the GIF.\n` +
+                    `> ${BULLET_EMOJI} **Overview Metrics:** Total whitelisted users and roles vs 25 trusted cap.\n` +
+                    `> ${BULLET_EMOJI} **Clearance Metrics:** Individual user/role authorized categories vs total defense categories.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}whitelist\` / \`${prefix}wl\` - Opens the Whitelist Overview Panel.\n` +
-                    `> • \`${prefix}wl <@user|@role>\` - Quick-whitelist for standard actions.\n` +
-                    `> • \`${prefix}unwl <@user|@role>\` - Remove user or role from whitelist.`;
+                    `> ${BULLET_EMOJI} \`${prefix}whitelist\` / \`${prefix}wl\` - Opens the Whitelist Overview Panel.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}wl <@user|@role>\` - Quick-whitelist for standard actions.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}unwl <@user|@role>\` - Remove user or role from whitelist.`;
               } else if (targetCmd.name === "automod") {
                   descContent = `Interactive Heuristic Filtering & Security Matrix console with synced looping animated GIF HUD and 10 active shield filters.\n\n` +
                     `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> • **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`automod_banner.gif\`) with glowing electric progress bar visualizing filter armor integrity (\`activeFilters / 10\`).\n` +
-                    `> • **Filters Monitored:** AI Toxicity & Sentiment, Mass Mentions, Anti-Flood, Anti-Link, Discord Invites, Word Filter, Big Fonts, Selfbot, Hidden URLs, and File Checks.\n\n` +
+                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`automod_banner.gif\`) with glowing electric progress bar visualizing filter armor integrity (\`activeFilters / 10\`).\n` +
+                    `> ${BULLET_EMOJI} **Filters Monitored:** AI Toxicity & Sentiment, Mass Mentions, Anti-Flood, Anti-Link, Discord Invites, Word Filter, Big Fonts, Selfbot, Hidden URLs, and File Checks.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}automod\` - Opens the interactive Heuristic Filter Matrix console.\n` +
-                    `> • \`${prefix}automodbypass add|remove <@role>\` - Manage granular role bypasses.`;
+                    `> ${BULLET_EMOJI} \`${prefix}automod\` - Opens the interactive Heuristic Filter Matrix console.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}automodbypass add|remove <@role>\` - Manage granular role bypasses.`;
               } else if (targetCmd.name === "scanserver" || targetCmd.name === "scan") {
                   descContent = `Server Threat Audit HUD scanner to evaluate external bot integrations, dangerous administrative permissions, and onboarding exploit vectors.\n\n` +
                     `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> • **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`scan_banner.gif\`) tracking verified bot armor ratio (\`safeBots / totalBots\`).\n` +
-                    `> • **Diagnostics:** Unauthorized external bots, high-risk humans with dangerous roles, dangerous onboarding prompt roles, and role-bound invite links.\n\n` +
+                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`scan_banner.gif\`) tracking verified bot armor ratio (\`safeBots / totalBots\`).\n` +
+                    `> ${BULLET_EMOJI} **Diagnostics:** Unauthorized external bots, high-risk humans with dangerous roles, dangerous onboarding prompt roles, and role-bound invite links.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}scanserver\` (or \`${prefix}scan\`) - Launch the server security audit scan.`;
+                    `> ${BULLET_EMOJI} \`${prefix}scanserver\` (or \`${prefix}scan\`) - Launch the server security audit scan.`;
               } else if (targetCmd.name === "warnings" || targetCmd.name === "warn") {
                   descContent = `Disciplinary Infraction Tracker HUD monitoring member strike history against server escalation limits.\n\n` +
                     `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> • **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`warn_banner.gif\`) with glowing strike progress bar (\`warns.length / maxWarnings\`).\n` +
-                    `> • **Auto-Escalation:** When strikes reach \`!maxwarnings\` limit (default: 3), Athena automatically isolates the user in Quarantine containment.\n\n` +
+                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`warn_banner.gif\`) with glowing strike progress bar (\`warns.length / maxWarnings\`).\n` +
+                    `> ${BULLET_EMOJI} **Auto-Escalation:** When strikes reach \`!maxwarnings\` limit (default: 3), Athena automatically isolates the user in Quarantine containment.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}warnings <@user>\` - View member's active warnings & strike HUD.\n` +
-                    `> • \`${prefix}warn <@user> [reason]\` - Issue a warning strike.\n` +
-                    `> • \`${prefix}clearwarns <@user>\` - Clear member's disciplinary record.`;
+                    `> ${BULLET_EMOJI} \`${prefix}warnings <@user>\` - View member's active warnings & strike HUD.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}warn <@user> [reason]\` - Issue a warning strike.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}clearwarns <@user>\` - Clear member's disciplinary record.`;
               } else if (targetCmd.name === "dashboard" || targetCmd.name === "hud") {
                   descContent = `Flagship Athena Prime Tactical Command Center and War-Room HUD with live animated cyber banners and real-time telemetry.\n\n` +
                     `> -# **__Features & Defense Integration:__**\n` +
-                    `> • **Three Core Layers:** Merges Bot Telemetry (Heap, Ping, Clusters), Server Operations (Members, Channels, Roles), and DEFCON Security Posture.\n` +
-                    `> • **DEFCON Defense Matrix:** Displays live threat status (DEFCON 1 to 5), active lockdown tier, anti-raid shield, and emergency blackout state.\n` +
-                    `> • **Interactive Controls:** ActionRow buttons allow switching views, refreshing live metrics, opening the DEFCON Intel manual, or triggering one-click recovery.\n\n` +
+                    `> ${BULLET_EMOJI} **Three Core Layers:** Merges Bot Telemetry (Heap, Ping, Clusters), Server Operations (Members, Channels, Roles), and DEFCON Security Posture.\n` +
+                    `> ${BULLET_EMOJI} **DEFCON Defense Matrix:** Displays live threat status (DEFCON 1 to 5), active lockdown tier, anti-raid shield, and emergency blackout state.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Controls:** ActionRow buttons allow switching views, refreshing live metrics, opening the DEFCON Intel manual, or triggering one-click recovery.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}dashboard\` - Open the all-inclusive Unified Command Center.\n` +
-                    `> • \`${prefix}hud [telemetry|server|defcon]\` - Open the mode-based War-Room HUD.\n` +
-                    `> • \`${prefix}omni\` / \`${prefix}commandcenter\` - Quick aliases for the command center.`;
+                    `> ${BULLET_EMOJI} \`${prefix}dashboard\` - Open the all-inclusive Unified Command Center.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}hud [telemetry|server|defcon]\` - Open the mode-based War-Room HUD.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}omni\` / \`${prefix}commandcenter\` - Quick aliases for the command center.`;
               } else if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
                   descContent = `Ultra-fast emergency panic protocol that immediately strips permissions, hides all public channels, and locks down the server.\n\n` +
                     `> -# **__Execution & Architecture:__**\n` +
-                    `> • **Immediate Blackout:** Denies \`ViewChannel\` across all channels for \`@everyone\`.\n` +
-                    `> • **Micro-Batched REST Engine:** Modifies permissions concurrently in chunks of 8 (~1.2s execution) without triggering 429 rate limits.\n` +
-                    `> • **Phone Verification Shield:** Automatically elevates server verification level to Phone Required.\n` +
-                    `> • **Zero-Loss Bitmask Snapshot:** Stores exact channel permissions in database memory before alterations for 100% clean recovery.\n\n` +
+                    `> ${BULLET_EMOJI} **Immediate Blackout:** Denies \`ViewChannel\` across all channels for \`@everyone\`.\n` +
+                    `> ${BULLET_EMOJI} **Micro-Batched REST Engine:** Modifies permissions concurrently in chunks of 8 (~1.2s execution) without triggering 429 rate limits.\n` +
+                    `> ${BULLET_EMOJI} **Phone Verification Shield:** Automatically elevates server verification level to Phone Required.\n` +
+                    `> ${BULLET_EMOJI} **Zero-Loss Bitmask Snapshot:** Stores exact channel permissions in database memory before alterations for 100% clean recovery.\n\n` +
                     `> -# **__Usage Syntax & Subcommands:__**\n` +
-                    `> • \`${prefix}panic\` / \`${prefix}emergency\` - Engage total server emergency blackout.\n` +
-                    `> • \`${prefix}unpanic\` / \`${prefix}endemergency\` / \`${prefix}panic off\` - Lift emergency blackout and restore all channels.`;
+                    `> ${BULLET_EMOJI} \`${prefix}panic\` / \`${prefix}emergency\` - Engage total server emergency blackout.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}unpanic\` / \`${prefix}endemergency\` / \`${prefix}panic off\` - Lift emergency blackout and restore all channels.`;
               } else if (targetCmd.name === "lockdown" || targetCmd.name === "unlockdown") {
                   descContent = `Tiered One-Click Panic Lockdown with parallel batched channel execution (~1.2s speed) and database bitmask recovery.\n\n` +
                     `> -# **__Lockdown Tiers:__**\n` +
-                    `> • **Tier 1 (Soft Lockdown):** Denies \`SendMessages\`, thread creation, and voice \`Speak\` across all public channels.\n` +
-                    `> • **Tier 2 (Medium Lockdown):** Tier 1 + Denies reactions, attachments, application commands + arms Raid Mode + Phone Verification.\n` +
-                    `> • **Tier 3 (Nuclear Lockdown):** Total server blackout (denies \`ViewChannel\` across all public channels).\n\n` +
+                    `> ${BULLET_EMOJI} **Tier 1 (Soft Lockdown):** Denies \`SendMessages\`, thread creation, and voice \`Speak\` across all public channels.\n` +
+                    `> ${BULLET_EMOJI} **Tier 2 (Medium Lockdown):** Tier 1 + Denies reactions, attachments, application commands + arms Raid Mode + Phone Verification.\n` +
+                    `> ${BULLET_EMOJI} **Tier 3 (Nuclear Lockdown):** Total server blackout (denies \`ViewChannel\` across all public channels).\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> • \`${prefix}lockdown <1|2|3>\` - Engage specified panic lockdown tier.\n` +
-                    `> • \`${prefix}unlockdown\` / \`${prefix}lockdown off\` - Restore exact pre-lockdown channel permissions from DB snapshot in ~1.2s.`;
+                    `> ${BULLET_EMOJI} \`${prefix}lockdown <1|2|3>\` - Engage specified panic lockdown tier.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}unlockdown\` / \`${prefix}lockdown off\` - Restore exact pre-lockdown channel permissions from DB snapshot in ~1.2s.`;
               } else if (targetCmd.name === "chess" || targetCmd.name === "chessgame") {
                   descContent = `Interactive Grandmaster Chess Engine Matrix featuring 11 advanced AI engines, PvP matches, themes & real-time board rendering.\n\n` +
                     `> -# **__The 11 Chess Engines & Personalities:__**\n` +
-                    `> • **Stockfish 16.1 (Ultra GM • 3550 ELO):** Peak open-source calculation at depth 15.\n` +
-                    `> • **Mittens 🐾 (Menace Cat • 3600+ ELO):** Sinister Chess.com cat bot with terrifying philosophical quotes on every move.\n` +
-                    `> • **AlphaZero (DeepMind • 3500 ELO):** Intuitive neural sacrifices & positional piece activity.\n` +
-                    `> • **Torch 1.0 (Chess.com • 3420 ELO):** Relentless king hunting and central breakthroughs.\n` +
-                    `> • **Leela Chess Zero (LCZero • 3450 ELO):** Self-learning neural net with suffocating positional squeeze.\n` +
-                    `> • **Stockfish 15 (GM • 3200 ELO):** High-speed classic NNUE engine calculating razor-sharp lines.\n` +
-                    `> • **Komodo Dragon 3.3 (World Champ • 3350 ELO):** Blends positional mastery and dynamic counterplay.\n` +
-                    `> • **Magnus Carlsen AI (Champion • 2882 ELO):** Emulates the GOAT's endgame grinding and zero-counterplay squeeze.\n` +
-                    `> • **Hikaru Nakamura AI (Blitz King • 2875 ELO):** Lightning-fast tactical fireworks and venomous king attacks.\n` +
-                    `> • **Stockfish 11 (Master • 2500 ELO):** Accessible club-level classical engine.\n` +
-                    `> • **Martin (Chess.com Coach • 250 ELO):** Beloved goofy dad bot with 65% blunder rate and hilarious dad jokes.\n\n` +
+                    `> ${BULLET_EMOJI} **Stockfish 16.1 (Ultra GM • 3550 ELO):** Peak open-source calculation at depth 15.\n` +
+                    `> ${BULLET_EMOJI} **Mittens 🐾 (Menace Cat • 3600+ ELO):** Sinister Chess.com cat bot with terrifying philosophical quotes on every move.\n` +
+                    `> ${BULLET_EMOJI} **AlphaZero (DeepMind • 3500 ELO):** Intuitive neural sacrifices & positional piece activity.\n` +
+                    `> ${BULLET_EMOJI} **Torch 1.0 (Chess.com • 3420 ELO):** Relentless king hunting and central breakthroughs.\n` +
+                    `> ${BULLET_EMOJI} **Leela Chess Zero (LCZero • 3450 ELO):** Self-learning neural net with suffocating positional squeeze.\n` +
+                    `> ${BULLET_EMOJI} **Stockfish 15 (GM • 3200 ELO):** High-speed classic NNUE engine calculating razor-sharp lines.\n` +
+                    `> ${BULLET_EMOJI} **Komodo Dragon 3.3 (World Champ • 3350 ELO):** Blends positional mastery and dynamic counterplay.\n` +
+                    `> ${BULLET_EMOJI} **Magnus Carlsen AI (Champion • 2882 ELO):** Emulates the GOAT's endgame grinding and zero-counterplay squeeze.\n` +
+                    `> ${BULLET_EMOJI} **Hikaru Nakamura AI (Blitz King • 2875 ELO):** Lightning-fast tactical fireworks and venomous king attacks.\n` +
+                    `> ${BULLET_EMOJI} **Stockfish 11 (Master • 2500 ELO):** Accessible club-level classical engine.\n` +
+                    `> ${BULLET_EMOJI} **Martin (Chess.com Coach • 250 ELO):** Beloved goofy dad bot with 65% blunder rate and hilarious dad jokes.\n\n` +
                     `> -# **__Public Execution & Subcommands:__**\n` +
-                    `> • \`${prefix}chess ai [bot]\` — Challenge an AI engine directly (\`!chess ai mittens\`, \`!chess ai torch\`, \`!chess ai alphazero\`, etc.) \`[Public]\`\n` +
-                    `> • \`${prefix}chess engine\` (or \`!chess bot\`) — Interactive dropdown selector to choose active chess engine \`[Public]\`\n` +
-                    `> • \`${prefix}chess @user\` — Challenge a friend to a live PvP match \`[Public]\`\n` +
-                    `> • \`${prefix}chess theme\` — Select from 20 aesthetic board styles (Walnut, Glass, Neon, Retro, etc.) \`[Public]\`\n` +
-                    `> • \`${prefix}chess stop\` — Resign or terminate active match \`[Public]\`\n` +
-                    `> • Move by simply typing standard algebraic (\`e4\`, \`Nf3\`), UCI (\`e7e5\`), or castling (\`O-O\`) in chat!`;
+                    `> ${BULLET_EMOJI} \`${prefix}chess ai [bot]\` — Challenge an AI engine directly (\`!chess ai mittens\`, \`!chess ai torch\`, \`!chess ai alphazero\`, etc.) \`[Public]\`\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}chess engine\` (or \`!chess bot\`) — Interactive dropdown selector to choose active chess engine \`[Public]\`\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}chess @user\` — Challenge a friend to a live PvP match \`[Public]\`\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}chess theme\` — Select from 20 aesthetic board styles (Walnut, Glass, Neon, Retro, etc.) \`[Public]\`\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}chess stop\` — Resign or terminate active match \`[Public]\`\n` +
+                    `> ${BULLET_EMOJI} Move by simply typing standard algebraic (\`e4\`, \`Nf3\`), UCI (\`e7e5\`), or castling (\`O-O\`) in chat!`;
               }
 
-              const display1 = new TextDisplayBuilder().setContent(
-                `# Command Name: \`${targetCmd.name}\`\n\n` +
+              const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
                 `> -# **__Command usage:__** \`${usageText}\`\n` +
                 `> -# **__Aliases:__** ${aliasesText}\n` +
                 `> -# **__Command Permissions:__** \`${permsText}\``
@@ -892,368 +892,367 @@ export const commands = [
         if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
           descContent = `Extracts and downloads uncompressed original master-resolution images and MP4 videos from any Pinterest link or short URL (pin.it).\n\n` +
             `> -# **__Features & Pipeline:__**\n` +
-            `> • **Full Master Resolution:** Automatically expands shortened \`pin.it\` redirects and upgrades 736x/564x preview thumbnails to uncompressed master quality (/originals/).\n` +
-            `> • **Video & GIF Extraction:** Automatically extracts full MP4 videos (v.pinimg.com) and animated assets.\n` +
-            `> • **1-Click Download Button:** Attaches an instant direct button to download the media asset directly to your device.\n` +
-            `> • **Universal Cross-Bot Media Integration:** Any command with an image prompt or button (\`${prefix}welcome\`, \`${prefix}leave\`, \`${prefix}ticketpanel\`, \`${prefix}announce\`, \`${prefix}aiannounce\`, \`${prefix}autoreply\`, and Studio) accepts direct Pinterest links (\`pin.it\` or \`pinterest.com\`) and Athena will automatically extract and resolve the raw high-resolution media!\n\n` +
+            `> ${BULLET_EMOJI} **Full Master Resolution:** Automatically expands shortened \`pin.it\` redirects and upgrades 736x/564x preview thumbnails to uncompressed master quality (/originals/).\n` +
+            `> ${BULLET_EMOJI} **Video & GIF Extraction:** Automatically extracts full MP4 videos (v.pinimg.com) and animated assets.\n` +
+            `> ${BULLET_EMOJI} **1-Click Download Button:** Attaches an instant direct button to download the media asset directly to your device.\n` +
+            `> ${BULLET_EMOJI} **Universal Cross-Bot Media Integration:** Any command with an image prompt or button (\`${prefix}welcome\`, \`${prefix}leave\`, \`${prefix}ticketpanel\`, \`${prefix}announce\`, \`${prefix}aiannounce\`, \`${prefix}autoreply\`, and Studio) accepts direct Pinterest links (\`pin.it\` or \`pinterest.com\`) and Athena will automatically extract and resolve the raw high-resolution media!\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}pinterest <link>\` - Download media from Pinterest link.\n` +
-            `> • \`${prefix}pin <link>\` - Short alias for quick downloads.\n` +
-            `> • Reply to any Pinterest link with \`${prefix}pin\` to download it instantly.`;
+            `> ${BULLET_EMOJI} \`${prefix}pinterest <link>\` - Download media from Pinterest link.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}pin <link>\` - Short alias for quick downloads.\n` +
+            `> ${BULLET_EMOJI} Reply to any Pinterest link with \`${prefix}pin\` to download it instantly.`;
         } else if (targetCmd.name === "welcome" || targetCmd.name === "leave") {
           descContent = `Interactive visual builder for join greetings and departures featuring borderless CV2 embeds, dynamic placeholders, and full media pipeline.\n\n` +
             `> -# **__Media & Universal Pinterest Support:__**\n` +
-            `> • **Direct Pinterest Links:** Paste any Pinterest link (\`pin.it\` or \`pinterest.com/pin/...\`) into Image, Thumbnail, Author Icon, or Footer Icon modals — Athena automatically extracts the uncompressed master resolution media.\n` +
-            `> • **MP4-to-GIF Conversion:** Video links are automatically converted into animated looping Discord GIFs.\n` +
-            `> • **Dynamic Variables:** Full support for \`{membercount}\`, \`{ordinal}\`, \`{user}\`, \`{avatar}\`, \`{server}\`, and 15+ guild metadata tokens.\n\n` +
+            `> ${BULLET_EMOJI} **Direct Pinterest Links:** Paste any Pinterest link (\`pin.it\` or \`pinterest.com/pin/...\`) into Image, Thumbnail, Author Icon, or Footer Icon modals — Athena automatically extracts the uncompressed master resolution media.\n` +
+            `> ${BULLET_EMOJI} **MP4-to-GIF Conversion:** Video links are automatically converted into animated looping Discord GIFs.\n` +
+            `> ${BULLET_EMOJI} **Dynamic Variables:** Full support for \`{membercount}\`, \`{ordinal}\`, \`{user}\`, \`{avatar}\`, \`{server}\`, and 15+ guild metadata tokens.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}${targetCmd.name}\` - Open the interactive visual configuration dashboard.`;
+            `> ${BULLET_EMOJI} \`${prefix}${targetCmd.name}\` - Open the interactive visual configuration dashboard.`;
         } else if (targetCmd.name === "ticketpanel") {
           descContent = `Interactive visual ticket panel deployment dashboard with AI triage and custom media integration.\n\n` +
             `> -# **__Features & Media Support:__**\n` +
-            `> • **Universal Pinterest Support:** Panel banner and thumbnail inputs support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic uncompressed extraction.\n` +
-            `> • **Smart AI Triage:** Classifies incoming inquiries into urgency tiers with staff executive summaries.\n` +
-            `> • **Interactive Customization:** Buttons, dropdown reasons, target channels, and closing roles.\n\n` +
+            `> ${BULLET_EMOJI} **Universal Pinterest Support:** Panel banner and thumbnail inputs support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic uncompressed extraction.\n` +
+            `> ${BULLET_EMOJI} **Smart AI Triage:** Classifies incoming inquiries into urgency tiers with staff executive summaries.\n` +
+            `> ${BULLET_EMOJI} **Interactive Customization:** Buttons, dropdown reasons, target channels, and closing roles.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}ticketpanel\` - Open the interactive panel manager.`;
+            `> ${BULLET_EMOJI} \`${prefix}ticketpanel\` - Open the interactive panel manager.`;
         } else if (targetCmd.name === "announce" || targetCmd.name === "aiannounce") {
           descContent = `Interactive announcement studio to craft, format, preview, and dispatch server broadcasts.\n\n` +
             `> -# **__Features & Media Support:__**\n` +
-            `> • **Universal Pinterest Support:** Announcement banners and images support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic master extraction.\n` +
-            `> • **AI Polish & Formatting:** Converts rough notes into beautifully formatted broadcasts with custom emojis.\n` +
-            `> • **Live Ephemeral Preview:** Preview your broadcast before sending it to the target channel.\n\n` +
+            `> ${BULLET_EMOJI} **Universal Pinterest Support:** Announcement banners and images support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic master extraction.\n` +
+            `> ${BULLET_EMOJI} **AI Polish & Formatting:** Converts rough notes into beautifully formatted broadcasts with custom emojis.\n` +
+            `> ${BULLET_EMOJI} **Live Ephemeral Preview:** Preview your broadcast before sending it to the target channel.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}${targetCmd.name} [prompt] [#channel]\` - Launch announcement builder.`;
+            `> ${BULLET_EMOJI} \`${prefix}${targetCmd.name} [prompt] [#channel]\` - Launch announcement builder.`;
         } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
           descContent = `Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Zero Security Disruption Guarantee:__**\n` +
-            `> • **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
-            `> • **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.\n\n` +
+            `> ${BULLET_EMOJI} **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
+            `> ${BULLET_EMOJI} **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.\n\n` +
             `> -# **__Autonomous Bot Self-Learning & Neural Autopsy:__**\n` +
-            `> • **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
-            `> • **Autonomous Defense Flaw Diagnosis:** If antinuke fails or is blocked from eliminating a hostile actor or rolling back damage, Athena autonomously analyzes the exact architectural flaw (Discord Role Hierarchy Inversion, Missing Core Permissions, Server Owner Immunity) and formulates step-by-step remediation fixes!\n` +
-            `> • **Lambda AI Incident Autopsy:** Powered by Google Gemini 3.8 Flash Neural Pipeline to dissect attack vectors and generate professional forensic reports.\n\n` +
+            `> ${BULLET_EMOJI} **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
+            `> ${BULLET_EMOJI} **Autonomous Defense Flaw Diagnosis:** If antinuke fails or is blocked from eliminating a hostile actor or rolling back damage, Athena autonomously analyzes the exact architectural flaw (Discord Role Hierarchy Inversion, Missing Core Permissions, Server Owner Immunity) and formulates step-by-step remediation fixes!\n` +
+            `> ${BULLET_EMOJI} **Lambda AI Incident Autopsy:** Powered by Google Gemini 3.8 Flash Neural Pipeline to dissect attack vectors and generate professional forensic reports.\n\n` +
             `> -# **__Rate Limit & Emergency Resilience:__**\n` +
-            `> • **Discord Rate Limits (429):** Identifies API congestion and shifts restoration into background ring buffers.\n` +
-            `> • **Emergency Dispatch:** Automatically sends high-priority flaw alerts to the security log channel and DMs the Server Owner with the exact flaw reason and step-by-step fix.\n\n` +
+            `> ${BULLET_EMOJI} **Discord Rate Limits (429):** Identifies API congestion and shifts restoration into background ring buffers.\n` +
+            `> ${BULLET_EMOJI} **Emergency Dispatch:** Automatically sends high-priority flaw alerts to the security log channel and DMs the Server Owner with the exact flaw reason and step-by-step fix.\n\n` +
             `> -# **__Subcommands & Directives:__**\n` +
-            `> • \`${prefix}learn status\` (or \`${prefix}lambda\`) — Interactive Component V2 learning & flaw dashboard.\n` +
-            `> • \`${prefix}learn help\` (or \`${prefix}lambda help\`) — Interactive Component V2 commands & architecture guidance.\n` +
-            `> • \`${prefix}learn flaws\` — View historical defense block failures, root causes, and fixes.\n` +
-            `> • \`${prefix}learn fix\` — Live server hierarchy & permission audit with immediate step-by-step fixes.\n` +
-            `> • \`${prefix}learn analyze [id]\` — Deep Lambda Neural AI forensic breakdown of any threat signature.\n` +
-            `> • \`${prefix}learn on / off\` — Toggle continuous autonomous self-learning.\n` +
-            `> • \`${prefix}learn baseline\` — Audit staff accounts, elevated roles & webhooks to establish normal baselines.\n` +
-            `> • \`${prefix}learn signatures\` — Display captured rogue bot fingerprints and velocity patterns.\n` +
-            `> • \`${prefix}learn clear\` — Reset captured signature history.`;
+            `> ${BULLET_EMOJI} \`${prefix}learn status\` (or \`${prefix}lambda\`) — Interactive Component V2 learning & flaw dashboard.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}learn help\` (or \`${prefix}lambda help\`) — Interactive Component V2 commands & architecture guidance.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}learn flaws\` — View historical defense block failures, root causes, and fixes.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}learn fix\` — Live server hierarchy & permission audit with immediate step-by-step fixes.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}learn analyze [id]\` — Deep Lambda Neural AI forensic breakdown of any threat signature.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}learn on / off\` — Toggle continuous autonomous self-learning.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}learn baseline\` — Audit staff accounts, elevated roles & webhooks to establish normal baselines.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}learn signatures\` — Display captured rogue bot fingerprints and velocity patterns.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}learn clear\` — Reset captured signature history.`;
         } else if (targetCmd.name === "voicerole") {
           descContent = `Automatically assigns a designated role to members the instant they connect to ANY voice channel, and strips it when they disconnect.\n\n` +
             `> -# **__Universal Scope:__**\n` +
-            `> • Enforces role assignment & revocation for **ALL** entities: Server Owner, Bot Owner, Extra Owners, standard members, and integration bots.\n` +
-            `> • Real-time live synchronization: instantly grants role to everyone sitting in VCs when configured, and instantly cleans up when disabled or when members leave.\n\n` +
+            `> ${BULLET_EMOJI} Enforces role assignment & revocation for **ALL** entities: Server Owner, Bot Owner, Extra Owners, standard members, and integration bots.\n` +
+            `> ${BULLET_EMOJI} Real-time live synchronization: instantly grants role to everyone sitting in VCs when configured, and instantly cleans up when disabled or when members leave.\n\n` +
             `> -# **__Subcommands & Syntax:__**\n` +
-            `> • \`${prefix}voicerole\` - Open the interactive Components V2 Control Panel.\n` +
-            `> • \`${prefix}voicerole <@role / ID / Name>\` - Bind a specific voice role.\n` +
-            `> • \`${prefix}voicerole disable\` - Disable system & strip role from all active members.\n` +
-            `> • \`/voicerole [role] [disable]\` - Slash command equivalent.`;
+            `> ${BULLET_EMOJI} \`${prefix}voicerole\` - Open the interactive Components V2 Control Panel.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}voicerole <@role / ID / Name>\` - Bind a specific voice role.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}voicerole disable\` - Disable system & strip role from all active members.\n` +
+            `> ${BULLET_EMOJI} \`/voicerole [role] [disable]\` - Slash command equivalent.`;
         } else if (targetCmd.name === "raidmode") {
           descContent = `Unified Server Raid Defense Matrix providing manual lockdown control and automated join-velocity burst detection.\n\n` +
             `> -# **__Subcommands & Directives:__**\n` +
-            `> • \`${prefix}raidmode\` - Displays the live Server Raid Defense Matrix dashboard.\n` +
-            `> • \`${prefix}raidmode on\` - Immediately locks down server, elevates verification to VERY HIGH (Phone Required), and auto-quarantines incoming accounts.\n` +
-            `> • \`${prefix}raidmode off\` - Disengages lockdown, restores baseline verification level, and mass-releases quarantined members.\n` +
-            `> • \`${prefix}raidmode auto on\` - Arms automated join-velocity burst detection.\n` +
-            `> • \`${prefix}raidmode auto off\` - Disarms automated join-velocity burst detection.\n` +
-            `> • \`${prefix}raidmode auto threshold <number>\` - Configures how many joins trigger the auto-shield (default: 8).\n` +
-            `> • \`${prefix}raidmode auto window <seconds>\` - Configures time window in seconds (default: 5s).`;
+            `> ${BULLET_EMOJI} \`${prefix}raidmode\` - Displays the live Server Raid Defense Matrix dashboard.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}raidmode on\` - Immediately locks down server, elevates verification to VERY HIGH (Phone Required), and auto-quarantines incoming accounts.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}raidmode off\` - Disengages lockdown, restores baseline verification level, and mass-releases quarantined members.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}raidmode auto on\` - Arms automated join-velocity burst detection.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}raidmode auto off\` - Disarms automated join-velocity burst detection.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}raidmode auto threshold <number>\` - Configures how many joins trigger the auto-shield (default: 8).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}raidmode auto window <seconds>\` - Configures time window in seconds (default: 5s).`;
         } else if (targetCmd.name === "weather" || targetCmd.name === "wtr") {
           descContent = `Live global weather reconnaissance with generated satellite world map projection and 3-day forecast.\n\n` +
             `> -# **__Features & Projection Engine:__**\n` +
-            `> • **Universal Location Support:** Works for any location globally — city names, countries, coordinates, or Google Maps links.\n` +
-            `> • **Google Maps Link Support:** Paste any Google Maps URL (\`https://maps.google.com/...\` or \`https://maps.app.goo.gl/...\`) and Athena will automatically extract and pinpoint the exact coordinates.\n` +
-            `> • **Generated World Map:** Renders an Equirectangular satellite world map on Canvas with locked radar crosshairs, target beacon, and telemetry.\n` +
-            `> • **Atmospheric Telemetry:** Current temperature (°C and °F), feels-like index, humidity, wind velocity and direction, UV index, pressure, and visibility.\n` +
-            `> • **3-Day Meteorological Forecast:** Max/min temperatures and daily condition summaries.\n` +
-            `> • **Solar & Lunar Telemetry:** Sunrise, sunset, and moon phase illumination.\n\n` +
+            `> ${BULLET_EMOJI} **Universal Location Support:** Works for any location globally — city names, countries, coordinates, or Google Maps links.\n` +
+            `> ${BULLET_EMOJI} **Google Maps Link Support:** Paste any Google Maps URL (\`https://maps.google.com/...\` or \`https://maps.app.goo.gl/...\`) and Athena will automatically extract and pinpoint the exact coordinates.\n` +
+            `> ${BULLET_EMOJI} **Generated World Map:** Renders an Equirectangular satellite world map on Canvas with locked radar crosshairs, target beacon, and telemetry.\n` +
+            `> ${BULLET_EMOJI} **Atmospheric Telemetry:** Current temperature (°C and °F), feels-like index, humidity, wind velocity and direction, UV index, pressure, and visibility.\n` +
+            `> ${BULLET_EMOJI} **3-Day Meteorological Forecast:** Max/min temperatures and daily condition summaries.\n` +
+            `> ${BULLET_EMOJI} **Solar & Lunar Telemetry:** Sunrise, sunset, and moon phase illumination.\n\n` +
             `> -# **__All Aliases & Usage Syntax:__**\n` +
-            `> • \`${prefix}weather <city>\` / \`${prefix}wtr <city>\` - Quick weather search (e.g. \`${prefix}wtr London\`, \`${prefix}wtr Tokyo\`).\n` +
-            `> • \`${prefix}climate <city>\` / \`${prefix}forecast <city>\` - Detailed regional meteorological forecast.\n` +
-            `> • \`${prefix}temp <city>\` / \`${prefix}temperature <city>\` - Temperature and atmospheric condition lookup.\n` +
-            `> • \`${prefix}wtr <coordinates>\` - Coordinate search (e.g. \`${prefix}wtr 13.0827, 80.2707\`).\n` +
-            `> • \`${prefix}wtr <google_maps_url>\` - Extract weather directly from any Google Maps link.\n` +
-            `> • \`/weather [location]\` - Slash command equivalent.`;
+            `> ${BULLET_EMOJI} \`${prefix}weather <city>\` / \`${prefix}wtr <city>\` - Quick weather search (e.g. \`${prefix}wtr London\`, \`${prefix}wtr Tokyo\`).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}climate <city>\` / \`${prefix}forecast <city>\` - Detailed regional meteorological forecast.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}temp <city>\` / \`${prefix}temperature <city>\` - Temperature and atmospheric condition lookup.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}wtr <coordinates>\` - Coordinate search (e.g. \`${prefix}wtr 13.0827, 80.2707\`).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}wtr <google_maps_url>\` - Extract weather directly from any Google Maps link.\n` +
+            `> ${BULLET_EMOJI} \`/weather [location]\` - Slash command equivalent.`;
         } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
           descContent = `Real-time web image search retrieving actual high-resolution pictures from the internet.\n\n` +
             `> -# **__Features & Intelligence:__**\n` +
-            `> • **Real Web Pictures:** Queries live net search engines to retrieve actual authentic pictures matching any topic (e.g. \`cat\`, \`worldmap\`, \`fog\`, \`mist\`, \`car\`, \`cm of tn\`, \`biden\`).\n` +
-            `> • **Multi-Page 70+ Pool & Fresh Batches:** Concurrently pools dozens of high-res pictures per search with automatic unblocked resolution.\n` +
-            `> • **Interactive Pagination:** Browse results with \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.\n` +
-            `> • **Random Shuffle Button:** Click \`[Random]\` to discover unexpected high-res pictures.\n` +
-            `> • **1-Click Fresh Batch Button:** Click \`[Fresh Batch]\` to fetch brand new pictures on demand.\n` +
-            `> • **Direct Source Link:** 1-click button to view the original full-resolution image on the hosting website.\n` +
-            `> • **Fail-Safe Session Recovery:** Sessions never expire; Athena seamlessly re-queries in the background.\n` +
-            `> • **Conversational AI Integration:** You can also ask Athena in chat (e.g. \`@Athena picture of cat\` or \`${prefix}ask give me a picture of biden\`) and Athena will automatically fetch and provide the picture.\n\n` +
+            `> ${BULLET_EMOJI} **Real Web Pictures:** Queries live net search engines to retrieve actual authentic pictures matching any topic (e.g. \`cat\`, \`worldmap\`, \`fog\`, \`mist\`, \`car\`, \`cm of tn\`, \`biden\`).\n` +
+            `> ${BULLET_EMOJI} **Multi-Page 70+ Pool & Fresh Batches:** Concurrently pools dozens of high-res pictures per search with automatic unblocked resolution.\n` +
+            `> ${BULLET_EMOJI} **Interactive Pagination:** Browse results with \`◀ Previous\` and \`Next ▶\` buttons directly inside Discord.\n` +
+            `> ${BULLET_EMOJI} **Random Shuffle Button:** Click \`[Random]\` to discover unexpected high-res pictures.\n` +
+            `> ${BULLET_EMOJI} **1-Click Fresh Batch Button:** Click \`[Fresh Batch]\` to fetch brand new pictures on demand.\n` +
+            `> ${BULLET_EMOJI} **Direct Source Link:** 1-click button to view the original full-resolution image on the hosting website.\n` +
+            `> ${BULLET_EMOJI} **Fail-Safe Session Recovery:** Sessions never expire; Athena seamlessly re-queries in the background.\n` +
+            `> ${BULLET_EMOJI} **Conversational AI Integration:** You can also ask Athena in chat (e.g. \`@Athena picture of cat\` or \`${prefix}ask give me a picture of biden\`) and Athena will automatically fetch and provide the picture.\n\n` +
             `> -# **__All Aliases & Usage Syntax:__**\n` +
-            `> • \`${prefix}image <query>\` - Primary image search directive.\n` +
-            `> • \`${prefix}pic <query>\` - Short quick-alias (e.g. \`${prefix}pic cat\`, \`${prefix}pic car\`).\n` +
-            `> • \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
-            `> • \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
-            `> • \`/image [query]\` - Slash command equivalent.`;
+            `> ${BULLET_EMOJI} \`${prefix}image <query>\` - Primary image search directive.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}pic <query>\` - Short quick-alias (e.g. \`${prefix}pic cat\`, \`${prefix}pic car\`).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
+            `> ${BULLET_EMOJI} \`/image [query]\` - Slash command equivalent.`;
         } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
           descContent = `Universal real-time stock, ETF, and cryptocurrency telemetry engine with terminal-grade Canvas charts, autonomous self-learning database, and market intelligence.\n\n` +
             `> -# **__Features & Telemetry Pipeline:__**\n` +
-            `> • **Global Market Pulse Dashboard:** Run without arguments (\`${prefix}stock\` or \`${prefix}market\`) to generate a master 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) plus mega-caps ticker tape.\n` +
-            `> • **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock TCS\`, \`${prefix}stock ZOMATO\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
-            `> • **Universal Global Market Resolution:** Resolves any publicly traded asset worldwide without forcing exchange extensions (Indian NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, SWIGGY; US tech titans NVDA, AAPL, TSLA; crypto BTC, ETH, SOL; commodities GOLD, CRUDE; and global indices).\n` +
-            `> • **Autonomous Self-Learning & Auto-Updating Registry:** Automatically detects, indexes, and edits any new stock, recent IPO, or corporate ticker renaming (e.g. Zomato -> ETERNAL.NS, Tata Motors -> TMCV.NS, FB -> META) and permanently caches it in SQLite.\n` +
-            `> • **Dynamic Multi-Currency Auto-Formatting:** Dynamically detects and formats quotes with appropriate currency symbols (₹ for INR, $ for USD, € for EUR, £ for GBP, ¥ for JPY).\n` +
-            `> • **Interactive Components V2 Controls:** 1-click buttons to browse Symbols Directory, refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
+            `> ${BULLET_EMOJI} **Global Market Pulse Dashboard:** Run without arguments (\`${prefix}stock\` or \`${prefix}market\`) to generate a master 6-index overview (S&P 500, NASDAQ, Dow Jones, NIFTY 50, Bitcoin, Ethereum) plus mega-caps ticker tape.\n` +
+            `> ${BULLET_EMOJI} **Individual Stock Telemetry Card:** Run with any ticker or company name (\`${prefix}stock NVDA\`, \`${prefix}stock TCS\`, \`${prefix}stock ZOMATO\`, \`${prefix}stock BTC\`) to generate a custom Canvas chart with smooth Bezier price curve, day range slider, 52-week range slider, volume, and sentiment gauge.\n` +
+            `> ${BULLET_EMOJI} **Universal Global Market Resolution:** Resolves any publicly traded asset worldwide without forcing exchange extensions (Indian NSE/BSE like TCS, RELIANCE, INFY, TATAMOTORS, SBIN, SWIGGY; US tech titans NVDA, AAPL, TSLA; crypto BTC, ETH, SOL; commodities GOLD, CRUDE; and global indices).\n` +
+            `> ${BULLET_EMOJI} **Autonomous Self-Learning & Auto-Updating Registry:** Automatically detects, indexes, and edits any new stock, recent IPO, or corporate ticker renaming (e.g. Zomato -> ETERNAL.NS, Tata Motors -> TMCV.NS, FB -> META) and permanently caches it in SQLite.\n` +
+            `> ${BULLET_EMOJI} **Dynamic Multi-Currency Auto-Formatting:** Dynamically detects and formats quotes with appropriate currency symbols (₹ for INR, $ for USD, € for EUR, £ for GBP, ¥ for JPY).\n` +
+            `> ${BULLET_EMOJI} **Interactive Components V2 Controls:** 1-click buttons to browse Symbols Directory, refresh quotes, run instant AI deep-dive breakdowns, and read financial news.\n\n` +
             `> -# **__All Aliases & Directives:__**\n` +
-            `> • \`${prefix}stock [symbol]\` - Primary stock command.\n` +
-            `> • \`${prefix}market\` / \`${prefix}stocks\` / \`${prefix}stockmarket\` - Global market overview shortcuts.\n` +
-            `> • \`${prefix}ticker <symbol>\` / \`${prefix}share <symbol>\` / \`${prefix}shares <symbol>\` - Direct ticker lookup.\n` +
-            `> • \`${prefix}symbols [query]\` - Universal symbol directory & search.\n` +
-            `> • \`${prefix}stockai <query>\` - Ask Athena AI for detailed financial and earnings analysis.\n` +
-            `> • \`${prefix}movers\` - Real-time market gainers and decliners.\n` +
-            `> • \`${prefix}crypto [coin]\` - Dedicated cryptocurrency asset telemetry.\n` +
-            `> • \`${prefix}stocknews [symbol]\` - Recent headlines and financial catalysts.\n` +
-            `> • \`${prefix}stockchannel <set|disable|status|test>\` - Configure daily automated market upload channel.\n\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stock [symbol]\` - Primary stock command.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}market\` / \`${prefix}stocks\` / \`${prefix}stockmarket\` - Global market overview shortcuts.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ticker <symbol>\` / \`${prefix}share <symbol>\` / \`${prefix}shares <symbol>\` - Direct ticker lookup.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}symbols [query]\` - Universal symbol directory & search.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stockai <query>\` - Ask Athena AI for detailed financial and earnings analysis.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}movers\` - Real-time market gainers and decliners.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}crypto [coin]\` - Dedicated cryptocurrency asset telemetry.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stocknews [symbol]\` - Recent headlines and financial catalysts.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stockchannel <set|disable|status|test>\` - Configure daily automated market upload channel.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data before investing.`;
         } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
           descContent = `AI-powered quantitative financial analyst providing in-depth market explanations, earnings breakdowns, and valuation concepts.\n\n` +
             `> -# **__Capabilities:__**\n` +
-            `> • Injects live exchange prices and recent press headlines into query context.\n` +
-            `> • Dissects macroeconomic trends, Federal Reserve rate decisions, technical levels, and earnings drivers.\n` +
-            `> • Formats all responses in sleek grey markdown with clear bold-underlined headers.\n\n` +
+            `> ${BULLET_EMOJI} Injects live exchange prices and recent press headlines into query context.\n` +
+            `> ${BULLET_EMOJI} Dissects macroeconomic trends, Federal Reserve rate decisions, technical levels, and earnings drivers.\n` +
+            `> ${BULLET_EMOJI} Formats all responses in sleek grey markdown with clear bold-underlined headers.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}stockai why did tech drop today?\`\n` +
-            `> • \`${prefix}stockai explain NVDA valuation\`\n` +
-            `> • \`${prefix}stockexplain TSLA\`\n\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stockai why did tech drop today?\`\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stockai explain NVDA valuation\`\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stockexplain TSLA\`\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. AI insights are for educational purposes only. Not financial advice. Always double check data.`;
         } else if (targetCmd.name === "stockchannel") {
           descContent = `Configures an automated channel for daily stock market intelligence briefings and high-resolution Canvas image uploads.\n\n` +
             `> -# **__Automated Dispatch System:__**\n` +
-            `> • Automatically posts every morning at **09:30 AM EST (14:30 UTC)** coinciding with US Market Open.\n` +
-            `> • Generates and attaches the high-resolution World Market Pulse dashboard image.\n` +
-            `> • Strictly tracks and fetches channels via database Snowflake ID.\n\n` +
+            `> ${BULLET_EMOJI} Automatically posts every morning at **09:30 AM EST (14:30 UTC)** coinciding with US Market Open.\n` +
+            `> ${BULLET_EMOJI} Generates and attaches the high-resolution World Market Pulse dashboard image.\n` +
+            `> ${BULLET_EMOJI} Strictly tracks and fetches channels via database Snowflake ID.\n\n` +
             `> -# **__Directives:__**\n` +
-            `> • \`${prefix}stockchannel set <#channel>\` - Bind broadcast channel.\n` +
-            `> • \`${prefix}stockchannel disable\` - Turn off automated daily upload.\n` +
-            `> • \`${prefix}stockchannel test\` - Immediately post today's briefing to verify.\n` +
-            `> • \`${prefix}stockchannel status\` - View current configuration.\n\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stockchannel set <#channel>\` - Bind broadcast channel.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stockchannel disable\` - Turn off automated daily upload.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stockchannel test\` - Immediately post today's briefing to verify.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stockchannel status\` - View current configuration.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
         } else if (targetCmd.name === "movers") {
           descContent = `Real-time market volatility and momentum scanner across mega-cap equities and major cryptocurrencies.\n\n` +
             `> -# **__Features & Intelligence:__**\n` +
-            `> • **Top Gainers:** Identifies the strongest positive price velocity across global equities and crypto.\n` +
-            `> • **Top Decliners:** Highlights major downward volatility and market pullbacks.\n` +
-            `> • **Supporting Ecosystem:** Seamless integration with \`${prefix}stock <symbol>\`, \`${prefix}market\`, and \`${prefix}stockai <query>\`.\n\n` +
+            `> ${BULLET_EMOJI} **Top Gainers:** Identifies the strongest positive price velocity across global equities and crypto.\n` +
+            `> ${BULLET_EMOJI} **Top Decliners:** Highlights major downward volatility and market pullbacks.\n` +
+            `> ${BULLET_EMOJI} **Supporting Ecosystem:** Seamless integration with \`${prefix}stock <symbol>\`, \`${prefix}market\`, and \`${prefix}stockai <query>\`.\n\n` +
             `> -# **__All Aliases & Directives:__**\n` +
-            `> • \`${prefix}movers\` - Full market gainers & decliners breakdown.\n` +
-            `> • \`${prefix}topmovers\` / \`${prefix}gainers\` / \`${prefix}losers\` / \`${prefix}marketmovers\` - Direct aliases.\n\n` +
+            `> ${BULLET_EMOJI} \`${prefix}movers\` - Full market gainers & decliners breakdown.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}topmovers\` / \`${prefix}gainers\` / \`${prefix}losers\` / \`${prefix}marketmovers\` - Direct aliases.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data may be delayed or estimated. Not financial advice. Always double check live data.`;
         } else if (targetCmd.name === "crypto") {
           descContent = `Dedicated cryptocurrency market telemetry and Canvas price action charts.\n\n` +
             `> -# **__Features & Visual Telemetry:__**\n` +
-            `> • **Widescreen Canvas Charts:** Generates high-resolution price action curves with 24h range, 52-week range, volume, and sentiment gauge.\n` +
-            `> • **Universal Coin Support:** Supports Bitcoin (\`BTC\`), Ethereum (\`ETH\`), Solana (\`SOL\`), Dogecoin (\`DOGE\`), XRP, and 100+ crypto assets.\n` +
-            `> • **Default Asset:** Running \`${prefix}crypto\` without arguments defaults to Bitcoin (BTC-USD).\n\n` +
+            `> ${BULLET_EMOJI} **Widescreen Canvas Charts:** Generates high-resolution price action curves with 24h range, 52-week range, volume, and sentiment gauge.\n` +
+            `> ${BULLET_EMOJI} **Universal Coin Support:** Supports Bitcoin (\`BTC\`), Ethereum (\`ETH\`), Solana (\`SOL\`), Dogecoin (\`DOGE\`), XRP, and 100+ crypto assets.\n` +
+            `> ${BULLET_EMOJI} **Default Asset:** Running \`${prefix}crypto\` without arguments defaults to Bitcoin (BTC-USD).\n\n` +
             `> -# **__All Aliases & Directives:__**\n` +
-            `> • \`${prefix}crypto [coin]\` - e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`\n` +
-            `> • \`${prefix}btc\` / \`${prefix}eth\` / \`${prefix}coin <symbol>\` - Quick crypto shortcuts.\n\n` +
+            `> ${BULLET_EMOJI} \`${prefix}crypto [coin]\` - e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`\n` +
+            `> ${BULLET_EMOJI} \`${prefix}btc\` / \`${prefix}eth\` / \`${prefix}coin <symbol>\` - Quick crypto shortcuts.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Crypto markets are highly volatile. Not financial advice. Always double check live data.`;
         } else if (targetCmd.name === "stocknews") {
           descContent = `Real-time financial press wiretap aggregating breaking news and market catalysts.\n\n` +
             `> -# **__Features & Syndicate:__**\n` +
-            `> • **Direct Publisher Links:** Real-time articles with direct links to verified financial press (Yahoo Finance, Bloomberg, Reuters, Motley Fool, MarketWatch).\n` +
-            `> • **Targeted Ticker News:** Query news for any specific stock (\`${prefix}stocknews NVDA\`, \`${prefix}stocknews TSLA\`) or general market (\`${prefix}stocknews\`).\n` +
-            `> • **Relative Timestamps:** Displays when articles were published (<t:...:R>).\n\n` +
+            `> ${BULLET_EMOJI} **Direct Publisher Links:** Real-time articles with direct links to verified financial press (Yahoo Finance, Bloomberg, Reuters, Motley Fool, MarketWatch).\n` +
+            `> ${BULLET_EMOJI} **Targeted Ticker News:** Query news for any specific stock (\`${prefix}stocknews NVDA\`, \`${prefix}stocknews TSLA\`) or general market (\`${prefix}stocknews\`).\n` +
+            `> ${BULLET_EMOJI} **Relative Timestamps:** Displays when articles were published (<t:...:R>).\n\n` +
             `> -# **__All Aliases & Directives:__**\n` +
-            `> • \`${prefix}stocknews [symbol]\` - Primary news wiretap.\n` +
-            `> • \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stocknews [symbol]\` - Primary news wiretap.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}marketnews\` / \`${prefix}financenews\` - General market news aliases.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market news is for informational purposes only. Always double check live data.`;
         } else if (targetCmd.name === "symbols" || targetCmd.name === "symbollist" || targetCmd.name === "tickers") {
           descContent = `Universal symbol directory, autonomous self-learning ticker registry, and real-time search covering every publicly traded asset worldwide.\n\n` +
             `> -# **__Primary & Aliases:__**\n` +
-            `> • \`${prefix}symbols\`, \`${prefix}symbollist\`, \`${prefix}tickers\`, \`${prefix}tickerlist\`, \`${prefix}stocksymbols\`, \`${prefix}marketlist\`, \`${prefix}symlist\`, \`/symbols [query]\`.\n\n` +
+            `> ${BULLET_EMOJI} \`${prefix}symbols\`, \`${prefix}symbollist\`, \`${prefix}tickers\`, \`${prefix}tickerlist\`, \`${prefix}stocksymbols\`, \`${prefix}marketlist\`, \`${prefix}symlist\`, \`/symbols [query]\`.\n\n` +
             `> -# **__Interactive Categorized Directory:__**\n` +
-            `> • **Overview Directory:** Master cross-asset directory of top world equities, tech giants, crypto assets, and benchmark indices.\n` +
-            `> • **Trending & Newly Discovered Tickers:** Real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
-            `> • **India (NSE / BSE):** Benchmark indices (\`NIFTY\`, \`SENSEX\`, \`BANKNIFTY\`) and heavyweights (\`TCS\`, \`RELIANCE\`, \`INFY\`, \`TATAMOTORS\`, \`SBIN\`, \`ETERNAL\` [Zomato], \`SWIGGY\`, \`HYUNDAI\`).\n` +
-            `> • **US Tech & AI Titans:** Mega-caps and semiconductor giants (\`NVDA\`, \`AAPL\`, \`MSFT\`, \`GOOGL\`, \`AMZN\`, \`META\`, \`TSLA\`, \`AMD\`, \`PLTR\`).\n` +
-            `> • **Cryptocurrencies:** Major digital blockchain assets (\`BTC\`, \`ETH\`, \`SOL\`, \`BNB\`, \`XRP\`, \`DOGE\`, \`ADA\`, \`AVAX\`, \`LINK\`, \`SUI\`).\n` +
-            `> • **Macro & Commodities:** Raw materials, international market indices & forex (\`GOLD\`, \`SILVER\`, \`CRUDE\`, \`NATGAS\`, \`NIKKEI\`, \`FTSE\`, \`DAX\`, \`USDINR\`, \`EURUSD\`).\n\n` +
+            `> ${BULLET_EMOJI} **Overview Directory:** Master cross-asset directory of top world equities, tech giants, crypto assets, and benchmark indices.\n` +
+            `> ${BULLET_EMOJI} **Trending & Newly Discovered Tickers:** Real-time newly listed IPOs, active movers, and ticker migrations auto-discovered and indexed in SQLite.\n` +
+            `> ${BULLET_EMOJI} **India (NSE / BSE):** Benchmark indices (\`NIFTY\`, \`SENSEX\`, \`BANKNIFTY\`) and heavyweights (\`TCS\`, \`RELIANCE\`, \`INFY\`, \`TATAMOTORS\`, \`SBIN\`, \`ETERNAL\` [Zomato], \`SWIGGY\`, \`HYUNDAI\`).\n` +
+            `> ${BULLET_EMOJI} **US Tech & AI Titans:** Mega-caps and semiconductor giants (\`NVDA\`, \`AAPL\`, \`MSFT\`, \`GOOGL\`, \`AMZN\`, \`META\`, \`TSLA\`, \`AMD\`, \`PLTR\`).\n` +
+            `> ${BULLET_EMOJI} **Cryptocurrencies:** Major digital blockchain assets (\`BTC\`, \`ETH\`, \`SOL\`, \`BNB\`, \`XRP\`, \`DOGE\`, \`ADA\`, \`AVAX\`, \`LINK\`, \`SUI\`).\n` +
+            `> ${BULLET_EMOJI} **Macro & Commodities:** Raw materials, international market indices & forex (\`GOLD\`, \`SILVER\`, \`CRUDE\`, \`NATGAS\`, \`NIKKEI\`, \`FTSE\`, \`DAX\`, \`USDINR\`, \`EURUSD\`).\n\n` +
             `> -# **__Dynamic Search & Telemetry Commands:__**\n` +
-            `> • **Real-Time Live Search:** Run \`${prefix}symbols <query>\` or \`${prefix}symbols search <query>\` to instantly search global exchanges (e.g. \`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`, \`${prefix}symbols Zomato\`).\n` +
-            `> • **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n` +
-            `> • **1-Click Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
+            `> ${BULLET_EMOJI} **Real-Time Live Search:** Run \`${prefix}symbols <query>\` or \`${prefix}symbols search <query>\` to instantly search global exchanges (e.g. \`${prefix}symbols Tata\`, \`${prefix}symbols Adani\`, \`${prefix}symbols Palantir\`, \`${prefix}symbols Zomato\`).\n` +
+            `> ${BULLET_EMOJI} **Autonomous Background Sync:** Automatically queries and syncs trending tickers across Indian and US exchanges every 2 hours.\n` +
+            `> ${BULLET_EMOJI} **1-Click Interactive Category Switcher:** Switch between Overview, Trending & New, India, US Tech, Crypto, and Macro categories via interactive buttons.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Market data is for informational purposes only. Not financial advice. Always double check live data.`;
         } else if (targetCmd.name === "nifty" || targetCmd.name === "banknifty" || targetCmd.name === "sensex" || targetCmd.name === "niftyit" || targetCmd.name === "indiavix") {
           descContent = `Real-time Indian Benchmark Indices & Dalal Street telemetry engine with terminal-grade Canvas charts, Classic Pivot points (P, R1, S1), and interactive sector switches.\n\n` +
             `> -# **__Primary & Dedicated Sector Commands:__**\n` +
-            `> • \`${prefix}nifty [50|bank|sensex|it|vix]\` - Primary Indian market benchmark terminal (defaults to NIFTY 50).\n` +
-            `> • \`${prefix}banknifty\` (\`${prefix}niftybank\`, \`${prefix}bnifty\`) - Dedicated Bank Nifty index telemetry & banking sector health.\n` +
-            `> • \`${prefix}sensex\` (\`${prefix}bse\`, \`${prefix}bsesensex\`) - Dedicated Bombay Stock Exchange Dalal Street 30 benchmark.\n` +
-            `> • \`${prefix}niftyit\` (\`${prefix}itnifty\`, \`${prefix}cnxit\`) - Dedicated Nifty IT index & tech exporter telemetry.\n` +
-            `> • \`${prefix}indiavix\` (\`${prefix}vixindia\`, \`${prefix}vix\`) - Dedicated India Volatility Index (Fear & Greed gauge).\n\n` +
+            `> ${BULLET_EMOJI} \`${prefix}nifty [50|bank|sensex|it|vix]\` - Primary Indian market benchmark terminal (defaults to NIFTY 50).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}banknifty\` (\`${prefix}niftybank\`, \`${prefix}bnifty\`) - Dedicated Bank Nifty index telemetry & banking sector health.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}sensex\` (\`${prefix}bse\`, \`${prefix}bsesensex\`) - Dedicated Bombay Stock Exchange Dalal Street 30 benchmark.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}niftyit\` (\`${prefix}itnifty\`, \`${prefix}cnxit\`) - Dedicated Nifty IT index & tech exporter telemetry.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}indiavix\` (\`${prefix}vixindia\`, \`${prefix}vix\`) - Dedicated India Volatility Index (Fear & Greed gauge).\n\n` +
             `> -# **__Canvas Cards & Analytical Telemetry:__**\n` +
-            `> • **Custom Index Badges & Logos:** Official badges (\`N50\`, \`BNK\`, \`BSE\`, \`IT\`, \`VIX\`) and official NSE / BSE branding.\n` +
-            `> • **Classic Pivot Points Calculation:** Live mathematical Intraday Pivot Points (\`P\`, \`R1\`, \`S1\`) derived from High, Low, and Close.\n` +
-            `> • **Live Operational Market Hours Detector:** Pre-Market (09:00 - 09:15 IST), Regular Trading (09:15 - 15:30 IST), Post-Market (15:40 - 16:00 IST), and Off-Market/Weekend countdowns.\n` +
-            `> • **Interactive 1-Click Buttons:** Switch between Nifty 50, Bank Nifty, Sensex, Nifty IT, and India VIX instantly.\n\n` +
+            `> ${BULLET_EMOJI} **Custom Index Badges & Logos:** Official badges (\`N50\`, \`BNK\`, \`BSE\`, \`IT\`, \`VIX\`) and official NSE / BSE branding.\n` +
+            `> ${BULLET_EMOJI} **Classic Pivot Points Calculation:** Live mathematical Intraday Pivot Points (\`P\`, \`R1\`, \`S1\`) derived from High, Low, and Close.\n` +
+            `> ${BULLET_EMOJI} **Live Operational Market Hours Detector:** Pre-Market (09:00 - 09:15 IST), Regular Trading (09:15 - 15:30 IST), Post-Market (15:40 - 16:00 IST), and Off-Market/Weekend countdowns.\n` +
+            `> ${BULLET_EMOJI} **Interactive 1-Click Buttons:** Switch between Nifty 50, Bank Nifty, Sensex, Nifty IT, and India VIX instantly.\n\n` +
             `> -# <a:uptime:1552608831060844575> **Risk Notice:** Athena can make mistakes. Index market data is for informational purposes only. Not financial advice.`;
         } else if (targetCmd.name === "health" || targetCmd.name === "audit") {
           descContent = `Runs a real-time security diagnostics and hierarchy health assessment on the server.\n\n` +
             `> -# **__Diagnostics Evaluated:__**\n` +
-            `> • **Hierarchy Health:** Bot highest role position vs all other roles; alerts if any roles above Athena have dangerous permissions.\n` +
-            `> • **Core Permissions:** Validates all 8 critical bot permissions (Admin, Manage Server, Manage Roles, Manage Channels, Ban, Kick, View Audit Log, Manage Webhooks).\n` +
-            `> • **Defense Modules:** Reports master antinuke status, security state, raid mode, and auto-shield.\n` +
-            `> • **Snapshot Integrity:** Reports ground-truth mapped channels, roles, and snapshot freshness.\n` +
-            `> • **Persistence Roles:** Validates Athena Unbypassable and Athena Firewall.\n` +
-            `> • **Audit Socket Latency:** Tests raw TLS undici keep-alive round-trip socket latency to Discord API.`;
+            `> ${BULLET_EMOJI} **Hierarchy Health:** Bot highest role position vs all other roles; alerts if any roles above Athena have dangerous permissions.\n` +
+            `> ${BULLET_EMOJI} **Core Permissions:** Validates all 8 critical bot permissions (Admin, Manage Server, Manage Roles, Manage Channels, Ban, Kick, View Audit Log, Manage Webhooks).\n` +
+            `> ${BULLET_EMOJI} **Defense Modules:** Reports master antinuke status, security state, raid mode, and auto-shield.\n` +
+            `> ${BULLET_EMOJI} **Snapshot Integrity:** Reports ground-truth mapped channels, roles, and snapshot freshness.\n` +
+            `> ${BULLET_EMOJI} **Persistence Roles:** Validates Athena Unbypassable and Athena Firewall.\n` +
+            `> ${BULLET_EMOJI} **Audit Socket Latency:** Tests raw TLS undici keep-alive round-trip socket latency to Discord API.`;
         } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
           descContent = `Master unbypassable security deployment, real-time threat neutralization, and incident telemetry engine.\n\n` +
             `> -# **__Core Antinuke Upgrades:__**\n` +
-            `> • **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (\`rawBan\` / \`rawRoleStrip\`). Zero restorations run during an active attack.\n` +
-            `> • **Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all accounts. If coordinated bots trigger destructive acts, Athena instantly initiates emergency lockdown.\n` +
-            `> • **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.\n` +
-            `> • **Role Member Restoration:** Infrastructure snapshots back up member role assignments; restored roles automatically re-assign members in parallel.\n` +
-            `> • **Strict 3-Tier Queue Ordering:** Damage restoration executes strictly in topological order: Roles FIRST, Categories SECOND, Channels THIRD.\n` +
-            `> • **Vanity URL Tampering Guard:** Instant interception and automatic reclaim if an attacker modifies or steals the server vanity code.\n\n` +
+            `> ${BULLET_EMOJI} **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (\`rawBan\` / \`rawRoleStrip\`). Zero restorations run during an active attack.\n` +
+            `> ${BULLET_EMOJI} **Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all accounts. If coordinated bots trigger destructive acts, Athena instantly initiates emergency lockdown.\n` +
+            `> ${BULLET_EMOJI} **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.\n` +
+            `> ${BULLET_EMOJI} **Role Member Restoration:** Infrastructure snapshots back up member role assignments; restored roles automatically re-assign members in parallel.\n` +
+            `> ${BULLET_EMOJI} **Strict 3-Tier Queue Ordering:** Damage restoration executes strictly in topological order: Roles FIRST, Categories SECOND, Channels THIRD.\n` +
+            `> ${BULLET_EMOJI} **Vanity URL Tampering Guard:** Instant interception and automatic reclaim if an attacker modifies or steals the server vanity code.\n\n` +
             `> -# **__Subcommands & Directives:__**\n` +
-            `> • \`${prefix}security enable all\` - One-click deployment of all 28 antinuke modules, persistence roles, and dashboard.\n` +
-            `> • \`${prefix}security disable all\` - Forcibly disable security system (requires 2FA Gmail authorization).\n` +
-            `> • \`${prefix}security status\` - Real-time active/offline matrix view across all 28 security modules.\n` +
-            `> • \`${prefix}security records\` - Live forensic incident audit stream of neutralized threats, execution speeds, and automatic rollbacks.\n` +
-            `> • \`${prefix}security disable <module>\` - Disable a specific security module.\n` +
-            `> • \`${prefix}security enable <module>\` - Enable a specific security module.`;
+            `> ${BULLET_EMOJI} \`${prefix}security enable all\` - One-click deployment of all 28 antinuke modules, persistence roles, and dashboard.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}security disable all\` - Forcibly disable security system (requires 2FA Gmail authorization).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}security status\` - Real-time active/offline matrix view across all 28 security modules.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}security records\` - Live forensic incident audit stream of neutralized threats, execution speeds, and automatic rollbacks.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}security disable <module>\` - Disable a specific security module.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}security enable <module>\` - Enable a specific security module.`;
         } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
           descContent = `Server Join Application, Screening Gatekeeper & Remote DM Review System.\n\n` +
             `> -# **__Core Gatekeeper Features:__**\n` +
-            `> • **Dedicated Screening Gate:** Blocks unauthorized new joiners with temporary quarantine holding roles until staff approve their application.\n` +
-            `> • **Customizable Questionnaire Modal:** Collects applicant answers using interactive Discord modal dialogs before submitting for review.\n` +
-            `> • **Dual-Channel Architecture:** Separate public application portal and internal staff review channel.\n` +
-            `> • **Dual-Tier Review System:** Designated Extra Owners and the Server Owner review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
+            `> ${BULLET_EMOJI} **Dedicated Screening Gate:** Blocks unauthorized new joiners with temporary quarantine holding roles until staff approve their application.\n` +
+            `> ${BULLET_EMOJI} **Customizable Questionnaire Modal:** Collects applicant answers using interactive Discord modal dialogs before submitting for review.\n` +
+            `> ${BULLET_EMOJI} **Dual-Channel Architecture:** Separate public application portal and internal staff review channel.\n` +
+            `> ${BULLET_EMOJI} **Dual-Tier Review System:** Designated Extra Owners and the Server Owner review and accept/deny applications within their server. Bot Owners have **Universal Remote DM Review** to accept or deny applicants across ANY server in real time via DM interactive cards.\n\n` +
             `> -# **__Server Configuration Subcommands (Extra Owners / Server Owner):__**\n` +
-            `> • \`${prefix}entry deploy [#channel]\` - Deploys the interactive "Submit Join Application" button panel.\n` +
-            `> • \`${prefix}entry channel <#channel>\` - Sets the public gate channel where new members submit applications.\n` +
-            `> • \`${prefix}entry log <#channel>\` - Sets the internal staff review channel for pending applications.\n` +
-            `> • \`${prefix}entry role <@role>\` - Sets the verified role automatically granted when an applicant is accepted.\n` +
-            `> • \`${prefix}entry holding <@role|none>\` - Sets or clears the temporary quarantine holding role assigned upon joining.\n` +
-            `> • \`${prefix}entry questions\` - Displays or modifies the application questions.\n` +
-            `> • \`${prefix}entry enable\` / \`${prefix}entry disable\` - Toggles the server entry gate on or off.\n\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry deploy [#channel]\` - Deploys the interactive "Submit Join Application" button panel.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry channel <#channel>\` - Sets the public gate channel where new members submit applications.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry log <#channel>\` - Sets the internal staff review channel for pending applications.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry role <@role>\` - Sets the verified role automatically granted when an applicant is accepted.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry holding <@role|none>\` - Sets or clears the temporary quarantine holding role assigned upon joining.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry questions\` - Displays or modifies the application questions.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry enable\` / \`${prefix}entry disable\` - Toggles the server entry gate on or off.\n\n` +
             `> -# **__Review & Remote Processing Subcommands:__**\n` +
-            `> • \`${prefix}entry list [all|<guildId>]\` - Lists pending applications under review.\n` +
-            `> • \`${prefix}entry accept <userId> [guildId] [reason]\` - Accepts applicant, assigns verified role, removes holding role, and notifies member.\n` +
-            `> • \`${prefix}entry deny <userId> [guildId] [reason]\` - Rejects application, notifies user with reason, and removes them from the server.\n` +
-            `> • \`${prefix}entry remote <on|off>\` - *(Bot Owner Only)* Enables/disables live DM review delivery cards across all servers.`;
+            `> ${BULLET_EMOJI} \`${prefix}entry list [all|<guildId>]\` - Lists pending applications under review.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry accept <userId> [guildId] [reason]\` - Accepts applicant, assigns verified role, removes holding role, and notifies member.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry deny <userId> [guildId] [reason]\` - Rejects application, notifies user with reason, and removes them from the server.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}entry remote <on|off>\` - *(Bot Owner Only)* Enables/disables live DM review delivery cards across all servers.`;
         } else if (targetCmd.name === "records" || targetCmd.name === "incidents") {
           descContent = `Real-time security live audit & incident telemetry stream.\n\n` +
             `> -# **__Features & Telemetry:__**\n` +
-            `> • Displays all intercepted threats in real time with relative timestamps (<t:...:R>).\n` +
-            `> • Shows perpetrator tag, user ID, countermeasure verdict (BAN_APPLIED, ROLES_STRIPPED), and strike latency in ms.\n` +
-            `> • Reports automatic channel/category recreation and permission rollbacks.\n` +
-            `> • Interactive components: Page navigation (Previous / Next), live Refresh, and Clear History.`;
+            `> ${BULLET_EMOJI} Displays all intercepted threats in real time with relative timestamps (<t:...:R>).\n` +
+            `> ${BULLET_EMOJI} Shows perpetrator tag, user ID, countermeasure verdict (BAN_APPLIED, ROLES_STRIPPED), and strike latency in ms.\n` +
+            `> ${BULLET_EMOJI} Reports automatic channel/category recreation and permission rollbacks.\n` +
+            `> ${BULLET_EMOJI} Interactive components: Page navigation (Previous / Next), live Refresh, and Clear History.`;
         } else if (targetCmd.name === "dashboard" || targetCmd.name === "hud") {
           descContent = `Flagship Athena Prime Tactical Command Center and War-Room HUD with live animated cyber banners and real-time telemetry.\n\n` +
             `> -# **__Features & Defense Integration:__**\n` +
-            `> • **Three Core Layers:** Merges Bot Telemetry (Heap, Ping, Clusters), Server Operations (Members, Channels, Roles), and DEFCON Security Posture.\n` +
-            `> • **DEFCON Defense Matrix:** Displays live threat status (DEFCON 1 to 5), active lockdown tier, anti-raid shield, and emergency blackout state.\n` +
-            `> • **Interactive Controls:** ActionRow buttons allow switching views, refreshing live metrics, opening the DEFCON Intel manual, or triggering one-click recovery.\n\n` +
+            `> ${BULLET_EMOJI} **Three Core Layers:** Merges Bot Telemetry (Heap, Ping, Clusters), Server Operations (Members, Channels, Roles), and DEFCON Security Posture.\n` +
+            `> ${BULLET_EMOJI} **DEFCON Defense Matrix:** Displays live threat status (DEFCON 1 to 5), active lockdown tier, anti-raid shield, and emergency blackout state.\n` +
+            `> ${BULLET_EMOJI} **Interactive Controls:** ActionRow buttons allow switching views, refreshing live metrics, opening the DEFCON Intel manual, or triggering one-click recovery.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}dashboard\` - Open the all-inclusive Unified Command Center.\n` +
-            `> • \`${prefix}hud [telemetry|server|defcon]\` - Open the mode-based War-Room HUD.\n` +
-            `> • \`${prefix}omni\` / \`${prefix}commandcenter\` - Quick aliases for the command center.`;
+            `> ${BULLET_EMOJI} \`${prefix}dashboard\` - Open the all-inclusive Unified Command Center.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}hud [telemetry|server|defcon]\` - Open the mode-based War-Room HUD.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}omni\` / \`${prefix}commandcenter\` - Quick aliases for the command center.`;
         } else if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
           descContent = `Ultra-fast emergency panic protocol that immediately strips permissions, hides all public channels, and locks down the server.\n\n` +
             `> -# **__Execution & Architecture:__**\n` +
-            `> • **Immediate Blackout:** Denies \`ViewChannel\` across all channels for \`@everyone\`.\n` +
-            `> • **Micro-Batched REST Engine:** Modifies permissions concurrently in chunks of 8 (~1.2s execution) without triggering 429 rate limits.\n` +
-            `> • **Phone Verification Shield:** Automatically elevates server verification level to Phone Required.\n` +
-            `> • **Zero-Loss Bitmask Snapshot:** Stores exact channel permissions in database memory before alterations for 100% clean recovery.\n\n` +
+            `> ${BULLET_EMOJI} **Immediate Blackout:** Denies \`ViewChannel\` across all channels for \`@everyone\`.\n` +
+            `> ${BULLET_EMOJI} **Micro-Batched REST Engine:** Modifies permissions concurrently in chunks of 8 (~1.2s execution) without triggering 429 rate limits.\n` +
+            `> ${BULLET_EMOJI} **Phone Verification Shield:** Automatically elevates server verification level to Phone Required.\n` +
+            `> ${BULLET_EMOJI} **Zero-Loss Bitmask Snapshot:** Stores exact channel permissions in database memory before alterations for 100% clean recovery.\n\n` +
             `> -# **__Usage Syntax & Subcommands:__**\n` +
-            `> • \`${prefix}panic\` / \`${prefix}emergency\` - Engage total server emergency blackout.\n` +
-            `> • \`${prefix}unpanic\` / \`${prefix}endemergency\` / \`${prefix}panic off\` - Lift emergency blackout and restore all channels.`;
+            `> ${BULLET_EMOJI} \`${prefix}panic\` / \`${prefix}emergency\` - Engage total server emergency blackout.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}unpanic\` / \`${prefix}endemergency\` / \`${prefix}panic off\` - Lift emergency blackout and restore all channels.`;
         } else if (targetCmd.name === "lockdown" || targetCmd.name === "unlockdown") {
           descContent = `Tiered One-Click Panic Lockdown with parallel batched channel execution (~1.2s speed) and database bitmask recovery.\n\n` +
             `> -# **__Lockdown Tiers:__**\n` +
-            `> • **Tier 1 (Soft Lockdown):** Denies \`SendMessages\`, thread creation, and voice \`Speak\` across all public channels.\n` +
-            `> • **Tier 2 (Medium Lockdown):** Tier 1 + Denies reactions, attachments, application commands + arms Raid Mode + Phone Verification.\n` +
-            `> • **Tier 3 (Nuclear Lockdown):** Total server blackout (denies \`ViewChannel\` across all public channels).\n\n` +
+            `> ${BULLET_EMOJI} **Tier 1 (Soft Lockdown):** Denies \`SendMessages\`, thread creation, and voice \`Speak\` across all public channels.\n` +
+            `> ${BULLET_EMOJI} **Tier 2 (Medium Lockdown):** Tier 1 + Denies reactions, attachments, application commands + arms Raid Mode + Phone Verification.\n` +
+            `> ${BULLET_EMOJI} **Tier 3 (Nuclear Lockdown):** Total server blackout (denies \`ViewChannel\` across all public channels).\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}lockdown <1|2|3>\` - Engage specified panic lockdown tier.\n` +
-            `> • \`${prefix}unlockdown\` / \`${prefix}lockdown off\` - Restore exact pre-lockdown channel permissions from DB snapshot in ~1.2s.`;
+            `> ${BULLET_EMOJI} \`${prefix}lockdown <1|2|3>\` - Engage specified panic lockdown tier.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}unlockdown\` / \`${prefix}lockdown off\` - Restore exact pre-lockdown channel permissions from DB snapshot in ~1.2s.`;
         } else if (targetCmd.name === "chess" || targetCmd.name === "chessgame") {
           descContent = `Interactive Grandmaster Chess Engine Matrix featuring 11 advanced AI engines, PvP matches, themes & real-time board rendering.\n\n` +
             `> -# **__The 11 Chess Engines & Personalities:__**\n` +
-            `> • **Stockfish 16.1 (Ultra GM • 3550 ELO):** Peak open-source calculation at depth 15.\n` +
-            `> • **Mittens 🐾 (Menace Cat • 3600+ ELO):** Sinister Chess.com cat bot with terrifying philosophical quotes on every move.\n` +
-            `> • **AlphaZero (DeepMind • 3500 ELO):** Intuitive neural sacrifices & positional piece activity.\n` +
-            `> • **Torch 1.0 (Chess.com • 3420 ELO):** Relentless king hunting and central breakthroughs.\n` +
-            `> • **Leela Chess Zero (LCZero • 3450 ELO):** Self-learning neural net with suffocating positional squeeze.\n` +
-            `> • **Stockfish 15 (GM • 3200 ELO):** High-speed classic NNUE engine calculating razor-sharp lines.\n` +
-            `> • **Komodo Dragon 3.3 (World Champ • 3350 ELO):** Blends positional mastery and dynamic counterplay.\n` +
-            `> • **Magnus Carlsen AI (Champion • 2882 ELO):** Emulates the GOAT's endgame grinding and zero-counterplay squeeze.\n` +
-            `> • **Hikaru Nakamura AI (Blitz King • 2875 ELO):** Lightning-fast tactical fireworks and venomous king attacks.\n` +
-            `> • **Stockfish 11 (Master • 2500 ELO):** Accessible club-level classical engine.\n` +
-            `> • **Martin (Chess.com Coach • 250 ELO):** Beloved goofy dad bot with 65% blunder rate and hilarious dad jokes.\n\n` +
+            `> ${BULLET_EMOJI} **Stockfish 16.1 (Ultra GM • 3550 ELO):** Peak open-source calculation at depth 15.\n` +
+            `> ${BULLET_EMOJI} **Mittens 🐾 (Menace Cat • 3600+ ELO):** Sinister Chess.com cat bot with terrifying philosophical quotes on every move.\n` +
+            `> ${BULLET_EMOJI} **AlphaZero (DeepMind • 3500 ELO):** Intuitive neural sacrifices & positional piece activity.\n` +
+            `> ${BULLET_EMOJI} **Torch 1.0 (Chess.com • 3420 ELO):** Relentless king hunting and central breakthroughs.\n` +
+            `> ${BULLET_EMOJI} **Leela Chess Zero (LCZero • 3450 ELO):** Self-learning neural net with suffocating positional squeeze.\n` +
+            `> ${BULLET_EMOJI} **Stockfish 15 (GM • 3200 ELO):** High-speed classic NNUE engine calculating razor-sharp lines.\n` +
+            `> ${BULLET_EMOJI} **Komodo Dragon 3.3 (World Champ • 3350 ELO):** Blends positional mastery and dynamic counterplay.\n` +
+            `> ${BULLET_EMOJI} **Magnus Carlsen AI (Champion • 2882 ELO):** Emulates the GOAT's endgame grinding and zero-counterplay squeeze.\n` +
+            `> ${BULLET_EMOJI} **Hikaru Nakamura AI (Blitz King • 2875 ELO):** Lightning-fast tactical fireworks and venomous king attacks.\n` +
+            `> ${BULLET_EMOJI} **Stockfish 11 (Master • 2500 ELO):** Accessible club-level classical engine.\n` +
+            `> ${BULLET_EMOJI} **Martin (Chess.com Coach • 250 ELO):** Beloved goofy dad bot with 65% blunder rate and hilarious dad jokes.\n\n` +
             `> -# **__Public Execution & Subcommands:__**\n` +
-            `> • \`${prefix}chess ai [bot]\` — Challenge an AI engine directly (\`!chess ai mittens\`, \`!chess ai torch\`, \`!chess ai alphazero\`, etc.) \`[Public]\`\n` +
-            `> • \`${prefix}chess engine\` (or \`!chess bot\`) — Interactive dropdown selector to choose active chess engine \`[Public]\`\n` +
-            `> • \`${prefix}chess @user\` — Challenge a friend to a live PvP match \`[Public]\`\n` +
-            `> • \`${prefix}chess theme\` — Select from 20 aesthetic board styles (Walnut, Glass, Neon, Retro, etc.) \`[Public]\`\n` +
-            `> • \`${prefix}chess stop\` — Resign or terminate active match \`[Public]\`\n` +
-            `> • Move by simply typing standard algebraic (\`e4\`, \`Nf3\`), UCI (\`e7e5\`), or castling (\`O-O\`) in chat!`;
+            `> ${BULLET_EMOJI} \`${prefix}chess ai [bot]\` — Challenge an AI engine directly (\`!chess ai mittens\`, \`!chess ai torch\`, \`!chess ai alphazero\`, etc.) \`[Public]\`\n` +
+            `> ${BULLET_EMOJI} \`${prefix}chess engine\` (or \`!chess bot\`) — Interactive dropdown selector to choose active chess engine \`[Public]\`\n` +
+            `> ${BULLET_EMOJI} \`${prefix}chess @user\` — Challenge a friend to a live PvP match \`[Public]\`\n` +
+            `> ${BULLET_EMOJI} \`${prefix}chess theme\` — Select from 20 aesthetic board styles (Walnut, Glass, Neon, Retro, etc.) \`[Public]\`\n` +
+            `> ${BULLET_EMOJI} \`${prefix}chess stop\` — Resign or terminate active match \`[Public]\`\n` +
+            `> ${BULLET_EMOJI} Move by simply typing standard algebraic (\`e4\`, \`Nf3\`), UCI (\`e7e5\`), or castling (\`O-O\`) in chat!`;
         } else if (targetCmd.name === "autoreply" || targetCmd.name === "ar" || targetCmd.name === "customreply") {
           descContent = `Interactive server auto-reply manager with accent borderless CV2 embeds, dynamic variables, and media support.\n\n` +
             `> -# **__Features & Capabilities:__**\n` +
-            `> • **Accent Borderless CV2 Embeds:** Delivers rich responses formatted with server theme colors and clean modern borders.\n` +
-            `> • **Universal Media Support:** Direct support for GIFs and Pinterest links (\`pin.it\` & \`pinterest.com\`) with uncompressed media resolution.\n` +
-            `> • **Dynamic Placeholders:** Supports \`{user}\`, \`{server}\`, \`{count}\`, \`{channel}\`, \`{avatar}\`, and more.\n` +
-            `> • **Clearance Policy:** Strictly restricted to Extra Owners, the Server Owner, or the Bot Owner.\n\n` +
+            `> ${BULLET_EMOJI} **Accent Borderless CV2 Embeds:** Delivers rich responses formatted with server theme colors and clean modern borders.\n` +
+            `> ${BULLET_EMOJI} **Universal Media Support:** Direct support for GIFs and Pinterest links (\`pin.it\` & \`pinterest.com\`) with uncompressed media resolution.\n` +
+            `> ${BULLET_EMOJI} **Dynamic Placeholders:** Supports \`{user}\`, \`{server}\`, \`{count}\`, \`{channel}\`, \`{avatar}\`, and more.\n` +
+            `> ${BULLET_EMOJI} **Clearance Policy:** Strictly restricted to Extra Owners, the Server Owner, or the Bot Owner.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}ar dashboard\` (or \`${prefix}ar\`) - Opens the interactive Auto-Reply Control Matrix.\n` +
-            `> • \`${prefix}ar add <keyword> <reply>\` - Quickly register an automated keyword reply \`[Extra Owner]\`.\n` +
-            `> • \`${prefix}ar edit <keyword> <reply>\` - Edit an existing auto-reply response \`[Extra Owner]\`.\n` +
-            `> • \`${prefix}ar remove <keyword>\` - Delete a keyword auto-reply \`[Extra Owner]\`.\n` +
-            `> • \`${prefix}ar list\` - List all active auto-replies in the server.`;
+            `> ${BULLET_EMOJI} \`${prefix}ar dashboard\` (or \`${prefix}ar\`) - Opens the interactive Auto-Reply Control Matrix.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ar add <keyword> <reply>\` - Quickly register an automated keyword reply \`[Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ar edit <keyword> <reply>\` - Edit an existing auto-reply response \`[Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ar remove <keyword>\` - Delete a keyword auto-reply \`[Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ar list\` - List all active auto-replies in the server.`;
         } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
           descContent = `Interactive server trigger word responder dashboard with synced animated looping GIF HUD, electric progress bar, and 4 advanced automation modules.\n\n` +
             `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-            `> • **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`trigger_banner.gif\`) with real-time glowing capacity progress bar drawn directly in the GIF.\n` +
-            `> • **Metrics Tracked:** Server trigger count vs 50-slot capacity, global network auto-responses, and synchronization state.\n\n` +
+            `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`trigger_banner.gif\`) with real-time glowing capacity progress bar drawn directly in the GIF.\n` +
+            `> ${BULLET_EMOJI} **Metrics Tracked:** Server trigger count vs 50-slot capacity, global network auto-responses, and synchronization state.\n\n` +
             `> -# **__The 4 Advanced Trigger Engines:__**\n` +
-            `> • **Ghost / Auto-Destruct (\`ghost:<sec>\`):** Automatically purges response after N seconds to prevent channel clutter.\n` +
-            `> • **Bounty XP Rewards (\`xp:<amount>\` & \`maxclaims:<limit>\`):** Awards dynamic XP to the first N users who trigger the response.\n` +
-            `> • **Time / Clock Variant (\`time:<morning|day|night|weekend>\`):** Daypart-dependent response matching current server clock.\n` +
-            `> • **Audience & Tier Adaptive (\`audience:<newbie|booster|staff>\`):** Personalizes responses based on user tenure, booster status, or staff tier.\n\n` +
+            `> ${BULLET_EMOJI} **Ghost / Auto-Destruct (\`ghost:<sec>\`):** Automatically purges response after N seconds to prevent channel clutter.\n` +
+            `> ${BULLET_EMOJI} **Bounty XP Rewards (\`xp:<amount>\` & \`maxclaims:<limit>\`):** Awards dynamic XP to the first N users who trigger the response.\n` +
+            `> ${BULLET_EMOJI} **Time / Clock Variant (\`time:<morning|day|night|weekend>\`):** Daypart-dependent response matching current server clock.\n` +
+            `> ${BULLET_EMOJI} **Audience & Tier Adaptive (\`audience:<newbie|booster|staff>\`):** Personalizes responses based on user tenure, booster status, or staff tier.\n\n` +
             `> -# **__Cross-Action Synergy:__**\n` +
-            `> • **Dual-Action Emoji Reaction Synergy (\`reaction:<emoji>\`):** Reacts with custom/unicode emoji on the triggering message while responding.\n` +
-            `> • **Staff Alert Mirroring (\`mirror:<#channel>\`):** Escalates emergency keywords directly to staff channels in real time.\n\n` +
+            `> ${BULLET_EMOJI} **Dual-Action Emoji Reaction Synergy (\`reaction:<emoji>\`):** Reacts with custom/unicode emoji on the triggering message while responding.\n` +
+            `> ${BULLET_EMOJI} **Staff Alert Mirroring (\`mirror:<#channel>\`):** Escalates emergency keywords directly to staff channels in real time.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}trigger\` - Open the interactive Response Matrix Dashboard.\n` +
-            `> • \`${prefix}trigger create <match> | <response>\` - Simple & fast usual setup.\n` +
-            `> • \`${prefix}trigger <match> | <response>\` - Direct shortcut.\n` +
-            `> • \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
-            `> • \`${prefix}trigger list\` - Public list of configured triggers.`;
+            `> ${BULLET_EMOJI} \`${prefix}trigger\` - Open the interactive Response Matrix Dashboard.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}trigger create <match> | <response>\` - Simple & fast usual setup.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}trigger <match> | <response>\` - Direct shortcut.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}trigger list\` - Public list of configured triggers.`;
         } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis" || targetCmd.name === "emojilist") {
           descContent = `Interactive server emoji explorer, raw ID extractor, and copyable asset terminal.\n\n` +
             `> -# **__Features & Capabilities:__**\n` +
-            `> • **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
-            `> • **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
-            `> • **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
-            `> • **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n` +
-            `> • **Clearance Policy:** Strictly reserved for the **Server Owner** and **Bot Owner**.\n\n` +
+            `> ${BULLET_EMOJI} **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
+            `> ${BULLET_EMOJI} **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
+            `> ${BULLET_EMOJI} **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
+            `> ${BULLET_EMOJI} **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n` +
+            `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner** and **Bot Owner**.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> • \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
-            `> • \`${prefix}emojis static\` - View all static emojis in the server.\n` +
-            `> • \`${prefix}emojis all\` - View all emojis in the server.\n` +
-            `> • \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
-            `> • \`${prefix}emojid <emoji/id/name>\` - Inspect a specific emoji's details and raw ID.`;
+            `> ${BULLET_EMOJI} \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}emojis static\` - View all static emojis in the server.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}emojis all\` - View all emojis in the server.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}emojid <emoji/id/name>\` - Inspect a specific emoji's details and raw ID.`;
         }
 
-        const display1 = new TextDisplayBuilder().setContent(
-          `# Command Name: \`${targetCmd.name}\`\n\n` +
+        const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
           `> -# **__Command usage:__** \`${usageText}\`\n` +
           `> -# **__Aliases:__** ${aliasesText}\n` +
           `> -# **__Command Permissions:__** \`${permsText}\``
@@ -1450,7 +1449,7 @@ export const commands = [
         components: [
           {
             type: 10,
-            content: '## **Current System Time**'
+            content: `# ${getRandomHeadingGlyph()} **Current System Time**`
           },
           { type: 14, divider: true },
           mainSection,
@@ -1862,7 +1861,7 @@ export const commands = [
       if (!items.length) {
         return sendReply(cv2.warn(
           'No Emojis or GIFs Found',
-          'Provide a custom emoji, attach a GIF/image, or reply to a message containing one.\n\n**Usage Examples:**\n-# • Attach a `.gif` or image file with `!steal [optional_name]`\n-# • Paste custom emojis: `!steal :pog: :hype:`\n-# • Paste an image/GIF link: `!steal https://example.com/logo.gif [name]`\n-# • Reply to any GIF or emoji message with `!steal`'
+          'Provide a custom emoji, attach a GIF/image, or reply to a message containing one.\n\n**Usage Examples:**\n-# ${BULLET_EMOJI} Attach a `.gif` or image file with `!steal [optional_name]`\n-# ${BULLET_EMOJI} Paste custom emojis: `!steal :pog: :hype:`\n-# ${BULLET_EMOJI} Paste an image/GIF link: `!steal https://example.com/logo.gif [name]`\n-# ${BULLET_EMOJI} Reply to any GIF or emoji message with `!steal`'
         ));
       }
 
@@ -2099,9 +2098,9 @@ export const helpModules = [
     "`!ignoreall / !unignoreall` - Ignore or unignore all text channels `[Extra Owner]`",
     "",
     "-# **__Filter Management:__**",
-    "-# • **__AI Toxicity AutoMod:__** Autonomous neural filtering of doxxing attempts (IPs, SSNs, phone numbers) and severe violent harassment (Optional).",
-    "-# • Whitelisting domains overrides the anti-link filter for those specific links.",
-    "-# • Automod bypass roles apply to spam, caps, and raid limits.",
+    "-# ${BULLET_EMOJI} **__AI Toxicity AutoMod:__** Autonomous neural filtering of doxxing attempts (IPs, SSNs, phone numbers) and severe violent harassment (Optional).",
+    "-# ${BULLET_EMOJI} Whitelisting domains overrides the anti-link filter for those specific links.",
+    "-# ${BULLET_EMOJI} Automod bypass roles apply to spam, caps, and raid limits.",
     "-# **__Advanced Threat Firewall:__**",
     "-# **__Instant Anti-Spam__** and **__Malicious Link Filtering__** engineered directly into Discord event stream."
   ] },
@@ -2118,11 +2117,11 @@ export const helpModules = [
     "`!maxwarnings <amount>` - Configure warnings before auto-quarantine `[Extra Owner]`",
     "",
     "-# **__Quarantine Architecture:__**",
-    "-# • **__Smart Auto-Setup:__** Creates leftover components, aligns them under `.      You Have Been Quarantined`, and syncs permissions.",
-    "-# • **__Pure Font Naming:__** All categories and channels use clean typography without emojis.",
-    "-# • **__Role Color:__** Dedicated red `#ff0000` Quarantined role with zero global permissions.",
-    "-# • **__Full Isolation:__** Isolated users cannot view, message, or connect to any normal channel.",
-    "-# • **__Channel Sweeper:__** Automatically syncs deny overwrites across all channels to prevent evasion."
+    "-# ${BULLET_EMOJI} **__Smart Auto-Setup:__** Creates leftover components, aligns them under `.      You Have Been Quarantined`, and syncs permissions.",
+    "-# ${BULLET_EMOJI} **__Pure Font Naming:__** All categories and channels use clean typography without emojis.",
+    "-# ${BULLET_EMOJI} **__Role Color:__** Dedicated red `#ff0000` Quarantined role with zero global permissions.",
+    "-# ${BULLET_EMOJI} **__Full Isolation:__** Isolated users cannot view, message, or connect to any normal channel.",
+    "-# ${BULLET_EMOJI} **__Channel Sweeper:__** Automatically syncs deny overwrites across all channels to prevent evasion."
   ] },
   { id: 'whitelist', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Whitelist', label: 'Whitelist Manager', emoji: 'whitelist', commands: [
     "`!whitelist / !wl` - Opens Whitelist Overview Panel with Synced Looping Animated GIF HUD & Progress Bar `[Extra Owner]`",
@@ -2133,9 +2132,9 @@ export const helpModules = [
     "`!extraowner list` - View current server extra owners `[Extra Owner]`",
     "",
     "-# **__The Whitelist Interface:__**",
-    "-# • Allows granting specific bypasses (e.g., allow Mass Ban but block Channel Delete).",
-    "-# • Supports **__Custom Trigger Limits__** (e.g., allowed to kick 5 members max per hour).",
-    "-# • **__Synced Looping GIF HUD:__** Features authentic 8-frame looping animated HUD banners (`wl_banner.gif` & `wl_access.gif`) with glowing progress bars drawn directly in the GIF."
+    "-# ${BULLET_EMOJI} Allows granting specific bypasses (e.g., allow Mass Ban but block Channel Delete).",
+    "-# ${BULLET_EMOJI} Supports **__Custom Trigger Limits__** (e.g., allowed to kick 5 members max per hour).",
+    "-# ${BULLET_EMOJI} **__Synced Looping GIF HUD:__** Features authentic 8-frame looping animated HUD banners (`wl_banner.gif` & `wl_access.gif`) with glowing progress bars drawn directly in the GIF."
   ] },
   
   { id: 'moderation', category: 'SERVER MANAGEMENT', shortLabel: 'Mods', label: 'Moderation Tools', emoji: 'mod', commands: [
@@ -2204,10 +2203,10 @@ export const helpModules = [
     "`!auditlogs / !audit [@user] [limit]` - Forensic audit log search with action classification and time filters `[Extra Owner]`",
     "",
     "-# **__Studio & Forensic Architecture:__**",
-    "-# • **__AI Announcement Studio:__** Neural speech enhancement transforms rough ideas into formatted Discord announcements with custom emojis, direct Pinterest banners, and live preview.",
-    "-# • **__Universal Media Pipeline:__** Announcement banners and studio embed containers support direct Pinterest links (`pin.it` & `pinterest.com`) with uncompressed master extraction.",
-    "-# • **__Custom Container Templates:__** Create and persist reusable CV2 borderless layouts across reboots.",
-    "-# • **__Forensic Audit Logs:__** Real-time Gateway API audit log inspection with moderator/target filtering."
+    "-# ${BULLET_EMOJI} **__AI Announcement Studio:__** Neural speech enhancement transforms rough ideas into formatted Discord announcements with custom emojis, direct Pinterest banners, and live preview.",
+    "-# ${BULLET_EMOJI} **__Universal Media Pipeline:__** Announcement banners and studio embed containers support direct Pinterest links (`pin.it` & `pinterest.com`) with uncompressed master extraction.",
+    "-# ${BULLET_EMOJI} **__Custom Container Templates:__** Create and persist reusable CV2 borderless layouts across reboots.",
+    "-# ${BULLET_EMOJI} **__Forensic Audit Logs:__** Real-time Gateway API audit log inspection with moderator/target filtering."
   ] },
 
   { id: 'ai', category: 'AI & SYSTEM INTELLIGENCE', shortLabel: 'AI Guide', label: 'AI & System Intelligence', emoji: 'ai', commands: [
@@ -2222,15 +2221,15 @@ export const helpModules = [
     "`!explain athena / !explain guide` - Deep-dive architecture of Athena's AI Guide, RAG & button generator `[Public]`",
     "",
     "-# **__Athena AI Specialist Capabilities & Architecture:__**",
-    "-# • **__AI Announcement Studio:__** Turns brief, typo-laden notes into polished Discord announcements with custom emojis, live ephemeral preview, and channel targeting.",
-    "-# • **__257+ Command Deep-Dive & Knowledge Base:__** Full awareness of all command parameters, syntax variations, permission tiers, and edge cases across every bot module.",
-    "-# • **__Fuzzy Typo Auto-Correction:__** Powered by Damerau-Levenshtein distance. Typo variations (e.g. `!athena how to use rnkthme`, `tcikets`, `atninuke`) are automatically recognized and resolved.",
-    "-# • **__Prefix-First Step-by-Step Walkthroughs:__** Guides users step-by-step with clean markdown codeblocks (`!command ...`) while clarifying if slash commands or dashboard alternatives exist.",
-    "-# • **__Context-Aware Multi-Turn Thread Memory:__** Retains conversation history for 10 minutes in each channel, allowing natural follow-up questions without re-typing context.",
-    "-# • **__Clearance-Aware Adaptive Guidance:__** Dynamically checks user permissions (Bot Owner, Server Owner, Extra Owner, Public) and tailors instructions to their exact clearance.",
-    "-# • **__One-Click Interactive Action Buttons:__** Provides neutral grey action buttons (`style: 2`) to instantly launch setups, view statuses, or switch themes with 1 click.",
-    "-# • **__On-Demand Custom Button Generator:__** Need a specific button? Ask Athena in your question or follow-up and custom grey action buttons are generated on demand.",
-    "-# • **__Live Thinking Telemetry:__** Real-time progress timer showing elapsed seconds during Google Gemini 3.8 Flash neural processing.",
+    "-# ${BULLET_EMOJI} **__AI Announcement Studio:__** Turns brief, typo-laden notes into polished Discord announcements with custom emojis, live ephemeral preview, and channel targeting.",
+    "-# ${BULLET_EMOJI} **__257+ Command Deep-Dive & Knowledge Base:__** Full awareness of all command parameters, syntax variations, permission tiers, and edge cases across every bot module.",
+    "-# ${BULLET_EMOJI} **__Fuzzy Typo Auto-Correction:__** Powered by Damerau-Levenshtein distance. Typo variations (e.g. `!athena how to use rnkthme`, `tcikets`, `atninuke`) are automatically recognized and resolved.",
+    "-# ${BULLET_EMOJI} **__Prefix-First Step-by-Step Walkthroughs:__** Guides users step-by-step with clean markdown codeblocks (`!command ...`) while clarifying if slash commands or dashboard alternatives exist.",
+    "-# ${BULLET_EMOJI} **__Context-Aware Multi-Turn Thread Memory:__** Retains conversation history for 10 minutes in each channel, allowing natural follow-up questions without re-typing context.",
+    "-# ${BULLET_EMOJI} **__Clearance-Aware Adaptive Guidance:__** Dynamically checks user permissions (Bot Owner, Server Owner, Extra Owner, Public) and tailors instructions to their exact clearance.",
+    "-# ${BULLET_EMOJI} **__One-Click Interactive Action Buttons:__** Provides neutral grey action buttons (`style: 2`) to instantly launch setups, view statuses, or switch themes with 1 click.",
+    "-# ${BULLET_EMOJI} **__On-Demand Custom Button Generator:__** Need a specific button? Ask Athena in your question or follow-up and custom grey action buttons are generated on demand.",
+    "-# ${BULLET_EMOJI} **__Live Thinking Telemetry:__** Real-time progress timer showing elapsed seconds during Google Gemini 3.8 Flash neural processing.",
     "-# **__Neural Intelligence Architecture:__** Powered by Google Gemini 3.8 Flash with multi-tier failover and high-speed edge reasoning."
   ] },
 
@@ -2244,12 +2243,12 @@ export const helpModules = [
     "`!rename <name>` - Rename an active ticket channel `[Extra Owner]`",
     "",
     "-# **__Ticket System Capabilities:__**",
-    "-# • Features **__Dropdown Menus__**, **__Interactive Q&A Modals__**, and **__Beautiful CV2 Welcome Embeds__**.",
-    "-# • **__Universal Media & Pinterest Support:__** Ticket panel banner and thumbnail inputs support direct Pinterest links (`pin.it` & `pinterest.com`) with automatic uncompressed extraction.",
-    "-# • **__Smart Ban Appeals & AI Triage (Optional):__** Categorizes inquiries (Ban Appeal, Store/Coins, Bugs, Harassment) and creates executive summaries for staff.",
-    "-# • Automatically creates paired Voice Channels and Text Channels per ticket.",
-    "-# • **__Step 1:__** Run `!ticket setup <#category> <@staffRole> [ai_on]` to configure category and staff roles.",
-    "-# • **__Step 2:__** Run `!ticketpanel` to deploy and customize the public interactive panel."
+    "-# ${BULLET_EMOJI} Features **__Dropdown Menus__**, **__Interactive Q&A Modals__**, and **__Beautiful CV2 Welcome Embeds__**.",
+    "-# ${BULLET_EMOJI} **__Universal Media & Pinterest Support:__** Ticket panel banner and thumbnail inputs support direct Pinterest links (`pin.it` & `pinterest.com`) with automatic uncompressed extraction.",
+    "-# ${BULLET_EMOJI} **__Smart Ban Appeals & AI Triage (Optional):__** Categorizes inquiries (Ban Appeal, Store/Coins, Bugs, Harassment) and creates executive summaries for staff.",
+    "-# ${BULLET_EMOJI} Automatically creates paired Voice Channels and Text Channels per ticket.",
+    "-# ${BULLET_EMOJI} **__Step 1:__** Run `!ticket setup <#category> <@staffRole> [ai_on]` to configure category and staff roles.",
+    "-# ${BULLET_EMOJI} **__Step 2:__** Run `!ticketpanel` to deploy and customize the public interactive panel."
   ] },
   { id: 'tracking', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Tracking', label: 'Tracking & Logs', emoji: 'tracking', commands: [
     "`!serverlogs` - View interactive server event logs `[Extra Owner]`",
@@ -2306,11 +2305,11 @@ export const helpModules = [
     "`!verify disable` - Dismantle verification gate `[Extra Owner]`",
     "",
     "-# **__Builder & Engine Features:__**",
-    "-# • **__Universal Pinterest Integration:__** Paste any direct Pinterest link (`pin.it` or `pinterest.com/pin/...`) into Image, Thumbnail, Author Icon, or Footer Icon modals — Athena automatically scrapes the uncompressed master resolution image or converts MP4 videos into animated looping GIFs.",
-    "-# • **__AutoRole & Vanity Engine:__** Automatically assigns human/bot roles on join and vanity URL reward roles.",
-    "-# • **__Auto-React Engine:__** Configure up to 5 custom or native reaction emojis per channel.",
-    "-# • **__Dynamic Variable Interpolation:__** Full support for `{membercount}`, `{ordinal}`, `{user}`, `{username}`, `{displayname}`, `{tag}`, `{userid}`, `{server}`, `{serverid}`, `{server.icon}`, `{avatar}`, `{created}`, `{joined}`, `{owner}`, `{boosts}`, `{tier}`, `{roles}`, `{channels}`.",
-    "-# • **__Media Pipeline:__** Supports custom hex accent colors, direct image URLs, uncompressed Pinterest links, and auto-converts MP4 video links into animated looping GIFs."
+    "-# ${BULLET_EMOJI} **__Universal Pinterest Integration:__** Paste any direct Pinterest link (`pin.it` or `pinterest.com/pin/...`) into Image, Thumbnail, Author Icon, or Footer Icon modals — Athena automatically scrapes the uncompressed master resolution image or converts MP4 videos into animated looping GIFs.",
+    "-# ${BULLET_EMOJI} **__AutoRole & Vanity Engine:__** Automatically assigns human/bot roles on join and vanity URL reward roles.",
+    "-# ${BULLET_EMOJI} **__Auto-React Engine:__** Configure up to 5 custom or native reaction emojis per channel.",
+    "-# ${BULLET_EMOJI} **__Dynamic Variable Interpolation:__** Full support for `{membercount}`, `{ordinal}`, `{user}`, `{username}`, `{displayname}`, `{tag}`, `{userid}`, `{server}`, `{serverid}`, `{server.icon}`, `{avatar}`, `{created}`, `{joined}`, `{owner}`, `{boosts}`, `{tier}`, `{roles}`, `{channels}`.",
+    "-# ${BULLET_EMOJI} **__Media Pipeline:__** Supports custom hex accent colors, direct image URLs, uncompressed Pinterest links, and auto-converts MP4 video links into animated looping GIFs."
   ] },
   { id: 'leveling', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'XP', label: 'Leveling & XP', emoji: 'leveling', commands: [
     "`!xpsetup` - Open the XP Dashboard `[Extra Owner]`",
@@ -2323,10 +2322,10 @@ export const helpModules = [
     "`!removexp @user <amount>` - Manually remove XP `[Extra Owner]`",
     "",
     "-# **__XP Setup Guide:__**",
-    "-# • **__Step 1:__** Run `!xpsetup` and click **__Enable System__**.",
-    "-# • **__Step 2:__** Use `!rankrewards add <lvl> <@role>` to configure milestone role rewards.",
-    "-# • **__Step 3:__** Members choose between **__Hogwarts Looping GIF__** or **__Athena Classic__** via `!ranktheme`.",
-    "-# • **__Step 4:__** Set the **__Announce Channel__** where level-up messages will be sent."
+    "-# ${BULLET_EMOJI} **__Step 1:__** Run `!xpsetup` and click **__Enable System__**.",
+    "-# ${BULLET_EMOJI} **__Step 2:__** Use `!rankrewards add <lvl> <@role>` to configure milestone role rewards.",
+    "-# ${BULLET_EMOJI} **__Step 3:__** Members choose between **__Hogwarts Looping GIF__** or **__Athena Classic__** via `!ranktheme`.",
+    "-# ${BULLET_EMOJI} **__Step 4:__** Set the **__Announce Channel__** where level-up messages will be sent."
   ] },
   { id: 'counting', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Counting', label: 'Counting Engine', emoji: 'counting', commands: [
     "`!counting` - Open interactive Counting Control Panel `[Extra Owner]`",
@@ -2339,10 +2338,10 @@ export const helpModules = [
     "`!countlb / !counting lb` - View server counting records & top counters `[Public]`",
     "",
     "-# **__Counting Engine Guide:__**",
-    "-# • **__Step 1:__** Run `!counting setup #channel` or type `!counting` to open the interactive panel.",
-    "-# • **__Step 2:__** Members count consecutively starting from **__1__**.",
-    "-# • **__Step 3:__** If someone counts twice in a row or types the wrong number, a server save is consumed.",
-    "-# • **__Step 4:__** If no saves remain, the count ruins back to 1 and the all-time high score is updated!"
+    "-# ${BULLET_EMOJI} **__Step 1:__** Run `!counting setup #channel` or type `!counting` to open the interactive panel.",
+    "-# ${BULLET_EMOJI} **__Step 2:__** Members count consecutively starting from **__1__**.",
+    "-# ${BULLET_EMOJI} **__Step 3:__** If someone counts twice in a row or types the wrong number, a server save is consumed.",
+    "-# ${BULLET_EMOJI} **__Step 4:__** If no saves remain, the count ruins back to 1 and the all-time high score is updated!"
   ] },
   { id: 'economy', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Economy', label: 'Economy & Shop', emoji: 'coins', commands: [
     "`!balance / !bal [@user]` - View wallet, vault reserves, and net worth `[Public]`",
@@ -2359,9 +2358,9 @@ export const helpModules = [
     "`!shop remove <itemId>` - Purge item from catalog `[Extra Owner]`",
     "",
     "-# **__Commerce & Minigames Architecture:__**",
-    "-# • Persistent ledger stored in SQLite & synchronized with Discord Cloud Backups.",
-    "-# • Interactive casino buttons engineered via Discord Components V2 with instant balance reconciliation.",
-    "-# • Roles purchased via shop are fulfilled and audited instantly by Role ID."
+    "-# ${BULLET_EMOJI} Persistent ledger stored in SQLite & synchronized with Discord Cloud Backups.",
+    "-# ${BULLET_EMOJI} Interactive casino buttons engineered via Discord Components V2 with instant balance reconciliation.",
+    "-# ${BULLET_EMOJI} Roles purchased via shop are fulfilled and audited instantly by Role ID."
   ] },
   { id: 'voice', category: 'VOICE & MEDIA', shortLabel: 'Voice', label: 'Voice Utilities', emoji: 'voice', commands: [
     "`!tts` - Interactive AI & Celebrity TTS Control Center `[Public]`",
@@ -2440,30 +2439,30 @@ export const helpModules = [
     "`!help chess / /help chess` - Open the interactive Grandmaster Chess Engine Matrix dashboard `[Public]`",
     "",
     "-# **__Grandmaster Chess Engine Matrix (11 Engines & Personalities):__**",
-    "-# • **__Stockfish 16.1 (Ultra GM • 3550 ELO):__** The peak of open-source calculation at depth 15 with razor-sharp tactical lines.",
-    "-# • **__Mittens 🐾 (Menace Cat • 3600+ ELO):__** Chess.com's sinister cat bot that consumes all human hope with terrifying quotes on every move.",
-    "-# • **__AlphaZero (DeepMind • 3500 ELO):__** Groundbreaking neural network known for intuitive piece sacrifices and dynamic piece activity.",
-    "-# • **__Torch 1.0 (Chess.com • 3420 ELO):__** Aggressive king-hunting engine launching relentless central breakthroughs.",
-    "-# • **__Leela Chess Zero (LCZero • 3450 ELO):__** Open-source deep reinforcement learning neural net with suffocating positional squeeze.",
-    "-# • **__Stockfish 15 (Grandmaster • 3200 ELO):__** Classic high-speed NNUE engine calculating razor-sharp lines at depth 12.",
-    "-# • **__Komodo Dragon 3.3 (World Champ • 3350 ELO):__** Former computer world champion blending positional mastery with dynamic counterplay.",
-    "-# • **__Magnus Carlsen AI (Champion • 2882 ELO):__** Emulates the GOAT's legendary endgame grinding and zero-counterplay squeeze.",
-    "-# • **__Hikaru Nakamura AI (Blitz King • 2875 ELO):__** Lightning-fast tactical fireworks, sharp speed-chess complications and venomous attacks.",
-    "-# • **__Stockfish 11 (Master • 2500 ELO):__** Accessible club-level classical engine for competitive practice.",
-    "-# • **__Martin (Chess.com Coach • 250 ELO):__** Beloved goofy dad bot with a 65% blunder rate, friendly dad jokes and chaotic moves.",
+    "-# ${BULLET_EMOJI} **__Stockfish 16.1 (Ultra GM • 3550 ELO):__** The peak of open-source calculation at depth 15 with razor-sharp tactical lines.",
+    "-# ${BULLET_EMOJI} **__Mittens 🐾 (Menace Cat • 3600+ ELO):__** Chess.com's sinister cat bot that consumes all human hope with terrifying quotes on every move.",
+    "-# ${BULLET_EMOJI} **__AlphaZero (DeepMind • 3500 ELO):__** Groundbreaking neural network known for intuitive piece sacrifices and dynamic piece activity.",
+    "-# ${BULLET_EMOJI} **__Torch 1.0 (Chess.com • 3420 ELO):__** Aggressive king-hunting engine launching relentless central breakthroughs.",
+    "-# ${BULLET_EMOJI} **__Leela Chess Zero (LCZero • 3450 ELO):__** Open-source deep reinforcement learning neural net with suffocating positional squeeze.",
+    "-# ${BULLET_EMOJI} **__Stockfish 15 (Grandmaster • 3200 ELO):__** Classic high-speed NNUE engine calculating razor-sharp lines at depth 12.",
+    "-# ${BULLET_EMOJI} **__Komodo Dragon 3.3 (World Champ • 3350 ELO):__** Former computer world champion blending positional mastery with dynamic counterplay.",
+    "-# ${BULLET_EMOJI} **__Magnus Carlsen AI (Champion • 2882 ELO):__** Emulates the GOAT's legendary endgame grinding and zero-counterplay squeeze.",
+    "-# ${BULLET_EMOJI} **__Hikaru Nakamura AI (Blitz King • 2875 ELO):__** Lightning-fast tactical fireworks, sharp speed-chess complications and venomous attacks.",
+    "-# ${BULLET_EMOJI} **__Stockfish 11 (Master • 2500 ELO):__** Accessible club-level classical engine for competitive practice.",
+    "-# ${BULLET_EMOJI} **__Martin (Chess.com Coach • 250 ELO):__** Beloved goofy dad bot with a 65% blunder rate, friendly dad jokes and chaotic moves.",
     "",
     "-# **__Interactive Engine Selector Dropdown (`!chess engine` / `!chess bot`):__**",
-    "-# • Launch the interactive Discord Components V2 dropdown menu to switch the active engine for the server on the fly `[Public]`.",
+    "-# ${BULLET_EMOJI} Launch the interactive Discord Components V2 dropdown menu to switch the active engine for the server on the fly `[Public]`.",
     "",
     "-# **__How to Play & Move Syntax:__**",
-    "-# • **__Direct Challenge:__** Type `!chess ai <bot>` (e.g. `!chess ai mittens`, `!chess ai torch`, `!chess ai alphazero`, `!chess ai martin`).",
-    "-# • **__Move Syntax in Chat:__** When it is your turn, type your move directly in chat:",
+    "-# ${BULLET_EMOJI} **__Direct Challenge:__** Type `!chess ai <bot>` (e.g. `!chess ai mittens`, `!chess ai torch`, `!chess ai alphazero`, `!chess ai martin`).",
+    "-# ${BULLET_EMOJI} **__Move Syntax in Chat:__** When it is your turn, type your move directly in chat:",
     "-#   - Standard Algebraic: `e4`, `Nf3`, `Bc4`, `Qxd5+`",
     "-#   - UCI Notation: `e2e4`, `g1f3`, `b8c6`",
     "-#   - Pawn Promotions: `e8=Q` or shorthand `e8q`, `e7e8q`",
     "-#   - Castling: `O-O` (Kingside) or `O-O-O` (Queenside)",
-    "-# • **__Zero-Latency Minimax Fallback:__** If the cloud engine times out, local alpha-beta minimax responds in <1ms without move rollbacks.",
-    "-# • **__100% Public Access:__** All chess commands, engine selections, and matches are completely public for all server members!"
+    "-# ${BULLET_EMOJI} **__Zero-Latency Minimax Fallback:__** If the cloud engine times out, local alpha-beta minimax responds in <1ms without move rollbacks.",
+    "-# ${BULLET_EMOJI} **__100% Public Access:__** All chess commands, engine selections, and matches are completely public for all server members!"
   ] },
 
   { id: 'nifty', category: 'STOCK & MARKET INTELLIGENCE', shortLabel: 'Indian Mkts', label: 'Indian Benchmarks (NIFTY 50)', emoji: 'finance', commands: [
@@ -2673,7 +2672,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
             let underlined = cleaned
               .replace(/__\*\*([^*_]+)\*\*__/g, '**__$1__**')
               .replace(/\*\*(?!__)(.*?)(?<!__)\*\*/g, '**__$1__**');
-            line = `-# • ${underlined}`;
+            line = `-# ${BULLET_EMOJI} ${underlined}`;
           } else {
             line = `> **${formatted}**`;
           }
@@ -3140,12 +3139,12 @@ commands.push({
       {
         type: 10,
         content: '### • Core Features\n' +
-                 '-# • **__Anti-Nuke Engine:__** **A predictive, zero-tolerance firewall that neutralizes structural threats in milliseconds and autonomously reconstructs deleted channels, roles, and server hierarchies via intelligent caching.**\n' +
-                 '-# • **__Dynamic Voice Infrastructure:__** **An auto-scaling Join-To-Create (JTC) architecture equipped with granular, real-time control panels.**\n' +
-                 '-# • **__Advanced Threat Firewall:__** **Heuristic anti-spam filtering, real-time malicious link scanning, and predictive quarantine protocols.**\n' +
-                 '-# • **__Zero-Trust Verification Gateway:__** **A strict, automated access-control layer that dynamically audits Discord Onboarding configurations and strips bypassing permissions to prevent unauthorized infiltration.**\n' +
-                 '-# • **__Asynchronous Ticket Matrix:__** **A highly-concurrent, transcript-generating support infrastructure built directly onto Discord\'s raw interaction API for seamless multi-channel thread management.**\n' +
-                 '-# • **__Omniscient Audit Telemetry:__** **A deeply-integrated logging engine that intercepts, parses, and permanently archives server mutations, deleted messages, and role hierarchy alterations.**'
+                 '-# ${BULLET_EMOJI} **__Anti-Nuke Engine:__** **A predictive, zero-tolerance firewall that neutralizes structural threats in milliseconds and autonomously reconstructs deleted channels, roles, and server hierarchies via intelligent caching.**\n' +
+                 '-# ${BULLET_EMOJI} **__Dynamic Voice Infrastructure:__** **An auto-scaling Join-To-Create (JTC) architecture equipped with granular, real-time control panels.**\n' +
+                 '-# ${BULLET_EMOJI} **__Advanced Threat Firewall:__** **Heuristic anti-spam filtering, real-time malicious link scanning, and predictive quarantine protocols.**\n' +
+                 '-# ${BULLET_EMOJI} **__Zero-Trust Verification Gateway:__** **A strict, automated access-control layer that dynamically audits Discord Onboarding configurations and strips bypassing permissions to prevent unauthorized infiltration.**\n' +
+                 '-# ${BULLET_EMOJI} **__Asynchronous Ticket Matrix:__** **A highly-concurrent, transcript-generating support infrastructure built directly onto Discord\'s raw interaction API for seamless multi-channel thread management.**\n' +
+                 '-# ${BULLET_EMOJI} **__Omniscient Audit Telemetry:__** **A deeply-integrated logging engine that intercepts, parses, and permanently archives server mutations, deleted messages, and role hierarchy alterations.**'
       },
       { type: 14, divider: true },
       {

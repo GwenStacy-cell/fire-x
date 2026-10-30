@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from './emojis.js';
 import { PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import { generateAIResponse, formatAIToGreyMarkdown } from './ai.js';
@@ -297,7 +298,7 @@ async function dispatchFlawAlert(guild, entry, diagnosis) {
             components: [
               {
                 type: 10,
-                content: `# Emergency Antinuke Flaw Alert | ${TICK}\n` +
+                content: `# ${getRandomHeadingGlyph()} Emergency Antinuke Flaw Alert | ${TICK}\n` +
                          `> -# <a:uptime:1552608831060844575> **Server:** **${guild.name}**\n` +
                          `> -# <a:uptime:1552608831060844575> **Hostile Actor:** <@${entry.executorId}> (\`${entry.executorTag}\`) ${entry.isBot ? '`[BOT]`' : '`[USER]`'}\n` +
                          `> -# <a:uptime:1552608831060844575> **Attack Event:** \`${entry.eventType}\`\n\n` +
@@ -367,7 +368,7 @@ export function buildFlawAlertContainer(guild, entry, diagnosis) {
         components: [
           {
             type: 10,
-            content: `# Antinuke Defense Flaw Detected | ${TICK}\n` +
+            content: `# ${getRandomHeadingGlyph()} Antinuke Defense Flaw Detected | ${TICK}\n` +
                      `> ${UPTIME} **Incident Logged:** <t:${ts}:R> | **Server:** **${guild.name}**\n` +
                      `> -# Athena Prime intercepted a hostile action, but encountered execution friction.`
           },
@@ -432,7 +433,7 @@ export function buildFlawsReportContainer(guild, prefix = '!') {
           components: [
             {
               type: 10,
-              content: `# Defense Flaws & Failures Registry | ${TICK}\n` +
+              content: `# ${getRandomHeadingGlyph()} Defense Flaws & Failures Registry | ${TICK}\n` +
                        `> ${UPTIME} **Zero Unresolved Defense Flaws Detected!**\n` +
                        `> -# Athena Prime has successfully neutralized all recorded attacks without encountering hierarchy or permission resistance.`
             },
@@ -473,10 +474,10 @@ export function buildFlawsReportContainer(guild, prefix = '!') {
     const fixText = (f.flawFix || 'Move Athena to top of roles.').split('\n')[0];
 
     return `**${idx + 1}. ${f.flawType || 'EXECUTION_FLAW'} — ${f.eventType}** (${ts})\n` +
-           `-# • **Hostile Actor:** ${actor}\n` +
-           `-# • **Verdict:** \`${f.verdict}\`\n` +
-           `-# • **Root Cause:** ${f.flawReason || 'Execution blocked by Discord API hierarchy.'}\n` +
-           `-# • **Remedy:** **${fixText}**`;
+           `-# ${BULLET_EMOJI} **Hostile Actor:** ${actor}\n` +
+           `-# ${BULLET_EMOJI} **Verdict:** \`${f.verdict}\`\n` +
+           `-# ${BULLET_EMOJI} **Root Cause:** ${f.flawReason || 'Execution blocked by Discord API hierarchy.'}\n` +
+           `-# ${BULLET_EMOJI} **Remedy:** **${fixText}**`;
   }).join('\n\n');
 
   return {
@@ -486,7 +487,7 @@ export function buildFlawsReportContainer(guild, prefix = '!') {
         components: [
           {
             type: 10,
-            content: `# Defense Flaws & Failures Registry | ${TICK}\n` +
+            content: `# ${getRandomHeadingGlyph()} Defense Flaws & Failures Registry | ${TICK}\n` +
                      `> -# Showing the **${recentFlaws.length}** most recent recorded execution flaws and block failures for **${guild.name}**:`
           },
           { type: 14, divider: true },
@@ -530,7 +531,7 @@ export async function buildServerFixContainer(guild, prefix = '!') {
           components: [
             {
               type: 10,
-              content: `# Server Hardening Audit & Hierarchy Verification | ${TICK}\n` +
+              content: `# ${getRandomHeadingGlyph()} Server Hardening Audit & Hierarchy Verification | ${TICK}\n` +
                        `> ${UPTIME} **No Structural Antinuke Vulnerabilities Detected!**\n` +
                        `> -# Athena Prime has full permission supremacy and role elevation across **${guild.name}**.`
             },
@@ -568,7 +569,7 @@ export async function buildServerFixContainer(guild, prefix = '!') {
     return `### ${i + 1}. ${f.title}\n` +
            `> **Identified Flaw:** ${f.reason}\n` +
            `> **Step-by-Step Fix:**\n` +
-           f.fix.split('\n').map(l => `> • ${l}`).join('\n');
+           f.fix.split('\n').map(l => `> ${BULLET_EMOJI} ${l}`).join('\n');
   }).join('\n\n');
 
   return {
@@ -578,7 +579,7 @@ export async function buildServerFixContainer(guild, prefix = '!') {
         components: [
           {
             type: 10,
-            content: `# Server Hardening Audit & Structural Flaws | ${TICK}\n` +
+            content: `# ${getRandomHeadingGlyph()} Server Hardening Audit & Structural Flaws | ${TICK}\n` +
                      `> -# Athena detected **${flaws.length}** structural security flaws that could prevent attacks from being blocked:`
           },
           { type: 14, divider: true },
@@ -624,7 +625,7 @@ export async function buildAIAnalysisContainer(guild, signatureId, prefix = '!')
           components: [
             {
               type: 10,
-              content: `# Neural AI Threat Autopsy | ${TICK}\n` +
+              content: `# ${getRandomHeadingGlyph()} Neural AI Threat Autopsy | ${TICK}\n` +
                        `> ${OFF} **No threat signatures recorded yet.**\n` +
                        `> -# Run attacks or baseline scans to generate telemetry for Lambda AI analysis.`
             },
@@ -658,7 +659,7 @@ export async function buildAIAnalysisContainer(guild, signatureId, prefix = '!')
         components: [
           {
             type: 10,
-            content: `# Lambda Neural AI Threat Autopsy | ${TICK}\n` +
+            content: `# ${getRandomHeadingGlyph()} Lambda Neural AI Threat Autopsy | ${TICK}\n` +
                      `> ${UPTIME} **Signature ID:** \`${target.id}\` | **Recorded:** ${ts}\n` +
                      `> -# Powered by Google Gemini 3.8 Flash High Intelligence Pipeline & Lambda Security Engine.`
           },

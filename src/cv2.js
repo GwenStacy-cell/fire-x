@@ -5,7 +5,8 @@ import {
   WARN_EMOJI, 
   BULLET_EMOJI, 
   LEGACY_TICK, 
-  getRandomHeadingGlyph 
+  getRandomHeadingGlyph,
+  hasHeadingGlyphStart
 } from './utils/emojis.js';
 
 export { TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, BULLET_EMOJI };
@@ -274,6 +275,26 @@ export function sanitizeCV2Payload(payload, maxLimit = 3800) {
 
   for (const c of rootComps) {
     collect(c);
+  }
+
+  for (const c of textComps) {
+    if (typeof c.content === 'string') {
+      c.content = c.content.replaceAll(LEGACY_TICK, TICK_EMOJI);
+      c.content = c.content.replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
+
+      if (c.content.startsWith('## ') || c.content.startsWith('> ## ') || c.content.startsWith('> # ')) {
+        let clean = c.content.replace(/^[>#\s]+/, '').trim();
+        if (!hasHeadingGlyphStart(clean)) {
+          clean = `${getRandomHeadingGlyph()} ${clean}`;
+        }
+        c.content = `# ${clean}`;
+      } else if (c.content.startsWith('# ')) {
+        let clean = c.content.slice(2).trim();
+        if (!hasHeadingGlyphStart(clean)) {
+          c.content = `# ${getRandomHeadingGlyph()} ${clean}`;
+        }
+      }
+    }
   }
 
   let totalLength = textComps.reduce((sum, c) => sum + c.content.length, 0);

@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from './emojis.js';
 import db from '../database.js';
 import { cleanDisplayName } from './helpers.js';
 
@@ -33,7 +34,7 @@ export async function postGlobalActionLog(client, opts) {
     components: [
       {
         type: 10,
-        content: `## **GLOBAL ACTION LOG — ${action}**`
+        content: `# ${getRandomHeadingGlyph()} **GLOBAL ACTION LOG — ${action}**`
       },
       { type: 14, divider: true },
       {

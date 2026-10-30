@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { 
   ActionRowBuilder, 
   ButtonBuilder, 
@@ -37,8 +38,7 @@ export const commands = [
 
         const headerSection = {
           type: 9,
-          components: [{ type: 10, content:
-            `## **Server Owner Voice | Control Panel**\n` +
+          components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **Server Owner Voice | Control Panel**\n` +
             `-# **Server Owner:** <@${message.guild.ownerId}> | **Channel:** <#${voiceChannel.id}>\n` +
             `-# **Connected Members (${currentMembers.size}):** ${connectedTags}`
           }],

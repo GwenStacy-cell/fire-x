@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, TextDisplayBuilder, ContainerBuilder, MessageFlags, SectionBuilder, ThumbnailBuilder, Routes } from 'discord.js';
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs/promises';
@@ -1965,7 +1966,7 @@ export const commands = [
           components: [{
             type: 17,
             components: [
-              { type: 10, content: `## Onboarding Sentinel Audit | <a:03_tick_circle:1565665642084827206>` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Onboarding Sentinel Audit | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -1986,7 +1987,7 @@ export const commands = [
           components: [{
             type: 17,
             components: [
-              { type: 10, content: `## Onboarding Security Status | <a:03_tick_circle:1565665642084827206>` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Onboarding Security Status | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -2015,7 +2016,7 @@ export const commands = [
         components: [{
           type: 17,
           components: [
-            { type: 10, content: `## Onboarding Exploit Neutralized | <a:03_tick_circle:1565665642084827206>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Onboarding Exploit Neutralized | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -2023,9 +2024,9 @@ export const commands = [
                 `> -# **Scan Summary:** Neutralized \`${result.neutralizedCount}\` dangerous role(s) attached to Discord Onboarding.\n\n` +
                 `> -# **Neutralized Roles:**\n${roleSummaries}\n\n` +
                 `> -# **Countermeasures Applied:**\n` +
-                `-# • **Permissions Disarmed:** Critical destructive privileges removed from the role.\n` +
-                `-# • **Prompts Sanitized:** Excised role options via Discord Onboarding API.\n` +
-                `-# • **Member Access Revoked:** Unauthorized holders stripped and isolated in Quarantine.`
+                `-# ${BULLET_EMOJI} **Permissions Disarmed:** Critical destructive privileges removed from the role.\n` +
+                `-# ${BULLET_EMOJI} **Prompts Sanitized:** Excised role options via Discord Onboarding API.\n` +
+                `-# ${BULLET_EMOJI} **Member Access Revoked:** Unauthorized holders stripped and isolated in Quarantine.`
             },
             { type: 14, divider: true },
             { type: 10, content: `-# **Athena Prime Zero-Trust Protection Active**` }
@@ -2810,17 +2811,17 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
           type: 12,
           items: [{ media: { url: 'attachment://emergency_banner.gif' } }]
         }] : []),
-        { type: 10, content: `## Emergency Blackout Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Emergency Blackout Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
           content:
             `### **Maximum Threat Containment Active**\n` +
-            `> -# \u2022 **Channels Hidden:** \`${cCount} / ${channelsToModify.length}\` channels secured\n` +
-            `> -# \u2022 **Roles Stripped:** \`${rCount} / ${rolesToModify.length}\` roles neutralized\n` +
-            `> -# \u2022 **Pre-Emergency State:** Saved securely in database snapshot\n` +
-            `> -# \u2022 **Tactical Audio Briefing:** ${vcDispatched ? `Broadcast live in <#${moderator.voice?.channel?.id}>` : audioAttachment ? 'Audio briefing generated (attached below)' : 'Synthesizer online'}\n` +
-            `> -# \u2022 **Quick Recovery:** Click **End Emergency / Restore Server** below or type \`!unpanic\`.${errorWarning}`
+            `> -# ${BULLET_EMOJI} **Channels Hidden:** \`${cCount} / ${channelsToModify.length}\` channels secured\n` +
+            `> -# ${BULLET_EMOJI} **Roles Stripped:** \`${rCount} / ${rolesToModify.length}\` roles neutralized\n` +
+            `> -# ${BULLET_EMOJI} **Pre-Emergency State:** Saved securely in database snapshot\n` +
+            `> -# ${BULLET_EMOJI} **Tactical Audio Briefing:** ${vcDispatched ? `Broadcast live in <#${moderator.voice?.channel?.id}>` : audioAttachment ? 'Audio briefing generated (attached below)' : 'Synthesizer online'}\n` +
+            `> -# ${BULLET_EMOJI} **Quick Recovery:** Click **End Emergency / Restore Server** below or type \`!unpanic\`.${errorWarning}`
         },
         { type: 14, divider: true },
         { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Emergency Protocol**` }
@@ -2950,17 +2951,17 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
           type: 12,
           items: [{ media: { url: 'attachment://emergency_end_banner.gif' } }]
         }] : []),
-        { type: 10, content: `## Emergency Mode Resolved | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Emergency Mode Resolved | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
           content:
             `### **Normal Operations Fully Restored**\n` +
-            `> -# \u2022 **Channels Restored:** \`${channelsRestored} / ${savedState.channels?.length || 0}\` channels\n` +
-            `> -# \u2022 **Roles Restored:** \`${rolesRestored} / ${savedState.roles?.length || 0}\` roles\n` +
-            `> -# \u2022 **Permission Bitmasks:** Synchronized from pre-emergency snapshot\n` +
-            `> -# \u2022 **Tactical Audio Briefing:** ${vcDispatched ? `Broadcast live in <#${moderator.voice?.channel?.id}>` : audioAttachment ? 'Audio briefing generated (attached below)' : 'Synthesizer online'}\n` +
-            `> -# \u2022 **Database Memory:** Emergency snapshot cleanly flushed.`
+            `> -# ${BULLET_EMOJI} **Channels Restored:** \`${channelsRestored} / ${savedState.channels?.length || 0}\` channels\n` +
+            `> -# ${BULLET_EMOJI} **Roles Restored:** \`${rolesRestored} / ${savedState.roles?.length || 0}\` roles\n` +
+            `> -# ${BULLET_EMOJI} **Permission Bitmasks:** Synchronized from pre-emergency snapshot\n` +
+            `> -# ${BULLET_EMOJI} **Tactical Audio Briefing:** ${vcDispatched ? `Broadcast live in <#${moderator.voice?.channel?.id}>` : audioAttachment ? 'Audio briefing generated (attached below)' : 'Synthesizer online'}\n` +
+            `> -# ${BULLET_EMOJI} **Database Memory:** Emergency snapshot cleanly flushed.`
         },
         { type: 14, divider: true },
         { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Operations Restored**` }
@@ -3131,9 +3132,9 @@ async function handleLockdown(guild, channel, moderator, mode) {
       const lockEmbed = cv2.danger(
         'Channel Lockdown Activated', 
         `<a:uptime:1552608831060844575> This channel has been placed under administrative lockdown by **${moderator.user?.tag || moderator.tag}**.\n` +
-        `> -# \u2022 **Channel:** <#${channel.id}>\n` +
-        `> -# \u2022 **Status:** Writing & reactions restricted across all member roles.\n` +
-        `> -# \u2022 **Restoration:** Type \`!unlock\` or \`!lockdown channel\` to lift.`
+        `> -# ${BULLET_EMOJI} **Channel:** <#${channel.id}>\n` +
+        `> -# ${BULLET_EMOJI} **Status:** Writing & reactions restricted across all member roles.\n` +
+        `> -# ${BULLET_EMOJI} **Restoration:** Type \`!unlock\` or \`!lockdown channel\` to lift.`
       );
       logToSecurityChannel(guild, cv2.log('Channel Locked', `Moderator **${moderator.user?.tag || moderator.tag}** [${modTier}] locked down channel <#${channel.id}>. Non-staff role overwrites neutralized.`, [], 'warning'));
       return lockEmbed;
@@ -3164,8 +3165,8 @@ async function handleLockdown(guild, channel, moderator, mode) {
       const unlockEmbed = cv2.success(
         'Channel Lockdown Deactivated', 
         `<a:uptime:1552608831060844575> Channel lockdown has been lifted by **${moderator.user?.tag || moderator.tag}**.\n` +
-        `> -# \u2022 **Channel:** <#${channel.id}>\n` +
-        `> -# \u2022 **Status:** Member speaking/writing permissions fully restored from pre-lockdown state.`
+        `> -# ${BULLET_EMOJI} **Channel:** <#${channel.id}>\n` +
+        `> -# ${BULLET_EMOJI} **Status:** Member speaking/writing permissions fully restored from pre-lockdown state.`
       );
       logToSecurityChannel(guild, cv2.log('Channel Unlocked', `Moderator **${moderator.user?.tag || moderator.tag}** [${modTier}] unlocked channel <#${channel.id}>. Pre-lockdown permissions restored.`, [], 'success'));
       return unlockEmbed;
@@ -3410,18 +3411,18 @@ export async function handlePanicLockdown(guild, moderator, tier = '1', updatePr
         type: 12,
         items: [{ media: { url: 'attachment://lockdown_banner.gif' } }]
       }] : []),
-      { type: 10, content: `## Emergency Panic Lockdown Engaged | <a:03_tick_circle:1565665642084827206>` },
+      { type: 10, content: `# ${getRandomHeadingGlyph()} Emergency Panic Lockdown Engaged | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
         type: 10,
         content:
           `### **${tierLabel} Deployed Instantly**\n` +
-          `> -# \u2022 **Channels Affected:** \`${modifiedCount} / ${modifiedChannels.length}\` channels secured\n` +
-          `> -# \u2022 **State Snapshot:** Pre-lockdown permissions securely persisted to database\n` +
-          `> -# \u2022 **Verification Level:** ${verifElevated ? '`Very High (Phone Required)`' : '`Preserved`'}\n` +
-          `> -# \u2022 **Raid Shield:** ${tierNum >= 2 ? '`Active (Auto-quarantine joiners)`' : '`Standby`'}\n` +
-          `> -# \u2022 **Tactical Audio Briefing:** ${vcDispatched ? `Broadcast live in <#${moderator.voice?.channel?.id}>` : audioAttachment ? 'Audio briefing generated (attached below)' : 'Synthesizer online'}\n` +
-          `> -# \u2022 **Quick Recovery:** Click **Lift Lockdown / Restore** below or type \`!unlockdown\` to recover exact permissions.`
+          `> -# ${BULLET_EMOJI} **Channels Affected:** \`${modifiedCount} / ${modifiedChannels.length}\` channels secured\n` +
+          `> -# ${BULLET_EMOJI} **State Snapshot:** Pre-lockdown permissions securely persisted to database\n` +
+          `> -# ${BULLET_EMOJI} **Verification Level:** ${verifElevated ? '`Very High (Phone Required)`' : '`Preserved`'}\n` +
+          `> -# ${BULLET_EMOJI} **Raid Shield:** ${tierNum >= 2 ? '`Active (Auto-quarantine joiners)`' : '`Standby`'}\n` +
+          `> -# ${BULLET_EMOJI} **Tactical Audio Briefing:** ${vcDispatched ? `Broadcast live in <#${moderator.voice?.channel?.id}>` : audioAttachment ? 'Audio briefing generated (attached below)' : 'Synthesizer online'}\n` +
+          `> -# ${BULLET_EMOJI} **Quick Recovery:** Click **Lift Lockdown / Restore** below or type \`!unlockdown\` to recover exact permissions.`
       },
       { type: 14, divider: true },
       { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Panic Lockdown**` }
@@ -3558,17 +3559,17 @@ export async function handleUnlockdown(guild, moderator, updateProgress) {
         type: 12,
         items: [{ media: { url: 'attachment://unlockdown_banner.gif' } }]
       }] : []),
-      { type: 10, content: `## Server Lockdown Lifted | <a:03_tick_circle:1565665642084827206>` },
+      { type: 10, content: `# ${getRandomHeadingGlyph()} Server Lockdown Lifted | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
         type: 10,
         content:
           `### **Permissions Fully Synchronized**\n` +
-          `> -# \u2022 **Channels Restored:** \`${restoredCount} / ${snapshot.channels.length}\` channels\n` +
-          `> -# \u2022 **Original Permissions:** Bitmasks fully synchronized from DB snapshot\n` +
-          `> -# \u2022 **Raid Shield:** Reverted to pre-lockdown state\n` +
-          `> -# \u2022 **Tactical Audio Briefing:** ${vcDispatched ? `Broadcast live in <#${moderator.voice?.channel?.id}>` : audioAttachment ? 'Audio briefing generated (attached below)' : 'Synthesizer online'}\n` +
-          `> -# \u2022 **Snapshot:** Flushed cleanly from database memory.`
+          `> -# ${BULLET_EMOJI} **Channels Restored:** \`${restoredCount} / ${snapshot.channels.length}\` channels\n` +
+          `> -# ${BULLET_EMOJI} **Original Permissions:** Bitmasks fully synchronized from DB snapshot\n` +
+          `> -# ${BULLET_EMOJI} **Raid Shield:** Reverted to pre-lockdown state\n` +
+          `> -# ${BULLET_EMOJI} **Tactical Audio Briefing:** ${vcDispatched ? `Broadcast live in <#${moderator.voice?.channel?.id}>` : audioAttachment ? 'Audio briefing generated (attached below)' : 'Synthesizer online'}\n` +
+          `> -# ${BULLET_EMOJI} **Snapshot:** Flushed cleanly from database memory.`
       },
       { type: 14, divider: true },
       { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Operations Restored**` }
@@ -3628,7 +3629,7 @@ async function buildRaidModeStatusPanel(guild) {
             type: 12,
             items: [{ media: { url: 'attachment://raid_banner.gif' } }]
           },
-          { type: 10, content: `## Server Raid Defense Matrix | <a:uptime:1552608831060844575>` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} Server Raid Defense Matrix | <a:uptime:1552608831060844575>` },
           { type: 14, divider: true },
           {
             type: 10,
@@ -3694,7 +3695,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Raid Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Raid Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3716,7 +3717,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
         {
           type: 17,
           components: [
-            { type: 10, content: `## Raid Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Raid Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -3765,7 +3766,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Raid Mode Disengaged | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Raid Mode Disengaged | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3786,7 +3787,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
         {
           type: 17,
           components: [
-            { type: 10, content: `## Raid Mode Disengaged | <a:03_tick_circle:1565665642084827206>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Raid Mode Disengaged | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -3813,7 +3814,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Join-Velocity Anti-Raid Shield Enabled | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Join-Velocity Anti-Raid Shield Enabled | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3836,7 +3837,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Join-Velocity Anti-Raid Shield Disabled | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Join-Velocity Anti-Raid Shield Disabled | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3862,7 +3863,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Join Velocity Threshold Updated | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Join Velocity Threshold Updated | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3888,7 +3889,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Join Velocity Window Updated | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Join Velocity Window Updated | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -4060,7 +4061,7 @@ export async function getSecurityHealthPanel(guild) {
             type: 12,
             items: [{ media: { url: 'attachment://health_banner.gif' } }]
           },
-          { type: 10, content: `## Security Diagnostics & Hierarchy Health | <a:03_tick_circle:1565665642084827206>` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} Security Diagnostics & Hierarchy Health | <a:03_tick_circle:1565665642084827206>` },
           { type: 14, divider: true },
           {
             type: 10,
@@ -4187,8 +4188,8 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
   const description = 
     `# WHITELIST ACCESS\n` +
     `-# **${targetName}** (${targetId})\n\n` +
-    `-# • **Authorized Categories:** ${accessProgress} (${enabledCount}/${modulesKeys.length} Whitelisted)\n` +
-    `-# • **Custom Action Limits:** \`${limitText}\`\n\n` +
+    `-# ${BULLET_EMOJI} **Authorized Categories:** ${accessProgress} (${enabledCount}/${modulesKeys.length} Whitelisted)\n` +
+    `-# ${BULLET_EMOJI} **Custom Action Limits:** \`${limitText}\`\n\n` +
     moduleListText;
 
   const panelContainer = {
@@ -4288,8 +4289,8 @@ export async function getWhitelistOverviewPanel(guild) {
   const description = 
     `# WL OVERVIEW\n` +
     `-# **${guild.name} !**\n\n` +
-    `-# • **Whitelist Protection Level:** ${wlProgress} (${totalWl}/25 Trusted)\n` +
-    `-# • **Active Authorizations:** **${userIds.length} Users** • **${roleIds.length} Roles**\n\n` +
+    `-# ${BULLET_EMOJI} **Whitelist Protection Level:** ${wlProgress} (${totalWl}/25 Trusted)\n` +
+    `-# ${BULLET_EMOJI} **Active Authorizations:** **${userIds.length} Users** • **${roleIds.length} Roles**\n\n` +
     `**Users Whitelisted**\n\n` +
     `${usersText}\n\n` +
     `**Roles Whitelisted**\n\n` +
@@ -4473,7 +4474,7 @@ export async function buildAutonickDashboard(guildId, guild = null) {
     components: [
       {
         type: 10,
-        content: `## **__Autonick Manager__**`
+        content: `# ${getRandomHeadingGlyph()} **__Autonick Manager__**`
       },
       { type: 14, divider: true },
       {
@@ -4674,15 +4675,15 @@ export async function getAntinukeConfigPanel(guild) {
   } else if (!meetsHierarchy) {
     description +=
       `-# <a:warning:1540656124313993247> **Hierarchy Requirements Not Met for Anti-Nuke:**\n` +
-      `-# • Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
-      `-# • Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3)'}\n` +
+      `-# ${BULLET_EMOJI} Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
+      `-# ${BULLET_EMOJI} Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3)'}\n` +
       `-# *(Note: Only Bot Owners can bypass these clearance criteria)*\n\n`;
   }
 
   description +=
     `> -# <a:uptime:1552608831060844575> **Architecture Rule:** The 28 modules represent the Anti-Nuke Firewall.\n` +
-    `> -# • **Turning ON:** Arms all 28 modules, generates & binds hidden persistence roles, and snapshots server structure.\n` +
-    `> -# • **Turning OFF:** Deactivates all 28 modules, deletes hidden persistence roles, and suspends all automated security interception.`;
+    `> -# ${BULLET_EMOJI} **Turning ON:** Arms all 28 modules, generates & binds hidden persistence roles, and snapshots server structure.\n` +
+    `> -# ${BULLET_EMOJI} **Turning OFF:** Deactivates all 28 modules, deletes hidden persistence roles, and suspends all automated security interception.`;
 
   const mainDisplay = new TextDisplayBuilder().setContent(description);
   const panelContainer = new ContainerBuilder().addTextDisplayComponents(mainDisplay);
@@ -5030,7 +5031,7 @@ async function getServerInfoEmbed(guild) {
 
   const headerSection = {
     type: 9,
-    components: [{ type: 10, content: `## **${guild.name} — Server Info**\n-# **Comprehensive server statistics and Athena Prime security overview.**` }]
+    components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **${guild.name} — Server Info**\n-# **Comprehensive server statistics and Athena Prime security overview.**` }]
   };
   if (iconUrl) {
     headerSection.accessory = { type: 11, media: { url: iconUrl } };
@@ -5092,7 +5093,7 @@ async function getUserInfoEmbed(guild, member) {
 
   const headerSection = {
     type: 9,
-    components: [{ type: 10, content: `## **User Info — ${member.user.tag}**\n-# **Detailed profile and privilege information.**` }]
+    components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **User Info — ${member.user.tag}**\n-# **Detailed profile and privilege information.**` }]
   };
   if (avatarUrl) {
     headerSection.accessory = { type: 11, media: { url: avatarUrl } };
@@ -5257,11 +5258,11 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
     const textContent =
       `## All Security Shields Disengaged | <a:03_tick_circle:1565665642084827206>\n\n` +
       `> -# <a:uptime:1552608831060844575> All Athena Prime protective shields, persistence roles, and dashboard monitors have been **DEACTIVATED** server-wide.\n\n` +
-      `> -# \u2022 **Antinuke Firewall:** Deactivated (All 28 Modules Disarmed)\n` +
-      `> -# \u2022 **Secondary & Backup Roles:** Deleted from Server\n` +
-      `> -# \u2022 **Security Dashboard:** Removed\n` +
-      `> -# \u2022 **Automated Interception:** Suspended\n` +
-      `> -# \u2022 **Disabled by:** ${moderator}\n\n` +
+      `> -# ${BULLET_EMOJI} **Antinuke Firewall:** Deactivated (All 28 Modules Disarmed)\n` +
+      `> -# ${BULLET_EMOJI} **Secondary & Backup Roles:** Deleted from Server\n` +
+      `> -# ${BULLET_EMOJI} **Security Dashboard:** Removed\n` +
+      `> -# ${BULLET_EMOJI} **Automated Interception:** Suspended\n` +
+      `> -# ${BULLET_EMOJI} **Disabled by:** ${moderator}\n\n` +
       `> -# <a:uptime:1552608831060844575> **Architecture Rule:** When Antinuke Firewall is disabled, all 28 protection modules are disengaged, secondary & hidden persistence roles are removed from the server, and Athena suspends all automated security interception.`;
 
     logToSecurityChannel(guild, cv2.log(
@@ -5341,8 +5342,8 @@ export async function getSecurityStatusPanel(guild) {
   if (!isSecured) {
     if (!meetsHierarchy) {
       listText += `\n> -# <a:warning:1540656124313993247> **Hierarchy Requirements Not Met for Anti-Nuke:**\n` +
-                  `> -# • Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
-                  `> -# • Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3)'}\n` +
+                  `> -# ${BULLET_EMOJI} Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
+                  `> -# ${BULLET_EMOJI} Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3)'}\n` +
                   `> -# **Execute \`!security enable all\` or click \`⚡ Engage All Shields\` once requirements are met. (Bot Owner bypasses all requirements).**`;
     } else {
       listText += "\n> -# <a:warning:1540656124313993247> **Security is currently DISABLED on this server.**\n> -# **Execute `!security enable all` or click `⚡ Engage All Shields` below to arm all 28 modules.**";
@@ -5380,15 +5381,14 @@ export async function getSecurityStatusPanel(guild) {
     animated: true
   });
 
-  const headerSection = { type: 10, content: 
-      `## Security Firewall Status | <a:03_tick_circle:1565665642084827206>\n` +
+  const headerSection = { type: 10, content: `# ${getRandomHeadingGlyph()} Security Firewall Status | <a:03_tick_circle:1565665642084827206>\n` +
       "-# Global Status: " + (isSecured ? "**God-Tier Firewall ACTIVE**" : "Offline \u2014 Unprotected") + "\n" +
-      "-# • **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
-      "-# • **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")") + "\n" +
-      "-# • **Role Position:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : rolePosProgress + " (Pos " + botPos + " / " + maxPos + ")") + "\n" +
-      "-# • **Strike Velocity:** " + (isSecured ? "Ludicrously fast \u2014 **1-3ms execution**" : "Disabled") + "\n" +
-      "-# • **Live Audit Records:** **`" + liveRecords.length + "` threat events neutralized** in real-time\n" +
-      "-# • **Architecture Rule:** The 28 modules represent the Anti-Nuke Firewall. Disabling disarms all 28 modules and deletes persistence roles."
+      "-# ${BULLET_EMOJI} **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
+      "-# ${BULLET_EMOJI} **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")") + "\n" +
+      "-# ${BULLET_EMOJI} **Role Position:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : rolePosProgress + " (Pos " + botPos + " / " + maxPos + ")") + "\n" +
+      "-# ${BULLET_EMOJI} **Strike Velocity:** " + (isSecured ? "Ludicrously fast \u2014 **1-3ms execution**" : "Disabled") + "\n" +
+      "-# ${BULLET_EMOJI} **Live Audit Records:** **`" + liveRecords.length + "` threat events neutralized** in real-time\n" +
+      "-# ${BULLET_EMOJI} **Architecture Rule:** The 28 modules represent the Anti-Nuke Firewall. Disabling disarms all 28 modules and deletes persistence roles."
     };
 
     const detailsSection = { type: 10, content:
@@ -5463,9 +5463,9 @@ export async function getSecurityLiveRecordsPanel(guild, page = 0) {
       const timeStr = r.timestamp ? `<t:${Math.floor(r.timestamp / 1000)}:R>` : 'Just now';
       return (
         `> **#${idx}** • **__${r.eventType}__** • ${timeStr}\n` +
-        `> -# • **Perpetrator:** ${r.executorTag} (\`${r.executorId}\`)\n` +
-        `> -# • **Neutralization:** **${r.verdict}** (\`${r.latencyMs || 1}ms execution\`)\n` +
-        `> -# • **Rollback & Repair:** ${r.rollback || 'Damage prevented'}`
+        `> -# ${BULLET_EMOJI} **Perpetrator:** ${r.executorTag} (\`${r.executorId}\`)\n` +
+        `> -# ${BULLET_EMOJI} **Neutralization:** **${r.verdict}** (\`${r.latencyMs || 1}ms execution\`)\n` +
+        `> -# ${BULLET_EMOJI} **Rollback & Repair:** ${r.rollback || 'Damage prevented'}`
       );
     }).join('\n\n');
   }
@@ -5529,50 +5529,44 @@ export async function getAntinukeArchitecturePanel(guild) {
       { type: 14, divider: true },
       {
         type: 10,
-        content:
-          "## **1. Zero-Delay Pre-Emptive Role Stripping (`guildMemberUpdate.js`)**\n" +
-          "-# • **0ms Strip:** Dangerous roles (`Administrator`, `ManageRoles`, `ManageChannels`, `BanMembers`, `KickMembers`) are stripped at **0 milliseconds** before audit resolution, eliminating race condition windows.\n" +
-          "-# • **Progressive Verification Loop:** Microsecond audit examination (`[0, 40, 100, 250]ms`). If authorized by staff, role is restored; if unauthorized/linked-role exploit, rogue giver is banned and recipient quarantined."
+        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**1. Zero-Delay Pre-Emptive Role Stripping (`guildMemberUpdate.js`)**\n" +
+          "-# ${BULLET_EMOJI} **0ms Strip:** Dangerous roles (`Administrator`, `ManageRoles`, `ManageChannels`, `BanMembers`, `KickMembers`) are stripped at **0 milliseconds** before audit resolution, eliminating race condition windows.\n" +
+          "-# ${BULLET_EMOJI} **Progressive Verification Loop:** Microsecond audit examination (`[0, 40, 100, 250]ms`). If authorized by staff, role is restored; if unauthorized/linked-role exploit, rogue giver is banned and recipient quarantined."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content:
-          "## **2. Gateway Permission Escalation Guard (`roleUpdate.js`)**\n" +
-          "-# • **Trigger:** Detects any role gaining dangerous bitfield permissions or name tampering.\n" +
-          "-# • **Revert & Strike:** Reverts permissions back to safe bitmasks in sub-10ms, vaporizes rogue spam roles, and executes `directStrike` against unauthorized executors."
+        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**2. Gateway Permission Escalation Guard (`roleUpdate.js`)**\n" +
+          "-# ${BULLET_EMOJI} **Trigger:** Detects any role gaining dangerous bitfield permissions or name tampering.\n" +
+          "-# ${BULLET_EMOJI} **Revert & Strike:** Reverts permissions back to safe bitmasks in sub-10ms, vaporizes rogue spam roles, and executes `directStrike` against unauthorized executors."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content:
-          "## **3. Mass Rogue Role & Channel Annihilation (`antinuke.js` & `roleCreate.js`)**\n" +
-          "-# • **Flood Interceptor:** In-flight gateway interceptor vaporizes newly arriving spam channels/roles in sub-5ms during active attacks.\n" +
-          "-# • **Parallel Sweep Workers:** Parallel batch deletions (10 concurrent requests per batch over pre-warmed Undici TLS sockets) eliminate spam entities created in the last 60s.\n" +
-          "-# • **Dual-Strike Pre-Emption:** Stripping roles clears permissions in Discord's cache within 10-15ms, forcing Discord to reject subsequent attack calls with `403 Forbidden`."
+        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**3. Mass Rogue Role & Channel Annihilation (`antinuke.js` & `roleCreate.js`)**\n" +
+          "-# ${BULLET_EMOJI} **Flood Interceptor:** In-flight gateway interceptor vaporizes newly arriving spam channels/roles in sub-5ms during active attacks.\n" +
+          "-# ${BULLET_EMOJI} **Parallel Sweep Workers:** Parallel batch deletions (10 concurrent requests per batch over pre-warmed Undici TLS sockets) eliminate spam entities created in the last 60s.\n" +
+          "-# ${BULLET_EMOJI} **Dual-Strike Pre-Emption:** Stripping roles clears permissions in Discord's cache within 10-15ms, forcing Discord to reject subsequent attack calls with `403 Forbidden`."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content:
-          "## **4. Server Identity Rollback (`guildUpdate.js`)**\n" +
-          "-# • **Vectors Protected:** Server Name, Icon, Banner, Vanity URL, and Verification Level.\n" +
-          "-# • **Self-Healing:** Intercepts unauthorized tampering, strikes the hostile account, and automatically restores original assets from baseline."
+        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**4. Server Identity Rollback (`guildUpdate.js`)**\n" +
+          "-# ${BULLET_EMOJI} **Vectors Protected:** Server Name, Icon, Banner, Vanity URL, and Verification Level.\n" +
+          "-# ${BULLET_EMOJI} **Self-Healing:** Intercepts unauthorized tampering, strikes the hostile account, and automatically restores original assets from baseline."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content:
-          "## **5. Unified Server Raid Defense Matrix (`!raidmode`)**\n" +
-          "-# • **Manual Lockdown (`!raidmode on|off`):** Elevates server verification to VERY HIGH (Phone Required), saves pre-raid baseline, and auto-quarantines joiners.\n" +
-          "-# • **Join-Velocity Auto-Shield (`!raidmode auto on`):** Real-time join velocity tracker. If join bursts breach threshold (default: 8 joins / 5s), automatically engages Raid Mode and Phone Verification without staff intervention required."
+        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**5. Unified Server Raid Defense Matrix (`!raidmode`)**\n" +
+          "-# ${BULLET_EMOJI} **Manual Lockdown (`!raidmode on|off`):** Elevates server verification to VERY HIGH (Phone Required), saves pre-raid baseline, and auto-quarantines joiners.\n" +
+          "-# ${BULLET_EMOJI} **Join-Velocity Auto-Shield (`!raidmode auto on`):** Real-time join velocity tracker. If join bursts breach threshold (default: 8 joins / 5s), automatically engages Raid Mode and Phone Verification without staff intervention required."
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content:
-          "## **6. Diagnostics & Hierarchy Health Audit (`!health` / `!audit`)**\n" +
-          "-# • **Live Audit:** Verifies bot role hierarchy, scans dangerous roles above Athena, checks all 8 core permissions, persistence roles, and measures direct Undici TLS socket latency to Discord API."
+        content: '# ' + getRandomHeadingGlyph() + ' ' + '' + getRandomHeadingGlyph() + ' ' + "**6. Diagnostics & Hierarchy Health Audit (`!health` / `!audit`)**\n" +
+          "-# ${BULLET_EMOJI} **Live Audit:** Verifies bot role hierarchy, scans dangerous roles above Athena, checks all 8 core permissions, persistence roles, and measures direct Undici TLS socket latency to Discord API."
       },
       { type: 14, divider: true },
       {
@@ -5612,9 +5606,9 @@ function formatQuarantineSetupResult(res) {
 
   const fields = [
     { name: 'Quarantine Category', value: res.category ? `\`${res.category.name}\` • ${res.categoryInDb ? 'DB Assigned' : (res.categoryFound ? 'Found in Server' : 'Created')}` : 'None', inline: false },
-    { name: 'Quarantined Role', value: res.role ? `<@&${res.role.id}> • ${res.roleInDb ? 'DB Assigned' : (res.roleFound ? 'Found in Server' : 'Created')}` : 'None', inline: false },
-    { name: 'Quarantine Text', value: res.textChannel ? `<#${res.textChannel.id}> • ${res.textInDb ? (res.textWasUnderCat ? 'DB Assigned & Synced' : 'DB Assigned, Moved & Synced') : (res.textFound ? 'Found & Synced' : 'Created & Synced')}` : 'None', inline: false },
-    { name: 'Quarantine VC', value: res.voiceChannel ? `<#${res.voiceChannel.id}> • ${res.vcInDb ? (res.vcWasUnderCat ? 'DB Assigned & Synced' : 'DB Assigned, Moved & Synced') : (res.vcFound ? 'Found & Synced' : 'Created & Synced')}` : 'None', inline: false },
+    { name: 'Quarantined Role', value: res.role ? `<@&${res.role.id}> ${BULLET_EMOJI} ${res.roleInDb ? 'DB Assigned' : (res.roleFound ? 'Found in Server' : 'Created')}` : 'None', inline: false },
+    { name: 'Quarantine Text', value: res.textChannel ? `<#${res.textChannel.id}> ${BULLET_EMOJI} ${res.textInDb ? (res.textWasUnderCat ? 'DB Assigned & Synced' : 'DB Assigned, Moved & Synced') : (res.textFound ? 'Found & Synced' : 'Created & Synced')}` : 'None', inline: false },
+    { name: 'Quarantine VC', value: res.voiceChannel ? `<#${res.voiceChannel.id}> ${BULLET_EMOJI} ${res.vcInDb ? (res.vcWasUnderCat ? 'DB Assigned & Synced' : 'DB Assigned, Moved & Synced') : (res.vcFound ? 'Found & Synced' : 'Created & Synced')}` : 'None', inline: false },
     { name: 'Channel Protection', value: `\`${res.synced}\` channels isolated`, inline: false }
   ];
 
@@ -5745,7 +5739,7 @@ async function handleQrManager(guild, moderator, action, roleArg, channelArg) {
           type: 12,
           items: [{ media: { url: 'attachment://qr_banner.gif' } }]
         },
-        { type: 10, content: `## Quarantine System Status | <a:uptime:1552608831060844575>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Quarantine System Status | <a:uptime:1552608831060844575>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -6200,7 +6194,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
         components: [
           {
             type: 10,
-            content: `## Athena Prime Defense Matrix Online | <a:03_tick_circle:1565665642084827206>\n-# **Server Security & Antinuke:** \`100% Bulletproof Active\`\n-# **Enforcement Mode:** \`Instant Ban (Threshold 1)\`\n-# **Monitored Vectors:** \`All 28 Antinuke Modules + AI Toxicity/Doxxing Shield\``
+            content: `# ${getRandomHeadingGlyph()} Athena Prime Defense Matrix Online | <a:03_tick_circle:1565665642084827206>\n-# **Server Security & Antinuke:** \`100% Bulletproof Active\`\n-# **Enforcement Mode:** \`Instant Ban (Threshold 1)\`\n-# **Monitored Vectors:** \`All 28 Antinuke Modules + AI Toxicity/Doxxing Shield\``
           }
         ]
       }).catch(() => null);
@@ -6216,8 +6210,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
 export async function getServerSecurityEnabledPanel() {
     const section1 = { 
       type: 10, 
-      content: 
-        `## Server Security Enabled | <a:03_tick_circle:1565665642084827206>\n` +
+      content: `# ${getRandomHeadingGlyph()} Server Security Enabled | <a:03_tick_circle:1565665642084827206>\n` +
         `> -# <a:uptime:1552608831060844575> **When server security is enabled, the following configuration actions are required from Owner / Extra Owners / Whitelisted entities:**` 
     };
 
@@ -6225,8 +6218,8 @@ export async function getServerSecurityEnabledPanel() {
       type: 10, 
       content:
         `### **Active Anti-Exploit Protections:**\n` +
-        `> -# • **Real-Time Role Interceptor (\`guildMemberUpdate.js\`):** Intercepts unauthorized gaining of Administrator/dangerous roles, cross-examining 60s audit logs, stripping roles, disarming dangerous permissions, and quarantining the user.\n` +
-        `> -# • **Join-Time & Onboarding Guard (\`guildMemberAdd.js\` & \`onboardingGuard.js\`):** Neutralizes Discord Onboarding & pre-linked role exploits with Administrator, Manage Server, Manage Roles, Ban Members, etc. by disarming permissions, scrubbing prompts, stripping roles, and quarantining accounts.`
+        `> -# ${BULLET_EMOJI} **Real-Time Role Interceptor (\`guildMemberUpdate.js\`):** Intercepts unauthorized gaining of Administrator/dangerous roles, cross-examining 60s audit logs, stripping roles, disarming dangerous permissions, and quarantining the user.\n` +
+        `> -# ${BULLET_EMOJI} **Join-Time & Onboarding Guard (\`guildMemberAdd.js\` & \`onboardingGuard.js\`):** Neutralizes Discord Onboarding & pre-linked role exploits with Administrator, Manage Server, Manage Roles, Ban Members, etc. by disarming permissions, scrubbing prompts, stripping roles, and quarantining accounts.`
     };
 
     const section2 = { 
@@ -6317,7 +6310,7 @@ export async function getSecureDashboardPanel(guild) {
     const card = {
       type: 17,
       components: [
-        { type: 10, content: `## Live Threat & Entity Audit | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} Live Threat & Entity Audit | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         { type: 10, content: text },
         { type: 14, divider: true },
@@ -6484,12 +6477,12 @@ const allMembers = guild.members.cache;
     items: [{ media: { url: 'attachment://scan_banner.gif' } }]
   });
   cv2Components.push({ type: 14, divider: true });
-  cv2Components.push({ type: 10, content: `## **SERVER SECURITY SCANNER**` });
+  cv2Components.push({ type: 10, content: `# ${getRandomHeadingGlyph()} **SERVER SECURITY SCANNER**` });
   cv2Components.push({ type: 14, divider: true });
   
   cv2Components.push({ 
     type: 10, 
-    content: `## **SECURITY DIAGNOSTICS**\n-# • **Verified Bot Armor:** ${botAuditProgress} (${safeBotsCount}/${allBots.size} Safe)\n-# **Total Humans:** \`${allHumans.size}\`\n-# **Total Bots:** \`${allBots.size}\` (Whitelisted: \`${whitelistedBots.length}\` | Unauthorized: \`${unauthorizedBots.length}\`)\n-# **Onboarding Status:** \`${onboardingDangerousRoles.length > 0 ? `${onboardingDangerousRoles.length} Dangerous Roles Detected (Use !neutralizeonboarding)` : 'Clean / Protected'}\`\n-# **Role-Based Invites Status:** \`${dangerousInviteLinks.length > 0 ? `${dangerousInviteLinks.length} Dangerous Role-Bound Invites Detected` : 'Clean / Protected'}\`` 
+    content: `# ${getRandomHeadingGlyph()} **SECURITY DIAGNOSTICS**\n-# ${BULLET_EMOJI} **Verified Bot Armor:** ${botAuditProgress} (${safeBotsCount}/${allBots.size} Safe)\n-# **Total Humans:** \`${allHumans.size}\`\n-# **Total Bots:** \`${allBots.size}\` (Whitelisted: \`${whitelistedBots.length}\` | Unauthorized: \`${unauthorizedBots.length}\`)\n-# **Onboarding Status:** \`${onboardingDangerousRoles.length > 0 ? `${onboardingDangerousRoles.length} Dangerous Roles Detected (Use !neutralizeonboarding)` : 'Clean / Protected'}\`\n-# **Role-Based Invites Status:** \`${dangerousInviteLinks.length > 0 ? `${dangerousInviteLinks.length} Dangerous Role-Bound Invites Detected` : 'Clean / Protected'}\`` 
   });
 
   if (dangerousInviteLinks.length > 0) {
@@ -6727,10 +6720,9 @@ export async function getAutoModPanel(guild) {
 
   panelContainer.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
-  panelContainer.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-    `# AUTOMOD | HEURISTIC FILTERING & SECURITY MATRIX\n` +
+  panelContainer.addTextDisplayComponents(new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} AUTOMOD | HEURISTIC FILTERING & SECURITY MATRIX\n` +
     `**Athena Unbypassable !**\n\n` +
-    `-# • **Heuristic Filter Armor:** ${automodProgress} (${activeFilters}/10 Filters Armed)`
+    `-# ${BULLET_EMOJI} **Heuristic Filter Armor:** ${automodProgress} (${activeFilters}/10 Filters Armed)`
   ));
 
   panelContainer.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
@@ -6847,8 +6839,7 @@ export async function getGranularBypassPanel(guild, roleId) {
 
   const panelContainer = new ContainerBuilder();
 
-  panelContainer.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-    `# AUTOMOD | PRIVILEGE ESCALATION & BYPASS MATRIX\n\n` +
+  panelContainer.addTextDisplayComponents(new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} AUTOMOD | PRIVILEGE ESCALATION & BYPASS MATRIX\n\n` +
     `**Target Role:** <@&${roleId}>\n` +
     `-# ${status('Anti Invite')}\n` +
     `-# ${status('Swear Words')}\n` +
@@ -6918,8 +6909,7 @@ export async function getAdvancedConfigPanel(guild) {
   const honeypotChannel = config.honeypotChannelId ? `<#${config.honeypotChannelId}>` : 'None';
 
   const c = new ContainerBuilder();
-  c.addTextDisplayComponents(new TextDisplayBuilder().setContent(
-    `# AUTOMOD | ADVANCED GLOBAL SETTINGS\n` +
+  c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} AUTOMOD | ADVANCED GLOBAL SETTINGS\n` +
     `-# **| AI Toxicity & Sentiment Shield:** ${config.aiToxicityEnabled ? '<:on:1533844867191406672>' : '<:off:1533844858983157851>'}\n` +
     `-# **| Allow All Links (Global):** ${config.allowAllLinks ? '<:on:1533844867191406672>' : '<:off:1533844858983157851>'}\n` +
     `-# **| Allow Invites (Global):** ${config.allowInvitesGlobally ? '<:on:1533844867191406672>' : '<:off:1533844858983157851>'}\n` +
@@ -6987,7 +6977,7 @@ export async function handleAutonickButton(interaction) {
         components: [
           {
             type: 10,
-            content: `## <:off:1533844858983157851> **__Missing Permissions__**`
+            content: `# ${getRandomHeadingGlyph()} <:off:1533844858983157851> **__Missing Permissions__**`
           },
           { type: 14, divider: true },
           {
@@ -7010,7 +7000,7 @@ export async function handleAutonickButton(interaction) {
       components: [
         {
           type: 10,
-          content: `## <a:loading:1542155051286396938> **__Synchronizing Nicknames...__**`
+          content: `# ${getRandomHeadingGlyph()} <a:loading:1542155051286396938> **__Synchronizing Nicknames...__**`
         },
         { type: 14, divider: true },
         {
@@ -7082,7 +7072,7 @@ export async function handleAutonickButton(interaction) {
         components: [
           {
             type: 10,
-            content: `## <a:uptime:1552608831060844575> **__Nickname Synchronization Complete__**`
+            content: `# ${getRandomHeadingGlyph()} <a:uptime:1552608831060844575> **__Nickname Synchronization Complete__**`
           },
           { type: 14, divider: true },
           {
@@ -7124,7 +7114,7 @@ export async function handleAutonickButton(interaction) {
           components: [
             {
               type: 10,
-              content: `## <a:loading:1542155051286396938> **__Synchronizing Nicknames...__**`
+              content: `# ${getRandomHeadingGlyph()} <a:loading:1542155051286396938> **__Synchronizing Nicknames...__**`
             },
             { type: 14, divider: true },
             {
@@ -7154,7 +7144,7 @@ export async function handleAutonickButton(interaction) {
       components: [
         {
           type: 10,
-          content: `## <a:uptime:1552608831060844575> **__Nickname Synchronization Complete__**`
+          content: `# ${getRandomHeadingGlyph()} <a:uptime:1552608831060844575> **__Nickname Synchronization Complete__**`
         },
         { type: 14, divider: true },
         {
@@ -7182,7 +7172,7 @@ export async function handleAutonickButton(interaction) {
         components: [
           {
             type: 10,
-            content: `## <:off:1533844858983157851> **__Missing Permissions__**`
+            content: `# ${getRandomHeadingGlyph()} <:off:1533844858983157851> **__Missing Permissions__**`
           },
           { type: 14, divider: true },
           {
@@ -7205,7 +7195,7 @@ export async function handleAutonickButton(interaction) {
       components: [
         {
           type: 10,
-          content: `## <a:loading:1542155051286396938> **__Restoring Original Nicknames...__**`
+          content: `# ${getRandomHeadingGlyph()} <a:loading:1542155051286396938> **__Restoring Original Nicknames...__**`
         },
         { type: 14, divider: true },
         {
@@ -7268,7 +7258,7 @@ export async function handleAutonickButton(interaction) {
         components: [
           {
             type: 10,
-            content: `## <a:uptime:1552608831060844575> **__Original Nicknames Restored__**`
+            content: `# ${getRandomHeadingGlyph()} <a:uptime:1552608831060844575> **__Original Nicknames Restored__**`
           },
           { type: 14, divider: true },
           {
@@ -7309,7 +7299,7 @@ export async function handleAutonickButton(interaction) {
           components: [
             {
               type: 10,
-              content: `## <a:loading:1542155051286396938> **__Restoring Original Nicknames...__**`
+              content: `# ${getRandomHeadingGlyph()} <a:loading:1542155051286396938> **__Restoring Original Nicknames...__**`
             },
             { type: 14, divider: true },
             {
@@ -7338,7 +7328,7 @@ export async function handleAutonickButton(interaction) {
       components: [
         {
           type: 10,
-          content: `## <a:uptime:1552608831060844575> **__Original Nicknames Restored__**`
+          content: `# ${getRandomHeadingGlyph()} <a:uptime:1552608831060844575> **__Original Nicknames Restored__**`
         },
         { type: 14, divider: true },
         {
@@ -7424,11 +7414,11 @@ export async function handleHoneypotCommand(guild, moderator, action = 'status',
           components: [
             {
               type: 10,
-              content: `## Honeypot Tripwire Armed | <a:03_tick_circle:1565665642084827206>\n` +
+              content: `# ${getRandomHeadingGlyph()} Honeypot Tripwire Armed | <a:03_tick_circle:1565665642084827206>\n` +
                        `> -# <a:uptime:1552608831060844575> **Tripwire Enforcement:** Active\n` +
-                       `> -# • **Warning:** This channel is an automated Athena Prime security tripwire.\n` +
-                       `> -# • **Consequence:** Any non-whitelisted account that posts or sends any message here will be banned immediately in \`<15ms\`.\n` +
-                       `> -# • **Zero Tolerance:** Bans issued by this tripwire are logged permanently in the Security Black Box.`
+                       `> -# ${BULLET_EMOJI} **Warning:** This channel is an automated Athena Prime security tripwire.\n` +
+                       `> -# ${BULLET_EMOJI} **Consequence:** Any non-whitelisted account that posts or sends any message here will be banned immediately in \`<15ms\`.\n` +
+                       `> -# ${BULLET_EMOJI} **Zero Tolerance:** Bans issued by this tripwire are logged permanently in the Security Black Box.`
             },
             { type: 14, divider: true },
             { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Automated Trap System**` }
@@ -7494,13 +7484,13 @@ export async function getHoneypotStatusPanel(guild, honeypotChannelId, notice = 
         components: [
           {
             type: 10,
-            content: `## Honeypot Raider Sentry | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} Honeypot Raider Sentry | <a:03_tick_circle:1565665642084827206>\n` +
                      noticeBlock +
                      `> -# <a:uptime:1552608831060844575> **Tripwire Status:** ${isArmed ? '`ARMED & MONITORING`' : '`DISARMED`'}\n` +
-                     `> -# • **Active Trap Channel:** ${targetChannel ? `<#${targetChannel.id}> (\`${targetChannel.id}\`)` : '`None`'}\n` +
-                     `> -# • **Neutralization Latency:** \`<15ms\` *(Pre-parsing gateway interceptor)*\n` +
-                     `> -# • **Enforcement Action:** Instant Permanent Ban + Message Vaporization\n` +
-                     `> -# • **Exemptions:** Server Owner, Extra Owners, Bot Owner, and Verified Whitelist`
+                     `> -# ${BULLET_EMOJI} **Active Trap Channel:** ${targetChannel ? `<#${targetChannel.id}> (\`${targetChannel.id}\`)` : '`None`'}\n` +
+                     `> -# ${BULLET_EMOJI} **Neutralization Latency:** \`<15ms\` *(Pre-parsing gateway interceptor)*\n` +
+                     `> -# ${BULLET_EMOJI} **Enforcement Action:** Instant Permanent Ban + Message Vaporization\n` +
+                     `> -# ${BULLET_EMOJI} **Exemptions:** Server Owner, Extra Owners, Bot Owner, and Verified Whitelist`
           },
           { type: 14, divider: true },
           actionRow.toJSON(),
@@ -7562,12 +7552,12 @@ export async function getAntiGhostPingPanel(guild, isEnabledOverride = null) {
         components: [
           {
             type: 10,
-            content: `## Anti-GhostPing Sentry | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} Anti-GhostPing Sentry | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Sentry Status:** ${isEnabled ? '`ACTIVE & MONITORING`' : '`DISABLED`'}\n` +
-                     `> -# • **Detection Vector:** Real-time \`messageDelete\` mention payload audit\n` +
-                     `> -# • **In-Channel Alert:** Public Component V2 card exposing sender, targets & deleted content\n` +
-                     `> -# • **Security Logging:** Simultaneous dispatch to security log channel\n` +
-                     `> -# • **Bot Immunity:** Automatic ignore for bot-initiated mention deletions`
+                     `> -# ${BULLET_EMOJI} **Detection Vector:** Real-time \`messageDelete\` mention payload audit\n` +
+                     `> -# ${BULLET_EMOJI} **In-Channel Alert:** Public Component V2 card exposing sender, targets & deleted content\n` +
+                     `> -# ${BULLET_EMOJI} **Security Logging:** Simultaneous dispatch to security log channel\n` +
+                     `> -# ${BULLET_EMOJI} **Bot Immunity:** Automatic ignore for bot-initiated mention deletions`
           },
           { type: 14, divider: true },
           actionRow.toJSON(),
@@ -7607,7 +7597,7 @@ export async function getQuarantineListPanel(guild, moderator) {
     memberListString = quarantinedMembers.slice(0, 15).map(m => {
       const timerKey = `${guild.id}-${m.id}`;
       const hasTimer = autoUnquarantineTimers.has(timerKey);
-      return `> -# • <@${m.id}> (\`${m.user?.tag || m.id}\`) ${hasTimer ? '*(Auto-Timer Active)*' : '*(Indefinite)*'}`;
+      return `> -# ${BULLET_EMOJI} <@${m.id}> (\`${m.user?.tag || m.id}\`) ${hasTimer ? '*(Auto-Timer Active)*' : '*(Indefinite)*'}`;
     }).join('\n');
     if (count > 15) {
       memberListString += `\n> -# *...and ${count - 15} more quarantined subjects*`;
@@ -7643,10 +7633,10 @@ export async function getQuarantineListPanel(guild, moderator) {
         components: [
           {
             type: 10,
-            content: `## Quarantine Vault Roster | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} Quarantine Vault Roster | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Isolated Subjects:** \`${count}\` member(s)\n` +
-                     `> -# • **Quarantine Role:** ${qRole ? `<@&${qRole.id}>` : '`None`'}\n` +
-                     `> -# • **Vault Isolation Channel:** ${config.quarantineChannelId ? `<#${config.quarantineChannelId}>` : '`Default VC`'}\n\n` +
+                     `> -# ${BULLET_EMOJI} **Quarantine Role:** ${qRole ? `<@&${qRole.id}>` : '`None`'}\n` +
+                     `> -# ${BULLET_EMOJI} **Vault Isolation Channel:** ${config.quarantineChannelId ? `<#${config.quarantineChannelId}>` : '`Default VC`'}\n\n` +
                      `### Quarantined Subjects\n` +
                      memberListString
           },
@@ -7834,11 +7824,11 @@ export async function handleTacticalBriefing(guild, member, channel, targetVc = 
             components: [
               {
                 type: 10,
-                content: `## Tactical Audio Briefing Dispatched | <a:03_tick_circle:1565665642084827206>\n` +
+                content: `# ${getRandomHeadingGlyph()} Tactical Audio Briefing Dispatched | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Broadcasting Voice Channel:** <#${vc.id}>\n` +
-                         `> -# • **Voice Profile:** Cute Female Anime AI Operator (\`en-US-AnaNeural\`)\n` +
-                         `> -# • **Telemetry Ingress:** Real-time DEFCON, Anti-Nuke & Quarantine metrics\n` +
-                         `> -# • **Script:** *"${scriptText}"*`
+                         `> -# ${BULLET_EMOJI} **Voice Profile:** Cute Female Anime AI Operator (\`en-US-AnaNeural\`)\n` +
+                         `> -# ${BULLET_EMOJI} **Telemetry Ingress:** Real-time DEFCON, Anti-Nuke & Quarantine metrics\n` +
+                         `> -# ${BULLET_EMOJI} **Script:** *"${scriptText}"*`
               },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Tactical Dispatch**` }
@@ -7861,10 +7851,10 @@ export async function handleTacticalBriefing(guild, member, channel, targetVc = 
         components: [
           {
             type: 10,
-            content: `## Tactical Audio Briefing | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} Tactical Audio Briefing | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Voice Profile:** Cute Female Anime AI Operator (\`en-US-AnaNeural\`)\n` +
-                     `> -# • **Telemetry Audio Stream:** Attached below (Play in client or connect to VC to hear live)\n` +
-                     `> -# • **Live Transcript:**\n` +
+                     `> -# ${BULLET_EMOJI} **Telemetry Audio Stream:** Attached below (Play in client or connect to VC to hear live)\n` +
+                     `> -# ${BULLET_EMOJI} **Live Transcript:**\n` +
                      `> *"${scriptText}"*`
           },
           { type: 14, divider: true },
@@ -7912,10 +7902,10 @@ export async function handleSimNukeCommand(guild, moderator) {
         components: [
           {
             type: 10,
-            content: `## Antinuke Attack Simulation Report | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} Antinuke Attack Simulation Report | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Simulation Execution:** Zero-Risk Sandboxed Dry-Run\n` +
-                     `> -# • **Average Interception Velocity:** \`${avgVelocity}ms\` *(Dual-Strike Engine)*\n` +
-                     `> -# • **Hardware Benchmark:** In-Memory Bitfield Comparator & Pre-Warmed Sockets\n\n` +
+                     `> -# ${BULLET_EMOJI} **Average Interception Velocity:** \`${avgVelocity}ms\` *(Dual-Strike Engine)*\n` +
+                     `> -# ${BULLET_EMOJI} **Hardware Benchmark:** In-Memory Bitfield Comparator & Pre-Warmed Sockets\n\n` +
                      `### Attack Vector Interception Benchmarks\n` +
                      `> **1. Mass Channel Deletion Attack** | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# Intercepted in \`${t1}ms\` • Action: Instant Snapshot Rollback & Enforcer Role Stripping\n\n` +
@@ -7958,10 +7948,10 @@ export async function getPanicHistoryPanel(guild, moderator) {
       const timeStr = `<t:${Math.floor(e.timestamp / 1000)}:f> (<t:${Math.floor(e.timestamp / 1000)}:R>)`;
       const op = `<@${e.moderatorId}> (\`${e.moderatorTag || e.moderatorId}\`)`;
       return `> **#${idx + 1} \u2022 ${e.type}** | <a:03_tick_circle:1565665642084827206>\n` +
-             `> -# • **Time:** ${timeStr}\n` +
-             `> -# • **Operator:** ${op}\n` +
-             `> -# • **Status:** \`${e.action || 'ENGAGED'}\` ${e.tierLabel ? `(${e.tierLabel})` : ''} ${e.channelCount ? `• ${e.channelCount} channels snapshot` : ''}\n` +
-             `> -# • **Rationale:** \`${e.rationale || 'Administrative Defense Trigger'}\``;
+             `> -# ${BULLET_EMOJI} **Time:** ${timeStr}\n` +
+             `> -# ${BULLET_EMOJI} **Operator:** ${op}\n` +
+             `> -# ${BULLET_EMOJI} **Status:** \`${e.action || 'ENGAGED'}\` ${e.tierLabel ? `(${e.tierLabel})` : ''} ${e.channelCount ? `• ${e.channelCount} channels snapshot` : ''}\n` +
+             `> -# ${BULLET_EMOJI} **Rationale:** \`${e.rationale || 'Administrative Defense Trigger'}\``;
     }).join('\n\n');
   }
 
@@ -7986,10 +7976,10 @@ export async function getPanicHistoryPanel(guild, moderator) {
         components: [
           {
             type: 10,
-            content: `## Defense Matrix Black Box | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} Defense Matrix Black Box | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Audit Telemetry:** DEFCON & Emergency Chronological Timeline\n` +
-                     `> -# • **Recorded Incidents:** \`${history.length}\` total recorded events\n` +
-                     `> -# • **Storage Architecture:** Persistent SQLite WAL Database\n\n` +
+                     `> -# ${BULLET_EMOJI} **Recorded Incidents:** \`${history.length}\` total recorded events\n` +
+                     `> -# ${BULLET_EMOJI} **Storage Architecture:** Persistent SQLite WAL Database\n\n` +
                      historyString
           },
           { type: 14, divider: true },
@@ -8045,17 +8035,17 @@ export async function getSecurityMatrixHub(guild, moderator) {
         components: [
           {
             type: 10,
-            content: `## Unified Security Matrix | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} Unified Security Matrix | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Athena Prime Flagship Defense Matrix**\n` +
                      `> -# Master control room for real-time monitoring and defense enforcement.\n\n` +
                      `### Defense Layer Status\n` +
-                     `> • **Anti-Nuke Dual Engine:** ${isAntiNukeArmed ? '`ARMED & SECURED`' : '`DISARMED`'}\n` +
-                     `> • **DEFCON Readiness:** ${defconState ? `\`ELEVATED (Tier ${defconState.tier})\`` : '`STANDBY (Tier 0 Peace)`'}\n` +
-                     `> • **Honeypot Raider Trap:** ${isHoneypotArmed ? `<#${config.honeypotChannelId}> (\`<15ms auto-ban\`)` : '`Disarmed`'}\n` +
-                     `> • **Anti-GhostPing Sentry:** ${isGhostPingArmed ? '`ACTIVE & MONITORING`' : '`Disabled`'}\n` +
-                     `> • **Quarantine Vault:** \`${qCount}\` isolated subject(s)\n` +
-                     `> • **Join-Velocity Auto-Shield:** ${isRaidAutoShield ? '`ARMED`' : '`Disabled`'}\n` +
-                     `> • **Security Logs Sentry:** ${config.securityLogChannelId ? `<#${config.securityLogChannelId}>` : '`Not Bound`'}`
+                     `> ${BULLET_EMOJI} **Anti-Nuke Dual Engine:** ${isAntiNukeArmed ? '`ARMED & SECURED`' : '`DISARMED`'}\n` +
+                     `> ${BULLET_EMOJI} **DEFCON Readiness:** ${defconState ? `\`ELEVATED (Tier ${defconState.tier})\`` : '`STANDBY (Tier 0 Peace)`'}\n` +
+                     `> ${BULLET_EMOJI} **Honeypot Raider Trap:** ${isHoneypotArmed ? `<#${config.honeypotChannelId}> (\`<15ms auto-ban\`)` : '`Disarmed`'}\n` +
+                     `> ${BULLET_EMOJI} **Anti-GhostPing Sentry:** ${isGhostPingArmed ? '`ACTIVE & MONITORING`' : '`Disabled`'}\n` +
+                     `> ${BULLET_EMOJI} **Quarantine Vault:** \`${qCount}\` isolated subject(s)\n` +
+                     `> ${BULLET_EMOJI} **Join-Velocity Auto-Shield:** ${isRaidAutoShield ? '`ARMED`' : '`Disabled`'}\n` +
+                     `> ${BULLET_EMOJI} **Security Logs Sentry:** ${config.securityLogChannelId ? `<#${config.securityLogChannelId}>` : '`Not Bound`'}`
           },
           { type: 14, divider: true },
           new ActionRowBuilder().addComponents(selectMenu).toJSON(),

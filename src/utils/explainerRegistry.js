@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from './emojis.js';
 /**
  * Comprehensive Architectural & Command Explainer Registry for Athena Prime.
  * Provides granular, in-depth architectural breakdowns, zero-day exploit analysis,
@@ -14,8 +15,7 @@ export const ARCHITECTURE_TOPICS = {
     pages: [
       {
         pageTitle: 'Linked Role Exploit Analysis & The 60s Solution',
-        content: 
-`# 1. What is a "Linked Role"?
+        content: `# ${getRandomHeadingGlyph()} 1. What is a "Linked Role"?
 Discord has a built-in feature called **Linked Roles (Connections)**. Server administrators can set verification requirements on a role (such as having a connected Steam account with game hours, Reddit karma, YouTube, Twitter/X, GitHub, domain verification, etc.). When a member connects that account, Discord's internal system automatically grants the role to the member.
 
 # 2. Why is this an exploit vector?
@@ -32,8 +32,7 @@ As designed for Athena Prime:
       },
       {
         pageTitle: 'Real-Time Interceptor & Execution Systems',
-        content:
-`# Real-Time Role Interceptor (\`src/events/guildMemberUpdate.js\`)
+        content: `# ${getRandomHeadingGlyph()} Real-Time Role Interceptor (\`src/events/guildMemberUpdate.js\`)
 • **Trigger:** Fires dynamically whenever any member's roles change.
 • **Checks:** Scans if the user gained any dangerous permission (\`Administrator\`, \`Manage Server\`, \`Manage Roles\`, \`Manage Channels\`, \`Ban Members\`, \`Kick Members\`, \`Manage Webhooks\`, \`Mention Everyone\`, or configured Admin Tier roles).
 • **Exemption Matrix:** Skips only the Server Owner, Bot Owner, and Extra Owners.
@@ -51,8 +50,7 @@ As designed for Athena Prime:
       },
       {
         pageTitle: 'Invite, Onboarding & Sentinel Role Hierarchy',
-        content:
-`# Role-Based Invite & Onboarding Guard (\`src/events/inviteCreate.js\`, \`guildMemberAdd.js\` & \`onboardingGuard.js\`)
+        content: `# ${getRandomHeadingGlyph()} Role-Based Invite & Onboarding Guard (\`src/events/inviteCreate.js\`, \`guildMemberAdd.js\` & \`onboardingGuard.js\`)
 • **Trigger:** Real-time raw socket inspection upon invite creation, member join, and prompt audit.
 • **Exploit Vectors Mitigated:** Neutralizes Discord Role-Based Invites (invites created with Admin/dangerous roles attached), Discord Onboarding & pre-linked role exploits carrying \`Administrator\`, \`Manage Server\`, \`Manage Roles\`, \`Ban Members\`, etc.
 • **Zero-Day Invite Wiretap:** Instantly intercepts \`INVITE_CREATE\` packets; if an invite carries dangerous roles, Athena deletes the invite link in <1ms, disarms the role permissions, and quarantines unauthorized creators.
@@ -67,8 +65,7 @@ As designed for Athena Prime:
       },
       {
         pageTitle: 'Zero-Delay Role Stripping & Gateway Interception',
-        content:
-`# 0ms Pre-Emptive Dangerous Role Stripping (\`src/events/guildMemberUpdate.js\`)
+        content: `# ${getRandomHeadingGlyph()} 0ms Pre-Emptive Dangerous Role Stripping (\`src/events/guildMemberUpdate.js\`)
 • **The Race Condition:** Nuke bots that exploit dangerous role grants or linked-role connections immediately execute destructive calls within 200-400ms. If an antinuke bot waits 1000ms for audit logs, the nuke bot can delete channels or roles before punishment occurs.
 • **The 0ms Solution:** When any member receives a role carrying dangerous permissions (\`Administrator\`, \`ManageRoles\`, \`ManageChannels\`, \`BanMembers\`, \`KickMembers\`), Athena immediately strips the role at **0 milliseconds** before doing any verification.
 • **Instant Progressive Verification Loop:** Athena executes an immediate progressive audit loop \`[0ms, 40ms, 100ms, 250ms]\` over pre-warmed Undici TLS sockets:
@@ -78,8 +75,7 @@ As designed for Athena Prime:
       },
       {
         pageTitle: 'Mass Rogue Role/Channel Annihilation & Direct Strike',
-        content:
-`# Rogue Channel & Role Annihilation Engine (\`src/utils/antinuke.js\`)
+        content: `# ${getRandomHeadingGlyph()} Rogue Channel & Role Annihilation Engine (\`src/utils/antinuke.js\`)
 • **The Spam Nuke Vector:** Rapid nuke bots attempt to flood a guild with dozens of spam channels (e.g. \`nuked-by-xyz\`) or spam roles within 2-3 seconds.
 • **Dual-Strike Instant Neutralization:**
   • Sub-1ms parallel \`rawRoleStrip\` and \`rawBan\` over pre-warmed keep-alive HTTP/1.1 sockets revokes \`Administrator\` and \`ManageChannels\` in Discord's permissions cache within 10-15ms.
@@ -100,8 +96,7 @@ As designed for Athena Prime:
       },
       {
         pageTitle: 'Server Identity Rollback, Raid Defense & Diagnostics',
-        content:
-`# Server Identity & Settings Rollback Guard (\`src/events/guildUpdate.js\`)
+        content: `# ${getRandomHeadingGlyph()} Server Identity & Settings Rollback Guard (\`src/events/guildUpdate.js\`)
 • **Monitored Vectors:** Server Name, Icon, Banner, Vanity URL, and Verification Level.
 • **Zero-Day Reclaim:** If an attacker attempts to rename the server, delete the icon/banner, or tamper with verification, Athena intercepts the event, triggers \`directStrike\` to ban the violator, and instantly restores the original identity via direct API rollback.
 
@@ -130,8 +125,7 @@ As designed for Athena Prime:
     pages: [
       {
         pageTitle: 'Sentinel Roles Architecture & Hierarchy',
-        content:
-`# Persistence Sentinel Role Mechanics
+        content: `# ${getRandomHeadingGlyph()} Persistence Sentinel Role Mechanics
 Discord enforces strict role hierarchy mechanics:
 • A bot can only assign, strip, or modify roles that are positioned strictly **below** its highest integration role.
 • If an attacker creates an elevated role above existing moderators, traditional bots become powerless.
@@ -158,8 +152,7 @@ Discord enforces strict role hierarchy mechanics:
     pages: [
       {
         pageTitle: 'Onboarding Exploit Mechanics & Neutralization',
-        content:
-`# Discord Onboarding Exploit Vector
+        content: `# ${getRandomHeadingGlyph()} Discord Onboarding Exploit Vector
 • Discord Community Onboarding allows servers to configure questionnaire prompts (e.g. "What is your role?").
 • Options can be linked to roles that are automatically assigned when a new user selects an option.
 • **The Vulnerability:** A rogue administrator or compromised account can silently attach an **Administrator** role to an Onboarding prompt option.
@@ -193,8 +186,7 @@ Discord enforces strict role hierarchy mechanics:
     pages: [
       {
         pageTitle: 'Multi-Tier Message Filtering Pipeline',
-        content:
-`# Automod Real-Time Inspection Pipeline
+        content: `# ${getRandomHeadingGlyph()} Automod Real-Time Inspection Pipeline
 Athena's automod engine inspects every message across Discord Gateway at raw velocity:
 
 # Tier 1: Real-Time Invite Interception (\`!antiinvite\`)
@@ -227,8 +219,7 @@ Athena's automod engine inspects every message across Discord Gateway at raw vel
     pages: [
       {
         pageTitle: 'Voice Drag Loops & Mass Relocation Mechanics',
-        content:
-`# High-Velocity Voice Dragging (\`!vcdrag\`)
+        content: `# ${getRandomHeadingGlyph()} High-Velocity Voice Dragging (\`!vcdrag\`)
 • **Objective:** Disrupts, confuses, or contains rogue actors across voice channels.
 • **Execution Mechanics:**
   1. Cycles the target member through all active voice channels sequentially.
@@ -253,8 +244,7 @@ Athena's automod engine inspects every message across Discord Gateway at raw vel
     pages: [
       {
         pageTitle: 'Mass Action Throttling & Rogue Admin Defense',
-        content:
-`# Mass Action Throttling Engine
+        content: `# ${getRandomHeadingGlyph()} Mass Action Throttling Engine
 Athena actively monitors the velocity of destructive administrative actions:
 • **Mass Ban / Kick Protection:** If an authorized admin account is compromised and begins rapid-fire banning members, Athena tracks execution velocity in an in-memory sliding window.
 • **Threshold Interception:** When actions exceed configured thresholds (e.g. >3 bans within 10 seconds):
@@ -279,8 +269,7 @@ Athena actively monitors the velocity of destructive administrative actions:
     pages: [
       {
         pageTitle: 'Quarantine Setup & Containment Lifecycle',
-        content:
-`# Zero-Trust Quarantine Containment
+        content: `# ${getRandomHeadingGlyph()} Zero-Trust Quarantine Containment
 Athena's quarantine system provides full cryptographic isolation of compromised accounts:
 
 # 1. Infrastructure Provisioning (\`!quarantine setup\`)
@@ -312,8 +301,7 @@ Athena's quarantine system provides full cryptographic isolation of compromised 
     pages: [
       {
         pageTitle: 'Snapshot Serialization & Disaster Recovery',
-        content:
-`# Cloud Backup & Persistence Architecture
+        content: `# ${getRandomHeadingGlyph()} Cloud Backup & Persistence Architecture
 Athena Prime guarantees server survival even against total guild wipeouts:
 
 # 1. State Snapshot Serialization
@@ -333,8 +321,7 @@ Athena Prime guarantees server survival even against total guild wipeouts:
       },
       {
         pageTitle: 'Database Cloud Sync & Host Migration Engine',
-        content:
-`# 1. Automated Persistent Snapshots (\`src/utils/cloudSync.js\` & \`!db\`)
+        content: `# ${getRandomHeadingGlyph()} 1. Automated Persistent Snapshots (\`src/utils/cloudSync.js\` & \`!db\`)
 • **Dual Data Storage Dispatch:** Every 20 minutes (and on boot), flushes in-memory \`db.cache\` to \`data/db.json\` and executes \`wal_checkpoint(TRUNCATE)\` on SQLite \`data/stats.db\`.
 • **Complete Schema Coverage (53+ Categories):**
   • **Guild Configurations:** Prefixes, antinuke modules, thresholds, 2FA gates, autoroles, whitelists, auto-nicks.
@@ -361,8 +348,7 @@ Athena Prime guarantees server survival even against total guild wipeouts:
     pages: [
       {
         pageTitle: 'Three-Tier Authorization Matrix',
-        content:
-`# Three-Tier Access Control System
+        content: `# ${getRandomHeadingGlyph()} Three-Tier Access Control System
 Athena Prime separates security administration into distinct, tamper-proof tiers:
 
 # Tier 1: Admin Tier (\`!auth admin @role\`)
@@ -392,8 +378,7 @@ Athena Prime separates security administration into distinct, tamper-proof tiers
     pages: [
       {
         pageTitle: 'Autonomous Self-Learning & Flaw Diagnostic Dashboard',
-        content:
-`# 1. Interactive Components V2 Dashboard (\`!learn\` / \`!lambda\` / \`!learn status\`)
+        content: `# ${getRandomHeadingGlyph()} 1. Interactive Components V2 Dashboard (\`!learn\` / \`!lambda\` / \`!learn status\`)
 The **Autonomous Learning & Lambda AI Dashboard** provides real-time oversight of Athena's adaptive behavioral intelligence:
 • **Live Telemetry Status:**
   - <a:uptime:1552608831060844575> **Active (Autonomous Self-Learning Engaged)**: Continuous profiling actively indexes rogue bot attacks, velocity fingerprints, and defense execution flaws.
@@ -416,8 +401,7 @@ The **Autonomous Learning & Lambda AI Dashboard** provides real-time oversight o
       },
       {
         pageTitle: 'Flaw Diagnostics, Lambda AI Autopsies & Subcommand Suite',
-        content:
-`# 2. Autonomous Antinuke Flaw Diagnosis Engine
+        content: `# ${getRandomHeadingGlyph()} 2. Autonomous Antinuke Flaw Diagnosis Engine
 When a hostile bot executes a nuking event and Athena encounters friction or fails to completely block the action, Athena's **Autonomous Flaw Diagnostic Engine** immediately investigates:
 • **Role Hierarchy Inversion Detection:**
   - If the attacking bot holds a role equal to or higher than Athena's role, Discord API returns Error 50013. Athena instantly diagnoses the exact role name and position gap, and instructs the owner to drag Athena to the top of Server Settings > Roles.
@@ -452,8 +436,7 @@ Athena Prime supports full parity across standard text prefixes and Discord slas
     pages: [
       {
         pageTitle: 'Under-the-Hood Honeypot Mechanics',
-        content:
-`# 1. What is a Honeypot Trap?
+        content: `# ${getRandomHeadingGlyph()} 1. What is a Honeypot Trap?
 A Honeypot is a designated text channel configured with permissions hidden or silenced for human users, but left visible to automated selfbots, token scrapers, and mass raid accounts that spam every channel.
 
 # 2. Athena's Zero-Latency Tripwire Protocol
@@ -475,8 +458,7 @@ A Honeypot is a designated text channel configured with permissions hidden or si
     pages: [
       {
         pageTitle: 'AI Engine & Container Architecture',
-        content:
-`# 1. Multi-Provider Fallback Matrix
+        content: `# ${getRandomHeadingGlyph()} 1. Multi-Provider Fallback Matrix
 • **Primary:** Google Gemini 3.8 Flash API for advanced reasoning when \`GEMINI_API_KEY\` is configured.
 • **Autonomous Fallback:** High-speed edge inference providing resilient fallback responses.
 • **Native Emoji Scrubbing:** Filters out unicode Discord emojis to strictly uphold Athena's brand identity.
@@ -488,8 +470,7 @@ A Honeypot is a designated text channel configured with permissions hidden or si
       },
       {
         pageTitle: 'AI Toxicity & Sentiment AutoMod Architecture',
-        content:
-`# 1. AI Toxicity & Sentiment AutoMod Mechanics
+        content: `# ${getRandomHeadingGlyph()} 1. AI Toxicity & Sentiment AutoMod Mechanics
 • **Proactive Interception:** Scans message streams in real time for severe toxicity, aggressive targeted arguments, hate slurs, and malicious doxxing attempts before human moderators need to intervene.
 • **Doxxing Detection Matrix:**
   • **IPv4 / IPv6 Broadcasts:** Intercepts raw IP address leaks combined with dox context or packet keywords (\`lives at\`, \`dox\`, \`swat\`, \`leak\`).
@@ -509,8 +490,7 @@ A Honeypot is a designated text channel configured with permissions hidden or si
       },
       {
         pageTitle: 'Smart Ban Appeals & Ticket Triage Architecture',
-        content:
-`# 1. Smart Ticket Triage & Categorization
+        content: `# ${getRandomHeadingGlyph()} 1. Smart Ticket Triage & Categorization
 • **Cognitive Issue Classification:** Automatically classifies user support tickets and modal submissions into clear administrative domains:
   • **Ban Appeal & Punishment Dispute:** Escalates punishment disputes with urgent priority, prompting staff to review moderation audit logs.
   • **Billing & Store Fulfillment:** Directs store and coin inquiries to economy ledgers and fulfillment records.
@@ -539,8 +519,7 @@ A Honeypot is a designated text channel configured with permissions hidden or si
     pages: [
       {
         pageTitle: 'Economy & Shop Mechanics',
-        content:
-`# 1. Persistent Currency Ledger
+        content: `# ${getRandomHeadingGlyph()} 1. Persistent Currency Ledger
 • **SQLite & JSON Storage:** Tracks wallet, vault reserves, and daily streak counters per guild.
 • **Daily Stipends:** Consecutive streak bonus rewarding active members up to +600 bonus coins.
 • **Cloud Backup Sync:** All economy balances and shop item mappings are continuously synchronized into Discord Cloud Backups.
@@ -561,8 +540,7 @@ A Honeypot is a designated text channel configured with permissions hidden or si
     pages: [
       {
         pageTitle: 'The 5-Tier Readiness Spectrum (DEFCON 5 to 1)',
-        content:
-`# DEFCON Defense Matrix Posture
+        content: `# ${getRandomHeadingGlyph()} DEFCON Defense Matrix Posture
 Athena Prime models military Defense Readiness Conditions (DEFCON) to provide structured threat escalation:
 
 • **DEFCON 5 (Peacetime / Normal Operations):**
@@ -593,8 +571,7 @@ Athena Prime models military Defense Readiness Conditions (DEFCON) to provide st
       },
       {
         pageTitle: 'Parallel Batched REST Engine (~1.2s Speed)',
-        content:
-`# Batched Concurrent Execution Engine
+        content: `# ${getRandomHeadingGlyph()} Batched Concurrent Execution Engine
 Traditional bots execute channel permission alterations sequentially in a single-threaded loop:
 \`\`\`js
 // Legacy slow approach (15-25 seconds lag):
@@ -611,8 +588,7 @@ Athena Prime employs **Micro-Batched Parallel REST Workers**:
       },
       {
         pageTitle: 'Zero-Loss Bitmask Snapshots & Recovery Manual',
-        content:
-`# Pre-Lockdown Bitmask Snapshot Serialization
+        content: `# ${getRandomHeadingGlyph()} Pre-Lockdown Bitmask Snapshot Serialization
 Before any permission is modified, Athena serializes every channel's exact allow/deny bitfield into \`db.cache.lockdownSnapshots\` on disk:
 • **Preserves Complex Permissions:** Private staff channels, bot gates, and VIP perms are captured bit-for-bit (\`BigInt\` allow/deny).
 • **1-Click Rollback:**
@@ -632,8 +608,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     pages: [
       {
         pageTitle: 'Tiered Lockdown Protocols (Tiers 1, 2, 3)',
-        content:
-`# Emergency Panic Lockdown Tiers
+        content: `# ${getRandomHeadingGlyph()} Emergency Panic Lockdown Tiers
 • **Tier 1 (Soft Lockdown):** Denies \`SendMessages\`, thread creation, and voice \`Speak\` across all public channels for \`@everyone\`.
 • **Tier 2 (Medium Lockdown):** Tier 1 + Denies \`AddReactions\`, \`UseApplicationCommands\`, \`AttachFiles\`, and \`EmbedLinks\`. Automatically engages Server Raid Mode and elevates verification to Phone Required.
 • **Tier 3 (Nuclear Lockdown):** Total server dark mode. Denies \`ViewChannel\` across all channels (keeping rules/quarantine visible with Send denied) and disallows voice connections.
@@ -641,8 +616,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
       },
       {
         pageTitle: 'Zero-Loss State Restoration Engine',
-        content:
-`# State Restoration Engine (\`!unlockdown\` / \`/unlockdown\`)
+        content: `# ${getRandomHeadingGlyph()} State Restoration Engine (\`!unlockdown\` / \`/unlockdown\`)
 • **Database Snapshot Lookup:** Retrieves the exact bitmasks snapshotted prior to panic lockdown engagement.
 • **Parallel Batched Restoration:** Iterates through channels in concurrent chunks of 8, restoring pre-lockdown permissions via \`channel.permissionOverwrites.set()\` in ~1.2s.
 • **Verification & Raid Normalization:** Automatically restores verification level and raid protection state to their pre-lockdown baseline.
@@ -660,8 +634,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     pages: [
       {
         pageTitle: 'Phishing Heuristics & Domain Spoofing Mitigations',
-        content:
-`# Automated Threat Classifier (\`src/utils/phishingShield.js\`)
+        content: `# ${getRandomHeadingGlyph()} Automated Threat Classifier (\`src/utils/phishingShield.js\`)
 • **Domain Spoofing Interception:** Inspects lookalike domains mimicking Discord (e.g., \`discorcl\`, \`dlscord\`, \`discord-nitro-gift\`, \`steam-community\`).
 • **Zero-Day Token Stealer Regex:** Detects browser credential snatchers, token grabber links, and fake Steam trade authorization traps.
 • **Sub-Millisecond Wiretap:** Intercepts message packets inside \`messageCreate.js\` before members can click malicious URLs.
@@ -679,8 +652,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     pages: [
       {
         pageTitle: 'Algorithmic Noise & Distortion Verification',
-        content:
-`# Graphic CAPTCHA Engine (\`src/utils/captchaEngine.js\`)
+        content: `# ${getRandomHeadingGlyph()} Graphic CAPTCHA Engine (\`src/utils/captchaEngine.js\`)
 • **Canvas Noise Injection:** Generates high-entropy multi-colored distortion lines and dot clusters preventing OCR evasion.
 • **Rotational Character Jitter:** Applies randomized degree rotation (-15° to +15°) to alphanumeric glyphs.
 • **In-Memory TTL Cryptography:** Stores generated answers in multi-guild memory maps with automatic 5-minute expiration timers.
@@ -698,8 +670,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     pages: [
       {
         pageTitle: 'Blackjack, Roulette & Trivia Mechanics',
-        content:
-`# Minigames & Economy Suite (\`src/commands/minigames.js\`)
+        content: `# ${getRandomHeadingGlyph()} Minigames & Economy Suite (\`src/commands/minigames.js\`)
 • **Blackjack Table:** Standard 52-card deck with Fisher-Yates shuffling, Ace valuation (1/11), interactive \`Hit\`, \`Stand\`, and \`Double Down\` Components V2 buttons, and 3:2 Natural 21 payouts.
 • **European Roulette:** Provably fair wheel selection (numbers 0 through 36) supporting Red/Black (2x), Even/Odd (2x), Green Zero (14x), and Single Number (36x) bets.
 • **Trivia Tournaments:** Multi-topic question bank rendered with 4 shuffled Discord action buttons and 25-second countdown timers.
@@ -717,8 +688,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     pages: [
       {
         pageTitle: 'Container Studio & Forensic Inspection',
-        content:
-`# Container Studio & Forensic Audit Logs (\`src/commands/studio.js\`)
+        content: `# ${getRandomHeadingGlyph()} Container Studio & Forensic Audit Logs (\`src/commands/studio.js\`)
 • **Interactive Studio Builder:** Allows staff to compose title, description, custom fields, and footers via Discord modals, with live ephemeral previews and persistent template storage on disk.
 • **Forensic Audit Log Engine:** Direct Gateway API interrogation of \`GuildAuditLogs\` with member/executor filtering, action classifier mapping, and relative timestamp analysis.`
       }
@@ -734,8 +704,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     pages: [
       {
         pageTitle: 'Dynamic Knowledge RAG & Typo Auto-Correction',
-        content:
-`# 1. Dynamic Command Catalog Indexing (\`src/utils/botGuideKnowledge.js\`)
+        content: `# ${getRandomHeadingGlyph()} 1. Dynamic Command Catalog Indexing (\`src/utils/botGuideKnowledge.js\`)
 • **Autonomous Codebase RAG:** Dynamically introspects and indexes all 257+ commands, slash schemas, parameter syntax, permission bitmasks, and subcommands directly from \`src/commands/loader.js\`.
 • **Subsystem Deep Dockets:** Generates domain dossiers for complex subsystems (Security & Antinuke, AutoMod & Filters, Quarantine Isolation, Ticket Management, Voice Grid, Economy, Leveling).
 • **Fuzzy Typo Auto-Correction (Damerau-Levenshtein Algorithm):**
@@ -749,8 +718,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
       },
       {
         pageTitle: 'Conversational Memory, Thread Expiry & Streaming Telemetry',
-        content:
-`# 1. Multi-Turn Conversational Thread Memory
+        content: `# ${getRandomHeadingGlyph()} 1. Multi-Turn Conversational Thread Memory
 • **Session State Preservation (\`athenaSessions\` Map):** Scopes multi-turn conversational context to \`channelId_userId\`. Users can ask natural follow-up questions (e.g., "how do I add a bypass for that?", "give me a button for that") without repeating the original command context.
 • **Rolling 10-Minute Expiry (Sliding TTL):** Every turn updates \`expiresAt = Date.now() + 10 * 60 * 1000\`.
 • **Garbage Collection Sweep:** Automatically evicts expired sessions from memory to guarantee zero heap degradation.
@@ -764,8 +732,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
       },
       {
         pageTitle: 'One-Click Action Buttons & On-Demand Interactive Components',
-        content:
-`# 1. Interactive Action Buttons (\`style: 2\`)
+        content: `# ${getRandomHeadingGlyph()} 1. Interactive Action Buttons (\`style: 2\`)
 • **Strict Palette Compliance:** Every generated button strictly enforces Discord Secondary style (\`style: 2\`, grey), with literally no color.
 • **Domain Action Synthesis:** Automatically generates executable grey action buttons for queried commands:
   • \`ranktheme\`: 1-Click buttons to preview and switch between Anime, Cyberpunk, and Hogwarts themes.
@@ -792,8 +759,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     pages: [
       {
         pageTitle: 'Human-Speech Error Resilience & Natural Language Ingestion',
-        content:
-`# 1. Human-Speech Error Resilience & Natural Language Ingestion (\`src/commands/aiannounce.js\`)
+        content: `# ${getRandomHeadingGlyph()} 1. Human-Speech Error Resilience & Natural Language Ingestion (\`src/commands/aiannounce.js\`)
 • **Casual Speech & Typo Normalization:** Ingests unrefined, brief, or typo-ridden human prompts (e.g. *"game night at 8pm ist bring snax and drinks, use emoji id 1557841381630681106 for bullets"*).
 • **Neural Prompt Refinement:** Transmits prompt through Google Gemini 3.8 Flash High intelligence engine, enhancing structure, grammatical flow, and tone while faithfully preserving all facts, dates, times, and participant instructions.
 • **Discord Grey Subtext Post-Processing (\`cleanAnnouncementBody\`):**
@@ -803,8 +769,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
       },
       {
         pageTitle: 'Custom Emoji Resolution & Raw ID Synthesis Engine',
-        content:
-`# 1. Custom Emoji & Numerical ID Extraction (\`resolveCustomEmojiIds\`)
+        content: `# ${getRandomHeadingGlyph()} 1. Custom Emoji & Numerical ID Extraction (\`resolveCustomEmojiIds\`)
 • **Raw Emoji ID Extraction:** Users can supply raw 18–19 digit Discord snowflake IDs directly in the prompt (e.g. \`use emoji id 1557841381630681106 for bullets\` or \`use 1557841381630681107 in heading\`).
 • **Live Guild & Client Cache Lookup:** Athena evaluates numerical IDs against \`client.emojis.cache.get(id)\` and \`guild.emojis.cache.get(id)\`:
   • Resolves whether the emoji is animated (\`<a:name:id>\`) or static (\`<:name:id>\`).
@@ -816,8 +781,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
       },
       {
         pageTitle: 'Components V2 Interactive Studio Controls & Broadcast Dispatcher',
-        content:
-`# 1. Ephemeral Components V2 Live Studio Preview (\`buildAnnouncementStudioContainer\`)
+        content: `# ${getRandomHeadingGlyph()} 1. Ephemeral Components V2 Live Studio Preview (\`buildAnnouncementStudioContainer\`)
 • **Interactive Preview Mode:** Generates a real-time Components V2 container (\`type: 17\`) showing the announcement exactly as members will see it before anything is dispatched.
 • **Target Channel Dropdown Selector:** Interactive \`ChannelSelectMenuBuilder\` configured for \`GuildText\` and \`GuildAnnouncement\` channels, allowing staff to route broadcasts with 1 click.
 • **Broadcast Mention Mode Selector:** Dedicated \`StringSelectMenuBuilder\` allowing instant toggles between:
@@ -844,8 +808,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     pages: [
       {
         pageTitle: 'Dynamic Variable Interpolation & Full Placeholder Suite',
-        content:
-`# Dynamic Variable Interpolation Engine (resolvePlaceholders)
+        content: `# ${getRandomHeadingGlyph()} Dynamic Variable Interpolation Engine (resolvePlaceholders)
 Athena Prime features a high-performance, multi-token variable resolution engine in \`src/commands/welcome.js\` that dynamically injects real-time guild and member metadata into greeting messages, embeds, and auto-replies.
 
 ### Supported Placeholder Matrix
@@ -877,8 +840,7 @@ Athena Prime features a high-performance, multi-token variable resolution engine
       },
       {
         pageTitle: 'Welcome & Leave Architecture & Deliverability',
-        content:
-`# Welcome & Leave Dispatch Architecture (src/commands/welcome.js)
+        content: `# ${getRandomHeadingGlyph()} Welcome & Leave Dispatch Architecture (src/commands/welcome.js)
 • **Event Gateways:**
   - Join triggers in \`guildMemberAdd\` immediately dispatch \`sendWelcomeMessage(member)\`.
   - Departure triggers in \`guildMemberRemove\` immediately dispatch \`sendLeaveMessage(member)\`.
@@ -905,8 +867,7 @@ Athena Prime features a high-performance, multi-token variable resolution engine
     pages: [
       {
         pageTitle: 'Looping GIF Architecture & Canvas Rendering Pipeline',
-        content:
-`# Dynamic Looping Animated GIF Engine (generateCommandStatusBanner)
+        content: `# ${getRandomHeadingGlyph()} Dynamic Looping Animated GIF Engine (generateCommandStatusBanner)
 Athena Prime features a specialized real-time 8-frame animated GIF generation engine in \`src/utils/canvasCards.js\` modeled after the ultra-sleek 1024x512 Athena Global Defense War Room Control Center.
 
 ### Under-The-Hood Mechanics:
@@ -926,8 +887,7 @@ Athena Prime features a specialized real-time 8-frame animated GIF generation en
       },
       {
         pageTitle: 'Synced Command Matrix & Real-Time Tracking Integration',
-        content:
-`# Real-Time Synchronized Command Matrix
+        content: `# ${getRandomHeadingGlyph()} Real-Time Synchronized Command Matrix
 The 1024x512 War Room animated GIF HUD with in-GIF electric progress bar is implemented across all 9 core commands with tracking or configurable parameters:
 
 ### 1. Whitelist Overview & Clearance (!whitelist / !wl)
@@ -987,8 +947,7 @@ The 1024x512 War Room animated GIF HUD with in-GIF electric progress bar is impl
     pages: [
       {
         pageTitle: 'Voice Directory & Command Syntax',
-        content:
-`# AI & Celebrity Voice Directory & Syntax
+        content: `# ${getRandomHeadingGlyph()} AI & Celebrity Voice Directory & Syntax
 Athena Prime includes a built-in voice transformation suite featuring world leaders, global pop icons, and iconic characters:
 
 ### Celebrity & Character Roster:
@@ -1016,8 +975,7 @@ Athena Prime includes a built-in voice transformation suite featuring world lead
       },
       {
         pageTitle: 'Audio DSP Pipeline & Architecture',
-        content:
-`# Under-The-Hood Audio DSP Architecture
+        content: `# ${getRandomHeadingGlyph()} Under-The-Hood Audio DSP Architecture
 Unlike slow third-party web scrapers that face rate-limits and 30-second queues, Athena Prime uses a localized high-performance DSP audio pipeline in \`src/utils/ttsVoiceEngine.js\`:
 
 ### Execution Pipeline:
@@ -1045,8 +1003,7 @@ Unlike slow third-party web scrapers that face rate-limits and 30-second queues,
     pages: [
       {
         pageTitle: 'The 4 Advanced Trigger Engines',
-        content:
-`# The 4 Advanced Trigger Automation Engines
+        content: `# ${getRandomHeadingGlyph()} The 4 Advanced Trigger Automation Engines
 Athena Prime expands traditional auto-responders into an intelligent automation network with 4 specialized execution modules:
 
 ### 1. Ghost / Self-Destruct Triggers (\`ghost:<seconds>\`)
@@ -1072,8 +1029,7 @@ Athena Prime expands traditional auto-responders into an intelligent automation 
       },
       {
         pageTitle: 'Dual-Action Synergy, Mirroring & Access Clearance',
-        content:
-`# Dual-Action Emoji Reactions & Emergency Escalation
+        content: `# ${getRandomHeadingGlyph()} Dual-Action Emoji Reactions & Emergency Escalation
 Beyond automated message dispatch, Athena Prime supports cross-action synergy:
 
 ### Dual-Action Emoji Reaction Synergy
@@ -2864,7 +2820,7 @@ export function buildNotFoundContainer(query, prefix = '!') {
 
 /**
  * Formats architecture explanation markdown so all bullets, steps, and highlights
- * render in grey bold underlined format (-# • **__Keyword:__** ...) in Discord.
+ * render in grey bold underlined format (-# ${BULLET_EMOJI} **__Keyword:__** ...) in Discord.
  */
 export function formatExplainerMarkdown(content) {
   if (!content) return '';
@@ -2910,7 +2866,7 @@ export function formatExplainerMarkdown(content) {
       cleanBullet = cleanBullet
         .replace(/__\*\*([^*_]+)\*\*__/g, '**__$1__**')
         .replace(/\*\*(?!__)(.*?)(?<!__)\*\*/g, '**__$1__**');
-      formatted.push(`-# • ${cleanBullet}`);
+      formatted.push(`-# ${BULLET_EMOJI} ${cleanBullet}`);
       continue;
     }
 
@@ -2970,7 +2926,7 @@ export function buildExplainContainer(topicOrCmd, pageIndex = 0, prefix = '!', c
     // Header
     rawComponents.push({
       type: 10,
-      content: `# ${matchedTopic.title}\n> -# **__Topic Overview:__** ${matchedTopic.description}\n> -# **__Section [${safeIndex + 1}/${totalPages}]:__** **__${currentPage.pageTitle}__**`
+      content: `# ${getRandomHeadingGlyph()} ${matchedTopic.title}\n> -# **__Topic Overview:__** ${matchedTopic.description}\n> -# **__Section [${safeIndex + 1}/${totalPages}]:__** **__${currentPage.pageTitle}__**`
     });
     rawComponents.push({ type: 14, divider: true });
 
@@ -3056,8 +3012,7 @@ export function buildExplainContainer(topicOrCmd, pageIndex = 0, prefix = '!', c
     const rawComponents = [
       {
         type: 10,
-        content: 
-`# Command Architecture: \`${prefix}${matchedCmd.name}\` | <a:03_tick_circle:1565665642084827206>
+        content: `# ${getRandomHeadingGlyph()} Command Architecture: \`${prefix}${matchedCmd.name}\` | <a:03_tick_circle:1565665642084827206>
 > -# **__Category:__** ${matchedCmd.category}
 > -# **__Required Clearance:__** \`${matchedCmd.clearance}\`
 > -# **__Aliases:__** ${aliasesText}
@@ -3191,8 +3146,7 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
   const rawComponents = [
     {
       type: 10,
-      content: 
-`# Architecture & Command Deep-Dive Explainer | <a:03_tick_circle:1565665642084827206>
+      content: `# ${getRandomHeadingGlyph()} Architecture & Command Deep-Dive Explainer | <a:03_tick_circle:1565665642084827206>
 > <a:uptime:1552608831060844575> **Welcome to the Athena Prime Architecture Explainer Engine!**
 > Full technical breakdowns of Gateway wiretaps, velocity throttling, zero-day exploit mitigations, and execution mechanics.
 > -# **__To inspect any command:__** Type \`${prefix}explain <command>\` (e.g. \`${prefix}explain kick\`, \`${prefix}explain vcdrag\`)`
@@ -3203,15 +3157,15 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
       content:
 `### 1. Autonomous Security & Antinuke Architecture
 > -# **__Under-the-Hood:__** Raw WebSocket wiretap (<1ms) intercepts unlogged Linked Role and Onboarding escalations via 60s audit threshold. Reinstates sentinel roles and quarantines offenders.
--# • **__Commands:__** \`unbypassable\`, \`antinuke\`, \`firewall\`, \`neutralizeonboarding\`, \`scanserver\`, \`panic\`, \`quarantine\`, \`botwhitelist\`, \`spampermit\`, \`autonick\`, \`learn\`, \`modmode\`
+-# ${BULLET_EMOJI} **__Commands:__** \`unbypassable\`, \`antinuke\`, \`firewall\`, \`neutralizeonboarding\`, \`scanserver\`, \`panic\`, \`quarantine\`, \`botwhitelist\`, \`spampermit\`, \`autonick\`, \`learn\`, \`modmode\`
 
 ### 2. Voice Grid Control & Channel Drag Architecture
 > -# **__Under-the-Hood:__** Voice gateway wiretap updates state via PATCH /guilds/{id}/members/{user}. Executes drag loops, mass moves, and mass disconnects with 150ms buffers and caller immunity.
--# • **__Commands:__** \`vcdrag\`, \`vcdragstop\`, \`massmove\`, \`massdc\`, \`muteall\`, \`unmuteall\`, \`deafenall\`, \`undeafenall\`, \`jtc\`, \`vcprotect\`
+-# ${BULLET_EMOJI} **__Commands:__** \`vcdrag\`, \`vcdragstop\`, \`massmove\`, \`massdc\`, \`muteall\`, \`unmuteall\`, \`deafenall\`, \`undeafenall\`, \`jtc\`, \`vcprotect\`
 
 ### 3. Mass Moderation & Action Velocity Architecture
 > -# **__Under-the-Hood:__** Sequential REST execution with hierarchy checks. Velocity tripwires (>3 actions/10s) quarantine rogue staff, while pre-action DMs and SQLite forensics record accountability.
--# • **__Commands:__** \`kick\`, \`ban\`, \`unban\`, \`tempban\`, \`massban\`, \`masskick\`, \`timeout\`, \`untimeout\`, \`warn\`, \`warnings\`, \`clearwarns\`, \`purge\`, \`slowmode\`, \`nuke\``
+-# ${BULLET_EMOJI} **__Commands:__** \`kick\`, \`ban\`, \`unban\`, \`tempban\`, \`massban\`, \`masskick\`, \`timeout\`, \`untimeout\`, \`warn\`, \`warnings\`, \`clearwarns\`, \`purge\`, \`slowmode\`, \`nuke\``
     },
     { type: 14, divider: true },
     {
@@ -3219,23 +3173,23 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
       content:
 `### 4. Channel Lifecycle & ACL Isolation Architecture
 > -# **__Under-the-Hood:__** Manipulates explicit @everyone and role overwrite bitmasks. Rewrites channel ACLs dynamically during lockdown, quarantine isolation, and metadata-preserving clones.
--# • **__Commands:__** \`lock\`, \`unlock\`, \`hide\`, \`unhide\`, \`nuke\`, \`quarantine\`
+-# ${BULLET_EMOJI} **__Commands:__** \`lock\`, \`unlock\`, \`hide\`, \`unhide\`, \`nuke\`, \`quarantine\`
 
 ### 5. Role Hierarchy & Identity Persistence Architecture
 > -# **__Under-the-Hood:__** Strict database ID binding immune to display spoofing. Manages join-time autoroles, dynamic member stripping, anti-strip self-healing triggers, and three-tier clearance.
--# • **__Commands:__** \`addrole\`, \`removerole\`, \`striproles\`, \`autorole\`, \`auth\`, \`tier\`
+-# ${BULLET_EMOJI} **__Commands:__** \`addrole\`, \`removerole\`, \`striproles\`, \`autorole\`, \`auth\`, \`tier\`
 
 ### 6. Automod, Regex & Phishing Defense Architecture
 > -# **__Under-the-Hood:__** Pre-dispatch inspection. De-cloaks punycode URLs, executes compiled regex dictionaries, intercepts Discord invites in <1ms, and evaluates role bypass caches.
--# • **__Commands:__** \`automod\`, \`spampermit\`
+-# ${BULLET_EMOJI} **__Commands:__** \`automod\`, \`spampermit\`
 
 ### 7. Cloud Snapshot & State Restoration Architecture
 > -# **__Under-the-Hood:__** Serializes full guild state (roles, permissions, channels, settings) into AES-encrypted JSON snapshots stored off-site for 1-click disaster recovery.
--# • **__Commands:__** \`backup\`, \`restore\`, \`setup\`
+-# ${BULLET_EMOJI} **__Commands:__** \`backup\`, \`restore\`, \`setup\`
 
 ### 8. Athena AI Specialist & Neural Guide Architecture
 > -# **__Under-the-Hood:__** Multi-tier RAG indexing 257+ commands with Damerau-Levenshtein typo auto-correction, 10m rolling thread memory, and dynamic grey action button synthesis.
--# • **__Commands:__** \`athena\`, \`ask\`, \`aimode\`, \`explain\``
+-# ${BULLET_EMOJI} **__Commands:__** \`athena\`, \`ask\`, \`aimode\`, \`explain\``
     },
     { type: 14, divider: true },
     {

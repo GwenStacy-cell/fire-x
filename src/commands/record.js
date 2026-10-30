@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { ChannelType, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import { isBotOwnerSync } from '../utils/helpers.js';
@@ -49,7 +50,7 @@ export const commands = [
           const container = {
             type: 17,
             components: [
-              { type: 10, content: `## Voice Recording Started | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: 🔊 **${vc.name}** | Initiated By: ${message.author}\n\n-# Live multi-user audio capture is active.\n-# When finished, run \`!record stop\` or click **Stop & Export** below.\n-# Audio recording will be delivered directly via DM (with channel fallback).` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Voice Recording Started | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: 🔊 **${vc.name}** | Initiated By: ${message.author}\n\n-# Live multi-user audio capture is active.\n-# When finished, run \`!record stop\` or click **Stop & Export** below.\n-# Audio recording will be delivered directly via DM (with channel fallback).` },
               {
                 type: 1,
                 components: [
@@ -74,7 +75,7 @@ export const commands = [
         const container = {
           type: 17,
           components: [
-            { type: 10, content: `## Voice Recording Stopped | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: 🔊 **${vcName}**\n\n-# Processing and exporting the audio file, please wait...` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Voice Recording Stopped | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: 🔊 **${vcName}**\n\n-# Processing and exporting the audio file, please wait...` },
             { type: 14, divider: true },
             { type: 10, content: '-# Athena Bulletproof Security' }
           ]
@@ -110,7 +111,7 @@ export const commands = [
           const dmContainer = {
              type: 17,
              components: [
-                { type: 10, content: `## Athena Voice Export | <a:03_tick_circle:1565665642084827206>` },
+                { type: 10, content: `# ${getRandomHeadingGlyph()} Athena Voice Export | <a:03_tick_circle:1565665642084827206>` },
                 {
                    type: 9,
                    components: [{ type: 10, content: `-# **Server :** **${targetGuild ? targetGuild.name : 'Unknown'}**\n-# **Channel :** **${vcName}**\n-# **Started At :** **${startDate}**\n-# **Duration :** **${durationStr}**\n-# **Speakers Detected :** **${userCount || 1}**` }],
@@ -145,7 +146,7 @@ export const commands = [
             const channelExportContainer = {
               type: 17,
               components: [
-                { type: 10, content: `## Athena Voice Export | <a:03_tick_circle:1565665642084827206>` },
+                { type: 10, content: `# ${getRandomHeadingGlyph()} Athena Voice Export | <a:03_tick_circle:1565665642084827206>` },
                 {
                   type: 9,
                   components: [{ type: 10, content: `-# **Server :** **${targetGuild ? targetGuild.name : 'Unknown'}**\n-# **Channel :** **${vcName}**\n-# **Started At :** **${startDate}**\n-# **Duration :** **${durationStr}**\n-# **Note :** Your DMs are closed, so the audio was delivered here.` }],

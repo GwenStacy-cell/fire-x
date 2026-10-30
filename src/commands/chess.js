@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, MessageFlags, EmbedBuilder } from 'discord.js';
 import { Chess } from 'chess.js';
 import cv2 from '../cv2.js';
@@ -253,15 +254,15 @@ export const commands = [
         const container = {
           type: 17,
           components: [
-            { type: 10, content: `## Chess Engine Selector | ${TICK}` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Chess Engine Selector | ${TICK}` },
             { type: 14, divider: true },
             { 
               type: 10, 
               content: 
                 `-# **Current Server Engine:** **${currentEngine.name}** (\`${currentEngine.elo} ELO\`)\n` +
                 `-# **Description:** ${currentEngine.description}\n\n` +
-                `> -# • Selecting an engine updates the active bot for \`${prefix}chess ai\` games in this server.\n` +
-                `> -# • Anyone can also challenge any engine directly anytime: \`${prefix}chess ai <bot>\` (e.g. \`${prefix}chess ai mittens\`, \`${prefix}chess ai torch\`, \`${prefix}chess ai alphazero\`, \`${prefix}chess ai martin\`).`
+                `> -# ${BULLET_EMOJI} Selecting an engine updates the active bot for \`${prefix}chess ai\` games in this server.\n` +
+                `> -# ${BULLET_EMOJI} Anyone can also challenge any engine directly anytime: \`${prefix}chess ai <bot>\` (e.g. \`${prefix}chess ai mittens\`, \`${prefix}chess ai torch\`, \`${prefix}chess ai alphazero\`, \`${prefix}chess ai martin\`).`
             },
             { type: 14, divider: true },
             row.toJSON()
@@ -288,7 +289,7 @@ export const commands = [
         const container = {
           type: 17,
           components: [
-            { type: 10, content: `## Athena Theme Configuration | ${TICK}` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Athena Theme Configuration | ${TICK}` },
             { type: 14, divider: true },
             { type: 10, content: '-# Please select your preferred chessboard aesthetic from the dropdown below.' },
             { type: 14, divider: true },

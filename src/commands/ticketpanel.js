@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelSelectMenuBuilder, RoleSelectMenuBuilder, StringSelectMenuBuilder, ChannelType, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -9,7 +10,7 @@ export function buildTicketPanelPayload(guildId) {
   const desc = config.panelDescription || 'Need help? Click the button below to open a private ticket.';
 
   const containerComponents = [
-    { type: 10, content: `## **${title}**` },
+    { type: 10, content: `# ${getRandomHeadingGlyph()} **${title}**` },
     { type: 14, divider: true },
     { type: 10, content: desc },
     { type: 14, divider: true },
@@ -19,7 +20,7 @@ export function buildTicketPanelPayload(guildId) {
   if (config.panelThumbnail) {
     containerComponents[0] = {
       type: 9,
-      components: [{ type: 10, content: `## **${title}**` }],
+      components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **${title}**` }],
       accessory: { type: 11, media: { url: config.panelThumbnail } }
     };
   }
@@ -63,7 +64,7 @@ export function buildTicketManagerPayload(guildId) {
   const container = {
     type: 17,
     components: [
-      { type: 10, content: '## **Ticket Panel Manager**' },
+      { type: 10, content: `# ${getRandomHeadingGlyph()} **Ticket Panel Manager**` },
       { type: 14, divider: true },
       {
         type: 10,

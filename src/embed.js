@@ -9,7 +9,8 @@ import {
   WARN_EMOJI, 
   BULLET_EMOJI, 
   LEGACY_TICK, 
-  getRandomHeadingGlyph 
+  getRandomHeadingGlyph,
+  hasHeadingGlyphStart
 } from './utils/emojis.js';
 
 // Safely load config
@@ -77,7 +78,8 @@ export const embed = {
 
     if (title) {
       let finalTitle = String(title).trim().replaceAll(LEGACY_TICK, TICK_EMOJI);
-      if (!/^<a?:[a-zA-Z0-9_]+:\d+>/.test(finalTitle) && !finalTitle.startsWith('#')) {
+      finalTitle = finalTitle.replace(/^[>#\s]+/, '').trim();
+      if (!hasHeadingGlyphStart(finalTitle)) {
         finalTitle = `${getRandomHeadingGlyph()} ${finalTitle}`;
       }
       builder.setTitle(finalTitle);

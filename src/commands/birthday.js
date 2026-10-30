@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, ChannelType, EmbedBuilder } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -22,7 +23,7 @@ export function generateBirthdayMessage(userId, guildId) {
     components: [
       {
         type: 10,
-        content: `## ${e1} HAPPY BIRTHDAY! ${e2}\n\n` +
+        content: `# ${getRandomHeadingGlyph()} ${e1} HAPPY BIRTHDAY! ${e2}\n\n` +
           `**Hey <@${userId}>!**\n\n` +
           `Wishing you a truly spectacular day surrounded by the people who matter most. May this special day be filled with endless joy, beautiful memories, and boundless success in everything you do. Thank you for being such an incredible part of our community. Celebrate big, because you absolutely deserve it!\n\n` +
           `-# **${e3} Have an extraordinary year ahead!**`
@@ -243,7 +244,7 @@ export const commands = [
         const container = {
           type: 17,
           components: [
-            { type: 10, content: '## **<a:cheers:1517075669547483206> Server Birthdays**' },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} **<a:cheers:1517075669547483206> Server Birthdays**` },
             { type: 14, divider: true },
             { type: 10, content: desc.trim() },
             { type: 14, divider: true },
@@ -354,7 +355,7 @@ export const commands = [
         const container = {
           type: 17,
           components: [
-            { type: 10, content: '## **<a:cheers:1517075669547483206> Server Birthdays**' },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} **<a:cheers:1517075669547483206> Server Birthdays**` },
             { type: 14, divider: true },
             { type: 10, content: desc.trim() },
             { type: 14, divider: true },

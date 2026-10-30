@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, ChannelSelectMenuBuilder, ChannelType } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -299,22 +300,22 @@ export function getManagerPanel(guildId, type) {
     `${label} Manager`,
     `-# **• Manage settings for your server's ${label.toLowerCase()} messages.**\n\n` +
     `-# **__Current Configuration:__**\n` +
-    `-# • **Channel:** ${cfg.channelId ? `<#${cfg.channelId}>` : '`Not Set`'}\n` +
-    `-# • **Status:** ${cfg.enabled ? '`Enabled`' : '`Disabled`'}\n` +
-    `-# • **Top Text:** ${cfg.message ? `\`${cfg.message.slice(0, 40)}...\`` : '`Not Set`'}\n` +
-    `-# • **Author:** ${cfg.from ? `\`${cfg.from.slice(0, 30)}...\`` : '`Not Set`'}\n` +
-    `-# • **Title:** ${cfg.title ? `\`${cfg.title.slice(0, 30)}...\`` : '`Not Set`'}\n` +
-    `-# • **Description:** ${cfg.description ? `\`${cfg.description.slice(0, 40)}...\`` : '`Not Set`'}\n` +
-    `-# • **Image:** ${cfg.image ? '`[Custom Link]`' : '`Not Set`'}\n` +
-    `-# • **Footer:** ${cfg.footer ? `\`${cfg.footer.slice(0, 30)}...\`` : '`Not Set`'}\n` +
-    `-# • **Name Format:** ${cfg.nameFormat === 'user_link' ? '`Username Link`' : cfg.nameFormat === 'nick_link' ? '`Nickname Link`' : '`Tag (@user)`'}\n` +
-    `-# • **Avatar Location:** ${cfg.avatarPos === 'author' ? '`Author Icon`' : cfg.avatarPos === 'footer' ? '`Footer Icon`' : cfg.avatarPos === 'image' ? '`Large Image`' : cfg.avatarPos === 'off' ? '`Hidden`' : '`Thumbnail`'}\n` +
-    `-# • **Timestamp:** ${cfg.timestamp !== false ? '`Enabled`' : '`Disabled`'}\n\n` +
+    `-# ${BULLET_EMOJI} **Channel:** ${cfg.channelId ? `<#${cfg.channelId}>` : '`Not Set`'}\n` +
+    `-# ${BULLET_EMOJI} **Status:** ${cfg.enabled ? '`Enabled`' : '`Disabled`'}\n` +
+    `-# ${BULLET_EMOJI} **Top Text:** ${cfg.message ? `\`${cfg.message.slice(0, 40)}...\`` : '`Not Set`'}\n` +
+    `-# ${BULLET_EMOJI} **Author:** ${cfg.from ? `\`${cfg.from.slice(0, 30)}...\`` : '`Not Set`'}\n` +
+    `-# ${BULLET_EMOJI} **Title:** ${cfg.title ? `\`${cfg.title.slice(0, 30)}...\`` : '`Not Set`'}\n` +
+    `-# ${BULLET_EMOJI} **Description:** ${cfg.description ? `\`${cfg.description.slice(0, 40)}...\`` : '`Not Set`'}\n` +
+    `-# ${BULLET_EMOJI} **Image:** ${cfg.image ? '`[Custom Link]`' : '`Not Set`'}\n` +
+    `-# ${BULLET_EMOJI} **Footer:** ${cfg.footer ? `\`${cfg.footer.slice(0, 30)}...\`` : '`Not Set`'}\n` +
+    `-# ${BULLET_EMOJI} **Name Format:** ${cfg.nameFormat === 'user_link' ? '`Username Link`' : cfg.nameFormat === 'nick_link' ? '`Nickname Link`' : '`Tag (@user)`'}\n` +
+    `-# ${BULLET_EMOJI} **Avatar Location:** ${cfg.avatarPos === 'author' ? '`Author Icon`' : cfg.avatarPos === 'footer' ? '`Footer Icon`' : cfg.avatarPos === 'image' ? '`Large Image`' : cfg.avatarPos === 'off' ? '`Hidden`' : '`Thumbnail`'}\n` +
+    `-# ${BULLET_EMOJI} **Timestamp:** ${cfg.timestamp !== false ? '`Enabled`' : '`Disabled`'}\n\n` +
     `-# **__Live Placeholders & Dynamic Variables:__**\n` +
-    `-# • **Counts:** \`{membercount}\` • \`{ordinal}\` *(e.g. 1st, 142nd)* • \`{count}\`\n` +
-    `-# • **Member:** \`{user}\` *(ping/link)* • \`{username}\` • \`{displayname}\` • \`{tag}\` • \`{userid}\` • \`{avatar}\`\n` +
-    `-# • **Server:** \`{server}\` • \`{serverid}\` • \`{server.icon}\` • \`{owner}\` • \`{boosts}\` • \`{roles}\` • \`{channels}\`\n` +
-    `-# • **Times:** \`{created}\` *(account age)* • \`{joined}\` *(join date)*\n` +
+    `-# ${BULLET_EMOJI} **Counts:** \`{membercount}\` • \`{ordinal}\` *(e.g. 1st, 142nd)* • \`{count}\`\n` +
+    `-# ${BULLET_EMOJI} **Member:** \`{user}\` *(ping/link)* • \`{username}\` • \`{displayname}\` • \`{tag}\` • \`{userid}\` • \`{avatar}\`\n` +
+    `-# ${BULLET_EMOJI} **Server:** \`{server}\` • \`{serverid}\` • \`{server.icon}\` • \`{owner}\` • \`{boosts}\` • \`{roles}\` • \`{channels}\`\n` +
+    `-# ${BULLET_EMOJI} **Times:** \`{created}\` *(account age)* • \`{joined}\` *(join date)*\n` +
     `-# *Click **Placeholders** button below for the full cheat-sheet & copy-paste templates.*`
   );
 
@@ -475,27 +476,27 @@ export async function handleWelcomeManagerButton(interaction) {
       'Placeholder & Variable Guide',
       `-# **• Use these dynamic placeholders in your Top Text, Title, Description, Author, or Footer.**\n\n` +
       `### Member Counts & Ordinals\n` +
-      `-# • \`{membercount}\` or \`{count}\` — Current server member count (e.g. \`142\`).\n` +
-      `-# • \`{ordinal}\` or \`{ordinal_count}\` — Formatted join milestone ordinal (e.g. \`1st\`, \`2nd\`, \`142nd\`).\n\n` +
+      `-# ${BULLET_EMOJI} \`{membercount}\` or \`{count}\` — Current server member count (e.g. \`142\`).\n` +
+      `-# ${BULLET_EMOJI} \`{ordinal}\` or \`{ordinal_count}\` — Formatted join milestone ordinal (e.g. \`1st\`, \`2nd\`, \`142nd\`).\n\n` +
       `### User Information\n` +
-      `-# • \`{user}\` or \`{member}\` — Member ping (\`<@id>\`) or Markdown link based on Name Format.\n` +
-      `-# • \`{mention}\` — Literal user ping (\`<@id>\`).\n` +
-      `-# • \`{username}\` or \`{name}\` — Clean raw username (e.g. \`gwen\`).\n` +
-      `-# • \`{displayname}\` or \`{nickname}\` — Server nickname or display name.\n` +
-      `-# • \`{tag}\` or \`{usertag}\` — Full Discord tag.\n` +
-      `-# • \`{userid}\` or \`{id}\` — Raw Discord user snowflake ID.\n` +
-      `-# • \`{avatar}\` or \`{user.avatar}\` — User avatar CDN URL.\n\n` +
+      `-# ${BULLET_EMOJI} \`{user}\` or \`{member}\` — Member ping (\`<@id>\`) or Markdown link based on Name Format.\n` +
+      `-# ${BULLET_EMOJI} \`{mention}\` — Literal user ping (\`<@id>\`).\n` +
+      `-# ${BULLET_EMOJI} \`{username}\` or \`{name}\` — Clean raw username (e.g. \`gwen\`).\n` +
+      `-# ${BULLET_EMOJI} \`{displayname}\` or \`{nickname}\` — Server nickname or display name.\n` +
+      `-# ${BULLET_EMOJI} \`{tag}\` or \`{usertag}\` — Full Discord tag.\n` +
+      `-# ${BULLET_EMOJI} \`{userid}\` or \`{id}\` — Raw Discord user snowflake ID.\n` +
+      `-# ${BULLET_EMOJI} \`{avatar}\` or \`{user.avatar}\` — User avatar CDN URL.\n\n` +
       `### Server Information\n` +
-      `-# • \`{server}\` or \`{guild}\` — Server name.\n` +
-      `-# • \`{serverid}\` — Server snowflake ID.\n` +
-      `-# • \`{server.icon}\` — Server icon CDN URL.\n` +
-      `-# • \`{owner}\` — Server Owner mention (\`<@owner_id>\`).\n` +
-      `-# • \`{boosts}\` — Server Nitro boost count.\n` +
-      `-# • \`{roles}\` — Total server role count.\n` +
-      `-# • \`{channels}\` — Total server channel count.\n\n` +
+      `-# ${BULLET_EMOJI} \`{server}\` or \`{guild}\` — Server name.\n` +
+      `-# ${BULLET_EMOJI} \`{serverid}\` — Server snowflake ID.\n` +
+      `-# ${BULLET_EMOJI} \`{server.icon}\` — Server icon CDN URL.\n` +
+      `-# ${BULLET_EMOJI} \`{owner}\` — Server Owner mention (\`<@owner_id>\`).\n` +
+      `-# ${BULLET_EMOJI} \`{boosts}\` — Server Nitro boost count.\n` +
+      `-# ${BULLET_EMOJI} \`{roles}\` — Total server role count.\n` +
+      `-# ${BULLET_EMOJI} \`{channels}\` — Total server channel count.\n\n` +
       `### Relative Timestamps\n` +
-      `-# • \`{created}\` — Discord relative timestamp for account age.\n` +
-      `-# • \`{joined}\` — Discord relative timestamp for guild join date.\n\n` +
+      `-# ${BULLET_EMOJI} \`{created}\` — Discord relative timestamp for account age.\n` +
+      `-# ${BULLET_EMOJI} \`{joined}\` — Discord relative timestamp for guild join date.\n\n` +
       `### Example Template\n` +
       `-# Top Text: \`hope you enjoy your stay!\`\n` +
       `-# Title: \`୨ৎ - welcome - ୨ৎ\`\n` +

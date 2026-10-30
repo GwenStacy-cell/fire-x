@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import cv2 from '../cv2.js';
 import { isBotOwnerSync, isExtraOwner } from '../utils/helpers.js';
@@ -23,7 +24,7 @@ export const commands = [
       const container = {
         type: 17,
         components: [
-          { type: 10, content: '## **Emoji Wipe Sequence**\nAre you sure you want to delete **ALL** custom emojis in this server?\n\nThis action **cannot be undone**.' },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} **Emoji Wipe Sequence**\nAre you sure you want to delete **ALL** custom emojis in this server?\n\nThis action **cannot be undone**.` },
           { type: 14, divider: true },
           row.toJSON(),
           { type: 14, divider: true },
@@ -48,7 +49,7 @@ export const commands = [
           const cancelContainer = {
             type: 17,
             components: [
-              { type: 10, content: `## Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# Operation cancelled by user.` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# Operation cancelled by user.` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
             ]
@@ -66,7 +67,7 @@ export const commands = [
           const buildProgressContainer = () => ({
             type: 17,
             components: [
-              { type: 10, content: `## Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# <a:uptime:1552608831060844575> Deleting emojis... [${deleted}/${total}]` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# <a:uptime:1552608831060844575> Deleting emojis... [${deleted}/${total}]` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
             ]
@@ -91,7 +92,7 @@ export const commands = [
           const finalContainer = {
             type: 17,
             components: [
-              { type: 10, content: `## Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# <a:uptime:1552608831060844575> Successfully deleted **${deleted}** emojis from the server.` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# <a:uptime:1552608831060844575> Successfully deleted **${deleted}** emojis from the server.` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
             ]
@@ -105,7 +106,7 @@ export const commands = [
           const timeoutContainer = {
             type: 17,
             components: [
-              { type: 10, content: `## Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# Operation timed out.` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# Operation timed out.` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
             ]

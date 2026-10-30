@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from './emojis.js';
 import { EmbedBuilder, AttachmentBuilder, AuditLogEvent, PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import { generateDashboard, generateTimeoutCard, generateAutomodCard } from './dashboardCanvas.js';
@@ -168,7 +169,7 @@ export async function updateDashboardMessage(guild, client) {
       components: [
         {
           type: 10,
-          content: `## **ADMIN INTERVENTION & TIMEOUTS**`
+          content: `# ${getRandomHeadingGlyph()} **ADMIN INTERVENTION & TIMEOUTS**`
         },
         { type: 14, divider: true },
         {
@@ -188,7 +189,7 @@ export async function updateDashboardMessage(guild, client) {
       components: [
         {
           type: 10,
-          content: `## **AUTOMATED SECURITY EVENTS**`
+          content: `# ${getRandomHeadingGlyph()} **AUTOMATED SECURITY EVENTS**`
         },
         { type: 14, divider: true },
         {

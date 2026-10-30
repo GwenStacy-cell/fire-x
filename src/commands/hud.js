@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import db from '../database.js';
 import os from 'os';
@@ -83,16 +84,16 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
       type: 17,
       components: [
         ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://warroom_server.gif' } }] }] : []),
-        { type: 10, content: `## **${cleanDisplayName(guild.name)} // War-Room Dashboard** | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} **${cleanDisplayName(guild.name)} // War-Room Dashboard** | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
           content:
-            `> -# \u2022 **Server ID:** \`${guild.id}\`\n` +
-            `> -# \u2022 **Total Members:** \`${guild.memberCount.toLocaleString()}\` members\n` +
-            `> -# \u2022 **Total Channels:** \`${guild.channels.cache.size}\` channels\n` +
-            `> -# \u2022 **Total Roles:** \`${guild.roles.cache.size}\` roles\n` +
-            `> -# \u2022 **Boost Tier:** \`Level ${boostLevel}\` (${guild.premiumSubscriptionCount || 0} boosts)`
+            `> -# ${BULLET_EMOJI} **Server ID:** \`${guild.id}\`\n` +
+            `> -# ${BULLET_EMOJI} **Total Members:** \`${guild.memberCount.toLocaleString()}\` members\n` +
+            `> -# ${BULLET_EMOJI} **Total Channels:** \`${guild.channels.cache.size}\` channels\n` +
+            `> -# ${BULLET_EMOJI} **Total Roles:** \`${guild.roles.cache.size}\` roles\n` +
+            `> -# ${BULLET_EMOJI} **Boost Tier:** \`Level ${boostLevel}\` (${guild.premiumSubscriptionCount || 0} boosts)`
         },
         { type: 14, divider: true },
         { type: 10, content: `-# **Athena Prime Tactical War-Room \u2022 Live Interface**` }
@@ -143,15 +144,15 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
       type: 17,
       components: [
         ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://warroom_defcon.gif' } }] }] : []),
-        { type: 10, content: `## **DEFCON Defense Matrix Status** | <a:03_tick_circle:1565665642084827206>` },
+        { type: 10, content: `# ${getRandomHeadingGlyph()} **DEFCON Defense Matrix Status** | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
           content:
-            `> -# \u2022 **Server Threat State:** ${isAlert ? '`DEFCON 1 (Elevated Security)`' : '`DEFCON 5 (Peacetime / Normal)`'}\n` +
-            `> -# \u2022 **Server Panic Lockdown:** ${lockdown ? `\`Active (${lockdown.tierLabel || 'Tier ' + lockdown.tier})\`` : '`Standby (Disengaged)`'}\n` +
-            `> -# \u2022 **Raid Shield:** ${raidActive ? '`Armed (Auto-quarantine active)`' : '`Monitoring`'}\n` +
-            `> -# \u2022 **Emergency Blackout:** ${isEmergency ? '`Active (Blackout engaged)`' : '`Inactive`'}`
+            `> -# ${BULLET_EMOJI} **Server Threat State:** ${isAlert ? '`DEFCON 1 (Elevated Security)`' : '`DEFCON 5 (Peacetime / Normal)`'}\n` +
+            `> -# ${BULLET_EMOJI} **Server Panic Lockdown:** ${lockdown ? `\`Active (${lockdown.tierLabel || 'Tier ' + lockdown.tier})\`` : '`Standby (Disengaged)`'}\n` +
+            `> -# ${BULLET_EMOJI} **Raid Shield:** ${raidActive ? '`Armed (Auto-quarantine active)`' : '`Monitoring`'}\n` +
+            `> -# ${BULLET_EMOJI} **Emergency Blackout:** ${isEmergency ? '`Active (Blackout engaged)`' : '`Inactive`'}`
         },
         { type: 14, divider: true },
         { type: 10, content: `-# **Athena Prime Tactical War-Room \u2022 DEFCON Protocols**` }
@@ -207,16 +208,16 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
     type: 17,
     components: [
       ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://warroom_telemetry.gif' } }] }] : []),
-      { type: 10, content: `## **Athena Prime Core Telemetry** | <a:03_tick_circle:1565665642084827206>` },
+      { type: 10, content: `# ${getRandomHeadingGlyph()} **Athena Prime Core Telemetry** | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
         type: 10,
         content:
-          `> -# \u2022 **Gateway Ping:** \`${client.ws.ping}ms\`\n` +
-          `> -# \u2022 **Active Clusters:** \`${totalServers.toLocaleString()}\` servers connected\n` +
-          `> -# \u2022 **Memory Usage:** \`${heapMB} MB\` heap / \`${totalMemMB} MB\` system RAM\n` +
-          `> -# \u2022 **Process Uptime:** \`${d}d ${h}h ${m}m\` continuous\n` +
-          `> -# \u2022 **Node Engine:** \`${process.version}\` on \`${os.platform()} (${os.arch()})\``
+          `> -# ${BULLET_EMOJI} **Gateway Ping:** \`${client.ws.ping}ms\`\n` +
+          `> -# ${BULLET_EMOJI} **Active Clusters:** \`${totalServers.toLocaleString()}\` servers connected\n` +
+          `> -# ${BULLET_EMOJI} **Memory Usage:** \`${heapMB} MB\` heap / \`${totalMemMB} MB\` system RAM\n` +
+          `> -# ${BULLET_EMOJI} **Process Uptime:** \`${d}d ${h}h ${m}m\` continuous\n` +
+          `> -# ${BULLET_EMOJI} **Node Engine:** \`${process.version}\` on \`${os.platform()} (${os.arch()})\``
       },
       { type: 14, divider: true },
       { type: 10, content: `-# **Athena Prime Tactical War-Room \u2022 Core Telemetry**` }
