@@ -1,6 +1,7 @@
 import { MessageFlags, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI } from '../utils/emojis.js';
 import { 
   generateAthenaGuideResponse, 
   buildGuideHubContainer, 
@@ -116,7 +117,7 @@ export const commands = [
           components: [
             {
               type: 10,
-              content: `### **Conversation Thread Cleared | ${TICK}**\n-# Conversation memory has been reset for this channel. Your next query will start a fresh session.`
+              content: `# ${getRandomHeadingGlyph()} **Conversation Thread Cleared | ${TICK}**\n-# Conversation memory has been reset for this channel. Your next query will start a fresh session.`
             }
           ]
         };
@@ -192,7 +193,7 @@ export const commands = [
           components: [
             {
               type: 10,
-              content: `### **Conversation Thread Cleared | ${TICK}**\n-# Conversation memory has been reset for this channel. Your next query will start a fresh session.`
+              content: `# ${getRandomHeadingGlyph()} **Conversation Thread Cleared | ${TICK}**\n-# Conversation memory has been reset for this channel. Your next query will start a fresh session.`
             }
           ]
         };
@@ -275,13 +276,13 @@ export async function buildLiveCommandStatusPayload(guild, member, user, cmdName
           components: [
             {
               type: 10,
-              content: `## MODERATION Telemetry & Status | ${TICK}\n` +
-                `-# • **Operational State:** \`Autonomous Moderation Suite Active\`\n` +
-                `-# • **Audit Log Channel:** ${logChan}\n` +
-                `-# • **Designated Mod Roles:** ${modRoles}\n` +
-                `-# • **AI Toxicity Shield:** ${aiTox}\n` +
-                `-# • **Anti-Spam Filter:** ${cfg.spamDetection !== false ? '`Active`' : '`Disabled`'}\n` +
-                `-# • **Core Enforcement Commands:** \`!ban\`, \`!kick\`, \`!timeout\`, \`!mute\`, \`!warn\`, \`!purge\`, \`!quarantine\`\n\n` +
+              content: `# ${getRandomHeadingGlyph()} MODERATION Telemetry & Status | ${TICK}\n` +
+                `-# ${BULLET_EMOJI} **Operational State:** \`Autonomous Moderation Suite Active\`\n` +
+                `-# ${BULLET_EMOJI} **Audit Log Channel:** ${logChan}\n` +
+                `-# ${BULLET_EMOJI} **Designated Mod Roles:** ${modRoles}\n` +
+                `-# ${BULLET_EMOJI} **AI Toxicity Shield:** ${aiTox}\n` +
+                `-# ${BULLET_EMOJI} **Anti-Spam Filter:** ${cfg.spamDetection !== false ? '`Active`' : '`Disabled`'}\n` +
+                `-# ${BULLET_EMOJI} **Core Enforcement Commands:** \`!ban\`, \`!kick\`, \`!timeout\`, \`!mute\`, \`!warn\`, \`!purge\`, \`!quarantine\`\n\n` +
                 `-# **__Clearance Level:__** \`Server Moderator / Administrator\``
             }
           ]
@@ -307,7 +308,7 @@ export async function buildLiveCommandStatusPayload(guild, member, user, cmdName
           components: [
             {
               type: 10,
-              content: `## Command Not Found | ${TICK}\n` +
+              content: `# ${getRandomHeadingGlyph()} Command Not Found | ${TICK}\n` +
                 `-# The command \`!${cmdName}\` was not recognized in the Athena catalog of 254+ commands.\n` +
                 `-# Run \`${prefix}help\` to browse all active modules, or use \`${prefix}athena\` to search with AI.`
             }
@@ -330,11 +331,11 @@ export async function buildLiveCommandStatusPayload(guild, member, user, cmdName
   const statusPoints = [];
 
   // General telemetry
-  statusPoints.push(`-# • **Operational State:** \`Autonomous & Ready\``);
-  statusPoints.push(`-# • **Primary Invocation:** \`${prefix}${cleanName}\``);
-  statusPoints.push(`-# • **Aliases:** ${aliases}`);
-  statusPoints.push(`-# • **Clearance Level:** \`${clearance.label}\``);
-  statusPoints.push(`-# • **Your Access:** ${canRun ? '`Granted (Executable)`' : '`Restricted (Clearance Required)`'}`);
+  statusPoints.push(`-# ${BULLET_EMOJI} **Operational State:** \`Autonomous & Ready\``);
+  statusPoints.push(`-# ${BULLET_EMOJI} **Primary Invocation:** \`${prefix}${cleanName}\``);
+  statusPoints.push(`-# ${BULLET_EMOJI} **Aliases:** ${aliases}`);
+  statusPoints.push(`-# ${BULLET_EMOJI} **Clearance Level:** \`${clearance.label}\``);
+  statusPoints.push(`-# ${BULLET_EMOJI} **Your Access:** ${canRun ? '`Granted (Executable)`' : '`Restricted (Clearance Required)`'}`);
 
   const actionButtons = [
     { type: 2, custom_id: `athena_act_cmd_help_${cleanName}`, label: `View !${cleanName} Help`, style: 2 }
@@ -346,9 +347,9 @@ export async function buildLiveCommandStatusPayload(guild, member, user, cmdName
       const wChan = cfg.welcomeChannelId ? `<#${cfg.welcomeChannelId}>` : '`Not Configured`';
       const lChan = cfg.leaveChannelId ? `<#${cfg.leaveChannelId}>` : '`Not Configured`';
       const wCard = cfg.welcomeCard ? '`Custom Graphic Card`' : '`Standard Text Layout`';
-      statusPoints.push(`-# • **Welcome Channel:** ${wChan}`);
-      statusPoints.push(`-# • **Leave Channel:** ${lChan}`);
-      statusPoints.push(`-# • **Render Style:** ${wCard}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Welcome Channel:** ${wChan}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Leave Channel:** ${lChan}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Render Style:** ${wCard}`);
       actionButtons.unshift({ type: 2, custom_id: 'athena_act_welcome_setup', label: 'Open Welcome Setup', style: 2 });
       actionButtons.push({ type: 2, custom_id: 'athena_act_welcome_vars', label: 'Placeholders Guide', style: 2 });
       actionButtons.push({ type: 2, custom_id: 'athena_act_welcome_test', label: 'Test Welcome Card', style: 2 });
@@ -359,77 +360,77 @@ export async function buildLiveCommandStatusPayload(guild, member, user, cmdName
       const botRoles = (cfg.botAutoroles && cfg.botAutoroles.length) 
         ? cfg.botAutoroles.map(r => `<@&${r}>`).join(', ') 
         : '`None Bound`';
-      statusPoints.push(`-# • **Human Auto-Roles:** ${humanRoles}`);
-      statusPoints.push(`-# • **Bot Auto-Roles:** ${botRoles}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Human Auto-Roles:** ${humanRoles}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Bot Auto-Roles:** ${botRoles}`);
     } else if (cleanName === 'counting') {
       const cData = db.getCounting(guild.id);
       const cChan = cData?.channelId ? `<#${cData.channelId}>` : '`Not Configured`';
       const cCount = cData?.currentCount ?? 0;
       const cLastUser = cData?.lastUserId ? `<@${cData.lastUserId}>` : '`None`';
-      statusPoints.push(`-# • **Counting Channel:** ${cChan}`);
-      statusPoints.push(`-# • **Current Count:** \`${cCount}\``);
-      statusPoints.push(`-# • **Last Counter:** ${cLastUser}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Counting Channel:** ${cChan}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Current Count:** \`${cCount}\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Last Counter:** ${cLastUser}`);
     } else if (cleanName === 'jtc' || cleanName === 'vcpanel') {
       const jChan = cfg.jtcChannelId ? `<#${cfg.jtcChannelId}>` : '`Not Configured`';
       const jCat = cfg.jtcCategoryId ? `<#${cfg.jtcCategoryId}>` : '`Default Category`';
-      statusPoints.push(`-# • **JTC Hub Channel:** ${jChan}`);
-      statusPoints.push(`-# • **JTC Category:** ${jCat}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **JTC Hub Channel:** ${jChan}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **JTC Category:** ${jCat}`);
     } else if (cleanName === 'security' || cleanName === 'antinuke' || cleanName === 'ss') {
       const secConfig = db.getAntinukeConfig ? db.getAntinukeConfig(guild.id) : null;
       const wl = db.getAllWhitelists ? db.getAllWhitelists(guild.id) : null;
       const wlCount = wl?.users ? Object.keys(wl.users).length : 0;
-      statusPoints.push(`-# • **Antinuke Shield:** ${secConfig?.enabled !== false ? '`Active / Monitoring`' : '`Deactivated`'}`);
-      statusPoints.push(`-# • **Whitelisted Accounts:** \`${wlCount} trusted admins\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Antinuke Shield:** ${secConfig?.enabled !== false ? '`Active / Monitoring`' : '`Deactivated`'}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Whitelisted Accounts:** \`${wlCount} trusted admins\``);
       actionButtons.unshift({ type: 2, custom_id: 'athena_act_security_status', label: 'Inspect Security Status', style: 2 });
     } else if (cleanName === 'automod' || cleanName === 'filters' || cleanName === 'spam') {
       const aiTox = cfg.aiToxicityEnabled ? '`Active / AI Shielding`' : '`Deactivated`';
-      statusPoints.push(`-# • **AI Toxicity Defense:** ${aiTox}`);
-      statusPoints.push(`-# • **Anti-Spam Filter:** ${cfg.spamDetection !== false ? '`Active`' : '`Disabled`'}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **AI Toxicity Defense:** ${aiTox}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Anti-Spam Filter:** ${cfg.spamDetection !== false ? '`Active`' : '`Disabled`'}`);
       actionButtons.unshift({ type: 2, custom_id: 'athena_act_automod_panel', label: 'Open AutoMod Panel', style: 2 });
     } else if (cleanName === 'verify' || cleanName === 'verification') {
       const vData = db.getVerification(guild.id);
       const vChan = vData?.channelId ? `<#${vData.channelId}>` : '`Not Configured`';
       const vRole = vData?.roleId ? `<@&${vData.roleId}>` : '`Not Bound`';
       const vMode = (vData?.mode || 'button').toUpperCase();
-      statusPoints.push(`-# • **Gateway Channel:** ${vChan}`);
-      statusPoints.push(`-# • **Verified Role:** ${vRole}`);
-      statusPoints.push(`-# • **Authentication Mode:** \`${vMode}\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Gateway Channel:** ${vChan}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Verified Role:** ${vRole}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Authentication Mode:** \`${vMode}\``);
       actionButtons.unshift({ type: 2, custom_id: 'athena_act_verify_setup', label: 'Open Verification Setup', style: 2 });
     } else if (cleanName === 'giveaway') {
       actionButtons.unshift({ type: 2, custom_id: 'athena_act_giveaway_manager', label: 'Open Giveaway Manager', style: 2 });
     } else if (cleanName === 'lockdown') {
       const snap = db.getLockdownSnapshot(guild.id);
       const ldState = snap ? `ACTIVE (Tier ${snap.tier})` : 'Normal Operations (Inactive)';
-      statusPoints.push(`-# • **Panic Lockdown State:** \`${ldState}\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Panic Lockdown State:** \`${ldState}\``);
       actionButtons.unshift({ type: 2, custom_id: 'athena_act_lockdown_status', label: 'Inspect Lockdown Status', style: 2 });
     } else if (cleanName === 'starboard') {
       const sChan = cfg.starboardChannelId ? `<#${cfg.starboardChannelId}>` : '`Not Configured`';
       const sLimit = cfg.starboardThreshold || 3;
-      statusPoints.push(`-# • **Starboard Channel:** ${sChan}`);
-      statusPoints.push(`-# • **Star Reaction Threshold:** \`${sLimit} Stars\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Starboard Channel:** ${sChan}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Star Reaction Threshold:** \`${sLimit} Stars\``);
     } else if (cleanName === 'birthday') {
       const bChan = cfg.birthdayChannelId ? `<#${cfg.birthdayChannelId}>` : '`Not Configured`';
       const bRole = cfg.birthdayRoleId ? `<@&${cfg.birthdayRoleId}>` : '`Not Bound`';
-      statusPoints.push(`-# • **Birthday Channel:** ${bChan}`);
-      statusPoints.push(`-# • **Celebration Role:** ${bRole}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Birthday Channel:** ${bChan}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Celebration Role:** ${bRole}`);
     } else if (cleanName === 'rank' || cleanName === 'leveling' || cleanName === 'ranktheme') {
       const currentTheme = db.getUserRankTheme(user.id);
-      statusPoints.push(`-# • **Leveling Module:** ${cfg.levelingEnabled !== false ? '`Active`' : '`Disabled`'}`);
-      statusPoints.push(`-# • **Your Active Card Theme:** \`${currentTheme}\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Leveling Module:** ${cfg.levelingEnabled !== false ? '`Active`' : '`Disabled`'}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Your Active Card Theme:** \`${currentTheme}\``);
       actionButtons.push({ type: 2, custom_id: 'athena_act_rank_preview', label: 'Preview XP Card', style: 2 });
     } else if (cleanName === 'aiannounce' || cleanName === 'announce') {
-      statusPoints.push(`-# • **AI Announcement Engine:** \`Gemini 3.8 Flash High Architecture\``);
-      statusPoints.push(`-# • **Custom Emoji ID Support:** \`Active (Emoji & ID parsing enabled)\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **AI Announcement Engine:** \`Gemini 3.8 Flash High Architecture\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Custom Emoji ID Support:** \`Active (Emoji & ID parsing enabled)\``);
       actionButtons.unshift({ type: 2, custom_id: 'athena_act_aiannounce_create', label: 'Draft AI Announcement', style: 2 });
     } else if (cleanName === 'news') {
       const feeds = db.getNewsFeeds ? db.getNewsFeeds(guild.id) : [];
       const newsChan = cfg.newsChannelId ? `<#${cfg.newsChannelId}>` : '`Not Bound`';
-      statusPoints.push(`-# • **News Channel:** ${newsChan}`);
-      statusPoints.push(`-# • **Subscribed Feeds:** \`${feeds.length} / 5 feeds active\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **News Channel:** ${newsChan}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Subscribed Feeds:** \`${feeds.length} / 5 feeds active\``);
     } else if (cleanName === 'rate' || cleanName === 'rateedit') {
       const rChan = cfg.rateChannelId ? `<#${cfg.rateChannelId}>` : '`Not Bound`';
-      statusPoints.push(`-# • **Rate Edit Channel:** ${rChan}`);
-      statusPoints.push(`-# • **Interaction Method:** \`Interactive 1-5 Star Voting Buttons\``);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Rate Edit Channel:** ${rChan}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Interaction Method:** \`Interactive 1-5 Star Voting Buttons\``);
     }
   }
 
@@ -445,7 +446,7 @@ export async function buildLiveCommandStatusPayload(guild, member, user, cmdName
         components: [
           {
             type: 10,
-            content: `## ${cleanName.toUpperCase()} Telemetry & Status | ${TICK}\n` +
+            content: `# ${getRandomHeadingGlyph()} ${cleanName.toUpperCase()} Telemetry & Status | ${TICK}\n` +
               statusPoints.join('\n') + '\n\n' +
               `-# **__Description:__** ${cmd.description || 'No description registered.'}`
           }
@@ -482,18 +483,18 @@ export async function buildDetailedCommandHelpPayload(guild, member, user, cmdNa
           components: [
             {
               type: 10,
-              content: `## Command Manual: !moderation | ${TICK}\n` +
+              content: `# ${getRandomHeadingGlyph()} Command Manual: !moderation | ${TICK}\n` +
                 `-# **__Description:__** High-speed administrative and moderation enforcement matrix.\n` +
-                `-# • **Category:** \`Moderation\`\n` +
-                `-# • **Clearance Required:** \`Moderator / Administrator\`\n\n` +
+                `-# ${BULLET_EMOJI} **Category:** \`Moderation\`\n` +
+                `-# ${BULLET_EMOJI} **Clearance Required:** \`Moderator / Administrator\`\n\n` +
                 `<:info_jtc:1524111455404953663> **__Key Moderation Commands:__**\n` +
-                `-# • \`${prefix}ban <@user> [reason]\` - Permanently ban member from server\n` +
-                `-# • \`${prefix}kick <@user> [reason]\` - Kick member from server\n` +
-                `-# • \`${prefix}timeout <@user> <duration> [reason]\` - Native Discord timeout\n` +
-                `-# • \`${prefix}mute <@user> [reason]\` - Server voice-mute member\n` +
-                `-# • \`${prefix}warn <@user> [reason]\` - Issue tracked server warning to user\n` +
-                `-# • \`${prefix}purge <count>\` - Mass delete messages\n` +
-                `-# • \`${prefix}quarantine <@user>\` - Isolate member to quarantine chamber`
+                `-# ${BULLET_EMOJI} \`${prefix}ban <@user> [reason]\` - Permanently ban member from server\n` +
+                `-# ${BULLET_EMOJI} \`${prefix}kick <@user> [reason]\` - Kick member from server\n` +
+                `-# ${BULLET_EMOJI} \`${prefix}timeout <@user> <duration> [reason]\` - Native Discord timeout\n` +
+                `-# ${BULLET_EMOJI} \`${prefix}mute <@user> [reason]\` - Server voice-mute member\n` +
+                `-# ${BULLET_EMOJI} \`${prefix}warn <@user> [reason]\` - Issue tracked server warning to user\n` +
+                `-# ${BULLET_EMOJI} \`${prefix}purge <count>\` - Mass delete messages\n` +
+                `-# ${BULLET_EMOJI} \`${prefix}quarantine <@user>\` - Isolate member to quarantine chamber`
             }
           ]
         },
@@ -518,7 +519,7 @@ export async function buildDetailedCommandHelpPayload(guild, member, user, cmdNa
           components: [
             {
               type: 10,
-              content: `## Command Not Found | ${TICK}\n` +
+              content: `# ${getRandomHeadingGlyph()} Command Not Found | ${TICK}\n` +
                 `-# The command \`!${cmdName}\` was not recognized in the Athena catalog.`
             }
           ]
@@ -538,18 +539,18 @@ export async function buildDetailedCommandHelpPayload(guild, member, user, cmdNa
   if (Array.isArray(cmd.options) && cmd.options.length > 0) {
     for (const opt of cmd.options) {
       if (opt.type === 1) { // SUB_COMMAND
-        subcommands.push(`-# • \`${prefix}${cleanName} ${opt.name}\` - ${opt.description}`);
+        subcommands.push(`-# ${BULLET_EMOJI} \`${prefix}${cleanName} ${opt.name}\` - ${opt.description}`);
       } else {
-        subcommands.push(`-# • \`${opt.name}\`${opt.required ? ' *(Required)*' : ' *(Optional)*'} - ${opt.description}`);
+        subcommands.push(`-# ${BULLET_EMOJI} \`${opt.name}\`${opt.required ? ' *(Required)*' : ' *(Optional)*'} - ${opt.description}`);
       }
     }
   }
 
-  let content = `## Command Manual: !${cleanName} | ${TICK}\n` +
+  let content = `# ${getRandomHeadingGlyph()} Command Manual: !${cleanName} | ${TICK}\n` +
     `-# **__Description:__** ${cmd.description || 'No description registered.'}\n` +
-    `-# • **Category:** \`${cmd.category || 'General'}\`\n` +
-    `-# • **Clearance Required:** \`${clearance.label}\`\n` +
-    `-# • **Aliases:** ${aliases}\n`;
+    `-# ${BULLET_EMOJI} **Category:** \`${cmd.category || 'General'}\`\n` +
+    `-# ${BULLET_EMOJI} **Clearance Required:** \`${clearance.label}\`\n` +
+    `-# ${BULLET_EMOJI} **Aliases:** ${aliases}\n`;
 
   if (subcommands.length > 0) {
     content += `\n<:info_jtc:1524111455404953663> **__Subcommands & Parameters:__**\n` + subcommands.slice(0, 8).join('\n') + '\n';
@@ -597,7 +598,7 @@ export async function handleAthenaGuideButtons(interaction) {
           components: [
             {
               type: 10,
-              content: `### **Conversation Thread Cleared | ${TICK}**\n-# Conversation memory has been reset for this channel. You can now start a fresh topic with \`${prefix}athena <question>\`.`
+              content: `# ${getRandomHeadingGlyph()} **Conversation Thread Cleared | ${TICK}**\n-# Conversation memory has been reset for this channel. You can now start a fresh topic with \`${prefix}athena <question>\`.`
             }
           ]
         }
@@ -627,7 +628,7 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Rank Card Theme Updated | ${TICK}\n` +
+                content: `# ${getRandomHeadingGlyph()} Rank Card Theme Updated | ${TICK}\n` +
                   `-# **__Applied Theme:__** \`Hogwarts (Cinematic Animated Plate)\`\n` +
                   `-# Your XP Rank Card is now equipped with Hogwarts Castle, soaring Hedwig the owl, and glowing altar candles.\n` +
                   `-# Run \`${prefix}rank\` in chat anytime to render your live animated XP card!`
@@ -649,7 +650,7 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Rank Card Theme Updated | ${TICK}\n` +
+                content: `# ${getRandomHeadingGlyph()} Rank Card Theme Updated | ${TICK}\n` +
                   `-# **__Applied Theme:__** \`Athena (Sleek Obsidian Stone)\`\n` +
                   `-# Your XP Rank Card is now set to the classic Athena Obsidian theme.\n` +
                   `-# Run \`${prefix}rank\` in chat anytime to render your card!`
@@ -671,7 +672,7 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## XP Rank Card Status | ${TICK}\n` +
+                content: `# ${getRandomHeadingGlyph()} XP Rank Card Status | ${TICK}\n` +
                   `-# **__Member:__** <@${user.id}> \`(${user.id})\`\n` +
                   `-# **__Active Theme:__** \`${currentTheme}\`\n` +
                   `-# **__How to Render:__** Run \`${prefix}rank\` in any text channel to generate your full high-res XP banner.\n` +
@@ -699,7 +700,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Manage Server, Manage Messages, or Administrator permissions required to launch the AI Announcement Studio.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Manage Server, Manage Messages, or Administrator permissions required to launch the AI Announcement Studio.`
                 }
               ]
             }
@@ -725,7 +726,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can launch the Ticket Panel Manager.\n-# Non-owners can use \`${prefix}ticket\` to open a support ticket.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can launch the Ticket Panel Manager.\n-# Non-owners can use \`${prefix}ticket\` to open a support ticket.`
                 }
               ]
             }
@@ -756,7 +757,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Viewing full security status requires Moderator or Administrator clearance.\n-# Athena Prime antinuke shield is actively monitoring server integrity.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Viewing full security status requires Moderator or Administrator clearance.\n-# Athena Prime antinuke shield is actively monitoring server integrity.`
                 }
               ]
             }
@@ -779,7 +780,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Clearance Notice | ${TICK}\n-# Enabling all security modules requires **Server Owner** clearance.\n-# As a server staff member, you can run \`${prefix}security status\` to inspect current protections.`
+                  content: `# ${getRandomHeadingGlyph()} Clearance Notice | ${TICK}\n-# Enabling all security modules requires **Server Owner** clearance.\n-# As a server staff member, you can run \`${prefix}security status\` to inspect current protections.`
                 }
               ]
             }
@@ -794,7 +795,7 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## One-Click Security Enforcement | ${TICK}\n` +
+                content: `# ${getRandomHeadingGlyph()} One-Click Security Enforcement | ${TICK}\n` +
                   `-# **__Server Owner Detected:__** <@${user.id}>\n` +
                   `-# To initialize the full autonomous antinuke and anti-raid suite with role hierarchy checks, please execute \`${prefix}security enable all\` in this channel.\n` +
                   `-# This guarantees all roles, honeypots, and quarantine channels are bound directly to the database.`
@@ -822,7 +823,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can configure the AutoMod Dashboard.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can configure the AutoMod Dashboard.`
                 }
               ]
             }
@@ -844,7 +845,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can toggle AI Toxicity AutoMod.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can toggle AI Toxicity AutoMod.`
                 }
               ]
             }
@@ -862,7 +863,7 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## AI Toxicity & Sentiment AutoMod | ${TICK}\n` +
+                content: `# ${getRandomHeadingGlyph()} AI Toxicity & Sentiment AutoMod | ${TICK}\n` +
                   `-# **__Status:__** ${turnOn ? '`Active / Shielding`' : '`Disabled`'}\n` +
                   `-# ${turnOn ? 'Doxxing attempts (IPs, SSNs, phone numbers), severe toxicity, and violent threats will be autonomously intercepted.' : 'AI Toxicity shield is now deactivated.'}`
               }
@@ -886,7 +887,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can configure the Welcome System.\n-# Run \`${prefix}welcome\` to view server greeting settings.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can configure the Welcome System.\n-# Run \`${prefix}welcome\` to view server greeting settings.`
                 }
               ]
             }
@@ -911,7 +912,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can configure the Leave System.\n-# Run \`${prefix}leave\` to view server departure settings.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can configure the Leave System.\n-# Run \`${prefix}leave\` to view server departure settings.`
                 }
               ]
             }
@@ -934,7 +935,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Welcome Test Advisory | ${TICK}\n-# • **__Status:__** \`Could not dispatch test message\`\n-# • **__Reason:__** ${result.error}\n-# Click **Open Welcome Setup** below to select a channel from the dropdown first.`
+                  content: `# ${getRandomHeadingGlyph()} Welcome Test Advisory | ${TICK}\n-# ${BULLET_EMOJI} **__Status:__** \`Could not dispatch test message\`\n-# ${BULLET_EMOJI} **__Reason:__** ${result.error}\n-# Click **Open Welcome Setup** below to select a channel from the dropdown first.`
                 }
               ]
             }
@@ -949,7 +950,7 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Welcome Test Card Dispatched | ${TICK}\n-# • **__Target Channel:__** <#${result.channelId}>\n-# • **__Status:__** \`Successfully rendered test welcome card\`\n-# Check <#${result.channelId}> to preview your card layout, avatars, and typography!`
+                content: `# ${getRandomHeadingGlyph()} Welcome Test Card Dispatched | ${TICK}\n-# ${BULLET_EMOJI} **__Target Channel:__** <#${result.channelId}>\n-# ${BULLET_EMOJI} **__Status:__** \`Successfully rendered test welcome card\`\n-# Check <#${result.channelId}> to preview your card layout, avatars, and typography!`
               }
             ]
           }
@@ -967,30 +968,30 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Dynamic Placeholders & Variable Matrix | ${TICK}\n` +
+                content: `# ${getRandomHeadingGlyph()} Dynamic Placeholders & Variable Matrix | ${TICK}\n` +
                   `-# Use these dynamic placeholders in your Top Text, Title, Description, Author, or Footer.\n\n` +
                   `### Member Counts & Ordinals\n` +
-                  `-# • \`{membercount}\` or \`{count}\` — Current server member count (e.g. \`142\`).\n` +
-                  `-# • \`{ordinal}\` or \`{ordinal_count}\` — Formatted join milestone ordinal (e.g. \`1st\`, \`2nd\`, \`142nd\`).\n\n` +
+                  `-# ${BULLET_EMOJI} \`{membercount}\` or \`{count}\` — Current server member count (e.g. \`142\`).\n` +
+                  `-# ${BULLET_EMOJI} \`{ordinal}\` or \`{ordinal_count}\` — Formatted join milestone ordinal (e.g. \`1st\`, \`2nd\`, \`142nd\`).\n\n` +
                   `### User Information\n` +
-                  `-# • \`{user}\` or \`{member}\` — Member ping (\`<@id>\`) or formatted link based on Name Format.\n` +
-                  `-# • \`{mention}\` — Literal user ping (\`<@id>\`).\n` +
-                  `-# • \`{username}\` — Clean raw username (e.g. \`gwen\`).\n` +
-                  `-# • \`{displayname}\` or \`{nickname}\` — Server nickname or display name.\n` +
-                  `-# • \`{tag}\` — Full Discord tag.\n` +
-                  `-# • \`{userid}\` or \`{id}\` — Raw Discord user snowflake ID.\n` +
-                  `-# • \`{avatar}\` — User avatar CDN URL.\n\n` +
+                  `-# ${BULLET_EMOJI} \`{user}\` or \`{member}\` — Member ping (\`<@id>\`) or formatted link based on Name Format.\n` +
+                  `-# ${BULLET_EMOJI} \`{mention}\` — Literal user ping (\`<@id>\`).\n` +
+                  `-# ${BULLET_EMOJI} \`{username}\` — Clean raw username (e.g. \`gwen\`).\n` +
+                  `-# ${BULLET_EMOJI} \`{displayname}\` or \`{nickname}\` — Server nickname or display name.\n` +
+                  `-# ${BULLET_EMOJI} \`{tag}\` — Full Discord tag.\n` +
+                  `-# ${BULLET_EMOJI} \`{userid}\` or \`{id}\` — Raw Discord user snowflake ID.\n` +
+                  `-# ${BULLET_EMOJI} \`{avatar}\` — User avatar CDN URL.\n\n` +
                   `### Server Information\n` +
-                  `-# • \`{server}\` — Server name.\n` +
-                  `-# • \`{serverid}\` — Server snowflake ID.\n` +
-                  `-# • \`{server.icon}\` — Server icon CDN URL.\n` +
-                  `-# • \`{owner}\` — Server Owner mention (\`<@owner_id>\`).\n` +
-                  `-# • \`{boosts}\` — Server Nitro boost count.\n` +
-                  `-# • \`{roles}\` — Total server role count.\n` +
-                  `-# • \`{channels}\` — Total server channel count.\n\n` +
+                  `-# ${BULLET_EMOJI} \`{server}\` — Server name.\n` +
+                  `-# ${BULLET_EMOJI} \`{serverid}\` — Server snowflake ID.\n` +
+                  `-# ${BULLET_EMOJI} \`{server.icon}\` — Server icon CDN URL.\n` +
+                  `-# ${BULLET_EMOJI} \`{owner}\` — Server Owner mention (\`<@owner_id>\`).\n` +
+                  `-# ${BULLET_EMOJI} \`{boosts}\` — Server Nitro boost count.\n` +
+                  `-# ${BULLET_EMOJI} \`{roles}\` — Total server role count.\n` +
+                  `-# ${BULLET_EMOJI} \`{channels}\` — Total server channel count.\n\n` +
                   `### Relative Timestamps\n` +
-                  `-# • \`{created}\` — Discord relative timestamp for account age.\n` +
-                  `-# • \`{joined}\` — Discord relative timestamp for guild join date.\n\n` +
+                  `-# ${BULLET_EMOJI} \`{created}\` — Discord relative timestamp for account age.\n` +
+                  `-# ${BULLET_EMOJI} \`{joined}\` — Discord relative timestamp for guild join date.\n\n` +
                   `### Example Embed Setup\n` +
                   `-# Top Text: \`Welcome {user}! You are our {ordinal} member!\`\n` +
                   `-# Title: \`Welcome to {server}!\`\n` +
@@ -1016,7 +1017,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Administrator permissions are required to launch the Giveaway Manager.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Administrator permissions are required to launch the Giveaway Manager.`
                 }
               ]
             }
@@ -1051,7 +1052,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Administrator permissions are required to configure Server Verification.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Administrator permissions are required to configure Server Verification.`
                 }
               ]
             }
@@ -1072,11 +1073,11 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `## Verification Gateway Control | ${TICK}\n` +
-                    `-# • **Operational Status:** \`Deployed & Actively Screening\`\n` +
-                    `-# • **Verification Channel:** ${vChan}\n` +
-                    `-# • **Verified Role:** ${vRole}\n` +
-                    `-# • **Challenge Mechanism:** \`${vMode}\`\n\n` +
+                  content: `# ${getRandomHeadingGlyph()} Verification Gateway Control | ${TICK}\n` +
+                    `-# ${BULLET_EMOJI} **Operational Status:** \`Deployed & Actively Screening\`\n` +
+                    `-# ${BULLET_EMOJI} **Verification Channel:** ${vChan}\n` +
+                    `-# ${BULLET_EMOJI} **Verified Role:** ${vRole}\n` +
+                    `-# ${BULLET_EMOJI} **Challenge Mechanism:** \`${vMode}\`\n\n` +
                     `-# Switch verification authentication modes or dismantle the gate below:`
                 }
               ]
@@ -1102,14 +1103,14 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Verification Gateway Setup | ${TICK}\n` +
-                  `-# • **Operational Status:** \`Not Configured\`\n` +
-                  `-# • **Instant Setup:** Run \`${prefix}verify setup <@role> [button|captcha|math]\` in your gate channel.\n` +
-                  `-# • **Slash Setup:** \`/verify setup role:@Role mode:button\`\n\n` +
+                content: `# ${getRandomHeadingGlyph()} Verification Gateway Setup | ${TICK}\n` +
+                  `-# ${BULLET_EMOJI} **Operational Status:** \`Not Configured\`\n` +
+                  `-# ${BULLET_EMOJI} **Instant Setup:** Run \`${prefix}verify setup <@role> [button|captcha|math]\` in your gate channel.\n` +
+                  `-# ${BULLET_EMOJI} **Slash Setup:** \`/verify setup role:@Role mode:button\`\n\n` +
                   `-# **Available Modes:**\n` +
-                  `-# • \`button\`: 1-Click instant identity confirmation\n` +
-                  `-# • \`captcha\`: Distorted image CAPTCHA (Zero false positives)\n` +
-                  `-# • \`math\`: Arithmetic challenge filtering automated bot scripts`
+                  `-# ${BULLET_EMOJI} \`button\`: 1-Click instant identity confirmation\n` +
+                  `-# ${BULLET_EMOJI} \`captcha\`: Distorted image CAPTCHA (Zero false positives)\n` +
+                  `-# ${BULLET_EMOJI} \`math\`: Arithmetic challenge filtering automated bot scripts`
               }
             ]
           },
@@ -1130,7 +1131,7 @@ export async function handleAthenaGuideButtons(interaction) {
       const hasPerm = isExtraOwnerOrHigher(user.id, guild);
       if (!hasPerm) {
         return cv2.respond(interaction, {
-          components: [{ type: 17, components: [{ type: 10, content: `### Access Denied | ${TICK}\n-# Extra Owner or Server Owner clearance required.` }] }],
+          components: [{ type: 17, components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Extra Owner or Server Owner clearance required.` }] }],
           flags: MessageFlags.IsComponentsV2
         }, 7).catch(() => null);
       }
@@ -1138,7 +1139,7 @@ export async function handleAthenaGuideButtons(interaction) {
       const vData = db.getVerification(guild?.id || '0');
       if (!vData || !vData.roleId) {
         return cv2.respond(interaction, {
-          components: [{ type: 17, components: [{ type: 10, content: `### Setup Required | ${TICK}\n-# Please deploy verification first using \`${prefix}verify setup <@role>\`.` }] }],
+          components: [{ type: 17, components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} Setup Required | ${TICK}\n-# Please deploy verification first using \`${prefix}verify setup <@role>\`.` }] }],
           flags: MessageFlags.IsComponentsV2
         }, 7).catch(() => null);
       }
@@ -1150,9 +1151,9 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Verification Mode Switched | ${TICK}\n` +
-                  `-# • **New Mode:** \`${newMode.toUpperCase()}\`\n` +
-                  `-# • Joining members must now pass **${newMode.toUpperCase()}** authentication to receive <@&${vData.roleId}>.`
+                content: `# ${getRandomHeadingGlyph()} Verification Mode Switched | ${TICK}\n` +
+                  `-# ${BULLET_EMOJI} **New Mode:** \`${newMode.toUpperCase()}\`\n` +
+                  `-# ${BULLET_EMOJI} Joining members must now pass **${newMode.toUpperCase()}** authentication to receive <@&${vData.roleId}>.`
               }
             ]
           }
@@ -1166,7 +1167,7 @@ export async function handleAthenaGuideButtons(interaction) {
       const hasPerm = isExtraOwnerOrHigher(user.id, guild);
       if (!hasPerm) {
         return cv2.respond(interaction, {
-          components: [{ type: 17, components: [{ type: 10, content: `### Access Denied | ${TICK}\n-# Extra Owner or Server Owner clearance required.` }] }],
+          components: [{ type: 17, components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Extra Owner or Server Owner clearance required.` }] }],
           flags: MessageFlags.IsComponentsV2
         }, 7).catch(() => null);
       }
@@ -1188,7 +1189,7 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Verification Gateway Dismantled | ${TICK}\n` +
+                content: `# ${getRandomHeadingGlyph()} Verification Gateway Dismantled | ${TICK}\n` +
                   `-# The verification panel and database bindings have been completely removed.\n` +
                   `-# Run \`${prefix}verify setup <@role>\` anytime to re-deploy.`
               }
@@ -1212,11 +1213,11 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `## Panic Lockdown Status: ACTIVE | ${TICK}\n` +
-                    `-# • **Active Tier:** \`Tier ${snap.tier}\`\n` +
-                    `-# • **Engaged Since:** <t:${timeStr}:R> (<t:${timeStr}:f>)\n` +
-                    `-# • **Channels Isolated:** \`${lockedCount} channels\`\n` +
-                    `-# • **Snapshot Integrity:** \`Secured in SQLite storage\`\n\n` +
+                  content: `# ${getRandomHeadingGlyph()} Panic Lockdown Status: ACTIVE | ${TICK}\n` +
+                    `-# ${BULLET_EMOJI} **Active Tier:** \`Tier ${snap.tier}\`\n` +
+                    `-# ${BULLET_EMOJI} **Engaged Since:** <t:${timeStr}:R> (<t:${timeStr}:f>)\n` +
+                    `-# ${BULLET_EMOJI} **Channels Isolated:** \`${lockedCount} channels\`\n` +
+                    `-# ${BULLET_EMOJI} **Snapshot Integrity:** \`Secured in SQLite storage\`\n\n` +
                     `-# Click **Emergency Unlockdown** below to restore all channel permissions instantly.`
                 }
               ]
@@ -1240,10 +1241,10 @@ export async function handleAthenaGuideButtons(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Panic Lockdown Status: NORMAL | ${TICK}\n` +
-                  `-# • **Operational State:** \`No Active Lockdown\`\n` +
-                  `-# • **Server Channels:** Standard server permissions active across all categories.\n` +
-                  `-# • **Emergency Action:** In case of a raid or compromise, run \`${prefix}lockdown [1|2|3]\` to isolate channels instantly.`
+                content: `# ${getRandomHeadingGlyph()} Panic Lockdown Status: NORMAL | ${TICK}\n` +
+                  `-# ${BULLET_EMOJI} **Operational State:** \`No Active Lockdown\`\n` +
+                  `-# ${BULLET_EMOJI} **Server Channels:** Standard server permissions active across all categories.\n` +
+                  `-# ${BULLET_EMOJI} **Emergency Action:** In case of a raid or compromise, run \`${prefix}lockdown [1|2|3]\` to isolate channels instantly.`
               }
             ]
           },
@@ -1274,7 +1275,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `### Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can lift panic lockdown.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Only Extra Owners or the Server Owner can lift panic lockdown.`
                 }
               ]
             }

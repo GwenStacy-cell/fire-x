@@ -1,5 +1,6 @@
 import { PermissionFlagsBits } from 'discord.js';
 import cv2 from '../cv2.js';
+import { BULLET_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
 import { isAuthorized, isBotOwnerSync } from '../utils/helpers.js';
 
@@ -225,7 +226,7 @@ export const commands = [
       let replyTitle = addedRoles.length === 1 ? 'Role Added' : 'Roles Added';
       let replyDesc = '';
       if (addedRoles.length > 0) {
-        replyDesc += `${message.author} has given **${addedRoles.join(', ')}** to ${target}\n`;
+        replyDesc += `${BULLET_EMOJI} ${message.author} has given **${addedRoles.join(', ')}** to ${target}\n`;
       }
       if (failedRoles.length > 0) {
         replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
@@ -276,7 +277,7 @@ export const commands = [
       let replyTitle = addedRoles.length === 1 ? 'Role Added' : 'Roles Added';
       let replyDesc = '';
       if (addedRoles.length > 0) {
-        replyDesc += `${interaction.user} has given **${addedRoles.join(', ')}** to ${target}\n`;
+        replyDesc += `${BULLET_EMOJI} ${interaction.user} has given **${addedRoles.join(', ')}** to ${target}\n`;
       }
       if (failedRoles.length > 0) {
         replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
@@ -336,7 +337,7 @@ export const commands = [
       let replyTitle = removedRoles.length === 1 ? 'Role Removed' : 'Roles Removed';
       let replyDesc = '';
       if (removedRoles.length > 0) {
-        replyDesc += `${message.author} has removed **${removedRoles.join(', ')}** from ${target}\n`;
+        replyDesc += `${BULLET_EMOJI} ${message.author} has removed **${removedRoles.join(', ')}** from ${target}\n`;
       }
       if (failedRoles.length > 0) {
         replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
@@ -387,7 +388,7 @@ export const commands = [
       let replyTitle = removedRoles.length === 1 ? 'Role Removed' : 'Roles Removed';
       let replyDesc = '';
       if (removedRoles.length > 0) {
-        replyDesc += `${interaction.user} has removed **${removedRoles.join(', ')}** from ${target}\n`;
+        replyDesc += `${BULLET_EMOJI} ${interaction.user} has removed **${removedRoles.join(', ')}** from ${target}\n`;
       }
       if (failedRoles.length > 0) {
         replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;

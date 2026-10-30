@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from './emojis.js';
 import fetch from 'node-fetch';
 
 /**
@@ -670,7 +671,7 @@ export function buildTicketTriageContainer({ category, priority, summary, recomm
     components: [
       {
         type: 10,
-        content: `## Smart Ticket Triage | <a:03_tick_circle:1565665642084827206>`
+        content: `# ${getRandomHeadingGlyph()} Smart Ticket Triage | <a:03_tick_circle:1565665642084827206>`
       },
       { type: 14, divider: true },
       {

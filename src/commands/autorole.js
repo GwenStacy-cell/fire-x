@@ -1,5 +1,6 @@
 import { MessageFlags, ActionRowBuilder, RoleSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import db from '../database.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 import { hasCriticalOnboardingPerms } from '../utils/onboardingGuard.js';
 
 const TICK = '<a:black_dot:1544740123403620422>';
@@ -61,7 +62,7 @@ export function getAutoRolePanel(guildId, client) {
         components: [
           {
             type: 10,
-            content: `> # **AutoRole & Vanity Engine**\n\n-# **Automatically assign roles to new members, and reward users who promote your server vanity.**\n\n-# **${TICK} Use the dropdowns below to configure roles.**`
+            content: `# ${getRandomHeadingGlyph()} AutoRole & Vanity Engine\n\n-# Automatically assign roles to new members, and reward users who promote your server vanity.\n\n-# ${BULLET_EMOJI} Use the dropdowns below to configure roles.`
           }
         ],
         accessory: {
@@ -72,12 +73,12 @@ export function getAutoRolePanel(guildId, client) {
       { type: 14, divider: true },
       {
         type: 10,
-        content: `-# **${TICK} System Documentation:**\n-# \u2022 **Human AutoRole:** Assigned instantly to real users when they join the server.\n-# \u2022 **Bot AutoRole:** Assigned instantly to integration bots when they are invited.\n-# \u2022 **Vanity String:** A custom text (like \`.gg/server\`) you want members to put in their Discord status.\n-# \u2022 **Vanity Reward:** The special role granted to members while they have the string in their status (automatically removed if they delete it).`
+        content: `-# **${TICK} System Documentation:**\n-# ${BULLET_EMOJI} **Human AutoRole:** Assigned instantly to real users when they join the server.\n-# ${BULLET_EMOJI} **Bot AutoRole:** Assigned instantly to integration bots when they are invited.\n-# ${BULLET_EMOJI} **Vanity String:** A custom text (like \`.gg/server\`) you want members to put in their Discord status.\n-# ${BULLET_EMOJI} **Vanity Reward:** The special role granted to members while they have the string in their status (automatically removed if they delete it).`
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: `-# **${TICK} Join Auto-Roles:**\n-# **\u2022 Humans:**  ${ARROW}  ${humanRole}\n-# **\u2022 Bots:**  ${ARROW}  ${botRole}\n\n-# **${TICK} Vanity Status Rewards:**\n-# **\u2022 Target String:**  ${ARROW}  ${vanityStr}\n-# **\u2022 Reward Roles:**  ${ARROW}  ${vanityRole}`
+        content: `-# **${TICK} Join Auto-Roles:**\n-# **${BULLET_EMOJI} Humans:**  ${ARROW}  ${humanRole}\n-# **${BULLET_EMOJI} Bots:**  ${ARROW}  ${botRole}\n\n-# **${TICK} Vanity Status Rewards:**\n-# **${BULLET_EMOJI} Target String:**  ${ARROW}  ${vanityStr}\n-# **${BULLET_EMOJI} Reward Roles:**  ${ARROW}  ${vanityRole}`
       },
       { type: 14, divider: true },
       row1.toJSON(),

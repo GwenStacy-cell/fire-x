@@ -253,20 +253,20 @@ export function buildPromptIntakeContainer(draft = null) {
   const comps = [
     {
       type: 10,
-      content: `## Athena AI Announcement Studio | <a:uptime:1552608831060844575>\n-# Transform rough ideas, typo-filled notes, or brief human bullet points into stunning server announcements.\n-# Powered by Google Gemini 3.8 Flash High Intelligence Pipeline.`
+      content: `# ${getRandomHeadingGlyph()} Athena AI Announcement Studio | <a:uptime:1552608831060844575>\n-# Transform rough ideas, typo-filled notes, or brief human bullet points into stunning server announcements.\n-# Powered by Google Gemini 3.8 Flash High Intelligence Pipeline.`
     },
     { type: 14, divider: true },
     {
       type: 10,
       content: 
-        `-# • **__Custom Emoji & ID Support:__** Provide full emojis (\`<:name:id>\` / \`<a:name:id>\`) or raw **Emoji IDs** (e.g. \`1557841381630681106\`) for heading and bullets.\n` +
-        `-# • **__Live Studio Preview:__** Inspect, adjust mentions, choose target channel, and fully edit heading, content, and footer before sending.\n` +
-        `-# • **__Direct Command:__** \`!aiannounce <your prompt / notes>\` or write your prompt below.`
+        `-# ${BULLET_EMOJI} **__Custom Emoji & ID Support:__** Provide full emojis (\`<:name:id>\` / \`<a:name:id>\`) or raw **Emoji IDs** (e.g. \`1557841381630681106\`) for heading and bullets.\n` +
+        `-# ${BULLET_EMOJI} **__Live Studio Preview:__** Inspect, adjust mentions, choose target channel, and fully edit heading, content, and footer before sending.\n` +
+        `-# ${BULLET_EMOJI} **__Direct Command:__** \`!aiannounce <your prompt / notes>\` or write your prompt below.`
     },
     { type: 14, divider: true },
     {
       type: 10,
-      content: `-# • **__Target Channel:__** ${targetText} \u00b7 **__Broadcast:__** \`${pingText}\``
+      content: `-# ${BULLET_EMOJI} **__Target Channel:__** ${targetText} \u00b7 **__Broadcast:__** \`${pingText}\``
     }
   ];
 
@@ -354,7 +354,7 @@ export function buildAnnouncementStudioContainer(draft, isPreview = true) {
   const targetText = draft.targetChannelId ? `<#${draft.targetChannelId}>` : '`Not Selected`';
   const pingLabel = draft.pingMode === 'everyone' ? '@everyone' : (draft.pingMode === 'here' ? '@here' : 'None');
   const previewControlsText = isPreview
-    ? `-# • **__AI Announcement Studio Controls:__** Target: ${targetText} \u00b7 Broadcast: \`${pingLabel}\``
+    ? `-# ${BULLET_EMOJI} **__AI Announcement Studio Controls:__** Target: ${targetText} \u00b7 Broadcast: \`${pingLabel}\``
     : '';
 
   const auxLength = titleText.length + footerText.length + (isPreview ? previewControlsText.length + 50 : 0) + 60;
@@ -584,7 +584,7 @@ export const commands = [
         components: [
           {
             type: 10,
-            content: `## Crafting Announcement | <a:loading:1542155051286396938>\n-# Athena AI is analyzing your prompt and formatting your announcement...`
+            content: `# ${getRandomHeadingGlyph()} Crafting Announcement | <a:loading:1542155051286396938>\n-# Athena AI is analyzing your prompt and formatting your announcement...`
           }
         ]
       };
@@ -644,7 +644,7 @@ export const commands = [
         components: [
           {
             type: 10,
-            content: `## Crafting Announcement | <a:loading:1542155051286396938>\n-# Athena AI is analyzing your prompt and formatting your announcement...`
+            content: `# ${getRandomHeadingGlyph()} Crafting Announcement | <a:loading:1542155051286396938>\n-# Athena AI is analyzing your prompt and formatting your announcement...`
           }
         ]
       };
@@ -821,7 +821,7 @@ export async function handleAIAnnouncementInteractions(interaction) {
           components: [
             {
               type: 10,
-              content: `## Announcement Published | <a:03_tick_circle:1565665642084827206>\n-# Successfully broadcasted to <#${draft.targetChannelId}>.\n-# • **__Jump to Announcement:__** [View Message](${sentMsg.url})\n-# • **__Broadcast Mention:__** \`${draft.pingMode === 'none' ? 'None' : '@' + draft.pingMode}\``
+              content: `# ${getRandomHeadingGlyph()} Announcement Published | <a:03_tick_circle:1565665642084827206>\n-# Successfully broadcasted to <#${draft.targetChannelId}>.\n-# ${BULLET_EMOJI} **__Jump to Announcement:__** [View Message](${sentMsg.url})\n-# ${BULLET_EMOJI} **__Broadcast Mention:__** \`${draft.pingMode === 'none' ? 'None' : '@' + draft.pingMode}\``
             }
           ]
         };
@@ -930,7 +930,7 @@ export async function handleAIAnnouncementInteractions(interaction) {
         components: [
           {
             type: 10,
-            content: `## Crafting Announcement | <a:loading:1542155051286396938>\n-# Athena AI is analyzing your prompt and formatting your announcement...`
+            content: `# ${getRandomHeadingGlyph()} Crafting Announcement | <a:loading:1542155051286396938>\n-# Athena AI is analyzing your prompt and formatting your announcement...`
           }
         ]
       };
@@ -989,7 +989,7 @@ export async function handleAIAnnouncementInteractions(interaction) {
         components: [
           {
             type: 10,
-            content: `## Refining Announcement | <a:loading:1542155051286396938>\n-# Athena AI is adjusting your announcement draft...`
+            content: `# ${getRandomHeadingGlyph()} Refining Announcement | <a:loading:1542155051286396938>\n-# Athena AI is adjusting your announcement draft...`
           }
         ]
       };

@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { AuditLogEvent } from 'discord.js';
@@ -138,7 +139,7 @@ if (!message.guild) return;
               components: [
                 {
                   type: 10,
-                  content: `## Ghost Ping Intercepted | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Ghost Ping Intercepted | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Sender:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
                            `> -# • **Target(s):** ${pinged.join(', ').substring(0, 300)}\n` +
                            `> -# • **Deleted Content:** ${content.substring(0, 350)}`

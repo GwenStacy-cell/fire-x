@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
 import { hasDangerousPerms, DANGEROUS_PERMS } from '../utils/antinuke.js';
 import { logToSecurityChannel, isBotOwnerSync, getUserTierName } from '../utils/helpers.js';
@@ -91,7 +92,7 @@ export default {
         const alertContainer = {
           type: 17,
           components: [
-            { type: 10, content: `## Rogue Role-Based Invite Link Destroyed | <a:03_tick_circle:1565665642084827206>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Rogue Role-Based Invite Link Destroyed | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -115,7 +116,7 @@ export default {
             const ownerDM = {
               type: 17,
               components: [
-                { type: 10, content: `## Critical Alert: Rogue Role-Based Invite Destroyed | <a:03_tick_circle:1565665642084827206>` },
+                { type: 10, content: `# ${getRandomHeadingGlyph()} Critical Alert: Rogue Role-Based Invite Destroyed | <a:03_tick_circle:1565665642084827206>` },
                 { type: 14, divider: true },
                 {
                   type: 10,

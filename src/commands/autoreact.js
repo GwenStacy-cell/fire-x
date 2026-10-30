@@ -1,5 +1,6 @@
 ﻿import { MessageFlags, ActionRowBuilder, ChannelSelectMenuBuilder, ChannelType, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import db from '../database.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 
 const TICK = '<a:black_dot:1544740123403620422>';
 const ARROW = '<a:z_arrow_pink1:1523082728004653138>';
@@ -15,7 +16,7 @@ export function getAutoReactPanel(guildId, client) {
   } else {
     for (const cid of channelIds) {
       if (reacts[cid].length === 0) continue;
-      rulesText += `-# **\u2022 <#${cid}>**  ${ARROW}  **${reacts[cid].join(' ')}**\n`;
+      rulesText += `-# **${BULLET_EMOJI} <#${cid}>**  ${ARROW}  **${reacts[cid].join(' ')}**\n`;
     }
     if (!rulesText) rulesText = `-# **${ARROW} No active auto-react channels.**`;
   }
@@ -40,7 +41,7 @@ export function getAutoReactPanel(guildId, client) {
         components: [
           {
             type: 10,
-            content: `> # **Auto-React Engine**\n\n-# **Automatically add emoji reactions to messages in specific channels.**\n\n-# **${TICK} Select a channel below to configure reactions!**`
+            content: `# ${getRandomHeadingGlyph()} Auto-React Engine\n\n-# Automatically add emoji reactions to messages in specific channels.\n\n-# ${BULLET_EMOJI} Select a channel below to configure reactions!`
           }
         ],
         accessory: {
@@ -51,7 +52,7 @@ export function getAutoReactPanel(guildId, client) {
       { type: 14, divider: true },
       {
         type: 10,
-        content: `-# **${TICK} System Documentation:**\n-# \u2022 **How it works:** Whenever any user sends a message in a configured channel, Athena will instantly react to their message with the emojis you set.\n-# \u2022 **Multiple Emojis:** You can add as many emojis as you want. Just separate them with a space!\n-# \u2022 **Use Cases:** Perfect for #art channels (auto upvote/downvote), #suggestions, or welcome lobbies.`
+        content: `-# **${TICK} System Documentation:**\n-# ${BULLET_EMOJI} **How it works:** Whenever any user sends a message in a configured channel, Athena will instantly react to their message with the emojis you set.\n-# ${BULLET_EMOJI} **Multiple Emojis:** You can add as many emojis as you want. Just separate them with a space!\n-# ${BULLET_EMOJI} **Use Cases:** Perfect for #art channels (auto upvote/downvote), #suggestions, or welcome lobbies.`
       },
       { type: 14, divider: true },
       {

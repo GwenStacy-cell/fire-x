@@ -1,5 +1,6 @@
 import { MessageFlags } from 'discord.js';
 import cv2 from '../cv2.js';
+import { getRandomHeadingGlyph, TICK_EMOJI, BULLET_EMOJI } from '../utils/emojis.js';
 import { resolveLocationInput, fetchWeatherData, buildWeatherReportPayload } from '../utils/weatherMap.js';
 
 export const commands = [
@@ -27,13 +28,13 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Weather Reconnaissance Guidance | <a:03_tick_circle:1565665642084827206>\n` +
+                  content: `# ${getRandomHeadingGlyph()} Weather Reconnaissance Guidance | ${TICK_EMOJI}\n` +
                            `> -# <a:uptime:1552608831060844575> **Usage:** \`!weather <city | country | coordinates | google_maps_url>\`\n` +
-                           `> -# • **All Aliases:** \`!wtr\`, \`!climate\`, \`!forecast\`, \`!temp\`, \`!temperature\`, \`/weather\`\n` +
-                           `> -# • **City Example:** \`!weather London\` or \`!wtr Chennai\`\n` +
-                           `> -# • **Coordinates Example:** \`!wtr 13.0827, 80.2707\`\n` +
-                           `> -# • **Google Maps Link:** \`!wtr https://maps.google.com/?q=Eiffel+Tower\`\n` +
-                           `> -# • **Projection Feature:** Generates an Equirectangular world map with locked radar crosshairs.`
+                           `> -# ${BULLET_EMOJI} **All Aliases:** \`!wtr\`, \`!climate\`, \`!forecast\`, \`!temp\`, \`!temperature\`, \`/weather\`\n` +
+                           `> -# ${BULLET_EMOJI} **City Example:** \`!weather London\` or \`!wtr Chennai\`\n` +
+                           `> -# ${BULLET_EMOJI} **Coordinates Example:** \`!wtr 13.0827, 80.2707\`\n` +
+                           `> -# ${BULLET_EMOJI} **Google Maps Link:** \`!wtr https://maps.google.com/?q=Eiffel+Tower\`\n` +
+                           `> -# ${BULLET_EMOJI} **Projection Feature:** Generates an Equirectangular world map with locked radar crosshairs.`
                 },
                 { type: 14, divider: true },
                 { type: 10, content: `-# **Athena Prime Atmospheric Sentry \u2022 World Meteorological Engine**` }

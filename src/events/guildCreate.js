@@ -1,4 +1,5 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { getRandomHeadingGlyph, TICK_EMOJI, WRONG_EMOJI, BULLET_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
 import { setupDashboardChannel } from '../utils/dashboardManager.js';
 import { removePersistenceRoles } from '../utils/antiStrip.js';
@@ -49,20 +50,29 @@ export default {
 
       if (db.isServerBanned(guild.id)) {
         if (owners.length > 0) {
-          const embed = new EmbedBuilder()
-            .setColor(0xFF0000)
-            .setTitle('Banned Server Addition Attempt')
-            .setDescription(`${addedBy} tried to add me to a banned server. I have automatically left it.`)
-            .addFields(
-              { name: 'Server Name', value: `${guild.name}`, inline: true },
-              { name: 'Server ID', value: `\`${guild.id}\``, inline: true },
-              { name: 'Owner ID', value: `\`${guild.ownerId}\``, inline: true }
-            )
-            .setFooter({ text: 'Athena Bulletproof Security System � V1.0.0' })
-            .setTimestamp();
+          const glyph = getRandomHeadingGlyph();
+          const bannedContainer = {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content: `# ${glyph} Banned Server Addition Attempt | ${WRONG_EMOJI}`
+              },
+              { type: 14, divider: true },
+              {
+                type: 10,
+                content: `${BULLET_EMOJI} ${addedBy} tried to add me to a banned server. I have automatically left it.\n\n-# ${BULLET_EMOJI} **Server Name:** \`${guild.name}\`  ·  **Server ID:** \`${guild.id}\`  ·  **Owner ID:** \`${guild.ownerId}\``
+              },
+              { type: 14, divider: true },
+              {
+                type: 10,
+                content: '-# **Athena Bulletproof Security System**'
+              }
+            ]
+          };
           
           for (const owner of owners) {
-            await owner.send({ embeds: [embed] }).catch(() => null);
+            await owner.send({ components: [bannedContainer], flags: 32768 }).catch(() => null);
           }
         }
         await guild.leave().catch(() => null);
@@ -71,34 +81,46 @@ export default {
 
       if (owners.length === 0) return;
 
-      const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
-        .setTitle('New Server Joined')
-        .setDescription(`${addedBy} just added me to a new server.`)
-        .addFields(
-          { name: 'Server Name', value: `${guild.name}`, inline: true },
-          { name: 'Server ID', value: `\`${guild.id}\``, inline: true },
-          { name: 'Owner ID', value: `\`${guild.ownerId}\``, inline: true },
-          { name: 'Member Count', value: `${guild.memberCount}`, inline: true },
-          { name: 'Channel Count', value: `${guild.channels.cache.size}`, inline: true },
-          { name: 'Role Count', value: `${guild.roles.cache.size}`, inline: true }
-        )
-        .setFooter({ text: 'Athena Prime Server Tracking' })
-        .setTimestamp();
-
-      if (guild.iconURL()) {
-        embed.setThumbnail(guild.iconURL({ dynamic: true, size: 256 }));
-      }
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`gen_invite_${guild.id}`)
-          .setLabel('Generate Invite')
-          .setStyle(ButtonStyle.Primary)
-      );
+      const glyph = getRandomHeadingGlyph();
+      const iconUrl = guild.iconURL({ size: 128, extension: 'png' });
+      const joinContainer = {
+        type: 17,
+        components: [
+          iconUrl ? {
+            type: 9,
+            components: [{ type: 10, content: `# ${glyph} New Server Joined | ${TICK_EMOJI}` }],
+            accessory: { type: 11, media: { url: iconUrl } }
+          } : {
+            type: 10,
+            content: `# ${glyph} New Server Joined | ${TICK_EMOJI}`
+          },
+          { type: 14, divider: true },
+          {
+            type: 10,
+            content: `${BULLET_EMOJI} ${addedBy} just added me to a new server.\n\n-# ${BULLET_EMOJI} **Server Name:** \`${guild.name}\`  ·  **Server ID:** \`${guild.id}\`  ·  **Owner ID:** \`${guild.ownerId}\`\n-# ${BULLET_EMOJI} **Member Count:** \`${guild.memberCount}\`  ·  **Channel Count:** \`${guild.channels.cache.size}\`  ·  **Role Count:** \`${guild.roles.cache.size}\``
+          },
+          { type: 14, divider: true },
+          {
+            type: 1,
+            components: [
+              {
+                type: 2,
+                style: 1,
+                label: 'Generate Invite',
+                custom_id: `gen_invite_${guild.id}`
+              }
+            ]
+          },
+          { type: 14, divider: true },
+          {
+            type: 10,
+            content: '-# **Athena Prime Server Tracking**'
+          }
+        ]
+      };
 
       for (const owner of owners) {
-        await owner.send({ embeds: [embed], components: [row] }).catch(() => null);
+        await owner.send({ components: [joinContainer], flags: 32768 }).catch(() => null);
       }
 
       // Initialize the dashboard if Anti-Nuke is enabled (default is true)

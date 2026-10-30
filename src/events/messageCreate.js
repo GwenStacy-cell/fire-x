@@ -22,6 +22,7 @@ import { buildAutoReplyPreview } from '../commands/trigger.js';
 import { handleCountingMessage } from '../utils/countingEngine.js';
 import { scanForPhishing } from '../utils/phishingShield.js';
 import { scanToxicityAndSentiment } from '../utils/ai.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 
 function matchesTrigger(messageContent, triggerKeyword) {
   if (!messageContent || !triggerKeyword) return false;
@@ -258,11 +259,11 @@ export default {
             components: [
               {
                 type: 10,
-                content: `## Honeypot Intruder Neutralized | <a:03_tick_circle:1565665642084827206>\n` +
+                content: `# ${getRandomHeadingGlyph()} Honeypot Intruder Neutralized | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Target Banned:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
-                         `> -# • **Trap Channel:** <#${message.channel.id}>\n` +
-                         `> -# • **Trigger Payload:** \`${message.content?.substring(0, 150) || 'Attachment/Media'}\`\n` +
-                         `> -# • **Enforcement Action:** Instant Permanent Ban (\`<15ms\`)`
+                         `> -#  **Trap Channel:** <#${message.channel.id}>\n` +
+                         `> -#  **Trigger Payload:** \`${message.content?.substring(0, 150) || 'Attachment/Media'}\`\n` +
+                         `> -#  **Enforcement Action:** Instant Permanent Ban (\`<15ms\`)`
               },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Honeypot Sentry**` }
@@ -601,18 +602,21 @@ export default {
   
               const iconUrl = message.guild.iconURL({ extension: 'png', size: 128 }) || message.author.displayAvatarURL({ extension: 'png', size: 128 });
   
+              const glyph1 = getRandomHeadingGlyph();
+              const glyph2 = getRandomHeadingGlyph();
+
               const container = {
                   type: 17,
                   components: [
                       { 
                         type: 9, 
-                        components: [{ type: 10, content: '**Athena Notification : ' + message.guild.name + '**' }], 
+                        components: [{ type: 10, content: `# ${glyph1} Athena Notification : ${message.guild.name}` }], 
                         accessory: { type: 11, media: { url: iconUrl } } 
                       },
                       { type: 14, divider: true },
                       { 
                         type: 10, 
-                        content: `**Tagged By:** [${cleanNick}](https://discord.com/users/${message.author.id})\n-# Channel: [#${cleanChannel}](https://discord.com/channels/${message.guild.id}/${message.channel.id})\n-# Message: ${snippet}` 
+                        content: `${glyph2} **Tagged By:** <@${message.author.id}>\n-# Channel: [#${cleanChannel}](https://discord.com/channels/${message.guild.id}/${message.channel.id})\n-# Message: \`${snippet}\`` 
                       },
                       { type: 14, divider: true },
                       {
@@ -936,9 +940,9 @@ export default {
                       type: 10,
                       content:
                         `# New ModMail Ticket\n` +
-                        `-# • **Applicant:** ${message.author} (\`${message.author.id}\`)\n` +
-                        `-# • **Account Created:** <t:${Math.floor(message.author.createdTimestamp / 1000)}:R>\n` +
-                        `-# • **Staff Instructions:** Use \`!reply <message>\` to respond back to the user.`
+                        `-#  **Applicant:** ${message.author} (\`${message.author.id}\`)\n` +
+                        `-#  **Account Created:** <t:${Math.floor(message.author.createdTimestamp / 1000)}:R>\n` +
+                        `-#  **Staff Instructions:** Use \`!reply <message>\` to respond back to the user.`
                     }
                   ]
                 };
@@ -954,7 +958,7 @@ export default {
                     type: 10,
                     content:
                       `# Incoming User Message\n` +
-                      `-# • **From:** ${message.author}\n\n` +
+                      `-#  **From:** ${message.author}\n\n` +
                       `> ${message.content || '*(Attachment / Media)*'}`
                   }
                 ]
@@ -1483,7 +1487,7 @@ export default {
           const securityLog = {
             type: 17,
             components: [
-              { type: 10, content: `## AI Toxicity & Sentiment Intercept | <a:03_tick_circle:1565665642084827206>` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} AI Toxicity & Sentiment Intercept | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -1518,7 +1522,7 @@ export default {
         const securityLog = {
           type: 17,
           components: [
-            { type: 10, content: `## Anti-Phishing & Scam Shield Triggered | <a:03_tick_circle:1565665642084827206>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Anti-Phishing & Scam Shield Triggered | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -1571,7 +1575,7 @@ export default {
           const securityLog = {
             type: 17,
             components: [
-              { type: 10, content: `## Discord Invite Link Blocked | <a:03_tick_circle:1565665642084827206>` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Discord Invite Link Blocked | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -1595,7 +1599,7 @@ export default {
 
           // 2. Detailed Message Delete Log
           let delInnerComps = [
-            { type: 10, content: `## Message Deleted | <a:uptime:1552608831060844575>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:uptime:1552608831060844575>` },
             { type: 14, divider: true },
             { type: 10, content: `-# **Author:** [${cleanDisplayName(message.author.displayName || message.author.username)}](https://discord.com/users/${message.author.id}) (\`${message.author.id}\`) [${authorTier}]` },
             { type: 10, content: `-# **Deleted By:** Athena Prime (Anti-Invite Auto-Mod)` },
@@ -1654,7 +1658,7 @@ export default {
           const securityLog = {
             type: 17,
             components: [
-              { type: 10, content: `## URL Link Filter Blocked | <a:03_tick_circle:1565665642084827206>` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} URL Link Filter Blocked | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -1678,7 +1682,7 @@ export default {
 
           // 2. Detailed Message Delete Log (msgDeletes)
           let delInnerComps = [
-            { type: 10, content: `## Message Deleted | <a:uptime:1552608831060844575>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:uptime:1552608831060844575>` },
             { type: 14, divider: true },
             { type: 10, content: `-# **Author:** <@${message.author.id}> (\`${message.author.id}\`) [${authorTier}]` },
             { type: 10, content: `-# **Deleted By:** Athena Prime (Anti-Link Auto-Mod)` },
@@ -1724,7 +1728,7 @@ export default {
                  components: [{
                    type: 17,
                    components: [
-                     { type: 10, content: `## Message Deleted | <a:uptime:1552608831060844575>` },
+                     { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:uptime:1552608831060844575>` },
                      { type: 14, divider: true },
                      { type: 10, content: `-# **Author:** <@${message.author.id}> (\`${message.author.id}\`) [${authorTier}]` },
                      { type: 10, content: `-# **Deleted By:** Athena Prime (Hidden URL Filter)` },
@@ -1790,7 +1794,7 @@ export default {
             const securityLog = {
               type: 17,
               components: [
-                { type: 10, content: `## Blacklisted Word Neutralized | <a:03_tick_circle:1565665642084827206>` },
+                { type: 10, content: `# ${getRandomHeadingGlyph()} Blacklisted Word Neutralized | <a:03_tick_circle:1565665642084827206>` },
                 { type: 14, divider: true },
                 {
                   type: 10,
@@ -1814,7 +1818,7 @@ export default {
 
             // 2. Comprehensive Message Delete Log
             let delInnerComps = [
-              { type: 10, content: `## Message Deleted | <a:uptime:1552608831060844575>` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:uptime:1552608831060844575>` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Author:** [${cleanDisplayName(message.author.displayName || message.author.username)}](https://discord.com/users/${message.author.id}) (\`${message.author.id}\`) [${authorTier}]` },
               { type: 10, content: `-# **Deleted By:** Athena Prime (Blacklisted Word Auto-Mod)` },
@@ -1958,16 +1962,16 @@ export default {
                   type: 17,
                   accent_color: 0xED4245,
                   components: [
-                    { type: 10, content: '## **Trigger Escalation Alert | <a:03_tick_circle:1565665642084827206>**' },
+                    { type: 10, content: `# ${getRandomHeadingGlyph()} **Trigger Escalation Alert | <a:03_tick_circle:1565665642084827206>**` },
                     { type: 14, divider: true },
                     {
                       type: 10,
                       content:
-                        `-# • **Trigger Keyword:** \`${t.match}\`\n` +
-                        `-# • **Author:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
-                        `-# • **Channel:** <#${message.channel.id}>\n` +
-                        `-# • **Message Content:** ${message.content.slice(0, 500)}\n` +
-                        `-# • **Jump Link:** [Click to Jump](${message.url})`
+                        `-#  **Trigger Keyword:** \`${t.match}\`\n` +
+                        `-#  **Author:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
+                        `-#  **Channel:** <#${message.channel.id}>\n` +
+                        `-#  **Message Content:** ${message.content.slice(0, 500)}\n` +
+                        `-#  **Jump Link:** [Click to Jump](${message.url})`
                     },
                     { type: 14, divider: true },
                     { type: 10, content: '-# Athena Prime Escalation Matrix • Trigger Mirror Alert' }

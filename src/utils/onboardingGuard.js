@@ -1,3 +1,4 @@
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from './emojis.js';
 import { PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import { logToSecurityChannel, isBotOwnerSync } from './helpers.js';
@@ -253,7 +254,7 @@ export async function auditAndNeutralizeOnboarding(guild, options = {}) {
         components: [
           {
             type: 10,
-            content: `## Discord Onboarding Exploit Neutralized | <a:03_tick_circle:1565665642084827206>`
+            content: `# ${getRandomHeadingGlyph()} Discord Onboarding Exploit Neutralized | <a:03_tick_circle:1565665642084827206>`
           },
           { type: 14, divider: true },
           {

@@ -2,6 +2,7 @@ import path from 'path';
 import { AttachmentBuilder, MessageFlags } from 'discord.js';
 import { createCanvas, registerFont, loadImage } from './canvas.js';
 import cv2 from '../cv2.js';
+import { getRandomHeadingGlyph, TICK_EMOJI, BULLET_EMOJI } from './emojis.js';
 import db from '../database.js';
 import { generateAIResponse } from './ai.js';
 
@@ -1517,22 +1518,22 @@ export function buildStockPayload(stock, imageBuffer, prefix = '!') {
     },
     {
       type: 10,
-      content: `## ${stock.name} (${stock.symbol}) Stock Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
+      content: `# ${getRandomHeadingGlyph()} ${stock.name} (${stock.symbol}) Stock Telemetry | ${TICK_EMOJI}\n` +
                `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                `> -# <a:uptime:1552608831060844575> **Current Price:** \`${currSym}${stock.price.toFixed(2)} ${stock.currency}\` (\`${sign}${currSym}${Math.abs(stock.change).toFixed(2)}\` | \`${sign}${stock.changePct.toFixed(2)}%\`)\n` +
-               `> -# • **Day Session Range:** \`${currSym}${stock.dayLow.toFixed(2)}\` \u2014 \`${currSym}${stock.dayHigh.toFixed(2)}\`\n` +
-               `> -# • **52-Week Range:** \`${currSym}${stock.fiftyTwoWeekLow.toFixed(2)}\` \u2014 \`${currSym}${stock.fiftyTwoWeekHigh.toFixed(2)}\`\n` +
-               `> -# • **24h Volume:** \`${stock.volume > 1e6 ? (stock.volume / 1e6).toFixed(2) + 'M' : stock.volume.toLocaleString()}\` \u2022 **Prev Close:** \`${currSym}${stock.prevClose.toFixed(2)}\`\n` +
-               `> -# • **Exchange Market:** \`${stock.exchange}\` (\`${stock.currency}\`)\n` +
-               `> -# • **Session Momentum:** \`${isUp ? 'Bullish (Upward Momentum)' : 'Bearish (Downward Pull)'}\`\n\n` +
+               `> -# ${BULLET_EMOJI} **Day Session Range:** \`${currSym}${stock.dayLow.toFixed(2)}\` \u2014 \`${currSym}${stock.dayHigh.toFixed(2)}\`\n` +
+               `> -# ${BULLET_EMOJI} **52-Week Range:** \`${currSym}${stock.fiftyTwoWeekLow.toFixed(2)}\` \u2014 \`${currSym}${stock.fiftyTwoWeekHigh.toFixed(2)}\`\n` +
+               `> -# ${BULLET_EMOJI} **24h Volume:** \`${stock.volume > 1e6 ? (stock.volume / 1e6).toFixed(2) + 'M' : stock.volume.toLocaleString()}\` \u2022 **Prev Close:** \`${currSym}${stock.prevClose.toFixed(2)}\`\n` +
+               `> -# ${BULLET_EMOJI} **Exchange Market:** \`${stock.exchange}\` (\`${stock.currency}\`)\n` +
+               `> -# ${BULLET_EMOJI} **Session Momentum:** \`${isUp ? 'Bullish (Upward Momentum)' : 'Bearish (Downward Pull)'}\`\n\n` +
                `### Supporting Commands Guidance\n` +
-               `> -# • \`${prefix}symbols\` \u2014 Browse global ticker directory (NSE/BSE, US Tech, Crypto, Commodities) or search any company.\n` +
-               `> -# • \`${prefix}market\` \u2014 Global 6-index world market pulse & mega-caps tape.\n` +
-               `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown.\n` +
-               `> -# • \`${prefix}movers\` \u2014 Real-time top gainers & decliners across equities/crypto.\n` +
-               `> -# • \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL).\n` +
-               `> -# • \`${prefix}stocknews [symbol]\` \u2014 Real-time press wiretap & headlines.\n` +
-               `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload.\n\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}symbols\` \u2014 Browse global ticker directory (NSE/BSE, US Tech, Crypto, Commodities) or search any company.\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}market\` \u2014 Global 6-index world market pulse & mega-caps tape.\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown.\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}movers\` \u2014 Real-time top gainers & decliners across equities/crypto.\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL).\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}stocknews [symbol]\` \u2014 Real-time press wiretap & headlines.\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload.\n\n` +
                `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
     },
     {
@@ -1741,24 +1742,24 @@ export async function buildNiftyPayload(targetKey = '50', prefix = '!') {
     },
     {
       type: 10,
-      content: `## ${targetLabel} Benchmark Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
+      content: `# ${getRandomHeadingGlyph()} ${targetLabel} Benchmark Telemetry | ${TICK_EMOJI}\n` +
                `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                `> -# <a:uptime:1552608831060844575> **Exchange & Currency:** \`${stockData.exchange}\` • \`${stockData.currency}\`\n` +
                `> -# <a:uptime:1552608831060844575> **Market Status:** \`${mktStatus.status}\` • ${mktStatus.session}\n\n` +
                `### Real-Time Benchmark Metrics\n` +
-               `> • **Current Level:** \`₹${stockData.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\` (\`${sign}₹${Math.abs(stockData.change).toFixed(2)}\` | \`${sign}${stockData.changePct.toFixed(2)}%\`)\n` +
-               `> • **Day Session Range:** \`₹${stockData.dayLow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\` \u2014 \`₹${stockData.dayHigh.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\`\n` +
-               `> • **52-Week Range:** \`₹${stockData.fiftyTwoWeekLow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\` \u2014 \`₹${stockData.fiftyTwoWeekHigh.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\`\n\n` +
+               `> ${BULLET_EMOJI} **Current Level:** \`₹${stockData.price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\` (\`${sign}₹${Math.abs(stockData.change).toFixed(2)}\` | \`${sign}${stockData.changePct.toFixed(2)}%\`)\n` +
+               `> ${BULLET_EMOJI} **Day Session Range:** \`₹${stockData.dayLow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\` \u2014 \`₹${stockData.dayHigh.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\`\n` +
+               `> ${BULLET_EMOJI} **52-Week Range:** \`₹${stockData.fiftyTwoWeekLow.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\` \u2014 \`₹${stockData.fiftyTwoWeekHigh.toLocaleString('en-IN', { minimumFractionDigits: 2 })}\`\n\n` +
                `### Technical Pivot Points & Key Levels (Classic)\n` +
-               `> • **R2 Resistance:** \`₹${r2.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\` • **R1 Resistance:** \`₹${r1.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\`\n` +
-               `> • **Central Pivot (P):** \`₹${pivot.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\`\n` +
-               `> • **S1 Support:** \`₹${s1.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\` • **S2 Support:** \`₹${s2.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\`\n\n` +
+               `> ${BULLET_EMOJI} **R2 Resistance:** \`₹${r2.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\` • **R1 Resistance:** \`₹${r1.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\`\n` +
+               `> ${BULLET_EMOJI} **Central Pivot (P):** \`₹${pivot.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\`\n` +
+               `> ${BULLET_EMOJI} **S1 Support:** \`₹${s1.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\` • **S2 Support:** \`₹${s2.toLocaleString('en-IN', { maximumFractionDigits: 1 })}\`\n\n` +
                `### Dalal Street Directives & Supporting Commands\n` +
-               `> -# • Run \`${prefix}banknifty\` or \`${prefix}nifty bank\` for Banking Sector telemetry (\`^NSEBANK\`).\n` +
-               `> -# • Run \`${prefix}sensex\` or \`${prefix}nifty sensex\` for Bombay Stock Exchange (\`^BSESN\`).\n` +
-               `> -# • Run \`${prefix}niftyit\` or \`${prefix}nifty it\` for Indian IT export sector telemetry (\`^CNXIT\`).\n` +
-               `> -# • Run \`${prefix}indiavix\` or \`${prefix}nifty vix\` for market volatility fear gauge (\`^INDIAVIX\`).\n` +
-               `> -# • Run \`${prefix}stock <ticker>\` for single stock telemetry (e.g. \`${prefix}stock TCS\`, \`${prefix}stock RELIANCE\`).\n\n` +
+               `> -# ${BULLET_EMOJI} Run \`${prefix}banknifty\` or \`${prefix}nifty bank\` for Banking Sector telemetry (\`^NSEBANK\`).\n` +
+               `> -# ${BULLET_EMOJI} Run \`${prefix}sensex\` or \`${prefix}nifty sensex\` for Bombay Stock Exchange (\`^BSESN\`).\n` +
+               `> -# ${BULLET_EMOJI} Run \`${prefix}niftyit\` or \`${prefix}nifty it\` for Indian IT export sector telemetry (\`^CNXIT\`).\n` +
+               `> -# ${BULLET_EMOJI} Run \`${prefix}indiavix\` or \`${prefix}nifty vix\` for market volatility fear gauge (\`^INDIAVIX\`).\n` +
+               `> -# ${BULLET_EMOJI} Run \`${prefix}stock <ticker>\` for single stock telemetry (e.g. \`${prefix}stock TCS\`, \`${prefix}stock RELIANCE\`).\n\n` +
                `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
     },
     {
@@ -1798,8 +1799,8 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
   const dt = getFormattedDateTimeStrings();
 
   const heading = isDaily 
-    ? `## Athena Prime Daily Stock Market Briefing | <a:03_tick_circle:1565665642084827206>` 
-    : `## Global Stock & Crypto Market Intelligence | <a:03_tick_circle:1565665642084827206>`;
+    ? `# ${getRandomHeadingGlyph()} Athena Prime Daily Stock Market Briefing | ${TICK_EMOJI}` 
+    : `# ${getRandomHeadingGlyph()} Global Stock & Crypto Market Intelligence | ${TICK_EMOJI}`;
 
   // Calculate market bias
   const upCount = overview.indices.filter(i => i.change >= 0).length;
@@ -1820,16 +1821,16 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
       content: `${heading}\n` +
                `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                `> -# <a:uptime:1552608831060844575> **Global Market Regime:** \`${bias}\` across 6 major indices.\n` +
-               `> -# • **Key Indices:** ${indicesSummary}\n` +
-               `> -# • **Tech Mega-Caps:** \`NVDA\` (${overview.tickers[0]?.changePct >= 0 ? '+' : ''}${overview.tickers[0]?.changePct?.toFixed(1)}%), \`AAPL\` (${overview.tickers[1]?.changePct >= 0 ? '+' : ''}${overview.tickers[1]?.changePct?.toFixed(1)}%), \`MSFT\` (${overview.tickers[2]?.changePct >= 0 ? '+' : ''}${overview.tickers[2]?.changePct?.toFixed(1)}%), \`TSLA\` (${overview.tickers[3]?.changePct >= 0 ? '+' : ''}${overview.tickers[3]?.changePct?.toFixed(1)}%)\n\n` +
+               `> -# ${BULLET_EMOJI} **Key Indices:** ${indicesSummary}\n` +
+               `> -# ${BULLET_EMOJI} **Tech Mega-Caps:** \`NVDA\` (${overview.tickers[0]?.changePct >= 0 ? '+' : ''}${overview.tickers[0]?.changePct?.toFixed(1)}%), \`AAPL\` (${overview.tickers[1]?.changePct >= 0 ? '+' : ''}${overview.tickers[1]?.changePct?.toFixed(1)}%), \`MSFT\` (${overview.tickers[2]?.changePct >= 0 ? '+' : ''}${overview.tickers[2]?.changePct?.toFixed(1)}%), \`TSLA\` (${overview.tickers[3]?.changePct >= 0 ? '+' : ''}${overview.tickers[3]?.changePct?.toFixed(1)}%)\n\n` +
                `### Supporting Commands Guidance\n` +
-               `> -# • \`${prefix}symbols\` \u2014 Browse global ticker directory (NSE, US Tech, Crypto, Commodities) or search any company.\n` +
-               `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry (e.g. \`${prefix}stock TCS\`, \`${prefix}stock NVDA\`).\n` +
-               `> -# • \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown.\n` +
-               `> -# • \`${prefix}movers\` \u2014 Real-time top gainers & decliners across equities/crypto.\n` +
-               `> -# • \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL).\n` +
-               `> -# • \`${prefix}stocknews [symbol]\` \u2014 Real-time press wiretap & headlines.\n` +
-               `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload.\n\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}symbols\` \u2014 Browse global ticker directory (NSE, US Tech, Crypto, Commodities) or search any company.\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart & telemetry (e.g. \`${prefix}stock TCS\`, \`${prefix}stock NVDA\`).\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}stockai <query>\` \u2014 AI financial analyst & earnings breakdown.\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}movers\` \u2014 Real-time top gainers & decliners across equities/crypto.\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}crypto [coin]\` \u2014 Dedicated cryptocurrency charts (BTC, ETH, SOL).\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}stocknews [symbol]\` \u2014 Real-time press wiretap & headlines.\n` +
+               `> -# ${BULLET_EMOJI} \`${prefix}stockchannel set <#channel>\` \u2014 Automated daily morning briefing upload.\n\n` +
                `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
     },
     {
@@ -1906,36 +1907,36 @@ export function buildStockGuidancePayload(prefix = '!') {
         components: [
           {
             type: 10,
-            content: `## Financial Intelligence Suite & Commands Guidance | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} Financial Intelligence Suite & Commands Guidance | ${TICK_EMOJI}\n` +
                      `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                      `> -# <a:uptime:1552608831060844575> **Overview:** Athena Prime provides real-time stock/crypto telemetry, high-resolution Canvas charts, and AI-driven financial intelligence.\n\n` +
                      `### 1. Market Telemetry & Charts\n` +
-                     `> -# • \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart with Bezier curves, day range, 52w range, volume, & sentiment gauge (e.g. \`${prefix}stock TCS\`, \`${prefix}stock NVDA\`, \`${prefix}stock RELIANCE\`).\n` +
-                     `> -# • \`${prefix}market\` / \`${prefix}stocks\` \u2014 Global 6-index world market pulse (S&P 500, NASDAQ, Dow, NIFTY 50, BTC, ETH) + mega-caps ticker tape.\n` +
-                     `> -# • \`${prefix}ticker <symbol>\` \u2014 Direct company/ticker resolution.\n\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}stock <symbol>\` \u2014 Single stock Canvas chart with Bezier curves, day range, 52w range, volume, & sentiment gauge (e.g. \`${prefix}stock TCS\`, \`${prefix}stock NVDA\`, \`${prefix}stock RELIANCE\`).\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}market\` / \`${prefix}stocks\` \u2014 Global 6-index world market pulse (S&P 500, NASDAQ, Dow, NIFTY 50, BTC, ETH) + mega-caps ticker tape.\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}ticker <symbol>\` \u2014 Direct company/ticker resolution.\n\n` +
                      `### 2. Indian Market Benchmarks & Dalal Street Suite\n` +
-                     `> -# • \`${prefix}nifty [50|bank|sensex|it|vix]\` \u2014 Live NIFTY 50 telemetry Canvas image with pivot levels & Indian market status.\n` +
-                     `> -# • \`${prefix}banknifty\` / \`${prefix}niftybank\` \u2014 Dedicated Bank Nifty banking sector telemetry card.\n` +
-                     `> -# • \`${prefix}sensex\` / \`${prefix}bse\` \u2014 Live Bombay Stock Exchange benchmark telemetry.\n` +
-                     `> -# • \`${prefix}niftyit\` / \`${prefix}itnifty\` \u2014 Live Nifty IT exporter sector telemetry card.\n` +
-                     `> -# • \`${prefix}indiavix\` / \`${prefix}vix\` \u2014 Live India VIX market volatility & fear gauge index.\n\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}nifty [50|bank|sensex|it|vix]\` \u2014 Live NIFTY 50 telemetry Canvas image with pivot levels & Indian market status.\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}banknifty\` / \`${prefix}niftybank\` \u2014 Dedicated Bank Nifty banking sector telemetry card.\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}sensex\` / \`${prefix}bse\` \u2014 Live Bombay Stock Exchange benchmark telemetry.\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}niftyit\` / \`${prefix}itnifty\` \u2014 Live Nifty IT exporter sector telemetry card.\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}indiavix\` / \`${prefix}vix\` \u2014 Live India VIX market volatility & fear gauge index.\n\n` +
                      `### 3. Universal Ticker Directory & Autonomous Symbol Search\n` +
-                     `> -# • \`${prefix}symbols\` / \`${prefix}symbollist\` \u2014 Interactive ticker directory with 1-click categories (Trending & New IPOs, Indian Equities, US Mega-Caps, Crypto, Commodities & Indices).\n` +
-                     `> -# • \`${prefix}symbols trending\` \u2014 Real-time newly discovered and active market tickers auto-indexed in SQLite.\n` +
-                     `> -# • \`${prefix}symbols <query>\` / \`${prefix}symbols search <name>\` \u2014 Dynamic real-time symbol search on Yahoo Finance (e.g. \`${prefix}symbols tata\`, \`${prefix}symbols sbi\`, \`${prefix}symbols reliance\`, \`${prefix}symbols adani\`, \`${prefix}symbols zomato\`).\n\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}symbols\` / \`${prefix}symbollist\` \u2014 Interactive ticker directory with 1-click categories (Trending & New IPOs, Indian Equities, US Mega-Caps, Crypto, Commodities & Indices).\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}symbols trending\` \u2014 Real-time newly discovered and active market tickers auto-indexed in SQLite.\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}symbols <query>\` / \`${prefix}symbols search <name>\` \u2014 Dynamic real-time symbol search on Yahoo Finance (e.g. \`${prefix}symbols tata\`, \`${prefix}symbols sbi\`, \`${prefix}symbols reliance\`, \`${prefix}symbols adani\`, \`${prefix}symbols zomato\`).\n\n` +
                      `### 4. AI Financial Analyst & Reports\n` +
-                     `> -# • \`${prefix}stockai <question or topic>\` \u2014 Ask Athena AI for detailed earnings breakdowns, macro trends, or financial concepts (e.g. \`${prefix}stockai why did tech drop today?\`, \`${prefix}stockai explain NVDA valuation\`).\n` +
-                     `> -# • \`${prefix}stockexplain <symbol/topic>\` / \`${prefix}marketai\` \u2014 AI financial research aliases.\n\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}stockai <question or topic>\` \u2014 Ask Athena AI for detailed earnings breakdowns, macro trends, or financial concepts (e.g. \`${prefix}stockai why did tech drop today?\`, \`${prefix}stockai explain NVDA valuation\`).\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}stockexplain <symbol/topic>\` / \`${prefix}marketai\` \u2014 AI financial research aliases.\n\n` +
                      `### 5. Market Movers & Catalysts\n` +
-                     `> -# • \`${prefix}movers\` / \`${prefix}topmovers\` \u2014 Real-time top gainers and decliners across mega-caps and crypto.\n` +
-                     `> -# • \`${prefix}stocknews [symbol]\` / \`${prefix}marketnews\` \u2014 Real-time press wiretap with direct links to Bloomberg, Reuters, Yahoo Finance, etc.\n\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}movers\` / \`${prefix}topmovers\` \u2014 Real-time top gainers and decliners across mega-caps and crypto.\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}stocknews [symbol]\` / \`${prefix}marketnews\` \u2014 Real-time press wiretap with direct links to Bloomberg, Reuters, Yahoo Finance, etc.\n\n` +
                      `### 6. Cryptocurrency Telemetry\n` +
-                     `> -# • \`${prefix}crypto [coin]\` \u2014 Cryptocurrency charts and telemetry (e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`).\n\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}crypto [coin]\` \u2014 Cryptocurrency charts and telemetry (e.g. \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`).\n\n` +
                      `### 7. Automated Daily Briefing Channel\n` +
-                     `> -# • \`${prefix}stockchannel set <#channel>\` \u2014 Binds an automated morning upload channel (posts every morning at 09:30 AM EST / 14:30 UTC at US Market Open).\n` +
-                     `> -# • \`${prefix}stockchannel test\` \u2014 Immediately uploads today's briefing to verify delivery.\n` +
-                     `> -# • \`${prefix}stockchannel status\` \u2014 Inspect current broadcast channel ID & delivery state.\n` +
-                     `> -# • \`${prefix}stockchannel disable\` \u2014 Turn off daily automated briefing.\n\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}stockchannel set <#channel>\` \u2014 Binds an automated morning upload channel (posts every morning at 09:30 AM EST / 14:30 UTC at US Market Open).\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}stockchannel test\` \u2014 Immediately uploads today's briefing to verify delivery.\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}stockchannel status\` \u2014 Inspect current broadcast channel ID & delivery state.\n` +
+                     `> -# ${BULLET_EMOJI} \`${prefix}stockchannel disable\` \u2014 Turn off daily automated briefing.\n\n` +
                      `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
           },
           {
@@ -2009,9 +2010,9 @@ export function buildSymbolsPayload(category = 'all', prefix = '!') {
     const rows = dynamicList.map((item, idx) => {
       const baseTicker = item.symbol.replace(/\.NS$|\.BO$/, '');
       const timeStr = item.updatedAt ? `<t:${Math.floor(item.updatedAt / 1000)}:R>` : 'Active';
-      return `> -# • **${item.name}** (\`${item.symbol}\`) \u2014 \`${item.exchange}\` (${timeStr})\n` +
+      return `> -# ${BULLET_EMOJI} **${item.name}** (\`${item.symbol}\`) \u2014 \`${item.exchange}\` (${timeStr})\n` +
              `> -#   \u25b8 Command: \`${prefix}stock ${baseTicker}\` or \`${prefix}stock ${item.symbol}\``;
-    }).join('\n\n') || '> -# • No dynamic tickers recorded yet. Query any ticker with `!stock <symbol>` to index it!';
+    }).join('\n\n') || '> -# ${BULLET_EMOJI} No dynamic tickers recorded yet. Query any ticker with `!stock <symbol>` to index it!';
 
     bodyContent =
       `### Dynamically Registered Assets (${totalCount} Auto-Tracked)\n` +
@@ -2021,89 +2022,89 @@ export function buildSymbolsPayload(category = 'all', prefix = '!') {
     title = 'Indian Equities & Indices (NSE / BSE)';
     bodyContent =
       `### Benchmark Indices\n` +
-      `> -# • \`NIFTY\` \u2014 NIFTY 50 Benchmark Index (\`${prefix}stock NIFTY\`)\n` +
-      `> -# • \`SENSEX\` \u2014 BSE SENSEX 30 Index (\`${prefix}stock SENSEX\`)\n` +
-      `> -# • \`BANKNIFTY\` \u2014 Nifty Bank Banking Index (\`${prefix}stock BANKNIFTY\`)\n\n` +
+      `> -# ${BULLET_EMOJI} \`NIFTY\` \u2014 NIFTY 50 Benchmark Index (\`${prefix}stock NIFTY\`)\n` +
+      `> -# ${BULLET_EMOJI} \`SENSEX\` \u2014 BSE SENSEX 30 Index (\`${prefix}stock SENSEX\`)\n` +
+      `> -# ${BULLET_EMOJI} \`BANKNIFTY\` \u2014 Nifty Bank Banking Index (\`${prefix}stock BANKNIFTY\`)\n\n` +
       `### Top Bluechips & Heavyweights\n` +
-      `> -# • \`TCS\` \u2014 Tata Consultancy Services (\`${prefix}stock TCS\`)\n` +
-      `> -# • \`RELIANCE\` \u2014 Reliance Industries Ltd (\`${prefix}stock RELIANCE\`)\n` +
-      `> -# • \`INFY\` \u2014 Infosys Limited (\`${prefix}stock INFY\`)\n` +
-      `> -# • \`HDFCBANK\` \u2014 HDFC Bank Limited (\`${prefix}stock HDFCBANK\`)\n` +
-      `> -# • \`TATAMOTORS\` \u2014 Tata Motors Ltd (\`${prefix}stock TATAMOTORS\`)\n` +
-      `> -# • \`SBIN\` \u2014 State Bank of India (\`${prefix}stock SBIN\`)\n` +
-      `> -# • \`ITC\` \u2014 ITC Limited (\`${prefix}stock ITC\`)\n` +
-      `> -# • \`ICICIBANK\` \u2014 ICICI Bank Ltd (\`${prefix}stock ICICIBANK\`)\n` +
-      `> -# • \`BHARTIARTL\` \u2014 Bharti Airtel Ltd (\`${prefix}stock BHARTIARTL\`)\n` +
-      `> -# • \`HINDUNILVR\` \u2014 Hindustan Unilever Ltd (\`${prefix}stock HINDUNILVR\`)\n` +
-      `> -# • \`LT\` \u2014 Larsen & Toubro Ltd (\`${prefix}stock LT\`)\n` +
-      `> -# • \`WIPRO\` \u2014 Wipro Limited (\`${prefix}stock WIPRO\`)\n` +
-      `> -# • \`BAJFINANCE\` \u2014 Bajaj Finance Ltd (\`${prefix}stock BAJFINANCE\`)\n` +
-      `> -# • \`ADANIENT\` \u2014 Adani Enterprises Ltd (\`${prefix}stock ADANIENT\`)\n` +
-      `> -# • \`MARUTI\` \u2014 Maruti Suzuki India (\`${prefix}stock MARUTI\`)\n` +
-      `> -# • \`TITAN\` \u2014 Titan Company Ltd (\`${prefix}stock TITAN\`)\n` +
-      `> -# • \`TATASTEEL\` \u2014 Tata Steel Ltd (\`${prefix}stock TATASTEEL\`)\n` +
-      `> -# • \`KOTAKBANK\` \u2014 Kotak Mahindra Bank (\`${prefix}stock KOTAKBANK\`)\n` +
-      `> -# • \`AXISBANK\` \u2014 Axis Bank Ltd (\`${prefix}stock AXISBANK\`)\n` +
-      `> -# • \`SUNPHARMA\` \u2014 Sun Pharmaceutical Industries (\`${prefix}stock SUNPHARMA\`)`;
+      `> -# ${BULLET_EMOJI} \`TCS\` \u2014 Tata Consultancy Services (\`${prefix}stock TCS\`)\n` +
+      `> -# ${BULLET_EMOJI} \`RELIANCE\` \u2014 Reliance Industries Ltd (\`${prefix}stock RELIANCE\`)\n` +
+      `> -# ${BULLET_EMOJI} \`INFY\` \u2014 Infosys Limited (\`${prefix}stock INFY\`)\n` +
+      `> -# ${BULLET_EMOJI} \`HDFCBANK\` \u2014 HDFC Bank Limited (\`${prefix}stock HDFCBANK\`)\n` +
+      `> -# ${BULLET_EMOJI} \`TATAMOTORS\` \u2014 Tata Motors Ltd (\`${prefix}stock TATAMOTORS\`)\n` +
+      `> -# ${BULLET_EMOJI} \`SBIN\` \u2014 State Bank of India (\`${prefix}stock SBIN\`)\n` +
+      `> -# ${BULLET_EMOJI} \`ITC\` \u2014 ITC Limited (\`${prefix}stock ITC\`)\n` +
+      `> -# ${BULLET_EMOJI} \`ICICIBANK\` \u2014 ICICI Bank Ltd (\`${prefix}stock ICICIBANK\`)\n` +
+      `> -# ${BULLET_EMOJI} \`BHARTIARTL\` \u2014 Bharti Airtel Ltd (\`${prefix}stock BHARTIARTL\`)\n` +
+      `> -# ${BULLET_EMOJI} \`HINDUNILVR\` \u2014 Hindustan Unilever Ltd (\`${prefix}stock HINDUNILVR\`)\n` +
+      `> -# ${BULLET_EMOJI} \`LT\` \u2014 Larsen & Toubro Ltd (\`${prefix}stock LT\`)\n` +
+      `> -# ${BULLET_EMOJI} \`WIPRO\` \u2014 Wipro Limited (\`${prefix}stock WIPRO\`)\n` +
+      `> -# ${BULLET_EMOJI} \`BAJFINANCE\` \u2014 Bajaj Finance Ltd (\`${prefix}stock BAJFINANCE\`)\n` +
+      `> -# ${BULLET_EMOJI} \`ADANIENT\` \u2014 Adani Enterprises Ltd (\`${prefix}stock ADANIENT\`)\n` +
+      `> -# ${BULLET_EMOJI} \`MARUTI\` \u2014 Maruti Suzuki India (\`${prefix}stock MARUTI\`)\n` +
+      `> -# ${BULLET_EMOJI} \`TITAN\` \u2014 Titan Company Ltd (\`${prefix}stock TITAN\`)\n` +
+      `> -# ${BULLET_EMOJI} \`TATASTEEL\` \u2014 Tata Steel Ltd (\`${prefix}stock TATASTEEL\`)\n` +
+      `> -# ${BULLET_EMOJI} \`KOTAKBANK\` \u2014 Kotak Mahindra Bank (\`${prefix}stock KOTAKBANK\`)\n` +
+      `> -# ${BULLET_EMOJI} \`AXISBANK\` \u2014 Axis Bank Ltd (\`${prefix}stock AXISBANK\`)\n` +
+      `> -# ${BULLET_EMOJI} \`SUNPHARMA\` \u2014 Sun Pharmaceutical Industries (\`${prefix}stock SUNPHARMA\`)`;
   } else if (cat === 'us') {
     title = 'US Tech Titans & Global Equities';
     bodyContent =
       `### US Benchmark Indices & ETFs\n` +
-      `> -# • \`SP500\` \u2014 S&P 500 Index (\`${prefix}stock SP500\`)\n` +
-      `> -# • \`NASDAQ\` \u2014 Nasdaq Composite Index (\`${prefix}stock NASDAQ\`)\n` +
-      `> -# • \`DOW\` \u2014 Dow Jones Industrial Average (\`${prefix}stock DOW\`)\n` +
-      `> -# • \`QQQ\` \u2014 Invesco QQQ Trust ETF (\`${prefix}stock QQQ\`)\n` +
-      `> -# • \`SPY\` \u2014 SPDR S&P 500 ETF Trust (\`${prefix}stock SPY\`)\n\n` +
+      `> -# ${BULLET_EMOJI} \`SP500\` \u2014 S&P 500 Index (\`${prefix}stock SP500\`)\n` +
+      `> -# ${BULLET_EMOJI} \`NASDAQ\` \u2014 Nasdaq Composite Index (\`${prefix}stock NASDAQ\`)\n` +
+      `> -# ${BULLET_EMOJI} \`DOW\` \u2014 Dow Jones Industrial Average (\`${prefix}stock DOW\`)\n` +
+      `> -# ${BULLET_EMOJI} \`QQQ\` \u2014 Invesco QQQ Trust ETF (\`${prefix}stock QQQ\`)\n` +
+      `> -# ${BULLET_EMOJI} \`SPY\` \u2014 SPDR S&P 500 ETF Trust (\`${prefix}stock SPY\`)\n\n` +
       `### Tech Titans & AI Powerhouses\n` +
-      `> -# • \`NVDA\` \u2014 NVIDIA Corporation (\`${prefix}stock NVDA\`)\n` +
-      `> -# • \`AAPL\` \u2014 Apple Inc. (\`${prefix}stock AAPL\`)\n` +
-      `> -# • \`MSFT\` \u2014 Microsoft Corporation (\`${prefix}stock MSFT\`)\n` +
-      `> -# • \`GOOGL\` \u2014 Alphabet Inc. Google (\`${prefix}stock GOOGL\`)\n` +
-      `> -# • \`AMZN\` \u2014 Amazon.com Inc. (\`${prefix}stock AMZN\`)\n` +
-      `> -# • \`META\` \u2014 Meta Platforms Inc. (\`${prefix}stock META\`)\n` +
-      `> -# • \`TSLA\` \u2014 Tesla Inc. (\`${prefix}stock TSLA\`)\n` +
-      `> -# • \`AMD\` \u2014 Advanced Micro Devices (\`${prefix}stock AMD\`)\n` +
-      `> -# • \`AVGO\` \u2014 Broadcom Inc. (\`${prefix}stock AVGO\`)\n` +
-      `> -# • \`NFLX\` \u2014 Netflix Inc. (\`${prefix}stock NFLX\`)\n` +
-      `> -# • \`PLTR\` \u2014 Palantir Technologies (\`${prefix}stock PLTR\`)\n` +
-      `> -# • \`COIN\` \u2014 Coinbase Global Inc. (\`${prefix}stock COIN\`)`;
+      `> -# ${BULLET_EMOJI} \`NVDA\` \u2014 NVIDIA Corporation (\`${prefix}stock NVDA\`)\n` +
+      `> -# ${BULLET_EMOJI} \`AAPL\` \u2014 Apple Inc. (\`${prefix}stock AAPL\`)\n` +
+      `> -# ${BULLET_EMOJI} \`MSFT\` \u2014 Microsoft Corporation (\`${prefix}stock MSFT\`)\n` +
+      `> -# ${BULLET_EMOJI} \`GOOGL\` \u2014 Alphabet Inc. Google (\`${prefix}stock GOOGL\`)\n` +
+      `> -# ${BULLET_EMOJI} \`AMZN\` \u2014 Amazon.com Inc. (\`${prefix}stock AMZN\`)\n` +
+      `> -# ${BULLET_EMOJI} \`META\` \u2014 Meta Platforms Inc. (\`${prefix}stock META\`)\n` +
+      `> -# ${BULLET_EMOJI} \`TSLA\` \u2014 Tesla Inc. (\`${prefix}stock TSLA\`)\n` +
+      `> -# ${BULLET_EMOJI} \`AMD\` \u2014 Advanced Micro Devices (\`${prefix}stock AMD\`)\n` +
+      `> -# ${BULLET_EMOJI} \`AVGO\` \u2014 Broadcom Inc. (\`${prefix}stock AVGO\`)\n` +
+      `> -# ${BULLET_EMOJI} \`NFLX\` \u2014 Netflix Inc. (\`${prefix}stock NFLX\`)\n` +
+      `> -# ${BULLET_EMOJI} \`PLTR\` \u2014 Palantir Technologies (\`${prefix}stock PLTR\`)\n` +
+      `> -# ${BULLET_EMOJI} \`COIN\` \u2014 Coinbase Global Inc. (\`${prefix}stock COIN\`)`;
   } else if (cat === 'crypto') {
     title = 'Cryptocurrency & Digital Assets';
     bodyContent =
       `### Major Cryptocurrencies\n` +
-      `> -# • \`BTC\` \u2014 Bitcoin (\`${prefix}stock BTC\` / \`${prefix}crypto BTC\`)\n` +
-      `> -# • \`ETH\` \u2014 Ethereum (\`${prefix}stock ETH\` / \`${prefix}crypto ETH\`)\n` +
-      `> -# • \`SOL\` \u2014 Solana (\`${prefix}stock SOL\` / \`${prefix}crypto SOL\`)\n` +
-      `> -# • \`BNB\` \u2014 Binance Coin (\`${prefix}stock BNB\` / \`${prefix}crypto BNB\`)\n` +
-      `> -# • \`XRP\` \u2014 XRP Ledger (\`${prefix}stock XRP\` / \`${prefix}crypto XRP\`)\n` +
-      `> -# • \`DOGE\` \u2014 Dogecoin (\`${prefix}stock DOGE\` / \`${prefix}crypto DOGE\`)\n` +
-      `> -# • \`ADA\` \u2014 Cardano (\`${prefix}stock ADA\` / \`${prefix}crypto ADA\`)\n` +
-      `> -# • \`AVAX\` \u2014 Avalanche (\`${prefix}stock AVAX\` / \`${prefix}crypto AVAX\`)\n` +
-      `> -# • \`LINK\` \u2014 Chainlink (\`${prefix}stock LINK\` / \`${prefix}crypto LINK\`)\n` +
-      `> -# • \`SUI\` \u2014 Sui Network (\`${prefix}stock SUI\` / \`${prefix}crypto SUI\`)\n` +
-      `> -# • \`NEAR\` \u2014 NEAR Protocol (\`${prefix}stock NEAR\` / \`${prefix}crypto NEAR\`)\n` +
-      `> -# • \`DOT\` \u2014 Polkadot (\`${prefix}stock DOT\` / \`${prefix}crypto DOT\`)\n` +
-      `> -# • \`SHIB\` \u2014 Shiba Inu (\`${prefix}stock SHIB\` / \`${prefix}crypto SHIB\`)\n` +
-      `> -# • \`PEPE\` \u2014 Pepe (\`${prefix}stock PEPE\` / \`${prefix}crypto PEPE\`)`;
+      `> -# ${BULLET_EMOJI} \`BTC\` \u2014 Bitcoin (\`${prefix}stock BTC\` / \`${prefix}crypto BTC\`)\n` +
+      `> -# ${BULLET_EMOJI} \`ETH\` \u2014 Ethereum (\`${prefix}stock ETH\` / \`${prefix}crypto ETH\`)\n` +
+      `> -# ${BULLET_EMOJI} \`SOL\` \u2014 Solana (\`${prefix}stock SOL\` / \`${prefix}crypto SOL\`)\n` +
+      `> -# ${BULLET_EMOJI} \`BNB\` \u2014 Binance Coin (\`${prefix}stock BNB\` / \`${prefix}crypto BNB\`)\n` +
+      `> -# ${BULLET_EMOJI} \`XRP\` \u2014 XRP Ledger (\`${prefix}stock XRP\` / \`${prefix}crypto XRP\`)\n` +
+      `> -# ${BULLET_EMOJI} \`DOGE\` \u2014 Dogecoin (\`${prefix}stock DOGE\` / \`${prefix}crypto DOGE\`)\n` +
+      `> -# ${BULLET_EMOJI} \`ADA\` \u2014 Cardano (\`${prefix}stock ADA\` / \`${prefix}crypto ADA\`)\n` +
+      `> -# ${BULLET_EMOJI} \`AVAX\` \u2014 Avalanche (\`${prefix}stock AVAX\` / \`${prefix}crypto AVAX\`)\n` +
+      `> -# ${BULLET_EMOJI} \`LINK\` \u2014 Chainlink (\`${prefix}stock LINK\` / \`${prefix}crypto LINK\`)\n` +
+      `> -# ${BULLET_EMOJI} \`SUI\` \u2014 Sui Network (\`${prefix}stock SUI\` / \`${prefix}crypto SUI\`)\n` +
+      `> -# ${BULLET_EMOJI} \`NEAR\` \u2014 NEAR Protocol (\`${prefix}stock NEAR\` / \`${prefix}crypto NEAR\`)\n` +
+      `> -# ${BULLET_EMOJI} \`DOT\` \u2014 Polkadot (\`${prefix}stock DOT\` / \`${prefix}crypto DOT\`)\n` +
+      `> -# ${BULLET_EMOJI} \`SHIB\` \u2014 Shiba Inu (\`${prefix}stock SHIB\` / \`${prefix}crypto SHIB\`)\n` +
+      `> -# ${BULLET_EMOJI} \`PEPE\` \u2014 Pepe (\`${prefix}stock PEPE\` / \`${prefix}crypto PEPE\`)`;
   } else if (cat === 'macro') {
     title = 'Commodities, Global Indices & Forex';
     bodyContent =
       `### Global Commodities\n` +
-      `> -# • \`GOLD\` \u2014 Gold Futures / Spot (\`${prefix}stock GOLD\`)\n` +
-      `> -# • \`SILVER\` \u2014 Silver Futures / Spot (\`${prefix}stock SILVER\`)\n` +
-      `> -# • \`CRUDE\` \u2014 Crude Oil WTI Futures (\`${prefix}stock CRUDE\`)\n` +
-      `> -# • \`NATGAS\` \u2014 Natural Gas Futures (\`${prefix}stock NATGAS\`)\n` +
-      `> -# • \`COPPER\` \u2014 Copper Futures (\`${prefix}stock COPPER\`)\n\n` +
+      `> -# ${BULLET_EMOJI} \`GOLD\` \u2014 Gold Futures / Spot (\`${prefix}stock GOLD\`)\n` +
+      `> -# ${BULLET_EMOJI} \`SILVER\` \u2014 Silver Futures / Spot (\`${prefix}stock SILVER\`)\n` +
+      `> -# ${BULLET_EMOJI} \`CRUDE\` \u2014 Crude Oil WTI Futures (\`${prefix}stock CRUDE\`)\n` +
+      `> -# ${BULLET_EMOJI} \`NATGAS\` \u2014 Natural Gas Futures (\`${prefix}stock NATGAS\`)\n` +
+      `> -# ${BULLET_EMOJI} \`COPPER\` \u2014 Copper Futures (\`${prefix}stock COPPER\`)\n\n` +
       `### International Market Indices\n` +
-      `> -# • \`NIKKEI\` \u2014 Nikkei 225 - Japan (\`${prefix}stock NIKKEI\`)\n` +
-      `> -# • \`FTSE\` \u2014 FTSE 100 - United Kingdom (\`${prefix}stock FTSE\`)\n` +
-      `> -# • \`DAX\` \u2014 DAX 40 - Germany (\`${prefix}stock DAX\`)\n` +
-      `> -# • \`HANGSENG\` \u2014 Hang Seng Index - Hong Kong (\`${prefix}stock HANGSENG\`)\n\n` +
+      `> -# ${BULLET_EMOJI} \`NIKKEI\` \u2014 Nikkei 225 - Japan (\`${prefix}stock NIKKEI\`)\n` +
+      `> -# ${BULLET_EMOJI} \`FTSE\` \u2014 FTSE 100 - United Kingdom (\`${prefix}stock FTSE\`)\n` +
+      `> -# ${BULLET_EMOJI} \`DAX\` \u2014 DAX 40 - Germany (\`${prefix}stock DAX\`)\n` +
+      `> -# ${BULLET_EMOJI} \`HANGSENG\` \u2014 Hang Seng Index - Hong Kong (\`${prefix}stock HANGSENG\`)\n\n` +
       `### Major Forex Pairs\n` +
-      `> -# • \`USDINR\` \u2014 US Dollar to Indian Rupee (\`${prefix}stock USDINR\`)\n` +
-      `> -# • \`EURUSD\` \u2014 Euro to US Dollar (\`${prefix}stock EURUSD\`)\n` +
-      `> -# • \`GBPUSD\` \u2014 British Pound to US Dollar (\`${prefix}stock GBPUSD\`)\n` +
-      `> -# • \`USDJPY\` \u2014 US Dollar to Japanese Yen (\`${prefix}stock USDJPY\`)`;
+      `> -# ${BULLET_EMOJI} \`USDINR\` \u2014 US Dollar to Indian Rupee (\`${prefix}stock USDINR\`)\n` +
+      `> -# ${BULLET_EMOJI} \`EURUSD\` \u2014 Euro to US Dollar (\`${prefix}stock EURUSD\`)\n` +
+      `> -# ${BULLET_EMOJI} \`GBPUSD\` \u2014 British Pound to US Dollar (\`${prefix}stock GBPUSD\`)\n` +
+      `> -# ${BULLET_EMOJI} \`USDJPY\` \u2014 US Dollar to Japanese Yen (\`${prefix}stock USDJPY\`)`;
   } else {
     // 'all' / general overview
     title = 'Universal Ticker & Symbol Directory';
@@ -2185,12 +2186,12 @@ export function buildSymbolsPayload(category = 'all', prefix = '!') {
         components: [
           {
             type: 10,
-            content: `## ${title} | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} ${title} | ${TICK_EMOJI}\n` +
                      `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                      `> -# <a:uptime:1552608831060844575> **Universal Ticker Support:** Athena resolves **every single publicly traded asset globally**.\n\n` +
                      `${bodyContent}\n\n` +
                      `### Dynamic Symbol Search\n` +
-                     `> -# • Run \`${prefix}symbols <search-term>\` to search any company by name or ticker in real-time (e.g. \`${prefix}symbols tata\`, \`${prefix}symbols adani\`, \`${prefix}symbols zomato\`, \`${prefix}symbols palantir\`).\n\n` +
+                     `> -# ${BULLET_EMOJI} Run \`${prefix}symbols <search-term>\` to search any company by name or ticker in real-time (e.g. \`${prefix}symbols tata\`, \`${prefix}symbols adani\`, \`${prefix}symbols zomato\`, \`${prefix}symbols palantir\`).\n\n` +
                      `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
           },
           {
@@ -2282,13 +2283,13 @@ export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!
           components: [
             {
               type: 10,
-              content: `## Symbol Search: "${query}" | <a:03_tick_circle:1565665642084827206>\n` +
+              content: `# ${getRandomHeadingGlyph()} Symbol Search: "${query}" | ${TICK_EMOJI}\n` +
                        `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                        `> -# <a:uptime:1552608831060844575> **Status:** No verified ticker symbols found matching "${query}".\n\n` +
                        `### Search Recommendations\n` +
-                       `> -# • Try searching by full company name (e.g. \`${prefix}symbols Tata Motors\`, \`${prefix}symbols State Bank\`).\n` +
-                       `> -# • Try searching by asset code (e.g. \`${prefix}symbols TCS\`, \`${prefix}symbols NVDA\`, \`${prefix}symbols BTC\`).\n` +
-                       `> -# • Browse standard categories using the directory buttons below.\n\n` +
+                       `> -# ${BULLET_EMOJI} Try searching by full company name (e.g. \`${prefix}symbols Tata Motors\`, \`${prefix}symbols State Bank\`).\n` +
+                       `> -# ${BULLET_EMOJI} Try searching by asset code (e.g. \`${prefix}symbols TCS\`, \`${prefix}symbols NVDA\`, \`${prefix}symbols BTC\`).\n` +
+                       `> -# ${BULLET_EMOJI} Browse standard categories using the directory buttons below.\n\n` +
                        `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
             },
             {
@@ -2320,7 +2321,7 @@ export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!
       ? `${r.name} (${cleanUpper})`
       : r.name;
     return `> -# **${idx + 1}. ${displayName}** (\`${r.symbol}\`)\n` +
-           `> -# • Exchange: \`${r.exchange}\` • Asset Type: \`${r.type}\`\n` +
+           `> -# ${BULLET_EMOJI} Exchange: \`${r.exchange}\` • Asset Type: \`${r.type}\`\n` +
            `> -# \u25b8 Telemetry: \`${prefix}stock ${baseTicker}\` or \`${prefix}stock ${r.symbol}\``;
   }).join('\n\n');
 
@@ -2331,7 +2332,7 @@ export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!
         components: [
           {
             type: 10,
-            content: `## Symbol Search Results: "${query}" | <a:03_tick_circle:1565665642084827206>\n` +
+            content: `# ${getRandomHeadingGlyph()} Symbol Search Results: "${query}" | ${TICK_EMOJI}\n` +
                      `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                      `> -# <a:uptime:1552608831060844575> **Matches Found:** Showing top ${items.length} verified market assets for \`${query}\`.\n\n` +
                      `${rows}\n\n` +

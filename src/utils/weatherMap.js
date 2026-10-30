@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createCanvas } from './canvas.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { getRandomHeadingGlyph, TICK_EMOJI, BULLET_EMOJI } from './emojis.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -396,16 +397,16 @@ export async function buildWeatherReportPayload(weatherData, locationInput, sour
       },
       {
         type: 10,
-        content: `## Weather Reconnaissance | <a:03_tick_circle:1565665642084827206>\n` +
+        content: `# ${getRandomHeadingGlyph()} Weather Reconnaissance | ${TICK_EMOJI}\n` +
                  `> -# <a:uptime:1552608831060844575> **Target Location:** **${fullLocation}**\n` +
-                 `> -# • **Coordinates:** \`${lat.toFixed(4)}°, ${lon.toFixed(4)}°\` *(Target Locked on World Map)*\n` +
-                 `> -# • **Conditions:** \`${condition}\` • **Temp:** \`${tempC}°C\` (\`${tempF}°F\`) • **Feels Like:** \`${feelsLikeC}°C\` (\`${feelsLikeF}°F\`)\n` +
-                 `> -# • **Humidity:** \`${humidity}%\` • **Wind:** \`${windKmph} km/h ${windDir}\` • **UV Index:** \`${uvIndex}\`\n` +
-                 `> -# • **Precipitation:** \`${precip}mm\` • **Pressure:** \`${pressure} hPa\` • **Visibility:** \`${visibility} km\`\n\n` +
+                 `> -# ${BULLET_EMOJI} **Coordinates:** \`${lat.toFixed(4)}°, ${lon.toFixed(4)}°\` *(Target Locked on World Map)*\n` +
+                 `> -# ${BULLET_EMOJI} **Conditions:** \`${condition}\` ${BULLET_EMOJI} **Temp:** \`${tempC}°C\` (\`${tempF}°F\`) ${BULLET_EMOJI} **Feels Like:** \`${feelsLikeC}°C\` (\`${feelsLikeF}°F\`)\n` +
+                 `> -# ${BULLET_EMOJI} **Humidity:** \`${humidity}%\` ${BULLET_EMOJI} **Wind:** \`${windKmph} km/h ${windDir}\` ${BULLET_EMOJI} **UV Index:** \`${uvIndex}\`\n` +
+                 `> -# ${BULLET_EMOJI} **Precipitation:** \`${precip}mm\` ${BULLET_EMOJI} **Pressure:** \`${pressure} hPa\` ${BULLET_EMOJI} **Visibility:** \`${visibility} km\`\n\n` +
                  `### 3-Day Meteorological Forecast\n` +
                  daysText + `\n\n` +
                  `### Solar & Lunar Telemetry\n` +
-                 `> -# • **Sunrise:** \`${sunrise}\` • **Sunset:** \`${sunset}\` • **Moon Phase:** \`${moonPhase}\``
+                 `> -# ${BULLET_EMOJI} **Sunrise:** \`${sunrise}\` ${BULLET_EMOJI} **Sunset:** \`${sunset}\` ${BULLET_EMOJI} **Moon Phase:** \`${moonPhase}\``
       },
       { type: 14, divider: true },
       actionRow.toJSON(),

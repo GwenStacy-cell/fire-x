@@ -1,5 +1,6 @@
 import { MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import db from '../database.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 
 const TICK = '<a:black_dot:1544740123403620422>';
 const ARROW = '<a:z_arrow_pink1:1523082728004653138>';
@@ -13,7 +14,7 @@ export function getYtStatsPanel(guildId, client) {
     activeText = `-# **${ARROW} No active YouTube stat channels.**`;
   } else {
     for (const stat of ytStats) {
-      activeText += `-# **\u2022 <#${stat.channelId}>**  ${ARROW}  **${stat.handle}**  *(Format: ${stat.format})*\n`;
+      activeText += `-# **${BULLET_EMOJI} <#${stat.channelId}>**  ${ARROW}  **${stat.handle}**  *(Format: ${stat.format})*\n`;
     }
   }
 
@@ -33,7 +34,7 @@ export function getYtStatsPanel(guildId, client) {
         components: [
           {
             type: 10,
-            content: `> # **YouTube Stats VC Engine**\n\n-# **Dynamically rename voice channels to display live YouTube subscriber counts.**\n\n-# **${TICK} Setup a new channel by clicking the Bind button below.**`
+            content: `# ${getRandomHeadingGlyph()} YouTube Stats VC Engine\n\n-# Dynamically rename voice channels to display live YouTube subscriber counts.\n\n-# ${BULLET_EMOJI} Setup a new channel by clicking the Bind button below.`
           }
         ],
         accessory: {
@@ -44,7 +45,7 @@ export function getYtStatsPanel(guildId, client) {
       { type: 14, divider: true },
       {
         type: 10,
-        content: `-# **${TICK} System Documentation:**\n-# \u2022 **How it works:** Athena silently scrapes the YouTube channel in the background to fetch live subscriber counts, avoiding strict Google API Key quotas.\n-# \u2022 **Update Frequency:** To protect your server from being Rate-Limited by Discord (which aggressively bans rapid channel renames), Athena updates the stats exactly once every **10 minutes**.\n-# \u2022 **Format Template:** Use \`{subs}\`, \`{videos}\`, and \`{views}\` where you want the numbers to appear (e.g. \`Subs: {subs}\`).\n-# \u2022 **Pro Tip:** If you ever want to change the format of these channels after Auto-Setup creates them, you can just click the **Bind Existing VC** button, paste the ID of the channel it created, and type whatever custom format/text you want. The engine will instantly overwrite the format to your new layout!`
+        content: `-# **${TICK} System Documentation:**\n-# ${BULLET_EMOJI} **How it works:** Athena silently scrapes the YouTube channel in the background to fetch live subscriber counts, avoiding strict Google API Key quotas.\n-# ${BULLET_EMOJI} **Update Frequency:** To protect your server from being Rate-Limited by Discord (which aggressively bans rapid channel renames), Athena updates the stats exactly once every **10 minutes**.\n-# ${BULLET_EMOJI} **Format Template:** Use \`{subs}\`, \`{videos}\`, and \`{views}\` where you want the numbers to appear (e.g. \`Subs: {subs}\`).\n-# ${BULLET_EMOJI} **Pro Tip:** If you ever want to change the format of these channels after Auto-Setup creates them, you can just click the **Bind Existing VC** button, paste the ID of the channel it created, and type whatever custom format/text you want. The engine will instantly overwrite the format to your new layout!`
       },
       { type: 14, divider: true },
       {

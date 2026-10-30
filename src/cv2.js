@@ -67,13 +67,16 @@ function buildContainer(title, description, fields, customFooter, accentColor = 
     // Auto-upgrade legacy tick
     headerTitle = headerTitle.replaceAll(LEGACY_TICK, TICK_EMOJI);
 
-    // Prepend dynamic random heading glyph if it doesn't already start with an emoji or header tag
+    // Strip any existing markdown headers or quotes (#, ##, ###, > #, etc.)
+    headerTitle = headerTitle.replace(/^[>#\s]+/, '').trim();
+
+    // Prepend dynamic random heading glyph if it doesn't already start with an emoji
     const hasEmoji = hasEmojiStart(headerTitle);
-    if (!hasEmoji && !headerTitle.startsWith('#')) {
+    if (!hasEmoji) {
       headerTitle = `${getRandomHeadingGlyph()} ${headerTitle}`;
     }
 
-    comps.push({ type: 10, content: '## **' + headerTitle + '**' });
+    comps.push({ type: 10, content: '# ' + headerTitle });
     comps.push(SEP);
   }
 
@@ -388,8 +391,14 @@ export var cv2 = Object.assign(_m(false), {
       const comps = Array.isArray(payload.components) ? [...payload.components] : [];
       if (payload.content) {
         if (comps[0]?.type === 17 && Array.isArray(comps[0].components)) {
+          let cText = String(payload.content);
+          if (cText.startsWith('## ') || cText.startsWith('# ') || cText.startsWith('> #')) {
+            let clean = cText.replace(/^[>#\s]+/, '').trim();
+            if (!hasEmojiStart(clean)) clean = `${getRandomHeadingGlyph()} ${clean}`;
+            cText = `# ${clean}`;
+          }
           comps[0].components.unshift({ type: 14, divider: true });
-          comps[0].components.unshift({ type: 10, content: payload.content });
+          comps[0].components.unshift({ type: 10, content: cText });
         }
       }
       body = {
