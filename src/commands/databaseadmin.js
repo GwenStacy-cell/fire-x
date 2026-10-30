@@ -77,7 +77,8 @@ export const commands = [
       }
 
       await interaction.deferReply().catch(() => null);
-      const action = interaction.options.getString('action');
+      let action = interaction.options.getString('action');
+      if (!action) action = 'status';
       const file = interaction.options.getAttachment('file');
       const targetChannel = interaction.options.getChannel('channel');
 
@@ -132,7 +133,7 @@ export const commands = [
           return sendReply(cv2.warn('Backup Channel Not Found', 'No cloud backup channel is configured or accessible. Use `!db setchannel #channel` to configure one.'));
         }
 
-        const messages = await channel.messages.fetch({ limit: 15 }).catch(() => null);
+        const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
         const backupMessages = messages
           ? messages.filter(m => m.attachments.some(a => a.name?.endsWith('.json') && (a.name.includes('athena_db_') || a.name === 'db.json')))
           : null;
@@ -168,7 +169,8 @@ export const commands = [
           `> -# **Join Gatekeeper:** \`${m.entryActive || 0} gates\` | \`${m.entryPendingTotal || 0} pending apps\` | \`Remote DMs: ${m.botOwnerEntryRemote ? 'ACTIVE' : 'OFF'}\` | \`${m.entryVerifiedRoles || 0} verified roles\`\n` +
           `> -# **Stock Telemetry:** \`${m.stockChannels || 0} alert chs\` | \`${m.dailyStockEnabled || 0} daily briefings\` | \`${m.dynamicStockSymbolsCount || 0} learned tickers\`\n` +
           `> -# **Automod Filters:** \`${m.automodServers} active\` | \`${m.blacklistedWordsCount} words\` | \`${m.allowedLinksCount} allowed domains\` | \`${m.automodBypassRolesCount || 0} bypasses\`\n` +
-          `> -# **Voice & Studio:** \`${m.homeVc} home VCs\` | \`${m.jtc} JTC hubs\` | \`${m.studioTemplates || 0} studio presets\` | \`${m.voiceAnalyticsServers || 0} telemetry\` | \`${m.autoTtsChannels || 0} TTS chs\`\n` +
+          `> -# **Community Setups:** \`Suggestions: ${m.suggestionChannels || 0} chs | Starboard: ${m.starboardChannels || 0} chs (${m.starboardThresholdsCount || 0} limits) | Quotes: ${m.quoteChannels} | Voice Roles: ${m.voiceRolesCount || 0} | Verification: ${m.verification} gates | Reaction Roles: ${m.reactionRoles} menus (${m.reactionRolesMappingsCount || 0} mapped) | Chess Engines: ${m.chessEnginesCount || 0}\`\n` +
+          `> -# **Voice & Studio:** \`${m.homeVc} home VCs\` | \`${m.theaterModeVcs} theater\` | \`${m.jtc} JTC hubs (${m.jtcChimesCount || 0} chimes)\` | \`${m.studioTemplates || 0} studio presets\` | \`${m.voiceAnalyticsServers || 0} telemetry\` | \`${m.autoTtsChannels || 0} TTS chs\`\n` +
           `> -# **Economy & Community:** \`${m.economyUsers || 0} bank ledgers\` | \`${m.shopItemsCount || 0} shop items\` | \`${m.countingActive || 0} counting games\` | \`${m.tickets} tickets\` | \`${m.giveaways} giveaways\`\n` +
           `> -# **Sanctions & Access:** \`${m.warnings} warnings\` | \`${m.quarantines} quarantined\` | \`${m.tempBans} tempbans\` | \`${m.exploitTaintsCount || 0} exploit taints\` | \`${m.extraOwners} extra owners\`\n` +
           `> -# **NP Network:** \`${m.npUsers} NP users\` | \`${m.npServers} NP servers\` | \`${m.npManagers} NP managers\` | \`WAL SQLite stats.db: SYNCED\``;

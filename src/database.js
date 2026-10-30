@@ -63,8 +63,6 @@ const DEFAULT_SCHEMA = {
   vcProtection: {},   // guildId -> [userIds]
   apps: {},           // guildId -> staff application config
   pingAlertBlocks: {},// userId -> [guildIds]
-  likedSongs: {},     // userId -> [ { title, url, duration, artworkUrl } ]
-  bannedServers: [],  // global list of banned guild IDs
   tts: { users: {}, autoTts: {} },
   dbBackupChannelId: null,
   vcDrags: {},        // guildId -> { userId -> { initiatorId, targetTag, startedAt, intervalSec } }

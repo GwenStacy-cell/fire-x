@@ -367,6 +367,22 @@ export async function processMediaLink(client, message, url) {
           console.warn('[Media] YouTube Strategy C failed:', errC.message);
         }
       }
+
+      // Strategy D: High-speed btch.youtube API Fallback
+      if (!downloadSuccess) {
+        try {
+          const btch = (await import('btch-downloader')).default;
+          if (typeof btch?.youtube === 'function') {
+            const res = await btch.youtube(url);
+            if (res && res.mp4) {
+              directUrl = res.mp4;
+              downloadSuccess = true;
+            }
+          }
+        } catch (errD) {
+          console.warn('[Media] YouTube btch fallback failed:', errD.message);
+        }
+      }
     }
 
     // 7. Universal Fallback for any platform or unhandled link
@@ -531,7 +547,34 @@ export async function processMp3Link(client, message, url) {
       }
     }
 
-    const downloadedFile = findGeneratedFile(filePrefix);
+    let downloadedFile = findGeneratedFile(filePrefix);
+    if ((!downloadedFile || !fs.existsSync(downloadedFile)) && (url.includes('youtube.com') || url.includes('youtu.be'))) {
+      try {
+        const btch = (await import('btch-downloader')).default;
+        if (typeof btch?.youtube === 'function') {
+          const res = await btch.youtube(url);
+          if (res && res.mp3) {
+            const audioRes = await fetch(res.mp3);
+            if (audioRes.ok) {
+              const buffer = Buffer.from(await audioRes.arrayBuffer());
+              if (buffer.length > 25 * 1024 * 1024) {
+                await message.reply({ content: '-# **The audio is too large (Limit: 25MB).**' }).catch(() => {});
+                return true;
+              }
+              const attachment = new AttachmentBuilder(buffer, { name: 'Athena_Audio.mp3' });
+              await message.reply({
+                content: `-# **Audio Extracted | <a:atheNATICK:1557841381630681106>** Requested by ${message.author}`,
+                files: [attachment]
+              });
+              return true;
+            }
+          }
+        }
+      } catch (errYt) {
+        console.warn('[Audio] YouTube btch audio fallback failed:', errYt.message);
+      }
+    }
+
     if (downloadedFile && fs.existsSync(downloadedFile)) {
       tempFilesToClean.push(downloadedFile);
       const buffer = fs.readFileSync(downloadedFile);

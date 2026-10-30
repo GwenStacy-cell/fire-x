@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { AttachmentBuilder, ChannelType, PermissionFlagsBits } from 'discord.js';
+import { AttachmentBuilder, ChannelType, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import fetch from 'node-fetch';
 import chalk from 'chalk';
 import db from '../database.js';
@@ -106,10 +106,14 @@ export function getDatabaseMetrics() {
   const ticketStaffRolesCount = ticketConfigs.reduce((acc, t) => acc + (Array.isArray(t?.staffRoleIds) ? t.staffRoleIds.length : 0), 0);
   const ticketAiTriageServers = ticketConfigs.filter(t => t && t.aiTriage).length;
 
-  // Community Features: Suggestions, Starboard, Voice Roles
-  const suggestionChannels = guilds.filter(g => g && g.suggestionChannelId).length;
+  // Community Features: Suggestions, Starboard, Voice Roles, Chess Engines, JTC Chimes
+  const suggestionChannels = guilds.filter(g => g && (g.suggestionChannelId || g.suggestionsChannelId)).length;
   const starboardChannels = guilds.filter(g => g && g.starboardChannelId).length;
+  const starboardThresholdsCount = guilds.filter(g => g && g.starboardThreshold !== undefined).length;
   const voiceRolesCount = guilds.filter(g => g && g.voiceRoleId).length;
+  const chessEnginesCount = guilds.filter(g => g && g.chessEngine).length;
+  const jtcChimesCount = guilds.filter(g => g && g.jtcChime).length;
+  const reactionRolesMappingsCount = Object.values(cache.reactionRoles || {}).reduce((acc, r) => acc + (Array.isArray(r?.mappings) ? r.mappings.length : 0), 0);
 
   // Global Action Logger
   const globalActionLogServers = guilds.filter(g => g && g.globalActionLogChannel).length;
@@ -328,7 +332,11 @@ export function getDatabaseMetrics() {
 
     suggestionChannels,
     starboardChannels,
+    starboardThresholdsCount,
     voiceRolesCount,
+    chessEnginesCount,
+    jtcChimesCount,
+    reactionRolesMappingsCount,
     globalActionLogServers,
 
     maxWarningsSet,
@@ -560,13 +568,14 @@ export function formatDatabaseMetrics(m, options = {}) {
     `> -# **Tracking & Apps:** \`Invites: ${m.inviteLogChannels} chs | Staff Applications: ${m.appsActive || 0} active (${m.appsServers || 0} guilds)\`\n\n` +
 
     `-# **__Community, Economy & Neural AI:__**\n` +
-    `> -# **Neural AI:** \`Mode: ${m.aiModeServers || 0} guilds (${m.aiDedicatedChannels || 0} chs) | Toxicity: ${m.aiToxicityServers || 0} | Triage: ${m.ticketAiTriageServers || 0}\`\n` +
-    `> -# **Engagement:** \`News: ${m.newsChannels} chs (${m.newsFeedsCount} feeds) | Auto-React: ${m.autoReactChannels} | Tickets: ${m.ticketSetups || 0} (${m.ticketsActive || 0} active) | Giveaways: ${m.giveaways} | Sticky: ${m.stickyChannels || 0} | Adel: ${m.adelChannelsCount || 0} chs\`\n` +
+    `> -# **Neural AI & Chess:** \`Mode: ${m.aiModeServers || 0} guilds (${m.aiDedicatedChannels || 0} chs) | Chess Engines: ${m.chessEnginesCount || 0} setups | Toxicity: ${m.aiToxicityServers || 0} | Triage: ${m.ticketAiTriageServers || 0}\`\n` +
+    `> -# **Engagement:** \`News: ${m.newsChannels} chs (${m.newsFeedsCount} feeds) | Auto-React: ${m.autoReactChannels} (${m.autoReactServers || 0} guilds) | Tickets: ${m.ticketSetups || 0} (${m.ticketsActive || 0} active) | Giveaways: ${m.giveaways} | Sticky: ${m.stickyChannels || 0} | Adel: ${m.adelChannelsCount || 0} chs\`\n` +
+    `> -# **Community Setups:** \`Suggestions: ${m.suggestionChannels || 0} chs | Starboard: ${m.starboardChannels || 0} chs (${m.starboardThresholdsCount || 0} thresholds) | Quotes: ${m.quoteChannels} | Voice Roles: ${m.voiceRolesCount || 0} roles | Verification: ${m.verification} gates | Reaction Roles: ${m.reactionRoles} menus (${m.reactionRolesMappingsCount || 0} mapped)\`\n` +
     `> -# **Economy & Casino:** \`${m.economyUsers || 0} ledgers | Shop: ${m.shopItemsCount || 0} items (${m.shopGuilds || 0} guilds) | Themes: ${m.customThemesCount || 0} (${m.rankRewardsCount || 0} milestones) | Minigames: ${m.minigamesUsers || 0} players (${m.minigamesWagered || 0} chips)\`\n` +
-    `> -# **Activity:** \`XP: ${m.xpSystems} guilds (${m.xpUsers} users) | Counting: ${m.countingActive || 0} chs (Peak: ${m.countingPeakRecord || 0}, Streak: ${m.countingTotalCounts || 0}) | Quotes: ${m.quoteChannels} | Ratings: ${m.editRatingMessages || 0} (${m.rateChannels || 0} chs) | AFK: ${m.afkUsers || 0}\`\n\n` +
+    `> -# **Activity:** \`XP: ${m.xpSystems} guilds (${m.xpUsers} users) | Counting: ${m.countingActive || 0} chs (Peak: ${m.countingPeakRecord || 0}, Streak: ${m.countingTotalCounts || 0}) | Ratings: ${m.editRatingMessages || 0} (${m.rateChannels || 0} chs) | AFK: ${m.afkUsers || 0}\`\n\n` +
 
     `-# **__Voice Grid Control, Studio & Analytics:__**\n` +
-    `> -# **Voice Infrastructure:** \`${m.homeVc} home VCs, ${m.theaterModeVcs} theater, ${m.jtc} JTC hubs (${m.jtcChannels} temp) | Studio Templates: ${m.studioTemplates || 0} | Status VCs: ${m.autoVcStatusServers || 0}\`\n` +
+    `> -# **Voice Infrastructure:** \`${m.homeVc} home VCs, ${m.theaterModeVcs} theater, ${m.jtc} JTC hubs (${m.jtcChannels} temp, ${m.jtcChimesCount || 0} chimes) | Studio Templates: ${m.studioTemplates || 0} | Status VCs: ${m.autoVcStatusServers || 0} (${m.customVcStatusesCount || 0} custom)\`\n` +
     `> -# **Protection & Sentry:** \`Protected: ${m.vcProtectedTotal || 0} VC, ${m.moveProtectedTotal || 0} Move | Drags: ${m.activeVcDragsCount || 0} active | Auto-TTS: ${m.autoTtsChannels || 0} VCs (${m.ttsUsers || 0} prefs)\`\n` +
     `> -# **Audits & Telemetry:** \`Server Logs: ${m.serverLogsCount}, Mod Audit: ${m.logChannelsCount}, Voice Logs: ${m.voiceLogs || 0}, Delete Logs: ${m.msgDeleteLogChannels} | Voice Analytics: ${m.voiceAnalyticsServers || 0} guilds\`\n\n` +
 
@@ -726,13 +735,17 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
       formattedText = formattedText.slice(0, 3800) + '\n> -# **__[Snapshot manifest truncated for Discord display limits]__**';
     }
 
-    const payload = cv2.info(
-      `Database Cloud Backup | <a:atheNATICK:1557841381630681106>`,
-      formattedText
-    );
-    // Post diagnostics manifest container with files securely stored in Discord Cloud
-    payload.files = files;
-    const sentMsg = await channel.send(payload);
+    const embed = new EmbedBuilder()
+      .setTitle(`Database Cloud Backup | <a:atheNATICK:1557841381630681106>`)
+      .setDescription(formattedText)
+      .setColor(0x2b2d31)
+      .setTimestamp(timestamp);
+
+    // Send without IsComponentsV2 flag so Discord keeps downloadable file attachments intact
+    const sentMsg = await channel.send({
+      embeds: [embed],
+      files
+    });
 
     // Save metadata
     db.cache.lastCloudBackup = timestamp;
@@ -740,9 +753,15 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
     db.save();
 
     // Rotate and prune old backup messages to avoid channel bloat (keep latest 30)
+    // Also clean up any old broken messages sent with 0 attachments
     try {
-      const messages = await channel.messages.fetch({ limit: 50 }).catch(() => null);
+      const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
       if (messages) {
+        const brokenMsgs = messages.filter(msg => msg.author.id === client.user.id && msg.attachments.size === 0);
+        for (const msg of brokenMsgs.values()) {
+          await msg.delete().catch(() => null);
+        }
+
         const backupMessages = messages
           .filter(m => m.author.id === client.user.id && m.attachments.some(a => a.name?.startsWith('athena_db_')))
           .sort((a, b) => b.createdTimestamp - a.createdTimestamp);
