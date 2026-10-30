@@ -350,6 +350,8 @@ export const commands = [
                   usageText = `${prefix}ar [add|edit|remove|list|dashboard] / ${prefix}autoreply`;
               } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
                   usageText = `${prefix}trigger [create|delete|list|react|mirror|ghost|bounty|time|audience|dashboard] / ${prefix}trig`;
+              } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis") {
+                  usageText = `${prefix}emojis [animated|static|all|raw|global] / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -656,6 +658,19 @@ export const commands = [
                     `> • \`${prefix}trigger <match> | <response>\` - Direct shortcut.\n` +
                     `> • \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
                     `> • \`${prefix}trigger list\` - Public list of configured triggers.`;
+              } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis" || targetCmd.name === "emojilist") {
+                  descContent = `Interactive server emoji explorer, raw ID extractor, and copyable asset terminal.\n\n` +
+                    `> -# **__Features & Capabilities:__**\n` +
+                    `> • **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
+                    `> • **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
+                    `> • **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
+                    `> • **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> • \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix.\n` +
+                    `> • \`${prefix}emojis static\` - View all static emojis in the server.\n` +
+                    `> • \`${prefix}emojis all\` - View all emojis in the server.\n` +
+                    `> • \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
+                    `> • \`${prefix}emojid <emoji/id/name>\` - Inspect a specific emoji's details and raw ID.`;
               } else if (targetCmd.name === "whitelist" || targetCmd.name === "wl") {
                   descContent = `Interactive Whitelist Defense Matrix dashboard with synced looping animated GIF HUD, permission category clearance, and custom action limits.\n\n` +
                     `> -# **__Synced Looping Animated GIF HUD:__**\n` +
@@ -865,6 +880,8 @@ export const commands = [
           usageText = `${prefix}ar [add|edit|remove|list|dashboard] / ${prefix}autoreply`;
         } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
           usageText = `${prefix}trigger [create|delete|list|react|mirror|ghost|bounty|time|audience|dashboard] / ${prefix}trig`;
+        } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis") {
+          usageText = `${prefix}emojis [animated|static|all|raw|global] / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -1218,6 +1235,19 @@ export const commands = [
             `> • \`${prefix}trigger <match> | <response>\` - Direct shortcut.\n` +
             `> • \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
             `> • \`${prefix}trigger list\` - Public list of configured triggers.`;
+        } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis" || targetCmd.name === "emojilist") {
+          descContent = `Interactive server emoji explorer, raw ID extractor, and copyable asset terminal.\n\n` +
+            `> -# **__Features & Capabilities:__**\n` +
+            `> • **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
+            `> • **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
+            `> • **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
+            `> • **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> • \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix.\n` +
+            `> • \`${prefix}emojis static\` - View all static emojis in the server.\n` +
+            `> • \`${prefix}emojis all\` - View all emojis in the server.\n` +
+            `> • \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
+            `> • \`${prefix}emojid <emoji/id/name>\` - Inspect a specific emoji's details and raw ID.`;
         }
 
         const display1 = new TextDisplayBuilder().setContent(
@@ -2480,6 +2510,7 @@ export const helpModules = [
     "`!tts / !tts <text> / !tts voices / !tts voice <name> / !tts stop` - Interactive AI & Celebrity TTS Control Center `[Public]`",
     "`!qrcode / !qrc / !qrmanager <text/link>` - Generate high-resolution QR code `[Public]`",
     "`!steal / !stealemoji / !emojisteal / !steal-emoji / !addemoji <emoji/link>` - Steal an emoji to this server `[Extra Owner]`",
+    "`!emojis / !animatedemojis / !emojilist` - Interactive animated & static emoji inventory with raw IDs (<a:name:id>), previews & copyable codeblocks `[Public]`",
     "`!afk / !brb [reason]` - Set an AFK status that replies when pinged `[Public]`",
     "`!bump` - Bump the server (Disboard integration) `[Public]`",
     "`!sticky / !stick <message>` - Keep a message stuck at bottom of chat `[Extra Owner]`",

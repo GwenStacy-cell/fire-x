@@ -58,6 +58,13 @@ export default {
       } catch (e) { console.error('[InteractionCreate] TTS interaction error:', e); }
     }
 
+    if (interaction.customId && interaction.customId.startsWith('emoj_')) {
+      try {
+        const { handleEmojiInteractions } = await import('../commands/emojis.js');
+        return handleEmojiInteractions(interaction);
+      } catch (e) { console.error('[InteractionCreate] Emoji interaction error:', e); }
+    }
+
     // ==========================================
     // DEFENSE MATRIX: LOCKDOWN & EMERGENCY BUTTONS
     // ==========================================

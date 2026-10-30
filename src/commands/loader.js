@@ -68,6 +68,7 @@ import { commands as stickyCmds } from './sticky.js';
 import { commands as fckCmds } from './fck.js';
 import { commands as afkCmds } from './afk.js';
 import { commands as emojiStealerCmds } from './emojistealer.js';
+import { commands as emojisCmds } from './emojis.js';
 import { commands as setDeleteLogCmds } from './setdeletelog.js';
 import { commands as channelAdminCmds } from './channeladmin.js';
 import { commands as youtubeCmds } from './youtube.js';
@@ -191,6 +192,7 @@ export const allCommands = [
   ...fckCmds,
   ...afkCmds,
   ...emojiStealerCmds,
+  ...emojisCmds,
   ...setDeleteLogCmds,
   ...rateLeaderboardCmds,
   ...adelCmds,
