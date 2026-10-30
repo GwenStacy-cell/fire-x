@@ -71,6 +71,17 @@ export async function startGitWatcher(intervalMs = 30000) {
           }
         } catch {}
 
+        // Pull latest updates immediately
+        try {
+          console.log(chalk.cyan('[AutoDeploy] Synchronizing local repository via git pull...'));
+          await execPromise('git pull origin main');
+          console.log(chalk.green('[AutoDeploy] Successfully updated local repository.'));
+        } catch (pullErr) {
+          try {
+            await execPromise('git pull');
+          } catch {}
+        }
+
         setTimeout(() => {
           process.exit(0);
         }, 1000);
