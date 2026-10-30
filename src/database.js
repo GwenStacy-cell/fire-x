@@ -82,7 +82,8 @@ const DEFAULT_SCHEMA = {
   securityLiveRecords: {}, // guildId -> [ { id, timestamp, action, target, executor, latencyMs, ... } ]
   entryConfigs: {},        // guildId -> { enabled, gateChannelId, logChannelId, holdingRoleId, verifiedRoleId, questions, autoDmServerOwner }
   entryPending: {},        // guildId -> { userId -> { submittedAt, answers, guildId, guildName, ... } }
-  botOwnerEntryRemote: true // global toggle for Bot Owner DM join application delivery
+  botOwnerEntryRemote: true, // global toggle for Bot Owner DM join application delivery
+  chessStats: {}           // userId -> { wins: 0, losses: 0, draws: 0, games: 0, rating: 1200 }
 };
 
 class Database {

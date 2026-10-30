@@ -678,6 +678,9 @@ export async function handleChessThemeApply(interaction) {
   await interaction.deferUpdate().catch(() => {});
 
   const theme = interaction.customId.replace('chess_theme_apply_', '');
+  if (interaction.guild) {
+    db.updateGuildConfig(interaction.guild.id, { chessTheme: theme });
+  }
   interaction.client.globalChessTheme = theme;
 
   if (interaction.client.chessGames && interaction.client.chessGames.has(interaction.user.id)) {

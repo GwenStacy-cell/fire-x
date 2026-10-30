@@ -106,22 +106,21 @@ export const commands = [
 
         const stats = fs.statSync(DB_FILE);
         const sizeKb = (stats.size / 1024).toFixed(1);
-        const m = getDatabaseMetrics();
+        const m = getDatabaseMetrics(context.client);
 
-        const embed = new EmbedBuilder()
-          .setDescription(
-            `# Database Backed Up | <a:atheNATICK:1557841381630681106>\n\n` +
-            formatDatabaseMetrics(m, {
-              prefixText: '**Cloud snapshot successfully stored!**\nYour entire database is securely archived in Discord. If you ever switch hosting companies, the bot will automatically restore everything on boot.',
-              channelId: result.channelId,
-              sizeKb,
-              timestamp: result.timestamp,
-              reason: `Manual Backup by ${user.tag || user.username}`
-            })
-          )
-          .setColor(0x2b2d31)
-          .setTimestamp(result.timestamp);
-        const successPayload = { embeds: [embed] };
+        const successPayload = cv2.success(
+          `Database Backed Up | <a:atheNATICK:1557841381630681106>`,
+          formatDatabaseMetrics(m, {
+            prefixText: '**Cloud snapshot successfully stored!**\nYour entire database is securely archived in Discord. If you ever switch hosting companies, the bot will automatically restore everything on boot.',
+            channelId: result.channelId,
+            sizeKb,
+            timestamp: result.timestamp,
+            reason: `Manual Backup by ${user.tag || user.username}`
+          }),
+          [],
+          'Athena Bulletproof Defense Matrix • V1.0.0',
+          0x5865F2
+        );
         if (context.isCommand?.()) {
           return context.editReply(successPayload);
         }
@@ -157,7 +156,7 @@ export const commands = [
                  `> -# <t:${timeSec}:F> (<t:${timeSec}:R>)`;
         });
 
-        const m = getDatabaseMetrics();
+        const m = getDatabaseMetrics(context.client);
         const flagged = db.getBotBlacklist();
         const data = (db.getBotBlacklistData ? db.getBotBlacklistData() : db.cache.botBlacklistData) || {};
         const blSummary = flagged.length > 0
@@ -174,7 +173,7 @@ export const commands = [
           `> -# **Stock Telemetry:** \`${m.stockChannels || 0} alert chs\` | \`${m.dailyStockEnabled || 0} daily briefings\` | \`${m.dynamicStockSymbolsCount || 0} learned tickers\`\n` +
           `> -# **Automod Filters:** \`${m.automodServers} active\` | \`${m.blacklistedWordsCount} words\` | \`${m.allowedLinksCount} allowed domains\` | \`${m.automodBypassRolesCount || 0} bypasses\`\n` +
           `> -# **Greetings & Feeds:** \`Welcome: ${m.welcomeActive} chs (${m.welcomeMessages} texts, ${m.welcomeEmbeds} embeds) | Leave: ${m.leaveActive} chs | News: ${m.newsChannels} chs | Feeds: ${m.newsFeedsCount} RSS\`\n` +
-          `> -# **Community Setups:** \`Suggestions: ${m.suggestionChannels || 0} chs | Starboard: ${m.starboardChannels || 0} chs (${m.starboardThresholdsCount || 0} limits) | Quotes: ${m.quoteChannels} chs | Rate: ${m.rateChannels || 0} chs | Voice Roles: ${m.voiceRolesCount || 0} | Verification: ${m.verification} gates | Reaction Roles: ${m.reactionRoles} menus (${m.reactionRolesMappingsCount || 0} mapped) | Chess Engines: ${m.chessEnginesCount || 0}\`\n` +
+          `> -# **Community Setups:** \`Suggestions: ${m.suggestionChannels || 0} chs | Starboard: ${m.starboardChannels || 0} chs (${m.starboardThresholdsCount || 0} limits) | Quotes: ${m.quoteChannels} chs | Rate: ${m.rateChannels || 0} chs | Voice Roles: ${m.voiceRolesCount || 0} | Verification: ${m.verification} gates | Reaction Roles: ${m.reactionRoles} menus (${m.reactionRolesMappingsCount || 0} mapped) | Chess: ${m.chessEnginesCount || 0} engines, ${m.chessThemesCount || 0} themes, ${m.chessGamesActive || 0} active\`\n` +
           `> -# **Voice & Studio:** \`${m.homeVc} home VCs\` | \`${m.theaterModeVcs} theater\` | \`${m.jtc} JTC hubs (${m.jtcChimesCount || 0} chimes)\` | \`${m.studioTemplates || 0} studio presets\` | \`${m.voiceAnalyticsServers || 0} telemetry\` | \`${m.autoTtsChannels || 0} TTS chs\`\n` +
           `> -# **Economy & Community:** \`${m.economyUsers || 0} bank ledgers\` | \`${m.shopItemsCount || 0} shop items\` | \`${m.countingActive || 0} counting games\` | \`${m.tickets} tickets\` | \`${m.giveaways} giveaways\`\n` +
           `> -# **Sanctions & Access:** \`${m.warnings} warnings\` | \`${m.quarantines} quarantined\` | \`${m.tempBans} tempbans\` | \`${m.exploitTaintsCount || 0} exploit taints\` | \`${m.extraOwners} extra owners\`\n` +
@@ -208,7 +207,7 @@ export const commands = [
 
         const stats = fs.statSync(DB_FILE);
         const sizeKb = (stats.size / 1024).toFixed(1);
-        const m = getDatabaseMetrics();
+        const m = getDatabaseMetrics(context.client);
 
         const files = [new AttachmentBuilder(DB_FILE, { name: 'db.json' })];
         if (fs.existsSync(STATS_FILE)) {
@@ -359,7 +358,7 @@ export const commands = [
 
       // 5. STATUS ACTION (DEFAULT)
       const currentChannel = await getBackupChannel(context.client);
-      const m = getDatabaseMetrics();
+      const m = getDatabaseMetrics(context.client);
       const sizeKb = fs.existsSync(DB_FILE) ? (fs.statSync(DB_FILE).size / 1024).toFixed(1) : '0';
       const lastBackupStr = db.cache.lastCloudBackup ? `<t:${Math.floor(db.cache.lastCloudBackup / 1000)}:R>` : '`Never`';
 

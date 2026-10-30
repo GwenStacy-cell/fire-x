@@ -44,7 +44,7 @@ function styleLine(line, addBullet) {
 const SEP = { type: 14, divider: true };
 
 // Build a raw CV2 container JSON with separators
-function buildContainer(title, description, fields, customFooter) {
+function buildContainer(title, description, fields, customFooter, accentColor = 0x5865F2) {
   if (!fields) fields = [];
   var comps = [];
 
@@ -212,10 +212,12 @@ function buildContainer(title, description, fields, customFooter) {
 
   comps.push({ type: 10, content: `-# **${footerText}**` });
 
-  // Pure borderless CV2 container (no accent_color)
+  // Accent borderless CV2 container (with accent_color)
   // Discord caps total displayable text across all components at 4,000 characters.
   // Enforce a hard safety ceiling of 3,800 characters to prevent COMPONENT_DISPLAYABLE_TEXT_SIZE_EXCEEDED.
-  return sanitizeCV2Payload({ type: 17, components: comps });
+  const container = { type: 17, components: comps };
+  if (accentColor) container.accent_color = accentColor;
+  return sanitizeCV2Payload(container);
 }
 
 /**
@@ -285,33 +287,33 @@ export function sanitizeCV2Payload(payload, maxLimit = 3800) {
   return payload;
 }
 
-function make(title, desc, fields, eph, customFooter) {
+function make(title, desc, fields, eph, customFooter, accentColor = 0x5865F2) {
   if (!fields) fields = [];
   if (!eph) eph = false;
   var flags = eph ? (MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral) : MessageFlags.IsComponentsV2;
-  return { components: [buildContainer(title, desc, fields, customFooter)], flags: flags };
+  return { components: [buildContainer(title, desc, fields, customFooter, accentColor)], flags: flags };
 }
 
 export const TICK_EMOJI = '<a:atheNATICK:1557841381630681106>';
 
 var _m = function(eph) {
   return {
-    success:  function(t,d,f,ft) {
+    success:  function(t,d,f,ft,acc) {
       var heading = t;
       if (t && !t.includes('1557841381630681106')) {
         heading = t + ' | ' + TICK_EMOJI;
       }
-      return make(heading, d, f, eph, ft);
+      return make(heading, d, f, eph, ft, acc || 0x5865F2);
     },
-    warn:     function(t,d,f,ft) { return make(t,d,f,eph,ft); },
-    danger:   function(t,d,f,ft) { return make(t,d,f,eph,ft); },
-    error:    function(t,d,f,ft) { return make(t,d,f,eph,ft); },
-    info:     function(t,d,f,ft) { return make(t,d,f,eph,ft); },
-    raid:     function(t,d,f,ft) { return make(t,d,f,eph,ft); },
-    owner:    function(t,d,f,ft) { return make(t,d,f,eph,ft); },
-    security: function(t,d,f,ft) { return make(t,d,f,eph,ft); },
-    defense:  function(t,d,f,ft) { return make(t,d,f,eph,ft); },
-    log:      function(t,d,f,ft) { return make('Log: ' + t, d, f, eph, ft); },
+    warn:     function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0xFEE75C); },
+    danger:   function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0xED4245); },
+    error:    function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0xED4245); },
+    info:     function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0x5865F2); },
+    raid:     function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0xED4245); },
+    owner:    function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0x5865F2); },
+    security: function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0x5865F2); },
+    defense:  function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0x5865F2); },
+    log:      function(t,d,f,ft,acc) { return make('Log: ' + t, d, f, eph, ft, acc || 0x5865F2); },
   };
 };
 
