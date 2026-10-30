@@ -2782,7 +2782,12 @@ async function handleSecurityInteractions(interaction, guild) {
 
     if (customId === "sec_2fa_gmail") {
       const modal = new ModalBuilder().setCustomId("modal_2fa_setup").setTitle("Configure Gmail 2FA");
-      const emailInput = new TextInputBuilder().setCustomId("2fa_email").setLabel("Your Athena Gmail Address").setStyle(TextInputStyle.Short).setRequired(true).setPlaceholder("admin@gmail.com");
+      const emailInput = new TextInputBuilder()
+        .setCustomId("2fa_email")
+        .setLabel("Your Email Address (To Receive 2FA)")
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true)
+        .setPlaceholder("e.g. hathimreigns1200@gmail.com");
       modal.addComponents(new ActionRowBuilder().addComponents(emailInput));
       return interaction.showModal(modal);
     }

@@ -1,21 +1,20 @@
 import nodemailer from "nodemailer";
 import chalk from "chalk";
 
+// Dedicated production mailer credentials for Athena Prime
+const DEFAULT_SMTP_USER = "athenaprime.security@gmail.com";
+const DEFAULT_SMTP_PASS = "ugyvrysffjxeutkj";
+
 export async function send2FACode(toEmail, code, guildName) {
   // Always log the 2FA code immediately to the console so the host is never locked out
   console.log(chalk.yellow.bold(`\n======================================================`));
-  console.log(chalk.yellow.bold(`[SECURITY 2FA DISPATCH] Guild: ${guildName} | Email: ${toEmail}`));
+  console.log(chalk.yellow.bold(`[SECURITY 2FA DISPATCH] Guild: ${guildName} | Recipient: ${toEmail}`));
   console.log(chalk.cyan.bold(`[SECURITY 2FA CODE]: >>> ${code} <<<`));
   console.log(chalk.yellow.bold(`======================================================\n`));
 
-  const user = (process.env.GMAIL_USER || process.env.EMAIL_USER || '').trim();
-  const rawPass = (process.env.GMAIL_PASS || process.env.EMAIL_PASS || '').trim();
+  const user = (process.env.GMAIL_USER || process.env.EMAIL_USER || DEFAULT_SMTP_USER).trim();
+  const rawPass = (process.env.GMAIL_PASS || process.env.EMAIL_PASS || DEFAULT_SMTP_PASS).trim();
   const pass = rawPass.replace(/\s+/g, '');
-
-  if (!user || !pass) {
-    console.error(chalk.red.bold('[SMTP Error] Email credentials (EMAIL_USER / EMAIL_PASS) are missing in .env!'));
-    throw new Error("Email credentials (EMAIL_USER / EMAIL_PASS) are not configured in your server .env");
-  }
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
