@@ -619,7 +619,27 @@ export default {
       }
 
       if (interaction.isButton()) {
-        // --- XP DASHBOARD BUTTONS ---
+if (interaction.customId.startsWith('xp_view_rank_')) {
+          const targetUserId = interaction.customId.replace('xp_view_rank_', '');
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+          const targetMember = await interaction.guild.members.fetch(targetUserId).catch(() => interaction.member);
+          const userXp = db.getUserXp(interaction.guild.id, targetUserId);
+          const allUsers = db.getTopUsersXp(interaction.guild.id, 99999);
+          let rank = allUsers.findIndex(u => u.userId === targetUserId) + 1;
+          if (rank === 0 && userXp.xp > 0) rank = allUsers.length + 1;
+          else if (rank === 0) rank = '-';
+          const { calculateXpForLevel } = await import('../utils/xpEngine.js');
+          const requiredXp = calculateXpForLevel(userXp.level + 1);
+          const { generateRankCard } = await import('../utils/canvasCards.js');
+          const attachment = await generateRankCard(targetMember, userXp.xp, userXp.level, rank, requiredXp);
+          const { getRandomHeadingGlyph, TICK_EMOJI, BULLET_EMOJI } = await import('../utils/emojis.js');
+          return interaction.editReply({
+            content: `# ${getRandomHeadingGlyph()} Member XP Statistics | ${TICK_EMOJI}\n-# ${BULLET_EMOJI} **Rank Card for <@${targetUserId}>**`,
+            files: [attachment]
+          });
+        }
+
+                // --- XP DASHBOARD BUTTONS ---
         if (interaction.customId === 'xp_dash') {
           const panel = await buildXpDashboard(interaction.guild.id);
           return cv2.respond(interaction, { ...panel, flags: (panel.flags || 32768) | MessageFlags.Ephemeral }, 4);

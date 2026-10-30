@@ -152,6 +152,50 @@ export const commands = [
         return message.reply({ content: 'The XP system is currently disabled.' });
       }
 
+      // Admin Channel Configuration Subcommand (!xp channel #channel)
+      if (args[0] && (args[0].toLowerCase() === 'channel' || args[0].toLowerCase() === 'stats' || args[0].toLowerCase() === 'cmdchannel')) {
+        if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+          return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can configure the XP stats channel.')], flags: MessageFlags.IsComponentsV2 });
+        }
+        if (args[1] && args[1].toLowerCase() === 'clear') {
+          db.setXpSystem(message.guild.id, { ...system, cmdChannelId: null });
+          return message.reply({
+            components: [{
+              type: 17,
+              components: [{
+                type: 10,
+                content: `# ${getRandomHeadingGlyph()} XP Stats Channel Reset | ${TICK_EMOJI}\n> -# ${BULLET_EMOJI} Cleared XP stats channel. Level up cards and XP commands are now unrestricted.`
+              }]
+            }],
+            flags: MessageFlags.IsComponentsV2
+          });
+        }
+        const targetChannel = message.mentions.channels.first() || (args[1] ? message.guild.channels.cache.get(args[1]) : null);
+        if (targetChannel) {
+          db.setXpSystem(message.guild.id, { ...system, cmdChannelId: targetChannel.id });
+          return message.reply({
+            components: [{
+              type: 17,
+              components: [{
+                type: 10,
+                content: `# ${getRandomHeadingGlyph()} XP Stats Channel Bound | ${TICK_EMOJI}\n> -# ${BULLET_EMOJI} Bound XP stats and commands channel to <#${targetChannel.id}>.\n> -# ${BULLET_EMOJI} Level-up announcements will now feature direct links and buttons to this channel.`
+              }]
+            }],
+            flags: MessageFlags.IsComponentsV2
+          });
+        }
+        return message.reply({
+          components: [{
+            type: 17,
+            components: [{
+              type: 10,
+              content: `# ${getRandomHeadingGlyph()} XP Stats Channel Configuration\n> -# ${BULLET_EMOJI} **Current Stats Channel:** ${system.cmdChannelId ? `<#${system.cmdChannelId}>` : '`Not Set (Unrestricted)`'}\n> -# ${BULLET_EMOJI} **Usage:** \`!xp channel <#channel>\` or \`!xp channel clear\``
+            }]
+          }],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+
       if (system.cmdChannelId && message.channelId !== system.cmdChannelId) {
         return message.reply({ content: `Please use this command in <#${system.cmdChannelId}>.` });
       }
@@ -175,7 +219,7 @@ export const commands = [
       const requiredXp = calculateXpForLevel(userXp.level + 1);
       
       const attachment = await generateRankCard(targetMember, userXp.xp, userXp.level, rank, requiredXp);
-      await message.reply({ content: `**${targetMember.displayName}'s Rank** | <a:03_tick_circle:1565665642084827206>`, files: [attachment] });
+      await message.reply({ content: `# ${getRandomHeadingGlyph()} Member Rank | ${TICK_EMOJI}\n-# ${BULLET_EMOJI} **Rank Card for <@${targetUser.id}>**`, files: [attachment] });
     },
     async executeSlash(interaction) {
       const system = db.getXpSystem(interaction.guild.id);
@@ -205,7 +249,7 @@ export const commands = [
       const requiredXp = calculateXpForLevel(userXp.level + 1);
       
       const attachment = await generateRankCard(targetMember, userXp.xp, userXp.level, rank, requiredXp);
-      await interaction.editReply({ content: `**${targetMember.displayName}'s Rank** | <a:03_tick_circle:1565665642084827206>`, files: [attachment] });
+      await interaction.editReply({ content: `# ${getRandomHeadingGlyph()} Member Rank | ${TICK_EMOJI}\n-# ${BULLET_EMOJI} **Rank Card for <@${targetUser.id}>**`, files: [attachment] });
     }
   },
 
