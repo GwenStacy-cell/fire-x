@@ -42,10 +42,10 @@ export const commands = [
 
         if (type === 'user') {
           db.addNpUser(targetId, expiresAt, message.author.id);
-          return message.reply({ content: `No-Prefix Granted | <a:atheNATICK:1557841381630681106>\n-# Successfully granted No-Prefix to User \`${targetId}\` for \`${durationRaw}\`.` });
+          return message.reply({ content: `No-Prefix Granted | <a:03_tick_circle:1565665642084827206>\n-# Successfully granted No-Prefix to User \`${targetId}\` for \`${durationRaw}\`.` });
         } else {
           db.addNpServer(targetId, expiresAt, message.author.id);
-          return message.reply({ content: `No-Prefix Granted | <a:atheNATICK:1557841381630681106>\n-# Successfully granted No-Prefix to Server \`${targetId}\` for \`${durationRaw}\`.` });
+          return message.reply({ content: `No-Prefix Granted | <a:03_tick_circle:1565665642084827206>\n-# Successfully granted No-Prefix to Server \`${targetId}\` for \`${durationRaw}\`.` });
         }
       }
 
@@ -58,10 +58,10 @@ export const commands = [
         targetId = targetId.replace(/[<@!>]/g, '');
 
         if (type === 'user') {
-          if (db.removeNpUser(targetId)) return message.reply({ content: `No-Prefix Revoked | <a:atheNATICK:1557841381630681106>\n-# Revoked No-Prefix from User \`${targetId}\`.` });
+          if (db.removeNpUser(targetId)) return message.reply({ content: `No-Prefix Revoked | <a:03_tick_circle:1565665642084827206>\n-# Revoked No-Prefix from User \`${targetId}\`.` });
           else return message.reply({ content: `-# User \`${targetId}\` does not have No-Prefix.` });
         } else {
-          if (db.removeNpServer(targetId)) return message.reply({ content: `No-Prefix Revoked | <a:atheNATICK:1557841381630681106>\n-# Revoked No-Prefix from Server \`${targetId}\`.` });
+          if (db.removeNpServer(targetId)) return message.reply({ content: `No-Prefix Revoked | <a:03_tick_circle:1565665642084827206>\n-# Revoked No-Prefix from Server \`${targetId}\`.` });
           else return message.reply({ content: `-# Server \`${targetId}\` does not have No-Prefix.` });
         }
       }
@@ -82,11 +82,11 @@ export const commands = [
 
         if (action === 'add') {
           db.addNpManager(targetId);
-          return message.reply({ content: `NP Manager Added | <a:atheNATICK:1557841381630681106>\n-# User \`${targetId}\` is now an NP Manager.` });
+          return message.reply({ content: `NP Manager Added | <a:03_tick_circle:1565665642084827206>\n-# User \`${targetId}\` is now an NP Manager.` });
         }
         if (action === 'remove') {
           db.removeNpManager(targetId);
-          return message.reply({ content: `NP Manager Removed | <a:atheNATICK:1557841381630681106>\n-# User \`${targetId}\` is no longer an NP Manager.` });
+          return message.reply({ content: `NP Manager Removed | <a:03_tick_circle:1565665642084827206>\n-# User \`${targetId}\` is no longer an NP Manager.` });
         }
       }
 
@@ -96,21 +96,21 @@ export const commands = [
         
         if (action === 'pause') {
           db.setNpPaused(true);
-          return message.reply({ content: `NP System Paused | <a:atheNATICK:1557841381630681106>\n-# NP System is now PAUSED globally.` });
+          return message.reply({ content: `NP System Paused | <a:03_tick_circle:1565665642084827206>\n-# NP System is now PAUSED globally.` });
         }
         if (action === 'unpause') {
           db.setNpPaused(false);
-          return message.reply({ content: `NP System Active | <a:atheNATICK:1557841381630681106>\n-# NP System is now ACTIVE globally.` });
+          return message.reply({ content: `NP System Active | <a:03_tick_circle:1565665642084827206>\n-# NP System is now ACTIVE globally.` });
         }
         
         if (!cmdName) return message.reply({ content: '-# **Usage:** `np cmds ban/unban <command>`' });
 
         if (action === 'ban') {
-          if (db.banNpCommand(cmdName)) return message.reply({ content: `Command Banned | <a:atheNATICK:1557841381630681106>\n-# Banned command \`${cmdName}\` from NP bypass.` });
+          if (db.banNpCommand(cmdName)) return message.reply({ content: `Command Banned | <a:03_tick_circle:1565665642084827206>\n-# Banned command \`${cmdName}\` from NP bypass.` });
           else return message.reply({ content: `-# Command \`${cmdName}\` is already banned.` });
         }
         if (action === 'unban') {
-          if (db.unbanNpCommand(cmdName)) return message.reply({ content: `Command Unbanned | <a:atheNATICK:1557841381630681106>\n-# Unbanned command \`${cmdName}\` from NP bypass.` });
+          if (db.unbanNpCommand(cmdName)) return message.reply({ content: `Command Unbanned | <a:03_tick_circle:1565665642084827206>\n-# Unbanned command \`${cmdName}\` from NP bypass.` });
           else return message.reply({ content: `-# Command \`${cmdName}\` is not banned.` });
         }
       }
@@ -127,7 +127,7 @@ export const commands = [
         if (npUser.expiresAt) {
           expStr = `<t:${Math.floor(npUser.expiresAt/1000)}:R>`;
         }
-        return message.reply({ content: `No-Prefix Status | <a:atheNATICK:1557841381630681106>\n-# User \`${targetId}\` has NP status.\n-# **Expires:** ${expStr}\n-# **Appointed by:** <@${npUser.appointedBy}>` });
+        return message.reply({ content: `No-Prefix Status | <a:03_tick_circle:1565665642084827206>\n-# User \`${targetId}\` has NP status.\n-# **Expires:** ${expStr}\n-# **Appointed by:** <@${npUser.appointedBy}>` });
       }
 
       // Fallback

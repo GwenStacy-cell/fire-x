@@ -129,7 +129,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Daily Stipend Disbursed | <a:atheNATICK:1557841381630681106>**\n` +
+              `### **Daily Stipend Disbursed | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **• Recipient:** <@${userId}>\n\n` +
               `-# • **Base Stipend:** \`+${baseReward}\` coins\n` +
               `-# • **Streak Multiplier (Day ${streak}):** \`+${streakBonus}\` bonus coins\n` +
@@ -186,7 +186,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Daily Stipend Disbursed | <a:atheNATICK:1557841381630681106>**\n` +
+              `### **Daily Stipend Disbursed | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **• Recipient:** <@${userId}>\n\n` +
               `-# • **Base Stipend:** \`+${baseReward}\` coins\n` +
               `-# • **Streak Multiplier (Day ${streak}):** \`+${streakBonus}\` bonus coins\n` +
@@ -266,7 +266,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Funds Transferred | <a:atheNATICK:1557841381630681106>**\n` +
+              `### **Funds Transferred | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **• Sender:** <@${message.author.id}>\n` +
               `-# • **Recipient:** <@${targetUser.id}>\n` +
               `-# • **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
@@ -317,7 +317,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Funds Transferred | <a:atheNATICK:1557841381630681106>**\n` +
+              `### **Funds Transferred | <a:03_tick_circle:1565665642084827206>**\n` +
               `-# **• Sender:** <@${interaction.user.id}>\n` +
               `-# • **Recipient:** <@${targetUser.id}>\n` +
               `-# • **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
@@ -399,7 +399,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Coinflip ${won ? 'Victory | <a:atheNATICK:1557841381630681106>' : 'Defeat | <a:uptime:1552608831060844575>'}**\n` +
+              `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:uptime:1552608831060844575>'}**\n` +
               `-# **• Player:** <@${message.author.id}>\n` +
               `-# • **Your Call:** \`${normalizedChoice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
               `-# • **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
@@ -447,7 +447,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Coinflip ${won ? 'Victory | <a:atheNATICK:1557841381630681106>' : 'Defeat | <a:uptime:1552608831060844575>'}**\n` +
+              `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:uptime:1552608831060844575>'}**\n` +
               `-# **• Player:** <@${interaction.user.id}>\n` +
               `-# • **Your Call:** \`${choice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
               `-# • **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
@@ -560,7 +560,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'Shop Item Created | <a:atheNATICK:1557841381630681106>',
+              'Shop Item Created | <a:03_tick_circle:1565665642084827206>',
               `Item **${item.name}** registered successfully!\n\n` +
               `-# • **Item ID:** \`${item.id}\`\n` +
               `-# • **Price:** \`${item.price.toLocaleString()}\` coins\n` +
@@ -585,7 +585,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              removed ? 'Shop Item Removed | <a:atheNATICK:1557841381630681106>' : 'Item Not Found',
+              removed ? 'Shop Item Removed | <a:03_tick_circle:1565665642084827206>' : 'Item Not Found',
               removed ? `Item \`${itemId}\` was purged from the shop.` : `No item matching ID \`${itemId}\` was found.`
             )
           ],
@@ -639,7 +639,7 @@ export const commands = [
             {
               type: 10,
               content:
-                `### **Item Purchased | <a:atheNATICK:1557841381630681106>**\n` +
+                `### **Item Purchased | <a:03_tick_circle:1565665642084827206>**\n` +
                 `-# **• Buyer:** <@${message.author.id}>\n` +
                 `-# • **Item:** **${item.name}**\n` +
                 `-# • **Role Granted:** <@&${role.id}>\n` +
@@ -705,7 +705,7 @@ export const commands = [
         return interaction.reply({
           components: [
             cv2.buildContainer(
-              'Shop Item Created | <a:atheNATICK:1557841381630681106>',
+              'Shop Item Created | <a:03_tick_circle:1565665642084827206>',
               `Item **${item.name}** added for \`${item.price.toLocaleString()}\` coins.\n-# **ID:** \`${item.id}\``
             )
           ],
@@ -719,7 +719,7 @@ export const commands = [
         return interaction.reply({
           components: [
             cv2.buildContainer(
-              removed ? 'Shop Item Removed | <a:atheNATICK:1557841381630681106>' : 'Item Not Found',
+              removed ? 'Shop Item Removed | <a:03_tick_circle:1565665642084827206>' : 'Item Not Found',
               removed ? `Item \`${itemId}\` removed from catalog.` : `Could not find item with ID \`${itemId}\`.`
             )
           ],
@@ -776,7 +776,7 @@ export const commands = [
             {
               type: 10,
               content:
-                `### **Item Purchased | <a:atheNATICK:1557841381630681106>**\n` +
+                `### **Item Purchased | <a:03_tick_circle:1565665642084827206>**\n` +
                 `-# **• Buyer:** <@${interaction.user.id}>\n` +
                 `-# • **Item:** **${item.name}**\n` +
                 `-# • **Role Granted:** <@&${role.id}>\n` +

@@ -350,7 +350,7 @@ export function buildImageResultPayload(sessionId, index = 0) {
           components: [
             {
               type: 10,
-              content: `## Image Search Session Expired | <a:atheNATICK:1557841381630681106>\n> -# Please execute a new \`!image <query>\` search.`
+              content: `## Image Search Session Expired | <a:03_tick_circle:1565665642084827206>\n> -# Please execute a new \`!image <query>\` search.`
             }
           ]
         }
@@ -413,7 +413,7 @@ export function buildImageResultPayload(sessionId, index = 0) {
       },
       {
         type: 10,
-        content: `## Web Image Retrieval | <a:atheNATICK:1557841381630681106>\n` +
+        content: `## Web Image Retrieval | <a:03_tick_circle:1565665642084827206>\n` +
                  `> -# <a:uptime:1552608831060844575> **Query:** \`${session.query}\` • **Result:** \`${clampedIndex + 1} of ${total}\`\n` +
                  `> -# • **Title:** \`${cleanTitle}\`\n` +
                  `> -# • **Source Domain:** [${sourceDomain}](${safeUrl})`

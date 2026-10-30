@@ -177,7 +177,7 @@ export async function buildDashboardResponse(guild, client, requester = null) {
   // 6. Build Discord Components V2 Container
   const containerComponents = [
     ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://command_center.gif' } }] }] : []),
-    { type: 10, content: `## Athena Prime Unified Command Center | <a:atheNATICK:1557841381630681106>` },
+    { type: 10, content: `## Athena Prime Unified Command Center | <a:03_tick_circle:1565665642084827206>` },
     { type: 14, divider: true },
     {
       type: 10,
@@ -244,7 +244,7 @@ export function buildDefconIntelContainer(prefix = '!') {
   return {
     type: 17,
     components: [
-      { type: 10, content: `## Athena Prime DEFCON Defense Matrix Intel | <a:atheNATICK:1557841381630681106>` },
+      { type: 10, content: `## Athena Prime DEFCON Defense Matrix Intel | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
         type: 10,

@@ -109,7 +109,7 @@ export const commands = [
         const m = getDatabaseMetrics(context.client);
 
         const successPayload = cv2.success(
-          `Database Backed Up | <a:atheNATICK:1557841381630681106>`,
+          `Database Backed Up | <a:03_tick_circle:1565665642084827206>`,
           formatDatabaseMetrics(m, {
             prefixText: '**Cloud snapshot successfully stored!**\nYour entire database is securely archived in Discord. If you ever switch hosting companies, the bot will automatically restore everything on boot.',
             channelId: result.channelId,
@@ -180,7 +180,7 @@ export const commands = [
           `> -# **NP Network & Snapshots:** \`${m.npUsers} NP users\` | \`${m.npServers} NP servers\` | \`${m.npManagers} NP managers\` | \`${m.serverBackups} server snapshots\` | \`WAL SQLite stats.db: SYNCED\``;
 
         return sendReply(cv2.info(
-          `Database Cloud Backup List | <a:atheNATICK:1557841381630681106>`,
+          `Database Cloud Backup List | <a:03_tick_circle:1565665642084827206>`,
           `-# **__Backup Channel:__** <#${channel.id}>\n` +
           `-# **__Total Snapshots Available:__** \`${backupMessages.size}\`\n\n` +
           `-# **__Recent Cloud Snapshots:__**\n` +
@@ -215,7 +215,7 @@ export const commands = [
         }
 
         const exportPayload = cv2.info(
-          `Database Export | <a:atheNATICK:1557841381630681106>`,
+          `Database Export | <a:03_tick_circle:1565665642084827206>`,
           formatDatabaseMetrics(m, {
             prefixText: '**Raw database files compiled.** Click the attachments below to download.',
             sizeKb,
@@ -226,7 +226,7 @@ export const commands = [
         await sendReply(exportPayload);
 
         const downloadPayload = {
-          content: `**Database Export Files | <a:atheNATICK:1557841381630681106>**\n-# Click the file attachments below to download your \`db.json\` (${sizeKb} KB)${fs.existsSync(STATS_FILE) ? ' and `stats.db`' : ''}:`,
+          content: `**Database Export Files | <a:03_tick_circle:1565665642084827206>**\n-# Click the file attachments below to download your \`db.json\` (${sizeKb} KB)${fs.existsSync(STATS_FILE) ? ' and `stats.db`' : ''}:`,
           files
         };
 
@@ -267,7 +267,7 @@ export const commands = [
 
           const m = cloudRes.metrics;
           const successPayload = cv2.success(
-            `Database Restored | <a:atheNATICK:1557841381630681106>`,
+            `Database Restored | <a:03_tick_circle:1565665642084827206>`,
             formatDatabaseMetrics(m, {
               prefixText: '**Database successfully restored from cloud backup!**\nAll bot systems and guild configurations are now fully active without needing a bot restart.',
               fileName: cloudRes.fileName,
@@ -303,7 +303,7 @@ export const commands = [
 
           const m = restoreResult.metrics;
           return sendReply(cv2.success(
-            `Database Restored | <a:atheNATICK:1557841381630681106>`,
+            `Database Restored | <a:03_tick_circle:1565665642084827206>`,
             formatDatabaseMetrics(m, {
               prefixText: '**Database successfully restored and hot-reloaded!**\nAll bot systems and guild configurations are now fully active without needing a bot restart.',
               fileName: attachment.name,
@@ -347,7 +347,7 @@ export const commands = [
         const testRes = await createCloudBackup(context.client, `Backup Channel Bound to #${targetChannel.name}`);
 
         return sendReply(cv2.success(
-          `Backup Channel Set | <a:atheNATICK:1557841381630681106>`,
+          `Backup Channel Set | <a:03_tick_circle:1565665642084827206>`,
           `Set <#${targetChannel.id}> as the official Discord Cloud Backup channel!\n\n` +
           `> -# **Auto-Backup Interval:** Every 20 minutes\n` +
           `> -# **Initial Snapshot:** ${testRes.success ? 'Saved successfully' : 'Queued'}\n` +
@@ -363,7 +363,7 @@ export const commands = [
       const lastBackupStr = db.cache.lastCloudBackup ? `<t:${Math.floor(db.cache.lastCloudBackup / 1000)}:R>` : '`Never`';
 
       return sendReply(cv2.info(
-        `Database Cloud Status | <a:atheNATICK:1557841381630681106>`,
+        `Database Cloud Status | <a:03_tick_circle:1565665642084827206>`,
         `**Persistence & Cloud Migration System**\n\n` +
         `> -# **Backup Channel:** ${currentChannel ? `<#${currentChannel.id}> (\`${currentChannel.id}\`)` : '`Not Set (Auto-detecting)`'}\n` +
         `> -# **Auto-Sync Scheduler:** \`Active (Every 20m)\`\n` +

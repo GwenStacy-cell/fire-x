@@ -147,7 +147,7 @@ export default {
           const alertContainer = {
             type: 17,
             components: [
-              { type: 10, content: `## Join-Time Dangerous Role Exploit Neutralized | <a:atheNATICK:1557841381630681106>` },
+              { type: 10, content: `## Join-Time Dangerous Role Exploit Neutralized | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -170,7 +170,7 @@ export default {
           const ownerExplainingDM = {
             type: 17,
             components: [
-              { type: 10, content: `## Critical Alert: Join-Time Dangerous Role Exploit Neutralized | <a:atheNATICK:1557841381630681106>` },
+              { type: 10, content: `## Critical Alert: Join-Time Dangerous Role Exploit Neutralized | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -199,10 +199,10 @@ export default {
                 type: 10,
                 content:
                   `### Defensive Countermeasures Taken\n` +
-                  `> <a:atheNATICK:1557841381630681106> **Roles Revoked:** Dangerous roles stripped from member immediately upon joining.\n` +
-                  `> <a:atheNATICK:1557841381630681106> **Role Disarmed:** Dangerous permissions stripped from the role itself.\n` +
-                  `> <a:atheNATICK:1557841381630681106> **Member Quarantined:** Offender isolated from all channels pending review.\n` +
-                  `> <a:atheNATICK:1557841381630681106> **Security Audit:** Telemetry logged to your security audit channel.`
+                  `> <a:03_tick_circle:1565665642084827206> **Roles Revoked:** Dangerous roles stripped from member immediately upon joining.\n` +
+                  `> <a:03_tick_circle:1565665642084827206> **Role Disarmed:** Dangerous permissions stripped from the role itself.\n` +
+                  `> <a:03_tick_circle:1565665642084827206> **Member Quarantined:** Offender isolated from all channels pending review.\n` +
+                  `> <a:03_tick_circle:1565665642084827206> **Security Audit:** Telemetry logged to your security audit channel.`
               },
               { type: 14, divider: true },
               {
@@ -306,7 +306,7 @@ export default {
         const alertContainer = {
           type: 17,
           components: [
-            { type: 10, content: `## Join-Velocity Anti-Raid Shield Engaged | <a:atheNATICK:1557841381630681106>` },
+            { type: 10, content: `## Join-Velocity Anti-Raid Shield Engaged | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -343,7 +343,7 @@ export default {
       const raidLogContainer = {
         type: 17,
         components: [
-          { type: 10, content: `## Anti-Raid Quarantine Applied | <a:atheNATICK:1557841381630681106>` },
+          { type: 10, content: `## Anti-Raid Quarantine Applied | <a:03_tick_circle:1565665642084827206>` },
           { type: 14, divider: true },
           {
             type: 10,

@@ -383,7 +383,7 @@ function handleVcDragStop(guild, moderator, target) {
   const durationSec = Math.round((Date.now() - session.startedAt) / 1000);
 
   return cv2.success(
-      `VC Drag Stopped | <a:atheNATICK:1557841381630681106>`,
+      `VC Drag Stopped | <a:03_tick_circle:1565665642084827206>`,
       `The VC drag session for **${session.targetTag}** has been terminated.`,
       [
         { name: 'Target', value: session.targetTag, inline: true },

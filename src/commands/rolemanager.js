@@ -222,11 +222,16 @@ export const commands = [
         }
       }
       
-      let replyDesc = `Target: ${target}\n`;
-      if (addedRoles.length > 0) replyDesc += `**Added:** ${addedRoles.join(', ')}\n`;
-      if (failedRoles.length > 0) replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
+      let replyTitle = addedRoles.length === 1 ? 'Role Added' : 'Roles Added';
+      let replyDesc = '';
+      if (addedRoles.length > 0) {
+        replyDesc += `${message.author} has given **${addedRoles.join(', ')}** to ${target}\n`;
+      }
+      if (failedRoles.length > 0) {
+        replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
+      }
       
-      await message.reply(cv2.success('Role Assignment', replyDesc));
+      await message.reply(cv2.success(replyTitle, replyDesc.trim()));
     },
     async executeSlash(interaction) {
       if (!(await isAuthorized(interaction.user, interaction.guild))) {
@@ -268,11 +273,16 @@ export const commands = [
         }
       }
       
-      let replyDesc = `Target: ${target}\n`;
-      if (addedRoles.length > 0) replyDesc += `**Added:** ${addedRoles.join(', ')}\n`;
-      if (failedRoles.length > 0) replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
+      let replyTitle = addedRoles.length === 1 ? 'Role Added' : 'Roles Added';
+      let replyDesc = '';
+      if (addedRoles.length > 0) {
+        replyDesc += `${interaction.user} has given **${addedRoles.join(', ')}** to ${target}\n`;
+      }
+      if (failedRoles.length > 0) {
+        replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
+      }
       
-      await interaction.reply(cv2.success('Role Assignment', replyDesc));
+      await interaction.reply(cv2.success(replyTitle, replyDesc.trim()));
     }
   },
   {
@@ -323,11 +333,16 @@ export const commands = [
         }
       }
       
-      let replyDesc = `Target: ${target}\n`;
-      if (removedRoles.length > 0) replyDesc += `**Removed:** ${removedRoles.join(', ')}\n`;
-      if (failedRoles.length > 0) replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
+      let replyTitle = removedRoles.length === 1 ? 'Role Removed' : 'Roles Removed';
+      let replyDesc = '';
+      if (removedRoles.length > 0) {
+        replyDesc += `${message.author} has removed **${removedRoles.join(', ')}** from ${target}\n`;
+      }
+      if (failedRoles.length > 0) {
+        replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
+      }
       
-      await message.reply(cv2.success('Role Removal', replyDesc));
+      await message.reply(cv2.success(replyTitle, replyDesc.trim()));
     },
     async executeSlash(interaction) {
       if (!(await isAuthorized(interaction.user, interaction.guild))) {
@@ -369,11 +384,16 @@ export const commands = [
         }
       }
       
-      let replyDesc = `Target: ${target}\n`;
-      if (removedRoles.length > 0) replyDesc += `**Removed:** ${removedRoles.join(', ')}\n`;
-      if (failedRoles.length > 0) replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
+      let replyTitle = removedRoles.length === 1 ? 'Role Removed' : 'Roles Removed';
+      let replyDesc = '';
+      if (removedRoles.length > 0) {
+        replyDesc += `${interaction.user} has removed **${removedRoles.join(', ')}** from ${target}\n`;
+      }
+      if (failedRoles.length > 0) {
+        replyDesc += `**Failed:** ${failedRoles.join(', ')}\n`;
+      }
       
-      await interaction.reply(cv2.success('Role Removal', replyDesc));
+      await interaction.reply(cv2.success(replyTitle, replyDesc.trim()));
     }
   },
   {

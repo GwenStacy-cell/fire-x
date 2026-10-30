@@ -9,7 +9,7 @@ export const ARCHITECTURE_TOPICS = {
     id: 'security',
     label: 'Security & Exploit Defense',
     aliases: ['antinuke', 'roleexploit', 'linkedroles', 'linkedrole', 'exploit', 'defense'],
-    title: 'Security & Zero-Day Exploit Defense Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'Security & Zero-Day Exploit Defense Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Autonomous zero-day exploit mitigation, Linked Role interception, and raw API defense mechanics.',
     pages: [
       {
@@ -125,7 +125,7 @@ As designed for Athena Prime:
     id: 'unbypassable',
     label: 'Persistence Sentinel Roles',
     aliases: ['unb', 'sentinels', 'persistenceroles', 'persist', 'sentinel'],
-    title: 'Persistence Sentinel Role Hierarchy & Self-Healing | <a:atheNATICK:1557841381630681106>',
+    title: 'Persistence Sentinel Role Hierarchy & Self-Healing | <a:03_tick_circle:1565665642084827206>',
     description: 'Top-tier administrative persistence sentinel roles and self-healing hierarchy safeguards.',
     pages: [
       {
@@ -153,7 +153,7 @@ Discord enforces strict role hierarchy mechanics:
     id: 'onboarding',
     label: 'Onboarding Exploit Guard',
     aliases: ['neutralizeonboarding', 'onboardingguard'],
-    title: 'Discord Onboarding Vulnerability & Neutralization Engine | <a:atheNATICK:1557841381630681106>',
+    title: 'Discord Onboarding Vulnerability & Neutralization Engine | <a:03_tick_circle:1565665642084827206>',
     description: 'Deep audit of Discord Community Onboarding prompt roles and automatic permission disarming.',
     pages: [
       {
@@ -188,7 +188,7 @@ Discord enforces strict role hierarchy mechanics:
     id: 'automod',
     label: 'Automod & Filter Engine',
     aliases: ['filters', 'antilink', 'wordfilter', 'wf', 'linksallow', 'links'],
-    title: 'Automated Moderation & Filter Engine Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'Automated Moderation & Filter Engine Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Real-time regex, punycode de-masking, invite blocking, and domain whitelist architecture.',
     pages: [
       {
@@ -222,7 +222,7 @@ Athena's automod engine inspects every message across Discord Gateway at raw vel
     id: 'voice',
     label: 'Voice Grid & Channel Drag Architecture',
     aliases: ['vcdrag', 'vcmove', 'massmove', 'massdc', 'voicegrid', 'voicecontrol'],
-    title: 'Voice Grid Control & Channel Drag Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'Voice Grid Control & Channel Drag Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'High-velocity loop dragging, mass channel evacuations, voice state severing, and anti-drag protections.',
     pages: [
       {
@@ -248,7 +248,7 @@ Athena's automod engine inspects every message across Discord Gateway at raw vel
     id: 'moderation',
     label: 'Moderation & Mass Actions',
     aliases: ['mod', 'massactions', 'antiban', 'antiraid', 'modmode'],
-    title: 'Zero-Trust Moderation & Mass Action Defense | <a:atheNATICK:1557841381630681106>',
+    title: 'Zero-Trust Moderation & Mass Action Defense | <a:03_tick_circle:1565665642084827206>',
     description: 'Throttled mass actions, anti-ban nuke protection, and reversible maintenance modmode.',
     pages: [
       {
@@ -274,7 +274,7 @@ Athena actively monitors the velocity of destructive administrative actions:
     id: 'quarantine',
     label: 'Quarantine Containment',
     aliases: ['isolation', 'quarantinesystem'],
-    title: 'Zero-Trust Quarantine Isolation Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'Zero-Trust Quarantine Isolation Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Full guild channel permission overrides, role strip caching, and forensic isolation.',
     pages: [
       {
@@ -307,7 +307,7 @@ Athena's quarantine system provides full cryptographic isolation of compromised 
     id: 'cloudsync',
     label: 'Cloud Backup & Manifest',
     aliases: ['backup', 'cloud', 'backupsystem'],
-    title: 'Cloud Backup & Persistence Manifest Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'Cloud Backup & Persistence Manifest Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Full guild snapshot serialization, cloud storage dispatch, and 1-click disaster recovery.',
     pages: [
       {
@@ -356,7 +356,7 @@ Athena Prime guarantees server survival even against total guild wipeouts:
     id: 'auth',
     label: 'Access Control & Tiers',
     aliases: ['tiers', 'clearance', 'perms', 'tier'],
-    title: 'Three-Tier Access Control & Role Authorization | <a:atheNATICK:1557841381630681106>',
+    title: 'Three-Tier Access Control & Role Authorization | <a:03_tick_circle:1565665642084827206>',
     description: 'Three-tier hierarchy (Admin, Mod, Staff), database ID binding, and privilege escalation guards.',
     pages: [
       {
@@ -387,7 +387,7 @@ Athena Prime separates security administration into distinct, tamper-proof tiers
     id: 'learn',
     label: 'Autonomous Self-Learning & Lambda AI Threat Matrix',
     aliases: ['lambda', 'heuristics', 'ai', 'behavioral', 'ml', 'profiling', 'signature', 'signatures', 'lambdalearn', 'selflearn'],
-    title: 'Autonomous Self-Learning, Lambda AI & Defense Flaw Matrix | <a:atheNATICK:1557841381630681106>',
+    title: 'Autonomous Self-Learning, Lambda AI & Defense Flaw Matrix | <a:03_tick_circle:1565665642084827206>',
     description: 'Autonomous rogue bot threat learning, automated antinuke flaw diagnosis, root-cause forensic analysis & step-by-step remedies.',
     pages: [
       {
@@ -447,7 +447,7 @@ Athena Prime supports full parity across standard text prefixes and Discord slas
     id: 'honeypot',
     label: 'Honeypot Trap Security',
     aliases: ['trap', 'honeypots', 'antispam_trap'],
-    title: 'Honeypot Channel Trap & Zero-Tolerance Defense | <a:atheNATICK:1557841381630681106>',
+    title: 'Honeypot Channel Trap & Zero-Tolerance Defense | <a:03_tick_circle:1565665642084827206>',
     description: 'Decoy channel baiting automated raiders and selfbots into instant timeout and message purge.',
     pages: [
       {
@@ -470,7 +470,7 @@ A Honeypot is a designated text channel configured with permissions hidden or si
     id: 'neural',
     label: 'Athena Neural AI Matrix',
     aliases: ['ai', 'ask', 'gemini', 'neuralengine', 'toxicity', 'triage'],
-    title: 'Athena Prime Neural AI Matrix & Cognitive Safeguards | <a:atheNATICK:1557841381630681106>',
+    title: 'Athena Prime Neural AI Matrix & Cognitive Safeguards | <a:03_tick_circle:1565665642084827206>',
     description: 'Multi-provider AI intelligence, AI Toxicity AutoMod, and Smart Ticket Triage.',
     pages: [
       {
@@ -534,7 +534,7 @@ A Honeypot is a designated text channel configured with permissions hidden or si
     id: 'economy',
     label: 'Commerce & Role Fulfillment Engine',
     aliases: ['shop', 'coins', 'balance', 'daily'],
-    title: 'Server Commerce & Role Privilege Matrix | <a:atheNATICK:1557841381630681106>',
+    title: 'Server Commerce & Role Privilege Matrix | <a:03_tick_circle:1565665642084827206>',
     description: 'Persistent currency ledger, interactive coinflip wagering, and automated role shop.',
     pages: [
       {
@@ -556,7 +556,7 @@ A Honeypot is a designated text channel configured with permissions hidden or si
     id: 'defcon',
     label: 'DEFCON Defense Matrix Architecture',
     aliases: ['defcon', 'threatmatrix', 'panicmode', 'emergencymode', 'dashboard', 'commandcenter', 'omni'],
-    title: 'DEFCON Defense Matrix & Panic Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'DEFCON Defense Matrix & Panic Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Autonomous 5-tier threat posture, parallel batched lockdown execution (~1.2s), and zero-loss snapshot rollback.',
     pages: [
       {
@@ -627,7 +627,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     id: 'lockdown',
     label: 'One-Click Panic Lockdown',
     aliases: ['paniclockdown', 'unlockdown', 'tierlockdown'],
-    title: 'One-Click Emergency Panic Lockdown Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'One-Click Emergency Panic Lockdown Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Tiered 1-click server blackout defense, ~1.2s parallel batching, and pre-lockdown bitmask recovery.',
     pages: [
       {
@@ -655,7 +655,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     id: 'phishing',
     label: 'Automated Phishing & Scam Shield',
     aliases: ['phishingshield', 'antiscam', 'fakegift', 'nitroshield'],
-    title: 'Real-Time Anti-Phishing & Token Stealer Shield | <a:atheNATICK:1557841381630681106>',
+    title: 'Real-Time Anti-Phishing & Token Stealer Shield | <a:03_tick_circle:1565665642084827206>',
     description: 'High-speed regex domain classifier and token stealer neutralizer.',
     pages: [
       {
@@ -674,7 +674,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     id: 'captcha',
     label: 'Graphic CAPTCHA & Math Verification',
     aliases: ['verify', 'mathcaptcha', 'graphiccaptcha'],
-    title: 'Graphic CAPTCHA & Math Verification Engine | <a:atheNATICK:1557841381630681106>',
+    title: 'Graphic CAPTCHA & Math Verification Engine | <a:03_tick_circle:1565665642084827206>',
     description: 'Canvas noise distortion and zero false-positive raid barrier.',
     pages: [
       {
@@ -693,7 +693,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     id: 'minigames',
     label: 'Casino Minigames & Tournaments',
     aliases: ['blackjack', 'roulette', 'trivia', 'casinostats'],
-    title: 'Casino Minigames & Server Economy Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'Casino Minigames & Server Economy Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Interactive Components V2 casino card tables, roulette wheels, and trivia tournaments.',
     pages: [
       {
@@ -712,7 +712,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     id: 'studio',
     label: 'Container Studio & Forensic Audits',
     aliases: ['auditlogs', 'embedstudio', 'forensics'],
-    title: 'Container Studio & Forensic Audit Logs Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'Container Studio & Forensic Audit Logs Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Visual container announcement builder and deep Gateway audit log inspection.',
     pages: [
       {
@@ -729,7 +729,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     id: 'athena',
     label: 'Athena AI Specialist & System Guide',
     aliases: ['guide', 'botguide', 'aiguide', 'neuralguide', 'ai_guide', 'athena_guide', 'ai'],
-    title: 'Athena AI Specialist & System Guide Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'Athena AI Specialist & System Guide Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Dynamic codebase RAG, Damerau-Levenshtein typo correction, rolling thread memory, and 1-click action buttons.',
     pages: [
       {
@@ -787,7 +787,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     id: 'aiannounce',
     label: 'AI Announcement Studio & Neural Pipeline',
     aliases: ['aian', 'smartannounce', 'studioannounce', 'ai_announcement', 'aiannouncement'],
-    title: 'AI Announcement Studio & Neural Pipeline Architecture | <a:atheNATICK:1557841381630681106>',
+    title: 'AI Announcement Studio & Neural Pipeline Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Autonomous natural language speech enhancement, custom emoji & raw ID synthesis, Components V2 live preview studio, and broadcast dispatching.',
     pages: [
       {
@@ -839,7 +839,7 @@ Before any permission is modified, Athena serializes every channel's exact allow
     id: 'welcome',
     label: 'Welcome, Leave & Dynamic Placeholders',
     aliases: ['welcomer', 'greet', 'leave', 'farewell', 'placeholders', 'membercount', 'welcome_engine'],
-    title: 'Welcome, Leave & Dynamic Placeholder Engine | <a:atheNATICK:1557841381630681106>',
+    title: 'Welcome, Leave & Dynamic Placeholder Engine | <a:03_tick_circle:1565665642084827206>',
     description: 'Autonomous join greetings, departure dispatch, CV2 container formatting, and multi-token variable resolution.',
     pages: [
       {
@@ -900,7 +900,7 @@ Athena Prime features a high-performance, multi-token variable resolution engine
     id: 'synced_gif_hud',
     label: 'Synced Looping Animated GIF HUDs & Progress Bars',
     aliases: ['gifhud', 'canvasbanner', 'progressbar', 'gifprogress', 'animatedhud', 'sleekbar', 'warroom'],
-    title: '1024x512 Sci-Fi War Room Animated GIF HUD Architecture | <a:atheNATICK:1557841381630681106>',
+    title: '1024x512 Sci-Fi War Room Animated GIF HUD Architecture | <a:03_tick_circle:1565665642084827206>',
     description: '1024x512 cyberpunk war room control deck 8-frame looping GIF engine with electric plasma oscillating sine wave progress bars across all tracking & security commands.',
     pages: [
       {
@@ -982,7 +982,7 @@ The 1024x512 War Room animated GIF HUD with in-GIF electric progress bar is impl
     id: 'tts_voices',
     label: 'AI & Celebrity TTS Voices Engine',
     aliases: ['tts', 'voice', 'voices', 'celebritytts', 'speech', 'donaldtrump', 'modi', 'michaeljackson'],
-    title: 'AI & Celebrity Text-To-Speech (TTS) Voice Engine | <a:atheNATICK:1557841381630681106>',
+    title: 'AI & Celebrity Text-To-Speech (TTS) Voice Engine | <a:03_tick_circle:1565665642084827206>',
     description: 'Zero-latency multi-celebrity and character voice transformation engine with real-time acoustic DSP filtering and instant VC streaming.',
     pages: [
       {
@@ -1040,7 +1040,7 @@ Unlike slow third-party web scrapers that face rate-limits and 30-second queues,
     id: 'advanced_triggers',
     label: 'Advanced Trigger & Automation Engines',
     aliases: ['triggers', 'trigger', 'autoresponder', 'ar', 'bounty', 'ghosttrigger', 'clocktrigger'],
-    title: 'Advanced Next-Gen Trigger & Automation Systems | <a:atheNATICK:1557841381630681106>',
+    title: 'Advanced Next-Gen Trigger & Automation Systems | <a:03_tick_circle:1565665642084827206>',
     description: 'Autonomous trigger word responder matrix, 4 advanced automation engines, emoji synergy, emergency mirroring, and dual-interface setup.',
     pages: [
       {
@@ -1079,7 +1079,7 @@ Beyond automated message dispatch, Athena Prime supports cross-action synergy:
 ### Dual-Action Emoji Reaction Synergy
 • **Mechanics:** Automatically adds a custom or unicode emoji reaction to the user's triggering message in addition to sending the configured text/embed response.
 • **Direct Command:** \`!trigger react <keyword> <emoji | none>\`
-• **Creation Syntax:** \`!trigger create gg | Well played! | reaction:<a:atheNATICK:1557841381630681106>\`
+• **Creation Syntax:** \`!trigger create gg | Well played! | reaction:<a:03_tick_circle:1565665642084827206>\`
 
 ### Staff Alert & Channel Mirroring (Emergency Triggers)
 • **Mechanics:** When specific keywords (e.g., raid, alert, exploit, bug) are detected, Athena simultaneously mirrors an alert with user tag, channel link, and context to a secure staff escalation channel.
@@ -3057,7 +3057,7 @@ export function buildExplainContainer(topicOrCmd, pageIndex = 0, prefix = '!', c
       {
         type: 10,
         content: 
-`# Command Architecture: \`${prefix}${matchedCmd.name}\` | <a:atheNATICK:1557841381630681106>
+`# Command Architecture: \`${prefix}${matchedCmd.name}\` | <a:03_tick_circle:1565665642084827206>
 > -# **__Category:__** ${matchedCmd.category}
 > -# **__Required Clearance:__** \`${matchedCmd.clearance}\`
 > -# **__Aliases:__** ${aliasesText}
@@ -3192,7 +3192,7 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
     {
       type: 10,
       content: 
-`# Architecture & Command Deep-Dive Explainer | <a:atheNATICK:1557841381630681106>
+`# Architecture & Command Deep-Dive Explainer | <a:03_tick_circle:1565665642084827206>
 > <a:uptime:1552608831060844575> **Welcome to the Athena Prime Architecture Explainer Engine!**
 > Full technical breakdowns of Gateway wiretaps, velocity throttling, zero-day exploit mitigations, and execution mechanics.
 > -# **__To inspect any command:__** Type \`${prefix}explain <command>\` (e.g. \`${prefix}explain kick\`, \`${prefix}explain vcdrag\`)`

@@ -258,7 +258,7 @@ export default {
             components: [
               {
                 type: 10,
-                content: `## Honeypot Intruder Neutralized | <a:atheNATICK:1557841381630681106>\n` +
+                content: `## Honeypot Intruder Neutralized | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Target Banned:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
                          `> -# • **Trap Channel:** <#${message.channel.id}>\n` +
                          `> -# • **Trigger Payload:** \`${message.content?.substring(0, 150) || 'Attachment/Media'}\`\n` +
@@ -1483,7 +1483,7 @@ export default {
           const securityLog = {
             type: 17,
             components: [
-              { type: 10, content: `## AI Toxicity & Sentiment Intercept | <a:atheNATICK:1557841381630681106>` },
+              { type: 10, content: `## AI Toxicity & Sentiment Intercept | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -1518,7 +1518,7 @@ export default {
         const securityLog = {
           type: 17,
           components: [
-            { type: 10, content: `## Anti-Phishing & Scam Shield Triggered | <a:atheNATICK:1557841381630681106>` },
+            { type: 10, content: `## Anti-Phishing & Scam Shield Triggered | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -1571,7 +1571,7 @@ export default {
           const securityLog = {
             type: 17,
             components: [
-              { type: 10, content: `## Discord Invite Link Blocked | <a:atheNATICK:1557841381630681106>` },
+              { type: 10, content: `## Discord Invite Link Blocked | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -1654,7 +1654,7 @@ export default {
           const securityLog = {
             type: 17,
             components: [
-              { type: 10, content: `## URL Link Filter Blocked | <a:atheNATICK:1557841381630681106>` },
+              { type: 10, content: `## URL Link Filter Blocked | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -1790,7 +1790,7 @@ export default {
             const securityLog = {
               type: 17,
               components: [
-                { type: 10, content: `## Blacklisted Word Neutralized | <a:atheNATICK:1557841381630681106>` },
+                { type: 10, content: `## Blacklisted Word Neutralized | <a:03_tick_circle:1565665642084827206>` },
                 { type: 14, divider: true },
                 {
                   type: 10,
@@ -1958,7 +1958,7 @@ export default {
                   type: 17,
                   accent_color: 0xED4245,
                   components: [
-                    { type: 10, content: '## **Trigger Escalation Alert | <a:atheNATICK:1557841381630681106>**' },
+                    { type: 10, content: '## **Trigger Escalation Alert | <a:03_tick_circle:1565665642084827206>**' },
                     { type: 14, divider: true },
                     {
                       type: 10,

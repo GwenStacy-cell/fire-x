@@ -1490,7 +1490,7 @@ export const commands = [
               else if (arg1 === 'off' || arg1 === 'disable' || arg1 === 'false') turnOn = false;
             }
             db.updateGuildConfig(message.guild.id, { aiToxicityEnabled: turnOn });
-            return message.reply(cv2.success('AI Toxicity & Sentiment AutoMod | <a:atheNATICK:1557841381630681106>', turnOn ? 'AI Toxicity & Sentiment AutoMod has been enabled. Doxxing attempts (IPs, SSNs, phone numbers), severe toxicity, and violent harassment will be autonomously intercepted.' : 'AI Toxicity & Sentiment AutoMod has been disabled.'));
+            return message.reply(cv2.success('AI Toxicity & Sentiment AutoMod | <a:03_tick_circle:1565665642084827206>', turnOn ? 'AI Toxicity & Sentiment AutoMod has been enabled. Doxxing attempts (IPs, SSNs, phone numbers), severe toxicity, and violent harassment will be autonomously intercepted.' : 'AI Toxicity & Sentiment AutoMod has been disabled.'));
           }
           if (sub === 'advanced') {
             const panel = await getAdvancedConfigPanel(message.guild);
@@ -1512,7 +1512,7 @@ export const commands = [
           const current = db.getGuildConfig(interaction.guild.id).aiToxicityEnabled === true;
           const turnOn = !current;
           db.updateGuildConfig(interaction.guild.id, { aiToxicityEnabled: turnOn });
-          return interaction.reply(cv2.success('AI Toxicity & Sentiment AutoMod | <a:atheNATICK:1557841381630681106>', turnOn ? 'AI Toxicity & Sentiment AutoMod has been enabled. Doxxing attempts (IPs, SSNs, phone numbers), severe toxicity, and violent harassment will be autonomously intercepted.' : 'AI Toxicity & Sentiment AutoMod has been disabled.'));
+          return interaction.reply(cv2.success('AI Toxicity & Sentiment AutoMod | <a:03_tick_circle:1565665642084827206>', turnOn ? 'AI Toxicity & Sentiment AutoMod has been enabled. Doxxing attempts (IPs, SSNs, phone numbers), severe toxicity, and violent harassment will be autonomously intercepted.' : 'AI Toxicity & Sentiment AutoMod has been disabled.'));
         }
         if (sub === 'advanced') {
           const panel = await getAdvancedConfigPanel(interaction.guild);
@@ -1965,7 +1965,7 @@ export const commands = [
           components: [{
             type: 17,
             components: [
-              { type: 10, content: `## Onboarding Sentinel Audit | <a:atheNATICK:1557841381630681106>` },
+              { type: 10, content: `## Onboarding Sentinel Audit | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -1986,7 +1986,7 @@ export const commands = [
           components: [{
             type: 17,
             components: [
-              { type: 10, content: `## Onboarding Security Status | <a:atheNATICK:1557841381630681106>` },
+              { type: 10, content: `## Onboarding Security Status | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               {
                 type: 10,
@@ -2015,7 +2015,7 @@ export const commands = [
         components: [{
           type: 17,
           components: [
-            { type: 10, content: `## Onboarding Exploit Neutralized | <a:atheNATICK:1557841381630681106>` },
+            { type: 10, content: `## Onboarding Exploit Neutralized | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -2810,7 +2810,7 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
           type: 12,
           items: [{ media: { url: 'attachment://emergency_banner.gif' } }]
         }] : []),
-        { type: 10, content: `## Emergency Blackout Mode Engaged | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## Emergency Blackout Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -2950,7 +2950,7 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
           type: 12,
           items: [{ media: { url: 'attachment://emergency_end_banner.gif' } }]
         }] : []),
-        { type: 10, content: `## Emergency Mode Resolved | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## Emergency Mode Resolved | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3410,7 +3410,7 @@ export async function handlePanicLockdown(guild, moderator, tier = '1', updatePr
         type: 12,
         items: [{ media: { url: 'attachment://lockdown_banner.gif' } }]
       }] : []),
-      { type: 10, content: `## Emergency Panic Lockdown Engaged | <a:atheNATICK:1557841381630681106>` },
+      { type: 10, content: `## Emergency Panic Lockdown Engaged | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
         type: 10,
@@ -3558,7 +3558,7 @@ export async function handleUnlockdown(guild, moderator, updateProgress) {
         type: 12,
         items: [{ media: { url: 'attachment://unlockdown_banner.gif' } }]
       }] : []),
-      { type: 10, content: `## Server Lockdown Lifted | <a:atheNATICK:1557841381630681106>` },
+      { type: 10, content: `## Server Lockdown Lifted | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
         type: 10,
@@ -3694,7 +3694,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Raid Mode Engaged | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## Raid Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3716,7 +3716,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
         {
           type: 17,
           components: [
-            { type: 10, content: `## Raid Mode Engaged | <a:atheNATICK:1557841381630681106>` },
+            { type: 10, content: `## Raid Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -3765,7 +3765,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Raid Mode Disengaged | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## Raid Mode Disengaged | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3786,7 +3786,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
         {
           type: 17,
           components: [
-            { type: 10, content: `## Raid Mode Disengaged | <a:atheNATICK:1557841381630681106>` },
+            { type: 10, content: `## Raid Mode Disengaged | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -3813,7 +3813,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Join-Velocity Anti-Raid Shield Enabled | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## Join-Velocity Anti-Raid Shield Enabled | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3836,7 +3836,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Join-Velocity Anti-Raid Shield Disabled | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## Join-Velocity Anti-Raid Shield Disabled | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3862,7 +3862,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Join Velocity Threshold Updated | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## Join Velocity Threshold Updated | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -3888,7 +3888,7 @@ async function handleRaidMode(guild, moderator, mode = 'status', extraArgs = {})
     const container = {
       type: 17,
       components: [
-        { type: 10, content: `## Join Velocity Window Updated | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## Join Velocity Window Updated | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -4060,7 +4060,7 @@ export async function getSecurityHealthPanel(guild) {
             type: 12,
             items: [{ media: { url: 'attachment://health_banner.gif' } }]
           },
-          { type: 10, content: `## Security Diagnostics & Hierarchy Health | <a:atheNATICK:1557841381630681106>` },
+          { type: 10, content: `## Security Diagnostics & Hierarchy Health | <a:03_tick_circle:1565665642084827206>` },
           { type: 14, divider: true },
           {
             type: 10,
@@ -4660,7 +4660,7 @@ export async function getAntinukeConfigPanel(guild) {
   const emojiOff = '<:off:1533844858983157851>'; 
 
   let description = 
-    `# MODULE CONFIGURATION | <a:atheNATICK:1557841381630681106>\n` +
+    `# MODULE CONFIGURATION | <a:03_tick_circle:1565665642084827206>\n` +
     `-# **Athena Prime - God-Tier Firewall Matrix**\n\n` +
     `> ${nukeState ? emojiOn : emojiOff} **Anti-Nuke Firewall** (28 Master Protection Modules)\n` +
     `> ${spamState ? emojiOn : emojiOff} Anti-Spam Filter\n` +
@@ -5163,7 +5163,7 @@ export function checkSecurityRequirements(guild, executor) {
 
 export function buildSecurityRequirementsWarning(guild, req) {
   const textContent =
-    `## Security Requirements Warning | <a:atheNATICK:1557841381630681106>\n` +
+    `## Security Requirements Warning | <a:03_tick_circle:1565665642084827206>\n` +
     `> -# <a:uptime:1552608831060844575> **Pre-activation criteria are required before unbypassable antinuke can be engaged.**\n\n` +
     `### **Unmet Requirements:**\n` +
     req.reasons.map(r => `> -# ${r}`).join('\n') + `\n\n` +
@@ -5255,7 +5255,7 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
     });
 
     const textContent =
-      `## All Security Shields Disengaged | <a:atheNATICK:1557841381630681106>\n\n` +
+      `## All Security Shields Disengaged | <a:03_tick_circle:1565665642084827206>\n\n` +
       `> -# <a:uptime:1552608831060844575> All Athena Prime protective shields, persistence roles, and dashboard monitors have been **DEACTIVATED** server-wide.\n\n` +
       `> -# \u2022 **Antinuke Firewall:** Deactivated (All 28 Modules Disarmed)\n` +
       `> -# \u2022 **Secondary & Backup Roles:** Deleted from Server\n` +
@@ -5381,7 +5381,7 @@ export async function getSecurityStatusPanel(guild) {
   });
 
   const headerSection = { type: 10, content: 
-      `## Security Firewall Status | <a:atheNATICK:1557841381630681106>\n` +
+      `## Security Firewall Status | <a:03_tick_circle:1565665642084827206>\n` +
       "-# Global Status: " + (isSecured ? "**God-Tier Firewall ACTIVE**" : "Offline \u2014 Unprotected") + "\n" +
       "-# • **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
       "-# • **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")") + "\n" +
@@ -5454,7 +5454,7 @@ export async function getSecurityLiveRecordsPanel(guild, page = 0) {
   let recordsContent = '';
   if (pageRecords.length === 0) {
     recordsContent =
-      "> -# <a:atheNATICK:1557841381630681106> **All systems quiet. Zero hostile incursions recorded in live memory.**\n" +
+      "> -# <a:03_tick_circle:1565665642084827206> **All systems quiet. Zero hostile incursions recorded in live memory.**\n" +
       "> -# **Athena Prime Raw WebSocket Wiretap & Direct Strike Engine are standing guard.**\n" +
       "> -# Any unauthorized destructive action (roles, channels, bans, webhooks, exploits) will be recorded here live in <1ms.";
   } else {
@@ -5604,7 +5604,7 @@ function formatQuarantineSetupResult(res) {
     ];
 
     return cv2.success(
-      'Quarantine System | <a:atheNATICK:1557841381630681106>',
+      'Quarantine System | <a:03_tick_circle:1565665642084827206>',
       `All assigned quarantine channels and role were found in the bot's server database, active and synced under category **\`${catName}\`**.\nQuarantined members are strictly contained and isolated from all other server channels.`,
       fields
     );
@@ -5619,7 +5619,7 @@ function formatQuarantineSetupResult(res) {
   ];
 
   return cv2.success(
-    'Quarantine Auto-Setup | <a:atheNATICK:1557841381630681106>',
+    'Quarantine Auto-Setup | <a:03_tick_circle:1565665642084827206>',
     `Checked server database for assigned channels & roles. Leftover components were configured and synced under category **\`${catName}\`**.\nQuarantined members are strictly contained within the quarantine zone.`,
     fields
   );
@@ -5645,7 +5645,7 @@ async function handleQrManager(guild, moderator, action, roleArg, channelArg) {
     db.updateGuildConfig(guild.id, { quarantineRoleId: roleArg.id });
     const qChannelId = db.getGuildConfig(guild.id).quarantineChannelId;
     await syncQuarantinePermissions(guild, roleArg, qChannelId);
-    return cv2.success('Quarantine Role Set | <a:atheNATICK:1557841381630681106>', `Set <@&${roleArg.id}> as the quarantine role and synced deny overwrites across all channels.`);
+    return cv2.success('Quarantine Role Set | <a:03_tick_circle:1565665642084827206>', `Set <@&${roleArg.id}> as the quarantine role and synced deny overwrites across all channels.`);
   }
 
   if (action === 'setcategory') {
@@ -5653,7 +5653,7 @@ async function handleQrManager(guild, moderator, action, roleArg, channelArg) {
       return cv2.warn('Invalid Category', 'Please specify a valid category channel using the `channel` option.');
     }
     db.updateGuildConfig(guild.id, { quarantineCategoryId: channelArg.id });
-    return cv2.success('Quarantine Category Set | <a:atheNATICK:1557841381630681106>', `Set category \`${channelArg.name}\` as the designated quarantine category.`);
+    return cv2.success('Quarantine Category Set | <a:03_tick_circle:1565665642084827206>', `Set category \`${channelArg.name}\` as the designated quarantine category.`);
   }
 
   if (action === 'setchannel') {
@@ -5676,7 +5676,7 @@ async function handleQrManager(guild, moderator, action, roleArg, channelArg) {
     }
     const qRole = await getOrCreateQuarantineRole(guild);
     await syncQuarantinePermissions(guild, qRole, channelArg.id);
-    return cv2.success('Quarantine Channel Set | <a:atheNATICK:1557841381630681106>', `Set <#${channelArg.id}> as the quarantine text zone${targetCat ? ` under \`${targetCat.name}\`` : ''} and synced permissions.\nQuarantined users will be able to view and chat here.`);
+    return cv2.success('Quarantine Channel Set | <a:03_tick_circle:1565665642084827206>', `Set <#${channelArg.id}> as the quarantine text zone${targetCat ? ` under \`${targetCat.name}\`` : ''} and synced permissions.\nQuarantined users will be able to view and chat here.`);
   }
 
   if (action === 'setvc') {
@@ -5697,7 +5697,7 @@ async function handleQrManager(guild, moderator, action, roleArg, channelArg) {
       await channelArg.setParent(targetCat.id, { lockPermissions: true }).catch(() => null);
       await channelArg.lockPermissions().catch(() => null);
     }
-    return cv2.success('Quarantine VC Set | <a:atheNATICK:1557841381630681106>', `Set <#${channelArg.id}> as the quarantine voice channel${targetCat ? ` under \`${targetCat.name}\`` : ''} and synced permissions.\nWhen a member is quarantined they will be moved here.`);
+    return cv2.success('Quarantine VC Set | <a:03_tick_circle:1565665642084827206>', `Set <#${channelArg.id}> as the quarantine voice channel${targetCat ? ` under \`${targetCat.name}\`` : ''} and synced permissions.\nWhen a member is quarantined they will be moved here.`);
   }
 
   if (action === 'status') {
@@ -5784,7 +5784,7 @@ async function handleLinksAllow(guild, action, domain) {
   if (action === 'allowall') {
     db.updateGuildConfig(guild.id, { allowAllLinks: true });
     return cv2.success(
-        'All Links Allowed | <a:atheNATICK:1557841381630681106>',
+        'All Links Allowed | <a:03_tick_circle:1565665642084827206>',
         'The anti-link filter has been **completely disabled** for this server.\n\nAll users can now post any link freely.\n\nUse `/linksallow disallowall` to re-enable the filter.',
         [{ name: 'Note', value: 'This overrides all domain whitelists and disables the anti-link filter entirely.' }]
       );
@@ -5793,7 +5793,7 @@ async function handleLinksAllow(guild, action, domain) {
   if (action === 'disallowall') {
     db.updateGuildConfig(guild.id, { allowAllLinks: false, allowedLinks: [] });
     return cv2.success(
-        'Anti-Link Filter Restored | <a:atheNATICK:1557841381630681106>',
+        'Anti-Link Filter Restored | <a:03_tick_circle:1565665642084827206>',
         'The anti-link filter is **active** again and all allowed domains have been **reset**.\n\nThe following links will now be **strictly blocked**:\n> Discord Invites\n> NSFW Links\n> Scam/Phishing Links\n> Standard URLs (unless whitelisted)\n\nUse `/linksallow add <domain>` to whitelist specific domains.'
       );
   }
@@ -5810,7 +5810,7 @@ async function handleLinksAllow(guild, action, domain) {
 
     const added = db.addAllowedLink(guild.id, cleanDomain);
     if (added) {
-      return cv2.success('Domain Allowed | <a:atheNATICK:1557841381630681106>', `Added **\`${cleanDomain}\`** to the allowed links list.\nLinks containing this domain will bypass the anti-link filter.`);
+      return cv2.success('Domain Allowed | <a:03_tick_circle:1565665642084827206>', `Added **\`${cleanDomain}\`** to the allowed links list.\nLinks containing this domain will bypass the anti-link filter.`);
     }
     return cv2.info('Already Allowed', `**\`${cleanDomain}\`** is already in the allowed list.`);
   }
@@ -5824,7 +5824,7 @@ async function handleLinksAllow(guild, action, domain) {
 
     const removed = db.removeAllowedLink(guild.id, cleanDomain);
     if (removed) {
-      return cv2.success('Domain Removed | <a:atheNATICK:1557841381630681106>', `Removed **\`${cleanDomain}\`** from the allowed list.`);
+      return cv2.success('Domain Removed | <a:03_tick_circle:1565665642084827206>', `Removed **\`${cleanDomain}\`** from the allowed list.`);
     }
     return cv2.warn('Not Found', `**\`${cleanDomain}\`** is not in the allowed list.`);
   }
@@ -5977,7 +5977,7 @@ async function handleMassUnquarantine(guild, moderator, client, context = null) 
   ));
 
   return cv2.success(
-      'Mass Unquarantine Complete | <a:atheNATICK:1557841381630681106>',
+      'Mass Unquarantine Complete | <a:03_tick_circle:1565665642084827206>',
       `All quarantined members have been processed.`,
       [
         { name: 'Released',    value: `\`${success}\``, inline: true },
@@ -6200,7 +6200,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
         components: [
           {
             type: 10,
-            content: `## Athena Prime Defense Matrix Online | <a:atheNATICK:1557841381630681106>\n-# **Server Security & Antinuke:** \`100% Bulletproof Active\`\n-# **Enforcement Mode:** \`Instant Ban (Threshold 1)\`\n-# **Monitored Vectors:** \`All 28 Antinuke Modules + AI Toxicity/Doxxing Shield\``
+            content: `## Athena Prime Defense Matrix Online | <a:03_tick_circle:1565665642084827206>\n-# **Server Security & Antinuke:** \`100% Bulletproof Active\`\n-# **Enforcement Mode:** \`Instant Ban (Threshold 1)\`\n-# **Monitored Vectors:** \`All 28 Antinuke Modules + AI Toxicity/Doxxing Shield\``
           }
         ]
       }).catch(() => null);
@@ -6217,7 +6217,7 @@ export async function getServerSecurityEnabledPanel() {
     const section1 = { 
       type: 10, 
       content: 
-        `## Server Security Enabled | <a:atheNATICK:1557841381630681106>\n` +
+        `## Server Security Enabled | <a:03_tick_circle:1565665642084827206>\n` +
         `> -# <a:uptime:1552608831060844575> **When server security is enabled, the following configuration actions are required from Owner / Extra Owners / Whitelisted entities:**` 
     };
 
@@ -6317,7 +6317,7 @@ export async function getSecureDashboardPanel(guild) {
     const card = {
       type: 17,
       components: [
-        { type: 10, content: `## Live Threat & Entity Audit | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## Live Threat & Entity Audit | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         { type: 10, content: text },
         { type: 14, divider: true },
@@ -6627,7 +6627,7 @@ export async function handleAutoModBypass(guild, action, role) {
     if (!role) return cv2.warn('Invalid Role', 'Please mention a valid role to bypass automod.');
     bypasses[role.id] = ['all'];
     db.updateGuildConfig(guild.id, { automodBypasses: bypasses });
-    return cv2.success('Automod Bypass Added | <a:atheNATICK:1557841381630681106>', `Role <@&${role.id}> has been granted bypass for Automod modules.`);
+    return cv2.success('Automod Bypass Added | <a:03_tick_circle:1565665642084827206>', `Role <@&${role.id}> has been granted bypass for Automod modules.`);
   }
 
   if (action === 'remove') {
@@ -6635,7 +6635,7 @@ export async function handleAutoModBypass(guild, action, role) {
     if (bypasses[role.id]) {
       delete bypasses[role.id];
       db.updateGuildConfig(guild.id, { automodBypasses: bypasses });
-      return cv2.success('Automod Bypass Removed | <a:atheNATICK:1557841381630681106>', `Role <@&${role.id}> has been removed from Automod bypass.`);
+      return cv2.success('Automod Bypass Removed | <a:03_tick_circle:1565665642084827206>', `Role <@&${role.id}> has been removed from Automod bypass.`);
     }
     return cv2.warn('Not Found', `Role <@&${role.id}> is not in the Automod bypass list.`);
   }
@@ -7424,7 +7424,7 @@ export async function handleHoneypotCommand(guild, moderator, action = 'status',
           components: [
             {
               type: 10,
-              content: `## Honeypot Tripwire Armed | <a:atheNATICK:1557841381630681106>\n` +
+              content: `## Honeypot Tripwire Armed | <a:03_tick_circle:1565665642084827206>\n` +
                        `> -# <a:uptime:1552608831060844575> **Tripwire Enforcement:** Active\n` +
                        `> -# • **Warning:** This channel is an automated Athena Prime security tripwire.\n` +
                        `> -# • **Consequence:** Any non-whitelisted account that posts or sends any message here will be banned immediately in \`<15ms\`.\n` +
@@ -7494,7 +7494,7 @@ export async function getHoneypotStatusPanel(guild, honeypotChannelId, notice = 
         components: [
           {
             type: 10,
-            content: `## Honeypot Raider Sentry | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## Honeypot Raider Sentry | <a:03_tick_circle:1565665642084827206>\n` +
                      noticeBlock +
                      `> -# <a:uptime:1552608831060844575> **Tripwire Status:** ${isArmed ? '`ARMED & MONITORING`' : '`DISARMED`'}\n` +
                      `> -# • **Active Trap Channel:** ${targetChannel ? `<#${targetChannel.id}> (\`${targetChannel.id}\`)` : '`None`'}\n` +
@@ -7562,7 +7562,7 @@ export async function getAntiGhostPingPanel(guild, isEnabledOverride = null) {
         components: [
           {
             type: 10,
-            content: `## Anti-GhostPing Sentry | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## Anti-GhostPing Sentry | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Sentry Status:** ${isEnabled ? '`ACTIVE & MONITORING`' : '`DISABLED`'}\n` +
                      `> -# • **Detection Vector:** Real-time \`messageDelete\` mention payload audit\n` +
                      `> -# • **In-Channel Alert:** Public Component V2 card exposing sender, targets & deleted content\n` +
@@ -7643,7 +7643,7 @@ export async function getQuarantineListPanel(guild, moderator) {
         components: [
           {
             type: 10,
-            content: `## Quarantine Vault Roster | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## Quarantine Vault Roster | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Isolated Subjects:** \`${count}\` member(s)\n` +
                      `> -# • **Quarantine Role:** ${qRole ? `<@&${qRole.id}>` : '`None`'}\n` +
                      `> -# • **Vault Isolation Channel:** ${config.quarantineChannelId ? `<#${config.quarantineChannelId}>` : '`Default VC`'}\n\n` +
@@ -7834,7 +7834,7 @@ export async function handleTacticalBriefing(guild, member, channel, targetVc = 
             components: [
               {
                 type: 10,
-                content: `## Tactical Audio Briefing Dispatched | <a:atheNATICK:1557841381630681106>\n` +
+                content: `## Tactical Audio Briefing Dispatched | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Broadcasting Voice Channel:** <#${vc.id}>\n` +
                          `> -# • **Voice Profile:** Cute Female Anime AI Operator (\`en-US-AnaNeural\`)\n` +
                          `> -# • **Telemetry Ingress:** Real-time DEFCON, Anti-Nuke & Quarantine metrics\n` +
@@ -7861,7 +7861,7 @@ export async function handleTacticalBriefing(guild, member, channel, targetVc = 
         components: [
           {
             type: 10,
-            content: `## Tactical Audio Briefing | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## Tactical Audio Briefing | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Voice Profile:** Cute Female Anime AI Operator (\`en-US-AnaNeural\`)\n` +
                      `> -# • **Telemetry Audio Stream:** Attached below (Play in client or connect to VC to hear live)\n` +
                      `> -# • **Live Transcript:**\n` +
@@ -7912,20 +7912,20 @@ export async function handleSimNukeCommand(guild, moderator) {
         components: [
           {
             type: 10,
-            content: `## Antinuke Attack Simulation Report | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## Antinuke Attack Simulation Report | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Simulation Execution:** Zero-Risk Sandboxed Dry-Run\n` +
                      `> -# • **Average Interception Velocity:** \`${avgVelocity}ms\` *(Dual-Strike Engine)*\n` +
                      `> -# • **Hardware Benchmark:** In-Memory Bitfield Comparator & Pre-Warmed Sockets\n\n` +
                      `### Attack Vector Interception Benchmarks\n` +
-                     `> **1. Mass Channel Deletion Attack** | <a:atheNATICK:1557841381630681106>\n` +
+                     `> **1. Mass Channel Deletion Attack** | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# Intercepted in \`${t1}ms\` • Action: Instant Snapshot Rollback & Enforcer Role Stripping\n\n` +
-                     `> **2. Role Privilege Escalation & Deletion** | <a:atheNATICK:1557841381630681106>\n` +
+                     `> **2. Role Privilege Escalation & Deletion** | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# Intercepted in \`${t2}ms\` • Action: Re-created with exact bitmask permissions\n\n` +
-                     `> **3. Webhook Token Infiltration & Flood** | <a:atheNATICK:1557841381630681106>\n` +
+                     `> **3. Webhook Token Infiltration & Flood** | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# Intercepted in \`${t3}ms\` • Action: Instant Webhook Annihilation (<1ms)\n\n` +
-                     `> **4. Rogue High-Privilege Bot Addition** | <a:atheNATICK:1557841381630681106>\n` +
+                     `> **4. Rogue High-Privilege Bot Addition** | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# Intercepted in \`${t4}ms\` • Action: Automatic Quarantine & Ban with Bot Whitelist Verification\n\n` +
-                     `> **5. Mass Ban Burst Velocity Surge** | <a:atheNATICK:1557841381630681106>\n` +
+                     `> **5. Mass Ban Burst Velocity Surge** | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# Intercepted in \`${t5}ms\` • Action: Rate-limiter bucket trip & Attacker Neutralization`
           },
           { type: 14, divider: true },
@@ -7957,7 +7957,7 @@ export async function getPanicHistoryPanel(guild, moderator) {
     historyString = history.slice(0, 8).map((e, idx) => {
       const timeStr = `<t:${Math.floor(e.timestamp / 1000)}:f> (<t:${Math.floor(e.timestamp / 1000)}:R>)`;
       const op = `<@${e.moderatorId}> (\`${e.moderatorTag || e.moderatorId}\`)`;
-      return `> **#${idx + 1} \u2022 ${e.type}** | <a:atheNATICK:1557841381630681106>\n` +
+      return `> **#${idx + 1} \u2022 ${e.type}** | <a:03_tick_circle:1565665642084827206>\n` +
              `> -# • **Time:** ${timeStr}\n` +
              `> -# • **Operator:** ${op}\n` +
              `> -# • **Status:** \`${e.action || 'ENGAGED'}\` ${e.tierLabel ? `(${e.tierLabel})` : ''} ${e.channelCount ? `• ${e.channelCount} channels snapshot` : ''}\n` +
@@ -7986,7 +7986,7 @@ export async function getPanicHistoryPanel(guild, moderator) {
         components: [
           {
             type: 10,
-            content: `## Defense Matrix Black Box | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## Defense Matrix Black Box | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Audit Telemetry:** DEFCON & Emergency Chronological Timeline\n` +
                      `> -# • **Recorded Incidents:** \`${history.length}\` total recorded events\n` +
                      `> -# • **Storage Architecture:** Persistent SQLite WAL Database\n\n` +
@@ -8045,7 +8045,7 @@ export async function getSecurityMatrixHub(guild, moderator) {
         components: [
           {
             type: 10,
-            content: `## Unified Security Matrix | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## Unified Security Matrix | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Athena Prime Flagship Defense Matrix**\n` +
                      `> -# Master control room for real-time monitoring and defense enforcement.\n\n` +
                      `### Defense Layer Status\n` +

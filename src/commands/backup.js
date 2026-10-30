@@ -89,7 +89,7 @@ export const commands = [
         
         await loadingMsg.edit({
           content: null,
-          embeds: [new EmbedBuilder().setTitle('Restoration Complete | <a:atheNATICK:1557841381630681106>').setDescription('Successfully restored the server from backup.').setColor('#00ff00')],
+          embeds: [new EmbedBuilder().setTitle('Restoration Complete | <a:03_tick_circle:1565665642084827206>').setDescription('Successfully restored the server from backup.').setColor('#00ff00')],
           flags: 16384
         });
       }

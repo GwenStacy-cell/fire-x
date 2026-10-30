@@ -44,7 +44,7 @@ export const commands = [
         const stateArg = args[1]?.toLowerCase();
         if (stateArg === 'on' || stateArg === 'enable') {
           db.setBotOwnerEntryRemote(true);
-          return message.reply(cv2.success('Remote Delivery Enabled | <a:atheNATICK:1557841381630681106>', '<a:uptime:1552608831060844575> Real-time DM review cards will be delivered to your DMs for **every join application across all servers**.'));
+          return message.reply(cv2.success('Remote Delivery Enabled | <a:03_tick_circle:1565665642084827206>', '<a:uptime:1552608831060844575> Real-time DM review cards will be delivered to your DMs for **every join application across all servers**.'));
         } else if (stateArg === 'off' || stateArg === 'disable') {
           db.setBotOwnerEntryRemote(false);
           return message.reply(cv2.warn('Remote Delivery Disabled', 'You will no longer receive automatic DM cards for server join applications.'));
@@ -181,12 +181,12 @@ export const commands = [
 
           // 4. Notify Applicant via DM
           member.send(cv2.success(
-            `Application Accepted | <a:atheNATICK:1557841381630681106>`,
+            `Application Accepted | <a:03_tick_circle:1565665642084827206>`,
             `<a:uptime:1552608831060844575> Your join application for **${targetGuild.name}** has been **ACCEPTED**!\n\n**Reviewer Note:** ${reason}\n\nWelcome to the community!`
           )).catch(() => null);
 
           return message.reply(cv2.success(
-            `Application Accepted | <a:atheNATICK:1557841381630681106>`,
+            `Application Accepted | <a:03_tick_circle:1565665642084827206>`,
             `<a:uptime:1552608831060844575> Successfully accepted <@${targetUserId}> (\`${targetUserId}\`) into **${targetGuild.name}** remotely.\n> **Roles Updated:** Verified role granted & holding role removed.\n> **Reviewer Note:** ${reason}`
           ));
         } catch (err) {
@@ -249,7 +249,7 @@ export const commands = [
           db.deletePendingEntryApp(targetGuildId, targetUserId);
 
           return message.reply(cv2.success(
-            `Application Denied | <a:atheNATICK:1557841381630681106>`,
+            `Application Denied | <a:03_tick_circle:1565665642084827206>`,
             `<a:uptime:1552608831060844575> Successfully denied <@${targetUserId}> (\`${targetUserId}\`) from **${targetGuild.name}**.\n> **Reason:** ${reason}\n> **Action:** User notified and kicked.`
           ));
         } catch (err) {
@@ -271,7 +271,7 @@ export const commands = [
       // --- ENABLE / DISABLE ---
       if (subcommand === 'enable' || subcommand === 'on') {
         db.updateEntryConfig(guildId, { enabled: true });
-        return message.reply(cv2.success('Server Entry Gate Enabled | <a:atheNATICK:1557841381630681106>', '<a:uptime:1552608831060844575> Server Join Application & Gatekeeper system is now **ACTIVE**.'));
+        return message.reply(cv2.success('Server Entry Gate Enabled | <a:03_tick_circle:1565665642084827206>', '<a:uptime:1552608831060844575> Server Join Application & Gatekeeper system is now **ACTIVE**.'));
       }
 
       if (subcommand === 'disable' || subcommand === 'off') {
@@ -284,7 +284,7 @@ export const commands = [
         const targetChannel = message.mentions.channels.first() || message.guild.channels.cache.get(args[1]);
         if (!targetChannel) return message.reply(cv2.warn('Usage', '`!entry channel <#channel>` — Channel where users submit applications.'));
         db.updateEntryConfig(guildId, { gateChannelId: targetChannel.id });
-        return message.reply(cv2.success('Gate Channel Bound | <a:atheNATICK:1557841381630681106>', `<a:uptime:1552608831060844575> Gatekeeper channel set to <#${targetChannel.id}>.`));
+        return message.reply(cv2.success('Gate Channel Bound | <a:03_tick_circle:1565665642084827206>', `<a:uptime:1552608831060844575> Gatekeeper channel set to <#${targetChannel.id}>.`));
       }
 
       // --- BIND REVIEW LOG CHANNEL ---
@@ -292,7 +292,7 @@ export const commands = [
         const targetChannel = message.mentions.channels.first() || message.guild.channels.cache.get(args[1]);
         if (!targetChannel) return message.reply(cv2.warn('Usage', '`!entry log <#channel>` — Channel where staff reviews applications.'));
         db.updateEntryConfig(guildId, { logChannelId: targetChannel.id });
-        return message.reply(cv2.success('Review Log Bound | <a:atheNATICK:1557841381630681106>', `<a:uptime:1552608831060844575> Local staff review channel set to <#${targetChannel.id}>.`));
+        return message.reply(cv2.success('Review Log Bound | <a:03_tick_circle:1565665642084827206>', `<a:uptime:1552608831060844575> Local staff review channel set to <#${targetChannel.id}>.`));
       }
 
       // --- BIND VERIFIED MEMBER ROLE ---
@@ -300,19 +300,19 @@ export const commands = [
         const targetRole = message.mentions.roles.first() || message.guild.roles.cache.get(args[1]);
         if (!targetRole) return message.reply(cv2.warn('Usage', '`!entry role <@role>` — Role granted when an application is accepted.'));
         db.updateEntryConfig(guildId, { verifiedRoleId: targetRole.id });
-        return message.reply(cv2.success('Verified Role Bound | <a:atheNATICK:1557841381630681106>', `<a:uptime:1552608831060844575> Role to grant upon approval set to <@&${targetRole.id}>.`));
+        return message.reply(cv2.success('Verified Role Bound | <a:03_tick_circle:1565665642084827206>', `<a:uptime:1552608831060844575> Role to grant upon approval set to <@&${targetRole.id}>.`));
       }
 
       // --- BIND HOLDING / UNVERIFIED ROLE ---
       if (subcommand === 'holding' || subcommand === 'holdingrole') {
         if (args[1]?.toLowerCase() === 'none' || args[1]?.toLowerCase() === 'clear') {
           db.updateEntryConfig(guildId, { holdingRoleId: null });
-          return message.reply(cv2.success('Holding Role Cleared | <a:atheNATICK:1557841381630681106>', 'Holding role removed. Users will not receive a temporary quarantine role upon joining.'));
+          return message.reply(cv2.success('Holding Role Cleared | <a:03_tick_circle:1565665642084827206>', 'Holding role removed. Users will not receive a temporary quarantine role upon joining.'));
         }
         const targetRole = message.mentions.roles.first() || message.guild.roles.cache.get(args[1]);
         if (!targetRole) return message.reply(cv2.warn('Usage', '`!entry holding <@role>` or `!entry holding none` — Role assigned to new joiners before acceptance.'));
         db.updateEntryConfig(guildId, { holdingRoleId: targetRole.id });
-        return message.reply(cv2.success('Holding Role Bound | <a:atheNATICK:1557841381630681106>', `<a:uptime:1552608831060844575> Holding role for new joiners set to <@&${targetRole.id}>.`));
+        return message.reply(cv2.success('Holding Role Bound | <a:03_tick_circle:1565665642084827206>', `<a:uptime:1552608831060844575> Holding role for new joiners set to <@&${targetRole.id}>.`));
       }
 
       // --- DEPLOY APPLY BUTTON ---
@@ -342,7 +342,7 @@ export const commands = [
 
         await targetChannel.send({ components: [deployEmbed], flags: MessageFlags.IsComponentsV2 });
         db.updateEntryConfig(guildId, { gateChannelId: targetChannel.id, enabled: true });
-        return message.reply(cv2.success('Gatekeeper Deployed | <a:atheNATICK:1557841381630681106>', `<a:uptime:1552608831060844575> Join application panel successfully deployed to <#${targetChannel.id}> and system **ENABLED**.`));
+        return message.reply(cv2.success('Gatekeeper Deployed | <a:03_tick_circle:1565665642084827206>', `<a:uptime:1552608831060844575> Join application panel successfully deployed to <#${targetChannel.id}> and system **ENABLED**.`));
       }
 
       // --- QUESTIONS MANAGER ---
@@ -391,7 +391,7 @@ export const commands = [
 
           if (i.customId === 'entry_mngr_clear_q') {
             db.updateEntryConfig(guildId, { questions: [] });
-            return i.update(cv2.success('Questions Cleared | <a:atheNATICK:1557841381630681106>', 'All application questions have been cleared. Run `!entry questions` to add new ones.'));
+            return i.update(cv2.success('Questions Cleared | <a:03_tick_circle:1565665642084827206>', 'All application questions have been cleared. Run `!entry questions` to add new ones.'));
           }
 
           if (i.customId === 'entry_mngr_add_q') {
@@ -426,7 +426,7 @@ export const commands = [
           { type: 14, divider: true },
           { 
             type: 10, 
-            content: `**Operational Status:** ${config.enabled ? '`ACTIVE & SCREENING` <a:atheNATICK:1557841381630681106>' : '`DISABLED`'}\n` +
+            content: `**Operational Status:** ${config.enabled ? '`ACTIVE & SCREENING` <a:03_tick_circle:1565665642084827206>' : '`DISABLED`'}\n` +
                      `**Gate Channel:** ${gateCh}\n` +
                      `**Review Log Channel:** ${logCh}\n` +
                      `**Holding Role:** ${hRole}\n` +

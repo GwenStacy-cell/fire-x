@@ -146,12 +146,12 @@ export default {
       if (interaction.member?.voice?.channel) {
         await dispatchTacticalAudioToVc(interaction.member, script);
         return interaction.editReply({
-          content: `### Tactical Audio Briefing | <a:atheNATICK:1557841381630681106>\n> <a:uptime:1552608831060844575> **Broadcasting live defense dispatch to <#${interaction.member.voice.channel.id}>...**\n> -# Script: *"${script}"*`
+          content: `### Tactical Audio Briefing | <a:03_tick_circle:1565665642084827206>\n> <a:uptime:1552608831060844575> **Broadcasting live defense dispatch to <#${interaction.member.voice.channel.id}>...**\n> -# Script: *"${script}"*`
         });
       } else {
         const audioAtt = await createTacticalDispatchAttachment(script);
         return interaction.editReply({
-          content: `### Tactical Audio Briefing | <a:atheNATICK:1557841381630681106>\n> <a:uptime:1552608831060844575> **Synthesized Tactical Military Audio Dispatch.**\n> -# Join any Voice Channel to have Athena broadcast this dispatch live on command.\n> -# Script: *"${script}"*`,
+          content: `### Tactical Audio Briefing | <a:03_tick_circle:1565665642084827206>\n> <a:uptime:1552608831060844575> **Synthesized Tactical Military Audio Dispatch.**\n> -# Join any Voice Channel to have Athena broadcast this dispatch live on command.\n> -# Script: *"${script}"*`,
           files: audioAtt ? [audioAtt] : []
         });
       }
@@ -214,7 +214,7 @@ export default {
             sent = await channel.send({ content: replyText }).catch(() => null);
           }
           if (sent) {
-            return interaction.reply({ content: '-# <a:atheNATICK:1557841381630681106> Reply sent successfully to the channel!', flags: 64 });
+            return interaction.reply({ content: '-# <a:03_tick_circle:1565665642084827206> Reply sent successfully to the channel!', flags: 64 });
           } else {
             return interaction.reply({ content: '-# <:off:1533844858983157851> Failed to send message to the destination channel.', flags: 64 });
           }
@@ -327,7 +327,7 @@ export default {
       const confirmText = templateId ? `\n-# Saved to server templates as \`${templateId}\`. Dispatch with \`/studio action: send template_id: ${templateId}\`.` : '';
 
       return interaction.reply({
-        content: `-# <a:atheNATICK:1557841381630681106> **Container Studio Preview Generated:**${confirmText}`,
+        content: `-# <a:03_tick_circle:1565665642084827206> **Container Studio Preview Generated:**${confirmText}`,
         components: previewPayload.components,
         flags: MessageFlags.Ephemeral
       }).catch(() => null);
@@ -901,7 +901,7 @@ export default {
 
         // 4. Send acceptance DM
         member.send(cv2.success(
-          `Application Accepted | <a:atheNATICK:1557841381630681106>`,
+          `Application Accepted | <a:03_tick_circle:1565665642084827206>`,
           `<a:uptime:1552608831060844575> Your join application for **${targetGuild.name}** has been **ACCEPTED**!\n\nWelcome to the community!`
         )).catch(() => null);
 
@@ -910,7 +910,7 @@ export default {
         const filtered = origComponents.filter(c => c.type !== 1);
         filtered.push({
           type: 10,
-          content: `### Result: Accepted | <a:atheNATICK:1557841381630681106>\n> Approved by <@${interaction.user.id}> (\`${interaction.user.tag}\`)${isDM ? ' *(Remote Bot Owner Approval)*' : ''}`
+          content: `### Result: Accepted | <a:03_tick_circle:1565665642084827206>\n> Approved by <@${interaction.user.id}> (\`${interaction.user.tag}\`)${isDM ? ' *(Remote Bot Owner Approval)*' : ''}`
         });
 
         await interaction.editReply({ components: filtered, flags: MessageFlags.IsComponentsV2 }).catch(() => null);
@@ -1199,7 +1199,7 @@ export default {
       }
 
       return interaction.editReply({
-        content: '<a:atheNATICK:1557841381630681106> Your join application has been submitted successfully! Server staff will review your responses shortly.'
+        content: '<a:03_tick_circle:1565665642084827206> Your join application has been submitted successfully! Server staff will review your responses shortly.'
       }).catch(() => null);
     }
 
@@ -1249,7 +1249,7 @@ export default {
       }
       config.questions.push(qText);
       db.updateEntryConfig(interaction.guild.id, { questions: config.questions });
-      await interaction.reply({ content: `<a:atheNATICK:1557841381630681106> Successfully added question: **${qText}**\nRun \`!entry questions\` to review.`, flags: 64 });
+      await interaction.reply({ content: `<a:03_tick_circle:1565665642084827206> Successfully added question: **${qText}**\nRun \`!entry questions\` to review.`, flags: 64 });
       await interaction.message.delete().catch(() => null);
       return;
     }
@@ -2335,7 +2335,7 @@ export default {
         const container = {
           type: 17,
           components: [
-            { type: 10, content: `## Voice Recording Stopped | <a:atheNATICK:1557841381630681106>\n\n-# Channel: 🔊 **${vcName}**\n\n-# Processing and exporting the audio file, please wait...` },
+            { type: 10, content: `## Voice Recording Stopped | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: 🔊 **${vcName}**\n\n-# Processing and exporting the audio file, please wait...` },
             { type: 14, divider: true },
             { type: 10, content: '-# Athena Bulletproof Security' }
           ]
@@ -2358,7 +2358,7 @@ export default {
           const dmContainer = {
             type: 17,
             components: [
-              { type: 10, content: `## Athena Voice Export | <a:atheNATICK:1557841381630681106>` },
+              { type: 10, content: `## Athena Voice Export | <a:03_tick_circle:1565665642084827206>` },
               {
                 type: 9,
                 components: [{ type: 10, content: `-# **Server :** **${targetGuild ? targetGuild.name : 'Unknown'}**\n-# **Channel :** **${vcName}**\n-# **Started At :** **${startDate}**\n-# **Duration :** **${durationStr}**\n-# **Speakers Detected :** **${result.userCount || 1}**` }],
@@ -2387,13 +2387,13 @@ export default {
           }
 
           if (dmDelivered) {
-            const successContainer = { type: 17, components: [{ type: 10, content: `-# **Audio Export Successful | <a:atheNATICK:1557841381630681106>**\n-# Delivered securely to your DMs.` }] };
+            const successContainer = { type: 17, components: [{ type: 10, content: `-# **Audio Export Successful | <a:03_tick_circle:1565665642084827206>**\n-# Delivered securely to your DMs.` }] };
             await interaction.message.edit({ components: [successContainer] });
           } else {
             const channelFallbackContainer = {
               type: 17,
               components: [
-                { type: 10, content: `## Athena Voice Export | <a:atheNATICK:1557841381630681106>` },
+                { type: 10, content: `## Athena Voice Export | <a:03_tick_circle:1565665642084827206>` },
                 {
                   type: 9,
                   components: [{ type: 10, content: `-# **Server :** **${targetGuild ? targetGuild.name : 'Unknown'}**\n-# **Channel :** **${vcName}**\n-# **Started At :** **${startDate}**\n-# **Duration :** **${durationStr}**\n-# **Note :** Your DMs are closed, so the audio was delivered here.` }],
@@ -2405,7 +2405,7 @@ export default {
             };
             await interaction.followUp({ components: [channelFallbackContainer], flags: MessageFlags.IsComponentsV2 });
             await interaction.followUp({ content: `${interaction.user}, here is your voice recording:`, files: [audioAttachment] });
-            const successContainer = { type: 17, components: [{ type: 10, content: `-# **Audio Export Successful | <a:atheNATICK:1557841381630681106>**\n-# Delivered in this channel (DMs closed).` }] };
+            const successContainer = { type: 17, components: [{ type: 10, content: `-# **Audio Export Successful | <a:03_tick_circle:1565665642084827206>**\n-# Delivered in this channel (DMs closed).` }] };
             await interaction.message.edit({ components: [successContainer] });
           }
 

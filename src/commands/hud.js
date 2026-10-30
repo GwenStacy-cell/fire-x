@@ -83,7 +83,7 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
       type: 17,
       components: [
         ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://warroom_server.gif' } }] }] : []),
-        { type: 10, content: `## **${cleanDisplayName(guild.name)} // War-Room Dashboard** | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## **${cleanDisplayName(guild.name)} // War-Room Dashboard** | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -143,7 +143,7 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
       type: 17,
       components: [
         ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://warroom_defcon.gif' } }] }] : []),
-        { type: 10, content: `## **DEFCON Defense Matrix Status** | <a:atheNATICK:1557841381630681106>` },
+        { type: 10, content: `## **DEFCON Defense Matrix Status** | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
           type: 10,
@@ -207,7 +207,7 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
     type: 17,
     components: [
       ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://warroom_telemetry.gif' } }] }] : []),
-      { type: 10, content: `## **Athena Prime Core Telemetry** | <a:atheNATICK:1557841381630681106>` },
+      { type: 10, content: `## **Athena Prime Core Telemetry** | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
         type: 10,

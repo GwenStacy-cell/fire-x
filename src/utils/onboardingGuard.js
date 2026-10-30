@@ -253,7 +253,7 @@ export async function auditAndNeutralizeOnboarding(guild, options = {}) {
         components: [
           {
             type: 10,
-            content: `## Discord Onboarding Exploit Neutralized | <a:atheNATICK:1557841381630681106>`
+            content: `## Discord Onboarding Exploit Neutralized | <a:03_tick_circle:1565665642084827206>`
           },
           { type: 14, divider: true },
           {

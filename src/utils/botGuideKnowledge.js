@@ -32,7 +32,7 @@ export {
   augmentQueryWithSession 
 };
 
-const TICK = '<a:atheNATICK:1557841381630681106>';
+const TICK = '<a:03_tick_circle:1565665642084827206>';
 const UPTIME = '<a:uptime:1552608831060844575>';
 
 export const OWNER_COMMANDS = SERVER_OWNER_COMMANDS;

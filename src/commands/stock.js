@@ -84,7 +84,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Financial Reconnaissance Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Financial Reconnaissance Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Telemetry Fault:** ${err.message || 'Unable to resolve market data.'}\n` +
                            `> -# • **Try:** \`${prefix}stock NVDA\`, \`${prefix}stock AAPL\`, \`${prefix}stock BTC\`, or \`${prefix}market\` for global overview.\n` +
@@ -129,7 +129,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Financial Reconnaissance Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Financial Reconnaissance Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Telemetry Fault:** ${err.message || 'Unable to resolve market data.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -168,7 +168,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Athena Stock AI Guidance | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Athena Stock AI Guidance | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Usage:** \`!stockai <question / topic / symbol>\`\n` +
                            `> -# • **Examples:** \`!stockai why did tech drop today?\`, \`!stockai explain NVDA earnings\`, \`!stockai what is market cap?\`\n` +
@@ -242,7 +242,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Financial Intelligence Analysis | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Financial Intelligence Analysis | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Inquiry:** \`${query}\`\n\n` +
                            formatted + `\n\n` +
@@ -267,7 +267,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Financial AI Generation Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Financial AI Generation Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to generate analysis.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -324,7 +324,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Market Movers Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Market Movers Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                            `### Top Gainers & Momentum Leaders\n` +
                            gainersList + `\n\n` +
@@ -382,7 +382,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Market Movers Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Market Movers Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -444,7 +444,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Crypto Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Crypto Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Crypto coin not found.'}\n` +
                            `> -# • **Try:** \`${prefix}crypto BTC\`, \`${prefix}crypto ETH\`, \`${prefix}crypto SOL\`, \`${prefix}crypto DOGE\`\n` +
@@ -501,7 +501,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## No Headlines Found | <a:atheNATICK:1557841381630681106>\n` +
+                    content: `## No Headlines Found | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> No recent articles found for \`${query}\`.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -525,7 +525,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Live Financial News Wire | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Live Financial News Wire | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Subject:** \`${query}\`\n\n` +
                            headlines + `\n\n` +
@@ -587,7 +587,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## News Retrieval Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## News Retrieval Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -629,7 +629,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Daily Stock Market Broadcaster Control | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Daily Stock Market Broadcaster Control | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Current Channel:** ${boundChannelText}\n` +
                            `> -# • **Scheduled Time:** \`09:30 AM EST (14:30 UTC)\` \u2014 Every day at US Market Open.\n\n` +
@@ -666,7 +666,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## Invalid Channel Specified | <a:atheNATICK:1557841381630681106>\n` +
+                    content: `## Invalid Channel Specified | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> **Usage:** \`${prefix}stockchannel set <#channel>\` or \`${prefix}stockchannel set <channel_id>\`\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -688,7 +688,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Daily Stock Channel Configured | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Daily Stock Channel Configured | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Bound Channel:** <#${targetChannel.id}> (\`${targetChannel.id}\`)\n` +
                            `> -# • **Schedule:** Athena will automatically generate and upload the high-resolution World Market Pulse dashboard image and briefing here every day at **09:30 AM EST (14:30 UTC)**.\n` +
@@ -712,7 +712,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Daily Stock Broadcaster Disarmed | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Daily Stock Broadcaster Disarmed | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> Daily stock market upload has been disabled for this server.\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -735,7 +735,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## No Stock Channel Configured | <a:atheNATICK:1557841381630681106>\n` +
+                    content: `## No Stock Channel Configured | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Please set a channel first via \`${prefix}stockchannel set <#channel>\`.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -756,7 +756,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## Target Channel Not Found | <a:atheNATICK:1557841381630681106>\n` +
+                    content: `## Target Channel Not Found | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Channel ID \`${boundChannelId}\` could not be resolved. Please re-bind via \`${prefix}stockchannel set <#channel>\`.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -792,7 +792,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## Daily Stock Briefing Dispatched | <a:atheNATICK:1557841381630681106>\n` +
+                    content: `## Daily Stock Briefing Dispatched | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Daily stock market intelligence image and report successfully delivered to <#${channel.id}>.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -810,7 +810,7 @@ export const commands = [
                 components: [
                   {
                     type: 10,
-                    content: `## Daily Stock Dispatch Failed | <a:atheNATICK:1557841381630681106>\n` +
+                    content: `## Daily Stock Dispatch Failed | <a:03_tick_circle:1565665642084827206>\n` +
                              `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                              `> -# <a:uptime:1552608831060844575> Could not post to <#${channel.id}>. Please verify bot permissions in that channel.\n\n` +
                              `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -835,7 +835,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Stock Channel Status | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Stock Channel Status | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Bound Channel:** ${boundChannelText}\n` +
                            `> -# • **Active Schedule:** \`09:30 AM EST (14:30 UTC)\` daily.\n` +
@@ -926,7 +926,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Symbol Search Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Symbol Search Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Symbol search failed.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -984,7 +984,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Symbol Search Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Symbol Search Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Symbol search failed.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1051,7 +1051,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Indian Benchmark Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Indian Benchmark Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve benchmark telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1080,7 +1080,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Indian Benchmark Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Indian Benchmark Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve benchmark telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1131,7 +1131,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Bank Nifty Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Bank Nifty Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Bank Nifty telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1158,7 +1158,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Bank Nifty Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Bank Nifty Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Bank Nifty telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1209,7 +1209,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## BSE Sensex Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## BSE Sensex Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve BSE Sensex telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1236,7 +1236,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## BSE Sensex Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## BSE Sensex Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve BSE Sensex telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1287,7 +1287,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Nifty IT Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Nifty IT Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Nifty IT telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1314,7 +1314,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Nifty IT Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Nifty IT Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve Nifty IT telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1365,7 +1365,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## India VIX Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## India VIX Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve India VIX telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1392,7 +1392,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## India VIX Telemetry Error | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## India VIX Telemetry Error | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                            `> -# <a:uptime:1552608831060844575> **Fault:** ${err.message || 'Unable to resolve India VIX telemetry.'}\n\n` +
                            `> -# <a:uptime:1552608831060844575> **Notice:** ${DISCLAIMER_TEXT}`
@@ -1497,7 +1497,7 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## ${stockData.name} (${stockData.symbol}) AI Analysis | <a:atheNATICK:1557841381630681106>\n` +
+                content: `## ${stockData.name} (${stockData.symbol}) AI Analysis | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          formatted + `\n\n` +
                          `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
@@ -1534,7 +1534,7 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## ${symbol} Financial News Wire | <a:atheNATICK:1557841381630681106>\n` +
+                content: `## ${symbol} Financial News Wire | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          headlines + `\n\n` +
                          `> -# <a:uptime:1552608831060844575> **Risk Notice:** ${DISCLAIMER_TEXT}`
@@ -1570,7 +1570,7 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Market Movers Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+                content: `## Market Movers Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          `### Top Gainers & Momentum Leaders\n` +
                          gainersList + `\n\n` +
@@ -1603,7 +1603,7 @@ export async function handleStockButton(interaction) {
             components: [
               {
                 type: 10,
-                content: `## Crypto Asset Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+                content: `## Crypto Asset Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n\n` +
                          `> -# • **Bitcoin (BTC):** \`$${btc.price.toLocaleString()}\` (${btc.change >= 0 ? '+' : ''}${btc.changePct.toFixed(2)}%)\n` +
                          `> -# • **Ethereum (ETH):** \`$${eth.price.toLocaleString()}\` (${eth.change >= 0 ? '+' : ''}${eth.changePct.toFixed(2)}%)\n` +

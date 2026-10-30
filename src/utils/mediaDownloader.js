@@ -288,7 +288,7 @@ export async function processMediaLink(client, message, url) {
             const ext = dl.extension;
             const attachment = new AttachmentBuilder(dl.buffer, { name: `Athena_Pinterest_${Date.now()}.${ext}` });
             await message.channel.send({
-              content: `-# **Pinterest Media Extracted | <a:atheNATICK:1557841381630681106>** Requested by ${message.author} \u00b7 [Source Pin](${pinResult.sourceUrl})`,
+              content: `-# **Pinterest Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author} \u00b7 [Source Pin](${pinResult.sourceUrl})`,
               files: [attachment]
             });
             await message.delete().catch(() => {});
@@ -451,7 +451,7 @@ export async function processMediaLink(client, message, url) {
 
     try {
       await message.channel.send({
-        content: `-# **Media Extracted | <a:atheNATICK:1557841381630681106>** Requested by ${message.author}`,
+        content: `-# **Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
         files: [attachment]
       });
       await message.delete().catch(() => {});
@@ -469,7 +469,7 @@ export async function processMediaLink(client, message, url) {
           const catboxUrl = (await catboxRes.text()).trim();
           if (catboxUrl && catboxUrl.startsWith('https://')) {
             await message.channel.send({
-              content: `-# **Media Extracted | <a:atheNATICK:1557841381630681106>** Requested by ${message.author}\n${catboxUrl}`
+              content: `-# **Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}\n${catboxUrl}`
             });
             await message.delete().catch(() => {});
             return true;
@@ -520,7 +520,7 @@ export async function processMp3Link(client, message, url) {
             }
             const attachment = new AttachmentBuilder(buffer, { name: 'Athena_Audio.mp3' });
             await message.reply({
-              content: `-# **Audio Extracted | <a:atheNATICK:1557841381630681106>** Requested by ${message.author}`,
+              content: `-# **Audio Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
               files: [attachment]
             });
             return true;
@@ -585,7 +585,7 @@ export async function processMp3Link(client, message, url) {
               }
               const attachment = new AttachmentBuilder(buffer, { name: 'Athena_Audio.mp3' });
               await message.reply({
-                content: `-# **Audio Extracted | <a:atheNATICK:1557841381630681106>** Requested by ${message.author}`,
+                content: `-# **Audio Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
                 files: [attachment]
               });
               return true;
@@ -608,7 +608,7 @@ export async function processMp3Link(client, message, url) {
 
       const attachment = new AttachmentBuilder(buffer, { name: `Athena_Audio${path.extname(downloadedFile)}` });
       await message.reply({
-        content: `-# **Audio Extracted | <a:atheNATICK:1557841381630681106>** Requested by ${message.author}`,
+        content: `-# **Audio Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
         files: [attachment]
       });
       return true;

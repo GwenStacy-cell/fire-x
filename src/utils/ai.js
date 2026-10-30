@@ -670,7 +670,7 @@ export function buildTicketTriageContainer({ category, priority, summary, recomm
     components: [
       {
         type: 10,
-        content: `## Smart Ticket Triage | <a:atheNATICK:1557841381630681106>`
+        content: `## Smart Ticket Triage | <a:03_tick_circle:1565665642084827206>`
       },
       { type: 14, divider: true },
       {

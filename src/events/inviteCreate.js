@@ -91,7 +91,7 @@ export default {
         const alertContainer = {
           type: 17,
           components: [
-            { type: 10, content: `## Rogue Role-Based Invite Link Destroyed | <a:atheNATICK:1557841381630681106>` },
+            { type: 10, content: `## Rogue Role-Based Invite Link Destroyed | <a:03_tick_circle:1565665642084827206>` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -115,7 +115,7 @@ export default {
             const ownerDM = {
               type: 17,
               components: [
-                { type: 10, content: `## Critical Alert: Rogue Role-Based Invite Destroyed | <a:atheNATICK:1557841381630681106>` },
+                { type: 10, content: `## Critical Alert: Rogue Role-Based Invite Destroyed | <a:03_tick_circle:1565665642084827206>` },
                 { type: 14, divider: true },
                 {
                   type: 10,
@@ -128,9 +128,9 @@ export default {
                     `### What Was The Threat?\n` +
                     `> Someone configured a Discord Server Invite link with **${roleNames}** attached to it. Anyone who joined using this link would have automatically received administrative permissions with zero manual role assignment.\n\n` +
                     `### Defensive Actions Taken\n` +
-                    `> <a:atheNATICK:1557841381630681106> **Invite Deleted:** The backdoored invite link was destroyed instantly.\n` +
-                    `> <a:atheNATICK:1557841381630681106> **Role Disarmed:** Dangerous permissions stripped from the targeted role.\n` +
-                    `> <a:atheNATICK:1557841381630681106> **Creator Handled:** Creator stripped of privileges and quarantined.`
+                    `> <a:03_tick_circle:1565665642084827206> **Invite Deleted:** The backdoored invite link was destroyed instantly.\n` +
+                    `> <a:03_tick_circle:1565665642084827206> **Role Disarmed:** Dangerous permissions stripped from the targeted role.\n` +
+                    `> <a:03_tick_circle:1565665642084827206> **Creator Handled:** Creator stripped of privileges and quarantined.`
                 },
                 { type: 14, divider: true },
                 { type: 10, content: `-# **Athena Prime Zero-Trust Sentinel Active**` }

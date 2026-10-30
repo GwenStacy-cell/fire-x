@@ -163,7 +163,7 @@ export default {
                 const accentInt = parseInt(accentHex.replace('#', ''), 16);
                 
                 const channel = guild.channels.cache.get(newState.channelId);
-                const warnEmoji = '<a:zzz_Exclamation:1533859965649817630>';
+                const warnEmoji = '<a:exclamation_outline1:1565666739356827759>';
 
                 if (strikes < 3) {
                   // WARNING

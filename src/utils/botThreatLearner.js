@@ -4,7 +4,7 @@ import { generateAIResponse, formatAIToGreyMarkdown } from './ai.js';
 import { logToSecurityChannel } from './helpers.js';
 import cv2 from '../cv2.js';
 
-const TICK = '<a:atheNATICK:1557841381630681106>';
+const TICK = '<a:03_tick_circle:1565665642084827206>';
 const UPTIME = '<a:uptime:1552608831060844575>';
 const OFF = '<:off:1533844858983157851>';
 const ARROW = '<a:z_arrow_pink1:1523082728004653138>';

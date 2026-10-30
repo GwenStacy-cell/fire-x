@@ -273,7 +273,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'AI Mode Activated | <a:atheNATICK:1557841381630681106>',
+              'AI Mode Activated | <a:03_tick_circle:1565665642084827206>',
               'Conversational AI mode has been enabled. Set a dedicated channel with `!aimode channel #channel`.'
             )
           ],
@@ -286,7 +286,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'AI Mode Disabled | <a:atheNATICK:1557841381630681106>',
+              'AI Mode Disabled | <a:03_tick_circle:1565665642084827206>',
               'AI replies are now strictly restricted to the `!ask` command.'
             )
           ],
@@ -301,7 +301,7 @@ export const commands = [
           return message.reply({
             components: [
               cv2.buildContainer(
-                'AI Channel Unbound | <a:atheNATICK:1557841381630681106>',
+                'AI Channel Unbound | <a:03_tick_circle:1565665642084827206>',
                 'The dedicated AI channel binding has been removed. AI replies are now strictly restricted to `!ask`.'
               )
             ],
@@ -312,7 +312,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'AI Channel Bound | <a:atheNATICK:1557841381630681106>',
+              'AI Channel Bound | <a:03_tick_circle:1565665642084827206>',
               `Athena AI will now converse automatically with members in <#${channelMention.id}>.\nAll responses will be formatted in accent borderless CV2 containers.`
             )
           ],
@@ -334,7 +334,7 @@ export const commands = [
 
       return message.reply({
         components: [
-          cv2.buildContainer('Athena AI Architecture Status | <a:atheNATICK:1557841381630681106>', statusText)
+          cv2.buildContainer('Athena AI Architecture Status | <a:03_tick_circle:1565665642084827206>', statusText)
         ],
         flags: MessageFlags.IsComponentsV2
       });
@@ -351,7 +351,7 @@ export const commands = [
         return interaction.reply({
           components: [
             cv2.buildContainer(
-              `AI Mode ${state ? 'Activated' : 'Disabled'} | <a:atheNATICK:1557841381630681106>`,
+              `AI Mode ${state ? 'Activated' : 'Disabled'} | <a:03_tick_circle:1565665642084827206>`,
               state
                 ? 'Conversational AI mode has been enabled. Set a channel with `/aimode channel`.'
                 : 'AI replies are now strictly restricted to `/ask`.'
@@ -368,7 +368,7 @@ export const commands = [
           return interaction.reply({
             components: [
               cv2.buildContainer(
-                'AI Channel Unbound | <a:atheNATICK:1557841381630681106>',
+                'AI Channel Unbound | <a:03_tick_circle:1565665642084827206>',
                 'The dedicated AI channel binding has been removed.'
               )
             ],
@@ -379,7 +379,7 @@ export const commands = [
         return interaction.reply({
           components: [
             cv2.buildContainer(
-              'AI Channel Bound | <a:atheNATICK:1557841381630681106>',
+              'AI Channel Bound | <a:03_tick_circle:1565665642084827206>',
               `Athena AI will now converse automatically with members in <#${target.id}>.`
             )
           ],
@@ -397,7 +397,7 @@ export const commands = [
 
       return interaction.reply({
         components: [
-          cv2.buildContainer('Athena AI Architecture Status | <a:atheNATICK:1557841381630681106>', statusText)
+          cv2.buildContainer('Athena AI Architecture Status | <a:03_tick_circle:1565665642084827206>', statusText)
         ],
         flags: MessageFlags.IsComponentsV2
       });

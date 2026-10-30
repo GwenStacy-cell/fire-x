@@ -739,7 +739,7 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
 
     // 1. Send the signature Accent Borderless CV2 manifest container ONLY
     const cv2Payload = cv2.info(
-      `Database Cloud Backup | <a:atheNATICK:1557841381630681106>`,
+      `Database Cloud Backup | <a:03_tick_circle:1565665642084827206>`,
       formattedText,
       [],
       'Athena Bulletproof Defense Matrix • V1.0.0',
@@ -918,7 +918,7 @@ export async function checkAndAutoRestore(client) {
     const channel = await getBackupChannel(client);
     if (channel) {
       await channel.send(cv2.success(
-        `Database Auto-Restored | <a:atheNATICK:1557841381630681106>`,
+        `Database Auto-Restored | <a:03_tick_circle:1565665642084827206>`,
         formatDatabaseMetrics(m, {
           prefixText: '**New Hosting Migration Detected!**\nThe bot detected a fresh boot and automatically restored all server configurations from the latest cloud backup.',
           fileName: result.fileName,

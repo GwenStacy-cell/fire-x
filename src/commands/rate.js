@@ -69,7 +69,7 @@ export const commands = [
           const currentId = db.getRateChannel(message.guild.id);
           const currentText = currentId ? `<#${currentId}> (\`${currentId}\`)` : '`None (Disabled)`';
           return message.reply(cv2.info(
-            `Edit Rating Channel Status | <a:atheNATICK:1557841381630681106>`,
+            `Edit Rating Channel Status | <a:03_tick_circle:1565665642084827206>`,
             `**Current Bound Channel:** ${currentText}\n\n` +
             `> -# • **Set Channel:** \`!rate setchannel <#channel>\` or \`!setrate <#channel>\`\n` +
             `> -# • **Disable:** \`!rate setchannel none\` or \`!setrate none\`\n` +
@@ -80,7 +80,7 @@ export const commands = [
         if (lowerTarget === 'none' || lowerTarget === 'disable' || lowerTarget === 'off' || lowerTarget === 'reset') {
           db.setRateChannel(message.guild.id, null);
           return message.reply(cv2.success(
-            `Channel Disabled | <a:atheNATICK:1557841381630681106>`,
+            `Channel Disabled | <a:03_tick_circle:1565665642084827206>`,
             'The designated edit rating channel has been disabled. Users can now rate edits in any channel.'
           ));
         }
@@ -97,7 +97,7 @@ export const commands = [
 
         db.setRateChannel(message.guild.id, resolvedChannel.id);
         return message.reply(cv2.success(
-          `Channel Configured | <a:atheNATICK:1557841381630681106>`,
+          `Channel Configured | <a:03_tick_circle:1565665642084827206>`,
           `The designated edit rating channel is now <#${resolvedChannel.id}>.\nAny image or video sent in that channel will automatically receive an interactive star rating card!`
         ));
       }

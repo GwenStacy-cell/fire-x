@@ -4,7 +4,7 @@ import cv2 from '../cv2.js';
 import db from '../database.js';
 import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 
-const TICK = '<a:atheNATICK:1557841381630681106>';
+const TICK = '<a:03_tick_circle:1565665642084827206>';
 const UPTIME = '<a:uptime:1552608831060844575>';
 
 export const CHESS_ENGINES = {
@@ -312,7 +312,7 @@ export const commands = [
         client.chessGames.delete(game.playerWhite);
         if (game.playerBlack !== 'ai') client.chessGames.delete(game.playerBlack);
         
-        return message.reply(cv2.success('Game Terminated | <a:atheNATICK:1557841381630681106>', 'You resigned. The chess game has been ended.'));
+        return message.reply(cv2.success('Game Terminated | <a:03_tick_circle:1565665642084827206>', 'You resigned. The chess game has been ended.'));
       }
 
       if (client.chessGames.has(message.author.id)) {

@@ -111,7 +111,7 @@ export async function handleAutoRoleMenu(interaction) {
 
   if (dangerousRoles.length > 0) {
     return interaction.reply({
-      content: `-# **Security Violation | <a:atheNATICK:1557841381630681106>**\n-# **Rejected Dangerous Role(s):** ${dangerousRoles.join(', ')}\n-# **Athena Security Policy:** Roles with \`Administrator\`, \`Manage Server\`, \`Manage Roles\`, or moderation permissions cannot be bound to AutoRole or Vanity rewards.`,
+      content: `-# **Security Violation | <a:03_tick_circle:1565665642084827206>**\n-# **Rejected Dangerous Role(s):** ${dangerousRoles.join(', ')}\n-# **Athena Security Policy:** Roles with \`Administrator\`, \`Manage Server\`, \`Manage Roles\`, or moderation permissions cannot be bound to AutoRole or Vanity rewards.`,
       flags: 64
     });
   }

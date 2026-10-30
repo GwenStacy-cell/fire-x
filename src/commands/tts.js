@@ -206,7 +206,7 @@ export function buildTtsControlPanel(member, guild) {
       {
         type: 10,
         content:
-          `# Athena Voice Studio // TTS Control Center | <a:atheNATICK:1557841381630681106>\n` +
+          `# Athena Voice Studio // TTS Control Center | <a:03_tick_circle:1565665642084827206>\n` +
           `-# Zero-latency celebrity speech synthesis, real-time acoustic DSP transformations, and voice channel broadcasting.\n\n` +
           `> **Current Voice Profile:** ${voiceName}\n` +
           `> **Vocal Characteristics:** *${voiceDesc}*\n` +
@@ -322,7 +322,7 @@ export async function handleTtsInteraction(interaction) {
         session.player.stop();
       }
       return interaction.reply({
-        content: '-# <a:atheNATICK:1557841381630681106> **TTS Playback Halted** | Queue has been cleared.',
+        content: '-# <a:03_tick_circle:1565665642084827206> **TTS Playback Halted** | Queue has been cleared.',
         flags: MessageFlags.Ephemeral
       }).catch(() => null);
     }
@@ -363,7 +363,7 @@ export async function handleTtsInteraction(interaction) {
     const voiceTag = resolved ? `**${resolved.name}**` : 'Standard Voice';
 
     await interaction.reply({
-      content: `-# <a:atheNATICK:1557841381630681106> **Broadcasting to <#${member.voice.channel.id}>** using **${voiceTag}**...`,
+      content: `-# <a:03_tick_circle:1565665642084827206> **Broadcasting to <#${member.voice.channel.id}>** using **${voiceTag}**...`,
       flags: MessageFlags.Ephemeral
     }).catch(() => null);
 
@@ -408,7 +408,7 @@ export const commands = [
 
         if (voiceArg === 'default' || voiceArg === 'none' || voiceArg === 'reset') {
           db.updateTtsPrefs(message.author.id, { voice: null });
-          return message.reply(cv2.success('TTS Voice Reset | <a:atheNATICK:1557841381630681106>', 'Your speech voice has been reset to standard default delivery.'));
+          return message.reply(cv2.success('TTS Voice Reset | <a:03_tick_circle:1565665642084827206>', 'Your speech voice has been reset to standard default delivery.'));
         }
 
         const resolved = resolveVoice(voiceArg);
@@ -417,7 +417,7 @@ export const commands = [
         }
 
         db.updateTtsPrefs(message.author.id, { voice: resolved.id, lang: resolved.baseLang });
-        return message.reply(cv2.success('TTS Voice Updated | <a:atheNATICK:1557841381630681106>', `Your voice preference has been locked to **${resolved.name}**!\nAll future TTS speech will speak in this voice.`));
+        return message.reply(cv2.success('TTS Voice Updated | <a:03_tick_circle:1565665642084827206>', `Your voice preference has been locked to **${resolved.name}**!\nAll future TTS speech will speak in this voice.`));
       }
 
       // If no args or interface keyword, open interactive Control Center Dashboard
@@ -451,7 +451,7 @@ export const commands = [
 
         if (voiceArg === 'default' || voiceArg === 'none' || voiceArg === 'reset') {
           db.updateTtsPrefs(message.author.id, { voice: null });
-          return message.reply(cv2.success('TTS Voice Reset | <a:atheNATICK:1557841381630681106>', 'Your speech voice has been reset to standard default delivery.'));
+          return message.reply(cv2.success('TTS Voice Reset | <a:03_tick_circle:1565665642084827206>', 'Your speech voice has been reset to standard default delivery.'));
         }
 
         const resolved = resolveVoice(voiceArg);
@@ -460,7 +460,7 @@ export const commands = [
         }
 
         db.updateTtsPrefs(message.author.id, { voice: resolved.id, lang: resolved.baseLang });
-        return message.reply(cv2.success('TTS Voice Updated | <a:atheNATICK:1557841381630681106>', `Your voice preference has been locked to **${resolved.name}**!\nAll future TTS speech will speak in this voice.`));
+        return message.reply(cv2.success('TTS Voice Updated | <a:03_tick_circle:1565665642084827206>', `Your voice preference has been locked to **${resolved.name}**!\nAll future TTS speech will speak in this voice.`));
       }
 
       if (subcommand === 'stop') {
@@ -469,7 +469,7 @@ export const commands = [
         if (session) {
           session.queue = [];
           session.player.stop();
-          return message.reply(cv2.success('TTS Stopped | <a:atheNATICK:1557841381630681106>', 'Cleared the speech queue and halted playback.'));
+          return message.reply(cv2.success('TTS Stopped | <a:03_tick_circle:1565665642084827206>', 'Cleared the speech queue and halted playback.'));
         }
         return message.reply(cv2.info('TTS', 'Nothing is currently playing.'));
       }
@@ -480,10 +480,10 @@ export const commands = [
           const hasAdmin = message.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerOrServerOwnerStrict(message.author.id, message.guild);
           if (!hasAdmin) return message.reply(cv2.danger('Access Denied', 'Only Admins can enable Auto-TTS for other users.'));
           db.addAutoTtsUser(message.guild.id, target.id);
-          return message.reply(cv2.success('Auto-TTS Enabled | <a:atheNATICK:1557841381630681106>', `${target} will now have all their messages read aloud.`));
+          return message.reply(cv2.success('Auto-TTS Enabled | <a:03_tick_circle:1565665642084827206>', `${target} will now have all their messages read aloud.`));
         } else {
           db.addAutoTtsUser(message.guild.id, message.author.id);
-          return message.reply(cv2.success('Auto-TTS Enabled | <a:atheNATICK:1557841381630681106>', `Your messages will now be read aloud automatically.`));
+          return message.reply(cv2.success('Auto-TTS Enabled | <a:03_tick_circle:1565665642084827206>', `Your messages will now be read aloud automatically.`));
         }
       }
 
@@ -493,10 +493,10 @@ export const commands = [
           const hasAdmin = message.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerOrServerOwnerStrict(message.author.id, message.guild);
           if (!hasAdmin) return message.reply(cv2.danger('Access Denied', 'Only Admins can disable Auto-TTS for other users.'));
           db.removeAutoTtsUser(message.guild.id, target.id);
-          return message.reply(cv2.success('Auto-TTS Disabled | <a:atheNATICK:1557841381630681106>', `${target} will no longer have their messages read aloud.`));
+          return message.reply(cv2.success('Auto-TTS Disabled | <a:03_tick_circle:1565665642084827206>', `${target} will no longer have their messages read aloud.`));
         } else {
           db.removeAutoTtsUser(message.guild.id, message.author.id);
-          return message.reply(cv2.success('Auto-TTS Disabled | <a:atheNATICK:1557841381630681106>', `Your messages will no longer be read aloud automatically.`));
+          return message.reply(cv2.success('Auto-TTS Disabled | <a:03_tick_circle:1565665642084827206>', `Your messages will no longer be read aloud automatically.`));
         }
       }
 
@@ -509,13 +509,13 @@ export const commands = [
         
         if (currentVc) {
           db.setAutoTtsVc(message.guild.id, null);
-          return message.reply(cv2.success('Auto-TTS VC Disabled | <a:atheNATICK:1557841381630681106>', `The global Auto-TTS Voice Channel has been disabled.`));
+          return message.reply(cv2.success('Auto-TTS VC Disabled | <a:03_tick_circle:1565665642084827206>', `The global Auto-TTS Voice Channel has been disabled.`));
         }
         
         if (!userVc) return message.reply(cv2.warn('Error', 'You must be in a Voice Channel to enable Auto-TTS for it.'));
         
         db.setAutoTtsVc(message.guild.id, userVc);
-        return message.reply(cv2.success('Auto-TTS VC Enabled | <a:atheNATICK:1557841381630681106>', `Anyone who types in chat while inside <#${userVc}> will now have their messages read aloud!`));
+        return message.reply(cv2.success('Auto-TTS VC Enabled | <a:03_tick_circle:1565665642084827206>', `Anyone who types in chat while inside <#${userVc}> will now have their messages read aloud!`));
       }
 
       if (subcommand === 'lang') {
@@ -530,7 +530,7 @@ export const commands = [
         if (code === 'english') code = 'en';
 
         db.updateTtsPrefs(message.author.id, { lang: code, voice: null });
-        return message.reply(cv2.success('TTS Language Set | <a:atheNATICK:1557841381630681106>', `Your speech language has been updated to \`${code}\`.`));
+        return message.reply(cv2.success('TTS Language Set | <a:03_tick_circle:1565665642084827206>', `Your speech language has been updated to \`${code}\`.`));
       }
 
       // Check for on-the-fly voice shortcut (e.g. !tts trump Hello or !tts mj Shamone)
@@ -568,7 +568,7 @@ export const commands = [
           });
         }
         return interaction.reply({
-          content: `-# <a:atheNATICK:1557841381630681106> Spoken in your voice channel!`,
+          content: `-# <a:03_tick_circle:1565665642084827206> Spoken in your voice channel!`,
           flags: MessageFlags.Ephemeral
         });
       }

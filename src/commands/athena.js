@@ -20,7 +20,7 @@ import { getManagerPanel, executeWelcomeTest } from './welcome.js';
 import { gwManagers, buildManagerContainer } from './giveaway.js';
 import { isBotOwnerSync, isExtraOwnerOrHigher } from '../utils/helpers.js';
 
-const TICK = '<a:atheNATICK:1557841381630681106>';
+const TICK = '<a:03_tick_circle:1565665642084827206>';
 
 /**
  * Creates a rate-limited real-time progress handler that edits the thinking container smoothly

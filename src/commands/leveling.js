@@ -175,7 +175,7 @@ export const commands = [
       const requiredXp = calculateXpForLevel(userXp.level + 1);
       
       const attachment = await generateRankCard(targetMember, userXp.xp, userXp.level, rank, requiredXp);
-      await message.reply({ content: `**${targetMember.displayName}'s Rank** | <a:atheNATICK:1557841381630681106>`, files: [attachment] });
+      await message.reply({ content: `**${targetMember.displayName}'s Rank** | <a:03_tick_circle:1565665642084827206>`, files: [attachment] });
     },
     async executeSlash(interaction) {
       const system = db.getXpSystem(interaction.guild.id);
@@ -205,7 +205,7 @@ export const commands = [
       const requiredXp = calculateXpForLevel(userXp.level + 1);
       
       const attachment = await generateRankCard(targetMember, userXp.xp, userXp.level, rank, requiredXp);
-      await interaction.editReply({ content: `**${targetMember.displayName}'s Rank** | <a:atheNATICK:1557841381630681106>`, files: [attachment] });
+      await interaction.editReply({ content: `**${targetMember.displayName}'s Rank** | <a:03_tick_circle:1565665642084827206>`, files: [attachment] });
     }
   },
 
@@ -285,7 +285,7 @@ export const commands = [
       return message.reply({
         components: [
           cv2.buildContainer(
-            'Rank Theme Updated | <a:atheNATICK:1557841381630681106>',
+            'Rank Theme Updated | <a:03_tick_circle:1565665642084827206>',
             `Your rank card theme has been switched to **\`${selected.toUpperCase()}\`**.\nRun \`!rank\` to preview your card.`
           )
         ],
@@ -299,7 +299,7 @@ export const commands = [
       return interaction.reply({
         components: [
           cv2.buildContainer(
-            'Rank Theme Updated | <a:atheNATICK:1557841381630681106>',
+            'Rank Theme Updated | <a:03_tick_circle:1565665642084827206>',
             `Your rank card theme has been switched to **\`${theme.toUpperCase()}\`**.\nRun \`/rank\` to preview your card.`
           )
         ],
@@ -362,7 +362,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'Level Reward Registered | <a:atheNATICK:1557841381630681106>',
+              'Level Reward Registered | <a:03_tick_circle:1565665642084827206>',
               `Members reaching **Level ${level}** will now automatically receive the <@&${role.id}> role.`
             )
           ],
@@ -385,7 +385,7 @@ export const commands = [
         return message.reply({
           components: [
             cv2.buildContainer(
-              'Level Reward Purged | <a:atheNATICK:1557841381630681106>',
+              'Level Reward Purged | <a:03_tick_circle:1565665642084827206>',
               `Milestone role reward for **Level ${level}** was removed.`
             )
           ],
@@ -435,7 +435,7 @@ export const commands = [
         return interaction.reply({
           components: [
             cv2.buildContainer(
-              'Level Reward Registered | <a:atheNATICK:1557841381630681106>',
+              'Level Reward Registered | <a:03_tick_circle:1565665642084827206>',
               `Members reaching **Level ${level}** will automatically receive <@&${role.id}>.`
             )
           ],
@@ -452,7 +452,7 @@ export const commands = [
         return interaction.reply({
           components: [
             cv2.buildContainer(
-              'Level Reward Purged | <a:atheNATICK:1557841381630681106>',
+              'Level Reward Purged | <a:03_tick_circle:1565665642084827206>',
               `Milestone role reward for **Level ${level}** was removed.`
             )
           ],

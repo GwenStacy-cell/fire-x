@@ -54,7 +54,7 @@ async function handleUnbypassable(context, isSlash, args = []) {
           {
             type: 17,
             components: [
-              { type: 10, content: `## Idle Mode Active | <a:atheNATICK:1557841381630681106>` },
+              { type: 10, content: `## Idle Mode Active | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
               { type: 10, content: `> -# <a:uptime:1552608831060844575> **Server Security and Antinuke Firewall are currently inactive.**\n> -# In Idle Mode, Athena strictly does not keep or deploy secondary persistence sentinel roles.\n> -# All persistence roles have been removed. Execute \`!security enable all\` or use \`!ss\` to arm all 28 shields and deploy persistence sentinels.` },
               { type: 14, divider: true },
@@ -138,7 +138,7 @@ async function handleUnbypassable(context, isSlash, args = []) {
 
   const ON = '<a:uptime:1552608831060844575>';
   const RED_OFF = '<:off:1533844858983157851>';
-  const TICK = '<a:atheNATICK:1557841381630681106>';
+  const TICK = '<a:03_tick_circle:1565665642084827206>';
 
   // Real-time calculation of Section 1: Persistence Sentinel Roles Status
   let unbStatus;
@@ -284,7 +284,7 @@ async function handleFirewall(context, isSlash, args = []) {
   const ON = '<a:uptime:1552608831060844575>';
   const RED_OFF = '<:off:1533844858983157851>';
   const LOAD = '<a:loading:1542155051286396938>';
-  const TICK = '<a:atheNATICK:1557841381630681106>';
+  const TICK = '<a:03_tick_circle:1565665642084827206>';
 
   // Real-time Uptime Calculation
   const uptimeMs = client.uptime || 0;

@@ -16,7 +16,7 @@ import {
   formatBytes 
 } from '../utils/pinterest.js';
 
-const TICK = '<a:atheNATICK:1557841381630681106>';
+const TICK = '<a:03_tick_circle:1565665642084827206>';
 const UPTIME = '<a:uptime:1552608831060844575>';
 const LOADING = '<a:loading:1542155051286396938>';
 

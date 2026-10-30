@@ -27,7 +27,7 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `## Weather Reconnaissance Guidance | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Weather Reconnaissance Guidance | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Usage:** \`!weather <city | country | coordinates | google_maps_url>\`\n` +
                            `> -# • **All Aliases:** \`!wtr\`, \`!climate\`, \`!forecast\`, \`!temp\`, \`!temperature\`, \`/weather\`\n` +
                            `> -# • **City Example:** \`!weather London\` or \`!wtr Chennai\`\n` +

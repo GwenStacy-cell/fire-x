@@ -138,7 +138,7 @@ if (!message.guild) return;
               components: [
                 {
                   type: 10,
-                  content: `## Ghost Ping Intercepted | <a:atheNATICK:1557841381630681106>\n` +
+                  content: `## Ghost Ping Intercepted | <a:03_tick_circle:1565665642084827206>\n` +
                            `> -# <a:uptime:1552608831060844575> **Sender:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
                            `> -# • **Target(s):** ${pinged.join(', ').substring(0, 300)}\n` +
                            `> -# • **Deleted Content:** ${content.substring(0, 350)}`

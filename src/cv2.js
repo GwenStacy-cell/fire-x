@@ -1,4 +1,14 @@
 import { MessageFlags, MessagePayload } from 'discord.js';
+import { 
+  TICK_EMOJI, 
+  WRONG_EMOJI, 
+  WARN_EMOJI, 
+  BULLET_EMOJI, 
+  LEGACY_TICK, 
+  getRandomHeadingGlyph 
+} from './utils/emojis.js';
+
+export { TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, BULLET_EMOJI };
 
 // Returns true if a line already has discord markdown — skip auto-formatting
 function isPreformatted(line) {
@@ -21,22 +31,25 @@ function convertBoldToBoldUnderline(str) {
 // Style a single line: grey, with optional bullet for plain text
 function styleLine(line, addBullet) {
   if (!line.trim()) return line;
-  if (isPreformatted(line)) {
-    const trimmed = line.trim();
+
+  // Replace unicode bullets with animated target blink bullet
+  let workingLine = line.replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
+
+  if (isPreformatted(workingLine)) {
+    const trimmed = workingLine.trim();
     if (trimmed.startsWith('-#') || trimmed.startsWith('> -#') || trimmed.startsWith('>')) {
-      return convertBoldToBoldUnderline(line);
+      return convertBoldToBoldUnderline(workingLine);
     }
-    return line;
+    return workingLine;
   }
-  const startsEmoji = hasEmojiStart(line);
-  const hasListMarker = /^[\u2022\-\*+] /.test(line);
+  const hasListMarker = /^[\u2022\-\*+] /.test(workingLine) || workingLine.startsWith(BULLET_EMOJI);
   
-  const bullet = (addBullet && !hasListMarker) ? '\u2022 ' : '';
-  if (line.includes('**')) {
-    const formatted = convertBoldToBoldUnderline(line);
+  const bullet = (addBullet && !hasListMarker) ? `${BULLET_EMOJI} ` : '';
+  if (workingLine.includes('**')) {
+    const formatted = convertBoldToBoldUnderline(workingLine);
     return '-# ' + bullet + formatted;
   }
-  const cleanLine = line.replace(/^\*\*|\*\*$/g, '');
+  const cleanLine = workingLine.replace(/^\*\*|\*\*$/g, '');
   return '-# **__' + bullet + cleanLine + '__**';
 }
 
@@ -48,15 +61,25 @@ function buildContainer(title, description, fields, customFooter, accentColor = 
   if (!fields) fields = [];
   var comps = [];
 
-  // Big bold heading + divider under it
+  // Dynamic aesthetic heading + divider
   if (title) {
-    comps.push({ type: 10, content: '## **' + title + '**' });
+    let headerTitle = String(title).trim();
+    // Auto-upgrade legacy tick
+    headerTitle = headerTitle.replaceAll(LEGACY_TICK, TICK_EMOJI);
+
+    // Prepend dynamic random heading glyph if it doesn't already start with an emoji or header tag
+    const hasEmoji = hasEmojiStart(headerTitle);
+    if (!hasEmoji && !headerTitle.startsWith('#')) {
+      headerTitle = `${getRandomHeadingGlyph()} ${headerTitle}`;
+    }
+
+    comps.push({ type: 10, content: '## **' + headerTitle + '**' });
     comps.push(SEP);
   }
 
   // Grey bold description with smart bullets
   if (description) {
-    var lines = description.split('\n');
+    var lines = String(description).replaceAll(LEGACY_TICK, TICK_EMOJI).split('\n');
     var inDescCode = false;
     var formattedLines = [];
     for (var d = 0; d < lines.length; d++) {
@@ -112,10 +135,12 @@ function buildContainer(title, description, fields, customFooter, accentColor = 
     var f = fields[i];
     if (!f || !f.name) continue;
     var name = String(f.name).replace(/^\*\*|\*\*$/g, '').trim();
-    var val = String(f.value || '').trim();
+    var val = String(f.value || '').replaceAll(LEGACY_TICK, TICK_EMOJI).trim();
+    // Replace unicode bullets in values
+    val = val.replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
 
     if (f.inline) {
-      inlineBuf.push('**__' + name + ':__** ' + val);
+      inlineBuf.push(`${BULLET_EMOJI} **__${name}:__** ${val}`);
       if (inlineBuf.length >= 3) {
         flushInline();
       }
@@ -135,15 +160,15 @@ function buildContainer(title, description, fields, customFooter, accentColor = 
           var lineText = trimmed ? (trimmed.startsWith('-#') ? trimmed : '-# ' + trimmed) : '';
           return convertBoldToBoldUnderline(lineText);
         });
-        fieldLines.push('-# **__' + name + ':__**\n' + subLines.join('\n'));
+        fieldLines.push(`-# ${BULLET_EMOJI} **__${name}:__**\n` + subLines.join('\n'));
       } else if (val.includes('\n')) {
         var subLines = val.split('\n').map(function(l) {
           var lineText = l.trim() ? (l.startsWith('-#') ? l : '-# ' + l) : '';
           return convertBoldToBoldUnderline(lineText);
         });
-        fieldLines.push('-# **__' + name + ':__**\n' + subLines.join('\n'));
+        fieldLines.push(`-# ${BULLET_EMOJI} **__${name}:__**\n` + subLines.join('\n'));
       } else {
-        fieldLines.push('-# **__' + name + ':__** ' + convertBoldToBoldUnderline(val));
+        fieldLines.push(`-# ${BULLET_EMOJI} **__${name}:__** ` + convertBoldToBoldUnderline(val));
       }
     }
   }
@@ -212,9 +237,6 @@ function buildContainer(title, description, fields, customFooter, accentColor = 
 
   comps.push({ type: 10, content: `-# **${footerText}**` });
 
-  // Accent borderless CV2 container (with accent_color)
-  // Discord caps total displayable text across all components at 4,000 characters.
-  // Enforce a hard safety ceiling of 3,800 characters to prevent COMPONENT_DISPLAYABLE_TEXT_SIZE_EXCEEDED.
   const container = { type: 17, components: comps };
   if (accentColor) container.accent_color = accentColor;
   return sanitizeCV2Payload(container);
@@ -294,31 +316,53 @@ function make(title, desc, fields, eph, customFooter, accentColor = 0x5865F2) {
   return { components: [buildContainer(title, desc, fields, customFooter, accentColor)], flags: flags };
 }
 
-export const TICK_EMOJI = '<a:atheNATICK:1557841381630681106>';
-
 var _m = function(eph) {
   return {
-    success:  function(t,d,f,ft,acc) {
+    success: function(t, d, f, ft, acc) {
       var heading = t;
-      if (t && !t.includes('1557841381630681106')) {
-        heading = t + ' | ' + TICK_EMOJI;
+      if (t) {
+        heading = heading.replaceAll(LEGACY_TICK, TICK_EMOJI);
+        if (!heading.includes(TICK_EMOJI)) {
+          heading = heading + ' | ' + TICK_EMOJI;
+        }
       }
       return make(heading, d, f, eph, ft, acc || 0x5865F2);
     },
-    warn:     function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0xFEE75C); },
-    danger:   function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0xED4245); },
-    error:    function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0xED4245); },
-    info:     function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0x5865F2); },
-    raid:     function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0xED4245); },
-    owner:    function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0x5865F2); },
-    security: function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0x5865F2); },
-    defense:  function(t,d,f,ft,acc) { return make(t,d,f,eph,ft,acc || 0x5865F2); },
-    log:      function(t,d,f,ft,acc) { return make('Log: ' + t, d, f, eph, ft, acc || 0x5865F2); },
+    warn: function(t, d, f, ft, acc) { 
+      var heading = t;
+      if (t && !heading.includes(WARN_EMOJI)) {
+        heading = heading + ' | ' + WARN_EMOJI;
+      }
+      return make(heading, d, f, eph, ft, acc || 0xFEE75C); 
+    },
+    danger: function(t, d, f, ft, acc) { 
+      var heading = t;
+      if (t && !heading.includes(WRONG_EMOJI)) {
+        heading = heading + ' | ' + WRONG_EMOJI;
+      }
+      return make(heading, d, f, eph, ft, acc || 0xED4245); 
+    },
+    error: function(t, d, f, ft, acc) { 
+      var heading = t;
+      if (t && !heading.includes(WRONG_EMOJI)) {
+        heading = heading + ' | ' + WRONG_EMOJI;
+      }
+      return make(heading, d, f, eph, ft, acc || 0xED4245); 
+    },
+    info:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
+    raid:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0xED4245); },
+    owner:    function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
+    security: function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
+    defense:  function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
+    log:      function(t, d, f, ft, acc) { return make('Log: ' + t, d, f, eph, ft, acc || 0x5865F2); },
   };
 };
 
 export var cv2 = Object.assign(_m(false), {
   TICK_EMOJI:   TICK_EMOJI,
+  WRONG_EMOJI:  WRONG_EMOJI,
+  WARN_EMOJI:   WARN_EMOJI,
+  BULLET_EMOJI: BULLET_EMOJI,
   sanitizeCV2Payload: sanitizeCV2Payload,
   e:            _m(true),
   asEphemeral:  function(p) {
@@ -348,66 +392,23 @@ export var cv2 = Object.assign(_m(false), {
           comps[0].components.unshift({ type: 10, content: payload.content });
         }
       }
-      body = { components: comps, flags: payload.flags };
-      sanitizeCV2Payload(body);
-      const fileList = resolvedFiles || payload.files;
-      if (payload.attachments && Array.isArray(payload.attachments)) {
-        body.attachments = payload.attachments;
-      } else if (fileList && Array.isArray(fileList)) {
-        body.attachments = fileList.map((f, i) => ({
-          id: String(i),
-          filename: f.name || (typeof f === 'string' ? f.split(/[\\/]/).pop() : `file_${i}`),
-          description: f.description
-        }));
-      }
+      body = {
+        type: type,
+        data: {
+          flags: payload.flags,
+          components: comps[0]?.type === 17 ? [comps[0]] : comps,
+          files: resolvedFiles
+        }
+      };
+    } else {
+      if (resolvedFiles) body.files = resolvedFiles;
     }
-    
-    if (ctx.replied || ctx.deferred) {
-      return cv2.edit(ctx, { ...payload, files: resolvedFiles });
+    if (ctx.deferred) {
+      const editData = body.data || body;
+      return ctx.editReply(editData);
     }
-
-    // type 4 = ChannelMessageWithSource (Reply)
-    // type 7 = UpdateMessage (Update)
-    return ctx.client.rest.post(`/interactions/${ctx.id}/${ctx.token}/callback`, { body: { type: type, data: body }, files: resolvedFiles });
-  },
-  edit: async function(ctx, payload) {
-    if (typeof payload === 'string') payload = { content: payload };
-    let resolvedFiles = payload.files;
-    if (resolvedFiles) {
-      const arr = Array.isArray(resolvedFiles) ? resolvedFiles : [resolvedFiles];
-      resolvedFiles = await Promise.all(arr.map(async f => {
-        if (!f) return f;
-        if (f.data && f.name) return f;
-        return MessagePayload.resolveFile(f);
-      }));
-    }
-    const isCV2 = payload.flags != null && (payload.flags & 32768);
-    let body = payload;
-    if (isCV2) {
-      body = { components: payload.components, flags: payload.flags };
-      sanitizeCV2Payload(body);
-      const fileList = resolvedFiles || payload.files;
-      if (payload.attachments && Array.isArray(payload.attachments)) {
-        body.attachments = payload.attachments;
-      } else if (fileList && Array.isArray(fileList)) {
-        body.attachments = fileList.map((f, i) => ({
-          id: String(i),
-          filename: f.name || (typeof f === 'string' ? f.split(/[\\/]/).pop() : `file_${i}`),
-          description: f.description
-        }));
-      }
-    }
-    if (ctx.editReply) {
-      return ctx.client.rest.patch(`/webhooks/${ctx.client.user.id}/${ctx.token}/messages/@original`, { body, files: resolvedFiles });
-    } else if (ctx.edit) {
-      if (isCV2 && ctx.content) {
-        await ctx.delete().catch(() => null);
-        return ctx.channel.send({ components: body.components, flags: body.flags, files: resolvedFiles });
-      }
-      return ctx.client.rest.patch(`/channels/${ctx.channel.id}/messages/${ctx.id}`, { body, files: resolvedFiles });
-    }
-  },
+    return ctx.reply(body);
+  }
 });
 
 export default cv2;
-// Safely edit a message or interaction reply with CV2 payload to bypass discord.js injecting content: null

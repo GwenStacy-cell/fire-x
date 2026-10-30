@@ -48,7 +48,7 @@ export const commands = [
           const cancelContainer = {
             type: 17,
             components: [
-              { type: 10, content: `## Emoji Wipe Sequence | <a:atheNATICK:1557841381630681106>\n> -# Operation cancelled by user.` },
+              { type: 10, content: `## Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# Operation cancelled by user.` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
             ]
@@ -66,7 +66,7 @@ export const commands = [
           const buildProgressContainer = () => ({
             type: 17,
             components: [
-              { type: 10, content: `## Emoji Wipe Sequence | <a:atheNATICK:1557841381630681106>\n> -# <a:uptime:1552608831060844575> Deleting emojis... [${deleted}/${total}]` },
+              { type: 10, content: `## Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# <a:uptime:1552608831060844575> Deleting emojis... [${deleted}/${total}]` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
             ]
@@ -91,7 +91,7 @@ export const commands = [
           const finalContainer = {
             type: 17,
             components: [
-              { type: 10, content: `## Emoji Wipe Sequence | <a:atheNATICK:1557841381630681106>\n> -# <a:uptime:1552608831060844575> Successfully deleted **${deleted}** emojis from the server.` },
+              { type: 10, content: `## Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# <a:uptime:1552608831060844575> Successfully deleted **${deleted}** emojis from the server.` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
             ]
@@ -105,7 +105,7 @@ export const commands = [
           const timeoutContainer = {
             type: 17,
             components: [
-              { type: 10, content: `## Emoji Wipe Sequence | <a:atheNATICK:1557841381630681106>\n> -# Operation timed out.` },
+              { type: 10, content: `## Emoji Wipe Sequence | <a:03_tick_circle:1565665642084827206>\n> -# Operation timed out.` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Bulletproof Security System • V1.0.0**` }
             ]

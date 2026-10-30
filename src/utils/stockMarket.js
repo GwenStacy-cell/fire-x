@@ -1517,7 +1517,7 @@ export function buildStockPayload(stock, imageBuffer, prefix = '!') {
     },
     {
       type: 10,
-      content: `## ${stock.name} (${stock.symbol}) Stock Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+      content: `## ${stock.name} (${stock.symbol}) Stock Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
                `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                `> -# <a:uptime:1552608831060844575> **Current Price:** \`${currSym}${stock.price.toFixed(2)} ${stock.currency}\` (\`${sign}${currSym}${Math.abs(stock.change).toFixed(2)}\` | \`${sign}${stock.changePct.toFixed(2)}%\`)\n` +
                `> -# • **Day Session Range:** \`${currSym}${stock.dayLow.toFixed(2)}\` \u2014 \`${currSym}${stock.dayHigh.toFixed(2)}\`\n` +
@@ -1741,7 +1741,7 @@ export async function buildNiftyPayload(targetKey = '50', prefix = '!') {
     },
     {
       type: 10,
-      content: `## ${targetLabel} Benchmark Telemetry | <a:atheNATICK:1557841381630681106>\n` +
+      content: `## ${targetLabel} Benchmark Telemetry | <a:03_tick_circle:1565665642084827206>\n` +
                `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                `> -# <a:uptime:1552608831060844575> **Exchange & Currency:** \`${stockData.exchange}\` • \`${stockData.currency}\`\n` +
                `> -# <a:uptime:1552608831060844575> **Market Status:** \`${mktStatus.status}\` • ${mktStatus.session}\n\n` +
@@ -1798,8 +1798,8 @@ export function buildMarketOverviewPayload(overview, imageBuffer, isDaily = fals
   const dt = getFormattedDateTimeStrings();
 
   const heading = isDaily 
-    ? `## Athena Prime Daily Stock Market Briefing | <a:atheNATICK:1557841381630681106>` 
-    : `## Global Stock & Crypto Market Intelligence | <a:atheNATICK:1557841381630681106>`;
+    ? `## Athena Prime Daily Stock Market Briefing | <a:03_tick_circle:1565665642084827206>` 
+    : `## Global Stock & Crypto Market Intelligence | <a:03_tick_circle:1565665642084827206>`;
 
   // Calculate market bias
   const upCount = overview.indices.filter(i => i.change >= 0).length;
@@ -1906,7 +1906,7 @@ export function buildStockGuidancePayload(prefix = '!') {
         components: [
           {
             type: 10,
-            content: `## Financial Intelligence Suite & Commands Guidance | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## Financial Intelligence Suite & Commands Guidance | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                      `> -# <a:uptime:1552608831060844575> **Overview:** Athena Prime provides real-time stock/crypto telemetry, high-resolution Canvas charts, and AI-driven financial intelligence.\n\n` +
                      `### 1. Market Telemetry & Charts\n` +
@@ -2185,7 +2185,7 @@ export function buildSymbolsPayload(category = 'all', prefix = '!') {
         components: [
           {
             type: 10,
-            content: `## ${title} | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## ${title} | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                      `> -# <a:uptime:1552608831060844575> **Universal Ticker Support:** Athena resolves **every single publicly traded asset globally**.\n\n` +
                      `${bodyContent}\n\n` +
@@ -2282,7 +2282,7 @@ export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!
           components: [
             {
               type: 10,
-              content: `## Symbol Search: "${query}" | <a:atheNATICK:1557841381630681106>\n` +
+              content: `## Symbol Search: "${query}" | <a:03_tick_circle:1565665642084827206>\n` +
                        `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                        `> -# <a:uptime:1552608831060844575> **Status:** No verified ticker symbols found matching "${query}".\n\n` +
                        `### Search Recommendations\n` +
@@ -2331,7 +2331,7 @@ export function buildSymbolSearchResultsPayload(query, results = [], prefix = '!
         components: [
           {
             type: 10,
-            content: `## Symbol Search Results: "${query}" | <a:atheNATICK:1557841381630681106>\n` +
+            content: `## Symbol Search Results: "${query}" | <a:03_tick_circle:1565665642084827206>\n` +
                      `> -# <a:uptime:1552608831060844575> **Date & Time:** ${dt.textBadge}\n` +
                      `> -# <a:uptime:1552608831060844575> **Matches Found:** Showing top ${items.length} verified market assets for \`${query}\`.\n\n` +
                      `${rows}\n\n` +

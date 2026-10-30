@@ -32,7 +32,7 @@ setInterval(() => {
 
 /**
  * Resolves standalone custom emoji IDs in user prompts into full Discord custom emoji strings
- * Example: "1557841381630681106" -> "<a:atheNATICK:1557841381630681106>"
+ * Example: "1557841381630681106" -> "<a:03_tick_circle:1565665642084827206>"
  */
 export function resolveCustomEmojiIds(prompt, client, guild) {
   if (!prompt || typeof prompt !== 'string') return prompt;
@@ -432,7 +432,7 @@ export function buildAnnouncementStudioContainer(draft, isPreview = true) {
       new ButtonBuilder()
         .setCustomId('aian_deploy')
         .setLabel('Send Announcement')
-        .setEmoji('<a:atheNATICK:1557841381630681106>')
+        .setEmoji('<a:03_tick_circle:1565665642084827206>')
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId('aian_refine_ai')
@@ -821,7 +821,7 @@ export async function handleAIAnnouncementInteractions(interaction) {
           components: [
             {
               type: 10,
-              content: `## Announcement Published | <a:atheNATICK:1557841381630681106>\n-# Successfully broadcasted to <#${draft.targetChannelId}>.\n-# • **__Jump to Announcement:__** [View Message](${sentMsg.url})\n-# • **__Broadcast Mention:__** \`${draft.pingMode === 'none' ? 'None' : '@' + draft.pingMode}\``
+              content: `## Announcement Published | <a:03_tick_circle:1565665642084827206>\n-# Successfully broadcasted to <#${draft.targetChannelId}>.\n-# • **__Jump to Announcement:__** [View Message](${sentMsg.url})\n-# • **__Broadcast Mention:__** \`${draft.pingMode === 'none' ? 'None' : '@' + draft.pingMode}\``
             }
           ]
         };

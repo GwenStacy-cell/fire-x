@@ -396,7 +396,7 @@ export async function buildWeatherReportPayload(weatherData, locationInput, sour
       },
       {
         type: 10,
-        content: `## Weather Reconnaissance | <a:atheNATICK:1557841381630681106>\n` +
+        content: `## Weather Reconnaissance | <a:03_tick_circle:1565665642084827206>\n` +
                  `> -# <a:uptime:1552608831060844575> **Target Location:** **${fullLocation}**\n` +
                  `> -# • **Coordinates:** \`${lat.toFixed(4)}°, ${lon.toFixed(4)}°\` *(Target Locked on World Map)*\n` +
                  `> -# • **Conditions:** \`${condition}\` • **Temp:** \`${tempC}°C\` (\`${tempF}°F\`) • **Feels Like:** \`${feelsLikeC}°C\` (\`${feelsLikeF}°F\`)\n` +

@@ -46,7 +46,7 @@ export const commands = [
           const cfg = db.getGuildConfig(message.guild.id);
           const current = cfg?.quoteChannelId ? `<#${cfg.quoteChannelId}> (\`${cfg.quoteChannelId}\`)` : '`None (Disabled)`';
           return message.reply(cv2.info(
-            `Auto-Quote Channel Status | <a:atheNATICK:1557841381630681106>`,
+            `Auto-Quote Channel Status | <a:03_tick_circle:1565665642084827206>`,
             `**Current Bound Channel:** ${current}\n\n` +
             `> -# • **Set Channel:** \`!quote setchannel <#channel>\` or \`!setquote <#channel>\`\n` +
             `> -# • **Disable:** \`!quote setchannel none\` or \`!setquote none\`\n` +
@@ -58,7 +58,7 @@ export const commands = [
         if (lowerChannelArg === 'none' || lowerChannelArg === 'off' || lowerChannelArg === 'disable' || lowerChannelArg === 'reset') {
           const { default: db } = await import('../database.js');
           db.updateGuildConfig(message.guild.id, { quoteChannelId: null });
-          return message.reply(cv2.success('Auto-Quote Disabled | <a:atheNATICK:1557841381630681106>', 'The dedicated Auto-Quote channel has been disabled.'));
+          return message.reply(cv2.success('Auto-Quote Disabled | <a:03_tick_circle:1565665642084827206>', 'The dedicated Auto-Quote channel has been disabled.'));
         }
         
         const channelInput = (isSetquoteAlias ? args.join(' ') : args.slice(1).join(' ')).trim();
@@ -71,7 +71,7 @@ export const commands = [
         
         const { default: db } = await import('../database.js');
         db.updateGuildConfig(message.guild.id, { quoteChannelId: targetChannel.id });
-        return message.reply(cv2.success('Auto-Quote Channel Bound | <a:atheNATICK:1557841381630681106>', `Any message typed in <#${targetChannel.id}> will now be automatically converted into an aesthetic canvas quote image!`));
+        return message.reply(cv2.success('Auto-Quote Channel Bound | <a:03_tick_circle:1565665642084827206>', `Any message typed in <#${targetChannel.id}> will now be automatically converted into an aesthetic canvas quote image!`));
       }
 
       // Check for Mention Route: !quote @user <text>

@@ -126,7 +126,7 @@ export const commands = [
         desc += `**Ping Role:** ${role ? `<@&${role.id}>` : 'None'}\n\n`;
         desc += `-# To add news feeds, run: \`${prefix}news add <bbc|tech|aljazeera|cnn|url>\``;
 
-        return message.reply(cv2.success(`News Feed Configured | <a:atheNATICK:1557841381630681106>`, desc));
+        return message.reply(cv2.success(`News Feed Configured | <a:03_tick_circle:1565665642084827206>`, desc));
       }
 
       // 2. !news disable / off
@@ -141,7 +141,7 @@ export const commands = [
         }
         db.updateNewsGuids(message.guild.id, []);
 
-        return message.reply(cv2.success(`System Disabled | <a:atheNATICK:1557841381630681106>`, 'The news feed system has been disabled and all feed subscriptions have been removed.'));
+        return message.reply(cv2.success(`System Disabled | <a:03_tick_circle:1565665642084827206>`, 'The news feed system has been disabled and all feed subscriptions have been removed.'));
       }
 
       // 3. !news list / feeds
@@ -200,7 +200,7 @@ export const commands = [
           }
 
           db.addNewsFeed(message.guild.id, name, url);
-          return message.reply(cv2.success(`Feed Added | <a:atheNATICK:1557841381630681106>`, `Successfully subscribed to **${name}**.\n\nURL: \`${url}\`\nChannel: <#${config.channelId}>`));
+          return message.reply(cv2.success(`Feed Added | <a:03_tick_circle:1565665642084827206>`, `Successfully subscribed to **${name}**.\n\nURL: \`${url}\`\nChannel: <#${config.channelId}>`));
         } catch (err) {
           return message.reply(cv2.danger('Invalid RSS Feed', `Failed to parse the provided URL. Make sure it is a valid XML RSS Feed.\n\nError: \`${err.message}\``));
         }
@@ -218,7 +218,7 @@ export const commands = [
           return message.reply(cv2.warn('Not Found', 'Could not find an active feed matching that URL.'));
         }
 
-        return message.reply(cv2.success(`Feed Removed | <a:atheNATICK:1557841381630681106>`, `Successfully unsubscribed from feed: \`${url}\``));
+        return message.reply(cv2.success(`Feed Removed | <a:03_tick_circle:1565665642084827206>`, `Successfully unsubscribed from feed: \`${url}\``));
       }
 
       // Default: Display overview and syntax

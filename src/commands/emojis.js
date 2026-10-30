@@ -9,9 +9,10 @@ import {
 import cv2 from '../cv2.js';
 import db from '../database.js';
 import { isBotOwnerSync } from '../utils/helpers.js';
+import { TICK_EMOJI, UPTIME_EMOJI } from '../utils/emojis.js';
 
-const TICK = '<a:atheNATICK:1557841381630681106>';
-const STATUS = '<a:uptime:1552608831060844575>';
+const TICK = TICK_EMOJI;
+const STATUS = UPTIME_EMOJI;
 
 /**
  * Builds the interactive Component V2 panel for emoji inspection & copying.

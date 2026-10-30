@@ -42,7 +42,7 @@ export function buildVoiceRolePanel(guild) {
       {
         type: 10,
         content:
-          `# Voice Role Matrix | <a:atheNATICK:1557841381630681106>\n` +
+          `# Voice Role Matrix | <a:03_tick_circle:1565665642084827206>\n` +
           `-# **__Automated Voice Channel Role Synchronization Engine__**\n\n` +
           `-# • **System Status:** ${statusIndicator}\n` +
           `-# • **Current Voice Role:** ${roleDisplay}\n` +

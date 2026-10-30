@@ -489,7 +489,7 @@ export function buildVoiceListContainer(prefix = '!') {
       {
         type: 10,
         content:
-          `# Athena Voice Studio // Celebrity & Neural Roster | <a:atheNATICK:1557841381630681106>\n` +
+          `# Athena Voice Studio // Celebrity & Neural Roster | <a:03_tick_circle:1565665642084827206>\n` +
           `-# High-fidelity AI speech synthesis powered by ElevenLabs Flash v2.5 & Neural Voice Modeling.\n\n` +
           `> -# **__Engine Status:__** \`ElevenLabs Flash v2.5 AI Engine (Active)\`\n` +
           `> -# **__How to Set Your Voice:__** \`${prefix}ttsvoice <name>\` or \`${prefix}tts voice <name>\` (e.g. \`${prefix}ttsvoice trump\`)\n` +

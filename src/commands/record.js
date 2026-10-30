@@ -49,7 +49,7 @@ export const commands = [
           const container = {
             type: 17,
             components: [
-              { type: 10, content: `## Voice Recording Started | <a:atheNATICK:1557841381630681106>\n\n-# Channel: 🔊 **${vc.name}** | Initiated By: ${message.author}\n\n-# Live multi-user audio capture is active.\n-# When finished, run \`!record stop\` or click **Stop & Export** below.\n-# Audio recording will be delivered directly via DM (with channel fallback).` },
+              { type: 10, content: `## Voice Recording Started | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: 🔊 **${vc.name}** | Initiated By: ${message.author}\n\n-# Live multi-user audio capture is active.\n-# When finished, run \`!record stop\` or click **Stop & Export** below.\n-# Audio recording will be delivered directly via DM (with channel fallback).` },
               {
                 type: 1,
                 components: [
@@ -74,7 +74,7 @@ export const commands = [
         const container = {
           type: 17,
           components: [
-            { type: 10, content: `## Voice Recording Stopped | <a:atheNATICK:1557841381630681106>\n\n-# Channel: 🔊 **${vcName}**\n\n-# Processing and exporting the audio file, please wait...` },
+            { type: 10, content: `## Voice Recording Stopped | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: 🔊 **${vcName}**\n\n-# Processing and exporting the audio file, please wait...` },
             { type: 14, divider: true },
             { type: 10, content: '-# Athena Bulletproof Security' }
           ]
@@ -110,7 +110,7 @@ export const commands = [
           const dmContainer = {
              type: 17,
              components: [
-                { type: 10, content: `## Athena Voice Export | <a:atheNATICK:1557841381630681106>` },
+                { type: 10, content: `## Athena Voice Export | <a:03_tick_circle:1565665642084827206>` },
                 {
                    type: 9,
                    components: [{ type: 10, content: `-# **Server :** **${targetGuild ? targetGuild.name : 'Unknown'}**\n-# **Channel :** **${vcName}**\n-# **Started At :** **${startDate}**\n-# **Duration :** **${durationStr}**\n-# **Speakers Detected :** **${userCount || 1}**` }],
@@ -139,13 +139,13 @@ export const commands = [
           }
 
           if (dmDelivered) {
-            await msg.edit({ components: [{ type: 17, components: [{ type: 10, content: `-# **Audio Export Successful | <a:atheNATICK:1557841381630681106>**\n-# Delivered securely to your DMs.` }] }] });
+            await msg.edit({ components: [{ type: 17, components: [{ type: 10, content: `-# **Audio Export Successful | <a:03_tick_circle:1565665642084827206>**\n-# Delivered securely to your DMs.` }] }] });
           } else {
             // Deliver in channel when DMs are closed
             const channelExportContainer = {
               type: 17,
               components: [
-                { type: 10, content: `## Athena Voice Export | <a:atheNATICK:1557841381630681106>` },
+                { type: 10, content: `## Athena Voice Export | <a:03_tick_circle:1565665642084827206>` },
                 {
                   type: 9,
                   components: [{ type: 10, content: `-# **Server :** **${targetGuild ? targetGuild.name : 'Unknown'}**\n-# **Channel :** **${vcName}**\n-# **Started At :** **${startDate}**\n-# **Duration :** **${durationStr}**\n-# **Note :** Your DMs are closed, so the audio was delivered here.` }],
@@ -157,7 +157,7 @@ export const commands = [
             };
             await message.channel.send({ components: [channelExportContainer], flags: MessageFlags.IsComponentsV2 });
             await message.channel.send({ content: `${message.author}, here is your voice recording:`, files: [audioAttachment] });
-            await msg.edit({ components: [{ type: 17, components: [{ type: 10, content: `-# **Audio Export Successful | <a:atheNATICK:1557841381630681106>**\n-# Delivered in this channel (DMs closed).` }] }] });
+            await msg.edit({ components: [{ type: 17, components: [{ type: 10, content: `-# **Audio Export Successful | <a:03_tick_circle:1565665642084827206>**\n-# Delivered in this channel (DMs closed).` }] }] });
           }
           
           try { fs.unlinkSync(mp3Path); } catch(e) {}

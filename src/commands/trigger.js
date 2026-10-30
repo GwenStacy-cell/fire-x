@@ -128,7 +128,7 @@ export function makeAccentResponse(guild, title, description, isSuccess = true) 
   const config = db.getGuildConfig(guild.id);
   const accentHex = config.accentColor || '#5865F2';
   const accentInt = parseInt(accentHex.replace('#', ''), 16);
-  const formattedTitle = isSuccess && !title.includes('1557841381630681106') ? `${title} | <a:atheNATICK:1557841381630681106>` : title;
+  const formattedTitle = isSuccess && !title.includes('1557841381630681106') ? `${title} | <a:03_tick_circle:1565665642084827206>` : title;
 
   const bodyLines = description.split('\n').map(l => {
     if (!l.trim()) return l;

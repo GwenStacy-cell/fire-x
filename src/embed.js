@@ -3,12 +3,20 @@ import fs from 'fs';
 import path from 'path';
 import db from './database.js';
 import { isValidImageUrl } from './utils/helpers.js';
+import { 
+  TICK_EMOJI, 
+  WRONG_EMOJI, 
+  WARN_EMOJI, 
+  BULLET_EMOJI, 
+  LEGACY_TICK, 
+  getRandomHeadingGlyph 
+} from './utils/emojis.js';
 
 // Safely load config
 const configPath = path.resolve('config.json');
 let config = {
   botName: 'Athena Prime',
-  footerText: 'Athena Bulletproof Security System � V1.0.0',
+  footerText: 'Athena Bulletproof Defense Matrix \u00b7 V1.0.0',
   colors: {
     success: '#2b2d31',
     warning: '#2b2d31',
@@ -29,7 +37,7 @@ try {
 }
 
 const colors = config.colors;
-const FOOTER_TEXT = config.footerText || 'Athena Bulletproof Security System � V1.0.0';
+const FOOTER_TEXT = config.footerText || 'Athena Bulletproof Defense Matrix \u00b7 V1.0.0';
 
 // ——————————————————————————————————————————
 // GUILD CONTEXT — set once per command invocation
@@ -67,8 +75,20 @@ export const embed = {
       .setColor(color || colors.dark)
       .setTimestamp();
 
-    if (title) builder.setTitle(title);
-    if (description) builder.setDescription(description);
+    if (title) {
+      let finalTitle = String(title).trim().replaceAll(LEGACY_TICK, TICK_EMOJI);
+      if (!/^<a?:[a-zA-Z0-9_]+:\d+>/.test(finalTitle) && !finalTitle.startsWith('#')) {
+        finalTitle = `${getRandomHeadingGlyph()} ${finalTitle}`;
+      }
+      builder.setTitle(finalTitle);
+    }
+
+    if (description) {
+      let finalDesc = String(description).replaceAll(LEGACY_TICK, TICK_EMOJI);
+      finalDesc = finalDesc.replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
+      builder.setDescription(finalDesc);
+    }
+
     if (thumbnail && typeof thumbnail === 'string' && isValidImageUrl(thumbnail)) {
       try { builder.setThumbnail(thumbnail.trim()); } catch {}
     }
@@ -77,11 +97,15 @@ export const embed = {
     }
 
     if (fields && fields.length > 0) {
-      builder.addFields(fields.map(f => ({
-        name: f.name,
-        value: f.value,
-        inline: !!f.inline
-      })));
+      builder.addFields(fields.map(f => {
+        let val = String(f.value || '').replaceAll(LEGACY_TICK, TICK_EMOJI);
+        val = val.replace(/(^|[\s>\-#])[\u2022•](\s)/g, `$1${BULLET_EMOJI}$2`);
+        return {
+          name: `${BULLET_EMOJI} ${f.name}`,
+          value: val,
+          inline: !!f.inline
+        };
+      }));
     }
 
     builder.setFooter({
@@ -99,15 +123,21 @@ export const embed = {
   },
 
   success(title, description, fields = [], guildId = null) {
-    return this.build({ title, description, color: getAccentColor(guildId, colors.success), fields });
+    let t = title ? String(title).replaceAll(LEGACY_TICK, TICK_EMOJI) : '';
+    if (t && !t.includes(TICK_EMOJI)) t = `${t} | ${TICK_EMOJI}`;
+    return this.build({ title: t, description, color: getAccentColor(guildId, colors.success), fields });
   },
 
   warn(title, description, fields = [], guildId = null) {
-    return this.build({ title, description, color: getAccentColor(guildId, colors.warning), fields });
+    let t = title ? String(title) : '';
+    if (t && !t.includes(WARN_EMOJI)) t = `${t} | ${WARN_EMOJI}`;
+    return this.build({ title: t, description, color: getAccentColor(guildId, colors.warning), fields });
   },
 
   danger(title, description, fields = [], guildId = null) {
-    return this.build({ title, description, color: getAccentColor(guildId, colors.danger), fields });
+    let t = title ? String(title) : '';
+    if (t && !t.includes(WRONG_EMOJI)) t = `${t} | ${WRONG_EMOJI}`;
+    return this.build({ title: t, description, color: getAccentColor(guildId, colors.danger), fields });
   },
 
   error(title, description, fields = [], guildId = null) {
@@ -140,4 +170,5 @@ export const embed = {
     return this.build({ title: `Log: ${title}`, description, color: getAccentColor(guildId, color), fields });
   }
 };
+
 export default embed;

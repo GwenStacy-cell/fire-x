@@ -623,7 +623,7 @@ export const commands = [
             {
               type: 10,
               content:
-                `# Member Temporarily Banned | <a:atheNATICK:1557841381630681106>\n` +
+                `# Member Temporarily Banned | <a:03_tick_circle:1565665642084827206>\n` +
                 `-# • **Target:** <@${finalId}> (\`${finalId}\`)\n` +
                 `-# • **Duration:** \`${durationStr}\`\n` +
                 `-# • **Unban Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
@@ -702,7 +702,7 @@ export const commands = [
             components: [{
               type: 10,
               content:
-                `# Member Temporarily Banned | <a:atheNATICK:1557841381630681106>\n` +
+                `# Member Temporarily Banned | <a:03_tick_circle:1565665642084827206>\n` +
                 `-# • **Target:** <@${targetUser.id}> (\`${targetUser.id}\`)\n` +
                 `-# • **Duration:** \`${durationStr}\`\n` +
                 `-# • **Unban Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
@@ -802,7 +802,7 @@ export const commands = [
             {
               type: 10,
               content:
-                `# Member Timed Out | <a:atheNATICK:1557841381630681106>\n` +
+                `# Member Timed Out | <a:03_tick_circle:1565665642084827206>\n` +
                 `-# • **Target:** ${target} (\`${target.id}\`)\n` +
                 `-# • **Duration:** \`${durationStr}\`\n` +
                 `-# • **Lift Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
@@ -885,7 +885,7 @@ export const commands = [
             components: [{
               type: 10,
               content:
-                `# Member Timed Out | <a:atheNATICK:1557841381630681106>\n` +
+                `# Member Timed Out | <a:03_tick_circle:1565665642084827206>\n` +
                 `-# • **Target:** ${target} (\`${target.id}\`)\n` +
                 `-# • **Duration:** \`${durationStr}\`\n` +
                 `-# • **Lift Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
@@ -1501,7 +1501,7 @@ async function executeNuke(channel, moderator, guild) {
     await cloned.setPosition(pos).catch(() => null);
     await channel.delete(`Channel nuked by ${author.tag || author.username}`).catch(() => null);
     await cloned.send(cv2.success(
-      'Channel Nuked | <a:atheNATICK:1557841381630681106>',
+      'Channel Nuked | <a:03_tick_circle:1565665642084827206>',
       `Successfully cloned and nuked this channel.\n-# Initiated by <@${author.id}>`
     ));
     logToSecurityChannel(guild, cv2.log(
@@ -1568,7 +1568,7 @@ async function handleMassBan(guild, moderator, role, reason) {
   ));
 
   return cv2.success(
-    'Mass Ban Complete | <a:atheNATICK:1557841381630681106>',
+    'Mass Ban Complete | <a:03_tick_circle:1565665642084827206>',
     `Successfully banned **${successCount}** member(s) with role <@&${role.id}>.` + (failCount > 0 ? `\nFailed: **${failCount}**.` : '')
   );
 }
@@ -1620,7 +1620,7 @@ async function handleMassKick(guild, moderator, role, reason) {
   ));
 
   return cv2.success(
-    'Mass Kick Complete | <a:atheNATICK:1557841381630681106>',
+    'Mass Kick Complete | <a:03_tick_circle:1565665642084827206>',
     `Successfully kicked **${successCount}** member(s) with role <@&${role.id}>.` + (failCount > 0 ? `\nFailed: **${failCount}**.` : '')
   );
 }
@@ -1671,7 +1671,7 @@ async function handleMassTimeout(guild, moderator, role, durationMs, reason) {
   ));
 
   return cv2.success(
-    'Mass Timeout Complete | <a:atheNATICK:1557841381630681106>',
+    'Mass Timeout Complete | <a:03_tick_circle:1565665642084827206>',
     `Successfully timed out **${successCount}** member(s) with role <@&${role.id}>.` + (failCount > 0 ? `\nFailed: **${failCount}**.` : '')
   );
 }

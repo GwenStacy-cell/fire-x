@@ -1927,7 +1927,7 @@ export const commands = [
 
       if (added.length > 0 && failed.length === 0) {
         return sendReply(cv2.success(
-          `Emoji Added | <a:atheNATICK:1557841381630681106>`,
+          `Emoji Added | <a:03_tick_circle:1565665642084827206>`,
           lines.join('\n\n')
         ));
       }

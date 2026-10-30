@@ -168,7 +168,7 @@ export default {
                   type: 17,
                   accent_color: 0xed4245,
                   components: [
-                    { type: 10, content: `## Tainted Member Exploit Blocked | <a:atheNATICK:1557841381630681106>` },
+                    { type: 10, content: `## Tainted Member Exploit Blocked | <a:03_tick_circle:1565665642084827206>` },
                     { type: 14, divider: true },
                     {
                       type: 10,
@@ -342,7 +342,7 @@ export default {
                       });
                     } catch (e) {}
 
-                    // 4. LOG & DM OWNER (Following Athena's formatting rules: Custom Tick Heading | <a:atheNATICK:1557841381630681106>)
+                    // 4. LOG & DM OWNER (Following Athena's formatting rules: Custom Tick Heading | <a:03_tick_circle:1565665642084827206>)
                     const targetTier = getUserTierName(guild, newMember);
                     const roleNames = dangerousRoles.map(r => `\`${r.name}\` (\`${r.id}\`)`).join(', ');
                     const dangerousPermList = [];
@@ -360,7 +360,7 @@ export default {
                       type: 17,
                       accent_color: 0xed4245,
                       components: [
-                        { type: 10, content: `## Illegal Role Grant Neutralized | <a:atheNATICK:1557841381630681106>` },
+                        { type: 10, content: `## Illegal Role Grant Neutralized | <a:03_tick_circle:1565665642084827206>` },
                         { type: 14, divider: true },
                         {
                           type: 10,
@@ -385,7 +385,7 @@ export default {
                       type: 17,
                       accent_color: 0xed4245,
                       components: [
-                        { type: 10, content: `## Critical Alert: Illegal Role Grant Neutralized | <a:atheNATICK:1557841381630681106>` },
+                        { type: 10, content: `## Critical Alert: Illegal Role Grant Neutralized | <a:03_tick_circle:1565665642084827206>` },
                         { type: 14, divider: true },
                         {
                           type: 10,
@@ -411,11 +411,11 @@ export default {
                           type: 10,
                           content:
                             `### Defensive Countermeasures Taken\n` +
-                            `> <a:atheNATICK:1557841381630681106> **Roles Revoked:** Dangerous roles stripped from member immediately.\n` +
-                            `> <a:atheNATICK:1557841381630681106> **Role Disarmed:** Dangerous permissions stripped from the role itself.\n` +
-                            (giverBanned ? `> <a:atheNATICK:1557841381630681106> **Giver Eliminated:** Rogue role giver was banned and stripped of roles.\n` : '') +
-                            `> <a:atheNATICK:1557841381630681106> **Member Quarantined:** Offender placed into server isolation and exploit-tainted.\n` +
-                            `> <a:atheNATICK:1557841381630681106> **Security Audit:** Telemetry logged to your security log channel.`
+                            `> <a:03_tick_circle:1565665642084827206> **Roles Revoked:** Dangerous roles stripped from member immediately.\n` +
+                            `> <a:03_tick_circle:1565665642084827206> **Role Disarmed:** Dangerous permissions stripped from the role itself.\n` +
+                            (giverBanned ? `> <a:03_tick_circle:1565665642084827206> **Giver Eliminated:** Rogue role giver was banned and stripped of roles.\n` : '') +
+                            `> <a:03_tick_circle:1565665642084827206> **Member Quarantined:** Offender placed into server isolation and exploit-tainted.\n` +
+                            `> <a:03_tick_circle:1565665642084827206> **Security Audit:** Telemetry logged to your security log channel.`
                         },
                         { type: 14, divider: true },
                         {

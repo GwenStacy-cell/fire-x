@@ -77,7 +77,7 @@ export const commands = [
       if (subcommand === 'ai') {
         const enabled = interaction.options.getBoolean('enabled');
         db.updateTicketConfig(guildId, { aiTriage: enabled });
-        return interaction.reply(cv2.success('Smart Ticket Triage | <a:atheNATICK:1557841381630681106>', enabled ? 'Smart Ban Appeals & Ticket Triage has been enabled. User inquiries will be categorized and summarized automatically for staff.' : 'Smart Ban Appeals & Ticket Triage has been disabled.'));
+        return interaction.reply(cv2.success('Smart Ticket Triage | <a:03_tick_circle:1565665642084827206>', enabled ? 'Smart Ban Appeals & Ticket Triage has been enabled. User inquiries will be categorized and summarized automatically for staff.' : 'Smart Ban Appeals & Ticket Triage has been disabled.'));
       }
 
       if (subcommand === 'setup') {
@@ -125,7 +125,7 @@ export const commands = [
         db.updateTicketConfig(guildId, ticketConfig);
 
         const roleMentions = staffRoles.map(id => `<@&${id}>`).join(', ');
-        await interaction.editReply(cv2.success('Ticket System Deployed | <a:atheNATICK:1557841381630681106>', `The ticket panel has been deployed successfully. Tickets will be created under ${category} and ${roleMentions} will be pinged.${aiTriageOpt ? '\n-# **Smart Ticket Triage:** Enabled' : ''}`));
+        await interaction.editReply(cv2.success('Ticket System Deployed | <a:03_tick_circle:1565665642084827206>', `The ticket panel has been deployed successfully. Tickets will be created under ${category} and ${roleMentions} will be pinged.${aiTriageOpt ? '\n-# **Smart Ticket Triage:** Enabled' : ''}`));
       }
     },
     async executePrefix(message, args) {
@@ -142,7 +142,7 @@ export const commands = [
           else if (a1 === 'off' || a1 === 'disable' || a1 === 'false') turnOn = false;
         }
         db.updateTicketConfig(message.guild.id, { aiTriage: turnOn });
-        return message.reply(cv2.success('Smart Ticket Triage | <a:atheNATICK:1557841381630681106>', turnOn ? 'Smart Ban Appeals & Ticket Triage has been enabled. User inquiries will be categorized and summarized automatically for staff.' : 'Smart Ban Appeals & Ticket Triage has been disabled.'));
+        return message.reply(cv2.success('Smart Ticket Triage | <a:03_tick_circle:1565665642084827206>', turnOn ? 'Smart Ban Appeals & Ticket Triage has been enabled. User inquiries will be categorized and summarized automatically for staff.' : 'Smart Ban Appeals & Ticket Triage has been disabled.'));
       }
 
       if (args[0]?.toLowerCase() === 'setup') {
@@ -208,7 +208,7 @@ export const commands = [
         db.updateTicketConfig(message.guild.id, ticketUpdate);
 
         const roleMentions = staffRoles.map(id => `<@&${id}>`).join(', ');
-        await message.reply(cv2.success('Ticket System Deployed | <a:atheNATICK:1557841381630681106>', `Tickets will be created under <#${category.id}> and ${roleMentions} will be pinged.${aiTriageEnabled ? '\n-# **Smart Ticket Triage:** Enabled' : ''}`));
+        await message.reply(cv2.success('Ticket System Deployed | <a:03_tick_circle:1565665642084827206>', `Tickets will be created under <#${category.id}> and ${roleMentions} will be pinged.${aiTriageEnabled ? '\n-# **Smart Ticket Triage:** Enabled' : ''}`));
       } else if (args[0]?.toLowerCase() === 'close') {
         return executeTicketClose(message.guild, message.channel, message.member, (p) => message.reply(p));
       } else {
@@ -298,7 +298,7 @@ async function executeTicketRename(guild, channel, member, newName, replyFn) {
   const clean = newName.replace(/[^a-zA-Z0-9_\-]/g, '').toLowerCase().slice(0, 30);
   const finalName = `ticket-${clean || 'named'}`;
   await channel.setName(finalName, `Ticket renamed by ${member.user.tag}`).catch(() => null);
-  return replyFn(cv2.success('Ticket Renamed | <a:atheNATICK:1557841381630681106>', `Ticket channel has been renamed to \`${finalName}\`.`));
+  return replyFn(cv2.success('Ticket Renamed | <a:03_tick_circle:1565665642084827206>', `Ticket channel has been renamed to \`${finalName}\`.`));
 }
 
 export async function handleTicketButtons(interaction) {
