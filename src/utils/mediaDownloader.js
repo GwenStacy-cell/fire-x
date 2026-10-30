@@ -307,64 +307,86 @@ export async function processMediaLink(client, message, url) {
       const tempPath = path.join(process.cwd(), `yt_dlp_video_${uniqueId}.mp4`);
       const filePrefix = `yt_dlp_video_${uniqueId}`;
 
-      console.log(`[Media] Downloading YouTube media via yt-dlp: ${url}`);
+      // Clean tracking tokens from URL (like ?si=... or &si=...)
+      let cleanUrl = url;
+      try {
+        const u = new URL(url);
+        u.searchParams.delete('si');
+        u.searchParams.delete('feature');
+        cleanUrl = u.toString();
+      } catch (e) {}
+
+      // If YouTube shorts, extract video ID to also prepare canonical watch URL
+      const shortsMatch = url.match(/(?:youtube\.com\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{6,15})/);
+      const watchUrl = shortsMatch ? `https://www.youtube.com/watch?v=${shortsMatch[1]}` : null;
+      const urlsToAttempt = [cleanUrl];
+      if (watchUrl && watchUrl !== cleanUrl) urlsToAttempt.push(watchUrl);
+
+      console.log(`[Media] Downloading YouTube media via yt-dlp: ${cleanUrl}`);
       let downloadSuccess = false;
 
-      // Strategy A: Best video + Best audio with MP4 remuxer (covers 1080p, 720p, shorts, SABR streams)
-      try {
-        await execPromise(
-          `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
-          `-f "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best" ` +
-          `--remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
-          `-o "${tempPath}" "${url}"`
-        );
-        const resolved = fs.existsSync(tempPath) ? tempPath : findGeneratedFile(filePrefix);
-        if (resolved && fs.statSync(resolved).size > 1000) {
-          downloadSuccess = true;
-          localFile = resolved;
-          tempFilesToClean.push(resolved);
-        }
-      } catch (errA) {
-        console.warn('[Media] YouTube Strategy A failed:', errA.message);
-      }
+      for (const targetUrl of urlsToAttempt) {
+        if (downloadSuccess) break;
 
-      // Strategy B: Android client fallback
-      if (!downloadSuccess) {
+        // Strategy A: Best video + Best audio with MP4 remuxer (covers 1080p, 720p, shorts, SABR streams)
         try {
           await execPromise(
             `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
-            `--extractor-args "youtube:player_client=android,web" ` +
-            `-f "best[ext=mp4][height<=720]/bestvideo+bestaudio/best" ` +
+            `-f "bestvideo[height<=1080]+bestaudio/best[height<=1080]/best" ` +
             `--remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
-            `-o "${tempPath}" "${url}"`
+            `-o "${tempPath}" "${targetUrl}"`
           );
           const resolved = fs.existsSync(tempPath) ? tempPath : findGeneratedFile(filePrefix);
           if (resolved && fs.statSync(resolved).size > 1000) {
             downloadSuccess = true;
             localFile = resolved;
             tempFilesToClean.push(resolved);
+            break;
           }
-        } catch (errB) {
-          console.warn('[Media] YouTube Strategy B failed:', errB.message);
+        } catch (errA) {
+          console.warn('[Media] YouTube Strategy A failed:', errA.message);
         }
-      }
 
-      // Strategy C: Universal default with remux
-      if (!downloadSuccess) {
-        try {
-          await execPromise(
-            `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
-            `-f "b/best" --remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
-            `-o "${tempPath}" "${url}"`
-          );
-          const resolved = fs.existsSync(tempPath) ? tempPath : findGeneratedFile(filePrefix);
-          if (resolved && fs.statSync(resolved).size > 1000) {
-            downloadSuccess = true;
-            localFile = resolved;
-            tempFilesToClean.push(resolved);
+        // Strategy B: Android client fallback
+        if (!downloadSuccess) {
+          try {
+            await execPromise(
+              `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
+              `--extractor-args "youtube:player_client=android,web" ` +
+              `-f "best[ext=mp4][height<=720]/bestvideo+bestaudio/best" ` +
+              `--remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
+              `-o "${tempPath}" "${targetUrl}"`
+            );
+            const resolved = fs.existsSync(tempPath) ? tempPath : findGeneratedFile(filePrefix);
+            if (resolved && fs.statSync(resolved).size > 1000) {
+              downloadSuccess = true;
+              localFile = resolved;
+              tempFilesToClean.push(resolved);
+              break;
+            }
+          } catch (errB) {
+            console.warn('[Media] YouTube Strategy B failed:', errB.message);
           }
-        } catch (errC) {
-          console.warn('[Media] YouTube Strategy C failed:', errC.message);
+        }
+
+        // Strategy C: Universal default with remux
+        if (!downloadSuccess) {
+          try {
+            await execPromise(
+              `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
+              `-f "b/best" --remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
+              `-o "${tempPath}" "${targetUrl}"`
+            );
+            const resolved = fs.existsSync(tempPath) ? tempPath : findGeneratedFile(filePrefix);
+            if (resolved && fs.statSync(resolved).size > 1000) {
+              downloadSuccess = true;
+              localFile = resolved;
+              tempFilesToClean.push(resolved);
+              break;
+            }
+          } catch (errC) {
+            console.warn('[Media] YouTube Strategy C failed:', errC.message);
+          }
         }
       }
 
@@ -373,7 +395,7 @@ export async function processMediaLink(client, message, url) {
         try {
           const btch = (await import('btch-downloader')).default;
           if (typeof btch?.youtube === 'function') {
-            const res = await btch.youtube(url);
+            const res = await btch.youtube(watchUrl || cleanUrl);
             if (res && res.mp4) {
               directUrl = res.mp4;
               downloadSuccess = true;

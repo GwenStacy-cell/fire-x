@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { AttachmentBuilder, PermissionFlagsBits } from 'discord.js';
+import { AttachmentBuilder, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import fetch from 'node-fetch';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -108,16 +108,20 @@ export const commands = [
         const sizeKb = (stats.size / 1024).toFixed(1);
         const m = getDatabaseMetrics();
 
-        const successPayload = cv2.success(
-          `Database Backed Up | <a:atheNATICK:1557841381630681106>`,
-          formatDatabaseMetrics(m, {
-            prefixText: '**Cloud snapshot successfully stored!**\nYour entire database is securely archived in Discord. If you ever switch hosting companies, the bot will automatically restore everything on boot.',
-            channelId: result.channelId,
-            sizeKb,
-            timestamp: result.timestamp,
-            reason: `Manual Backup by ${user.tag || user.username}`
-          })
-        );
+        const embed = new EmbedBuilder()
+          .setDescription(
+            `# Database Backed Up | <a:atheNATICK:1557841381630681106>\n\n` +
+            formatDatabaseMetrics(m, {
+              prefixText: '**Cloud snapshot successfully stored!**\nYour entire database is securely archived in Discord. If you ever switch hosting companies, the bot will automatically restore everything on boot.',
+              channelId: result.channelId,
+              sizeKb,
+              timestamp: result.timestamp,
+              reason: `Manual Backup by ${user.tag || user.username}`
+            })
+          )
+          .setColor(0x2b2d31)
+          .setTimestamp(result.timestamp);
+        const successPayload = { embeds: [embed] };
         if (context.isCommand?.()) {
           return context.editReply(successPayload);
         }
@@ -135,7 +139,7 @@ export const commands = [
 
         const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
         const backupMessages = messages
-          ? messages.filter(m => m.attachments.some(a => a.name?.endsWith('.json') && (a.name.includes('athena_db_') || a.name === 'db.json')))
+          ? messages.filter(m => m.attachments.some(a => a.name?.endsWith('.json')))
           : null;
 
         if (!backupMessages || backupMessages.size === 0) {

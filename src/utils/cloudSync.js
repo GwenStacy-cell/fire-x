@@ -540,8 +540,8 @@ export function formatDatabaseMetrics(m, options = {}) {
     `> -# **Application Stream:** \`Pending Submissions: ${m.entryPendingTotal || 0} (${m.entryPendingServers || 0} guilds) | Bot Owner Remote DMs: ${m.botOwnerEntryRemote ? 'ENABLED' : 'DISABLED'}\`\n\n` +
 
     `-# **__Stock & Equity Market Telemetry (!stock / !symbols):__**\n` +
-    `> -# **Market Broadcast:** \`${m.stockChannels || 0} alert channels | Daily Morning Briefings: ${m.dailyStockEnabled || 0} guilds\`\n` +
-    `> -# **Dynamic Tickers:** \`${m.dynamicStockSymbolsCount || 0} learned/indexed global equities, crypto & commodity tickers\`\n\n` +
+    `> -# **Market Broadcast:** \`${m.stockChannels || 0} alert chs | Daily Briefings: ${m.dailyStockEnabled || 0} guilds\`\n` +
+    `> -# **Dynamic Tickers:** \`${m.dynamicStockSymbolsCount || 0} learned global equities, crypto & commodity tickers\`\n\n` +
 
     `-# **__Heuristic Threat Engine & Clearances:__**\n` +
     `> -# **AI Heuristics:** \`${m.baselineProfiles || 0} baselines (${m.staffBaselinedCount || 0} staff) | Anomaly Sigs: ${m.nukeSignaturesCount || 0} (${m.nukeSignatureServers || 0} guilds)\`\n` +
@@ -731,13 +731,15 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
       timestamp,
       reason
     });
-    if (formattedText.length > 4000) {
-      formattedText = formattedText.slice(0, 3900) + '\n> -# **__[Snapshot manifest truncated for Discord display limits]__**';
+    if (formattedText.length > 3900) {
+      formattedText = formattedText.slice(0, 3800) + '\n> -# **__[Snapshot manifest truncated for Discord display limits]__**';
     }
 
     const embed = new EmbedBuilder()
-      .setTitle(`Database Cloud Backup | <a:atheNATICK:1557841381630681106>`)
-      .setDescription(formattedText)
+      .setDescription(
+        `# Database Cloud Backup | <a:atheNATICK:1557841381630681106>\n\n` +
+        formattedText
+      )
       .setColor(0x2b2d31)
       .setTimestamp(timestamp);
 
@@ -797,9 +799,9 @@ export async function restoreFromCloud(client) {
     return { success: false, reason: 'Backup channel has no messages.' };
   }
 
-  // Find latest message with athena_db_*.json or db.json attachment sorted by timestamp
+  // Find latest message with json attachment sorted by timestamp
   const backupMessages = messages.filter(m => 
-    m.attachments.some(a => a.name?.endsWith('.json') && (a.name.includes('athena_db_') || a.name === 'db.json'))
+    m.attachments.some(a => a.name?.endsWith('.json'))
   );
 
   if (!backupMessages || backupMessages.size === 0) {
