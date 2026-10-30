@@ -517,20 +517,24 @@ export const commands = [
     permissions: [PermissionFlagsBits.Administrator],
     options: [],
     async executePrefix(message) {
-      const allowed = message.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(message.author.id) || message.author.id === message.guild.ownerId || db.isExtraOwner(message.guild.id, message.author.id);
+      const allowed = isBotOwnerSync(message.author.id) || message.author.id === message.guild.ownerId || db.isExtraOwner(message.guild.id, message.author.id);
       if (!allowed) {
-        return message.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'));
       }
       const panel = await getSecurityHealthPanel(message.guild);
       await message.reply(panel);
     },
     async executeSlash(interaction) {
-      const allowed = interaction.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild.ownerId || db.isExtraOwner(interaction.guild.id, interaction.user.id);
+      const allowed = isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild.ownerId || db.isExtraOwner(interaction.guild.id, interaction.user.id);
       if (!allowed) {
-        return interaction.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+        return interaction.reply({
+          ...cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'),
+          flags: MessageFlags.Ephemeral
+        });
       }
+      await interaction.deferReply();
       const panel = await getSecurityHealthPanel(interaction.guild);
-      await interaction.reply(panel);
+      await interaction.editReply(panel);
     }
   },
 
@@ -863,28 +867,32 @@ export const commands = [
       }
     },
     async executeSlash(interaction) {
-      const allowed = interaction.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild.ownerId || db.isExtraOwner(interaction.guild.id, interaction.user.id);
+      const allowed = isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild.ownerId || db.isExtraOwner(interaction.guild.id, interaction.user.id);
       if (!allowed) {
-        return interaction.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+        return interaction.reply({
+          ...cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'),
+          flags: MessageFlags.Ephemeral
+        });
       }
 
+      await interaction.deferReply();
       const sub = interaction.options.getString('subcommand') || 'config';
 
       if (sub === 'config') {
         const panel = await getAntinukeConfigPanel(interaction.guild);
-        await interaction.reply(panel);
+        await interaction.editReply(panel);
       } else if (sub === 'status') {
         const panel = await getSecurityStatusPanel(interaction.guild);
-        await interaction.reply(panel);
+        await interaction.editReply(panel);
       } else if (sub === 'records') {
         const panel = await getSecurityLiveRecordsPanel(interaction.guild, 0);
-        await interaction.reply(panel);
+        await interaction.editReply(panel);
       } else if (sub === 'guide') {
         const panel = await getAntinukeArchitecturePanel(interaction.guild);
-        await interaction.reply(panel);
+        await interaction.editReply(panel);
       } else if (sub === 'health' || sub === 'audit') {
         const panel = await getSecurityHealthPanel(interaction.guild);
-        await interaction.reply(panel);
+        await interaction.editReply(panel);
       }
     }
   },

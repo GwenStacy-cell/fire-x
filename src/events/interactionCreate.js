@@ -1403,12 +1403,18 @@ export default {
       try {
         await command.executeSlash(interaction);
       } catch (error) {
-        console.error(error);
-        if (interaction.replied || interaction.deferred) {
-          await interaction.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
-        } else {
-          await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral });
+        if (error.code === 10062 || error.code === 10015 || error.code === 40060) {
+          console.warn(`[InteractionCreate] Interaction expired or already handled: ${error.message}`);
+          return;
         }
+        console.error('[InteractionCreate] Slash execution error:', error);
+        try {
+          if (interaction.replied || interaction.deferred) {
+            await interaction.followUp({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral }).catch(() => null);
+          } else {
+            await interaction.reply({ content: 'There was an error while executing this command!', flags: MessageFlags.Ephemeral }).catch(() => null);
+          }
+        } catch {}
       }
       return;
     }
@@ -2834,6 +2840,7 @@ async function handleSecurityInteractions(interaction, guild) {
     // 🏥 Server Health Scorecard & Auto-Fix
     if (customId === 'sec_health_rescan' || customId === 'sec_health_btn') {
       try {
+        await interaction.deferUpdate().catch(() => null);
         const sec = await import('../commands/security.js');
         const panel = await sec.getSecurityHealthPanel(guild);
         return cv2.respond(interaction, panel, 7);
@@ -2842,6 +2849,7 @@ async function handleSecurityInteractions(interaction, guild) {
 
     if (customId === 'sec_fix_vectors') {
       try {
+        await interaction.deferUpdate().catch(() => null);
         const sec = await import('../commands/security.js');
         const panel = await sec.handleAutoFixHealthVectors(guild, interaction.member);
         return cv2.respond(interaction, panel, 7);
