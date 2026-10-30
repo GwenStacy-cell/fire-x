@@ -72,13 +72,12 @@ export default {
 
 
 
-    // 3. Hierarchy Enforcement (The "Shield Wall")
-    if (config.securityEnabled || (config.antiNukeEnabled && config.antinukeModules?.antiRoleUpdate)) {
+    // 3. Hierarchy Enforcement & Anti-Role Reorder (The "Shield Wall")
+    if (config.securityEnabled || (config.antiNukeEnabled && (config.antinukeModules?.antiRoleReorder !== false || config.antinukeModules?.antiRoleUpdate !== false))) {
       const highestBotRole = newRole.guild.members.me.roles.highest;
       
       // If someone dragged a normal role equal to or above Athena's highest role
       if (newRole.position > oldRole.position && newRole.position >= highestBotRole.position && newRole.id !== highestBotRole.id) {
-        
         // Immediately revert the hierarchy
         try {
           await newRole.setPosition(oldRole.position, { reason: 'Athena Anti-Nuke: Hierarchy Shield Wall' });
@@ -92,6 +91,23 @@ export default {
           'Hierarchy Shield Wall Breach',
           newRole.id,
           async () => `Role **${newRole.name}** was forced back to position ${oldRole.position} to protect the Shield Wall.`
+        ).catch(() => null);
+      } else if (oldRole.position !== newRole.position && !newRole.managed && config.antinukeModules?.antiRoleReorder !== false) {
+        // General unauthorized role reordering
+        const { directStrike, isGuildUnderAttack } = await import('../utils/antinuke.js');
+        if (isGuildUnderAttack(newRole.guild.id)) {
+          await newRole.setPosition(oldRole.position, { reason: 'Athena Anti-Nuke: Rogue Role Reorder Intercepted' }).catch(() => null);
+        }
+
+        directStrike(
+          newRole.guild,
+          11 /* AuditLogEvent.RoleUpdate */,
+          'Role Reorder / Hierarchy Tampering',
+          newRole.id,
+          async () => {
+            await newRole.setPosition(oldRole.position, { reason: 'Athena Anti-Nuke: Reverted unauthorized role reordering' }).catch(() => null);
+            return `Reverted role position for **${newRole.name}** back to position ${oldRole.position}.`;
+          }
         ).catch(() => null);
       }
     }

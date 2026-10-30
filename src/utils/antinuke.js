@@ -1406,7 +1406,7 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     [AuditLogEvent.MemberPrune]:       mods.antiMemberPurge,
     [AuditLogEvent.BotAdd]:            mods.antiBotAdd,
     [1]: mods.antiServerUpdate, // GuildUpdate
-    [11]: mods.antiRoleUpdate,  // RoleUpdate
+    [11]: (mods.antiRoleUpdate !== false || mods.antiRoleReorder !== false || mods.antiRolePermUpdate !== false),  // RoleUpdate
   };
   if (moduleMap[auditType] === false) return;
 
