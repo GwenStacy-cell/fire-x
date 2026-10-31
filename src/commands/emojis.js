@@ -285,7 +285,71 @@ export async function handleEmojiInteractions(interaction) {
 }
 
 /**
- * Handles batch uploading emojis from JSON or ZIP files.
+ * Scans a binary buffer (such as an .exe, archive, or binary asset) and extracts
+ * embedded PNG and GIF images.
+ */
+function carveImagesFromBuffer(buffer, maxImages = 100) {
+  const images = [];
+  const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+  const pngIend = Buffer.from([0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]);
+
+  let offset = 0;
+  while (offset < buffer.length && images.length < maxImages) {
+    const start = buffer.indexOf(pngHeader, offset);
+    if (start === -1) break;
+    const end = buffer.indexOf(pngIend, start + 8);
+    if (end === -1) {
+      offset = start + 8;
+      continue;
+    }
+    const fullEnd = end + 8;
+    const imgBuf = buffer.subarray(start, fullEnd);
+    if (imgBuf.length >= 68 && imgBuf.length <= 10 * 1024 * 1024) {
+      images.push({
+        name: `emoji_${images.length + 1}`,
+        buffer: Buffer.from(imgBuf),
+        isAnimated: false
+      });
+    }
+    offset = fullEnd;
+  }
+
+  // Scan for GIF images if room allows
+  offset = 0;
+  const gif87 = Buffer.from('GIF87a');
+  const gif89 = Buffer.from('GIF89a');
+  while (offset < buffer.length && images.length < maxImages) {
+    const s87 = buffer.indexOf(gif87, offset);
+    const s89 = buffer.indexOf(gif89, offset);
+    let start = -1;
+    if (s87 !== -1 && s89 !== -1) start = Math.min(s87, s89);
+    else if (s87 !== -1) start = s87;
+    else if (s89 !== -1) start = s89;
+    if (start === -1) break;
+
+    // Search for GIF trailer 0x3B (at least 32 bytes ahead)
+    let end = buffer.indexOf(0x3b, start + 32);
+    if (end === -1 || (end - start) > 10 * 1024 * 1024) {
+      offset = start + 6;
+      continue;
+    }
+    const fullEnd = end + 1;
+    const gifBuf = buffer.subarray(start, fullEnd);
+    if (gifBuf.length >= 32) {
+      images.push({
+        name: `animated_emoji_${images.length + 1}`,
+        buffer: Buffer.from(gifBuf),
+        isAnimated: true
+      });
+    }
+    offset = fullEnd;
+  }
+
+  return images;
+}
+
+/**
+ * Handles batch uploading emojis from JSON, ZIP, or EXE files.
  */
 export async function handleEmojiUpload(message, args = []) {
   if (!message.guild) {
@@ -306,20 +370,20 @@ export async function handleEmojiUpload(message, args = []) {
 
   // If no attachment in command message, prompt user and await their upload
   if (!message.attachments || message.attachments.size === 0) {
-    await message.reply(cv2.info('Emjs', 'Please upload/attach the JSON or ZIP emoji file in your next message. You have 2 minutes...'));
+    await message.reply(cv2.info('Emjs', 'Please upload/attach the JSON, ZIP, or EXE emoji file in your next message. You have 2 minutes...'));
 
     const filter = m => m.author.id === message.author.id;
     const collected = await message.channel.awaitMessages({ filter, max: 1, time: 120000, errors: ['time'] }).catch(() => null);
 
     if (!collected || collected.size === 0) {
-      return message.channel.send(cv2.warn('Upload Timed Out', 'Upload timed out. Please run the command again and attach your JSON or ZIP file.'));
+      return message.channel.send(cv2.warn('Upload Timed Out', 'Upload timed out. Please run the command again and attach your JSON, ZIP, or EXE file.'));
     }
 
     uploadMsg = collected.first();
   }
 
   if (!uploadMsg.attachments || uploadMsg.attachments.size === 0) {
-    return message.channel.send(cv2.warn('Upload Timed Out', 'No attachments detected. Please run the command again and attach your JSON or ZIP file.'));
+    return message.channel.send(cv2.warn('Upload Timed Out', 'No attachments detected. Please run the command again and attach your JSON, ZIP, or EXE file.'));
   }
 
   const waitMsg = await message.channel.send(cv2.info('Uploading Emojis', '<a:loading:1542155051286396938> Processing uploaded emoji archive / file...'));
@@ -421,22 +485,30 @@ export async function handleEmojiUpload(message, args = []) {
         }
       }
 
-      // Case 2: ZIP archive
-      else if (fileName.endsWith('.zip')) {
+      // Case 2: ZIP / EXE / 7Z / RAR / Archive
+      else if (['.zip', '.exe', '.7z', '.rar', '.tar', '.gz'].some(ext => fileName.endsWith(ext))) {
         const res = await fetch(attachment.url);
-        const zipBuf = Buffer.from(await res.arrayBuffer());
-        const tempZip = path.join(os.tmpdir(), `emjs_${Date.now()}.zip`);
+        const fileBuf = Buffer.from(await res.arrayBuffer());
+        const fileExt = path.extname(fileName) || '.zip';
+        const tempArchive = path.join(os.tmpdir(), `emjs_${Date.now()}${fileExt}`);
         const extractDir = path.join(os.tmpdir(), `emjs_extracted_${Date.now()}`);
-        fs.writeFileSync(tempZip, zipBuf);
+        fs.writeFileSync(tempArchive, fileBuf);
         fs.mkdirSync(extractDir, { recursive: true });
-        tempDirsToClean.push(tempZip, extractDir);
+        tempDirsToClean.push(tempArchive, extractDir);
 
+        // Try extracting via 7z first (handles .exe SFX, .zip, .rar, .7z)
         try {
-          await execPromise(`tar -xf "${tempZip}" -C "${extractDir}"`);
+          await execPromise(`7z x "${tempArchive}" -o"${extractDir}" -y`);
         } catch {
           try {
-            await execPromise(`powershell -command "Expand-Archive -Path '${tempZip}' -DestinationPath '${extractDir}' -Force"`);
-          } catch {}
+            await execPromise(`tar -xf "${tempArchive}" -C "${extractDir}"`);
+          } catch {
+            if (fileExt === '.zip') {
+              try {
+                await execPromise(`powershell -command "Expand-Archive -Path '${tempArchive}' -DestinationPath '${extractDir}' -Force"`);
+              } catch {}
+            }
+          }
         }
 
         // Recursively find images
@@ -457,6 +529,14 @@ export async function handleEmojiUpload(message, args = []) {
           }
         }
         walkDir(extractDir);
+
+        // If directory extraction yielded no images (e.g. standalone PE executable or raw packed .exe), carve from buffer
+        if (itemsToUpload.length === 0) {
+          const carved = carveImagesFromBuffer(fileBuf);
+          if (carved.length > 0) {
+            itemsToUpload.push(...carved);
+          }
+        }
       }
 
       // Case 3: Direct image files
