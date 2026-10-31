@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, MARKET_CAP_ICON, GLOBAL_STOCK_ICON, CHESS_ICON } from '../utils/emojis.js';
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -2530,14 +2530,21 @@ export function buildHelpContainer(client, guildId, moduleId) {
     const botId = client?.user?.id || '1347071663182676059';
     
     const getEmoji = (name, fallback) => {
-      // 1. Designated custom emojis requested specifically for these 4 modules
+      // 1. Designated custom emojis requested specifically for these modules
       const designatedCustomEmojis = {
         'ai': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
         'aiguide': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
         'counting': '<:f4363980_d43f_47b9_81db_0fe0a9a4:1561256353094172692>',
         'community': '<:de2de296_a511_40fa_953f_01365b9a:1561256778405257370>',
         'economy': '<:d908aaba_8825_41ee_bc4c_ad871ad0:1561256682376400919>',
-        'coins': '<:d908aaba_8825_41ee_bc4c_ad871ad0:1561256682376400919>'
+        'coins': '<:d908aaba_8825_41ee_bc4c_ad871ad0:1561256682376400919>',
+        'finance': MARKET_CAP_ICON,
+        'nifty': MARKET_CAP_ICON,
+        'indianmkts': MARKET_CAP_ICON,
+        'stock': GLOBAL_STOCK_ICON,
+        'stocks': GLOBAL_STOCK_ICON,
+        'globalstock': GLOBAL_STOCK_ICON,
+        'chess': CHESS_ICON
       };
       if (designatedCustomEmojis[name]) return designatedCustomEmojis[name];
 
@@ -2573,9 +2580,11 @@ export function buildHelpContainer(client, guildId, moduleId) {
         'utilities': '<:pencil:1523770653528817835>',
         'black_dot': '<a:black_dot:1544740123403620422>',
         'ai': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
-        'stock': '<a:uptime:1552608831060844575>',
-        'finance': '<a:uptime:1552608831060844575>',
-        'chess': '<a:uptime:1552608831060844575>',
+        'stock': GLOBAL_STOCK_ICON,
+        'stocks': GLOBAL_STOCK_ICON,
+        'finance': MARKET_CAP_ICON,
+        'nifty': MARKET_CAP_ICON,
+        'chess': CHESS_ICON,
         'home': '<:on:1533844867191406672>'
       };
       return customEmojiFallback[name] || fallback;

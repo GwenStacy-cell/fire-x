@@ -10,6 +10,11 @@ export const WARN_EMOJI = '<a:exclamation_outline1:1565666739356827759>';
 export const BULLET_EMOJI = '<a:target_blink:1565667466984554588>';
 export const UPTIME_EMOJI = '<a:uptime:1552608831060844575>';
 
+// Module Specific Feature Icons
+export const MARKET_CAP_ICON = '<:market_cap_icon:1566117974920798268>';
+export const GLOBAL_STOCK_ICON = '<:global_stock_icon:1566117971649110066>';
+export const CHESS_ICON = '<:chess_icon:1566117968386064394>';
+
 // Legacy tick ID for backwards compatibility / auto-upgrade
 export const LEGACY_TICK = '<a:03_tick_circle:1565665642084827206>';
 
