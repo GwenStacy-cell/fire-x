@@ -424,9 +424,7 @@ class Database {
         if (cfg.antiNukeEnabled) { cfg.antiNukeEnabled = false; updated = true; }
         if (cfg.securityEnabled) { cfg.securityEnabled = false; updated = true; }
         if (cfg.botOwnerBypass) { cfg.botOwnerBypass = false; updated = true; }
-        if (cfg.antiInviteEnabled !== false) { cfg.antiInviteEnabled = false; updated = true; }
         if (cfg.antiSpamEnabled) { cfg.antiSpamEnabled = false; updated = true; }
-        if (cfg.antiLinkEnabled) { cfg.antiLinkEnabled = false; updated = true; }
         if (!cfg.antinukeModules) { cfg.antinukeModules = {}; updated = true; }
         for (const k of antinukeKeys) {
           if (cfg.antinukeModules[k] !== false) {
@@ -443,10 +441,28 @@ class Database {
             updated = true;
           }
         }
-        if (cfg.antiInviteEnabled !== true) { cfg.antiInviteEnabled = true; updated = true; }
         if (cfg.antiSpamEnabled !== true) { cfg.antiSpamEnabled = true; updated = true; }
-        if (cfg.antiLinkEnabled !== true) { cfg.antiLinkEnabled = true; updated = true; }
       }
+
+      // Enforce absolute mutual exclusivity for Link & Invite toggles
+      if (cfg.allowAllLinks === true) {
+        if (cfg.antiLinkEnabled !== false) { cfg.antiLinkEnabled = false; updated = true; }
+      } else if (cfg.antiLinkEnabled === false) {
+        if (cfg.allowAllLinks !== true) { cfg.allowAllLinks = true; updated = true; }
+      } else {
+        if (cfg.antiLinkEnabled !== true) { cfg.antiLinkEnabled = true; updated = true; }
+        if (cfg.allowAllLinks !== false) { cfg.allowAllLinks = false; updated = true; }
+      }
+
+      if (cfg.allowInvitesGlobally === true) {
+        if (cfg.antiInviteEnabled !== false) { cfg.antiInviteEnabled = false; updated = true; }
+      } else if (cfg.antiInviteEnabled === false) {
+        if (cfg.allowInvitesGlobally !== true) { cfg.allowInvitesGlobally = true; updated = true; }
+      } else {
+        if (cfg.antiInviteEnabled !== true) { cfg.antiInviteEnabled = true; updated = true; }
+        if (cfg.allowInvitesGlobally !== false) { cfg.allowInvitesGlobally = false; updated = true; }
+      }
+
       if (cfg.maxWarnings === undefined) { cfg.maxWarnings = 3; updated = true; }
       if (cfg.blacklistWords === undefined) { cfg.blacklistWords = []; updated = true; }
       if (cfg.whitelist === undefined || Array.isArray(cfg.whitelist) || !cfg.whitelist.users) { 
@@ -534,6 +550,17 @@ class Database {
     if (updates.antinukeModules && typeof updates.antinukeModules === 'object') {
       config.antinukeModules = { ...(config.antinukeModules || {}), ...updates.antinukeModules };
       delete updates.antinukeModules;
+    }
+    // Automatically synchronize mutually exclusive link & invite flags
+    if (updates.allowAllLinks !== undefined && updates.antiLinkEnabled === undefined) {
+      updates.antiLinkEnabled = !updates.allowAllLinks;
+    } else if (updates.antiLinkEnabled !== undefined && updates.allowAllLinks === undefined) {
+      updates.allowAllLinks = !updates.antiLinkEnabled;
+    }
+    if (updates.allowInvitesGlobally !== undefined && updates.antiInviteEnabled === undefined) {
+      updates.antiInviteEnabled = !updates.allowInvitesGlobally;
+    } else if (updates.antiInviteEnabled !== undefined && updates.allowInvitesGlobally === undefined) {
+      updates.allowInvitesGlobally = !updates.antiInviteEnabled;
     }
     Object.assign(config, updates);
     this.save();

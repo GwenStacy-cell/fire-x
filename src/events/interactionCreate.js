@@ -3302,17 +3302,23 @@ async function handleSecurityInteractions(interaction, guild) {
         updated = true;
       }
       else if (customId === 'am_tgl_link') {
-        const newVal = !config.antiLinkEnabled;
-        const updateData = { antiLinkEnabled: newVal };
-        if (newVal) updateData.allowAllLinks = false;
-        db.updateGuildConfig(guild.id, updateData);
+        const allowAll = config.allowAllLinks === true;
+        const currentAntiLink = !allowAll && config.antiLinkEnabled !== false;
+        const newAntiLink = !currentAntiLink;
+        db.updateGuildConfig(guild.id, {
+          antiLinkEnabled: newAntiLink,
+          allowAllLinks: !newAntiLink
+        });
         updated = true;
       }
       else if (customId === 'am_tgl_invite') {
-        const newVal = !config.antiInviteEnabled;
-        const updateData = { antiInviteEnabled: newVal };
-        if (newVal) updateData.allowInvitesGlobally = false;
-        db.updateGuildConfig(guild.id, updateData);
+        const allowInvites = config.allowInvitesGlobally === true;
+        const currentAntiInvite = !allowInvites && config.antiInviteEnabled !== false;
+        const newAntiInvite = !currentAntiInvite;
+        db.updateGuildConfig(guild.id, {
+          antiInviteEnabled: newAntiInvite,
+          allowInvitesGlobally: !newAntiInvite
+        });
         updated = true;
       }
       else if (customId === 'am_tgl_word') {
@@ -3339,10 +3345,12 @@ async function handleSecurityInteractions(interaction, guild) {
         return cv2.respond(interaction, newPanel, 7).catch(() => null);
       }
       else if (customId === 'am_tgl_global_links') {
-        const newVal = !config.allowAllLinks;
-        const updateData = { allowAllLinks: newVal };
-        if (newVal) updateData.antiLinkEnabled = false;
-        db.updateGuildConfig(guild.id, updateData);
+        const currentAllowAll = config.allowAllLinks === true;
+        const newAllowAll = !currentAllowAll;
+        db.updateGuildConfig(guild.id, {
+          allowAllLinks: newAllowAll,
+          antiLinkEnabled: !newAllowAll
+        });
         const { getAdvancedConfigPanel } = await import('../commands/security.js');
         const newPanel = await getAdvancedConfigPanel(guild);
         return cv2.respond(interaction, newPanel, 7).catch(() => null);
@@ -3356,11 +3364,12 @@ async function handleSecurityInteractions(interaction, guild) {
         return cv2.respond(interaction, newPanel, 7).catch(() => null);
       }
       else if (customId === 'am_tgl_global_invites') {
-        const config = db.getGuildConfig(guild.id);
-        const newVal = !config.allowInvitesGlobally;
-        const updateData = { allowInvitesGlobally: newVal };
-        if (newVal) updateData.antiInviteEnabled = false;
-        db.updateGuildConfig(guild.id, updateData);
+        const currentAllowInvites = config.allowInvitesGlobally === true;
+        const newAllowInvites = !currentAllowInvites;
+        db.updateGuildConfig(guild.id, {
+          allowInvitesGlobally: newAllowInvites,
+          antiInviteEnabled: !newAllowInvites
+        });
         const { getAdvancedConfigPanel } = await import('../commands/security.js');
         const newPanel = await getAdvancedConfigPanel(guild);
         return cv2.respond(interaction, newPanel, 7).catch(() => null);

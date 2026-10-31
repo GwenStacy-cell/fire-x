@@ -6668,8 +6668,10 @@ export async function getAutoModPanel(guild) {
   
   const spamMentionOn = config.antiSpamMentionEnabled === true;
   const antiFloodOn = config.antiFloodEnabled !== false;
-  const antiLinkOn = config.antiLinkEnabled !== false;
-  const antiInviteOn = config.antiInviteEnabled !== false;
+  const allowAllLinks = config.allowAllLinks === true;
+  const allowInvites = config.allowInvitesGlobally === true;
+  const antiLinkOn = !allowAllLinks && config.antiLinkEnabled !== false;
+  const antiInviteOn = !allowInvites && config.antiInviteEnabled !== false;
   const wordFilterOn = config.wordFilterEnabled !== false;
   const bigFontsOn = config.bigFontsEnabled !== false;
   const hiddenUrlOn = config.hiddenUrlEnabled !== false;
@@ -6778,8 +6780,8 @@ export async function getAutoModPanel(guild) {
     `-# **| Selfbot Detection:** ${selfbotOn ? TOGGLE_ON : TOGGLE_OFF}\n` +
     `-# **| Hidden URL Filter:** ${hiddenUrlOn ? TOGGLE_ON : TOGGLE_OFF}\n` +
     `-# **| File Check Filter:** ${fileCheckOn ? TOGGLE_ON : TOGGLE_OFF}\n` +
-    `-# **| Allow All Links (Global):** ${config.allowAllLinks ? TOGGLE_ON : TOGGLE_OFF}\n` +
-    `-# **| Allow Invites (Global):** ${config.allowInvitesGlobally ? TOGGLE_ON : TOGGLE_OFF}\n` +
+    `-# **| Allow All Links (Global):** ${allowAllLinks ? TOGGLE_ON : TOGGLE_OFF}\n` +
+    `-# **| Allow Invites (Global):** ${allowInvites ? TOGGLE_ON : TOGGLE_OFF}\n` +
     `-# **| Max Warnings Threshold:** ${config.maxWarnings || 3} (Use \`!maxwarnings <number>\` to modify)\n` +
     `-# **| Honeypot Timeout:** ${honeypotTimeout}m`
   ));
@@ -6939,8 +6941,8 @@ export async function getAdvancedConfigPanel(guild) {
   
   const row1 = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('am_tgl_aitoxicity').setLabel('AI Toxicity AutoMod').setStyle(config.aiToxicityEnabled ? ButtonStyle.Success : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('am_tgl_global_links').setLabel('Allow ALL Links').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('am_tgl_global_invites').setLabel('Global Invites').setStyle(ButtonStyle.Secondary)
+      new ButtonBuilder().setCustomId('am_tgl_global_links').setLabel('Allow ALL Links').setStyle(config.allowAllLinks ? ButtonStyle.Success : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('am_tgl_global_invites').setLabel('Global Invites').setStyle(config.allowInvitesGlobally ? ButtonStyle.Success : ButtonStyle.Secondary)
   );
 
   const row2 = new ActionRowBuilder().addComponents(
