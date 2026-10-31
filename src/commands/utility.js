@@ -352,7 +352,7 @@ export const commands = [
               } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
                   usageText = `${prefix}trigger [create|delete|list|react|mirror|ghost|bounty|time|audience|dashboard] / ${prefix}trig`;
               } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis") {
-                  usageText = `${prefix}emojis [animated|static|all|raw|global] / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
+                  usageText = `${prefix}emojis [animated|static|all|raw|upload] / ${prefix}emjs upload / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -660,15 +660,18 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}trigger list\` - Public list of configured triggers.`;
               } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis" || targetCmd.name === "emojilist") {
-                  descContent = `Interactive server emoji explorer, raw ID extractor, and copyable asset terminal.\n\n` +
+                  descContent = `Interactive server emoji explorer, raw ID extractor, batch importer, and copyable asset terminal.\n\n` +
                     `> -# **__Features & Capabilities:__**\n` +
+                    `> ${BULLET_EMOJI} **Batch ZIP & JSON Import (\`!emjs upload\`):** Attach a \`.zip\` archive of images/GIFs or a exported \`.json\` emoji manifest to batch upload emojis directly into your server with automatic lossless compression (256KB constraint resolution).\n` +
+                    `> ${BULLET_EMOJI} **2-Minute Interactive Collector:** Run \`!emjs upload\` and the bot will wait up to 2 minutes for your file attachment if not attached initially.\n` +
                     `> ${BULLET_EMOJI} **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
                     `> ${BULLET_EMOJI} **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
                     `> ${BULLET_EMOJI} **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
                     `> ${BULLET_EMOJI} **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n` +
-                    `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner** and **Bot Owner**.\n\n` +
+                    `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner**, designated **Extra Owners**, and **Bot Owner**.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> ${BULLET_EMOJI} \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}emjs upload\` (or \`${prefix}emojis upload\`) - Attach a JSON or ZIP file to batch upload emojis \`[Server Owner / Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}emojis\` (or \`${prefix}emjs\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}emojis static\` - View all static emojis in the server.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}emojis all\` - View all emojis in the server.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
@@ -882,7 +885,7 @@ export const commands = [
         } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
           usageText = `${prefix}trigger [create|delete|list|react|mirror|ghost|bounty|time|audience|dashboard] / ${prefix}trig`;
         } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis") {
-          usageText = `${prefix}emojis [animated|static|all|raw|global] / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
+          usageText = `${prefix}emojis [animated|static|all|raw|upload] / ${prefix}emjs upload / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -1237,15 +1240,18 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}trigger delete <match>\` - Remove trigger \`[Extra Owner]\`.\n` +
             `> ${BULLET_EMOJI} \`${prefix}trigger list\` - Public list of configured triggers.`;
         } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis" || targetCmd.name === "emojilist") {
-          descContent = `Interactive server emoji explorer, raw ID extractor, and copyable asset terminal.\n\n` +
+          descContent = `Interactive server emoji explorer, raw ID extractor, batch importer, and copyable asset terminal.\n\n` +
             `> -# **__Features & Capabilities:__**\n` +
+            `> ${BULLET_EMOJI} **Batch ZIP & JSON Import (\`!emjs upload\`):** Attach a \`.zip\` archive of images/GIFs or a exported \`.json\` emoji manifest to batch upload emojis directly into your server with automatic lossless compression (256KB constraint resolution).\n` +
+            `> ${BULLET_EMOJI} **2-Minute Interactive Collector:** Run \`!emjs upload\` and the bot will wait up to 2 minutes for your file attachment if not attached initially.\n` +
             `> ${BULLET_EMOJI} **Raw String Extraction:** Formats all animated emojis as \`<a:name:id>\` and static emojis as \`<:name:id>\` for instant copy-pasting.\n` +
             `> ${BULLET_EMOJI} **Dual View Modes:** Toggle between rich UI preview (with icons & direct CDN download links) and Raw Copy mode (codeblocks with select-all).\n` +
             `> ${BULLET_EMOJI} **Direct Inspector:** Inspect any emoji by mention (\`<:name:id>\`), ID, or name to reveal source server, high-res download, and creation date.\n` +
             `> ${BULLET_EMOJI} **Export Tool:** One-click download of all server emojis as a plain \`.txt\` file.\n` +
-            `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner** and **Bot Owner**.\n\n` +
+            `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner**, designated **Extra Owners**, and **Bot Owner**.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> ${BULLET_EMOJI} \`${prefix}emojis\` (or \`${prefix}animatedemojis\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}emjs upload\` (or \`${prefix}emojis upload\`) - Attach a JSON or ZIP file to batch upload emojis \`[Server Owner / Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}emojis\` (or \`${prefix}emjs\`) - Open the Animated Emoji Matrix \`[Server Owner]\`.\n` +
             `> ${BULLET_EMOJI} \`${prefix}emojis static\` - View all static emojis in the server.\n` +
             `> ${BULLET_EMOJI} \`${prefix}emojis all\` - View all emojis in the server.\n` +
             `> ${BULLET_EMOJI} \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
@@ -2513,6 +2519,8 @@ export const helpModules = [
     "`!qrcode / !qrc / !qrmanager <text/link>` - Generate high-resolution QR code `[Public]`",
     "`!steal / !stealemoji / !emojisteal / !steal-emoji / !addemoji <emoji/link>` - Steal an emoji to this server `[Extra Owner]`",
     "`!emojis / !animatedemojis / !emojilist` - Interactive animated & static emoji inventory with raw IDs (<a:name:id>), previews & copyable codeblocks `[Server Owner]`",
+    "`!emjs upload / !emojis upload` - Batch upload/import custom emojis from attached JSON or ZIP file with automatic lossless compression `[Server Owner / Extra Owner]`",
+    "`!morning / !goodmorning [panel|enable|disable|channel|auto|ping|test|add]` - Interactive daily pleasant thought dispatcher with randomized per-server morning scheduling `[Extra Owner]`",
     "`!afk / !brb [reason]` - Set an AFK status that replies when pinged `[Public]`",
     "`!bump` - Bump the server (Disboard integration) `[Public]`",
     "`!sticky / !stick <message>` - Keep a message stuck at bottom of chat `[Extra Owner]`",

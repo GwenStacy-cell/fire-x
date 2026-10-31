@@ -87,6 +87,7 @@ export function buildAnnouncementContainer(embed, color = 0x5865F2) {
 export const commands = [
   {
     name: 'announce',
+    aliases: ['announc', 'announcement'],
     description: 'Launch the Interactive Announcement Builder UI.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.ManageMessages],

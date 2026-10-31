@@ -371,11 +371,11 @@ export async function processMediaLink(client, message, url) {
       for (const targetUrl of urlsToAttempt) {
         if (downloadSuccess) break;
 
-        // Strategy A: Android client with best pre-merged stream or fallback
+        // Strategy A: TV Embedded & iOS client (Bypasses YouTube datacenter bot confirmation blocks!)
         try {
           await execPromise(
             `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
-            `--extractor-args "youtube:player_client=android" ` +
+            `--extractor-args "youtube:player_client=tv_embedded,ios,android" ` +
             `-f "bestvideo[height<=1080]+bestaudio/18/b/best" ` +
             `--no-playlist --geo-bypass --no-check-certificates ` +
             `-o "${tempPath}" -- "${targetUrl}"`
@@ -391,12 +391,12 @@ export async function processMediaLink(client, message, url) {
           console.warn('[Media] YouTube Strategy A failed:', errA.message);
         }
 
-        // Strategy B: Format 18 direct (Pre-merged stream - zero external dependencies)
+        // Strategy B: Format 18 direct with tv_embedded & web_creator
         if (!downloadSuccess) {
           try {
             await execPromise(
-              `"${ytdlpPath}" ` +
-              `--extractor-args "youtube:player_client=android" ` +
+              `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
+              `--extractor-args "youtube:player_client=tv_embedded,web_creator" ` +
               `-f "18/b/best" ` +
               `--no-playlist --geo-bypass --no-check-certificates ` +
               `-o "${tempPath}" -- "${targetUrl}"`
@@ -413,11 +413,12 @@ export async function processMediaLink(client, message, url) {
           }
         }
 
-        // Strategy C: Universal default client with 18/b/best
+        // Strategy C: Universal android client with 18/b/best
         if (!downloadSuccess) {
           try {
             await execPromise(
-              `"${ytdlpPath}" ` +
+              `"${ytdlpPath}" ${cookieArg} ` +
+              `--extractor-args "youtube:player_client=android" ` +
               `-f "18/b/best" --no-playlist --geo-bypass --no-check-certificates ` +
               `-o "${tempPath}" -- "${targetUrl}"`
             );
@@ -617,7 +618,7 @@ export async function processMp3Link(client, message, url) {
 
     let audioSuccess = false;
 
-    // Strategy A: YouTube Android Format 18 -> Direct FFmpeg MP3 Transcode (Zero ffprobe dependencies!)
+    // Strategy A: YouTube TV Embedded / iOS -> Direct FFmpeg MP3 Transcode (Bypasses datacenter blocks)
     if (isYt) {
       const vidTempPath = path.join(process.cwd(), `yt_dlp_vid_${uniqueId}.mp4`);
       const mp3OutPath = path.join(process.cwd(), `yt_dlp_${uniqueId}.mp3`);
@@ -626,7 +627,7 @@ export async function processMp3Link(client, message, url) {
       try {
         await execPromise(
           `"${ytdlpPath}" ${cookieArg} ` +
-          `--extractor-args "youtube:player_client=android" ` +
+          `--extractor-args "youtube:player_client=tv_embedded,ios,android" ` +
           `-f "18/b/best" --no-playlist --geo-bypass --no-check-certificates ` +
           `-o "${vidTempPath}" -- "${targetUrl}"`
         );
@@ -648,11 +649,12 @@ export async function processMp3Link(client, message, url) {
       }
     }
 
-    // Strategy B: Universal yt-dlp audio format for non-YouTube or fallback
+    // Strategy B: Universal yt-dlp audio format with tv_embedded fallback
     if (!audioSuccess) {
       try {
         await execPromise(
           `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
+          `--extractor-args "youtube:player_client=tv_embedded,ios,android" ` +
           `-x --audio-format mp3 -f "ba/b" ` +
           `--no-playlist --geo-bypass --no-check-certificates ` +
           `-o "${tempPattern}" -- "${targetUrl}"`

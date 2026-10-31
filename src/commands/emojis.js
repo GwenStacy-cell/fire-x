@@ -312,14 +312,14 @@ export async function handleEmojiUpload(message, args = []) {
     const collected = await message.channel.awaitMessages({ filter, max: 1, time: 120000, errors: ['time'] }).catch(() => null);
 
     if (!collected || collected.size === 0) {
-      return message.channel.send(cv2.warn('Error', 'Upload timed out. Please run the command again and attach your JSON file.'));
+      return message.channel.send(cv2.warn('Upload Timed Out', 'Upload timed out. Please run the command again and attach your JSON or ZIP file.'));
     }
 
     uploadMsg = collected.first();
   }
 
   if (!uploadMsg.attachments || uploadMsg.attachments.size === 0) {
-    return message.channel.send(cv2.warn('Error', 'Upload timed out. Please run the command again and attach your JSON file.'));
+    return message.channel.send(cv2.warn('Upload Timed Out', 'No attachments detected. Please run the command again and attach your JSON or ZIP file.'));
   }
 
   const waitMsg = await message.channel.send(cv2.info('Uploading Emojis', '<a:loading:1542155051286396938> Processing uploaded emoji archive / file...'));
@@ -472,7 +472,7 @@ export async function handleEmojiUpload(message, args = []) {
     }
 
     if (itemsToUpload.length === 0) {
-      return waitMsg.edit(cv2.warn('Error', 'No valid emojis found in the uploaded file. Please ensure your JSON contains emoji URLs or your ZIP contains images.'));
+      return waitMsg.edit(cv2.warn('No Emojis Found', 'No valid emojis found in the uploaded file. Please ensure your JSON contains emoji URLs or your ZIP contains images.'));
     }
 
     // Now upload emojis to server
