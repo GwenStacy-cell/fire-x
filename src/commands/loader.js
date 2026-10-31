@@ -1,3 +1,4 @@
+import { commands as morningCmds } from './morning.js';
 import { commands as firewallCmds } from './firewall.js';
 import { commands as hudCmds } from './hud.js';
 import { commands as dashboardCmds } from './dashboard.js';
@@ -205,7 +206,8 @@ export const allCommands = [
   uploadCmd,
   autoreactCmd,
   autoroleCmd,
-  ytstatsCmd
+  ytstatsCmd,
+  ...morningCmds
 ];
 
 export const commandMap = new Map();

@@ -210,6 +210,22 @@ export default {
       } catch (e) { console.error('[InteractionCreate] TTS interaction error:', e); }
     }
 
+    if (interaction.customId && interaction.customId.startsWith('mrn_')) {
+      try {
+        const morning = await import('../commands/morning.js');
+        return await morning.handleMorningInteraction(interaction);
+      } catch (e) {
+        console.error('[InteractionCreate] Morning interaction error:', e);
+        if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: `Failed to process morning action: ${e.message}`,
+            flags: MessageFlags.Ephemeral
+          }).catch(() => null);
+        }
+        return;
+      }
+    }
+
     if (interaction.customId && interaction.customId.startsWith('emoj_')) {
       try {
         const { handleEmojiInteractions } = await import('../commands/emojis.js');

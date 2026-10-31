@@ -1,3 +1,4 @@
+import { startMorningBroadcaster } from '../utils/morningEngine.js';
 import { REST, Routes, ActivityType, EmbedBuilder } from 'discord.js';
 import chalk from 'chalk';
 import { allCommands } from '../commands/loader.js';
@@ -491,6 +492,7 @@ export default {
     initWebSub(client);
     startYouTubeNotifier(client);
     startYtStatsEngine(client);
+    startMorningBroadcaster(client);
 
       console.log(chalk.blue(' Updating permissions for existing stats channels...'));
       try {

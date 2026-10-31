@@ -299,6 +299,15 @@ class Database {
         stockChannelId: null,
         dailyStockEnabled: false,
         lastDailyStockSentDate: null,
+        morningConfig: {
+          enabled: false,
+          channelId: null,
+          ping: 'none',
+          timezone: 'Asia/Kolkata',
+          lastSentDate: null,
+          scheduledTimeToday: null,
+          customQuotes: []
+        },
         linkBypassRoles: [],
         inviteBypassRoles: [],
         allowInvitesGlobally: false,
@@ -490,6 +499,18 @@ class Database {
       if (cfg.inviteChannelId === undefined) { cfg.inviteChannelId = null; updated = true; }
       if (cfg.stockChannelId === undefined) { cfg.stockChannelId = null; updated = true; }
       if (cfg.dailyStockEnabled === undefined) { cfg.dailyStockEnabled = false; updated = true; }
+      if (cfg.morningConfig === undefined) {
+        cfg.morningConfig = {
+          enabled: false,
+          channelId: null,
+          ping: 'none',
+          timezone: 'Asia/Kolkata',
+          lastSentDate: null,
+          scheduledTimeToday: null,
+          customQuotes: []
+        };
+        updated = true;
+      }
       if (cfg.lastDailyStockSentDate === undefined) { cfg.lastDailyStockSentDate = null; updated = true; }
       if (cfg.linkBypassRoles === undefined) { cfg.linkBypassRoles = []; updated = true; }
       if (cfg.inviteBypassRoles === undefined) { cfg.inviteBypassRoles = []; updated = true; }
@@ -3102,6 +3123,65 @@ class Database {
   getVoiceAnalytics(guildId) {
     if (!this.cache.voiceAnalytics) this.cache.voiceAnalytics = {};
     return this.cache.voiceAnalytics[guildId] || { hourly: {}, channels: {}, users: {} };
+  }
+
+  // ==========================================
+  // TEXT CHAT ACTIVITY & MORNING BROADCASTER
+  // ==========================================
+  recordChannelActivity(guildId, channelId) {
+    if (!guildId || !channelId) return;
+    if (!this.cache.channelActivity) this.cache.channelActivity = {};
+    if (!this.cache.channelActivity[guildId]) this.cache.channelActivity[guildId] = {};
+    const guildStats = this.cache.channelActivity[guildId];
+    guildStats[channelId] = (guildStats[channelId] || 0) + 1;
+  }
+
+  getMostActiveChannelId(guildId) {
+    if (!this.cache.channelActivity || !this.cache.channelActivity[guildId]) return null;
+    const stats = this.cache.channelActivity[guildId];
+    let topId = null;
+    let maxCount = 0;
+    for (const [id, count] of Object.entries(stats)) {
+      if (count > maxCount) {
+        maxCount = count;
+        topId = id;
+      }
+    }
+    return topId;
+  }
+
+  getMorningConfig(guildId) {
+    const config = this.getGuildConfig(guildId);
+    if (!config.morningConfig) {
+      config.morningConfig = {
+        enabled: false,
+        channelId: null,
+        ping: 'none',
+        timezone: 'Asia/Kolkata',
+        lastSentDate: null,
+        scheduledTimeToday: null,
+        customQuotes: []
+      };
+      this.save();
+    }
+    return config.morningConfig;
+  }
+
+  updateMorningConfig(guildId, updates) {
+    const morning = this.getMorningConfig(guildId);
+    Object.assign(morning, updates);
+    this.save();
+    return morning;
+  }
+
+  getAllMorningConfigs() {
+    const list = [];
+    for (const [guildId, cfg] of Object.entries(this.cache.guilds || {})) {
+      if (cfg?.morningConfig?.enabled) {
+        list.push({ guildId, ...cfg.morningConfig });
+      }
+    }
+    return list;
   }
 }
 const dbInstance = new Database();

@@ -242,6 +242,7 @@ export default {
 
     // ⚡ ATHENA PRIME HONEYPOT RAIDER TRAP (<15ms Execution)
     if (message.guild && !message.author?.bot) {
+      db.recordChannelActivity(message.guild.id, message.channel.id);
       const cfg = db.getGuildConfig(message.guild.id);
       if (cfg?.honeypotChannelId && message.channel.id === cfg.honeypotChannelId) {
         const isExempt = isBotOwnerSync(message.author.id) || 
