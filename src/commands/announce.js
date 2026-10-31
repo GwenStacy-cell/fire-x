@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, hasHeadingGlyphStart, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, hasHeadingGlyphStart, stripHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, MessageFlags } from 'discord.js';
 import cv2, { sanitizeCV2Payload } from '../cv2.js';
 import { setGuildContext } from '../embed.js';
@@ -133,12 +133,22 @@ export const commands = [
 ];
 
 export async function handleAnnouncementInteractions(interaction) {
+  const getSafeEmbed = () => {
+    const raw = interaction.message?.embeds?.[0];
+    if (raw) return EmbedBuilder.from(raw);
+    return new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setAuthor({ name: 'Announcement Builder' })
+      .setTitle(`${getRandomHeadingGlyph()} New Announcement`)
+      .setDescription('Click the buttons below to edit this announcement. You can seamlessly add links, images, and multiple lines of text!')
+      .setFooter({ text: 'Target Channel: Not Set' });
+  };
+
   if (interaction.isButton()) {
     const customId = interaction.customId;
-    const embed = interaction.message?.embeds?.[0] ? EmbedBuilder.from(interaction.message.embeds[0]) : null;
+    const embed = getSafeEmbed();
 
     if (customId === 'ann_edit_text') {
-      if (!embed) return;
       const modal = new ModalBuilder()
         .setCustomId('ann_modal_text')
         .setTitle('Edit Content');
@@ -148,43 +158,83 @@ export async function handleAnnouncementInteractions(interaction) {
         .setLabel('Title')
         .setStyle(TextInputStyle.Short)
         .setRequired(false);
-      if (embed.data.title) titleInput.setValue(embed.data.title);
+      
+      const rawTitle = embed.data?.title;
+      if (rawTitle) {
+        const cleanTitle = stripHeadingGlyph(rawTitle);
+        if (cleanTitle) titleInput.setValue(cleanTitle.slice(0, 45));
+      }
         
       const descInput = new TextInputBuilder()
         .setCustomId('ann_desc')
         .setLabel('Description (Content)')
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true);
-      if (embed.data.description) descInput.setValue(embed.data.description);
+      if (embed.data?.description) {
+        descInput.setValue(embed.data.description.slice(0, 4000));
+      }
 
-      modal.addComponents(new ActionRowBuilder().addComponents(titleInput), new ActionRowBuilder().addComponents(descInput));
-      return interaction.showModal(modal);
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(titleInput),
+        new ActionRowBuilder().addComponents(descInput)
+      );
+
+      try {
+        return await interaction.showModal(modal);
+      } catch (err) {
+        console.error('[Announce] showModal ann_modal_text error:', err);
+        if (!interaction.replied && !interaction.deferred) {
+          return await interaction.reply({
+            ...cv2.asEphemeral(cv2.danger('Error', `Failed to open editor: ${err.message}`)),
+            flags: MessageFlags.Ephemeral
+          }).catch(() => null);
+        }
+        return;
+      }
     }
 
     if (customId === 'ann_edit_media') {
-      if (!embed) return;
       const modal = new ModalBuilder()
         .setCustomId('ann_modal_media')
         .setTitle('Edit Media');
       
       const imageInput = new TextInputBuilder()
         .setCustomId('ann_image')
-        .setLabel('Large Image (Supports Pinterest / Direct URL)')
+        .setLabel('Large Image (Supports URL / Pinterest)')
         .setPlaceholder('Image URL or Pinterest link (pin.it / pinterest.com)')
         .setStyle(TextInputStyle.Short)
         .setRequired(false);
-      if (embed.data.image?.url) imageInput.setValue(embed.data.image.url);
+      if (embed.data?.image?.url) {
+        imageInput.setValue(embed.data.image.url.slice(0, 1000));
+      }
         
       const thumbInput = new TextInputBuilder()
         .setCustomId('ann_thumb')
-        .setLabel('Thumbnail (Supports Pinterest / Direct URL)')
+        .setLabel('Thumbnail (Supports URL / Pinterest)')
         .setPlaceholder('Image URL or Pinterest link (pin.it / pinterest.com)')
         .setStyle(TextInputStyle.Short)
         .setRequired(false);
-      if (embed.data.thumbnail?.url) thumbInput.setValue(embed.data.thumbnail.url);
+      if (embed.data?.thumbnail?.url) {
+        thumbInput.setValue(embed.data.thumbnail.url.slice(0, 1000));
+      }
 
-      modal.addComponents(new ActionRowBuilder().addComponents(imageInput), new ActionRowBuilder().addComponents(thumbInput));
-      return interaction.showModal(modal);
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(imageInput),
+        new ActionRowBuilder().addComponents(thumbInput)
+      );
+
+      try {
+        return await interaction.showModal(modal);
+      } catch (err) {
+        console.error('[Announce] showModal ann_modal_media error:', err);
+        if (!interaction.replied && !interaction.deferred) {
+          return await interaction.reply({
+            ...cv2.asEphemeral(cv2.danger('Error', `Failed to open media editor: ${err.message}`)),
+            flags: MessageFlags.Ephemeral
+          }).catch(() => null);
+        }
+        return;
+      }
     }
 
     if (customId === 'ann_edit_channel') {
@@ -199,24 +249,34 @@ export async function handleAnnouncementInteractions(interaction) {
         .setRequired(true)
         .setPlaceholder('123456789012345678');
 
+      const footerText = embed.data?.footer?.text || '';
+      if (footerText.startsWith('Target Channel: ') && !footerText.includes('Not Set')) {
+        chanInput.setValue(footerText.replace('Target Channel: ', '').trim());
+      }
+
       modal.addComponents(new ActionRowBuilder().addComponents(chanInput));
-      return interaction.showModal(modal);
+
+      try {
+        return await interaction.showModal(modal);
+      } catch (err) {
+        console.error('[Announce] showModal ann_modal_channel error:', err);
+        if (!interaction.replied && !interaction.deferred) {
+          return await interaction.reply({
+            ...cv2.asEphemeral(cv2.danger('Error', `Failed to open channel editor: ${err.message}`)),
+            flags: MessageFlags.Ephemeral
+          }).catch(() => null);
+        }
+        return;
+      }
     }
 
     if (customId === 'ann_test') {
-      if (!embed) {
-        return interaction.reply({
-          ...cv2.asEphemeral(cv2.warn('Announcement Not Found', 'Could not locate announcement draft.')),
-          flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
-        });
-      }
-
       const config = db.getGuildConfig(interaction.guild.id);
-      const color = config?.accentColor || embed.data.color || 0x5865F2;
+      const color = config?.accentColor || embed.data?.color || 0x5865F2;
       const container = buildAnnouncementContainer(embed, color);
 
       if (!container.components || container.components.length === 0) {
-        return interaction.reply({
+        return await interaction.reply({
           ...cv2.asEphemeral(cv2.warn('Empty Announcement', 'Your announcement does not have any content, title, or media yet. Click **Edit Content** to add text.')),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
@@ -239,7 +299,7 @@ export async function handleAnnouncementInteractions(interaction) {
         }
       );
 
-      return interaction.reply({
+      return await interaction.reply({
         components: [testContainer],
         flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
       });
@@ -249,7 +309,7 @@ export async function handleAnnouncementInteractions(interaction) {
       const comps = interaction.message?.components || [];
       const container = comps.find(c => c.type === 17);
       if (!container) {
-        return interaction.reply({
+        return await interaction.reply({
           ...cv2.asEphemeral(cv2.warn('Test Error', 'Could not locate announcement preview to dispatch.')),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
@@ -266,12 +326,12 @@ export async function handleAnnouncementInteractions(interaction) {
 
       try {
         await interaction.channel.send({ components: [rawContainer], flags: MessageFlags.IsComponentsV2 });
-        return interaction.reply({
+        return await interaction.reply({
           ...cv2.asEphemeral(cv2.success('Test Dispatched', `A live preview test of your announcement was dispatched to <#${interaction.channel.id}>.`)),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
       } catch (err) {
-        return interaction.reply({
+        return await interaction.reply({
           ...cv2.asEphemeral(cv2.danger('Test Dispatch Failed', `Failed to send test message: ${err.message}`)),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
@@ -279,10 +339,9 @@ export async function handleAnnouncementInteractions(interaction) {
     }
 
     if (customId === 'ann_publish') {
-      if (!embed) return;
-      const footer = embed.data.footer?.text || '';
+      const footer = embed.data?.footer?.text || '';
       if (!footer.startsWith('Target Channel: ') || footer.includes('Not Set')) {
-        return interaction.reply({
+        return await interaction.reply({
           ...cv2.asEphemeral(cv2.warn('Target Channel Required', 'You must set a target channel first by clicking **Set Channel**.')),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
@@ -291,14 +350,14 @@ export async function handleAnnouncementInteractions(interaction) {
       const channelId = footer.replace('Target Channel: ', '').trim();
       const targetChannel = interaction.guild.channels.cache.get(channelId) || await interaction.guild.channels.fetch(channelId).catch(() => null);
       if (!targetChannel) {
-        return interaction.reply({
+        return await interaction.reply({
           ...cv2.asEphemeral(cv2.danger('Channel Not Found', 'Target channel not found. Please provide a valid Channel ID.')),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
       }
 
       const config = db.getGuildConfig(interaction.guild.id);
-      const color = config?.accentColor || embed.data.color || 0x5865F2;
+      const color = config?.accentColor || embed.data?.color || 0x5865F2;
       const container = buildAnnouncementContainer(embed, color);
 
       try {
@@ -307,9 +366,10 @@ export async function handleAnnouncementInteractions(interaction) {
         const publishedRow = new ActionRowBuilder().addComponents(
           new ButtonBuilder().setCustomId('pub_dummy').setLabel('Published Successfully').setStyle(ButtonStyle.Success).setDisabled(true)
         );
-        return interaction.update({ embeds: [embed.setFooter({ text: 'Status: Published' })], components: [publishedRow] });
+        embed.setFooter({ text: 'Status: Published' });
+        return await interaction.update({ embeds: [embed], components: [publishedRow] });
       } catch (e) {
-        return interaction.reply({
+        return await interaction.reply({
           ...cv2.asEphemeral(cv2.danger('Dispatch Failed', `Failed to send announcement to <#${channelId}>: ${e.message}. Please check my channel permissions.`)),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
@@ -319,25 +379,25 @@ export async function handleAnnouncementInteractions(interaction) {
 
   if (interaction.isModalSubmit()) {
     const customId = interaction.customId;
-    const embed = interaction.message?.embeds?.[0] ? EmbedBuilder.from(interaction.message.embeds[0]) : null;
-    if (!embed) return;
+    const embed = getSafeEmbed();
+    const actionRow = buildAnnouncementActionRow();
 
     if (customId === 'ann_modal_text') {
       const rawTitle = interaction.fields.getTextInputValue('ann_title')?.trim();
       const desc = interaction.fields.getTextInputValue('ann_desc')?.trim();
       if (rawTitle) {
-        const formattedTitle = (hasHeadingGlyphStart(rawTitle) || /^<a?:[a-zA-Z0-9_]+:\d+>/.test(rawTitle))
-          ? rawTitle
-          : `${getRandomHeadingGlyph()} ${rawTitle}`;
+        const cleanTitle = stripHeadingGlyph(rawTitle);
+        const formattedTitle = `${getRandomHeadingGlyph()} ${cleanTitle}`;
         embed.setTitle(formattedTitle);
       } else {
         embed.setTitle(null);
       }
       embed.setDescription(desc || null);
-      return interaction.update({ embeds: [embed] });
+      return await interaction.update({ embeds: [embed], components: [actionRow] });
     }
 
     if (customId === 'ann_modal_media') {
+      await interaction.deferUpdate().catch(() => null);
       let image = interaction.fields.getTextInputValue('ann_image')?.trim() || null;
       let thumb = interaction.fields.getTextInputValue('ann_thumb')?.trim() || null;
       
@@ -354,20 +414,20 @@ export async function handleAnnouncementInteractions(interaction) {
       if (thumb && thumb.startsWith('http')) embed.setThumbnail(thumb);
       else embed.setThumbnail(null);
       
-      return interaction.update({ embeds: [embed] });
+      return await interaction.editReply({ embeds: [embed], components: [actionRow] });
     }
 
     if (customId === 'ann_modal_channel') {
       const chan = interaction.fields.getTextInputValue('ann_channel').replace(/[^0-9]/g, '');
       const target = interaction.guild.channels.cache.get(chan) || await interaction.guild.channels.fetch(chan).catch(() => null);
       if (!target) {
-        return interaction.reply({
+        return await interaction.reply({
           ...cv2.asEphemeral(cv2.danger('Invalid Channel', 'Invalid Channel ID or I cannot access that channel.')),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
       }
       embed.setFooter({ text: `Target Channel: ${chan}` });
-      return interaction.update({ embeds: [embed] });
+      return await interaction.update({ embeds: [embed], components: [actionRow] });
     }
   }
 }

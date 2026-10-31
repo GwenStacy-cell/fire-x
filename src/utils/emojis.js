@@ -91,6 +91,21 @@ export function hasHeadingGlyphStart(str) {
 }
 
 /**
+ * Strips any leading animated heading glyphs or custom emojis from a string
+ */
+export function stripHeadingGlyph(str) {
+  if (!str || typeof str !== 'string') return '';
+  let cleaned = str.trim();
+  for (const glyph of HEADING_GLYPHS) {
+    if (cleaned.startsWith(glyph)) {
+      cleaned = cleaned.slice(glyph.length).trim();
+      break;
+    }
+  }
+  return cleaned.replace(/^<a?:[a-zA-Z0-9_]+:\d+>\s*/, '');
+}
+
+/**
  * Formats a heading string:
  * 1. Prepend a random animated glyph if no emoji is at start
  * 2. Replaces legacy tick with the new tick

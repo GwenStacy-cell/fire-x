@@ -13,9 +13,131 @@ import db from '../database.js';
 import { isBotOwnerSync, isExtraOwner, isServerAdmin, getBotOwnerIds, checkCommandClearance } from '../utils/helpers.js';
 const TOGGLE_ON = '<:emoji_16:1533860111704002665>';
 
+// ==========================================
+// GLOBALLY PATCH CV2 RESPONSES TO BYPASS DJS V14 VALIDATION BUG
+// ==========================================
+export const isCV2 = (opts) => {
+  if (!opts) return false;
+  if (opts.flags != null && (opts.flags & 32768)) return true;
+  if (Array.isArray(opts.components) && opts.components.some(c => c && (c.type === 17 || c.type === 9 || c.type === 14 || c.data?.type === 17))) return true;
+  return false;
+};
+
+export const resolveFilesHelper = async (files) => {
+  if (!files) return undefined;
+  const arr = Array.isArray(files) ? files : [files];
+  if (arr.length === 0) return undefined;
+  return Promise.all(arr.map(async (file) => {
+    if (!file) return file;
+    if (file.data && file.name) return file;
+    return MessagePayload.resolveFile(file);
+  }));
+};
+
+export const prepareCV2Payload = (options, resolvedFiles) => {
+  const flags = (options.flags != null ? options.flags : 0) | 32768;
+  let comps = Array.isArray(options.components) ? [...options.components] : [];
+  if (options.content) {
+    const cIdx = comps.findIndex(c => c && (c.type === 17 || c.data?.type === 17));
+    if (cIdx !== -1) {
+      const c = { ...(comps[cIdx].toJSON ? comps[cIdx].toJSON() : comps[cIdx]) };
+      c.components = Array.isArray(c.components) ? [...c.components] : [];
+      c.components.unshift({ type: 14, divider: true });
+      c.components.unshift({ type: 10, content: options.content });
+      comps[cIdx] = c;
+    } else {
+      comps.unshift({ type: 17, components: [{ type: 10, content: options.content }] });
+    }
+  }
+  const data = { components: comps, flags };
+  const fileList = resolvedFiles || options.files;
+  if (options.attachments && Array.isArray(options.attachments)) {
+    data.attachments = options.attachments;
+  } else if (fileList && Array.isArray(fileList)) {
+    data.attachments = fileList.map((f, i) => ({
+      id: String(i),
+      filename: f.name || (typeof f === 'string' ? f.split(/[\/]/).pop() : ('file_' + i)),
+      description: f.description
+    }));
+  }
+  return data;
+};
+
+export function patchInteractionCV2(interaction) {
+  if (!interaction || interaction._cv2Patched) return;
+  interaction._cv2Patched = true;
+
+  if (interaction.editReply) {
+    const _editReply = interaction.editReply.bind(interaction);
+    interaction.editReply = async function(options) {
+      if (!interaction.deferred && !interaction.replied) {
+        return interaction.reply(options);
+      }
+      if (isCV2(options)) {
+        interaction.replied = true;
+        const resolvedFiles = await resolveFilesHelper(options.files);
+        const body = prepareCV2Payload(options, resolvedFiles);
+        return interaction.client.rest.patch(`/webhooks/${interaction.client.user.id}/${interaction.token}/messages/@original`, {
+          body, files: resolvedFiles
+        });
+      }
+      return _editReply(options);
+    };
+  }
+
+  if (interaction.reply) {
+    const _reply = interaction.reply.bind(interaction);
+    interaction.reply = async function(options) {
+      if (interaction.deferred || interaction.replied) {
+        if (interaction.followUp) return interaction.followUp(options);
+        return;
+      }
+      if (isCV2(options)) {
+        interaction.replied = true;
+        const resolvedFiles = await resolveFilesHelper(options.files);
+        const data = prepareCV2Payload(options, resolvedFiles);
+        return interaction.client.rest.post(`/interactions/${interaction.id}/${interaction.token}/callback`, {
+          body: { type: 4, data }, files: resolvedFiles
+        });
+      }
+      return _reply(options);
+    };
+  }
+
+  if (interaction.update) {
+    const _update = interaction.update.bind(interaction);
+    interaction.update = async function(options) {
+      if (isCV2(options)) {
+        interaction.replied = true;
+        const resolvedFiles = await resolveFilesHelper(options.files);
+        const data = prepareCV2Payload(options, resolvedFiles);
+        return interaction.client.rest.post(`/interactions/${interaction.id}/${interaction.token}/callback`, {
+          body: { type: 7, data }, files: resolvedFiles
+        });
+      }
+      return _update(options);
+    };
+  }
+  
+  if (interaction.followUp) {
+    const _followUp = interaction.followUp.bind(interaction);
+    interaction.followUp = async function(options) {
+      if (isCV2(options)) {
+        const resolvedFiles = await resolveFilesHelper(options.files);
+        const body = prepareCV2Payload(options, resolvedFiles);
+        return interaction.client.rest.post(`/webhooks/${interaction.client.user.id}/${interaction.token}`, {
+          body, files: resolvedFiles
+        });
+      }
+      return _followUp(options);
+    };
+  }
+}
+
 export default {
   name: 'interactionCreate',
   async execute(interaction) {
+    patchInteractionCV2(interaction);
     // ==========================================
     // GLOBALLY BLACKLISTED USER ENFORCEMENT
     // ==========================================
@@ -61,28 +183,37 @@ export default {
     if (interaction.customId && interaction.customId.startsWith('ann_')) {
       try {
         const announce = await import('../commands/announce.js');
-        return announce.handleAnnouncementInteractions(interaction);
-      } catch (e) { console.error(e); }
+        return await announce.handleAnnouncementInteractions(interaction);
+      } catch (e) {
+        console.error('[InteractionCreate] Announcement interaction error:', e);
+        if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
+          await interaction.reply({
+            content: `Failed to process announcement action: ${e.message}`,
+            flags: MessageFlags.Ephemeral
+          }).catch(() => null);
+        }
+        return;
+      }
     }
 
     if (interaction.customId && interaction.customId.startsWith('aian_')) {
       try {
         const aiannounce = await import('../commands/aiannounce.js');
-        return aiannounce.handleAIAnnouncementInteractions(interaction);
+        return await aiannounce.handleAIAnnouncementInteractions(interaction);
       } catch (e) { console.error(e); }
     }
 
     if (interaction.customId && interaction.customId.startsWith('tts_')) {
       try {
         const { handleTtsInteraction } = await import('../commands/tts.js');
-        return handleTtsInteraction(interaction);
+        return await handleTtsInteraction(interaction);
       } catch (e) { console.error('[InteractionCreate] TTS interaction error:', e); }
     }
 
     if (interaction.customId && interaction.customId.startsWith('emoj_')) {
       try {
         const { handleEmojiInteractions } = await import('../commands/emojis.js');
-        return handleEmojiInteractions(interaction);
+        return await handleEmojiInteractions(interaction);
       } catch (e) { console.error('[InteractionCreate] Emoji interaction error:', e); }
     }
 
@@ -1297,117 +1428,7 @@ if (interaction.customId.startsWith('xp_view_rank_')) {
   }
 
     try {
-        // ==========================================
-    // GLOBALLY PATCH CV2 RESPONSES TO BYPASS DJS V14 VALIDATION BUG
-    // ==========================================
-    const isCV2 = (opts) => {
-      if (!opts) return false;
-      if (opts.flags != null && (opts.flags & 32768)) return true;
-      if (Array.isArray(opts.components) && opts.components.some(c => c && (c.type === 17 || c.type === 9 || c.type === 14 || c.data?.type === 17))) return true;
-      return false;
-    };
-
-    const resolveFilesHelper = async (files) => {
-      if (!files) return undefined;
-      const arr = Array.isArray(files) ? files : [files];
-      if (arr.length === 0) return undefined;
-      return Promise.all(arr.map(async (file) => {
-        if (!file) return file;
-        if (file.data && file.name) return file;
-        return MessagePayload.resolveFile(file);
-      }));
-    };
-
-    const prepareCV2Payload = (options, resolvedFiles) => {
-      const flags = (options.flags != null ? options.flags : 0) | 32768;
-      let comps = Array.isArray(options.components) ? [...options.components] : [];
-      if (options.content) {
-        const cIdx = comps.findIndex(c => c && (c.type === 17 || c.data?.type === 17));
-        if (cIdx !== -1) {
-          const c = { ...(comps[cIdx].toJSON ? comps[cIdx].toJSON() : comps[cIdx]) };
-          c.components = Array.isArray(c.components) ? [...c.components] : [];
-          c.components.unshift({ type: 14, divider: true });
-          c.components.unshift({ type: 10, content: options.content });
-          comps[cIdx] = c;
-        } else {
-          comps.unshift({ type: 17, components: [{ type: 10, content: options.content }] });
-        }
-      }
-      const data = { components: comps, flags };
-      const fileList = resolvedFiles || options.files;
-      if (options.attachments && Array.isArray(options.attachments)) {
-        data.attachments = options.attachments;
-      } else if (fileList && Array.isArray(fileList)) {
-        data.attachments = fileList.map((f, i) => ({
-          id: String(i),
-          filename: f.name || (typeof f === 'string' ? f.split(/[\\/]/).pop() : `file_${i}`),
-          description: f.description
-        }));
-      }
-      return data;
-    };
-
-    const _editReply = interaction.editReply.bind(interaction);
-    interaction.editReply = async function(options) {
-      if (!interaction.deferred && !interaction.replied) {
-        return interaction.reply(options);
-      }
-      if (isCV2(options)) {
-        interaction.replied = true;
-        const resolvedFiles = await resolveFilesHelper(options.files);
-        const body = prepareCV2Payload(options, resolvedFiles);
-        return interaction.client.rest.patch(`/webhooks/${interaction.client.user.id}/${interaction.token}/messages/@original`, {
-          body, files: resolvedFiles
-        });
-      }
-      return _editReply(options);
-    };
-
-    const _reply = interaction.reply.bind(interaction);
-    interaction.reply = async function(options) {
-      if (interaction.deferred || interaction.replied) {
-        if (interaction.followUp) return interaction.followUp(options);
-        return;
-      }
-      if (isCV2(options)) {
-        interaction.replied = true;
-        const resolvedFiles = await resolveFilesHelper(options.files);
-        const data = prepareCV2Payload(options, resolvedFiles);
-        return interaction.client.rest.post(`/interactions/${interaction.id}/${interaction.token}/callback`, {
-          body: { type: 4, data }, files: resolvedFiles
-        });
-      }
-      return _reply(options);
-    };
-
-    if (interaction.update) {
-      const _update = interaction.update.bind(interaction);
-      interaction.update = async function(options) {
-        if (isCV2(options)) {
-          interaction.replied = true;
-          const resolvedFiles = await resolveFilesHelper(options.files);
-          const data = prepareCV2Payload(options, resolvedFiles);
-          return interaction.client.rest.post(`/interactions/${interaction.id}/${interaction.token}/callback`, {
-            body: { type: 7, data }, files: resolvedFiles
-          });
-        }
-        return _update(options);
-      };
-    }
-    
-    if (interaction.followUp) {
-      const _followUp = interaction.followUp.bind(interaction);
-      interaction.followUp = async function(options) {
-        if (isCV2(options)) {
-          const resolvedFiles = await resolveFilesHelper(options.files);
-          const body = prepareCV2Payload(options, resolvedFiles);
-          return interaction.client.rest.post(`/webhooks/${interaction.client.user.id}/${interaction.token}`, {
-            body, files: resolvedFiles
-          });
-        }
-        return _followUp(options);
-      };
-    }
+        patchInteractionCV2(interaction);
 
     const guild = interaction.guild;
     if (guild) setGuildContext(guild.id);
@@ -3279,12 +3300,7 @@ async function handleSecurityInteractions(interaction, guild) {
   }
 
   
-    if (customId && customId.startsWith('ann_')) {
-      try {
-        const announce = await import('../commands/announce.js');
-        return announce.handleAnnouncementInteractions(interaction);
-      } catch (e) { console.error(e); }
-    }
+// ann_ handled at top-level
 
     if (customId.startsWith('am_') || customId.startsWith('bp_')) {
       if (customId !== 'am_select_honeypot_channel') {
