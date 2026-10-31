@@ -56,12 +56,29 @@ export const HEADING_GLYPHS = [
   '<a:33_tav_:1565629226546241546>'
 ];
 
+let recentHeadingGlyphs = [];
+
 /**
- * Returns a random heading glyph from the dynamic pool
+ * Returns a random heading glyph from the dynamic pool.
+ * Employs a rolling non-repeating history buffer (tracking the last 10 selections)
+ * to guarantee that consecutive calls NEVER repeat the same glyph.
  */
 export function getRandomHeadingGlyph() {
-  const index = Math.floor(Math.random() * HEADING_GLYPHS.length);
-  return HEADING_GLYPHS[index];
+  if (!HEADING_GLYPHS || HEADING_GLYPHS.length === 0) return '';
+  if (HEADING_GLYPHS.length === 1) return HEADING_GLYPHS[0];
+
+  const maxHistory = Math.min(10, Math.floor(HEADING_GLYPHS.length / 2));
+  const available = HEADING_GLYPHS.filter(g => !recentHeadingGlyphs.includes(g));
+  const pool = available.length > 0 ? available : HEADING_GLYPHS;
+
+  const picked = pool[Math.floor(Math.random() * pool.length)];
+
+  recentHeadingGlyphs.push(picked);
+  if (recentHeadingGlyphs.length > maxHistory) {
+    recentHeadingGlyphs.shift();
+  }
+
+  return picked;
 }
 
 /**

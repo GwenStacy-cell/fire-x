@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, hasHeadingGlyphStart, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, MessageFlags } from 'discord.js';
 import cv2, { sanitizeCV2Payload } from '../cv2.js';
 import { setGuildContext } from '../embed.js';
@@ -42,20 +42,27 @@ export function buildAnnouncementContainer(embed, color = 0x5865F2) {
   };
   let hasHeader = false;
 
-  const title = embed.data?.title?.trim();
+  const rawTitle = embed.data?.title?.trim();
   const desc = embed.data?.description?.trim();
   const thumbUrl = embed.data?.thumbnail?.url;
   const imgUrl = embed.data?.image?.url;
 
+  let title = rawTitle;
+  if (title) {
+    title = (hasHeadingGlyphStart(title) || /^<a?:[a-zA-Z0-9_]+:\d+>/.test(title))
+      ? title
+      : `${getRandomHeadingGlyph()} ${title}`;
+  }
+
   if (title && thumbUrl) {
     container.components.push({
       type: 9,
-      components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} ${title}` }],
+      components: [{ type: 10, content: `# ${title}` }],
       accessory: { type: 11, media: { url: thumbUrl } }
     });
     hasHeader = true;
   } else if (title) {
-    container.components.push({ type: 10, content: `# ${getRandomHeadingGlyph()} ${title}` });
+    container.components.push({ type: 10, content: `# ${title}` });
     hasHeader = true;
   } else if (thumbUrl) {
     container.components.push({
@@ -93,7 +100,7 @@ export const commands = [
       const previewEmbed = new EmbedBuilder()
         .setColor(color)
         .setAuthor({ name: 'Announcement Builder' })
-        .setTitle('New Announcement')
+        .setTitle(`${getRandomHeadingGlyph()} New Announcement`)
         .setDescription('Click the buttons below to edit this announcement. You can seamlessly add links, images, and multiple lines of text!')
         .setThumbnail(message.guild.members.me.displayAvatarURL({ dynamic: true, size: 256 }))
         .setFooter({ text: 'Target Channel: Not Set' });
@@ -113,7 +120,7 @@ export const commands = [
       const previewEmbed = new EmbedBuilder()
         .setColor(color)
         .setAuthor({ name: 'Announcement Builder' })
-        .setTitle('New Announcement')
+        .setTitle(`${getRandomHeadingGlyph()} New Announcement`)
         .setDescription('Click the buttons below to edit this announcement. You can seamlessly add links, images, and multiple lines of text!')
         .setThumbnail(interaction.guild.members.me.displayAvatarURL({ dynamic: true, size: 256 }))
         .setFooter({ text: 'Target Channel: Not Set' });
@@ -215,15 +222,25 @@ export async function handleAnnouncementInteractions(interaction) {
         });
       }
 
-      const testActionRow = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('ann_test_send_channel')
-          .setLabel('Send Test to Current Channel')
-          .setStyle(ButtonStyle.Secondary)
+      // Clone container and append test dispatch button safely INSIDE the container
+      const testContainer = JSON.parse(JSON.stringify(container));
+      testContainer.components.push(
+        { type: 14, divider: true },
+        {
+          type: 1,
+          components: [
+            {
+              type: 2,
+              style: 2,
+              label: 'Send Test to Current Channel',
+              custom_id: 'ann_test_send_channel'
+            }
+          ]
+        }
       );
 
       return interaction.reply({
-        components: [container, testActionRow.toJSON()],
+        components: [testContainer],
         flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
       });
     }
@@ -233,12 +250,20 @@ export async function handleAnnouncementInteractions(interaction) {
       const container = comps.find(c => c.type === 17);
       if (!container) {
         return interaction.reply({
-          ...cv2.asEphemeral(cv2.warn('Test Error', 'Could not locate announcement container to test.')),
+          ...cv2.asEphemeral(cv2.warn('Test Error', 'Could not locate announcement preview to dispatch.')),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
       }
 
-      const rawContainer = container.toJSON ? container.toJSON() : container;
+      // Clean container by removing test button row and trailing divider
+      const rawContainer = container.toJSON ? container.toJSON() : JSON.parse(JSON.stringify(container));
+      if (rawContainer.components && Array.isArray(rawContainer.components)) {
+        rawContainer.components = rawContainer.components.filter(c => c.type !== 1);
+        if (rawContainer.components.length > 0 && rawContainer.components[rawContainer.components.length - 1].type === 14) {
+          rawContainer.components.pop();
+        }
+      }
+
       try {
         await interaction.channel.send({ components: [rawContainer], flags: MessageFlags.IsComponentsV2 });
         return interaction.reply({
@@ -298,11 +323,17 @@ export async function handleAnnouncementInteractions(interaction) {
     if (!embed) return;
 
     if (customId === 'ann_modal_text') {
-      const title = interaction.fields.getTextInputValue('ann_title');
-      const desc = interaction.fields.getTextInputValue('ann_desc');
-      if (title) embed.setTitle(title);
-      else embed.setTitle(null);
-      embed.setDescription(desc);
+      const rawTitle = interaction.fields.getTextInputValue('ann_title')?.trim();
+      const desc = interaction.fields.getTextInputValue('ann_desc')?.trim();
+      if (rawTitle) {
+        const formattedTitle = (hasHeadingGlyphStart(rawTitle) || /^<a?:[a-zA-Z0-9_]+:\d+>/.test(rawTitle))
+          ? rawTitle
+          : `${getRandomHeadingGlyph()} ${rawTitle}`;
+        embed.setTitle(formattedTitle);
+      } else {
+        embed.setTitle(null);
+      }
+      embed.setDescription(desc || null);
       return interaction.update({ embeds: [embed] });
     }
 
