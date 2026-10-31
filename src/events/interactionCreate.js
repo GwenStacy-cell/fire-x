@@ -2175,6 +2175,7 @@ if (interaction.customId.startsWith('xp_view_rank_')) {
 
       // SERVER SCANNER BUTTONS
       if (interaction.customId.startsWith('scanserver_')) {
+        await interaction.deferUpdate().catch(() => null);
         const { handleScanServer } = await import('../commands/security.js');
         const parts = interaction.customId.split('_');
         const action = parts[1];
@@ -2929,6 +2930,7 @@ async function handleSecurityInteractions(interaction, guild) {
 
     // ⚡ Zero-Risk Nuke Attack Simulator
     if (customId === 'sec_simnuke_rerun' || customId === 'sec_simnuke_btn') {
+      await interaction.deferUpdate().catch(() => null);
       try {
         const sec = await import('../commands/security.js');
         const panel = await sec.handleSimNukeCommand(guild, interaction.member);
@@ -2947,6 +2949,7 @@ async function handleSecurityInteractions(interaction, guild) {
 
     // 📜 Defense Matrix Black Box
     if (customId === 'sec_panichistory_btn') {
+      await interaction.deferUpdate().catch(() => null);
       try {
         const sec = await import('../commands/security.js');
         const panel = await sec.getPanicHistoryPanel(guild, interaction.member);
@@ -2967,6 +2970,7 @@ async function handleSecurityInteractions(interaction, guild) {
 
     // 🎛️ Unified Security Matrix Control Room Jump & Module Selector
     if (customId === 'sec_matrix_jump') {
+      await interaction.deferUpdate().catch(() => null);
       try {
         const sec = await import('../commands/security.js');
         const panel = await sec.getSecurityMatrixHub(guild, interaction.member);
@@ -2975,6 +2979,7 @@ async function handleSecurityInteractions(interaction, guild) {
     }
 
     if (interaction.isStringSelectMenu() && customId === 'sec_matrix_module_select') {
+      await interaction.deferUpdate().catch(() => null);
       const sec = await import('../commands/security.js');
       const val = interaction.values[0];
       let panel;
@@ -3228,6 +3233,7 @@ async function handleSecurityInteractions(interaction, guild) {
            return interaction.update(await sec.getAntinukeArchitecturePanel(guild));
         }
         if (customId === 'sec_status_back' || customId === 'sec_status_view') {
+           await interaction.deferUpdate().catch(() => null);
            const sec = await import('../commands/security.js');
            return interaction.update(await sec.getSecurityStatusPanel(guild));
         }
@@ -3254,6 +3260,7 @@ async function handleSecurityInteractions(interaction, guild) {
 
   // Security Overview Navigation
   if (customId === 'sec_back') {
+    await interaction.deferUpdate().catch(() => null);
     try {
       const sec = await import('../commands/security.js');
       const panel = await sec.getSecurityStatusPanel(guild);
@@ -3497,6 +3504,7 @@ async function handleSecurityInteractions(interaction, guild) {
   }
 
   if (customId === 'wlo_back') {
+    await interaction.deferUpdate().catch(() => null);
     try {
       const sec = await import('../commands/security.js');
       const panel = await sec.getWhitelistOverviewPanel(guild);
@@ -3509,6 +3517,7 @@ async function handleSecurityInteractions(interaction, guild) {
     
     if (interaction.isAnySelectMenu()) {
       if (customId.startsWith('wlo_select')) {
+        await interaction.deferUpdate().catch(() => null);
         let type, targetId, viewAction;
         const subAction = actionParts[1].replace('select', ''); 
         type = actionParts[2]; 
@@ -3583,6 +3592,7 @@ async function handleSecurityInteractions(interaction, guild) {
     targetId = parts[3];
   }
 
+  await interaction.deferUpdate().catch(() => null);
   // Determine which view to render after update
   let viewToRender = 'manage';
   if (action === 'save') {
@@ -3647,6 +3657,7 @@ export async function handleWhitelistModal(interaction) {
     return interaction.reply({ content: 'Invalid limit. Please enter a valid positive number.', flags: MessageFlags.Ephemeral });
   }
 
+  await interaction.deferUpdate().catch(() => null);
   let wData = db.getWhitelist(interaction.guild.id, targetId, type) || { modules: [], triggerLimit: 0, currentUsage: 0 };
   wData.triggerLimit = limitVal;
   wData.currentUsage = 0;
