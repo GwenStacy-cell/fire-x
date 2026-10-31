@@ -402,6 +402,56 @@ var _m = function(eph) {
   };
 };
 
+export async function edit(target, payload) {
+  if (!target) return null;
+  if (typeof payload === 'string') payload = { content: payload };
+
+  if (payload && payload.data && typeof payload.data === 'object' && !payload.components && !payload.content) {
+    payload = Object.assign({}, payload.data);
+  } else {
+    payload = Object.assign({}, payload);
+  }
+
+  let resolvedFiles = payload.files;
+  if (resolvedFiles) {
+    const arr = Array.isArray(resolvedFiles) ? resolvedFiles : [resolvedFiles];
+    resolvedFiles = await Promise.all(arr.map(async f => {
+      if (!f) return f;
+      if (f.data && f.name) return f;
+      return MessagePayload.resolveFile(f);
+    }));
+    payload.files = resolvedFiles;
+  }
+
+  if (payload.components) {
+    payload = sanitizeCV2Payload(payload);
+    if (payload.flags == null) {
+      payload.flags = MessageFlags.IsComponentsV2;
+    }
+  }
+
+  try {
+    if (typeof target.edit === 'function') {
+      return await target.edit(payload);
+    }
+    if (typeof target.editReply === 'function') {
+      if (target.deferred || target.replied) {
+        return await target.editReply(payload);
+      }
+      if (typeof target.reply === 'function') {
+        return await target.reply(payload);
+      }
+    }
+    if (typeof target.update === 'function') {
+      return await target.update(payload);
+    }
+  } catch (err) {
+    console.error('[CV2.edit] Failed to edit target:', err.message);
+    throw err;
+  }
+  return null;
+}
+
 export var cv2 = Object.assign(_m(false), {
   TICK_EMOJI:   TICK_EMOJI,
   WRONG_EMOJI:  WRONG_EMOJI,
@@ -414,6 +464,7 @@ export var cv2 = Object.assign(_m(false), {
   },
   buildContainer: buildContainer,
   make:           make,
+  edit:           edit,
   
   respond: async function(ctx, payload, type = 4) {
     if (typeof payload === 'string') payload = { content: payload };
@@ -460,5 +511,7 @@ export var cv2 = Object.assign(_m(false), {
     return ctx.reply(body);
   }
 });
+
+cv2.e.edit = edit;
 
 export default cv2;
