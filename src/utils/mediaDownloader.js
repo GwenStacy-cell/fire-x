@@ -29,6 +29,28 @@ let lastUpdateCheck = 0;
 /**
  * Ensures ffmpeg binary has execution permissions on Linux/Pterodactyl containers.
  */
+
+/**
+ * Automatically discovers cookies.txt or youtube_cookies.txt in bot root or home dir.
+ * This completely resolves YouTube datacenter IP "Sign in to confirm you're not a bot" blocks.
+ */
+export function getCookieArg() {
+  const possiblePaths = [
+    path.join(process.cwd(), 'cookies.txt'),
+    path.join(process.cwd(), 'youtube_cookies.txt'),
+    path.join(process.cwd(), 'yt_cookies.txt'),
+    path.join(os.homedir(), 'cookies.txt')
+  ];
+  for (const p of possiblePaths) {
+    try {
+      if (fs.existsSync(p) && fs.statSync(p).size > 10) {
+        return `--cookies "${p}"`;
+      }
+    } catch {}
+  }
+  return '';
+}
+
 export function ensureFfmpegPermissions() {
   try {
     if (ffmpegPath && fs.existsSync(ffmpegPath) && process.platform !== 'win32') {
@@ -343,6 +365,7 @@ export async function processMediaLink(client, message, url) {
       if (urlsToAttempt.length === 0) urlsToAttempt.push(url);
 
       console.log(`[Media] Downloading YouTube media via yt-dlp: ${urlsToAttempt[0]}`);
+      const cookieArg = getCookieArg();
       let downloadSuccess = false;
 
       for (const targetUrl of urlsToAttempt) {
@@ -351,7 +374,7 @@ export async function processMediaLink(client, message, url) {
         // Strategy A: Android client with best pre-merged stream or fallback
         try {
           await execPromise(
-            `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
+            `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
             `--extractor-args "youtube:player_client=android" ` +
             `-f "bestvideo[height<=1080]+bestaudio/18/b/best" ` +
             `--no-playlist --geo-bypass --no-check-certificates ` +
@@ -590,6 +613,7 @@ export async function processMp3Link(client, message, url) {
     const uniqueId = `audio_${Date.now()}`;
     const tempPattern = path.join(process.cwd(), `yt_dlp_${uniqueId}.%(ext)s`);
     const filePrefix = `yt_dlp_${uniqueId}`;
+    const cookieArg = getCookieArg();
 
     let audioSuccess = false;
 
@@ -601,7 +625,7 @@ export async function processMp3Link(client, message, url) {
 
       try {
         await execPromise(
-          `"${ytdlpPath}" ` +
+          `"${ytdlpPath}" ${cookieArg} ` +
           `--extractor-args "youtube:player_client=android" ` +
           `-f "18/b/best" --no-playlist --geo-bypass --no-check-certificates ` +
           `-o "${vidTempPath}" -- "${targetUrl}"`
@@ -628,7 +652,7 @@ export async function processMp3Link(client, message, url) {
     if (!audioSuccess) {
       try {
         await execPromise(
-          `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
+          `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
           `-x --audio-format mp3 -f "ba/b" ` +
           `--no-playlist --geo-bypass --no-check-certificates ` +
           `-o "${tempPattern}" -- "${targetUrl}"`
