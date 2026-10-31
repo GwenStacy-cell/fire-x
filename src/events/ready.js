@@ -19,6 +19,7 @@ import { formatServerStatChannelName } from '../commands/serverstats.js';
 import { initWebSub } from '../utils/websub.js';
 
 import { startYtStatsEngine } from '../utils/ytStatsEngine.js';
+import { startYouTubeNotifier } from '../utils/youtubeNotifier.js';
 import { checkAndAutoRestore, startCloudBackupScheduler } from '../utils/cloudSync.js';
 import { snapshotGuildInfrastructure } from '../utils/antinuke.js';
 import { pruneDuplicateSecurityLogChannels } from '../utils/helpers.js';
@@ -488,6 +489,8 @@ export default {
     }, 15000);
 
     initWebSub(client);
+    startYouTubeNotifier(client);
+    startYtStatsEngine(client);
 
       console.log(chalk.blue(' Updating permissions for existing stats channels...'));
       try {

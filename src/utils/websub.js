@@ -2,6 +2,7 @@ import express from 'express';
 import { XMLParser } from 'fast-xml-parser';
 import db from '../database.js';
 import chalk from 'chalk';
+import { sendYouTubeNotification } from './youtubeNotifier.js';
 
 const app = express();
 const xmlParser = new XMLParser({ ignoreAttributes: false });
@@ -80,68 +81,34 @@ export function initWebSub(client) {
 
   app.listen(port, () => {
     console.log(chalk.green(`[WebSub] Server listening on port ${port}`));
+  }).on('error', (err) => {
+    console.warn(`[WebSub] Could not bind port ${port} (standalone mode):`, err.message);
   });
 }
 
 async function processWebSubNotification(channelId, latestVideo) {
   if (!clientRef) return;
 
-  const guilds = Object.keys(db.cache.guilds);
+  const guilds = Object.keys(db.cache.guilds || {});
   for (const guildId of guilds) {
     const notifiers = db.getYouTubeNotifiers(guildId);
     if (!notifiers || notifiers.length === 0) continue;
     
-    const guild = clientRef.guilds.cache.get(guildId);
+    const guild = clientRef.guilds.cache.get(guildId)
+      || await clientRef.guilds.fetch(guildId).catch(() => null);
     if (!guild) continue;
 
     for (const notifier of notifiers) {
       if (notifier.youtubeId === channelId) {
-        // Found a matching tracker!
         if (!notifier.recentVideoIds) {
           notifier.recentVideoIds = notifier.lastVideoId ? [notifier.lastVideoId] : [];
         }
 
         if (!notifier.recentVideoIds.includes(latestVideo.id)) {
-          const channel = guild.channels.cache.get(notifier.discordChannelId);
-          if (channel) {
-            try {
-              const cfg = db.getGuildConfig(guild.id);
-              const accentHex = cfg?.accentColor || '#ff0000';
-              const accentInt = parseInt(accentHex.replace('#', ''), 16);
-
-              const { EmbedBuilder } = await import('discord.js');
-              const ytEmbed = new EmbedBuilder()
-                .setColor(accentInt)
-                .setAuthor({ 
-                  name: `New Upload from ${latestVideo.author}`, 
-                  iconURL: 'https://cdn.discordapp.com/emojis/1533383764250460241.webp?size=96&quality=lossless', 
-                  url: latestVideo.link 
-                })
-                .setTitle(latestVideo.title)
-                .setURL(latestVideo.link)
-                .setImage(latestVideo.thumbnail)
-                .setFooter({ text: 'Athena Prime YouTube Notifier' })
-                .setTimestamp(new Date(latestVideo.pubDate));
-
-              let content = notifier.customMessage || '';
-              content = content.replace(/{url}/g, latestVideo.link);
-              content = content.replace(/{title}/g, latestVideo.title);
-              content = content.replace(/{channel}/g, latestVideo.channelName);
-              
-              if (content === '') {
-                 content = `<:912969youtubelogo:1533383764250460241> **__${latestVideo.author}__ just uploaded a new video!** 🎥🔥\n> 📺 **Watch now:** ${latestVideo.link}`;
-              } else {
-                 content = `<:912969youtubelogo:1533383764250460241> ${content}`;
-              }
-
-              await channel.send({ content: content, embeds: [ytEmbed] });
-            } catch (err) {
-              console.error(`[WebSub] Failed to send message to Discord:`, err);
-            }
+          const sent = await sendYouTubeNotification(clientRef, guild, notifier, latestVideo, false);
+          if (sent) {
+            db.updateYouTubeNotifier(guildId, notifier.youtubeId, notifier.discordChannelId, latestVideo.id);
           }
-
-          // Update the database memory
-          db.updateYouTubeNotifier(guildId, notifier.youtubeId, notifier.discordChannelId, latestVideo.id);
         }
       }
     }
@@ -152,7 +119,9 @@ async function processWebSubNotification(channelId, latestVideo) {
  * Send a Subscribe or Unsubscribe request to YouTube's PubSubHubbub Hub.
  */
 export async function manageWebSubSubscription(channelId, mode = 'subscribe') {
-  const baseUrl = process.env.WEBSUB_URL || 'http://54.147.2.50:3000';
+  const baseUrl = process.env.WEBSUB_URL;
+  if (!baseUrl) return false;
+
   const callbackUrl = `${baseUrl}/youtube/webhook`;
   const topic = `https://www.youtube.com/xml/feeds/videos.xml?channel_id=${channelId}`;
 
