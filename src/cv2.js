@@ -504,11 +504,17 @@ export var cv2 = Object.assign(_m(false), {
     } else {
       if (resolvedFiles) body.files = resolvedFiles;
     }
-    if (ctx.deferred) {
-      const editData = body.data || body;
+    const editData = body.data || body;
+    if (resolvedFiles && resolvedFiles.length > 0 && editData.attachments === undefined) {
+      editData.attachments = [];
+    }
+    if (ctx.deferred || ctx.replied) {
       return ctx.editReply(editData);
     }
-    return ctx.reply(body);
+    if (type === 7 && typeof ctx.update === 'function') {
+      return ctx.update(editData);
+    }
+    return ctx.reply(editData);
   }
 });
 

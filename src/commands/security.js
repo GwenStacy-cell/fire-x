@@ -6661,6 +6661,8 @@ export async function handleAutoModBypass(guild, action, role) {
   return cv2.info('Automod Bypassed Roles', lines.join('\n'));
 }
 
+export const getAntilinkModulePanel = getAutoModPanel;
+
 export async function getAutoModPanel(guild) {
   const config = db.getGuildConfig(guild.id);
   

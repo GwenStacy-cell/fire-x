@@ -1698,7 +1698,7 @@ export async function generateCommandStatusBanner({
     return new AttachmentBuilder(gifBuffer, { name: attachmentName || 'status_banner.gif' });
   } catch (err) {
     console.error('[CommandStatusBanner] GIF generation error, falling back to static card:', err);
-    return new AttachmentBuilder(firstFrameBuffer || createCanvas(W, H).toBuffer('image/png'), { name: 'status_banner.png' });
+    return new AttachmentBuilder(firstFrameBuffer || createCanvas(W, H).toBuffer('image/png'), { name: attachmentName || 'status_banner.png' });
   } finally {
     if (animated) {
       try {

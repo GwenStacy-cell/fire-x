@@ -1563,6 +1563,7 @@ if (interaction.customId.startsWith('xp_view_rank_')) {
         const config = db.getGuildConfig(interaction.guild.id);
         const timeoutMinutes = config.honeypotTimeoutMinutes || 15;
         
+        await interaction.deferUpdate().catch(() => null);
         const { getAutoModPanel } = await import('../commands/security.js');
         const panel = await getAutoModPanel(interaction.guild);
         
@@ -3264,7 +3265,8 @@ async function handleSecurityInteractions(interaction, guild) {
   if (customId === 'sec_antilink') {
     try {
       const sec = await import('../commands/security.js');
-      const panel = await sec.getAntilinkModulePanel(guild);
+      await interaction.deferUpdate().catch(() => null);
+      const panel = await (sec.getAntilinkModulePanel || sec.getAutoModPanel)(guild);
       return cv2.respond(interaction, panel, 7);
     } catch(e) { console.error(e); }
   }
@@ -3278,6 +3280,9 @@ async function handleSecurityInteractions(interaction, guild) {
     }
 
     if (customId.startsWith('am_') || customId.startsWith('bp_')) {
+      if (customId !== 'am_select_honeypot_channel') {
+        await interaction.deferUpdate().catch(() => null);
+      }
       let updated = false;
       let targetRoleForBypass = null;
 
@@ -3338,6 +3343,7 @@ async function handleSecurityInteractions(interaction, guild) {
       else if (customId === 'am_tgl_selfbot') {
         const current = config.selfbotDetectionEnabled !== false;
         db.updateGuildConfig(guild.id, { selfbotDetectionEnabled: !current });
+        await interaction.deferUpdate().catch(() => null);
         const { getAutoModPanel } = await import('../commands/security.js');
         const newPanel = await getAutoModPanel(guild);
         return cv2.respond(interaction, newPanel, 7).catch(() => null);
@@ -3358,6 +3364,7 @@ async function handleSecurityInteractions(interaction, guild) {
         return cv2.respond(interaction, newPanel, 7).catch(() => null);
       }
       else if (customId === 'am_back_to_main') {
+        await interaction.deferUpdate().catch(() => null);
         const { getAutoModPanel } = await import('../commands/security.js');
         const newPanel = await getAutoModPanel(guild);
         return cv2.respond(interaction, newPanel, 7).catch(() => null);
