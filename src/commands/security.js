@@ -6957,7 +6957,7 @@ export async function getAdvancedConfigPanel(guild) {
   );
   
   c.addActionRowComponents(row1, row2, row3);
-  return { components: [c.toJSON ? c.toJSON() : c], flags: MessageFlags.IsComponentsV2 };
+  return { components: [c.toJSON ? c.toJSON() : c], attachments: [], flags: MessageFlags.IsComponentsV2 };
 }
 
 export async function handleAutonickButton(interaction) {

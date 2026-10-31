@@ -428,6 +428,9 @@ export async function edit(target, payload) {
     if (payload.flags == null) {
       payload.flags = MessageFlags.IsComponentsV2;
     }
+    if ((!resolvedFiles || resolvedFiles.length === 0) && payload.attachments === undefined) {
+      payload.attachments = [];
+    }
   }
 
   try {
@@ -497,7 +500,7 @@ export var cv2 = Object.assign(_m(false), {
         type: type,
         data: {
           flags: payload.flags,
-          components: comps[0]?.type === 17 ? [comps[0]] : comps,
+          components: comps,
           files: resolvedFiles
         }
       };
@@ -505,8 +508,12 @@ export var cv2 = Object.assign(_m(false), {
       if (resolvedFiles) body.files = resolvedFiles;
     }
     const editData = body.data || body;
-    if (resolvedFiles && resolvedFiles.length > 0 && editData.attachments === undefined) {
-      editData.attachments = [];
+    if (isCV2) {
+      if ((!resolvedFiles || resolvedFiles.length === 0) && editData.attachments === undefined) {
+        editData.attachments = [];
+      } else if (resolvedFiles && resolvedFiles.length > 0 && editData.attachments === undefined) {
+        editData.attachments = [];
+      }
     }
     if (ctx.deferred || ctx.replied) {
       return ctx.editReply(editData);

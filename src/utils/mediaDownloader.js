@@ -348,13 +348,13 @@ export async function processMediaLink(client, message, url) {
       for (const targetUrl of urlsToAttempt) {
         if (downloadSuccess) break;
 
-        // Strategy A: iOS + Android player client (Bypasses YouTube bot checks and datacenter blocks!)
+        // Strategy A: Android client with best pre-merged stream or fallback
         try {
           await execPromise(
             `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
-            `--extractor-args "youtube:player_client=ios,android,mweb" ` +
-            `-f "bestvideo[height<=1080]+bestaudio/best[height<=1080]/b/best" ` +
-            `--remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
+            `--extractor-args "youtube:player_client=android" ` +
+            `-f "bestvideo[height<=1080]+bestaudio/18/b/best" ` +
+            `--no-playlist --geo-bypass --no-check-certificates ` +
             `-o "${tempPath}" -- "${targetUrl}"`
           );
           const resolved = fs.existsSync(tempPath) ? tempPath : findGeneratedFile(filePrefix);
@@ -368,14 +368,14 @@ export async function processMediaLink(client, message, url) {
           console.warn('[Media] YouTube Strategy A failed:', errA.message);
         }
 
-        // Strategy B: Android only with single pre-merged 720p/480p stream
+        // Strategy B: Format 18 direct (Pre-merged stream - zero external dependencies)
         if (!downloadSuccess) {
           try {
             await execPromise(
-              `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
+              `"${ytdlpPath}" ` +
               `--extractor-args "youtube:player_client=android" ` +
-              `-f "18/best[ext=mp4]/b/best" ` +
-              `--remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
+              `-f "18/b/best" ` +
+              `--no-playlist --geo-bypass --no-check-certificates ` +
               `-o "${tempPath}" -- "${targetUrl}"`
             );
             const resolved = fs.existsSync(tempPath) ? tempPath : findGeneratedFile(filePrefix);
@@ -390,13 +390,12 @@ export async function processMediaLink(client, message, url) {
           }
         }
 
-        // Strategy C: mweb / web_safari fallback
+        // Strategy C: Universal default client with 18/b/best
         if (!downloadSuccess) {
           try {
             await execPromise(
-              `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
-              `--extractor-args "youtube:player_client=mweb,tv_embedded" ` +
-              `-f "b/best" --remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
+              `"${ytdlpPath}" ` +
+              `-f "18/b/best" --no-playlist --geo-bypass --no-check-certificates ` +
               `-o "${tempPath}" -- "${targetUrl}"`
             );
             const resolved = fs.existsSync(tempPath) ? tempPath : findGeneratedFile(filePrefix);
@@ -594,68 +593,53 @@ export async function processMp3Link(client, message, url) {
 
     let audioSuccess = false;
 
-    // Strategy A: iOS + Android mobile streams with ba/b format (extracts from any combined stream without bot block)
-    try {
-      const extractorArgs = isYt ? `--extractor-args "youtube:player_client=ios,android,mweb"` : '';
-      await execPromise(
-        `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ${extractorArgs} ` +
-        `-x --audio-format mp3 -f "ba/b" ` +
-        `--no-playlist --geo-bypass --no-check-certificates ` +
-        `-o "${tempPattern}" -- "${targetUrl}"`
-      );
-      const match = findGeneratedFile(filePrefix);
-      if (match && fs.existsSync(match) && fs.statSync(match).size > 1000) {
-        audioSuccess = true;
+    // Strategy A: YouTube Android Format 18 -> Direct FFmpeg MP3 Transcode (Zero ffprobe dependencies!)
+    if (isYt) {
+      const vidTempPath = path.join(process.cwd(), `yt_dlp_vid_${uniqueId}.mp4`);
+      const mp3OutPath = path.join(process.cwd(), `yt_dlp_${uniqueId}.mp3`);
+      tempFilesToClean.push(vidTempPath, mp3OutPath);
+
+      try {
+        await execPromise(
+          `"${ytdlpPath}" ` +
+          `--extractor-args "youtube:player_client=android" ` +
+          `-f "18/b/best" --no-playlist --geo-bypass --no-check-certificates ` +
+          `-o "${vidTempPath}" -- "${targetUrl}"`
+        );
+        const resolvedVid = fs.existsSync(vidTempPath) ? vidTempPath : findGeneratedFile(`yt_dlp_vid_${uniqueId}`);
+        if (resolvedVid && fs.existsSync(resolvedVid) && fs.statSync(resolvedVid).size > 1000) {
+          try {
+            await execPromise(`"${ffmpegPath}" -y -i "${resolvedVid}" -vn -c:a libmp3lame -q:a 2 "${mp3OutPath}"`);
+            if (fs.existsSync(mp3OutPath) && fs.statSync(mp3OutPath).size > 1000) {
+              downloadedFile = mp3OutPath;
+              audioSuccess = true;
+            }
+          } catch (errFfmpeg) {
+            downloadedFile = resolvedVid;
+            audioSuccess = true;
+          }
+        }
+      } catch (errYtVid) {
+        console.warn('[Audio] YouTube video-audio download failed:', errYtVid.message);
       }
-    } catch (errA) {
-      console.warn('[Audio] Strategy A failed:', errA.message);
     }
 
-    // Strategy B: Android only with bestaudio/best
-    if (!audioSuccess && isYt) {
+    // Strategy B: Universal yt-dlp audio format for non-YouTube or fallback
+    if (!audioSuccess) {
       try {
         await execPromise(
           `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
-          `--extractor-args "youtube:player_client=android" ` +
-          `-x --audio-format mp3 -f "bestaudio/best" ` +
+          `-x --audio-format mp3 -f "ba/b" ` +
           `--no-playlist --geo-bypass --no-check-certificates ` +
           `-o "${tempPattern}" -- "${targetUrl}"`
         );
         const match = findGeneratedFile(filePrefix);
         if (match && fs.existsSync(match) && fs.statSync(match).size > 1000) {
+          downloadedFile = match;
           audioSuccess = true;
         }
       } catch (errB) {
-        console.warn('[Audio] Strategy B failed:', errB.message);
-      }
-    }
-
-    // Strategy C: High-speed btch.youtube audio fallback
-    let downloadedFile = findGeneratedFile(filePrefix);
-    if ((!downloadedFile || !fs.existsSync(downloadedFile)) && isYt) {
-      try {
-        const btch = (await import('btch-downloader')).default;
-        if (typeof btch?.youtube === 'function') {
-          const res = await btch.youtube(targetUrl);
-          if (res && res.mp3) {
-            const audioRes = await fetch(res.mp3);
-            if (audioRes.ok) {
-              const buffer = Buffer.from(await audioRes.arrayBuffer());
-              if (buffer.length > 25 * 1024 * 1024) {
-                await message.reply({ content: '-# **The audio is too large (Limit: 25MB).**' }).catch(() => {});
-                return true;
-              }
-              const attachment = new AttachmentBuilder(buffer, { name: 'Athena_Audio.mp3' });
-              await message.reply({
-                content: `-# **Audio Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
-                files: [attachment]
-              });
-              return true;
-            }
-          }
-        }
-      } catch (errYt) {
-        console.warn('[Audio] YouTube btch audio fallback failed:', errYt.message);
+        console.warn('[Audio] Strategy B fallback failed:', errB.message);
       }
     }
 

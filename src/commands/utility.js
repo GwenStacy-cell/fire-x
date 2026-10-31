@@ -10,7 +10,7 @@ import path from 'path';
 import { spawn } from 'child_process';
 import ffmpegPath from 'ffmpeg-static';
 
-async function optimizeEmojiBuffer(buffer, isAnimated = false) {
+export async function optimizeEmojiBuffer(buffer, isAnimated = false) {
   if (!buffer || buffer.length <= 256 * 1024) return buffer;
 
   if (isAnimated) {
@@ -2719,13 +2719,19 @@ export function buildHelpContainer(client, guildId, moduleId) {
     ]);
 
     for (const mod of helpModules.slice(0, 24)) {
-      selectMenu.addOptions([
-        {
-          label: mod.label,
-          value: mod.id,
-          default: moduleId === mod.id
+      const opt = {
+        label: mod.label,
+        value: mod.id,
+        default: moduleId === mod.id
+      };
+      const rawEmoji = getEmoji(mod.emoji);
+      if (rawEmoji) {
+        const match = rawEmoji.match(/^<(a)?:([a-zA-Z0-9_]+):(\d+)>$/);
+        if (match) {
+          opt.emoji = { id: match[3], name: match[2], animated: !!match[1] };
         }
-      ]);
+      }
+      selectMenu.addOptions([opt]);
     }
 
     const btnPrev = new ButtonBuilder().setCustomId(`help_prev_${moduleId}`).setEmoji('1523766004839088301').setStyle(ButtonStyle.Secondary);

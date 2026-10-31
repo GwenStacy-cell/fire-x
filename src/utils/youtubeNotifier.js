@@ -81,7 +81,10 @@ export async function resolveYouTubeChannel(input) {
       if (match) channelId = match[1];
     }
 
-    let channelName = $('meta[property="og:title"]').attr('content')
+    let channelName = $('meta[name="author"]').attr('content')
+      || $('span[itemprop="author"] link[itemprop="name"]').attr('content')
+      || $('link[itemprop="name"]').attr('content')
+      || $('meta[property="og:title"]').attr('content')
       || $('meta[itemprop="name"]').attr('content')
       || $('title').text().replace(/ - YouTube$/, '').trim()
       || null;
@@ -89,6 +92,22 @@ export async function resolveYouTubeChannel(input) {
     if (channelName === 'YouTube' || !channelName) channelName = null;
 
     if (!channelId) return null;
+
+    // Fallback: Query RSS feed for authoritative channel name
+    if (!channelName || channelName === 'Unknown Channel') {
+      try {
+        const feedRes = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}`, {
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+        });
+        if (feedRes && feedRes.ok) {
+          const xml = await feedRes.text();
+          const titleMatch = xml.match(/<title>([^<]+)<\/title>/);
+          if (titleMatch && titleMatch[1]) {
+            channelName = titleMatch[1].trim();
+          }
+        }
+      } catch (e) {}
+    }
 
     return {
       channelId,
@@ -116,7 +135,18 @@ export async function getLatestVideo(channelId) {
   if (!channelId) return null;
   try {
     const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${channelId}&_=${Date.now()}`;
-    const feed = await parser.parseURL(feedUrl);
+    let feed = null;
+    try {
+      feed = await parser.parseURL(feedUrl);
+    } catch {
+      const res = await fetch(feedUrl, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+      }).catch(() => null);
+      if (res && res.ok) {
+        const xml = await res.text();
+        feed = await parser.parseString(xml).catch(() => null);
+      }
+    }
     
     if (feed && feed.items && feed.items.length > 0) {
       const latest = feed.items[0];

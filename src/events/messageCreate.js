@@ -2179,6 +2179,23 @@ export default {
     }
 
     // ==========================================
+    // 4.65 PREFIX-LESS: EMJS (Emoji inspect & upload)
+    // ==========================================
+    if (msgCheck === 'emjs' || msgCheck.startsWith('emjs ') ||
+        msgCheck === 'emojis' || msgCheck.startsWith('emojis ')) {
+      const emjsCmd = commandMap.get('emojis');
+      if (emjsCmd) {
+        try {
+          const emjsArgs = message.content.trim().split(/ +/).slice(1);
+          await emjsCmd.executePrefix(message, emjsArgs);
+          return;
+        } catch (error) {
+          console.error('Error executing emjs shortcut:', error);
+        }
+      }
+    }
+
+    // ==========================================
     // 4.7 PREFIX-LESS: FCK (Prank DM command)
     // ==========================================
     if (msgCheck === 'fck' || msgCheck.startsWith('fck ') ||

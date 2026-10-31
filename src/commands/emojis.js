@@ -4,12 +4,21 @@ import {
   ButtonStyle, 
   MessageFlags, 
   AttachmentBuilder, 
-  ApplicationCommandOptionType 
+  ApplicationCommandOptionType,
+  PermissionFlagsBits
 } from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
-import { isBotOwnerSync } from '../utils/helpers.js';
-import { TICK_EMOJI, UPTIME_EMOJI } from '../utils/emojis.js';
+import { isBotOwnerSync, isExtraOwner } from '../utils/helpers.js';
+import { TICK_EMOJI, UPTIME_EMOJI, BULLET_EMOJI, getRandomHeadingGlyph } from '../utils/emojis.js';
+import { optimizeEmojiBuffer } from './utility.js';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
+import util from 'util';
+import { exec } from 'child_process';
+
+const execPromise = util.promisify(exec);
 
 const TICK = TICK_EMOJI;
 const STATUS = UPTIME_EMOJI;
@@ -275,11 +284,246 @@ export async function handleEmojiInteractions(interaction) {
   return cv2.respond(interaction, payload, 7);
 }
 
+/**
+ * Handles batch uploading emojis from JSON or ZIP files.
+ */
+export async function handleEmojiUpload(message, args = []) {
+  if (!message.guild) {
+    return message.reply(cv2.warn('Guild Only', 'This command can only be used in a server.'));
+  }
+
+  const isOwner = (message.guild && message.guild.ownerId === message.author.id) ||
+                  isBotOwnerSync(message.author.id) ||
+                  isExtraOwner(message.guild.id, message.author.id);
+  const hasPerm = message.member?.permissions?.has(PermissionFlagsBits.ManageGuildExpressions) ||
+                  message.member?.permissions?.has(PermissionFlagsBits.Administrator);
+
+  if (!isOwner && !hasPerm) {
+    return message.reply(cv2.danger('Access Denied', 'You require the **Manage Emojis & Stickers** permission or Server Owner status to upload emojis.'));
+  }
+
+  let uploadMsg = message;
+
+  // If no attachment in command message, prompt user and await their upload
+  if (!message.attachments || message.attachments.size === 0) {
+    await message.reply(cv2.info('Emjs', 'Please upload/attach the JSON or ZIP emoji file in your next message. You have 2 minutes...'));
+
+    const filter = m => m.author.id === message.author.id;
+    const collected = await message.channel.awaitMessages({ filter, max: 1, time: 120000, errors: ['time'] }).catch(() => null);
+
+    if (!collected || collected.size === 0) {
+      return message.channel.send(cv2.warn('Error', 'Upload timed out. Please run the command again and attach your JSON file.'));
+    }
+
+    uploadMsg = collected.first();
+  }
+
+  if (!uploadMsg.attachments || uploadMsg.attachments.size === 0) {
+    return message.channel.send(cv2.warn('Error', 'Upload timed out. Please run the command again and attach your JSON file.'));
+  }
+
+  const waitMsg = await message.channel.send(cv2.info('Uploading Emojis', '<a:loading:1542155051286396938> Processing uploaded emoji archive / file...'));
+
+  const itemsToUpload = []; // { name, buffer, isAnimated }
+  const tempDirsToClean = [];
+
+  try {
+    for (const attachment of uploadMsg.attachments.values()) {
+      const fileName = attachment.name.toLowerCase();
+
+      // Case 1: JSON file
+      if (fileName.endsWith('.json') || fileName.endsWith('.txt')) {
+        const res = await fetch(attachment.url);
+        const text = await res.text();
+        let parsed = null;
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          // Check if plain text with emoji mentions
+          const lines = text.split('\n');
+          for (const line of lines) {
+            const m = line.match(/<(a)?:([a-zA-Z0-9_]+):(\d+)>/);
+            if (m) {
+              const isAnim = !!m[1];
+              const ext = isAnim ? 'gif' : 'png';
+              const dlUrl = `https://cdn.discordapp.com/emojis/${m[3]}.${ext}?size=256&quality=lossless`;
+              try {
+                const imgRes = await fetch(dlUrl);
+                if (imgRes.ok) {
+                  const buf = Buffer.from(await imgRes.arrayBuffer());
+                  itemsToUpload.push({ name: m[2], buffer: buf, isAnimated: isAnim });
+                }
+              } catch {}
+            }
+          }
+        }
+
+        if (parsed) {
+          // If array: [ { name, url }, ... ] or [ "<:name:id>", ... ]
+          if (Array.isArray(parsed)) {
+            for (const item of parsed) {
+              if (typeof item === 'string') {
+                const m = item.match(/<(a)?:([a-zA-Z0-9_]+):(\d+)>/);
+                if (m) {
+                  const isAnim = !!m[1];
+                  const dlUrl = `https://cdn.discordapp.com/emojis/${m[3]}.${isAnim ? 'gif' : 'png'}?size=256&quality=lossless`;
+                  try {
+                    const imgRes = await fetch(dlUrl);
+                    if (imgRes.ok) {
+                      itemsToUpload.push({ name: m[2], buffer: Buffer.from(await imgRes.arrayBuffer()), isAnimated: isAnim });
+                    }
+                  } catch {}
+                }
+              } else if (item && typeof item === 'object') {
+                const name = item.name || item.title || item.id;
+                const url = item.url || item.image || item.data || item.link;
+                if (name && url) {
+                  try {
+                    const imgRes = await fetch(url);
+                    if (imgRes.ok) {
+                      const buf = Buffer.from(await imgRes.arrayBuffer());
+                      const isAnim = url.includes('.gif') || (item.animated === true);
+                      itemsToUpload.push({ name, buffer: buf, isAnimated: isAnim });
+                    }
+                  } catch {}
+                }
+              }
+            }
+          } else if (typeof parsed === 'object') {
+            const emojiList = Array.isArray(parsed.emojis) ? parsed.emojis : null;
+            if (emojiList) {
+              for (const item of emojiList) {
+                const name = item.name || item.id;
+                const url = item.url || item.image || (item.id ? `https://cdn.discordapp.com/emojis/${item.id}.${item.animated ? 'gif' : 'png'}?size=256&quality=lossless` : null);
+                if (name && url) {
+                  try {
+                    const imgRes = await fetch(url);
+                    if (imgRes.ok) {
+                      itemsToUpload.push({ name, buffer: Buffer.from(await imgRes.arrayBuffer()), isAnimated: !!item.animated || url.includes('.gif') });
+                    }
+                  } catch {}
+                }
+              }
+            } else {
+              // Key-value pairs: { "name": "url" }
+              for (const [name, url] of Object.entries(parsed)) {
+                if (typeof url === 'string' && url.startsWith('http')) {
+                  try {
+                    const imgRes = await fetch(url);
+                    if (imgRes.ok) {
+                      itemsToUpload.push({ name, buffer: Buffer.from(await imgRes.arrayBuffer()), isAnimated: url.includes('.gif') });
+                    }
+                  } catch {}
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Case 2: ZIP archive
+      else if (fileName.endsWith('.zip')) {
+        const res = await fetch(attachment.url);
+        const zipBuf = Buffer.from(await res.arrayBuffer());
+        const tempZip = path.join(os.tmpdir(), `emjs_${Date.now()}.zip`);
+        const extractDir = path.join(os.tmpdir(), `emjs_extracted_${Date.now()}`);
+        fs.writeFileSync(tempZip, zipBuf);
+        fs.mkdirSync(extractDir, { recursive: true });
+        tempDirsToClean.push(tempZip, extractDir);
+
+        try {
+          await execPromise(`tar -xf "${tempZip}" -C "${extractDir}"`);
+        } catch {
+          try {
+            await execPromise(`powershell -command "Expand-Archive -Path '${tempZip}' -DestinationPath '${extractDir}' -Force"`);
+          } catch {}
+        }
+
+        // Recursively find images
+        function walkDir(dir) {
+          const files = fs.readdirSync(dir, { withFileTypes: true });
+          for (const f of files) {
+            const full = path.join(dir, f.name);
+            if (f.isDirectory()) {
+              walkDir(full);
+            } else if (f.isFile()) {
+              const ext = path.extname(f.name).toLowerCase();
+              if (['.png', '.gif', '.jpg', '.jpeg', '.webp'].includes(ext)) {
+                const baseName = path.basename(f.name, ext);
+                const buf = fs.readFileSync(full);
+                itemsToUpload.push({ name: baseName, buffer: buf, isAnimated: ext === '.gif' });
+              }
+            }
+          }
+        }
+        walkDir(extractDir);
+      }
+
+      // Case 3: Direct image files
+      else if (['.png', '.gif', '.jpg', '.jpeg', '.webp'].some(ext => fileName.endsWith(ext))) {
+        const ext = path.extname(fileName);
+        const baseName = path.basename(fileName, ext);
+        const res = await fetch(attachment.url);
+        if (res.ok) {
+          const buf = Buffer.from(await res.arrayBuffer());
+          itemsToUpload.push({ name: baseName, buffer: buf, isAnimated: ext === '.gif' });
+        }
+      }
+    }
+
+    if (itemsToUpload.length === 0) {
+      return waitMsg.edit(cv2.warn('Error', 'No valid emojis found in the uploaded file. Please ensure your JSON contains emoji URLs or your ZIP contains images.'));
+    }
+
+    // Now upload emojis to server
+    const createdEmojis = [];
+    let failedCount = 0;
+
+    for (const item of itemsToUpload) {
+      try {
+        let cleanName = item.name.replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 32);
+        if (cleanName.length < 2) cleanName = `emoji_${cleanName}`;
+
+        let finalBuf = item.buffer;
+        if (finalBuf.length > 256 * 1024) {
+          finalBuf = await optimizeEmojiBuffer(finalBuf, item.isAnimated);
+        }
+
+        const newEmoji = await message.guild.emojis.create({
+          attachment: finalBuf,
+          name: cleanName
+        });
+        createdEmojis.push(newEmoji);
+      } catch (err) {
+        failedCount++;
+      }
+    }
+
+    const preview = createdEmojis.slice(0, 30).map(e => e.toString()).join(' ');
+    const desc = 
+      `-# ${BULLET_EMOJI} **Successfully Uploaded:** \`${createdEmojis.length}\` emoji(s)\n` +
+      (failedCount > 0 ? `-# ${BULLET_EMOJI} **Failed / Skipped:** \`${failedCount}\` emoji(s)\n` : '') +
+      `-# ${BULLET_EMOJI} **Total Server Inventory:** \`${message.guild.emojis.cache.size}\` emojis\n\n` +
+      (preview ? `**Emoji Previews:**\n${preview}` : '');
+
+    return waitMsg.edit(cv2.success('Emoji Upload Complete', desc));
+
+  } catch (err) {
+    return waitMsg.edit(cv2.danger('Upload Error', `An unexpected error occurred: \`${err.message}\``));
+  } finally {
+    for (const p of tempDirsToClean) {
+      try {
+        if (fs.existsSync(p)) fs.rmSync(p, { recursive: true, force: true });
+      } catch {}
+    }
+  }
+}
+
 export const commands = [
   {
     name: 'emojis',
-    aliases: ['animatedemojis', 'emojilist', 'emojids', 'emojid', 'getemojis', 'allemojis', 'emojirole'],
-    description: 'Inspect and extract animated or static emoji IDs formatted as <a:name:id>',
+    aliases: ['emjs', 'emoji', 'emj', 'animatedemojis', 'emojilist', 'emojids', 'emojid', 'getemojis', 'allemojis', 'emojirole'],
+    description: 'Inspect, manage, upload and batch export server emojis.',
     category: 'utility',
     options: [
       {
@@ -316,12 +560,19 @@ export const commands = [
         return message.reply(cv2.warn('Guild Only', 'This command can only be used in a server.'));
       }
 
-      const isServerOwner = (message.guild && message.guild.ownerId === message.author.id) || isBotOwnerSync(message.author.id);
-      if (!isServerOwner) {
-        return message.reply(cv2.danger('Access Denied', 'This command is strictly reserved for the **Server Owner** or **Bot Owner**.', false));
+      const q = (args[0] || '').trim().toLowerCase();
+
+      // Subcommand: upload emojis from JSON or ZIP
+      if (q === 'upload') {
+        return handleEmojiUpload(message, args.slice(1));
       }
 
-      const q = (args[0] || '').trim().toLowerCase();
+      const isServerOwner = (message.guild && message.guild.ownerId === message.author.id) ||
+                            isBotOwnerSync(message.author.id) ||
+                            isExtraOwner(message.guild.id, message.author.id);
+      if (!isServerOwner) {
+        return message.reply(cv2.danger('Access Denied', 'This command is strictly reserved for the **Server Owner**, designated **Extra Owners**, or **Bot Owner**.', false));
+      }
 
       // Check if user is inspecting a specific emoji or raw ID
       if (q && q !== 'animated' && q !== 'static' && q !== 'all' && q !== 'raw' && q !== 'global' && q !== 'bot') {
