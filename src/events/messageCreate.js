@@ -368,7 +368,7 @@ export default {
           const urls = message.content.match(urlRegex);
           if (urls) {
             for (const url of urls) {
-              if (url.includes('tiktok.com') || url.includes('instagram.com') || url.includes('twitter.com') || url.includes('x.com') || url.includes('reddit.com') || url.includes('youtube.com') || url.includes('youtu.be') || url.includes('pinterest.com') || url.includes('pin.it')) {
+              if (url.includes('tiktok.com') || url.includes('instagram.com') || url.includes('twitter.com') || url.includes('x.com') || url.includes('reddit.com') || url.includes('youtube.com') || url.includes('youtu.be') || url.includes('pinterest.com') || url.includes('pin.it') || url.includes('facebook.com') || url.includes('fb.watch')) {
                 cacheMediaUrl(message.id, url);
                 const isPin = url.includes('pinterest.com') || url.includes('pin.it');
                 const row = new ActionRowBuilder().addComponents(
