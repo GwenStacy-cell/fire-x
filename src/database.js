@@ -2335,6 +2335,18 @@ class Database {
       this.save();
     }
   }
+  setEmjsUploadChannel(guildId, channelId) {
+    const config = this.getGuildConfig(guildId);
+    config.emjsUploadChannelId = channelId;
+    this.save();
+    return true;
+  }
+
+  getEmjsUploadChannel(guildId) {
+    const config = this.getGuildConfig(guildId);
+    return config?.emjsUploadChannelId || null;
+  }
+
   // --- NP SYSTEM METHODS ---
   
   getNpManagers() {
