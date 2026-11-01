@@ -353,6 +353,8 @@ export const commands = [
                   usageText = `${prefix}trigger [create|delete|list|react|mirror|ghost|bounty|time|audience|dashboard] / ${prefix}trig`;
               } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis") {
                   usageText = `${prefix}emojis [animated|static|all|raw|upload] / ${prefix}emjs upload / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
+              } else if (targetCmd.name === "fileupload" || targetCmd.name === "uploadfile" || targetCmd.name === "file") {
+                  usageText = `${prefix}fileupload [#channel] [title] / ${prefix}fileupload channel <#channel> / ${prefix}uploadfile`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -680,6 +682,17 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}emojis all\` - View all emojis in the server.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}emojid <emoji/id/name>\` - Inspect a specific emoji's details and raw ID.`;
+              } else if (targetCmd.name === "fileupload" || targetCmd.name === "uploadfile" || targetCmd.name === "file") {
+                  descContent = `Upload and publish any file (.exe, .zip, .json, etc.) using the bot to your designated channel inside an accentborderless container with a custom title or note.\n\n` +
+                    `> -# **__Features & Capabilities:__**\n` +
+                    `> ${BULLET_EMOJI} **Accentborderless Container Card:** Renders each file inside a sleek borderless card featuring the title/note, divider, and native file component.\n` +
+                    `> ${BULLET_EMOJI} **Universal File Support:** Upload any file type (.exe, .zip, .json, etc.) directly or mirror attachments.\n` +
+                    `> ${BULLET_EMOJI} **Designated Channel Routing:** Bind a default channel using \`${prefix}fileupload channel <#channel>\` to auto-dispatch without mentioning channels.\n` +
+                    `> ${BULLET_EMOJI} **2-Minute Interactive Collector:** Run \`${prefix}fileupload\` and the bot will wait up to 2 minutes for your file attachment.\n` +
+                    `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner**, designated **Extra Owners**, and **Administrators**.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}fileupload [#channel] [title/note]\` - Upload and publish file to designated or specified channel \`[Server Owner / Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}fileupload channel <#channel>\` - Set or view the designated channel for file uploads \`[Server Owner / Extra Owner]\`.`;
               } else if (targetCmd.name === "whitelist" || targetCmd.name === "wl") {
                   descContent = `Interactive Whitelist Defense Matrix dashboard with synced looping animated GIF HUD, permission category clearance, and custom action limits.\n\n` +
                     `> -# **__Synced Looping Animated GIF HUD:__**\n` +
@@ -890,6 +903,8 @@ export const commands = [
           usageText = `${prefix}trigger [create|delete|list|react|mirror|ghost|bounty|time|audience|dashboard] / ${prefix}trig`;
         } else if (targetCmd.name === "emojis" || targetCmd.name === "animatedemojis") {
           usageText = `${prefix}emojis [animated|static|all|raw|upload] / ${prefix}emjs upload / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
+        } else if (targetCmd.name === "fileupload" || targetCmd.name === "uploadfile" || targetCmd.name === "file") {
+          usageText = `${prefix}fileupload [#channel] [title] / ${prefix}fileupload channel <#channel> / ${prefix}uploadfile`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -1264,6 +1279,17 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}emojis all\` - View all emojis in the server.\n` +
             `> ${BULLET_EMOJI} \`${prefix}emojis raw\` - Direct copyable codeblock with raw emoji strings.\n` +
             `> ${BULLET_EMOJI} \`${prefix}emojid <emoji/id/name>\` - Inspect a specific emoji's details and raw ID.`;
+        } else if (targetCmd.name === "fileupload" || targetCmd.name === "uploadfile" || targetCmd.name === "file") {
+          descContent = `Upload and publish any file (.exe, .zip, .json, etc.) using the bot to your designated channel inside an accentborderless container with a custom title or note.\n\n` +
+            `> -# **__Features & Capabilities:__**\n` +
+            `> ${BULLET_EMOJI} **Accentborderless Container Card:** Renders each file inside a sleek borderless card featuring the title/note, divider, and native file component.\n` +
+            `> ${BULLET_EMOJI} **Universal File Support:** Upload any file type (.exe, .zip, .json, etc.) directly or mirror attachments.\n` +
+            `> ${BULLET_EMOJI} **Designated Channel Routing:** Bind a default channel using \`${prefix}fileupload channel <#channel>\` to auto-dispatch without mentioning channels.\n` +
+            `> ${BULLET_EMOJI} **2-Minute Interactive Collector:** Run \`${prefix}fileupload\` and the bot will wait up to 2 minutes for your file attachment.\n` +
+            `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner**, designated **Extra Owners**, and **Administrators**.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}fileupload [#channel] [title/note]\` - Upload and publish file to designated or specified channel \`[Server Owner / Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}fileupload channel <#channel>\` - Set or view the designated channel for file uploads \`[Server Owner / Extra Owner]\`.`;
         }
 
         const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
@@ -2527,7 +2553,7 @@ export const helpModules = [
     "`!qrcode / !qrc / !qrmanager <text/link>` - Generate high-resolution QR code `[Public]`",
     "`!steal / !stealemoji / !emojisteal / !steal-emoji / !addemoji <emoji/link>` - Steal an emoji to this server `[Extra Owner]`",
     "`!emojis / !animatedemojis / !emojilist` - Interactive animated & static emoji inventory with raw IDs (<a:name:id>), previews & copyable codeblocks `[Server Owner]`",
-    "`!emjs upload [#channel] [title]` - Upload a .exe, .zip, or .json file with a title/note to the designated channel `[Server Owner / Extra Owner]`",
+    "`!fileupload / !uploadfile [#channel] [title]` - Upload any file (.exe, .zip, .json, etc.) with a title/note inside an accentborderless container to the designated channel `[Server Owner / Extra Owner]`",
     "`!morning / !goodmorning [panel|enable|disable|channel|auto|ping|test|add]` - Interactive daily pleasant thought dispatcher with randomized per-server morning scheduling `[Extra Owner]`",
     "`!afk / !brb [reason]` - Set an AFK status that replies when pinged `[Public]`",
     "`!bump` - Bump the server (Disboard integration) `[Public]`",

@@ -2335,16 +2335,25 @@ class Database {
       this.save();
     }
   }
-  setEmjsUploadChannel(guildId, channelId) {
+  setFileUploadChannel(guildId, channelId) {
     const config = this.getGuildConfig(guildId);
+    config.fileUploadChannelId = channelId;
     config.emjsUploadChannelId = channelId;
     this.save();
     return true;
   }
 
-  getEmjsUploadChannel(guildId) {
+  getFileUploadChannel(guildId) {
     const config = this.getGuildConfig(guildId);
-    return config?.emjsUploadChannelId || null;
+    return config?.fileUploadChannelId || config?.emjsUploadChannelId || null;
+  }
+
+  setEmjsUploadChannel(guildId, channelId) {
+    return this.setFileUploadChannel(guildId, channelId);
+  }
+
+  getEmjsUploadChannel(guildId) {
+    return this.getFileUploadChannel(guildId);
   }
 
   // --- NP SYSTEM METHODS ---

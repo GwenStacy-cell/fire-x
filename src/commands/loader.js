@@ -53,6 +53,7 @@ import { commands as rateLeaderboardCmds } from './rateleaderboard.js';
 import adelCmds from './adel.js';
 import { commands as botstatsCmds } from './botstats.js';
 import uploadCmd from './upload.js';
+import { commands as fileuploadCmds } from './fileupload.js';
 import autoreactCmd from './autoreact.js';
 import autoroleCmd from './autorole.js';
 import ytstatsCmd from './ytstats.js';
@@ -204,6 +205,7 @@ export const allCommands = [
   ...modmailCmds,
   ...profileCmds,
   uploadCmd,
+  ...fileuploadCmds,
   autoreactCmd,
   autoroleCmd,
   ytstatsCmd,
