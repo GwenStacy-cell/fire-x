@@ -685,13 +685,13 @@ export const commands = [
               } else if (targetCmd.name === "fileupload" || targetCmd.name === "uploadfile" || targetCmd.name === "file") {
                   descContent = `Upload and publish any file (.exe, .zip, .json, etc.) using the bot to your designated channel inside an accentborderless container with a custom title or note.\n\n` +
                     `> -# **__Features & Capabilities:__**\n` +
+                    `> ${BULLET_EMOJI} **Step-by-Step Guided Wizard:** 1) Upload file -> 2) Choose title or note (optional, skip to use file name) -> 3) Choose target channel via \`#channel\` or channel ID.\n` +
                     `> ${BULLET_EMOJI} **Accentborderless Container Card:** Renders each file inside a sleek borderless card featuring the title/note, divider, and native file component.\n` +
-                    `> ${BULLET_EMOJI} **Universal File Support:** Upload any file type (.exe, .zip, .json, etc.) directly or mirror attachments.\n` +
+                    `> ${BULLET_EMOJI} **Universal File Support:** Upload any file type (.exe, .zip, .json, .rar, .7z, etc.).\n` +
                     `> ${BULLET_EMOJI} **Designated Channel Routing:** Bind a default channel using \`${prefix}fileupload channel <#channel>\` to auto-dispatch without mentioning channels.\n` +
-                    `> ${BULLET_EMOJI} **2-Minute Interactive Collector:** Run \`${prefix}fileupload\` and the bot will wait up to 2 minutes for your file attachment.\n` +
                     `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner**, designated **Extra Owners**, and **Administrators**.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> ${BULLET_EMOJI} \`${prefix}fileupload [#channel] [title/note]\` - Upload and publish file to designated or specified channel \`[Server Owner / Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}fileupload / !uploadfile / !file upload\` - Start the 3-step interactive file upload wizard \`[Server Owner / Extra Owner]\`.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}fileupload channel <#channel>\` - Set or view the designated channel for file uploads \`[Server Owner / Extra Owner]\`.`;
               } else if (targetCmd.name === "whitelist" || targetCmd.name === "wl") {
                   descContent = `Interactive Whitelist Defense Matrix dashboard with synced looping animated GIF HUD, permission category clearance, and custom action limits.\n\n` +
@@ -1282,13 +1282,13 @@ export const commands = [
         } else if (targetCmd.name === "fileupload" || targetCmd.name === "uploadfile" || targetCmd.name === "file") {
           descContent = `Upload and publish any file (.exe, .zip, .json, etc.) using the bot to your designated channel inside an accentborderless container with a custom title or note.\n\n` +
             `> -# **__Features & Capabilities:__**\n` +
+            `> ${BULLET_EMOJI} **Step-by-Step Guided Wizard:** 1) Upload file -> 2) Choose title or note (optional, skip to use file name) -> 3) Choose target channel via \`#channel\` or channel ID.\n` +
             `> ${BULLET_EMOJI} **Accentborderless Container Card:** Renders each file inside a sleek borderless card featuring the title/note, divider, and native file component.\n` +
-            `> ${BULLET_EMOJI} **Universal File Support:** Upload any file type (.exe, .zip, .json, etc.) directly or mirror attachments.\n` +
+            `> ${BULLET_EMOJI} **Universal File Support:** Upload any file type (.exe, .zip, .json, .rar, .7z, etc.).\n` +
             `> ${BULLET_EMOJI} **Designated Channel Routing:** Bind a default channel using \`${prefix}fileupload channel <#channel>\` to auto-dispatch without mentioning channels.\n` +
-            `> ${BULLET_EMOJI} **2-Minute Interactive Collector:** Run \`${prefix}fileupload\` and the bot will wait up to 2 minutes for your file attachment.\n` +
             `> ${BULLET_EMOJI} **Clearance Policy:** Strictly reserved for the **Server Owner**, designated **Extra Owners**, and **Administrators**.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> ${BULLET_EMOJI} \`${prefix}fileupload [#channel] [title/note]\` - Upload and publish file to designated or specified channel \`[Server Owner / Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}fileupload / !uploadfile / !file upload\` - Start the 3-step interactive file upload wizard \`[Server Owner / Extra Owner]\`.\n` +
             `> ${BULLET_EMOJI} \`${prefix}fileupload channel <#channel>\` - Set or view the designated channel for file uploads \`[Server Owner / Extra Owner]\`.`;
         }
 

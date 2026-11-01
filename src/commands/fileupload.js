@@ -1,12 +1,76 @@
-import { PermissionFlagsBits, MessageFlags, ApplicationCommandOptionType } from 'discord.js';
+import { 
+  PermissionFlagsBits, 
+  MessageFlags, 
+  ApplicationCommandOptionType, 
+  ActionRowBuilder, 
+  ButtonBuilder, 
+  ButtonStyle 
+} from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
 import { isBotOwnerSync, isExtraOwner } from '../utils/helpers.js';
 import { TICK_EMOJI, BULLET_EMOJI, getRandomHeadingGlyph } from '../utils/emojis.js';
 
 /**
- * Handles uploading a .exe, .json, .zip or any file using the bot to the designated
- * channel with a note/title above formatted inside a CV2 accentborderless container.
+ * Awaits either a message from authorId in channel OR a button interaction on promptMsg.
+ * Times out after timeout ms (default 120000 = 2 minutes).
+ */
+function awaitStepResponse(channel, promptMsg, authorId, timeout = 120000) {
+  return new Promise((resolve) => {
+    let finished = false;
+
+    const msgCollector = channel.createMessageCollector({
+      filter: m => m.author.id === authorId,
+      time: timeout,
+      max: 1
+    });
+
+    const btnCollector = promptMsg && promptMsg.createMessageComponentCollector
+      ? promptMsg.createMessageComponentCollector({
+          filter: i => i.user.id === authorId,
+          time: timeout,
+          max: 1
+        })
+      : null;
+
+    function finish(result) {
+      if (!finished) {
+        finished = true;
+        try { msgCollector.stop(); } catch {}
+        try { btnCollector?.stop(); } catch {}
+        resolve(result);
+      }
+    }
+
+    msgCollector.on('collect', (m) => {
+      finish({ type: 'message', message: m });
+    });
+
+    btnCollector?.on('collect', async (i) => {
+      try { await i.deferUpdate(); } catch {}
+      finish({ type: 'interaction', interaction: i, customId: i.customId });
+    });
+
+    msgCollector.on('end', (collected, reason) => {
+      if (!finished && reason === 'time') {
+        finish(null);
+      }
+    });
+
+    btnCollector?.on('end', (collected, reason) => {
+      if (!finished && reason === 'time') {
+        finish(null);
+      }
+    });
+  });
+}
+
+/**
+ * Step-by-step interactive file upload wizard:
+ * 1. Upload File (.exe, .zip, .json, etc.)
+ * 2. Choose Title / Note (Optional, can skip to use file name)
+ * 3. Choose Target Channel via #channel or Channel ID (or designated / current)
+ * 4. Publish inside CV2 Accentborderless Container
  */
 export async function handleFileUploadPublish(message, args = []) {
   if (!message.guild) {
@@ -39,78 +103,232 @@ export async function handleFileUploadPublish(message, args = []) {
       }
 
       db.setFileUploadChannel(message.guild.id, chan.id);
-      return message.reply(cv2.success('Designated Channel Configured', `Files uploaded via \`${prefix}fileupload\` will now be published to <#${chan.id}>.`));
+      return message.reply(cv2.success('Designated Channel Configured', `Files uploaded via \`${prefix}fileupload\` will default to <#${chan.id}>.`));
     }
 
     const currentId = db.getFileUploadChannel(message.guild.id);
     if (currentId) {
       return message.reply(cv2.info('Designated Upload Channel', `Currently designated upload channel: <#${currentId}>\nUse \`${prefix}fileupload channel <#channel>\` to change it.`));
     }
-    return message.reply(cv2.info('Designated Upload Channel', `No designated channel configured yet. Files will post to the current channel or target channel you specify.\n\nUse \`${prefix}fileupload channel <#channel>\` to set one.`));
+    return message.reply(cv2.info('Designated Upload Channel', `No designated channel configured yet. Files will post to the target channel you specify during upload.\n\nUse \`${prefix}fileupload channel <#channel>\` to set one.`));
   }
 
-  let uploadMsg = message;
-  let titleArgs = (sub === 'upload') ? args.slice(1) : [...args];
+  // --- STEP 1: UPLOAD FILE ---
+  let attachments = [];
+  if (message.attachments && message.attachments.size > 0) {
+    attachments = Array.from(message.attachments.values());
+  } else {
+    const cancelBtn1 = new ButtonBuilder()
+      .setCustomId('fu_cancel')
+      .setLabel('Cancel')
+      .setStyle(ButtonStyle.Danger);
+    const row1 = new ActionRowBuilder().addComponents(cancelBtn1);
 
-  // If no attachment in command message, prompt user and await their upload
-  if (!message.attachments || message.attachments.size === 0) {
-    const designatedId = db.getFileUploadChannel(message.guild.id);
-    const targetHint = designatedId ? `<#${designatedId}>` : 'this channel';
-
-    await message.reply(cv2.info('File Upload',
+    const step1Payload = cv2.info(
+      'File Upload [Step 1/3]',
       `Please upload/attach your file (**.exe**, **.zip**, **.json**, etc.) in your next message.\n\n` +
-      `> -# ${BULLET_EMOJI} **Title / Note:** Type your title or note in the message text.\n` +
-      `> -# ${BULLET_EMOJI} **Target Channel:** Posts to ${targetHint} (or mention a specific \`#channel\`).\n` +
-      `> -# ${BULLET_EMOJI} **Window:** You have 2 minutes to upload.`
-    ));
-
-    const filter = m => m.author.id === message.author.id;
-    const collected = await message.channel.awaitMessages({ filter, max: 1, time: 120000, errors: ['time'] }).catch(() => null);
-
-    if (!collected || collected.size === 0) {
-      return message.channel.send(cv2.warn('Upload Timed Out', 'Upload timed out. Please run the command again and attach your file.'));
+      `> -# ${BULLET_EMOJI} **Supported Formats:** .exe, .zip, .json, .rar, .7z, or any code / asset archive.\n` +
+      `> -# ${BULLET_EMOJI} **Cancel:** Type \`cancel\` or click **Cancel** below.\n` +
+      `> -# ${BULLET_EMOJI} **Window:** You have 2 minutes to upload your file.`
+    );
+    if (step1Payload.components?.[0]?.components) {
+      step1Payload.components[0].components.push({ type: 14, divider: true }, row1.toJSON());
     }
 
-    uploadMsg = collected.first();
-    if (uploadMsg.content) {
-      titleArgs = uploadMsg.content.trim().split(/\s+/);
+    const prompt1 = await message.reply(step1Payload);
+    const res1 = await awaitStepResponse(message.channel, prompt1, message.author.id, 120000);
+
+    if (!res1) {
+      return message.channel.send(cv2.warn('Upload Timed Out', 'File upload timed out. No file was received within 2 minutes.'));
     }
-  }
 
-  if (!uploadMsg.attachments || uploadMsg.attachments.size === 0) {
-    return message.channel.send(cv2.warn('Upload Timed Out', 'No attachments detected. Please run the command again and attach your file.'));
-  }
-
-  // Resolve target channel
-  let targetChannel = uploadMsg.mentions?.channels?.first() || message.mentions?.channels?.first();
-
-  if (!targetChannel && titleArgs.length > 0) {
-    const potentialId = titleArgs[0].replace(/[<#>]/g, '');
-    const found = message.guild.channels.cache.get(potentialId) || await message.guild.channels.fetch(potentialId).catch(() => null);
-    if (found && found.isTextBased()) {
-      targetChannel = found;
-      titleArgs.shift();
+    if (res1.type === 'interaction' && res1.customId === 'fu_cancel') {
+      return message.channel.send(cv2.danger('Upload Cancelled', 'File upload wizard has been cancelled.'));
     }
-  } else if (targetChannel) {
-    titleArgs = titleArgs.filter(a => a !== `<#${targetChannel.id}>`);
-  }
 
-  if (!targetChannel) {
-    const designatedId = db.getFileUploadChannel(message.guild.id);
-    if (designatedId) {
-      targetChannel = message.guild.channels.cache.get(designatedId) || await message.guild.channels.fetch(designatedId).catch(() => null);
+    if (res1.type === 'message') {
+      const content = res1.message.content.trim().toLowerCase();
+      if (content === 'cancel') {
+        return message.channel.send(cv2.danger('Upload Cancelled', 'File upload wizard has been cancelled.'));
+      }
+      if (!res1.message.attachments || res1.message.attachments.size === 0) {
+        return message.channel.send(cv2.danger('No File Attached', 'No file attachment was detected in your message. Please run `!fileupload` again and attach your file.'));
+      }
+      attachments = Array.from(res1.message.attachments.values());
     }
   }
 
-  if (!targetChannel) {
-    targetChannel = message.channel;
+  if (attachments.length === 0) {
+    return message.channel.send(cv2.danger('No File Attached', 'No file attachments detected. Setup cancelled.'));
   }
 
-  const rawTitle = titleArgs.join(' ').trim();
+  // --- STEP 2: CHOOSE TITLE (OPTIONAL) ---
+  const primaryFile = attachments[0];
+  const defaultTitle = primaryFile.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+
+  const skipBtn = new ButtonBuilder()
+    .setCustomId('fu_skip_title')
+    .setLabel('Skip (Use File Name)')
+    .setStyle(ButtonStyle.Primary);
+  const cancelBtn2 = new ButtonBuilder()
+    .setCustomId('fu_cancel')
+    .setLabel('Cancel')
+    .setStyle(ButtonStyle.Danger);
+  const row2 = new ActionRowBuilder().addComponents(skipBtn, cancelBtn2);
+
+  const step2Payload = cv2.info(
+    'File Upload [Step 2/3]',
+    `File received: \`${primaryFile.name}\` (${(primaryFile.size / 1024).toFixed(2)} KB)\n\n` +
+    `Now enter a **Title or Note** to display on top of this file.\n\n` +
+    `> -# ${BULLET_EMOJI} **Custom Title:** Type your title or note in chat.\n` +
+    `> -# ${BULLET_EMOJI} **Optional / Skip:** Type \`skip\` or click **Skip (Use File Name)** to use default: \`${defaultTitle}\`.\n` +
+    `> -# ${BULLET_EMOJI} **Cancel:** Type \`cancel\` to abort.\n` +
+    `> -# ${BULLET_EMOJI} **Window:** You have 2 minutes.`
+  );
+  if (step2Payload.components?.[0]?.components) {
+    step2Payload.components[0].components.push({ type: 14, divider: true }, row2.toJSON());
+  }
+
+  const prompt2 = await message.channel.send(step2Payload);
+  const res2 = await awaitStepResponse(message.channel, prompt2, message.author.id, 120000);
+
+  if (!res2) {
+    return message.channel.send(cv2.warn('Upload Timed Out', 'File upload timed out waiting for title selection. Setup cancelled.'));
+  }
+
+  let chosenTitle = defaultTitle;
+
+  if (res2.type === 'interaction') {
+    if (res2.customId === 'fu_cancel') {
+      return message.channel.send(cv2.danger('Upload Cancelled', 'File upload wizard has been cancelled.'));
+    }
+    if (res2.customId === 'fu_skip_title') {
+      chosenTitle = defaultTitle;
+    }
+  } else if (res2.type === 'message') {
+    const text = res2.message.content.trim();
+    if (text.toLowerCase() === 'cancel') {
+      return message.channel.send(cv2.danger('Upload Cancelled', 'File upload wizard has been cancelled.'));
+    }
+    if (['skip', 'none', 'default', 'pass', 'no'].includes(text.toLowerCase())) {
+      chosenTitle = defaultTitle;
+    } else if (text) {
+      chosenTitle = text;
+    }
+  }
+
+  // --- STEP 3: CHOOSE CHANNEL VIA #CHANNEL OR CHANNEL ID ---
+  const designatedId = db.getFileUploadChannel(message.guild.id);
+  let designatedChan = null;
+  if (designatedId) {
+    designatedChan = message.guild.channels.cache.get(designatedId) ||
+                     await message.guild.channels.fetch(designatedId).catch(() => null);
+  }
+
+  const chanButtons = [];
+  if (designatedChan && designatedChan.isTextBased()) {
+    chanButtons.push(
+      new ButtonBuilder()
+        .setCustomId('fu_use_designated')
+        .setLabel(`Use Designated (#${designatedChan.name.slice(0, 20)})`)
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+  chanButtons.push(
+    new ButtonBuilder()
+      .setCustomId('fu_use_current')
+      .setLabel(`Use Current (#${message.channel.name.slice(0, 20)})`)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('fu_cancel')
+      .setLabel('Cancel')
+      .setStyle(ButtonStyle.Danger)
+  );
+  const row3 = new ActionRowBuilder().addComponents(chanButtons);
+
+  const designatedLine = designatedChan 
+    ? `> -# ${BULLET_EMOJI} **Designated Channel:** <#${designatedChan.id}>\n` 
+    : '';
+
+  const step3Payload = cv2.info(
+    'File Upload [Step 3/3]',
+    `Title selected: **${chosenTitle}**\n\n` +
+    `Now choose the **Target Channel** where this file should be posted:\n\n` +
+    `> -# ${BULLET_EMOJI} **Mention or ID:** Mention a channel (e.g. \`#channel\`) or enter the **Channel ID** in chat.\n` +
+    `> -# ${BULLET_EMOJI} **Current Channel:** Type \`here\` or click **Use Current**.\n` +
+    designatedLine +
+    `> -# ${BULLET_EMOJI} **Cancel:** Type \`cancel\` to abort.\n` +
+    `> -# ${BULLET_EMOJI} **Window:** You have 2 minutes.`
+  );
+  if (step3Payload.components?.[0]?.components) {
+    step3Payload.components[0].components.push({ type: 14, divider: true }, row3.toJSON());
+  }
+
+  const prompt3 = await message.channel.send(step3Payload);
+  const res3 = await awaitStepResponse(message.channel, prompt3, message.author.id, 120000);
+
+  if (!res3) {
+    return message.channel.send(cv2.warn('Upload Timed Out', 'File upload timed out waiting for channel selection. Setup cancelled.'));
+  }
+
+  let targetChannel = null;
+
+  if (res3.type === 'interaction') {
+    if (res3.customId === 'fu_cancel') {
+      return message.channel.send(cv2.danger('Upload Cancelled', 'File upload wizard has been cancelled.'));
+    }
+    if (res3.customId === 'fu_use_designated' && designatedChan) {
+      targetChannel = designatedChan;
+    } else if (res3.customId === 'fu_use_current') {
+      targetChannel = message.channel;
+    }
+  } else if (res3.type === 'message') {
+    const rawContent = res3.message.content.trim();
+    if (rawContent.toLowerCase() === 'cancel') {
+      return message.channel.send(cv2.danger('Upload Cancelled', 'File upload wizard has been cancelled.'));
+    }
+
+    if (['here', 'current', 'this'].includes(rawContent.toLowerCase())) {
+      targetChannel = message.channel;
+    } else if (['default', 'designated'].includes(rawContent.toLowerCase()) && designatedChan) {
+      targetChannel = designatedChan;
+    } else {
+      // 1. Check channel mentions
+      const mentioned = res3.message.mentions.channels.first();
+      if (mentioned && mentioned.isTextBased()) {
+        targetChannel = mentioned;
+      } else {
+        // 2. Extract digits / channel ID
+        const match = rawContent.match(/\b\d{17,20}\b/) || rawContent.replace(/[<#>]/g, '').trim().split(/\s+/);
+        const chanId = match ? (typeof match === 'string' ? match : match[0]) : null;
+        if (chanId) {
+          const fetched = message.guild.channels.cache.get(chanId) || 
+                          await message.guild.channels.fetch(chanId).catch(() => null);
+          if (fetched && fetched.isTextBased()) {
+            targetChannel = fetched;
+          }
+        }
+      }
+    }
+  }
+
+  if (!targetChannel || !targetChannel.isTextBased()) {
+    return message.channel.send(cv2.danger('Invalid Channel', 'Could not resolve a valid text channel with that mention or ID. File upload cancelled.'));
+  }
+
+  // Permission check in targetChannel
+  const botPerms = targetChannel.permissionsFor(message.client.user);
+  if (botPerms && (!botPerms.has(PermissionFlagsBits.ViewChannel) || !botPerms.has(PermissionFlagsBits.SendMessages) || !botPerms.has(PermissionFlagsBits.AttachFiles))) {
+    return message.channel.send(cv2.danger('Missing Permissions', `The bot lacks permissions to post in <#${targetChannel.id}>. Ensure the bot has **View Channel**, **Send Messages**, and **Attach Files** permissions in that channel.`));
+  }
+
+  // --- STEP 4: PUBLISH INSIDE CV2 ACCENTBORDERLESS CONTAINER ---
   const published = [];
 
-  for (const attachment of uploadMsg.attachments.values()) {
-    const noteText = rawTitle || attachment.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+  for (const attachment of attachments) {
+    const noteText = (attachments.length > 1) 
+      ? `${chosenTitle} — ${attachment.name}` 
+      : chosenTitle;
 
     // CV2 Accentborderless Container (NO accent_color property)
     // Renders as a pure sleek dark rounded box without any colored left border
@@ -165,7 +383,7 @@ export const commands = [
       },
       {
         name: 'title',
-        description: 'Title or note above the file',
+        description: 'Title or note above the file (optional)',
         type: ApplicationCommandOptionType.String,
         required: false
       },
@@ -217,7 +435,7 @@ export const commands = [
 
       if (!fileAttachment) {
         return interaction.reply({
-          ...cv2.warn('File Required', 'Please provide a file attachment to publish, or use `!fileupload` in text chat for the interactive 2-minute uploader.'),
+          ...cv2.warn('File Required', 'Please provide a file attachment to publish, or use `!fileupload` in text chat for the step-by-step interactive wizard.'),
           flags: MessageFlags.Ephemeral
         });
       }
