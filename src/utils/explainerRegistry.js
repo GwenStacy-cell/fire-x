@@ -2600,6 +2600,18 @@ export const DETAILED_COMMANDS = {
     example: '!autonick on'
   },
 
+  dm: {
+    name: 'dm',
+    aliases: ['dms', 'toggledm', 'dmnotifs', 'tagnotif', 'pingdm'],
+    category: 'Security & Server Settings',
+    clearance: 'Extra Owner / Server Owner',
+    syntax: '!dm [on|off|status]',
+    purpose: 'Toggles automated Athena direct message notifications sent when members are tagged or mentioned in chat channels.',
+    architecture: 
+`• **Mention DM Interceptor:** Controls the \`messageCreate\` mention dispatch pipeline. Turning off disables all Athena mention/ping DM alerts across the server while keeping official moderation notices (warns, timeouts, bans) completely active.`,
+    example: '!dm off'
+  },
+
   botwhitelist: {
     name: 'botwhitelist',
     aliases: ['trustedbots', 'bw'],

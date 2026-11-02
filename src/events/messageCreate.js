@@ -570,6 +570,7 @@ export default {
         }
       // 3. ATHENA DM NOTIFICATION FOR TAGS
       if (message.guild && message.mentions.users.size > 0) {
+        if (!db.isTagDmEnabled(message.guild.id)) return;
         message.mentions.users.forEach(async (user) => {
           if (user.id === message.author.id || user.bot) return;
           

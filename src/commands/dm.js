@@ -16,7 +16,7 @@ export function buildDmStatusPanel(guild, isEnabled) {
   const ON = '<:on:1533844867191406672>';
   const OFF = '<:off:1533844858983157851>';
   const statusEmoji = isEnabled ? ON : OFF;
-  const statusText = isEnabled ? 'ACTIVE (DMs Enabled)' : 'DISABLED (All DMs Blocked)';
+  const statusText = isEnabled ? 'ACTIVE (Mention DMs Enabled)' : 'DISABLED (Mention DMs Blocked)';
   const statusBadge = isEnabled ? TICK_EMOJI : WRONG_EMOJI;
 
   const container = {
@@ -25,11 +25,11 @@ export function buildDmStatusPanel(guild, isEnabled) {
     components: [
       {
         type: 10,
-        content: `# ${glyph} Server DM Notifications | ${statusBadge}`
+        content: `# ${glyph} Athena Mention DM Notifications | ${statusBadge}`
       },
       {
         type: 10,
-        content: `Manage whether Athena dispatches automated direct messages (DMs) to members of **${guild.name}** for moderation actions, security strikes, automod warnings, and server greetings.`
+        content: `Manage whether Athena dispatches automated direct message (DM) ping alerts to members of **${guild.name}** whenever they are tagged or mentioned in server chat channels.`
       },
       {
         type: 14,
@@ -39,10 +39,9 @@ export function buildDmStatusPanel(guild, isEnabled) {
         type: 10,
         content: `### Configuration Status:\n` +
           `> ${BULLET_EMOJI} **Operational State:** ${statusEmoji} \`${statusText}\`\n` +
-          `> ${BULLET_EMOJI} **Moderation Actions (Warn, Timeout, Kick, Ban):** \`${isEnabled ? 'DISPATCHING' : 'MUTED / BLOCKED'}\`\n` +
-          `> ${BULLET_EMOJI} **Security Enforcements (Quarantine, Strikes):** \`${isEnabled ? 'DISPATCHING' : 'MUTED / BLOCKED'}\`\n` +
-          `> ${BULLET_EMOJI} **Automod Warnings (Filters, Spams, Invites):** \`${isEnabled ? 'DISPATCHING' : 'MUTED / BLOCKED'}\`\n` +
-          `> ${BULLET_EMOJI} **Server Greetings (Welcome & Leave DMs):** \`${isEnabled ? 'DISPATCHING' : 'MUTED / BLOCKED'}\``
+          `> ${BULLET_EMOJI} **Mention & Tag DM Alerts:** \`${isEnabled ? 'DISPATCHING (Members receive DM pings when tagged)' : 'MUTED / BLOCKED (No DM alerts dispatched on tag)'}\`\n` +
+          `> ${BULLET_EMOJI} **Official Moderation Notices (Warns, Timeouts, Bans):** \`ACTIVE & PROTECTED (Unaffected)\`\n` +
+          `> ${BULLET_EMOJI} **Security & Antinuke Strikes:** \`ACTIVE & PROTECTED\``
       },
       {
         type: 14,
@@ -54,7 +53,7 @@ export function buildDmStatusPanel(guild, isEnabled) {
           {
             type: 2,
             style: isEnabled ? ButtonStyle.Danger : ButtonStyle.Success,
-            label: isEnabled ? 'Turn Off All DMs' : 'Re-Enable All DMs',
+            label: isEnabled ? 'Turn Off Mention DMs' : 'Re-Enable Mention DMs',
             custom_id: 'dm_toggle',
             emoji: { id: isEnabled ? '1533844858983157851' : '1533844867191406672' }
           }
@@ -78,25 +77,21 @@ export function buildDmStatusPanel(guild, isEnabled) {
 }
 
 /**
- * Builds the confirmation card for enabling or disabling DMs
+ * Builds the confirmation card for enabling or disabling mention DMs
  */
 export function buildDmToggleResponse(guild, enable) {
   const glyph = getRandomHeadingGlyph();
   const badge = enable ? TICK_EMOJI : TICK_EMOJI;
 
   const content = enable
-    ? `All automated direct message (DM) notifications from Athena to users of **${guild.name}** have been **re-enabled**.\n\n` +
-      `> ${BULLET_EMOJI} **Moderation Actions:** Members will receive formal notices upon warns, timeouts, kicks, and bans.\n` +
-      `> ${BULLET_EMOJI} **Security Enforcements:** Quarantined members will receive their case instructions in DM.\n` +
-      `> ${BULLET_EMOJI} **Server Greetings:** Active welcome/leave DMs will be dispatched to joining/leaving members.\n` +
-      `> ${BULLET_EMOJI} **Automod Warnings:** Members will be alerted when violating word or spam filters.\n\n` +
-      `-# To turn off DM notifications at any time, run \`!dm off\` or \`/dm action:disable\`.`
-    : `All automated direct message (DM) notifications from Athena to users of **${guild.name}** have been **turned off**.\n\n` +
-      `> ${BULLET_EMOJI} **Moderation Actions:** Warns, timeouts, kicks, and bans will no longer DM members.\n` +
-      `> ${BULLET_EMOJI} **Security Enforcements:** Quarantine, blacklist, and antinuke strike alerts will remain silent.\n` +
-      `> ${BULLET_EMOJI} **Server Greetings:** Welcome and farewell direct messages are disabled.\n` +
-      `> ${BULLET_EMOJI} **Automod Warnings:** Filter violations and spam warnings will not DM users.\n\n` +
-      `-# To re-enable DM notifications at any time, run \`!dm on\` or \`/dm action:enable\`.`;
+    ? `Athena tag and mention direct message (DM) notifications for **${guild.name}** have been **re-enabled**.\n\n` +
+      `> ${BULLET_EMOJI} **Mention Alerts:** Members will receive Athena DM notifications when tagged in server channels.\n` +
+      `> ${BULLET_EMOJI} **Moderation Notices:** Warns, timeouts, kicks, and bans remain active and protected.\n\n` +
+      `-# To turn off mention DM notifications at any time, run \`!dm off\` or \`/dm action:disable\`.`
+    : `Athena tag and mention direct message (DM) notifications for **${guild.name}** have been **turned off**.\n\n` +
+      `> ${BULLET_EMOJI} **Mention Alerts:** Athena will no longer DM members when they are tagged in server channels.\n` +
+      `> ${BULLET_EMOJI} **Moderation Notices:** Official moderation notices (warns, timeouts, kicks, and bans) remain active and protected.\n\n` +
+      `-# To re-enable mention DM notifications at any time, run \`!dm on\` or \`/dm action:enable\`.`;
 
   const container = {
     type: 17,
@@ -104,7 +99,7 @@ export function buildDmToggleResponse(guild, enable) {
     components: [
       {
         type: 10,
-        content: `# ${glyph} Server DMs ${enable ? 'Enabled' : 'Disabled'} | ${badge}`
+        content: `# ${glyph} Mention DMs ${enable ? 'Enabled' : 'Disabled'} | ${badge}`
       },
       {
         type: 10,
@@ -130,9 +125,9 @@ export function buildDmToggleResponse(guild, enable) {
 export const commands = [
   {
     name: 'dm',
-    description: 'Turn off or re-enable all Athena automated DM notifications to users of this server.',
+    description: 'Turn off or re-enable Athena DM notifications when users are tagged in chat.',
     category: 'security',
-    aliases: ['dms', 'toggledm', 'serverdm', 'dmnotifs', 'dmnotifications'],
+    aliases: ['dms', 'toggledm', 'serverdm', 'dmnotifs', 'dmnotifications', 'pingnotif', 'tagnotif', 'pingdm'],
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
       {
@@ -141,8 +136,8 @@ export const commands = [
         type: 3,
         required: false,
         choices: [
-          { name: 'Turn Off All DMs (disable)', value: 'disable' },
-          { name: 'Re-Enable All DMs (enable)', value: 'enable' },
+          { name: 'Turn Off Mention DMs (disable)', value: 'disable' },
+          { name: 'Re-Enable Mention DMs (enable)', value: 'enable' },
           { name: 'View Status (panel)', value: 'status' }
         ]
       }
@@ -155,13 +150,13 @@ export const commands = [
       const sub = (args[0] || '').toLowerCase();
 
       if (sub === 'off' || sub === 'disable' || sub === 'mute' || sub === 'stop') {
-        db.updateGuildConfig(guild.id, { dmNotificationsEnabled: false, dmsEnabled: false });
+        db.setTagDmEnabled(guild.id, false);
         const res = buildDmToggleResponse(guild, false);
         return message.channel.send(res);
       }
 
       if (sub === 'on' || sub === 'enable' || sub === 'unmute' || sub === 'start') {
-        db.updateGuildConfig(guild.id, { dmNotificationsEnabled: true, dmsEnabled: true });
+        db.setTagDmEnabled(guild.id, true);
         const res = buildDmToggleResponse(guild, true);
         return message.channel.send(res);
       }
@@ -179,13 +174,13 @@ export const commands = [
       const action = interaction.options.getString('action');
 
       if (action === 'disable' || action === 'off') {
-        db.updateGuildConfig(guild.id, { dmNotificationsEnabled: false, dmsEnabled: false });
+        db.setTagDmEnabled(guild.id, false);
         const res = buildDmToggleResponse(guild, false);
         return interaction.reply(res);
       }
 
       if (action === 'enable' || action === 'on') {
-        db.updateGuildConfig(guild.id, { dmNotificationsEnabled: true, dmsEnabled: true });
+        db.setTagDmEnabled(guild.id, true);
         const res = buildDmToggleResponse(guild, true);
         return interaction.reply(res);
       }
@@ -219,7 +214,7 @@ export async function handleDmInteraction(interaction) {
   if (customId === 'dm_toggle') {
     const currentState = areServerDmsEnabled(guild.id);
     const newState = !currentState;
-    db.updateGuildConfig(guild.id, { dmNotificationsEnabled: newState, dmsEnabled: newState });
+    db.setTagDmEnabled(guild.id, newState);
     const panel = buildDmStatusPanel(guild, newState);
     return interaction.update(panel);
   }

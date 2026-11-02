@@ -2157,6 +2157,20 @@ class Database {
       return false;
     }
 
+    isTagDmEnabled(guildId) {
+      const cfg = this.getGuildConfig(guildId);
+      if (cfg.tagDmNotifications !== undefined) return Boolean(cfg.tagDmNotifications);
+      if (cfg.pingAlertsEnabled !== undefined) return Boolean(cfg.pingAlertsEnabled);
+      return true; // Default is true
+    }
+
+    setTagDmEnabled(guildId, enabled) {
+      return this.updateGuildConfig(guildId, {
+        tagDmNotifications: !!enabled,
+        pingAlertsEnabled: !!enabled
+      });
+    }
+
   getLikedSongs(userId) {
     if (!this.cache.likedSongs) this.cache.likedSongs = {};
     return this.cache.likedSongs[userId] || [];

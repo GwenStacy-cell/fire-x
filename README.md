@@ -100,6 +100,7 @@ Welcome to **Medusa Prime**, a powerful, state-of-the-art moderation, Anti-Nuke,
 | **`whitelist`**| `!whitelist <add\|remove\|list> [user]`| Manages whitelisted admins (immune to nuke/spam/etc.) | Administrator |
 | **`blacklist`**| `!blacklist <add\|remove\|list> [phrase]`| Manages filtered words (deletes and warns instantly). | Moderate Members |
 | **`autonick`** | `!autonick <on\|off> [prefix] [suffix]`| Manages join nickname formatting. | Manage Nicknames |
+| **`dm`** | `!dm <on\|off\|status>` | Toggles server-wide Athena mention & tag DM notifications. | Manage Guild / Extra Owner |
 | **`config`** | `!config <setting> <value>` | Toggle: `antinuke`, `antispam`, `antiinvite`, `maxwarnings`. | Administrator |
 | **`setup`** | `!setup [logchannel] [quarantinevc]`| Configures logs channel & Quarantine Voice Channel. | Administrator |
 | **`antinuke`** | `!antinuke <enable all\|disable all\|config>`| Toggles all shields, or opens buttons console! | Administrator |

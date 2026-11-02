@@ -364,6 +364,8 @@ export const commands = [
                   usageText = `${prefix}fileupload [#channel] [title] / ${prefix}fileupload channel <#channel> / ${prefix}uploadfile`;
               } else if (targetCmd.name === "morning" || targetCmd.name === "goodmorning" || targetCmd.name === "dailythought" || targetCmd.name === "thoughtoftheday") {
                   usageText = `${prefix}morning [panel|enable|disable|channel|auto|ping|test|add|list] / ${prefix}goodmorning / /morning [subcommand]`;
+              } else if (targetCmd.name === "dm" || targetCmd.name === "dms") {
+                  usageText = `${prefix}dm [on|off|status] / ${prefix}dms / /dm [action]`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -430,6 +432,16 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}learn baseline\` — Audit staff accounts, elevated roles & webhooks to establish normal baselines.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}learn signatures\` — Display captured rogue bot fingerprints and velocity patterns.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}learn clear\` — Reset captured signature history.`;
+              } else if (targetCmd.name === "dm" || targetCmd.name === "dms") {
+                  descContent = `Server-wide toggle for Athena direct message (DM) ping & mention notifications.\n\n` +
+                    `> -# **__Features & Controls:__**\n` +
+                    `> ${BULLET_EMOJI} **Stop Mention DM Spam:** Turn off automated direct messages Athena sends whenever members are tagged or mentioned across server channels.\n` +
+                    `> ${BULLET_EMOJI} **Keep Moderation Intact:** Official moderation notices (warns, timeouts, kicks, bans) and security strikes remain active and protected.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Dashboard:** Use \`${prefix}dm\` to view live status with a 1-click toggle button.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}dm off\` — Disable tag/mention DM notifications across this server.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}dm on\` — Re-enable tag/mention DM notifications across this server.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}dm status\` (or \`${prefix}dm\`) — Open the interactive status panel.`;
               } else if (targetCmd.name === "voicerole") {
                   descContent = `Automatically assigns a designated role to members the instant they connect to ANY voice channel, and strips it when they disconnect.\n\n` +
                     `> -# **__Universal Scope:__**\n` +
@@ -935,6 +947,8 @@ export const commands = [
           usageText = `${prefix}fileupload [#channel] [title] / ${prefix}fileupload channel <#channel> / ${prefix}uploadfile`;
         } else if (targetCmd.name === "morning" || targetCmd.name === "goodmorning" || targetCmd.name === "dailythought" || targetCmd.name === "thoughtoftheday") {
           usageText = `${prefix}morning [panel|enable|disable|channel|auto|ping|test|add|list] / ${prefix}goodmorning / /morning [subcommand]`;
+        } else if (targetCmd.name === "dm" || targetCmd.name === "dms") {
+          usageText = `${prefix}dm [on|off|status] / ${prefix}dms / /dm [action]`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -998,6 +1012,16 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}learn baseline\` — Audit staff accounts, elevated roles & webhooks to establish normal baselines.\n` +
             `> ${BULLET_EMOJI} \`${prefix}learn signatures\` — Display captured rogue bot fingerprints and velocity patterns.\n` +
             `> ${BULLET_EMOJI} \`${prefix}learn clear\` — Reset captured signature history.`;
+        } else if (targetCmd.name === "dm" || targetCmd.name === "dms") {
+          descContent = `Server-wide toggle for Athena direct message (DM) ping & mention notifications.\n\n` +
+            `> -# **__Features & Controls:__**\n` +
+            `> ${BULLET_EMOJI} **Stop Mention DM Spam:** Turn off automated direct messages Athena sends whenever members are tagged or mentioned across server channels.\n` +
+            `> ${BULLET_EMOJI} **Keep Moderation Intact:** Official moderation notices (warns, timeouts, kicks, bans) and security strikes remain active and protected.\n` +
+            `> ${BULLET_EMOJI} **Interactive Dashboard:** Use \`${prefix}dm\` to view live status with a 1-click toggle button.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}dm off\` — Disable tag/mention DM notifications across this server.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}dm on\` — Re-enable tag/mention DM notifications across this server.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}dm status\` (or \`${prefix}dm\`) — Open the interactive status panel.`;
         } else if (targetCmd.name === "voicerole") {
           descContent = `Automatically assigns a designated role to members the instant they connect to ANY voice channel, and strips it when they disconnect.\n\n` +
             `> -# **__Universal Scope:__**\n` +
