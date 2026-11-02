@@ -355,6 +355,8 @@ export const commands = [
                   usageText = `${prefix}emojis [animated|static|all|raw|upload] / ${prefix}emjs upload / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
               } else if (targetCmd.name === "fileupload" || targetCmd.name === "uploadfile" || targetCmd.name === "file") {
                   usageText = `${prefix}fileupload [#channel] [title] / ${prefix}fileupload channel <#channel> / ${prefix}uploadfile`;
+              } else if (targetCmd.name === "morning" || targetCmd.name === "goodmorning" || targetCmd.name === "dailythought" || targetCmd.name === "thoughtoftheday") {
+                  usageText = `${prefix}morning [panel|enable|disable|channel|auto|ping|test|add|list] / ${prefix}goodmorning / /morning [subcommand]`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -693,6 +695,24 @@ export const commands = [
                     `> -# **__Usage Syntax:__**\n` +
                     `> ${BULLET_EMOJI} \`${prefix}fileupload / !uploadfile / !file upload\` - Start the 3-step interactive file upload wizard \`[Server Owner / Extra Owner]\`.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}fileupload channel <#channel>\` - Set or view the designated channel for file uploads \`[Server Owner / Extra Owner]\`.`;
+              } else if (targetCmd.name === "morning" || targetCmd.name === "goodmorning" || targetCmd.name === "dailythought" || targetCmd.name === "thoughtoftheday") {
+                  descContent = `Automatically dispatches pleasant, uplifting morning reflections and thoughts of the day to your server at a unique, randomized morning time every single day.\n\n` +
+                    `> -# **__Features & Scheduling:__**\n` +
+                    `> ${BULLET_EMOJI} **Per-Server Randomized Time:** Each server calculates its own independent, randomized morning dispatch time between **07:00 AM and 10:59 AM** that changes every morning.\n` +
+                    `> ${BULLET_EMOJI} **Auto-Detect Active Chat:** Detects where members chat the most and dynamically posts the morning thought there (\`${prefix}morning auto\`).\n` +
+                    `> ${BULLET_EMOJI} **Target Channel Binding:** Alternatively locks morning reflections to a specific channel by ID (\`${prefix}morning channel <#channel>\`).\n` +
+                    `> ${BULLET_EMOJI} **Notification Ping:** Configure ping behavior to \`none\`, \`@here\`, or a custom role (\`${prefix}morning ping [none|here|@role]\`).\n` +
+                    `> ${BULLET_EMOJI} **Curated & Custom Library:** Includes 60+ uplifting thoughts, plus support for unlimited custom server quotes (\`${prefix}morning add <thought>\`).\n` +
+                    `> ${BULLET_EMOJI} **Interactive Control Panel:** Full dashboard with 1-click buttons and modal editors (\`${prefix}morning\`).\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}morning / ${prefix}goodmorning / ${prefix}morning panel\` - Open the interactive morning control dashboard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}morning enable / disable\` - Toggle automatic morning delivery on/off.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}morning auto\` - Enable auto-detection to post in the text channel where most members chat.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}morning channel <#channel>\` - Lock morning messages to a specific text channel by ID.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}morning ping <none|here|@role>\` - Change ping behavior (none, @here, or custom role).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}morning test\` - Dispatch an immediate test thought card to preview the output.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}morning add <thought>\` - Add a custom pleasant quote to your server's rotation.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}morning list\` - Display custom server quotes.`;
               } else if (targetCmd.name === "whitelist" || targetCmd.name === "wl") {
                   descContent = `Interactive Whitelist Defense Matrix dashboard with synced looping animated GIF HUD, permission category clearance, and custom action limits.\n\n` +
                     `> -# **__Synced Looping Animated GIF HUD:__**\n` +
@@ -905,6 +925,8 @@ export const commands = [
           usageText = `${prefix}emojis [animated|static|all|raw|upload] / ${prefix}emjs upload / ${prefix}animatedemojis / ${prefix}emojid <emoji>`;
         } else if (targetCmd.name === "fileupload" || targetCmd.name === "uploadfile" || targetCmd.name === "file") {
           usageText = `${prefix}fileupload [#channel] [title] / ${prefix}fileupload channel <#channel> / ${prefix}uploadfile`;
+        } else if (targetCmd.name === "morning" || targetCmd.name === "goodmorning" || targetCmd.name === "dailythought" || targetCmd.name === "thoughtoftheday") {
+          usageText = `${prefix}morning [panel|enable|disable|channel|auto|ping|test|add|list] / ${prefix}goodmorning / /morning [subcommand]`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -1290,6 +1312,24 @@ export const commands = [
             `> -# **__Usage Syntax:__**\n` +
             `> ${BULLET_EMOJI} \`${prefix}fileupload / !uploadfile / !file upload\` - Start the 3-step interactive file upload wizard \`[Server Owner / Extra Owner]\`.\n` +
             `> ${BULLET_EMOJI} \`${prefix}fileupload channel <#channel>\` - Set or view the designated channel for file uploads \`[Server Owner / Extra Owner]\`.`;
+        } else if (targetCmd.name === "morning" || targetCmd.name === "goodmorning" || targetCmd.name === "dailythought" || targetCmd.name === "thoughtoftheday") {
+          descContent = `Automatically dispatches pleasant, uplifting morning reflections and thoughts of the day to your server at a unique, randomized morning time every single day.\n\n` +
+            `> -# **__Features & Scheduling:__**\n` +
+            `> ${BULLET_EMOJI} **Per-Server Randomized Time:** Each server calculates its own independent, randomized morning dispatch time between **07:00 AM and 10:59 AM** that changes every morning.\n` +
+            `> ${BULLET_EMOJI} **Auto-Detect Active Chat:** Detects where members chat the most and dynamically posts the morning thought there (\`${prefix}morning auto\`).\n` +
+            `> ${BULLET_EMOJI} **Target Channel Binding:** Alternatively locks morning reflections to a specific channel by ID (\`${prefix}morning channel <#channel>\`).\n` +
+            `> ${BULLET_EMOJI} **Notification Ping:** Configure ping behavior to \`none\`, \`@here\`, or a custom role (\`${prefix}morning ping [none|here|@role]\`).\n` +
+            `> ${BULLET_EMOJI} **Curated & Custom Library:** Includes 60+ uplifting thoughts, plus support for unlimited custom server quotes (\`${prefix}morning add <thought>\`).\n` +
+            `> ${BULLET_EMOJI} **Interactive Control Panel:** Full dashboard with 1-click buttons and modal editors (\`${prefix}morning\`).\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}morning / ${prefix}goodmorning / ${prefix}morning panel\` - Open the interactive morning control dashboard.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}morning enable / disable\` - Toggle automatic morning delivery on/off.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}morning auto\` - Enable auto-detection to post in the text channel where most members chat.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}morning channel <#channel>\` - Lock morning messages to a specific text channel by ID.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}morning ping <none|here|@role>\` - Change ping behavior (none, @here, or custom role).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}morning test\` - Dispatch an immediate test thought card to preview the output.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}morning add <thought>\` - Add a custom pleasant quote to your server's rotation.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}morning list\` - Display custom server quotes.`;
         }
 
         const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
@@ -2554,7 +2594,7 @@ export const helpModules = [
     "`!steal / !stealemoji / !emojisteal / !steal-emoji / !addemoji <emoji/link>` - Steal an emoji to this server `[Extra Owner]`",
     "`!emojis / !animatedemojis / !emojilist` - Interactive animated & static emoji inventory with raw IDs (<a:name:id>), previews & copyable codeblocks `[Server Owner]`",
     "`!fileupload / !uploadfile [#channel] [title]` - Upload any file (.exe, .zip, .json, etc.) with a title/note inside an accentborderless container to the designated channel `[Server Owner / Extra Owner]`",
-    "`!morning / !goodmorning [panel|enable|disable|channel|auto|ping|test|add]` - Interactive daily pleasant thought dispatcher with randomized per-server morning scheduling `[Extra Owner]`",
+    "`!morning / !goodmorning [panel|enable|disable|channel|auto|ping|test|add|list]` - Daily pleasant thought dispatcher with per-server randomized morning scheduling & auto active chat detection `[Manage Server]`",
     "`!afk / !brb [reason]` - Set an AFK status that replies when pinged `[Public]`",
     "`!bump` - Bump the server (Disboard integration) `[Public]`",
     "`!sticky / !stick <message>` - Keep a message stuck at bottom of chat `[Extra Owner]`",

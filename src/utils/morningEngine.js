@@ -129,7 +129,7 @@ export function buildMorningPayload(quote, config = {}, guild = null) {
       },
       {
         type: 10,
-        content: `-# Good Morning${pingText} | Secure`
+        content: `-# Good Morning${pingText}`
       }
     ]
   };
