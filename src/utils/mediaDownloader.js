@@ -31,14 +31,26 @@ let lastUpdateCheck = 0;
  */
 
 /**
- * Automatically discovers cookies.txt or youtube_cookies.txt in bot root or home dir.
- * This completely resolves YouTube datacenter IP "Sign in to confirm you're not a bot" blocks.
+ * Automatically discovers cookies.txt or youtube_cookies.txt in bot root, home dir, or container.
+ * Also synchronizes from COOKIES_TEXT / YOUTUBE_COOKIES env var if present.
+ * This completely resolves YouTube and Instagram datacenter IP blocks.
  */
 export function getCookieArg() {
+  const defaultCookieFile = path.join(process.cwd(), 'cookies.txt');
+  const envCookie = process.env.COOKIES_TEXT || process.env.YOUTUBE_COOKIES || process.env.INSTAGRAM_COOKIES;
+  if (envCookie && !fs.existsSync(defaultCookieFile)) {
+    try {
+      fs.writeFileSync(defaultCookieFile, envCookie.trim(), 'utf8');
+    } catch {}
+  }
+
   const possiblePaths = [
     path.join(process.cwd(), 'cookies.txt'),
+    '/home/container/cookies.txt',
     path.join(process.cwd(), 'youtube_cookies.txt'),
     path.join(process.cwd(), 'yt_cookies.txt'),
+    path.join(process.cwd(), 'instagram_cookies.txt'),
+    path.join(process.cwd(), 'ig_cookies.txt'),
     path.join(os.homedir(), 'cookies.txt')
   ];
   for (const p of possiblePaths) {
@@ -157,6 +169,206 @@ function findGeneratedFile(prefix) {
 }
 
 /**
+ * Helper to locate ALL files created with a prefix in working directory (e.g. multi-item Instagram carousels)
+ */
+function findAllGeneratedFiles(prefix) {
+  try {
+    const dir = process.cwd();
+    const files = fs.readdirSync(dir);
+    return files
+      .filter(f => f.startsWith(prefix))
+      .map(f => path.join(dir, f));
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Comprehensive Instagram Media Extraction Pipeline:
+ * Handles Reels, Video Posts, Photo Posts, Carousels (multi-slide albums), and Stories.
+ */
+async function handleInstagramMedia(client, message, url, tempFilesToClean) {
+  // Clean URL of tracking parameters
+  let cleanUrl = url;
+  try {
+    const u = new URL(url);
+    u.searchParams.delete('igsh');
+    u.searchParams.delete('utm_source');
+    u.searchParams.delete('utm_medium');
+    u.searchParams.delete('utm_campaign');
+    u.searchParams.delete('si');
+    cleanUrl = u.toString();
+  } catch (e) {}
+
+  // Strategy 1: cakkatrok-instagram-downloader (Handles Reels, Posts, Photos, Carousels, Stories)
+  try {
+    const Instagram = (await import('cakkatrok-instagram-downloader')).default;
+    const cakkaRes = await Instagram.media(cleanUrl).catch(() => null) || await Instagram(cleanUrl).catch(() => null);
+    if (cakkaRes && cakkaRes.media && Array.isArray(cakkaRes.media) && cakkaRes.media.length > 0) {
+      const validItems = cakkaRes.media.filter(m => m && m.url && m.url.startsWith('http'));
+      if (validItems.length > 0) {
+        const attachments = [];
+        for (let i = 0; i < Math.min(validItems.length, 10); i++) {
+          const item = validItems[i];
+          try {
+            const mRes = await fetch(item.url, {
+              headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' }
+            });
+            if (mRes.ok) {
+              const buf = Buffer.from(await mRes.arrayBuffer());
+              if (buf.length > 500) {
+                const isVid = item.type === 'video' || item.url.includes('.mp4');
+                const ext = isVid ? 'mp4' : 'jpg';
+                attachments.push(new AttachmentBuilder(buf, { name: `Athena_Instagram_${i + 1}.${ext}` }));
+              }
+            }
+          } catch (fetchErr) {
+            console.warn('[Media] Failed to fetch Instagram media item:', fetchErr.message);
+          }
+        }
+
+        if (attachments.length > 0) {
+          const label = attachments.length > 1 ? `Instagram Album (${attachments.length} items)` : 'Instagram Media';
+          await message.channel.send({
+            content: `-# **${label} Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
+            files: attachments
+          });
+          await message.delete().catch(() => {});
+          return true;
+        }
+      }
+    }
+  } catch (errCakka) {
+    console.warn('[Media] cakkatrok IG extraction failed:', errCakka.message);
+  }
+
+  // Strategy 2: yt-dlp with cookieArg and mobile user-agent (Universal engine for all formats & authenticated downloads)
+  try {
+    const ytdlpPath = await downloadYtDlp();
+    ensureFfmpegPermissions();
+    const cookieArg = getCookieArg();
+    const uniqueId = `ig_${Date.now()}`;
+    const outTemplate = path.join(process.cwd(), `yt_dlp_ig_${uniqueId}_%(autonumber)s.%(ext)s`);
+
+    await execPromise(
+      `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
+      `--user-agent "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 300.0.0.0" ` +
+      `-f "best/bestvideo+bestaudio/b" --no-playlist --geo-bypass --no-check-certificates ` +
+      `-o "${outTemplate}" -- "${cleanUrl}"`
+    );
+
+    const generated = findAllGeneratedFiles(`yt_dlp_ig_${uniqueId}`);
+    if (generated.length > 0) {
+      tempFilesToClean.push(...generated);
+      const attachments = [];
+      for (let i = 0; i < Math.min(generated.length, 10); i++) {
+        const filePath = generated[i];
+        if (fs.existsSync(filePath) && fs.statSync(filePath).size > 500) {
+          const buf = fs.readFileSync(filePath);
+          const ext = path.extname(filePath).replace('.', '') || 'mp4';
+          attachments.push(new AttachmentBuilder(buf, { name: `Athena_Instagram_${i + 1}.${ext}` }));
+        }
+      }
+      if (attachments.length > 0) {
+        const label = attachments.length > 1 ? `Instagram Album (${attachments.length} items)` : 'Instagram Media';
+        await message.channel.send({
+          content: `-# **${label} Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
+          files: attachments
+        });
+        await message.delete().catch(() => {});
+        return true;
+      }
+    }
+  } catch (errYtIg) {
+    console.warn('[Media] yt-dlp IG extraction failed:', errYtIg.message);
+  }
+
+  // Strategy 3: snapsave-media-downloader
+  try {
+    const { snapsave } = await import('snapsave-media-downloader');
+    const snapRes = await snapsave(cleanUrl);
+    if (snapRes && snapRes.data && snapRes.data.length > 0) {
+      const vidObj = snapRes.data.find(d => d.url && (d.resolution || d.url.includes('.mp4')));
+      const targetUrl = vidObj ? vidObj.url : snapRes.data[0].url;
+      if (targetUrl) {
+        const mRes = await fetch(targetUrl);
+        if (mRes.ok) {
+          const buf = Buffer.from(await mRes.arrayBuffer());
+          const isVid = targetUrl.includes('.mp4') || vidObj !== undefined;
+          const ext = isVid ? 'mp4' : 'jpg';
+          const attachment = new AttachmentBuilder(buf, { name: `Athena_Instagram.${ext}` });
+          await message.channel.send({
+            content: `-# **Instagram Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
+            files: [attachment]
+          });
+          await message.delete().catch(() => {});
+          return true;
+        }
+      }
+    }
+  } catch (errSnap) {
+    console.warn('[Media] snapsave IG failed:', errSnap.message);
+  }
+
+  // Strategy 4: @mrnima/instagram-downloader
+  try {
+    const igdl = await import('@mrnima/instagram-downloader');
+    const fn = igdl.default?.instagramDownload || igdl.instagramDownload;
+    if (typeof fn === 'function') {
+      const igRes = await fn(cleanUrl);
+      if (igRes && igRes.status && igRes.data && igRes.data.length > 0) {
+        const item = igRes.data.find(i => i.url && (i.type === 'video' || i.url.includes('.mp4'))) || igRes.data[0];
+        if (item && item.url) {
+          const mRes = await fetch(item.url);
+          if (mRes.ok) {
+            const buf = Buffer.from(await mRes.arrayBuffer());
+            const ext = (item.type === 'video' || item.url.includes('.mp4')) ? 'mp4' : 'jpg';
+            const attachment = new AttachmentBuilder(buf, { name: `Athena_Instagram.${ext}` });
+            await message.channel.send({
+              content: `-# **Instagram Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
+              files: [attachment]
+            });
+            await message.delete().catch(() => {});
+            return true;
+          }
+        }
+      }
+    }
+  } catch (errIg) {
+    console.warn('[Media] @mrnima IG failed:', errIg.message);
+  }
+
+  // Strategy 5: btch-downloader igdl
+  try {
+    const btch = (await import('btch-downloader')).default;
+    if (typeof btch?.igdl === 'function') {
+      const btchRes = await btch.igdl(cleanUrl);
+      if (btchRes && btchRes.result && btchRes.result.length > 0) {
+        const item = btchRes.result.find(i => i.url && i.url.includes('.mp4')) || btchRes.result.find(i => i.url);
+        if (item && item.url) {
+          const mRes = await fetch(item.url);
+          if (mRes.ok) {
+            const buf = Buffer.from(await mRes.arrayBuffer());
+            const ext = item.url.includes('.mp4') ? 'mp4' : 'jpg';
+            const attachment = new AttachmentBuilder(buf, { name: `Athena_Instagram.${ext}` });
+            await message.channel.send({
+              content: `-# **Instagram Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
+              files: [attachment]
+            });
+            await message.delete().catch(() => {});
+            return true;
+          }
+        }
+      }
+    }
+  } catch (errBtch) {
+    console.warn('[Media] btch.igdl failed:', errBtch.message);
+  }
+
+  return false;
+}
+
+/**
  * Process a media link to extract and send video (MP4)
  */
 export async function processMediaLink(client, message, url) {
@@ -194,56 +406,10 @@ export async function processMediaLink(client, message, url) {
       }
     }
 
-    // 2. INSTAGRAM (snapsave -> @mrnima -> btch.igdl -> yt-dlp)
-    else if (url.includes('instagram.com')) {
-      // 2a. snapsave-media-downloader
-      try {
-        const { snapsave } = await import('snapsave-media-downloader');
-        const snapRes = await snapsave(url);
-        if (snapRes && snapRes.data && snapRes.data.length > 0) {
-          const vidObj = snapRes.data.find(d => d.url && (d.resolution || d.url.includes('.mp4')));
-          if (vidObj && vidObj.url) {
-            directUrl = vidObj.url;
-          } else if (snapRes.data[0].url) {
-            directUrl = snapRes.data[0].url;
-          }
-        }
-      } catch (errSnap) {
-        console.warn('[Media] Snapsave IG failed:', errSnap.message);
-      }
-
-      // 2b. @mrnima/instagram-downloader
-      if (!directUrl) {
-        try {
-          const igdl = await import('@mrnima/instagram-downloader');
-          const fn = igdl.default?.instagramDownload || igdl.instagramDownload;
-          if (typeof fn === 'function') {
-            const igRes = await fn(url);
-            if (igRes && igRes.status && igRes.data && igRes.data.length > 0) {
-              const item = igRes.data.find(i => i.url && (i.type === 'video' || i.url.includes('.mp4')));
-              if (item && item.url) directUrl = item.url;
-              else if (igRes.data[0].url) directUrl = igRes.data[0].url;
-            }
-          }
-        } catch (errIg) {
-          console.warn('[Media] @mrnima IG failed:', errIg.message);
-        }
-      }
-
-      // 2c. btch-downloader igdl
-      if (!directUrl) {
-        try {
-          const btch = (await import('btch-downloader')).default;
-          const btchRes = await btch.igdl(url);
-          if (btchRes && btchRes.result && btchRes.result.length > 0) {
-            const item = btchRes.result.find(i => i.url && i.url.includes('.mp4'));
-            if (item && item.url) directUrl = item.url;
-            else if (btchRes.result[0].url) directUrl = btchRes.result[0].url;
-          }
-        } catch (errBtch) {
-          console.warn('[Media] btch.igdl failed:', errBtch.message);
-        }
-      }
+    // 2. INSTAGRAM (Reels, Video Posts, Photo Posts, Carousels, Stories)
+    else if (url.includes('instagram.com') || url.includes('instagr.am')) {
+      const igHandled = await handleInstagramMedia(client, message, url, tempFilesToClean);
+      if (igHandled) return true;
     }
 
     // 3. TWITTER / X (vxTwitter & FxTwitter APIs -> btch.twitter)
@@ -473,12 +639,13 @@ export async function processMediaLink(client, message, url) {
       try {
         const ytdlpPath = await downloadYtDlp();
         ensureFfmpegPermissions();
+        const cookieArg = getCookieArg();
         const uniqueId = `fallback_${Date.now()}`;
         const tempPath = path.join(process.cwd(), `yt_dlp_fallback_video_${uniqueId}.mp4`);
         const filePrefix = `yt_dlp_fallback_video_${uniqueId}`;
 
         await execPromise(
-          `"${ytdlpPath}" --ffmpeg-location "${ffmpegPath}" ` +
+          `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
           `-f "best[ext=mp4]/bestvideo+bestaudio/b/best" ` +
           `--remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
           `-o "${tempPath}" -- "${url}"`
