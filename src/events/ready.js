@@ -189,9 +189,9 @@ export default {
       const config = db.getGuildConfig(guild.id);
       if (config) {
         if (config.homeVcId) {
-          setTimeout(() => {
-            connectToHomeVc(guild, config.homeVcId, true);
-          }, 10000);
+          setTimeout(async () => {
+            connectToHomeVc(guild, config.homeVcId, true).catch(() => null);
+          }, 6000);
         }
         
         // Retroactively update existing music request channels with the new Repeat button
@@ -308,18 +308,34 @@ export default {
 
 
 
-    // Global rotating schedule for Voice Channel Statuses
-    setInterval(() => {
-      client.guilds.cache.forEach(guild => {
-        const conf = db.getGuildConfig(guild.id);
-        if (conf?.homeVcId) {
-          const homeChannel = guild.channels.cache.get(conf.homeVcId);
-          if (homeChannel) {
-            updateBotVcStatus(homeChannel);
+    // Global 24/7 Home VC Persistence Watchdog & Voice Channel Status Sync
+    setInterval(async () => {
+      for (const [guildId, guild] of client.guilds.cache) {
+        try {
+          const conf = db.getGuildConfig(guildId);
+          if (!conf?.homeVcId) continue;
+
+          const homeChannel = guild.channels.cache.get(conf.homeVcId) || await guild.channels.fetch(conf.homeVcId).catch(() => null);
+          if (!homeChannel || !homeChannel.isVoiceBased()) continue;
+
+          const currentVcId = guild.members.me?.voice?.channelId;
+
+          if (currentVcId === homeChannel.id) {
+            updateBotVcStatus(homeChannel).catch(() => null);
+          } else {
+            // Check if playing music
+            const { getQueue } = await import('../utils/musicManager.js');
+            const queue = getQueue(guildId);
+            const isPlayingMusic = queue && (queue.isPlaying || queue.current || queue.songs.length > 0 || queue.isPreparing);
+
+            if (!isPlayingMusic) {
+              console.log(`[24/7 Watchdog] Bot missing from Home VC in ${guild.name}. Auto-reconnecting...`);
+              await connectToHomeVc(guild, conf.homeVcId, true);
+            }
           }
-        }
-      });
-    }, 240000); // Every 4 minutes
+        } catch (err) {}
+      }
+    }, 180000); // Check every 3 minutes
 
     // Server Stats auto-update loop (runs every 6 minutes to stay under Discord rate limits)
     setInterval(async () => {

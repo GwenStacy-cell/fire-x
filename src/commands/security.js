@@ -918,16 +918,13 @@ export const commands = [
         return message.reply(cv2.danger('Permission Denied', `${message.author} This command is restricted to the Bot Owner and the Server Owner.`));
       }
 
-      let channelId = args[0]?.replace(/[<#&>]/g, '');
+      let channelId = args[0]?.replace(/[<#&>]/g, '').trim();
       let channel = null;
       if (channelId) {
-        channel = await message.guild.channels.fetch(channelId).catch(() => null);
+        channel = message.guild.channels.cache.get(channelId) || await message.guild.channels.fetch(channelId).catch(() => null);
       }
       if (!channel) {
         channel = message.mentions.channels.filter(c => c.isVoiceBased()).first();
-      }
-      if (!channel && args[0]) {
-        channel = message.guild.channels.cache.find(c => c.name.toLowerCase() === args.join(' ').toLowerCase() && c.isVoiceBased());
       }
       if (!channel) {
         channel = message.member?.voice?.channel;
@@ -937,10 +934,30 @@ export const commands = [
         return message.reply(cv2.warn('Setup Error', `${message.author} Please mention a Voice Channel, specify its ID, or join a Voice Channel first.`));
       }
 
-      db.updateGuildConfig(message.guild.id, { homeVcId: channel.id });
-      connectToHomeVc(message.guild, channel.id);
+      const me = message.guild.members.me || await message.guild.members.fetchMe().catch(() => null);
+      const perms = channel.permissionsFor(me);
+      if (!perms || !perms.has(PermissionFlagsBits.ViewChannel)) {
+        return message.reply(cv2.danger('Missing Permission', `Athena Prime cannot view <#${channel.id}>. Please grant the bot the **View Channel** permission in that voice channel.`));
+      }
+      if (!perms.has(PermissionFlagsBits.Connect)) {
+        return message.reply(cv2.danger('Missing Permission', `Athena Prime does not have permission to join <#${channel.id}>. Please grant the bot the **Connect** permission in that voice channel.`));
+      }
+      if (channel.userLimit > 0 && channel.members.size >= channel.userLimit && !perms.has(PermissionFlagsBits.MoveMembers) && !perms.has(PermissionFlagsBits.Administrator)) {
+        return message.reply(cv2.danger('Channel Full', `Voice channel <#${channel.id}> is currently full (${channel.members.size}/${channel.userLimit}) and the bot lacks permission to bypass user limits.`));
+      }
 
-      await message.reply(cv2.success('Home VC Configured', `Athena Prime has set **${channel.name}** (ID: \`${channel.id}\`) as its Home Voice Channel. The bot will now join and stay there.`));
+      db.updateGuildConfig(message.guild.id, { homeVcId: channel.id });
+
+      const waitMsg = await message.reply(cv2.info('Connecting to Home VC...', `<a:uptime:1552608831060844575> Binding **${channel.name}** as 24/7 Home Voice Channel and establishing connection...`));
+
+      const res = await connectToHomeVc(message.guild, channel.id, true);
+      const isConnected = message.guild.members.me?.voice?.channelId === channel.id || res?.success;
+
+      if (isConnected) {
+        await waitMsg.edit(cv2.success('Home VC Configured', `Athena Prime has joined and bound **${channel.name}** (ID: \`${channel.id}\`) as its 24/7 Home Voice Channel. The bot will stay connected and auto-restore if disconnected.`));
+      } else {
+        await waitMsg.edit(cv2.danger('Connection Failed', `Athena Prime saved **${channel.name}** (ID: \`${channel.id}\`) as the Home VC in the database, but was unable to connect right now: \`${res?.reason || 'Connection timed out'}\`.`));
+      }
     },
     async executeSlash(interaction) {
       const allowed = await isBotOwnerOrServerOwner(interaction.user, interaction.guild);
@@ -955,10 +972,30 @@ export const commands = [
         return interaction.reply(cv2.warn('Setup Error', `${interaction.user} Please specify a Voice Channel or join one first.`));
       }
 
-      db.updateGuildConfig(interaction.guild.id, { homeVcId: channel.id });
-      connectToHomeVc(interaction.guild, channel.id);
+      const me = interaction.guild.members.me || await interaction.guild.members.fetchMe().catch(() => null);
+      const perms = channel.permissionsFor(me);
+      if (!perms || !perms.has(PermissionFlagsBits.ViewChannel)) {
+        return interaction.reply(cv2.danger('Missing Permission', `Athena Prime cannot view <#${channel.id}>. Please grant the bot the **View Channel** permission in that voice channel.`));
+      }
+      if (!perms.has(PermissionFlagsBits.Connect)) {
+        return interaction.reply(cv2.danger('Missing Permission', `Athena Prime does not have permission to join <#${channel.id}>. Please grant the bot the **Connect** permission in that voice channel.`));
+      }
+      if (channel.userLimit > 0 && channel.members.size >= channel.userLimit && !perms.has(PermissionFlagsBits.MoveMembers) && !perms.has(PermissionFlagsBits.Administrator)) {
+        return interaction.reply(cv2.danger('Channel Full', `Voice channel <#${channel.id}> is currently full (${channel.members.size}/${channel.userLimit}) and the bot lacks permission to bypass user limits.`));
+      }
 
-      await interaction.reply(cv2.success('Home VC Configured', `Athena Prime has set **${channel.name}** (ID: \`${channel.id}\`) as its Home Voice Channel. The bot will now join and stay there.`));
+      db.updateGuildConfig(interaction.guild.id, { homeVcId: channel.id });
+
+      await interaction.reply(cv2.info('Connecting to Home VC...', `<a:uptime:1552608831060844575> Binding **${channel.name}** as 24/7 Home Voice Channel and establishing connection...`));
+
+      const res = await connectToHomeVc(interaction.guild, channel.id, true);
+      const isConnected = interaction.guild.members.me?.voice?.channelId === channel.id || res?.success;
+
+      if (isConnected) {
+        await interaction.editReply(cv2.success('Home VC Configured', `Athena Prime has joined and bound **${channel.name}** (ID: \`${channel.id}\`) as its 24/7 Home Voice Channel. The bot will stay connected and auto-restore if disconnected.`));
+      } else {
+        await interaction.editReply(cv2.danger('Connection Failed', `Athena Prime saved **${channel.name}** (ID: \`${channel.id}\`) as the Home VC in the database, but was unable to connect right now: \`${res?.reason || 'Connection timed out'}\`.`));
+      }
     }
   },
 

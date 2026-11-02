@@ -405,19 +405,18 @@ export default {
       }
 
       if (newState.channelId !== homeVcId) {
-        console.log(`[JTC] Bot voice state changed in ${guild.name}. Force restoring home VC...`);
+        console.log(`[HomeVC] Bot voice state changed in ${guild.name} (channel: ${newState.channelId}). Restoring home VC...`);
         
-        if (!newState.channelId) {
-          const shoukaku = global.client?.shoukaku;
-          if (shoukaku) {
-             const player = shoukaku.players.get(guild.id);
-             if (player) shoukaku.leaveVoiceChannel(guild.id);
-          }
-          const connection = getVoiceConnection(guild.id);
-          if (connection) connection.destroy();
-        }
-
-        connectToHomeVc(guild, homeVcId, false);
+        setTimeout(async () => {
+          try {
+            const freshGuild = client.guilds.cache.get(guild.id);
+            if (!freshGuild) return;
+            const currentVcId = freshGuild.members.me?.voice?.channelId;
+            if (currentVcId !== homeVcId) {
+              await connectToHomeVc(freshGuild, homeVcId, true);
+            }
+          } catch (e) {}
+        }, 1500);
       }
       return;
     }
