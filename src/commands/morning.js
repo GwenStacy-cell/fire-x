@@ -70,6 +70,7 @@ export function buildMorningPanel(guild, config) {
           `> ${BULLET_EMOJI} **Target Channel:** ${channelDisplay}\n` +
           `> ${BULLET_EMOJI} **Today's Scheduled Time:** ${schedDisplay}\n` +
           `> ${BULLET_EMOJI} **Notification Ping:** ${pingDisplay}\n` +
+          `> ${BULLET_EMOJI} **Footer Text:** \`${config.footerText || 'Automated Daily Transmission \u00b7 Athena Prime'}\`\n` +
           `> ${BULLET_EMOJI} **Timezone:** \`${config.timezone || 'Asia/Kolkata'}\`\n` +
           `> ${BULLET_EMOJI} **Thought Library:** \`60+ Curated\` | \`${customCount} Custom Server Quotes\`\n` +
           `> ${BULLET_EMOJI} **Last Dispatched:** ${lastSent}`
@@ -105,6 +106,17 @@ export function buildMorningPanel(guild, config) {
             label: 'Cycle Ping Mode',
             custom_id: 'mrn_ping'
           },
+          {
+            type: 2,
+            style: ButtonStyle.Secondary,
+            label: 'Set Footer',
+            custom_id: 'mrn_footer'
+          }
+        ]
+      },
+      {
+        type: 1,
+        components: [
           {
             type: 2,
             style: ButtonStyle.Secondary,
@@ -195,6 +207,19 @@ export const commands = [
             description: 'The inspirational or pleasant thought text.',
             type: 3,
             required: true
+          }
+        ]
+      },
+      {
+        name: 'footer',
+        description: 'Set custom footer text for the morning card or reset to default.',
+        type: 1,
+        options: [
+          {
+            name: 'text',
+            description: 'Footer text to display (or type "reset" for default)',
+            type: 3,
+            required: false
           }
         ]
       }
@@ -376,6 +401,31 @@ export const commands = [
         });
       }
 
+      if (sub === 'footer' || sub === 'setfooter') {
+        const text = args.slice(1).join(' ').trim();
+        if (!text || text.toLowerCase() === 'reset' || text.toLowerCase() === 'default') {
+          db.updateMorningConfig(guild.id, { footerText: null });
+          const glyph = getRandomHeadingGlyph();
+          return message.channel.send({
+            ...cv2.success(
+              `${glyph} Footer Reset to Default | ${TICK_EMOJI}`,
+              `Morning card footer reset to default:\n> \`Automated Daily Transmission \u00b7 Athena Prime\``
+            ),
+            flags: MessageFlags.IsComponentsV2
+          });
+        }
+
+        db.updateMorningConfig(guild.id, { footerText: text });
+        const glyph = getRandomHeadingGlyph();
+        return message.channel.send({
+          ...cv2.success(
+            `${glyph} Footer Updated | ${TICK_EMOJI}`,
+            `Morning card footer set to:\n> **${text}**`
+          ),
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+
       // Default fallback
       const panel = buildMorningPanel(guild, config);
       return message.channel.send(panel);
@@ -493,6 +543,30 @@ export const commands = [
           flags: MessageFlags.IsComponentsV2
         });
       }
+
+      if (sub === 'footer') {
+        const text = interaction.options.getString('text');
+        if (!text || text.toLowerCase() === 'reset' || text.toLowerCase() === 'default') {
+          db.updateMorningConfig(guild.id, { footerText: null });
+          const glyph = getRandomHeadingGlyph();
+          return interaction.reply({
+            ...cv2.success(
+              `${glyph} Footer Reset to Default | ${TICK_EMOJI}`,
+              `Morning card footer reset to default:\n> \`Automated Daily Transmission \u00b7 Athena Prime\``
+            ),
+            flags: MessageFlags.IsComponentsV2
+          });
+        }
+        db.updateMorningConfig(guild.id, { footerText: text });
+        const glyph = getRandomHeadingGlyph();
+        return interaction.reply({
+          ...cv2.success(
+            `${glyph} Footer Updated | ${TICK_EMOJI}`,
+            `Morning card footer set to:\n> **${text}**`
+          ),
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
     }
   }
 ];
@@ -540,6 +614,24 @@ export async function handleMorningInteraction(interaction) {
       return interaction.update(panel);
     }
 
+    if (customId === 'mrn_footer') {
+      const modal = new ModalBuilder()
+        .setCustomId('mrn_modal_footer')
+        .setTitle('Set Morning Card Footer');
+
+      const footerInput = new TextInputBuilder()
+        .setCustomId('mrn_footer_input')
+        .setLabel('Footer Text (or type reset for default)')
+        .setPlaceholder('e.g. Automated Daily Transmission \u00b7 Athena Prime')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(false);
+
+      if (config.footerText) footerInput.setValue(config.footerText);
+
+      modal.addComponents(new ActionRowBuilder().addComponents(footerInput));
+      return interaction.showModal(modal);
+    }
+
     if (customId === 'mrn_channel') {
       const modal = new ModalBuilder()
         .setCustomId('mrn_modal_channel')
@@ -583,6 +675,15 @@ export async function handleMorningInteraction(interaction) {
   }
 
   if (interaction.isModalSubmit()) {
+    if (customId === 'mrn_modal_footer') {
+      const raw = (interaction.fields.getTextInputValue('mrn_footer_input') || '').trim();
+      const newFooter = (!raw || raw.toLowerCase() === 'reset' || raw.toLowerCase() === 'default') ? null : raw;
+      db.updateMorningConfig(guild.id, { footerText: newFooter });
+      const updated = db.getMorningConfig(guild.id);
+      const panel = buildMorningPanel(guild, updated);
+      return interaction.update(panel);
+    }
+
     if (customId === 'mrn_modal_channel') {
       const raw = interaction.fields.getTextInputValue('mrn_channel_input') || '';
       const cleanId = raw.replace(/[^0-9]/g, '');

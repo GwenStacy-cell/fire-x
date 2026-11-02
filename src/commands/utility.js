@@ -717,6 +717,7 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}morning auto\` - Enable auto-detection to post in the text channel where most members chat.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}morning channel <#channel>\` - Lock morning messages to a specific text channel by ID.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}morning ping <none|here|@role>\` - Change ping behavior (none, @here, or custom role).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}morning footer <text|reset>\` - Customize card footer text or reset to default.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}morning test\` - Dispatch an immediate test thought card to preview the output.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}morning add <thought>\` - Add a custom pleasant quote to your server's rotation.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}morning list\` - Display custom server quotes.`;
@@ -1334,6 +1335,7 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}morning auto\` - Enable auto-detection to post in the text channel where most members chat.\n` +
             `> ${BULLET_EMOJI} \`${prefix}morning channel <#channel>\` - Lock morning messages to a specific text channel by ID.\n` +
             `> ${BULLET_EMOJI} \`${prefix}morning ping <none|here|@role>\` - Change ping behavior (none, @here, or custom role).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}morning footer <text|reset>\` - Customize card footer text or reset to default.\n` +
             `> ${BULLET_EMOJI} \`${prefix}morning test\` - Dispatch an immediate test thought card to preview the output.\n` +
             `> ${BULLET_EMOJI} \`${prefix}morning add <thought>\` - Add a custom pleasant quote to your server's rotation.\n` +
             `> ${BULLET_EMOJI} \`${prefix}morning list\` - Display custom server quotes.`;

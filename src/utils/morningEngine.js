@@ -102,13 +102,18 @@ export function buildMorningPayload(quote, config = {}, guild = null) {
   let pingText = '';
   let content = undefined;
   if (config.ping === 'here') {
-    pingText = ' @here';
+    pingText = '@here';
     content = '@here';
   } else if (config.ping && config.ping !== 'none' && !config.ping.startsWith('@')) {
     // Role ID
-    pingText = ` <@&${config.ping}>`;
+    pingText = `<@&${config.ping}>`;
     content = `<@&${config.ping}>`;
   }
+
+  const defaultFooter = 'Automated Daily Transmission \u00b7 Athena Prime';
+  const customFooter = config.footerText ? config.footerText.trim() : null;
+  const footerLabel = customFooter || defaultFooter;
+  const pingSuffix = pingText ? ` \u00b7 ${pingText}` : '';
 
   // Components V2 Payload Container (matching the user's sleek screenshot)
   const container = {
@@ -129,7 +134,7 @@ export function buildMorningPayload(quote, config = {}, guild = null) {
       },
       {
         type: 10,
-        content: `-# Good Morning${pingText}`
+        content: `-# **${footerLabel}**${pingSuffix}`
       }
     ]
   };
