@@ -2522,6 +2522,49 @@ if (interaction.customId.startsWith('xp_view_rank_')) {
         try { return await interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2, ephemeral: true }); } catch(err) { console.error("INTERACTION ERROR:", err); }
       }
 
+      // EXTRACT MP3 FROM DELIVERED VIDEO BUTTON
+      if (interaction.customId.startsWith('extract_mp3_')) {
+        const mediaKey = interaction.customId.replace('extract_mp3_', '');
+        let url = downloader.mediaUrlCache.get(mediaKey) || downloader.mediaUrlCache.get(interaction.message.id);
+
+        if (!url && interaction.message.content) {
+          const match = interaction.message.content.match(/(https?:\/\/[^\s]+)/);
+          if (match) url = match[0];
+        }
+
+        if (!url) {
+          return interaction.reply({ content: '-# **Could not resolve the source media URL for audio extraction.**', flags: MessageFlags.Ephemeral });
+        }
+
+        await interaction.reply({ content: '-# **Extracting MP3 audio track... Please wait.**', flags: MessageFlags.Ephemeral });
+
+        const mockMessage = {
+          id: interaction.id,
+          author: interaction.user,
+          channel: interaction.channel,
+          content: url,
+          delete: async () => {},
+          reply: async (data) => {
+            const payload = typeof data === 'string' ? { content: data } : { ...data };
+            payload.reply = { messageReference: interaction.message.id, failIfNotExists: false };
+            return interaction.channel.send(payload);
+          }
+        };
+
+        try {
+          const success = await downloader.processMp3Link(interaction.client, mockMessage, url);
+          if (success) {
+            await interaction.editReply({ content: '-# **MP3 audio extracted and posted above!**' }).catch(() => {});
+          } else {
+            await interaction.editReply({ content: '-# **Failed to extract audio track from this media.**' }).catch(() => {});
+          }
+        } catch (err) {
+          console.error('[Extract MP3 Error]:', err);
+          await interaction.editReply({ content: '-# **An error occurred while extracting MP3 audio.**' }).catch(() => {});
+        }
+        return;
+      }
+
       // MEDIA PROMPT BUTTONS
       if (interaction.customId.startsWith('dl_mp4') || interaction.customId.startsWith('dl_mp3')) {
         const isMp4 = interaction.customId.startsWith('dl_mp4');

@@ -184,6 +184,36 @@ function findAllGeneratedFiles(prefix) {
 }
 
 /**
+ * Helper to dispatch extracted Instagram media immediately with an optional Extract MP3 button
+ */
+async function sendInstagramMediaWithMp3Option(message, attachments, label, cleanUrl) {
+  const hasVideo = attachments.some(a => a.name && (a.name.endsWith('.mp4') || a.name.endsWith('.webm')));
+  const mediaKey = `ig_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  cacheMediaUrl(mediaKey, cleanUrl);
+
+  const components = hasVideo ? [
+    new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`extract_mp3_${mediaKey}`)
+        .setLabel('Extract MP3')
+        .setStyle(ButtonStyle.Secondary)
+    )
+  ] : [];
+
+  const sentMsg = await message.channel.send({
+    content: `-# **${label} Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
+    files: attachments,
+    components: components
+  });
+
+  if (hasVideo && sentMsg) {
+    cacheMediaUrl(sentMsg.id, cleanUrl);
+  }
+  await message.delete().catch(() => {});
+  return true;
+}
+
+/**
  * Comprehensive Instagram Media Extraction Pipeline:
  * Handles Reels, Video Posts, Photo Posts, Carousels (multi-slide albums), and Stories.
  */
@@ -229,12 +259,7 @@ async function handleInstagramMedia(client, message, url, tempFilesToClean) {
 
         if (attachments.length > 0) {
           const label = attachments.length > 1 ? `Instagram Album (${attachments.length} items)` : 'Instagram Media';
-          await message.channel.send({
-            content: `-# **${label} Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
-            files: attachments
-          });
-          await message.delete().catch(() => {});
-          return true;
+          return await sendInstagramMediaWithMp3Option(message, attachments, label, cleanUrl);
         }
       }
     }
@@ -271,12 +296,7 @@ async function handleInstagramMedia(client, message, url, tempFilesToClean) {
       }
       if (attachments.length > 0) {
         const label = attachments.length > 1 ? `Instagram Album (${attachments.length} items)` : 'Instagram Media';
-        await message.channel.send({
-          content: `-# **${label} Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
-          files: attachments
-        });
-        await message.delete().catch(() => {});
-        return true;
+        return await sendInstagramMediaWithMp3Option(message, attachments, label, cleanUrl);
       }
     }
   } catch (errYtIg) {
@@ -297,12 +317,7 @@ async function handleInstagramMedia(client, message, url, tempFilesToClean) {
           const isVid = targetUrl.includes('.mp4') || vidObj !== undefined;
           const ext = isVid ? 'mp4' : 'jpg';
           const attachment = new AttachmentBuilder(buf, { name: `Athena_Instagram.${ext}` });
-          await message.channel.send({
-            content: `-# **Instagram Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
-            files: [attachment]
-          });
-          await message.delete().catch(() => {});
-          return true;
+          return await sendInstagramMediaWithMp3Option(message, [attachment], 'Instagram Media', cleanUrl);
         }
       }
     }
@@ -324,12 +339,7 @@ async function handleInstagramMedia(client, message, url, tempFilesToClean) {
             const buf = Buffer.from(await mRes.arrayBuffer());
             const ext = (item.type === 'video' || item.url.includes('.mp4')) ? 'mp4' : 'jpg';
             const attachment = new AttachmentBuilder(buf, { name: `Athena_Instagram.${ext}` });
-            await message.channel.send({
-              content: `-# **Instagram Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
-              files: [attachment]
-            });
-            await message.delete().catch(() => {});
-            return true;
+            return await sendInstagramMediaWithMp3Option(message, [attachment], 'Instagram Media', cleanUrl);
           }
         }
       }
@@ -351,12 +361,7 @@ async function handleInstagramMedia(client, message, url, tempFilesToClean) {
             const buf = Buffer.from(await mRes.arrayBuffer());
             const ext = item.url.includes('.mp4') ? 'mp4' : 'jpg';
             const attachment = new AttachmentBuilder(buf, { name: `Athena_Instagram.${ext}` });
-            await message.channel.send({
-              content: `-# **Instagram Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
-              files: [attachment]
-            });
-            await message.delete().catch(() => {});
-            return true;
+            return await sendInstagramMediaWithMp3Option(message, [attachment], 'Instagram Media', cleanUrl);
           }
         }
       }
@@ -489,10 +494,23 @@ export async function processMediaLink(client, message, url) {
           if (dl && dl.buffer) {
             const ext = dl.extension;
             const attachment = new AttachmentBuilder(dl.buffer, { name: `Athena_Pinterest_${Date.now()}.${ext}` });
-            await message.channel.send({
+            const isVid = ext === 'mp4';
+            const mediaKey = `pin_${Date.now()}`;
+            cacheMediaUrl(mediaKey, url);
+            const components = isVid ? [
+              new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                  .setCustomId(`extract_mp3_${mediaKey}`)
+                  .setLabel('Extract MP3')
+                  .setStyle(ButtonStyle.Secondary)
+              )
+            ] : [];
+            const sentPin = await message.channel.send({
               content: `-# **Pinterest Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author} \u00b7 [Source Pin](${pinResult.sourceUrl})`,
-              files: [attachment]
+              files: [attachment],
+              components: components
             });
+            if (isVid && sentPin) cacheMediaUrl(sentPin.id, url);
             await message.delete().catch(() => {});
             return true;
           }
@@ -695,12 +713,22 @@ export async function processMediaLink(client, message, url) {
     }
 
     const attachment = new AttachmentBuilder(buffer, { name: 'Athena_Media.mp4' });
+    const mediaKey = `media_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    cacheMediaUrl(mediaKey, url);
+    const mp3Row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`extract_mp3_${mediaKey}`)
+        .setLabel('Extract MP3')
+        .setStyle(ButtonStyle.Secondary)
+    );
 
     try {
-      await message.channel.send({
+      const sentMsg = await message.channel.send({
         content: `-# **Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
-        files: [attachment]
+        files: [attachment],
+        components: [mp3Row]
       });
+      if (sentMsg) cacheMediaUrl(sentMsg.id, url);
       await message.delete().catch(() => {});
       return true;
     } catch (sendError) {
@@ -715,9 +743,11 @@ export async function processMediaLink(client, message, url) {
           const catboxRes = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: form });
           const catboxUrl = (await catboxRes.text()).trim();
           if (catboxUrl && catboxUrl.startsWith('https://')) {
-            await message.channel.send({
-              content: `-# **Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}\n${catboxUrl}`
+            const sentCatbox = await message.channel.send({
+              content: `-# **Media Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}\n${catboxUrl}`,
+              components: [mp3Row]
             });
+            if (sentCatbox) cacheMediaUrl(sentCatbox.id, url);
             await message.delete().catch(() => {});
             return true;
           }
