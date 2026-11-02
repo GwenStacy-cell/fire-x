@@ -56,11 +56,11 @@ export function getCookieArg() {
   for (const p of possiblePaths) {
     try {
       if (fs.existsSync(p) && fs.statSync(p).size > 10) {
-        return `--cookies "${p}"`;
+        return `--cookies "${p}" --js-runtimes node`;
       }
     } catch {}
   }
-  return '';
+  return '--js-runtimes node';
 }
 
 export function ensureFfmpegPermissions() {
@@ -537,6 +537,25 @@ export async function processMediaLink(client, message, url) {
       for (const targetUrl of urlsToAttempt) {
         if (downloadSuccess) break;
 
+        // Strategy 0: Direct Authenticated Stream (Uses active cookies & JS solver)
+        try {
+          await execPromise(
+            `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
+            `-f "bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/18/best[ext=mp4]/best" ` +
+            `--remux-video mp4 --no-playlist --geo-bypass --no-check-certificates ` +
+            `-o "${tempPath}" -- "${targetUrl}"`
+          );
+          const resolved = fs.existsSync(tempPath) ? tempPath : findGeneratedFile(filePrefix);
+          if (resolved && fs.statSync(resolved).size > 1000) {
+            downloadSuccess = true;
+            localFile = resolved;
+            tempFilesToClean.push(resolved);
+            break;
+          }
+        } catch (err0) {
+          console.warn('[Media] YouTube Strategy 0 failed:', err0.message);
+        }
+
         // Strategy A: TV Embedded & iOS client (Bypasses YouTube datacenter bot confirmation blocks!)
         try {
           await execPromise(
@@ -784,6 +803,23 @@ export async function processMp3Link(client, message, url) {
     const cookieArg = getCookieArg();
 
     let audioSuccess = false;
+
+    // Strategy 0: Direct Authenticated Audio Stream (Uses active cookies & JS solver)
+    try {
+      await execPromise(
+        `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
+        `-x --audio-format mp3 -f "ba/b" ` +
+        `--no-playlist --geo-bypass --no-check-certificates ` +
+        `-o "${tempPattern}" -- "${targetUrl}"`
+      );
+      const match = findGeneratedFile(filePrefix);
+      if (match && fs.existsSync(match) && fs.statSync(match).size > 1000) {
+        downloadedFile = match;
+        audioSuccess = true;
+      }
+    } catch (err0) {
+      console.warn('[Audio] Strategy 0 audio extraction failed:', err0.message);
+    }
 
     // Strategy A: YouTube TV Embedded / iOS -> Direct FFmpeg MP3 Transcode (Bypasses datacenter blocks)
     if (isYt) {
