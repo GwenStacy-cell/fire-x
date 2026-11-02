@@ -431,6 +431,11 @@ export async function buildLiveCommandStatusPayload(guild, member, user, cmdName
       const rChan = cfg.rateChannelId ? `<#${cfg.rateChannelId}>` : '`Not Bound`';
       statusPoints.push(`-# ${BULLET_EMOJI} **Rate Edit Channel:** ${rChan}`);
       statusPoints.push(`-# ${BULLET_EMOJI} **Interaction Method:** \`Interactive 1-5 Star Voting Buttons\``);
+    } else if (cleanName === 'dm' || cleanName === 'dms') {
+      const isTagDmActive = db.isTagDmEnabled(guild.id);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Tag Mention DM Alerts:** ${isTagDmActive ? '`ACTIVE (Dispatched on mention)`' : '`MUTED / BLOCKED (Disabled server-wide)`'}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Moderation Direct Messages:** \`Active & Protected (Warns, bans, timeouts)\``);
+      actionButtons.unshift({ type: 2, custom_id: 'dm_toggle', label: isTagDmActive ? 'Turn Off Mention DMs' : 'Re-Enable Mention DMs', style: isTagDmActive ? 4 : 3 });
     }
   }
 

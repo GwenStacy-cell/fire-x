@@ -2407,7 +2407,9 @@ export const helpModules = [
     "`!removestatus` - Remove the 24/7 live status panel `[Bot Owner]`",
     "`!buildserver` - Auto-generate aesthetic server layout & channel structure `[Server Owner]`",
     "`!remotevc <guildId> <vcId>` - Remotely bind bot home voice channel `[Bot Owner]`",
-    "`!forceadmin / !unforceadmin` - Remote emergency administration bridge `[Bot Owner]`"
+    "`!forceadmin / !unforceadmin` - Remote emergency administration bridge `[Bot Owner]`",
+    "`!dm / !dms [on|off|status]` - Server-wide Athena mention & tag DM notifications toggle `[Extra Owner]`",
+    "`!autonick` - Interactive auto-nickname enforcer dashboard `[Extra Owner]`"
   ] },
 
   { id: 'welcome', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Welcome', label: 'Welcome & Leave', emoji: 'welcome', commands: [
@@ -2632,6 +2634,7 @@ export const helpModules = [
     "`!afk / !brb [reason]` - Set an AFK status that replies when pinged `[Public]`",
     "`!bump` - Bump the server (Disboard integration) `[Public]`",
     "`!sticky / !stick <message>` - Keep a message stuck at bottom of chat `[Extra Owner]`",
+    "`!dm / !dms [on|off|status]` - Server-wide Athena mention & tag DM notifications toggle `[Extra Owner]`",
     "`!upload <url>` - Upload and mirror file from direct URL `[Public]`",
     "`!tier / !mytier / !perms` - Check your current Athena Prime authorization tier `[Public]`",
     "`!profile / !card [@user]` - Official God of War canvas profile card `[Public]`"
@@ -2717,6 +2720,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
       topText += `> <a:z_arrow_pink1:1523082728004653138> **To set Custom Prefix use <@${botId}> \`${prefix}prefix " your custom prefix "\`**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Indian Benchmarks Suite (\`${prefix}nifty\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Grandmaster Chess Matrix: Play against 11 AI engines (Stockfish 16.1, Mittens 🐾, AlphaZero, Torch, Leela, Komodo, Magnus, Hikaru, Martin) or challenge friends via \`${prefix}chess\` & \`${prefix}chess engine\` \`[100% Public]\`!**\n\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Server Mention DM Alerts: Toggle automated Athena DM notifications dispatched when users are tagged in chat via \`${prefix}dm [on|off|status]\` \`[Extra Owner]\`!**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Hint: For a detailed guide and instruction on any specific command, type \`${prefix}help <command>\` !**`;
 
       rawComponents.push({ type: 10, content: topText });
