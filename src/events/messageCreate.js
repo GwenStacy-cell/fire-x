@@ -364,20 +364,15 @@ export default {
       if (message.guild && !message.author.bot && message.content) {
         const cfg = db.getGuildConfig(message.guild.id);
         const isOwner = isBotOwnerSync(message.author.id);
-        if (cfg && cfg.mediaChannelId === message.channel.id) {
+        const isMediaActive = cfg && (cfg.mediaChannelId === message.channel.id || cfg.autoMediaAll === true);
+        if (isMediaActive) {
           const urlRegex = /(https?:\/\/[^\s]+)/g;
           const urls = message.content.match(urlRegex);
           if (urls) {
             for (const url of urls) {
               if (url.includes('tiktok.com') || url.includes('instagram.com') || url.includes('instagr.am') || url.includes('twitter.com') || url.includes('x.com') || url.includes('reddit.com') || url.includes('youtube.com') || url.includes('youtu.be') || url.includes('pinterest.com') || url.includes('pin.it') || url.includes('facebook.com') || url.includes('fb.watch')) {
-                cacheMediaUrl(message.id, url);
-                const isPin = url.includes('pinterest.com') || url.includes('pin.it');
-                const row = new ActionRowBuilder().addComponents(
-                  new ButtonBuilder().setCustomId(`dl_mp4_${message.id}`).setLabel(isPin || url.includes('instagram.com') || url.includes('instagr.am') ? 'Download Media' : 'Download MP4').setStyle(ButtonStyle.Primary),
-                  ...(isPin ? [] : [new ButtonBuilder().setCustomId(`dl_mp3_${message.id}`).setLabel('Extract MP3').setStyle(ButtonStyle.Success)])
-                );
-                await message.reply({ content: '-# **Media Link Detected!** Choose your format:', components: [row] }).catch(() => null);
-                return;
+                const success = await processMediaLink(message.client, message, url);
+                if (success) return;
               }
             }
           }

@@ -181,15 +181,22 @@ export const commands = [
       ],
       async executePrefix(message, args) {
         if (!(await isAuthorized(message.author, message.guild))) return message.reply(cv2.error('UNAUTHORIZED ACCESS', 'You lack the required permissions to modify the system core routing.'));
-        const channelMention = message.mentions.channels.first();
-        if (!channelMention) return message.reply(cv2.error('INVALID TARGET', 'Please mention a valid text channel to bind the extraction module.'));
-        db.updateGuildConfig(message.guild.id, { mediaChannelId: channelMention.id });
-          const stickyText = 'MEDIA DOWNLOADER BOUND | The Auto-Media Downloader is now monitoring this channel.\nPaste TikTok, Instagram, YouTube, Twitter/X, or Reddit links to interactively extract the raw MP4 video or convert it to MP3 audio.\nIf Discord rejects a video due to file size, Athena will offer to compress it to a smaller version.\nDiscord\'s upload limit depends on your server\'s boost level.';
-          db.setStickyMessage(message.guild.id, channelMention.id, stickyText);
+        if (args[0] && ['all', 'everywhere', 'global', 'server'].includes(args[0].toLowerCase())) {
+          db.updateGuildConfig(message.guild.id, { autoMediaAll: true, mediaChannelId: null });
+          return message.reply(cv2.success(
+            'AUTO MEDIA DOWNLOADER ACTIVATED',
+            'The Auto-Media Downloader is now active across **all text channels** server-wide!\nAny Instagram, YouTube, TikTok, Twitter/X, Reddit, or Pinterest links will automatically download and post without manual prompts.'
+          ));
+        }
+        const channelMention = message.mentions.channels.first() || (args[0] ? message.guild.channels.cache.get(args[0].replace(/[^0-9]/g, '')) : null);
+        if (!channelMention) return message.reply(cv2.error('INVALID TARGET', 'Please mention a valid text channel (or type !setmedia all for server-wide auto-downloading).'));
+        db.updateGuildConfig(message.guild.id, { mediaChannelId: channelMention.id, autoMediaAll: false });
+        const stickyText = 'AUTO MEDIA DOWNLOADER | The Auto-Media Downloader is active in this channel.\nAny Instagram Reels/Posts, YouTube Shorts/Videos, TikTok, Twitter/X, Reddit, or Pinterest links will automatically download and post immediately.';
+        db.setStickyMessage(message.guild.id, channelMention.id, stickyText);
         
         return message.reply(cv2.success(
-          'MEDIA DOWNLOADER BOUND',
-          `The Auto-Media Downloader is now monitoring <#${channelMention ? channelMention.id : channel.id}>.\nPaste TikTok, Instagram, YouTube, Twitter/X, or Reddit links in that channel to interactively extract the raw MP4 video or convert it to MP3 audio.\nNote: Files are strictly limited to under 25MB to comply with Discord's attachment size limits.`
+          'AUTO MEDIA DOWNLOADER BOUND',
+          `The Auto-Media Downloader is now monitoring <#${channelMention.id}>.\nAny media links posted here will be automatically extracted and posted without buttons or manual prompts!`
         ));
       },
       async executeSlash(interaction) {
