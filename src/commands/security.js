@@ -4570,7 +4570,7 @@ export async function buildAutonickDashboard(guildId, guild = null) {
     ]
   };
 
-  return { components: [sanitizeCV2Payload(container)], files: [bannerAttachment], flags: MessageFlags.IsComponentsV2 };
+  return { components: [sanitizeCV2Payload(container)], flags: MessageFlags.IsComponentsV2 };
 }
 async function handleConfig(guild, moderator, setting, value) {
   const updates = {};
