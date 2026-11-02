@@ -99,21 +99,15 @@ export function buildMorningPayload(quote, config = {}, guild = null) {
   const headingText = MORNING_HEADINGS[Math.floor(Math.random() * MORNING_HEADINGS.length)];
   const glyph = getRandomHeadingGlyph();
 
-  let pingText = '';
-  let content = undefined;
-  if (config.ping === 'here') {
-    pingText = '@here';
-    content = '@here';
-  } else if (config.ping && config.ping !== 'none' && !config.ping.startsWith('@')) {
-    // Role ID
-    pingText = `<@&${config.ping}>`;
-    content = `<@&${config.ping}>`;
+  let pingTag = '@here';
+  if (config.ping && config.ping !== 'none' && config.ping !== 'off' && config.ping !== 'here') {
+    const rawRoleId = config.ping.replace(/[^0-9]/g, '');
+    pingTag = rawRoleId ? `<@&${rawRoleId}>` : '@here';
   }
 
   const defaultFooter = 'Automated Daily Transmission \u00b7 Athena Prime';
   const customFooter = config.footerText ? config.footerText.trim() : null;
   const footerLabel = customFooter || defaultFooter;
-  const pingSuffix = pingText ? ` \u00b7 ${pingText}` : '';
 
   // Components V2 Payload Container (matching the user's sleek screenshot)
   const container = {
@@ -134,20 +128,16 @@ export function buildMorningPayload(quote, config = {}, guild = null) {
       },
       {
         type: 10,
-        content: `-# **${footerLabel}**${pingSuffix}`
+        content: `-# **${footerLabel}** \u00b7 ${pingTag}`
       }
     ]
   };
 
   const payload = {
     components: [container],
-    flags: MessageFlags.IsComponentsV2
+    flags: MessageFlags.IsComponentsV2,
+    allowed_mentions: { parse: ['everyone', 'roles'] }
   };
-
-  if (content) {
-    payload.content = content;
-    payload.allowed_mentions = { parse: ['everyone', 'roles'] };
-  }
 
   return payload;
 }

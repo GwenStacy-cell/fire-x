@@ -3177,7 +3177,7 @@ class Database {
       config.morningConfig = {
         enabled: false,
         channelId: null,
-        ping: 'none',
+        ping: 'here',
         timezone: 'Asia/Kolkata',
         lastSentDate: null,
         scheduledTimeToday: null,
