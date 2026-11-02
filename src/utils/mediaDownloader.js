@@ -184,6 +184,30 @@ function findAllGeneratedFiles(prefix) {
 }
 
 /**
+ * Extract MP3 audio buffer directly from any video URL (Discord attachment, CDN, or direct video link)
+ */
+export async function extractAudioFromVideoUrl(videoUrl) {
+  const res = await fetch(videoUrl);
+  if (!res.ok) throw new Error(`Failed to fetch video: ${res.statusText}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  const uniqueId = `ext_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+  const tempIn = path.join(process.cwd(), `vid_in_${uniqueId}.mp4`);
+  const tempOut = path.join(process.cwd(), `aud_out_${uniqueId}.mp3`);
+  try {
+    fs.writeFileSync(tempIn, buf);
+    ensureFfmpegPermissions();
+    await execPromise(`"${ffmpegPath}" -y -i "${tempIn}" -vn -c:a libmp3lame -q:a 2 "${tempOut}"`);
+    if (fs.existsSync(tempOut) && fs.statSync(tempOut).size > 500) {
+      return fs.readFileSync(tempOut);
+    }
+    return null;
+  } finally {
+    try { if (fs.existsSync(tempIn)) fs.unlinkSync(tempIn); } catch {}
+    try { if (fs.existsSync(tempOut)) fs.unlinkSync(tempOut); } catch {}
+  }
+}
+
+/**
  * Helper to dispatch extracted Instagram media immediately with an optional Extract MP3 button
  */
 async function sendInstagramMediaWithMp3Option(message, attachments, label, cleanUrl) {
@@ -776,6 +800,8 @@ export async function processMediaLink(client, message, url) {
  */
 export async function processMp3Link(client, message, url) {
   let tempFilesToClean = [];
+  let downloadedFile = null;
+  let audioSuccess = false;
 
   try {
     if (message.channel && typeof message.channel.sendTyping === 'function') {
@@ -808,7 +834,43 @@ export async function processMp3Link(client, message, url) {
       }
     }
 
-    // 2. YOUTUBE CLEANING & CANONICAL URL RESOLUTION
+    // 2. INSTAGRAM (Reels, Posts, Carousels direct audio extraction)
+    if (url.includes('instagram.com')) {
+      try {
+        const Instagram = (await import('cakkatrok-instagram-downloader')).default;
+        const cakkaRes = await Instagram.media(url).catch(() => null) || await Instagram(url).catch(() => null);
+        let igVideoUrl = null;
+        if (cakkaRes && cakkaRes.media && Array.isArray(cakkaRes.media)) {
+          const vidItem = cakkaRes.media.find(m => m && (m.type === 'video' || (m.url && m.url.includes('.mp4'))));
+          if (vidItem) igVideoUrl = vidItem.url;
+        }
+        if (!igVideoUrl) {
+          const { snapsave } = await import('snapsave-media-downloader').catch(() => ({}));
+          if (snapsave) {
+            const snapRes = await snapsave(url).catch(() => null);
+            if (snapRes && snapRes.data && snapRes.data.length > 0) {
+              const vidObj = snapRes.data.find(d => d.url && (d.resolution || d.url.includes('.mp4')));
+              if (vidObj) igVideoUrl = vidObj.url;
+            }
+          }
+        }
+        if (igVideoUrl) {
+          const mp3Buf = await extractAudioFromVideoUrl(igVideoUrl);
+          if (mp3Buf) {
+            const attachment = new AttachmentBuilder(mp3Buf, { name: 'Athena_Audio.mp3' });
+            await message.reply({
+              content: `-# **Audio Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${message.author}`,
+              files: [attachment]
+            });
+            return true;
+          }
+        }
+      } catch (errIgAudio) {
+        console.warn('[Audio] Instagram direct audio extraction failed:', errIgAudio.message);
+      }
+    }
+
+    // 3. YOUTUBE CLEANING & CANONICAL URL RESOLUTION
     const isYt = url.includes('youtube.com') || url.includes('youtu.be');
     let cleanUrl = url;
     try {
@@ -824,7 +886,7 @@ export async function processMp3Link(client, message, url) {
     const watchUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : null;
     const targetUrl = (isYt && watchUrl) ? watchUrl : cleanUrl;
 
-    // 3. UNIVERSAL YT-DLP MP3 EXTRACTION (with ffmpeg-static)
+    // 4. UNIVERSAL YT-DLP MP3 EXTRACTION (with ffmpeg-static)
     const ytdlpPath = await downloadYtDlp();
     ensureFfmpegPermissions();
     const uniqueId = `audio_${Date.now()}`;
@@ -832,13 +894,11 @@ export async function processMp3Link(client, message, url) {
     const filePrefix = `yt_dlp_${uniqueId}`;
     const cookieArg = getCookieArg();
 
-    let audioSuccess = false;
-
     // Strategy 0: Direct Authenticated Audio Stream (Uses active cookies & JS solver)
     try {
       await execPromise(
         `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
-        `-x --audio-format mp3 -f "ba/b" ` +
+        `-x --audio-format mp3 -f "ba/b/best" ` +
         `--no-playlist --geo-bypass --no-check-certificates ` +
         `-o "${tempPattern}" -- "${targetUrl}"`
       );
@@ -888,7 +948,7 @@ export async function processMp3Link(client, message, url) {
         await execPromise(
           `"${ytdlpPath}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" ` +
           `--extractor-args "youtube:player_client=tv_embedded,ios,android" ` +
-          `-x --audio-format mp3 -f "ba/b" ` +
+          `-x --audio-format mp3 -f "ba/b/best" ` +
           `--no-playlist --geo-bypass --no-check-certificates ` +
           `-o "${tempPattern}" -- "${targetUrl}"`
         );

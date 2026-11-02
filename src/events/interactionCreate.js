@@ -2532,11 +2532,36 @@ if (interaction.customId.startsWith('xp_view_rank_')) {
           if (match) url = match[0];
         }
 
-        if (!url) {
-          return interaction.reply({ content: '-# **Could not resolve the source media URL for audio extraction.**', flags: MessageFlags.Ephemeral });
+        await interaction.reply({ content: '-# **Extracting MP3 audio track... Please wait.**', flags: MessageFlags.Ephemeral });
+
+        // 1. FAST-PATH: Direct extraction from the delivered message attachment (Instant & 100% reliable)
+        const videoAttachment = interaction.message.attachments ? interaction.message.attachments.find(a => 
+          (a.name && (a.name.endsWith('.mp4') || a.name.endsWith('.webm') || a.name.endsWith('.mov') || a.name.endsWith('.mkv'))) ||
+          (a.contentType && a.contentType.startsWith('video/'))
+        ) : null;
+
+        if (videoAttachment && videoAttachment.url) {
+          try {
+            const mp3Buf = await downloader.extractAudioFromVideoUrl(videoAttachment.url);
+            if (mp3Buf) {
+              const audioAttachment = new AttachmentBuilder(mp3Buf, { name: 'Athena_Audio.mp3' });
+              await interaction.channel.send({
+                content: `-# **Audio Extracted | <a:03_tick_circle:1565665642084827206>** Requested by ${interaction.user}`,
+                files: [audioAttachment],
+                reply: { messageReference: interaction.message.id, failIfNotExists: false }
+              });
+              await interaction.editReply({ content: '-# **MP3 audio extracted and posted above!**' }).catch(() => {});
+              return;
+            }
+          } catch (errFast) {
+            console.warn('[Extract MP3 Fast-Path Failed]:', errFast.message);
+          }
         }
 
-        await interaction.reply({ content: '-# **Extracting MP3 audio track... Please wait.**', flags: MessageFlags.Ephemeral });
+        // 2. FALLBACK: Full multi-platform downloader pipeline
+        if (!url) {
+          return interaction.editReply({ content: '-# **Could not resolve the source media URL for audio extraction.**' });
+        }
 
         const mockMessage = {
           id: interaction.id,
