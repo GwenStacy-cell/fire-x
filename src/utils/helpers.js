@@ -1,5 +1,41 @@
-import { PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
+import { PermissionFlagsBits, ChannelType, MessageFlags, GuildMember } from 'discord.js';
 import db from '../database.js';
+
+/**
+ * Checks whether outbound DM notifications are enabled for the given guild.
+ * @param {Guild|string} guildOrGuildId 
+ * @returns {boolean} True if DMs are enabled, false if disabled
+ */
+export function areServerDmsEnabled(guildOrGuildId) {
+  if (!guildOrGuildId) return true;
+  const gid = typeof guildOrGuildId === 'object' ? guildOrGuildId.id : String(guildOrGuildId);
+  const cfg = db.getGuildConfig(gid);
+  return cfg.dmNotificationsEnabled !== false && cfg.dmsEnabled !== false;
+}
+
+/**
+ * Sends a DM to a member or user only if server DM notifications are active.
+ * Automatically swallows closed DMs or disabled DMs cleanly.
+ */
+export async function sendGuildMemberDM(guildOrGuildId, targetUserOrMember, payload) {
+  if (!targetUserOrMember || typeof targetUserOrMember.send !== 'function') return null;
+  if (!areServerDmsEnabled(guildOrGuildId)) {
+    return null;
+  }
+  return await targetUserOrMember.send(payload).catch(() => null);
+}
+
+// Universal GuildMember DM interception across all server actions
+if (typeof GuildMember !== 'undefined' && GuildMember.prototype && !GuildMember.prototype._athenaPatchedSend) {
+  const originalMemberSend = GuildMember.prototype.send;
+  GuildMember.prototype.send = async function (...args) {
+    if (this.guild && !areServerDmsEnabled(this.guild.id)) {
+      return null;
+    }
+    return originalMemberSend.apply(this, args);
+  };
+  GuildMember.prototype._athenaPatchedSend = true;
+}
 
 // ==========================================
 // ATHENA OWNERSHIP CLEARANCE HIERARCHY

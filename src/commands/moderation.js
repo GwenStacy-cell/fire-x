@@ -2,7 +2,7 @@ import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJ
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import { parseDuration, canModerate, logToSecurityChannel, isBotOwnerSync, isExtraOwner, getUserTierName, cleanDisplayName, renderSleekProgressBar } from '../utils/helpers.js';
+import { parseDuration, canModerate, logToSecurityChannel, isBotOwnerSync, isExtraOwner, getUserTierName, cleanDisplayName, renderSleekProgressBar, sendGuildMemberDM } from '../utils/helpers.js';
 import { executeQuarantine } from './security.js';
 import { logServerEvent } from '../utils/serverLogger.js'; // We will implement security.js next
 import { generateCommandStatusBanner } from '../utils/canvasCards.js';
@@ -1730,7 +1730,7 @@ export async function handleWarn(guild, moderator, target, reason, force = false
       .setColor(0xFF0000)
       .setTitle('Warning Received')
       .setDescription(`You have been issued a warning in **${guild.name}**.\n\n**Reason:** ${reason}\n**Warn Total:** ${warns.length} / 3`);
-    await target.send({ embeds: [dmEmbed] }).catch(() => null);
+    await sendGuildMemberDM(guild.id, target, { embeds: [dmEmbed] });
 
   // Response channel embed
   const resEmbed = { embeds: [
@@ -1899,7 +1899,7 @@ async function handleTimeout(guild, moderator, target, durationStr, reason) {
       .setColor(0xFF0000)
       .setTitle('Timeout Applied')
       .setDescription(`You have been timed out in **${guild.name}**.\n\n**Duration:** ${durationStr}\n**Reason:** ${reason}`);
-    await target.send({ embeds: [dmEmbed] }).catch(() => null);
+    await sendGuildMemberDM(guild.id, target, { embeds: [dmEmbed] });
 
     const resEmbed = cv2.danger('Timeout Executed', `Successfully placed **${target.user.tag}** on timeout.`, [
       { name: 'Member', value: `${target}`, inline: true },
@@ -1950,7 +1950,7 @@ async function handleUntimeout(guild, moderator, target, reason) {
       .setColor(0x00FF88)
       .setTitle('Timeout Removed')
       .setDescription(`Your timeout has been removed in **${guild.name}**.\n\n**Reason:** ${reason}`);
-    await target.send({ embeds: [dmEmbed] }).catch(() => null);
+    await sendGuildMemberDM(guild.id, target, { embeds: [dmEmbed] });
 
     const resEmbed = cv2.success('Timeout Removed', `Successfully removed timeout from **${target.user.tag}**.`, [
       { name: 'Member', value: `${target}`, inline: true },
@@ -1997,7 +1997,7 @@ async function handleKick(guild, moderator, target, reason) {
       .setColor(0xFF0000)
       .setTitle('Kicked from Server')
       .setDescription(`You have been kicked from **${guild.name}**.\n\n**Reason:** ${reason}`);
-    await target.send({ embeds: [dmEmbed] }).catch(() => null);
+    await sendGuildMemberDM(guild.id, target, { embeds: [dmEmbed] });
 
     await target.kick(`${reason} - by ${moderator.user.tag}`);
 
@@ -2046,7 +2046,7 @@ async function handleBan(guild, moderator, target, reason) {
       .setColor(0xFF0000)
       .setTitle('Banned from Server')
       .setDescription(`You have been permanently banned from **${guild.name}**.\n\n**Reason:** ${reason}`);
-    await target.send({ embeds: [dmEmbed] }).catch(() => null);
+    await sendGuildMemberDM(guild.id, target, { embeds: [dmEmbed] });
 
     await target.ban({ reason: `${reason} - by ${moderator.user.tag}` });
 

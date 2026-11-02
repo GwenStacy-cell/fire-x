@@ -3,6 +3,7 @@ import { PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, Embe
 import db from '../database.js';
 import statsDB from '../statsDB.js';
 import cv2 from '../cv2.js';
+import { sendGuildMemberDM } from '../utils/helpers.js';
 import ms from 'ms';
 import chalk from 'chalk';
 
@@ -217,7 +218,7 @@ export async function endGiveaway(client, messageId, gwData) {
                 `> -# <a:target_blink:1565667466984554588> **Host:** <@${gwData.hostId}>\n\n` +
                 `Please reach out to the host or open a ticket in **${guild.name}** to claim your prize.`
               );
-            await winnerUser.send({ embeds: [dmEmbed] }).catch(() => null);
+            await sendGuildMemberDM(guild.id, winnerUser, { embeds: [dmEmbed] });
           }
         } catch (e) {
           // Ignore if user cannot be fetched or has DMs closed

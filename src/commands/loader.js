@@ -1,4 +1,5 @@
 import { commands as morningCmds } from './morning.js';
+import { commands as dmCmds } from './dm.js';
 import { commands as firewallCmds } from './firewall.js';
 import { commands as hudCmds } from './hud.js';
 import { commands as dashboardCmds } from './dashboard.js';
@@ -209,7 +210,8 @@ export const allCommands = [
   autoreactCmd,
   autoroleCmd,
   ytstatsCmd,
-  ...morningCmds
+  ...morningCmds,
+  ...dmCmds
 ];
 
 export const commandMap = new Map();

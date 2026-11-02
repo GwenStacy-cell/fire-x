@@ -5,7 +5,7 @@ import { getVoiceConnection } from '@discordjs/voice';
 import { buildControlPanel, buildSharedPanel } from '../commands/jtc.js';
 import statsDB from '../statsDB.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
-import { isBotOwnerSync, getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
+import { isBotOwnerSync, getSafeUserAvatar, getSafeGuildIcon, sendGuildMemberDM } from '../utils/helpers.js';
 import { handleWarn } from '../commands/moderation.js';
 
 const theaterStrikes = new Map();
@@ -189,7 +189,7 @@ export default {
                     .setColor(accentInt)
                     .setTitle('Quarantined')
                     .setDescription(`${warnEmoji}\n-# You have been quarantined in **${guild.name}** and stripped of any extra permissions for repeatedly interrupting Theater Mode.`);
-                  await culpritUser.send({ embeds: [dmEmbed] }).catch(() => null);
+                  await sendGuildMemberDM(guild.id, culpritUser, { embeds: [dmEmbed] });
                   
                   const qRole = guildCfg.quarantineRoleId;
                   if (qRole) {

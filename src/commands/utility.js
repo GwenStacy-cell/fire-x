@@ -2161,6 +2161,7 @@ export const helpModules = [
     "`!scanserver` - Scan server for dangerous bot & onboarding permissions `[Extra Owner]`",
     "`!neutralizeonboarding / !onboarding` - Audit & neutralize dangerous Onboarding roles `[Extra Owner]`",
     "`!autonick` - Interactive auto-nickname enforcer dashboard `[Extra Owner]`",
+    "`!dm / !dms [on|off|status]` - Server-wide automated Athena direct message (DM) notification toggle `[Extra Owner]`",
     "`!config / !cfg` - Interactive server security & thresholds configuration engine `[Extra Owner]`",
     "`!learn / !lambda / !ai / !selflearn [status|on|off|flaws|fix|analyze|baseline|signatures|clear]` - Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics `[Extra Owner]`",
     "`!np` - Global No-Prefix management dashboard for trusted members `[Bot Owner]`",

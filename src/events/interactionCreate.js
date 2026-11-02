@@ -226,6 +226,13 @@ export default {
       }
     }
 
+    if (interaction.customId && interaction.customId.startsWith('dm_')) {
+      try {
+        const { handleDmInteraction } = await import('../commands/dm.js');
+        return await handleDmInteraction(interaction);
+      } catch (e) { console.error('[InteractionCreate] DM interaction error:', e); }
+    }
+
     if (interaction.customId && interaction.customId.startsWith('emoj_')) {
       try {
         const { handleEmojiInteractions } = await import('../commands/emojis.js');
