@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, NAV_EMOJI_IDS, NINJA_BULLET, NINJA_BULLET_RTL } from '../utils/emojis.js';
 import { MessageFlags, PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -152,7 +152,7 @@ export function buildLearnGuidancePayload(prefix = '!') {
       {
         type: 1,
         components: [
-          { type: 2, custom_id: 'learn_dashboard', label: 'Open Dashboard', style: 2, emoji: { id: '1523765738655973589' } },
+          { type: 2, custom_id: 'learn_dashboard', label: 'Open Dashboard', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } },
           { type: 2, custom_id: 'learn_fix', label: 'Run Security Fix Audit', style: 3, emoji: { id: '1552608831060844575' } },
           { type: 2, custom_id: 'learn_flaws', label: 'View Flaws', style: 2, emoji: { id: '1523766065576935475' } },
           { type: 2, custom_id: 'learn_signatures', label: 'Signatures', style: 2 }
@@ -187,7 +187,7 @@ export function buildSignaturesContainer(guild, prefix = '!') {
         {
           type: 1,
           components: [
-            { type: 2, custom_id: 'learn_dashboard', label: 'Return to Dashboard', style: 2, emoji: { id: '1523765738655973589' } }
+            { type: 2, custom_id: 'learn_dashboard', label: 'Return to Dashboard', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } }
           ]
         }
       ]
@@ -222,7 +222,7 @@ export function buildSignaturesContainer(guild, prefix = '!') {
       {
         type: 1,
         components: [
-          { type: 2, custom_id: 'learn_dashboard', label: 'Return to Dashboard', style: 2, emoji: { id: '1523765738655973589' } },
+          { type: 2, custom_id: 'learn_dashboard', label: 'Return to Dashboard', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } },
           { type: 2, custom_id: 'learn_flaws', label: 'View Flaws & Fixes', style: 2 },
           { type: 2, custom_id: 'learn_clear', label: 'Clear All Signatures', style: 4 }
         ]
@@ -289,7 +289,7 @@ export async function executeBaselineScan(guild) {
         {
           type: 1,
           components: [
-            { type: 2, custom_id: 'learn_dashboard', label: 'Return to Dashboard', style: 2, emoji: { id: '1523765738655973589' } },
+            { type: 2, custom_id: 'learn_dashboard', label: 'Return to Dashboard', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } },
             { type: 2, custom_id: 'learn_fix', label: 'Run Security Fix Audit', style: 3, emoji: { id: '1552608831060844575' } }
           ]
         },

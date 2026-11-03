@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from './emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, NAV_EMOJI_IDS, NINJA_BULLET, NINJA_BULLET_RTL } from './emojis.js';
 /**
  * Comprehensive Architectural & Command Explainer Registry for Athena Prime.
  * Provides granular, in-depth architectural breakdowns, zero-day exploit analysis,
@@ -2957,7 +2957,7 @@ export function buildExplainContainer(topicOrCmd, pageIndex = 0, prefix = '!', c
         custom_id: `arch_page_${matchedTopic.id}_${safeIndex - 1}`,
         label: 'Previous Section',
         style: 2,
-        emoji: { id: '1523766004839088301' }
+        emoji: { id: NAV_EMOJI_IDS.PREV }
       });
     }
     if (safeIndex < totalPages - 1) {
@@ -2966,7 +2966,7 @@ export function buildExplainContainer(topicOrCmd, pageIndex = 0, prefix = '!', c
         custom_id: `arch_page_${matchedTopic.id}_${safeIndex + 1}`,
         label: 'Next Section',
         style: 2,
-        emoji: { id: '1523766065576935475' }
+        emoji: { id: NAV_EMOJI_IDS.NEXT }
       });
     }
     navButtons.push({
@@ -2974,14 +2974,14 @@ export function buildExplainContainer(topicOrCmd, pageIndex = 0, prefix = '!', c
       custom_id: 'arch_home',
       label: 'Topic Directory',
       style: 2,
-      emoji: { id: '1523765738655973589' }
+      emoji: { id: NAV_EMOJI_IDS.HOME }
     });
     navButtons.push({
       type: 2,
       custom_id: 'arch_close',
       label: 'Close',
       style: 2,
-      emoji: { id: '1523766340752642109' }
+      emoji: { id: NAV_EMOJI_IDS.DELETE }
     });
 
     rawComponents.push({
@@ -3047,8 +3047,8 @@ ${formatExplainerMarkdown(matchedCmd.architecture)}
       {
         type: 1,
         components: [
-          { type: 2, custom_id: 'arch_home', label: 'Topic Directory', style: 2, emoji: { id: '1523765738655973589' } },
-          { type: 2, custom_id: 'arch_close', label: 'Close', style: 2, emoji: { id: '1523766340752642109' } }
+          { type: 2, custom_id: 'arch_home', label: 'Topic Directory', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } },
+          { type: 2, custom_id: 'arch_close', label: 'Close', style: 2, emoji: { id: NAV_EMOJI_IDS.DELETE } }
         ]
       },
       { type: 14, divider: true },
@@ -3223,7 +3223,7 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
         { type: 2, custom_id: 'arch_topic_athena', label: 'AI Architecture', style: 2 },
         { type: 2, custom_id: 'arch_topic_unbypassable', label: 'Sentinel Roles', style: 2 },
         { type: 2, custom_id: 'arch_topic_moderation', label: 'Mass Moderation', style: 2 },
-        { type: 2, custom_id: 'arch_close', label: 'Close', style: 2, emoji: { id: '1523766340752642109' } }
+        { type: 2, custom_id: 'arch_close', label: 'Close', style: 2, emoji: { id: NAV_EMOJI_IDS.DELETE } }
       ]
     },
     { type: 14, divider: true },

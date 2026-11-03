@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, NINJA_BULLET, NINJA_BULLET_RTL } from '../utils/emojis.js';
 import { 
   PermissionFlagsBits, 
   ButtonStyle, 
@@ -19,13 +19,17 @@ export function buildDmStatusPanel(guild, isEnabled) {
   const statusText = isEnabled ? 'ACTIVE (Mention DMs Enabled)' : 'DISABLED (Mention DMs Blocked)';
   const statusBadge = isEnabled ? TICK_EMOJI : WRONG_EMOJI;
 
+  const headingContent = Math.random() < 0.35 
+    ? `# ${NINJA_BULLET} Athena Mention DM Notifications ${NINJA_BULLET_RTL} | ${statusBadge}`
+    : `# ${glyph} Athena Mention DM Notifications | ${statusBadge}`;
+
   const container = {
     type: 17,
     accent_color: isEnabled ? 0x00FF88 : 0xFF2A4B,
     components: [
       {
         type: 10,
-        content: `# ${glyph} Athena Mention DM Notifications | ${statusBadge}`
+        content: headingContent
       },
       {
         type: 10,
@@ -93,13 +97,17 @@ export function buildDmToggleResponse(guild, enable) {
       `> ${BULLET_EMOJI} **Moderation Notices:** Official moderation notices (warns, timeouts, kicks, and bans) remain active and protected.\n\n` +
       `-# To re-enable mention DM notifications at any time, run \`!dm on\` or \`/dm action:enable\`.`;
 
+  const headingContent = Math.random() < 0.35
+    ? `# ${NINJA_BULLET} Mention DMs ${enable ? 'Enabled' : 'Disabled'} ${NINJA_BULLET_RTL} | ${badge}`
+    : `# ${glyph} Mention DMs ${enable ? 'Enabled' : 'Disabled'} | ${badge}`;
+
   const container = {
     type: 17,
     accent_color: enable ? 0x00FF88 : 0xFF2A4B,
     components: [
       {
         type: 10,
-        content: `# ${glyph} Mention DMs ${enable ? 'Enabled' : 'Disabled'} | ${badge}`
+        content: headingContent
       },
       {
         type: 10,

@@ -15,6 +15,23 @@ export const MARKET_CAP_ICON = '<:market_cap_icon:1566117974920798268>';
 export const GLOBAL_STOCK_ICON = '<:global_stock_icon:1566117971649110066>';
 export const CHESS_ICON = '<:chess_icon:1566117968386064394>';
 
+// Navigation & Pagination Beat Emojis
+export const HOME_BEAT_EMOJI = '<a:01_home_beat:1567037361810833428>';
+export const DELETE_BEAT_EMOJI = '<a:02_delete_beat:1567037365547962449>';
+export const PREVIOUS_BEAT_EMOJI = '<a:03_previous_beat:1567037369058598962>';
+export const NEXT_BEAT_EMOJI = '<a:04_next_beat:1567037372133019710>';
+
+export const NAV_EMOJI_IDS = {
+  HOME: '1567037361810833428',
+  DELETE: '1567037365547962449',
+  PREV: '1567037369058598962',
+  NEXT: '1567037372133019710'
+};
+
+// Symmetrical Ninja Bullet Heading Frame Emojis
+export const NINJA_BULLET = '<a:ninja_bullet:1567038601668337705>';
+export const NINJA_BULLET_RTL = '<a:ninja_bullet_rtl:1567038652687712317>';
+
 // Legacy tick ID for backwards compatibility / auto-upgrade
 export const LEGACY_TICK = '<a:03_tick_circle:1565665642084827206>';
 
@@ -106,12 +123,31 @@ export function stripHeadingGlyph(str) {
 }
 
 /**
- * Formats a heading string:
- * 1. Prepend a random animated glyph if no emoji is at start
- * 2. Replaces legacy tick with the new tick
- * 3. Appends status badge if specified
+ * Wraps a heading in symmetrical ninja bullets:
+ * # <a:ninja_bullet:1567038601668337705> Heading <a:ninja_bullet_rtl:1567038652687712317>
  */
-export function formatHeading(title, status = null) {
+export function formatNinjaHeading(title, status = null) {
+  return formatHeading(title, status, { ninja: true });
+}
+
+/**
+ * Returns either a standard glyph heading or randomly (~30% of the time)
+ * a symmetrical ninja bullet framed heading:
+ * # <a:ninja_bullet:...> Heading <a:ninja_bullet_rtl:...>
+ */
+export function formatFramedHeading(title, status = null) {
+  const useNinja = Math.random() < 0.3;
+  return formatHeading(title, status, { ninja: useNinja });
+}
+
+/**
+ * Formats a heading string:
+ * 1. Symmetrical ninja bullet framed heading if requested or randomly triggered
+ * 2. Or prepends a random animated glyph from HEADING_GLYPHS
+ * 3. Replaces legacy tick with the new tick
+ * 4. Appends status badge if specified
+ */
+export function formatHeading(title, status = null, options = {}) {
   if (!title) return '';
   let str = String(title).trim();
 
@@ -129,12 +165,19 @@ export function formatHeading(title, status = null) {
   }
 
   // Status badge appending
+  let badgeSuffix = '';
   if (status === 'success') {
-    if (!str.includes(TICK_EMOJI)) str = `${str} | ${TICK_EMOJI}`;
+    if (!str.includes(TICK_EMOJI)) badgeSuffix = ` | ${TICK_EMOJI}`;
   } else if (status === 'danger' || status === 'error') {
-    if (!str.includes(WRONG_EMOJI)) str = `${str} | ${WRONG_EMOJI}`;
+    if (!str.includes(WRONG_EMOJI)) badgeSuffix = ` | ${WRONG_EMOJI}`;
   } else if (status === 'warn' || status === 'warning') {
-    if (!str.includes(WARN_EMOJI)) str = `${str} | ${WARN_EMOJI}`;
+    if (!str.includes(WARN_EMOJI)) badgeSuffix = ` | ${WARN_EMOJI}`;
+  }
+
+  // Symmetrical ninja bullet heading frame
+  if (options.ninja && !str.includes(NINJA_BULLET)) {
+    const clean = stripHeadingGlyph(str).replace(/^#+\s*/, '').trim();
+    return `# ${NINJA_BULLET} ${clean} ${NINJA_BULLET_RTL}${badgeSuffix}`;
   }
 
   // Prepend random heading glyph if it doesn't already start with an emoji or header markdown
@@ -143,5 +186,5 @@ export function formatHeading(title, status = null) {
     str = `${getRandomHeadingGlyph()} ${str}`;
   }
 
-  return str;
+  return `${str}${badgeSuffix}`;
 }

@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from './emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, NAV_EMOJI_IDS } from './emojis.js';
 import { ARCHITECTURE_TOPICS, COMMAND_EXPLAINERS } from './explainerRegistry.js';
 import { helpModules } from '../commands/utility.js';
 import { generateAIResponse, formatAIToGreyMarkdown } from './ai.js';
@@ -1753,7 +1753,7 @@ export function buildGuideHubContainer(guild, user, prefix = '!') {
         components: [
           { type: 2, custom_id: 'athena_topic_lockdown', label: 'Panic Lockdown', style: 2 },
           { type: 2, custom_id: 'athena_topic_learn', label: 'Heuristic Learn Mode', style: 2 },
-          { type: 2, custom_id: 'athena_topic_help', label: 'Open Help Center', style: 2, emoji: { id: '1523765738655973589' } }
+          { type: 2, custom_id: 'athena_topic_help', label: 'Open Help Center', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } }
         ]
       },
       { type: 14, divider: true },

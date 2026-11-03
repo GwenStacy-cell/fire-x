@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, MARKET_CAP_ICON, GLOBAL_STOCK_ICON, CHESS_ICON } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, MARKET_CAP_ICON, GLOBAL_STOCK_ICON, CHESS_ICON, NINJA_BULLET, NINJA_BULLET_RTL, HOME_BEAT_EMOJI, DELETE_BEAT_EMOJI, PREVIOUS_BEAT_EMOJI, NEXT_BEAT_EMOJI, NAV_EMOJI_IDS } from '../utils/emojis.js';
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -830,8 +830,8 @@ export const commands = [
               const actionRow = {
                 type: 1,
                 components: [
-                  { type: 2, custom_id: `arch_cmd_${targetCmd.name}`, label: 'Explain Architecture', style: 2, emoji: { id: '1523766065576935475' } },
-                  { type: 2, custom_id: 'arch_home', label: 'Topic Directory', style: 2, emoji: { id: '1523765738655973589' } }
+                  { type: 2, custom_id: `arch_cmd_${targetCmd.name}`, label: 'Explain Architecture', style: 2, emoji: { id: NAV_EMOJI_IDS.NEXT } },
+                  { type: 2, custom_id: 'arch_home', label: 'Topic Directory', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } }
                 ]
               };
 
@@ -1376,8 +1376,8 @@ export const commands = [
         const actionRow = {
           type: 1,
           components: [
-            { type: 2, custom_id: `arch_cmd_${targetCmd.name}`, label: 'Explain Architecture', style: 2, emoji: { id: '1523766065576935475' } },
-            { type: 2, custom_id: 'arch_home', label: 'Topic Directory', style: 2, emoji: { id: '1523765738655973589' } }
+            { type: 2, custom_id: `arch_cmd_${targetCmd.name}`, label: 'Explain Architecture', style: 2, emoji: { id: NAV_EMOJI_IDS.NEXT } },
+            { type: 2, custom_id: 'arch_home', label: 'Topic Directory', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } }
           ]
         };
 
@@ -2704,7 +2704,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
         'finance': MARKET_CAP_ICON,
         'nifty': MARKET_CAP_ICON,
         'chess': CHESS_ICON,
-        'home': '<:on:1533844867191406672>'
+        'home': HOME_BEAT_EMOJI
       };
       return customEmojiFallback[name] || fallback;
     };
@@ -2771,7 +2771,10 @@ export function buildHelpContainer(client, guildId, moduleId) {
       const mod = helpModules.find(m => m.id === moduleId || (moduleId === 'defense' && m.id === 'security'));
       if (mod) {
         const e = getEmoji(mod.emoji, '<a:uptime:1552608831060844575>');
-        let currentChunk = `# ${e} ${mod.label.toUpperCase()}`;
+        const useNinjaHeading = Math.random() < 0.35;
+        let currentChunk = useNinjaHeading 
+          ? `# ${NINJA_BULLET} ${mod.label.toUpperCase()} ${NINJA_BULLET_RTL}` 
+          : `# ${e} ${mod.label.toUpperCase()}`;
         
         for (const cmd of mod.commands) {
           if (cmd === '') {
@@ -2854,10 +2857,10 @@ export function buildHelpContainer(client, guildId, moduleId) {
       selectMenu.addOptions([opt]);
     }
 
-    const btnPrev = new ButtonBuilder().setCustomId(`help_prev_${moduleId}`).setEmoji('1523766004839088301').setStyle(ButtonStyle.Secondary);
-    const btnNext = new ButtonBuilder().setCustomId(`help_next_${moduleId}`).setEmoji('1523766065576935475').setStyle(ButtonStyle.Secondary);
-    const btnRefresh = new ButtonBuilder().setCustomId('help_home').setEmoji('1523765738655973589').setStyle(ButtonStyle.Secondary);
-    const btnDelete = new ButtonBuilder().setCustomId('help_delete').setEmoji('1523766340752642109').setStyle(ButtonStyle.Secondary);
+    const btnPrev = new ButtonBuilder().setCustomId(`help_prev_${moduleId}`).setEmoji(NAV_EMOJI_IDS.PREV).setStyle(ButtonStyle.Secondary);
+    const btnNext = new ButtonBuilder().setCustomId(`help_next_${moduleId}`).setEmoji(NAV_EMOJI_IDS.NEXT).setStyle(ButtonStyle.Secondary);
+    const btnRefresh = new ButtonBuilder().setCustomId('help_home').setEmoji(NAV_EMOJI_IDS.HOME).setStyle(ButtonStyle.Secondary);
+    const btnDelete = new ButtonBuilder().setCustomId('help_delete').setEmoji(NAV_EMOJI_IDS.DELETE).setStyle(ButtonStyle.Secondary);
     const btnExplain = new ButtonBuilder()
       .setCustomId(moduleId === 'home' ? 'arch_home' : `arch_topic_${moduleId}`)
       .setLabel('Explain Architecture')

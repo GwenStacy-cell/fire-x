@@ -1,6 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
+import { NAV_EMOJI_IDS } from '../utils/emojis.js';
 
 export const commands = [
   {
@@ -92,11 +93,13 @@ async function sendRateLeaderboard(context, page) {
     new ButtonBuilder()
       .setCustomId(`ratelb_prev_${page}`)
       .setLabel('Previous')
+      .setEmoji(NAV_EMOJI_IDS.PREV)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(page === 1),
     new ButtonBuilder()
       .setCustomId(`ratelb_next_${page}`)
       .setLabel('Next')
+      .setEmoji(NAV_EMOJI_IDS.NEXT)
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(page === totalPages)
   );

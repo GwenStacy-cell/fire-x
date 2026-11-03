@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from './emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, NAV_EMOJI_IDS } from './emojis.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 
 // Cache for active image search sessions (sessionId -> session)
@@ -376,11 +376,13 @@ export function buildImageResultPayload(sessionId, index = 0) {
     new ButtonBuilder()
       .setCustomId(`img:prev:${sessionId}:${prevIndex}`)
       .setLabel('Prev')
+      .setEmoji(NAV_EMOJI_IDS.PREV)
       .setStyle(ButtonStyle.Primary)
       .setDisabled(total <= 1),
     new ButtonBuilder()
       .setCustomId(`img:next:${sessionId}:${nextIndex}`)
       .setLabel('Next')
+      .setEmoji(NAV_EMOJI_IDS.NEXT)
       .setStyle(ButtonStyle.Primary)
       .setDisabled(total <= 1),
     new ButtonBuilder()

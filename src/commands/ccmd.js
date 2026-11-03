@@ -3,6 +3,7 @@ import cv2 from '../cv2.js';
 import commandMap from './loader.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import { isExtraOwnerOrHigher } from '../utils/helpers.js';
+import { NAV_EMOJI_IDS } from '../utils/emojis.js';
 
 export const commands = [
   {
@@ -124,9 +125,9 @@ export const commands = [
         }
         
         const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('ccmd_prev').setLabel('Previous').setStyle(ButtonStyle.Secondary).setDisabled(true),
-            new ButtonBuilder().setCustomId('ccmd_close').setLabel('Close').setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder().setCustomId('ccmd_next').setLabel('Next').setStyle(ButtonStyle.Secondary).setDisabled(true)
+            new ButtonBuilder().setCustomId('ccmd_prev').setLabel('Previous').setEmoji(NAV_EMOJI_IDS.PREV).setStyle(ButtonStyle.Secondary).setDisabled(true),
+            new ButtonBuilder().setCustomId('ccmd_close').setLabel('Close').setEmoji(NAV_EMOJI_IDS.DELETE).setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder().setCustomId('ccmd_next').setLabel('Next').setEmoji(NAV_EMOJI_IDS.NEXT).setStyle(ButtonStyle.Secondary).setDisabled(true)
         );
         
         const container = {

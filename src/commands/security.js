@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, NAV_EMOJI_IDS, NINJA_BULLET, NINJA_BULLET_RTL } from '../utils/emojis.js';
 import { PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, TextDisplayBuilder, ContainerBuilder, MessageFlags, SectionBuilder, ThumbnailBuilder, Routes } from 'discord.js';
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs/promises';
@@ -4511,7 +4511,9 @@ export async function buildAutonickDashboard(guildId, guild = null) {
     components: [
       {
         type: 10,
-        content: `# ${getRandomHeadingGlyph()} **__Autonick Manager__**`
+        content: Math.random() < 0.35 
+          ? `# ${NINJA_BULLET} **__Autonick Manager__** ${NINJA_BULLET_RTL}` 
+          : `# ${getRandomHeadingGlyph()} **__Autonick Manager__**`
       },
       { type: 14, divider: true },
       {
@@ -6624,12 +6626,14 @@ const allMembers = guild.members.cache;
     const prevBtn = new ButtonBuilder()
       .setCustomId(`scanserver_prev_${page}`)
       .setLabel('Previous')
+      .setEmoji(NAV_EMOJI_IDS.PREV)
       .setStyle(ButtonStyle.Primary)
       .setDisabled(page === 0);
       
     const nextBtn = new ButtonBuilder()
       .setCustomId(`scanserver_next_${page}`)
       .setLabel('Next')
+      .setEmoji(NAV_EMOJI_IDS.NEXT)
       .setStyle(ButtonStyle.Primary)
       .setDisabled(page === totalPages - 1);
       
