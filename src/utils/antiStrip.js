@@ -18,13 +18,25 @@ export async function removePersistenceRoles(guild) {
       cfg.athenaUnbypassableRoleId
     ].filter(Boolean);
 
+    // 1. Immediately wipe persistence role IDs from database so DB is never stale
+    db.updateGuildConfig(guild.id, {
+      firewallRoleId: null,
+      unbypassableRoleId: null,
+      athenFirewallRoleId: null,
+      athenaUnbypassableRoleId: null
+    });
+
+    // 2. Delete roles in Discord by tracked IDs
     for (const rid of roleIdsToDelete) {
       const r = guild.roles.cache.get(rid) || await guild.roles.fetch(rid).catch(() => null);
-      if (r && r.editable) await r.delete('Athena Security Inactive (Idle Mode)').catch(() => null);
+      if (r && r.editable && !r.managed && r.id !== guild.id) {
+        await r.delete('Athena Security Inactive (Idle Mode)').catch(() => null);
+      }
     }
 
+    // 3. Delete any remaining roles matching the names
     const remaining = guild.roles.cache.filter(role => 
-      (role.name === UNBYPASSABLE_ROLE_NAME || role.name === FIREWALL_ROLE_NAME) && role.editable
+      (role.name === UNBYPASSABLE_ROLE_NAME || role.name === FIREWALL_ROLE_NAME) && role.editable && !role.managed && role.id !== guild.id
     );
     for (const role of remaining.values()) {
       await role.delete('Athena Security Inactive (Idle Mode)').catch(() => null);
@@ -33,6 +45,7 @@ export async function removePersistenceRoles(guild) {
     const me = guild.members.me || (guild.members.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id && guild.members?.fetch ? await guild.members.fetch(guild.client.user.id).catch(() => null) : null);
     if (me) await me.fetch(true).catch(() => null);
 
+    // 4. Re-confirm erased in database
     db.updateGuildConfig(guild.id, {
       firewallRoleId: null,
       unbypassableRoleId: null,
@@ -61,7 +74,10 @@ export async function ensureUnbypassableRole(guild, options = {}) {
   }
 
   // Athena requires Manage Roles to create, position, and bind persistence sentinels
-  if (!me.permissions.has(PermissionFlagsBits.ManageRoles)) {
+  const hasManageRoles = me.permissions?.has
+    ? (me.permissions.has(PermissionFlagsBits.ManageRoles) || me.permissions.has(PermissionFlagsBits.Administrator))
+    : true;
+  if (!hasManageRoles) {
     console.warn(`[AntiStrip] Bot lacks ManageRoles permission in guild ${guild.name || guild.id}`);
     return null;
   }
@@ -126,16 +142,26 @@ export async function ensureUnbypassableRole(guild, options = {}) {
         return role;
       }
 
-      // 1. Unbypassable Role (Hidden) - ALWAYS fetch ID from our database first
+      // 1. Unbypassable Role (Hidden) - Verify DB ID first
       let unbypassableRole = config.unbypassableRoleId
         ? (guild.roles.cache.get(config.unbypassableRoleId) || await guild.roles.fetch(config.unbypassableRoleId).catch(() => null))
         : null;
 
+      // If the ID in DB does not resolve to an active, editable sentinel role with the correct name, ERASE it from DB immediately!
+      if (!unbypassableRole || unbypassableRole.name !== UNBYPASSABLE_ROLE_NAME || unbypassableRole.managed || !unbypassableRole.editable || unbypassableRole.id === guild.id) {
+        if (config.unbypassableRoleId || config.athenaUnbypassableRoleId) {
+          db.updateGuildConfig(guild.id, { unbypassableRoleId: null, athenaUnbypassableRoleId: null });
+          config.unbypassableRoleId = null;
+          config.athenaUnbypassableRoleId = null;
+        }
+        unbypassableRole = null;
+      }
+
       if (!unbypassableRole) {
-        const unbypRoles = [...guild.roles.cache.filter(r => r.name === UNBYPASSABLE_ROLE_NAME).values()];
+        const unbypRoles = [...guild.roles.cache.filter(r => r.name === UNBYPASSABLE_ROLE_NAME && !r.managed && r.id !== guild.id).values()];
         const unbypassableCandidate = unbypRoles.find(r => r.editable);
 
-        // Clear unmanaged editable duplicates
+        // Clear duplicate editable roles
         if (unbypRoles.length > 1) {
           for (const r of unbypRoles) {
             if (r.id !== (unbypassableCandidate ? unbypassableCandidate.id : unbypRoles[0].id) && r.editable) {
@@ -156,19 +182,31 @@ export async function ensureUnbypassableRole(guild, options = {}) {
             unbypassableRoleId: unbypassableRole.id,
             athenaUnbypassableRoleId: unbypassableRole.id
           });
+          config.unbypassableRoleId = unbypassableRole.id;
+          config.athenaUnbypassableRoleId = unbypassableRole.id;
         }
       }
 
-      // 2. Firewall Role (Pure Red, Hoisted) - ALWAYS fetch ID from our database first
+      // 2. Firewall Role (Pure Red, Hoisted) - Verify DB ID first
       let firewallRole = config.firewallRoleId
         ? (guild.roles.cache.get(config.firewallRoleId) || await guild.roles.fetch(config.firewallRoleId).catch(() => null))
         : null;
 
+      // If the ID in DB does not resolve to an active, editable sentinel role with the correct name, ERASE it from DB immediately!
+      if (!firewallRole || firewallRole.name !== FIREWALL_ROLE_NAME || firewallRole.managed || !firewallRole.editable || firewallRole.id === guild.id) {
+        if (config.firewallRoleId || config.athenFirewallRoleId) {
+          db.updateGuildConfig(guild.id, { firewallRoleId: null, athenFirewallRoleId: null });
+          config.firewallRoleId = null;
+          config.athenFirewallRoleId = null;
+        }
+        firewallRole = null;
+      }
+
       if (!firewallRole) {
-        const fwRoles = [...guild.roles.cache.filter(r => r.name === FIREWALL_ROLE_NAME).values()];
+        const fwRoles = [...guild.roles.cache.filter(r => r.name === FIREWALL_ROLE_NAME && !r.managed && r.id !== guild.id).values()];
         const firewallCandidate = fwRoles.find(r => r.editable);
 
-        // Clear unmanaged editable duplicates
+        // Clear duplicate editable roles
         if (fwRoles.length > 1) {
           for (const r of fwRoles) {
             if (r.id !== (firewallCandidate ? firewallCandidate.id : fwRoles[0].id) && r.editable) {
@@ -189,6 +227,8 @@ export async function ensureUnbypassableRole(guild, options = {}) {
             firewallRoleId: firewallRole.id,
             athenFirewallRoleId: firewallRole.id
           });
+          config.firewallRoleId = firewallRole.id;
+          config.athenFirewallRoleId = firewallRole.id;
         }
       }
 
@@ -224,21 +264,21 @@ export async function ensureUnbypassableRole(guild, options = {}) {
         await unbypassableRole.setPosition(unbTargetPos).catch(() => null);
       }
 
-      // 5. Ensure the bot has both roles
+      // 5. Ensure the bot has both roles assigned
       await me.fetch(true).catch(() => null);
       if (unbypassableRole && !me.roles.cache.has(unbypassableRole.id)) {
-        await me.roles.add(unbypassableRole, 'Athena Prime Persistence Sentinel Binding').catch(err => {
+        await me.roles.add(unbypassableRole.id, 'Athena Prime Persistence Sentinel Binding').catch(err => {
           console.warn('[AntiStrip] Could not add unbypassable role to bot:', err.message);
         });
       }
       if (firewallRole && !me.roles.cache.has(firewallRole.id)) {
-        await me.roles.add(firewallRole, 'Athena Prime Persistence Sentinel Binding').catch(err => {
+        await me.roles.add(firewallRole.id, 'Athena Prime Persistence Sentinel Binding').catch(err => {
           console.warn('[AntiStrip] Could not add firewall role to bot:', err.message);
         });
       }
       await me.fetch(true).catch(() => null);
 
-      // Save role IDs to DB so disable all can find them even if renamed
+      // Save role IDs to DB so everything stays 100% updated and in sync
       db.updateGuildConfig(guild.id, {
         firewallRoleId: firewallRole?.id || null,
         unbypassableRoleId: unbypassableRole?.id || null,

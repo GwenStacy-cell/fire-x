@@ -5262,32 +5262,17 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
       botOwnerBypass:           false,
       blacklistWords:           [],
       antinukeModules:          Object.fromEntries(['antiRoleCreate','antiRoleDelete','antiRoleUpdate','antiRolePermUpdate','antiMemberRoleUpdate','antiRoleReorder','antiChannelCreate','antiChannelDelete','antiChannelUpdate','antiChannelPermUpdate','antiChannelReorder','antiChannelNameMod','antiEmojiCreate','antiEmojiDelete','antiEmojiUpdate','antiWebhooks','antiBotAdd','antiServerUpdate','antiBan','antiKick','antiUnban','antiInvite','antiScheduledEvents','antiMemberPurge','antiMassBan','antiAutomodUpdate','antiAppCommands','antiLinkedRole'].map(k => [k, false])),
+      firewallRoleId:           null,
+      unbypassableRoleId:       null,
+      athenFirewallRoleId:      null,
+      athenaUnbypassableRoleId: null,
       dashboardChannelId:       null,
       dashboardMessageIds:      []
     });
 
-    // Delete Athena's secondary security roles
-    await guild.roles.fetch().catch(() => null);
-    const cfg = db.getGuildConfig(guild.id);
-    const roleIdsToDelete = [
-      cfg.firewallRoleId, 
-      cfg.unbypassableRoleId, 
-      cfg.athenFirewallRoleId, 
-      cfg.athenaUnbypassableRoleId
-    ].filter(Boolean);
-    
-    // First try by ID
-    for (const rid of roleIdsToDelete) {
-      const r = guild.roles.cache.get(rid) || await guild.roles.fetch(rid).catch(() => null);
-      if (r && r.editable) await r.delete('Security Disabled by owner').catch(() => null);
-    }
-    
-    // Fallback: search for remaining Athena Firewall / Athena Unbypassable roles by exact name
-    guild.roles.cache.forEach(async role => {
-      if ((role.name === 'Athena Firewall' || role.name === 'Athena Unbypassable') && role.editable) {
-        await role.delete('Security Disabled by owner').catch(() => null);
-      }
-    });
+    // Delete Athena's secondary security roles and permanently clear IDs from database
+    const { removePersistenceRoles } = await import('../utils/antiStrip.js');
+    await removePersistenceRoles(guild).catch(() => null);
 
     // Delete ALL athenas-dashboard channels (including duplicates)
     await guild.channels.fetch().catch(() => null);
@@ -6172,6 +6157,14 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
           });
           await guild.roles.fetch().catch(() => null);
           const dbMod = (await import("../database.js")).default;
+          if (created) {
+            dbMod.updateGuildConfig(guild.id, {
+              firewallRoleId: created.firewallRole?.id || null,
+              unbypassableRoleId: created.unbypassableRole?.id || null,
+              athenFirewallRoleId: created.firewallRole?.id || null,
+              athenaUnbypassableRoleId: created.unbypassableRole?.id || null
+            });
+          }
           const cfg = dbMod.getGuildConfig(guild.id);
           const fwRole = (cfg.firewallRoleId ? (guild.roles.cache.get(cfg.firewallRoleId) || await guild.roles.fetch(cfg.firewallRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Firewall" || r.id === created?.firewallRole?.id);
           const unbRole = (cfg.unbypassableRoleId ? (guild.roles.cache.get(cfg.unbypassableRoleId) || await guild.roles.fetch(cfg.unbypassableRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Unbypassable" || r.id === created?.unbypassableRole?.id);
@@ -6188,16 +6181,25 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
           if (me) {
             const dbMod = (await import("../database.js")).default;
             const cfg = dbMod.getGuildConfig(guild.id);
-            const fwRole = (cfg.firewallRoleId ? (guild.roles.cache.get(cfg.firewallRoleId) || await guild.roles.fetch(cfg.firewallRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Firewall");
-            const unbRole = (cfg.unbypassableRoleId ? (guild.roles.cache.get(cfg.unbypassableRoleId) || await guild.roles.fetch(cfg.unbypassableRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Unbypassable");
+            const fwRole = (cfg.firewallRoleId ? (guild.roles.cache.get(cfg.firewallRoleId) || await guild.roles.fetch(cfg.firewallRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Firewall" && r.editable);
+            const unbRole = (cfg.unbypassableRoleId ? (guild.roles.cache.get(cfg.unbypassableRoleId) || await guild.roles.fetch(cfg.unbypassableRoleId).catch(() => null)) : null) || guild.roles.cache.find(r => r.name === "Athena Unbypassable" && r.editable);
 
             if (fwRole && fwRole.editable && !me.roles.cache.has(fwRole.id)) {
-              await me.roles.add(fwRole).catch(() => null);
+              await me.roles.add(fwRole.id, 'Athena Security Enable Sequence').catch(() => null);
             }
             if (unbRole && unbRole.editable && !me.roles.cache.has(unbRole.id)) {
-              await me.roles.add(unbRole).catch(() => null);
+              await me.roles.add(unbRole.id, 'Athena Security Enable Sequence').catch(() => null);
             }
             await me.fetch(true).catch(() => null);
+
+            if (fwRole || unbRole) {
+              dbMod.updateGuildConfig(guild.id, {
+                firewallRoleId: fwRole?.id || cfg.firewallRoleId || null,
+                unbypassableRoleId: unbRole?.id || cfg.unbypassableRoleId || null,
+                athenFirewallRoleId: fwRole?.id || cfg.athenFirewallRoleId || null,
+                athenaUnbypassableRoleId: unbRole?.id || cfg.athenaUnbypassableRoleId || null
+              });
+            }
           }
           return `\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Persistence roles linked to bot entity`;
       }))) return false;

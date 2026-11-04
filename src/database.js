@@ -333,6 +333,10 @@ class Database {
         antiNukeEnabled: false,
         securityEnabled: false,
         botOwnerBypass: false,
+        firewallRoleId: null,
+        unbypassableRoleId: null,
+        athenFirewallRoleId: null,
+        athenaUnbypassableRoleId: null,
         antinukeModules: {
           antiRoleCreate: false,
           antiRoleDelete: false,
@@ -429,11 +433,15 @@ class Database {
       const isSecured = Boolean(cfg.securityEnabled && cfg.antiNukeEnabled);
 
       if (!isSecured) {
-        // IDLE MODE: When security/antinuke is not enabled, ALL 28 modules and flags are false
+        // IDLE MODE: When security/antinuke is not enabled, ALL 28 modules, flags, and persistence role IDs are reset
         if (cfg.antiNukeEnabled) { cfg.antiNukeEnabled = false; updated = true; }
         if (cfg.securityEnabled) { cfg.securityEnabled = false; updated = true; }
         if (cfg.botOwnerBypass) { cfg.botOwnerBypass = false; updated = true; }
         if (cfg.antiSpamEnabled) { cfg.antiSpamEnabled = false; updated = true; }
+        if (cfg.firewallRoleId) { cfg.firewallRoleId = null; updated = true; }
+        if (cfg.unbypassableRoleId) { cfg.unbypassableRoleId = null; updated = true; }
+        if (cfg.athenFirewallRoleId) { cfg.athenFirewallRoleId = null; updated = true; }
+        if (cfg.athenaUnbypassableRoleId) { cfg.athenaUnbypassableRoleId = null; updated = true; }
         if (!cfg.antinukeModules) { cfg.antinukeModules = {}; updated = true; }
         for (const k of antinukeKeys) {
           if (cfg.antinukeModules[k] !== false) {

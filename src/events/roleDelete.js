@@ -18,14 +18,33 @@ export default {
     if (!role.guild) return;
     if (db.isModModeActive(role.guild.id)) return;
 
-    // Anti-Strip: Instant recreation if hidden persistence role is deleted
+    // Anti-Strip: Instant recreation and database cleanup if persistence role is deleted
     const config = db.getGuildConfig(role.guild.id);
     const isPersistenceRole = (config.unbypassableRoleId && role.id === config.unbypassableRoleId) ||
                               (config.firewallRoleId && role.id === config.firewallRoleId) ||
+                              (config.athenFirewallRoleId && role.id === config.athenFirewallRoleId) ||
+                              (config.athenaUnbypassableRoleId && role.id === config.athenaUnbypassableRoleId) ||
                               role.name === UNBYPASSABLE_ROLE_NAME || role.name === FIREWALL_ROLE_NAME;
-    if (config.securityEnabled && config.antiNukeEnabled && isPersistenceRole) {
-      await ensureUnbypassableRole(role.guild);
-      await handleAntiStab(role.guild, `DELETE my persistence role (${role.name})`, AuditLogEvent.RoleDelete);
+
+    if (isPersistenceRole) {
+      // Immediately erase deleted role's ID from database
+      const dbUpdates = {};
+      if (role.id === config.unbypassableRoleId || role.id === config.athenaUnbypassableRoleId || role.name === UNBYPASSABLE_ROLE_NAME) {
+        dbUpdates.unbypassableRoleId = null;
+        dbUpdates.athenaUnbypassableRoleId = null;
+      }
+      if (role.id === config.firewallRoleId || role.id === config.athenFirewallRoleId || role.name === FIREWALL_ROLE_NAME) {
+        dbUpdates.firewallRoleId = null;
+        dbUpdates.athenFirewallRoleId = null;
+      }
+      if (Object.keys(dbUpdates).length > 0) {
+        db.updateGuildConfig(role.guild.id, dbUpdates);
+      }
+
+      if (config.securityEnabled && config.antiNukeEnabled) {
+        await ensureUnbypassableRole(role.guild, { force: true });
+        await handleAntiStab(role.guild, `DELETE my persistence role (${role.name})`, AuditLogEvent.RoleDelete);
+      }
       return;
     }
 
