@@ -5,7 +5,6 @@ import cv2 from '../cv2.js';
 import { isBotOwnerSync } from '../utils/helpers.js';
 import { resolvePlaceholders } from './welcome.js';
 import { resolveMediaUrl, isPinterestUrl } from '../utils/pinterest.js';
-import { generateCommandStatusBanner } from '../utils/canvasCards.js';
 
 import { renderSleekProgressBar } from '../utils/helpers.js';
 export { renderSleekProgressBar };
@@ -1011,26 +1010,6 @@ export async function buildTriggerDashboard(guild, page = 0) {
   const iconUrl = guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null;
   const progressBar = renderSleekProgressBar(triggers.length, 50, 14);
 
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'TRIGGER RESPONSE MATRIX',
-    subtitle: `${guild.name.toUpperCase()} // AUTOMATION SYSTEM`,
-    badge: triggers.length > 0 ? `${triggers.length} TRIGGERS ACTIVE` : 'ZERO TRIGGERS',
-    badgeColor: triggers.length > 0 ? (accentHex || '#00f0ff') : '#888888',
-    iconUrl,
-    fallbackInitial: guild.name[0] || 'T',
-    current: triggers.length,
-    total: 50,
-    unit: 'SLOTS USED',
-    accentColor: accentHex || '#00f0ff',
-    metrics: [
-      { label: 'TRIGGERS', value: `${triggers.length}/50` },
-      { label: 'NETWORK', value: `${globalTriggers.length} GLOBAL` },
-      { label: 'STATUS', value: 'SYNCED' }
-    ],
-    attachmentName: 'trigger_banner.gif',
-    animated: true
-  });
-
   let triggersContent = `-# <a:target_blink:1565667466984554588> **No server triggers configured yet.**\n-# <a:target_blink:1565667466984554588> For a simple usual trigger setup, use: \`${prefix}trigger create <match> | <response>\`\n-# <a:target_blink:1565667466984554588> Or click the **Create Trigger** button below to set one up!`;
   if (triggers.length > 0) {
     triggersContent = pageTriggers.map((t, idx) => {
@@ -1079,11 +1058,6 @@ export async function buildTriggerDashboard(guild, page = 0) {
   }
 
   const containerComps = [
-    {
-      type: 12,
-      items: [{ media: { url: 'attachment://trigger_banner.gif' } }]
-    },
-    { type: 14, divider: true },
     headerSection,
     { type: 14, divider: true },
     {
@@ -1206,7 +1180,6 @@ export async function buildTriggerDashboard(guild, page = 0) {
       accent_color: accentInt,
       components: containerComps
     }],
-    files: [bannerAttachment],
     flags: MessageFlags.IsComponentsV2
   };
 }

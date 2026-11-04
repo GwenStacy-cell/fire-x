@@ -664,9 +664,9 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}ar remove <keyword>\` - Delete a keyword auto-reply \`[Extra Owner]\`.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}ar list\` - List all active auto-replies in the server.`;
               } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
-                  descContent = `Interactive server trigger word responder dashboard with synced animated looping GIF HUD, electric progress bar, and 4 advanced automation modules.\n\n` +
-                    `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`trigger_banner.gif\`) with real-time glowing capacity progress bar drawn directly in the GIF.\n` +
+                  descContent = `Interactive server trigger word responder dashboard with sleek Components V2 UI, capacity progress bar, and 4 advanced automation modules.\n\n` +
+                    `> -# **__Trigger Response Dashboard:__**\n` +
+                    `> ${BULLET_EMOJI} **Sleek Progress Bar:** Real-time capacity progress meter visualizing trigger allocation.\n` +
                     `> ${BULLET_EMOJI} **Metrics Tracked:** Server trigger count vs 50-slot capacity, global network auto-responses, and synchronization state.\n\n` +
                     `> -# **__The 4 Advanced Trigger Engines:__**\n` +
                     `> ${BULLET_EMOJI} **Ghost / Auto-Destruct (\`ghost:<sec>\`):** Automatically purges response after N seconds to prevent channel clutter.\n` +
@@ -734,9 +734,9 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}morning add <thought>\` - Add a custom pleasant quote to your server's rotation.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}morning list\` - Display custom server quotes.`;
               } else if (targetCmd.name === "whitelist" || targetCmd.name === "wl") {
-                  descContent = `Interactive Whitelist Defense Matrix dashboard with synced looping animated GIF HUD, permission category clearance, and custom action limits.\n\n` +
-                    `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banners (\`wl_banner.gif\` & \`wl_access.gif\`) with real-time glowing electric progress bars drawn directly in the GIF.\n` +
+                  descContent = `Interactive Whitelist Defense Matrix dashboard with sleek Components V2 interface, permission category clearance, and custom action limits.\n\n` +
+                    `> -# **__Whitelist Defense Matrix:__**\n` +
+                    `> ${BULLET_EMOJI} **Interactive UI:** Clean Components V2 status panel with real-time clearance meter.\n` +
                     `> ${BULLET_EMOJI} **Overview Metrics:** Total whitelisted users and roles vs 25 trusted cap.\n` +
                     `> ${BULLET_EMOJI} **Clearance Metrics:** Individual user/role authorized categories vs total defense categories.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
@@ -744,24 +744,24 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}wl <@user|@role>\` - Quick-whitelist for standard actions.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}unwl <@user|@role>\` - Remove user or role from whitelist.`;
               } else if (targetCmd.name === "automod") {
-                  descContent = `Interactive Heuristic Filtering & Security Matrix console with synced looping animated GIF HUD and 10 active shield filters.\n\n` +
-                    `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`automod_banner.gif\`) with glowing electric progress bar visualizing filter armor integrity (\`activeFilters / 10\`).\n` +
+                  descContent = `Interactive Heuristic Filtering & Security Matrix console with sleek Components V2 controls and 10 active shield filters.\n\n` +
+                    `> -# **__Heuristic Filter Console:__**\n` +
+                    `> ${BULLET_EMOJI} **Filter Armor Meter:** Real-time progress bar visualizing armed filter integrity (\`activeFilters / 10\`).\n` +
                     `> ${BULLET_EMOJI} **Filters Monitored:** AI Toxicity & Sentiment, Mass Mentions, Anti-Flood, Anti-Link, Discord Invites, Word Filter, Big Fonts, Selfbot, Hidden URLs, and File Checks.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
                     `> ${BULLET_EMOJI} \`${prefix}automod\` - Opens the interactive Heuristic Filter Matrix console.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}automodbypass add|remove <@role>\` - Manage granular role bypasses.`;
               } else if (targetCmd.name === "scanserver" || targetCmd.name === "scan") {
                   descContent = `Server Threat Audit HUD scanner to evaluate external bot integrations, dangerous administrative permissions, and onboarding exploit vectors.\n\n` +
-                    `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`scan_banner.gif\`) tracking verified bot armor ratio (\`safeBots / totalBots\`).\n` +
+                    `> -# **__Threat Audit Scanner:__**\n` +
+                    `> ${BULLET_EMOJI} **Verified Bot Ratio:** Real-time progress bar tracking verified bot armor ratio (\`safeBots / totalBots\`).\n` +
                     `> ${BULLET_EMOJI} **Diagnostics:** Unauthorized external bots, high-risk humans with dangerous roles, dangerous onboarding prompt roles, and role-bound invite links.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
                     `> ${BULLET_EMOJI} \`${prefix}scanserver\` (or \`${prefix}scan\`) - Launch the server security audit scan.`;
               } else if (targetCmd.name === "warnings" || targetCmd.name === "warn") {
                   descContent = `Disciplinary Infraction Tracker HUD monitoring member strike history against server escalation limits.\n\n` +
-                    `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-                    `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`warn_banner.gif\`) with glowing strike progress bar (\`warns.length / maxWarnings\`).\n` +
+                    `> -# **__Disciplinary Infraction Tracker:__**\n` +
+                    `> ${BULLET_EMOJI} **Strike Progress Meter:** Sleek progress bar visualizing active strikes (\`warns.length / maxWarnings\`).\n` +
                     `> ${BULLET_EMOJI} **Auto-Escalation:** When strikes reach \`!maxwarnings\` limit (default: 3), Athena automatically isolates the user in Quarantine containment.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
                     `> ${BULLET_EMOJI} \`${prefix}warnings <@user>\` - View member's active warnings & strike HUD.\n` +
@@ -1294,9 +1294,9 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}ar remove <keyword>\` - Delete a keyword auto-reply \`[Extra Owner]\`.\n` +
             `> ${BULLET_EMOJI} \`${prefix}ar list\` - List all active auto-replies in the server.`;
         } else if (targetCmd.name === "trigger" || targetCmd.name === "trig") {
-          descContent = `Interactive server trigger word responder dashboard with synced animated looping GIF HUD, electric progress bar, and 4 advanced automation modules.\n\n` +
-            `> -# **__Synced Looping Animated GIF HUD:__**\n` +
-            `> ${BULLET_EMOJI} **In-GIF Progress Bar:** 8-frame looping animated HUD banner (\`trigger_banner.gif\`) with real-time glowing capacity progress bar drawn directly in the GIF.\n` +
+          descContent = `Interactive server trigger word responder dashboard with sleek Components V2 UI, capacity progress bar, and 4 advanced automation modules.\n\n` +
+            `> -# **__Trigger Response Dashboard:__**\n` +
+            `> ${BULLET_EMOJI} **Sleek Progress Bar:** Real-time capacity progress meter visualizing trigger allocation.\n` +
             `> ${BULLET_EMOJI} **Metrics Tracked:** Server trigger count vs 50-slot capacity, global network auto-responses, and synchronization state.\n\n` +
             `> -# **__The 4 Advanced Trigger Engines:__**\n` +
             `> ${BULLET_EMOJI} **Ghost / Auto-Destruct (\`ghost:<sec>\`):** Automatically purges response after N seconds to prevent channel clutter.\n` +
@@ -2249,7 +2249,7 @@ export const helpModules = [
     "-# **__The Whitelist Interface:__**",
     "-# <a:target_blink:1565667466984554588> Allows granting specific bypasses (e.g., allow Mass Ban but block Channel Delete).",
     "-# <a:target_blink:1565667466984554588> Supports **__Custom Trigger Limits__** (e.g., allowed to kick 5 members max per hour).",
-    "-# <a:target_blink:1565667466984554588> **__Synced Looping GIF HUD:__** Features authentic 8-frame looping animated HUD banners (`wl_banner.gif` & `wl_access.gif`) with glowing progress bars drawn directly in the GIF."
+    "-# <a:target_blink:1565667466984554588> **__Interactive Whitelist Dashboard:__** Features high-speed Components V2 controls with real-time clearance meters and custom limits."
   ] },
   
   { id: 'moderation', category: 'SERVER MANAGEMENT', shortLabel: 'Mods', label: 'Moderation Tools', emoji: 'mod', commands: [

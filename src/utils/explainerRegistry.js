@@ -1061,11 +1061,11 @@ export const DETAILED_COMMANDS = {
     category: 'Automation & Utilities',
     clearance: 'Public (View/Test) / Extra Owner (Create/Delete/Clear)',
     syntax: '!trigger / !trigger create <match> | <response> / !trigger delete <match> / !trigger react <match> <emoji> / !trigger mirror <match> <#channel>',
-    purpose: 'Interactive server trigger word responder dashboard with synced animated looping GIF HUD, electric progress bar, and 4 advanced automation modules.',
+    purpose: 'Interactive server trigger word responder dashboard with sleek Components V2 UI, capacity progress bar, and 4 advanced automation modules.',
     architecture:
-`• **Synced Looping Animated GIF HUD (trigger_banner.gif):**
-  - Features a real-time canvas-rendered 8-frame looping GIF with server avatar reticle, animated scan-lines, and glowing progress bar drawn directly in the GIF.
-  - Visualizes trigger slot capacity (\`triggers.length / 50\`) with real-time metrics for triggers, global network replies, and synchronization status.
+`• **Interactive Trigger Matrix Dashboard:**
+  - Modern Components V2 UI featuring real-time capacity progress meter and server trigger count vs 50-slot limit.
+  - Live status tracking server triggers, global network auto-responses, and synchronization status.
 • **Simple Usual Setup Syntax:**
   - Fast creation: \`!trigger create <match> | <response>\` (e.g., \`!trigger create hello | Hello {user}, welcome to {server}!\`).
   - Direct shortcut: \`!trigger <match> | <response>\`.
@@ -1086,12 +1086,12 @@ export const DETAILED_COMMANDS = {
     category: 'Security & Antinuke Defense',
     clearance: 'Server Owner / Extra Owner',
     syntax: '!whitelist / !wl / !wl <user|role> / !unwl <user|role> / !wlist',
-    purpose: 'Interactive Whitelist Defense Matrix dashboard with synced looping animated GIF HUD, permission category clearance, and custom action limits.',
+    purpose: 'Interactive Whitelist Defense Matrix dashboard with sleek Components V2 interface, permission category clearance, and custom action limits.',
     architecture:
-`• **Synced Looping Animated GIF HUD (wl_banner.gif & wl_access.gif):**
-  - Canvas-rendered 8-frame animated looping HUD with in-GIF glowing electric progress bar.
-  - Overview HUD tracks total whitelisted users and roles against the 25 trusted cap (\`totalWl / 25\`).
-  - Access Clearance HUD tracks individual user/role category clearance (\`enabledCategories / totalCategories\`).
+`• **Interactive Whitelist Defense Matrix:**
+  - Modern Components V2 UI featuring real-time clearance meter and trusted entity counters.
+  - Overview panel tracks total whitelisted users and roles against the 25 trusted cap (\`totalWl / 25\`).
+  - Access clearance panel tracks individual user/role category clearance (\`enabledCategories / totalCategories\`).
 • **Granular Action & Module Whitelisting:**
   - Whitelist specific entities for specific modules (e.g., Channel Protection, Role Protection, Mass Ban, Bot Add).
   - Supports custom action limits (e.g., allow up to 5 bans per hour without tripping antinuke threshold).
@@ -1171,12 +1171,11 @@ export const DETAILED_COMMANDS = {
     category: 'Security & Antinuke Defense',
     clearance: 'Extra Owner',
     syntax: '!raidmode [on|off|auto on|auto off|auto threshold <num>|auto window <sec>]',
-    purpose: 'Unified Server Raid Defense Matrix with synced 1024x512 Sci-Fi War Room animated GIF HUD, manual lockdown control, and automated join-velocity burst detection.',
+    purpose: 'Unified Server Raid Defense Matrix with sleek Components V2 status panel, manual lockdown control, and automated join-velocity burst detection.',
     architecture:
-`• **Synced War Room Animated GIF HUD (raid_banner.gif):**
-  - Features dynamic 1024x512 tactical control deck with rotating radar reticle around server avatar.
-  - In-GIF electric plasma oscillating sine wave progress bar tracking lockdown level and posture.
-  - Three real-time telemetry chips: Burst Velocity threshold, Auto-Shield status, Quarantined intruder count.
+`• **Interactive Raid Defense Matrix:**
+  - Modern Components V2 status panel displaying real-time lockdown posture and auto-shield states.
+  - Live telemetry tracking burst velocity threshold, auto-shield status, and quarantined intruder count.
 • **Manual Raid Lockdown (!raidmode on):**
   1. Sets server raid mode to active in SQLite database.
   2. Snapshots current server verification level.
@@ -1202,12 +1201,11 @@ export const DETAILED_COMMANDS = {
     category: 'Security & Antinuke Defense',
     clearance: 'Extra Owner',
     syntax: '!health / !audit',
-    purpose: 'Runs real-time hierarchy, permission, persistence, and audit socket diagnostics with synced 1024x512 Sci-Fi War Room animated GIF HUD.',
+    purpose: 'Runs real-time hierarchy, permission, persistence, and audit socket diagnostics with sleek Components V2 status matrix.',
     architecture:
-`• **Synced War Room Animated GIF HUD (health_banner.gif):**
-  - 1024x512 animated looping HUD with holographic cyber glass console overlay.
-  - In-GIF electric plasma sine wave progress bar rendering total composite health score (0-100%).
-  - Telemetry chips tracking Health Score (%), Socket Latency (ms), and Core Permissions (X/8).
+`• **Interactive Diagnostics & Health Matrix:**
+  - Modern Components V2 status panel rendering composite health meter (0-100%).
+  - Telemetry metrics tracking health score (%), socket latency (ms), and core permissions (X/8).
 • **Hierarchy Integrity Check:** Compares bot's highest role position against all roles in the server. Scans for any roles above Athena that possess dangerous administrative permissions (Administrator, Manage Guild, Manage Roles, Manage Channels, Ban, Kick).
 • **Core Permissions Validation:** Verifies all 8 critical operational permissions (Administrator, Manage Guild, Manage Roles, Manage Channels, Ban Members, Kick Members, View Audit Log, Manage Webhooks).
 • **Defense Matrix Status:** Assesses live master antinuke engine, general security, raid mode, and auto join-velocity shield.
@@ -1223,12 +1221,11 @@ export const DETAILED_COMMANDS = {
     category: 'Security & Antinuke Defense',
     clearance: 'Extra Owner',
     syntax: '!qrmanager setup / !qrmanager status / !qrmanager setrole <@role> / !qrmanager setchannel <#channel> / !qrmanager setvc <#vc>',
-    purpose: 'Automated quarantine containment setup, role binding, voice chamber isolation, and real-time status matrix with synced 1024x512 Sci-Fi War Room GIF HUD.',
+    purpose: 'Automated quarantine containment setup, role binding, voice chamber isolation, and real-time status matrix with sleek Components V2 controls.',
     architecture:
-`• **Synced War Room Animated GIF HUD (qr_banner.gif):**
-  - 1024x512 holographic control deck displaying containment readiness ratio (0-4 components).
-  - In-GIF dual-harmonic oscillating plasma progress bar with pulsing head plasma orb.
-  - HUD metric chips: Role status, Category status, System armed readiness.
+`• **Interactive Quarantine Containment Status:**
+  - Modern Components V2 status panel displaying containment readiness ratio (0-4 components).
+  - Telemetry metrics tracking role status, category status, and system armed readiness.
 • **One-Click Automated Setup (!qrmanager setup):**
   - Creates hidden isolation category, dedicated quarantine role, and restricted chat holding cell.
   - Automatically denies ViewChannel across all server channels for the quarantine role and grants access exclusively to the containment zone.

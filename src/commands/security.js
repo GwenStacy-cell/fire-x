@@ -23,7 +23,6 @@ import {
   renderSleekProgressBar,
   isExtraOwnerOrHigher
 } from '../utils/helpers.js';
-import { generateCommandStatusBanner } from '../utils/canvasCards.js';
 import { connectToHomeVc, toggleBotDeafen } from '../utils/voice.js';
 import { setupDashboardChannel } from '../utils/dashboardManager.js';
 import { resolveMediaUrl, isPinterestUrl } from '../utils/pinterest.js';
@@ -2796,29 +2795,6 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
       errorWarning = `\n\n<a:alert1:1533860044154732704> **WARNING:** Failed to modify ${rErrors} roles and ${cErrors} channels. Ensure the bot's role is placed at the top and has Administrator privileges.`;
     }
 
-    let bannerAttachment = null;
-    try {
-      bannerAttachment = await generateCommandStatusBanner({
-        title: 'DEFCON 1: SERVER EMERGENCY',
-        subtitle: `${guild.name.toUpperCase()} // MAXIMUM BLACKOUT ACTIVE`,
-        badge: 'BLACKOUT ACTIVE: EMERGENCY MODE',
-        badgeColor: '#ff2a4b',
-        iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-        fallbackInitial: guild.name[0] || 'E',
-        current: cCount,
-        total: Math.max(1, channelsToModify.length),
-        unit: 'CHANNELS HIDDEN',
-        accentColor: '#ff2a4b',
-        metrics: [
-          { label: 'CHANNELS', value: `${cCount}/${channelsToModify.length}`, pct: 1.0 },
-          { label: 'ROLES', value: `${rCount} STRIPPED`, pct: 1.0 },
-          { label: 'STATUS', value: 'BLACKOUT', pct: 1.0 }
-        ],
-        attachmentName: 'emergency_banner.gif',
-        animated: true
-      });
-    } catch (err) {}
-
     // Tactical Audio Dispatch
     const dispatchText = TACTICAL_DISPATCH_SCRIPTS.panic;
     let audioAttachment = null;
@@ -2844,10 +2820,6 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
     const containerComp = {
       type: 17,
       components: [
-        ...(bannerAttachment ? [{
-          type: 12,
-          items: [{ media: { url: 'attachment://emergency_banner.gif' } }]
-        }] : []),
         { type: 10, content: `# ${getRandomHeadingGlyph()} Emergency Blackout Mode Engaged | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
@@ -2867,7 +2839,7 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
 
     return {
       components: [containerComp, actionRow],
-      files: [bannerAttachment, audioAttachment].filter(Boolean),
+      files: [audioAttachment].filter(Boolean),
       flags: MessageFlags.IsComponentsV2
     };
 
@@ -2941,29 +2913,6 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
       }
     } catch(e) {}
 
-    let bannerAttachment = null;
-    try {
-      bannerAttachment = await generateCommandStatusBanner({
-        title: 'EMERGENCY RESOLVED',
-        subtitle: `${guild.name.toUpperCase()} // NORMAL OPERATIONS`,
-        badge: 'SERVER FULLY RESTORED',
-        badgeColor: '#00f0ff',
-        iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-        fallbackInitial: guild.name[0] || 'S',
-        current: channelsRestored,
-        total: Math.max(1, (savedState.channels || []).length),
-        unit: 'CHANNELS RESTORED',
-        accentColor: '#00f0ff',
-        metrics: [
-          { label: 'CHANNELS', value: `${channelsRestored}/${savedState.channels?.length || 0}`, pct: 1.0 },
-          { label: 'ROLES', value: `${rolesRestored} RESTORED`, pct: 1.0 },
-          { label: 'STATUS', value: 'ONLINE', pct: 1.0 }
-        ],
-        attachmentName: 'emergency_end_banner.gif',
-        animated: true
-      });
-    } catch (err) {}
-
     // Tactical Audio Dispatch
     const dispatchText = TACTICAL_DISPATCH_SCRIPTS.unpanic;
     let audioAttachment = null;
@@ -2984,10 +2933,6 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
     const containerComp = {
       type: 17,
       components: [
-        ...(bannerAttachment ? [{
-          type: 12,
-          items: [{ media: { url: 'attachment://emergency_end_banner.gif' } }]
-        }] : []),
         { type: 10, content: `# ${getRandomHeadingGlyph()} Emergency Mode Resolved | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
@@ -3007,7 +2952,7 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
 
     return {
       components: [containerComp, actionRow],
-      files: [bannerAttachment, audioAttachment].filter(Boolean),
+      files: [audioAttachment].filter(Boolean),
       flags: MessageFlags.IsComponentsV2
     };
   }
@@ -3391,29 +3336,6 @@ export async function handlePanicLockdown(guild, moderator, tier = '1', updatePr
     'danger'
   ));
 
-  let bannerAttachment = null;
-  try {
-    bannerAttachment = await generateCommandStatusBanner({
-      title: 'SERVER PANIC LOCKDOWN',
-      subtitle: `${guild.name.toUpperCase()} // DEFCON 1 PROTOCOL`,
-      badge: `TIER ${tierNum}: ${tierNum === 1 ? 'SOFT' : tierNum === 2 ? 'MEDIUM' : 'NUCLEAR'} LOCKDOWN`,
-      badgeColor: '#ff2a4b',
-      iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-      fallbackInitial: guild.name[0] || 'L',
-      current: modifiedCount,
-      total: Math.max(1, modifiedChannels.length),
-      unit: 'CHANNELS SECURED',
-      accentColor: '#ff2a4b',
-      metrics: [
-        { label: 'CHANNELS', value: `${modifiedCount}/${modifiedChannels.length}`, pct: 1.0 },
-        { label: 'RAID SHIELD', value: tierNum >= 2 ? 'ARMED' : 'STANDBY', pct: tierNum >= 2 ? 1.0 : 0.5 },
-        { label: 'VERIFY', value: verifElevated ? 'PHONE REQ' : 'STANDARD', pct: 1.0 }
-      ],
-      attachmentName: 'lockdown_banner.gif',
-      animated: true
-    });
-  } catch (err) {}
-
   // Tactical Audio Dispatch
   const scriptKey = tierNum === 1 ? 'lockdown_tier1' : tierNum === 2 ? 'lockdown_tier2' : 'lockdown_tier3';
   const dispatchText = TACTICAL_DISPATCH_SCRIPTS[scriptKey];
@@ -3444,10 +3366,6 @@ export async function handlePanicLockdown(guild, moderator, tier = '1', updatePr
   const containerComp = {
     type: 17,
     components: [
-      ...(bannerAttachment ? [{
-        type: 12,
-        items: [{ media: { url: 'attachment://lockdown_banner.gif' } }]
-      }] : []),
       { type: 10, content: `# ${getRandomHeadingGlyph()} Emergency Panic Lockdown Engaged | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
@@ -3466,7 +3384,7 @@ export async function handlePanicLockdown(guild, moderator, tier = '1', updatePr
     ]
   };
 
-  const filesToSend = [bannerAttachment, audioAttachment].filter(Boolean);
+  const filesToSend = [audioAttachment].filter(Boolean);
 
   return {
     components: [containerComp, actionRow],
@@ -3549,29 +3467,6 @@ export async function handleUnlockdown(guild, moderator, updateProgress) {
     'success'
   ));
 
-  let bannerAttachment = null;
-  try {
-    bannerAttachment = await generateCommandStatusBanner({
-      title: 'SERVER LOCKDOWN LIFTED',
-      subtitle: `${guild.name.toUpperCase()} // NORMAL OPERATIONS`,
-      badge: 'ALL PERMISSIONS RESTORED',
-      badgeColor: '#00f0ff',
-      iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-      fallbackInitial: guild.name[0] || 'S',
-      current: restoredCount,
-      total: Math.max(1, snapshot.channels.length),
-      unit: 'CHANNELS RESTORED',
-      accentColor: '#00f0ff',
-      metrics: [
-        { label: 'RESTORED', value: `${restoredCount}/${snapshot.channels.length}`, pct: 1.0 },
-        { label: 'DATABASE', value: 'SYNCHRONIZED', pct: 1.0 },
-        { label: 'DEFENSE', value: 'ARMED', pct: 1.0 }
-      ],
-      attachmentName: 'unlockdown_banner.gif',
-      animated: true
-    });
-  } catch (err) {}
-
   // Tactical Audio Dispatch
   const dispatchText = TACTICAL_DISPATCH_SCRIPTS.unlockdown;
   let audioAttachment = null;
@@ -3592,10 +3487,6 @@ export async function handleUnlockdown(guild, moderator, updateProgress) {
   const containerComp = {
     type: 17,
     components: [
-      ...(bannerAttachment ? [{
-        type: 12,
-        items: [{ media: { url: 'attachment://unlockdown_banner.gif' } }]
-      }] : []),
       { type: 10, content: `# ${getRandomHeadingGlyph()} Server Lockdown Lifted | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
@@ -3613,7 +3504,7 @@ export async function handleUnlockdown(guild, moderator, updateProgress) {
     ]
   };
 
-  const filesToSend = [bannerAttachment, audioAttachment].filter(Boolean);
+  const filesToSend = [audioAttachment].filter(Boolean);
 
   return {
     components: [containerComp, actionRow],
@@ -3637,35 +3528,11 @@ async function buildRaidModeStatusPanel(guild) {
 
   const currentLevel = raidModeActive ? 100 : (autoShieldActive ? 50 : 15);
 
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'SERVER RAID DEFENSE MATRIX',
-    subtitle: `${guild.name.toUpperCase()} // INTRUSION LOCKDOWN`,
-    badge: raidModeActive ? 'LOCKDOWN ENGAGED' : autoShieldActive ? 'AUTO-SHIELD ARMED' : 'STANDBY',
-    badgeColor: raidModeActive ? '#ef4444' : autoShieldActive ? '#00f0ff' : '#888888',
-    iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-    fallbackInitial: guild.name[0] || 'R',
-    current: currentLevel,
-    total: 100,
-    unit: 'ARMOR LVL',
-    accentColor: raidModeActive ? '#ef4444' : autoShieldActive ? (config?.accentColor || '#00f0ff') : (config?.accentColor || '#00ff88'),
-    metrics: [
-      { label: 'BURST', value: `${threshold}/${windowSec}s` },
-      { label: 'AUTO-SHIELD', value: autoShieldActive ? 'ON' : 'OFF' },
-      { label: 'QUARANTINE', value: `${quarantinedCount} ISOLATED` }
-    ],
-    attachmentName: 'raid_banner.gif',
-    animated: true
-  });
-
   return {
     components: [
       {
         type: 17,
         components: [
-          {
-            type: 12,
-            items: [{ media: { url: 'attachment://raid_banner.gif' } }]
-          },
           { type: 10, content: `# ${getRandomHeadingGlyph()} Server Raid Defense Matrix | <a:03_tick_circle:1565665642084827206>` },
           { type: 14, divider: true },
           {
@@ -3691,7 +3558,6 @@ async function buildRaidModeStatusPanel(guild) {
         ]
       }
     ],
-    files: [bannerAttachment],
     flags: MessageFlags.IsComponentsV2
   };
 }
@@ -4063,26 +3929,6 @@ export async function getSecurityHealthPanel(guild) {
     badgeColor = '#00f0ff';
   }
 
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'SECURITY DIAGNOSTICS & HEALTH',
-    subtitle: `${guild.name.toUpperCase()} // AUDIT INTEGRITY`,
-    badge: healthGrade,
-    badgeColor: badgeColor,
-    iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-    fallbackInitial: guild.name[0] || 'H',
-    current: totalHealthScore,
-    total: 100,
-    unit: 'HEALTH SCORE',
-    accentColor: totalHealthScore >= 80 ? (config?.accentColor || '#00ff88') : totalHealthScore >= 50 ? '#f97316' : '#ef4444',
-    metrics: [
-      { label: 'HEALTH', value: `${totalHealthScore}%` },
-      { label: 'LATENCY', value: `${socketLatencyMs}ms` },
-      { label: 'PERMS', value: `${requiredPerms.length - missingPerms.length}/${requiredPerms.length}` }
-    ],
-    attachmentName: 'health_banner.gif',
-    animated: true
-  });
-
   const healthActionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('sec_health_rescan').setLabel('Rescan Diagnostics').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('sec_fix_vectors').setLabel('1-Click Auto-Fix').setStyle(ButtonStyle.Success),
@@ -4094,10 +3940,6 @@ export async function getSecurityHealthPanel(guild) {
       {
         type: 17,
         components: [
-          {
-            type: 12,
-            items: [{ media: { url: 'attachment://health_banner.gif' } }]
-          },
           { type: 10, content: `# ${getRandomHeadingGlyph()} Security Diagnostics & Hierarchy Health | <a:03_tick_circle:1565665642084827206>` },
           { type: 14, divider: true },
           {
@@ -4129,7 +3971,6 @@ export async function getSecurityHealthPanel(guild) {
         ]
       }
     ],
-    files: [bannerAttachment],
     flags: MessageFlags.IsComponentsV2
   };
 }
@@ -4199,27 +4040,6 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
     targetAvatarUrl = guild.iconURL({ extension: 'png', size: 256, forceStatic: true });
   }
 
-  const wlAccessAccent = config?.accentColor || '#00f0ff';
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'WHITELIST ACCESS CLEARANCE',
-    subtitle: `${targetName.toUpperCase()} // PERMISSION MATRIX`,
-    badge: enabledCount === modulesKeys.length ? 'ALL AUTHORIZED' : `${enabledCount}/${modulesKeys.length} CATEGORIES`,
-    badgeColor: enabledCount > 0 ? wlAccessAccent : '#ef4444',
-    iconUrl: targetAvatarUrl,
-    fallbackInitial: targetName[0] || 'U',
-    current: enabledCount,
-    total: modulesKeys.length,
-    unit: 'PERMISSIONS',
-    accentColor: wlAccessAccent,
-    metrics: [
-      { label: 'CATEGORIES', value: `${enabledCount}/${modulesKeys.length}` },
-      { label: 'ACTION LIMIT', value: String(wData.triggerLimit || 0) },
-      { label: 'STATUS', value: 'GUARDED' }
-    ],
-    attachmentName: 'wl_access.gif',
-    animated: true
-  });
-
   const limitText = wData.triggerLimit === 0 ? '0' : wData.triggerLimit;
   
   const description = 
@@ -4232,11 +4052,6 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
   const panelContainer = {
     type: 17,
     components: [
-      {
-        type: 12,
-        items: [{ media: { url: 'attachment://wl_access.gif' } }]
-      },
-      { type: 14, divider: true },
       { type: 10, content: description }
     ]
   };
@@ -4303,7 +4118,7 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
     );
   }
 
-  return { components: [panelContainer], files: [bannerAttachment], flags: MessageFlags.IsComponentsV2 };
+  return { components: [panelContainer], flags: MessageFlags.IsComponentsV2 };
 }
 
 export async function getWhitelistOverviewPanel(guild) {
@@ -4334,27 +4149,7 @@ export async function getWhitelistOverviewPanel(guild) {
     `${rolesText}`;
 
   const config = db.getGuildConfig(guild.id);
-  const serverAccent = config?.accentColor || '#00f0ff';
   const iconUrl = guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null;
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'WHITELIST DEFENSE MATRIX',
-    subtitle: `${guild.name.toUpperCase()} // SECURITY LEVEL`,
-    badge: totalWl > 0 ? `LEVEL ${Math.min(5, Math.ceil(totalWl / 5))}: MAXIMUM ARMOR` : 'LEVEL 0: NONE',
-    badgeColor: totalWl > 0 ? serverAccent : '#888888',
-    iconUrl,
-    fallbackInitial: guild.name[0] || 'W',
-    current: totalWl,
-    total: 25,
-    unit: 'ENTITIES',
-    accentColor: serverAccent,
-    metrics: [
-      { label: 'USERS', value: String(userIds.length) },
-      { label: 'ROLES', value: String(roleIds.length) },
-      { label: 'ANTINUKE', value: 'GUARDED' }
-    ],
-    attachmentName: 'wl_banner.gif',
-    animated: true
-  });
 
   const headerSection = {
     type: 9,
@@ -4367,11 +4162,6 @@ export async function getWhitelistOverviewPanel(guild) {
   const card = {
     type: 17,
     components: [
-      {
-        type: 12,
-        items: [{ media: { url: 'attachment://wl_banner.gif' } }]
-      },
-      { type: 14, divider: true },
       headerSection,
       { type: 14, divider: true },
       { type: 1, components: [
@@ -4390,7 +4180,7 @@ export async function getWhitelistOverviewPanel(guild) {
     ]
   };
 
-  return { components: [card.toJSON ? card.toJSON() : card], files: [bannerAttachment], flags: MessageFlags.IsComponentsV2 };
+  return { components: [card.toJSON ? card.toJSON() : card], flags: MessageFlags.IsComponentsV2 };
 }
 
 export async function getWhitelistSelectPanel(guild, type, action) {
@@ -5443,27 +5233,6 @@ export async function getSecurityStatusPanel(guild) {
   const memberProgress = renderSleekProgressBar(guild.memberCount || 0, 200, 12);
   const rolePosProgress = renderSleekProgressBar(botPos, Math.max(botPos, maxPos), 12);
 
-  const secAccent = isSecured ? (config?.accentColor || '#00ff88') : '#ef4444';
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'FIREWALL DEFENSE STATUS',
-    subtitle: `${guild.name.toUpperCase()} // ANTINUKE ARMOR`,
-    badge: isSecured ? 'GOD-TIER FIREWALL ACTIVE' : 'OFFLINE // STANDBY',
-    badgeColor: isSecured ? secAccent : '#ef4444',
-    iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }),
-    fallbackInitial: guild.name[0] || 'S',
-    current: activeModulesCount,
-    total: totalModules,
-    unit: 'SHIELDS ARMED',
-    accentColor: secAccent,
-    metrics: [
-      { label: 'SHIELDS', value: `${activeModulesCount}/${totalModules}` },
-      { label: 'MEMBERS', value: `${guild.memberCount || 0}/200` },
-      { label: 'THREATS', value: `${liveRecords.length} BLOCKED` }
-    ],
-    attachmentName: 'sec_status.gif',
-    animated: true
-  });
-
   const headerSection = { type: 10, content: `# ${getRandomHeadingGlyph()} Security Firewall Status | <a:03_tick_circle:1565665642084827206>\n` +
       "-# Global Status: " + (isSecured ? "**God-Tier Firewall ACTIVE**" : "Offline \u2014 Unprotected") + "\n" +
       "-# " + BULLET_EMOJI + " **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
@@ -5514,11 +5283,6 @@ export async function getSecurityStatusPanel(guild) {
     const container = {
     type: 17,
     components: [
-      {
-        type: 12,
-        items: [{ media: { url: 'attachment://sec_status.gif' } }]
-      },
-      { type: 14, divider: true },
       headerSection,
       { type: 14, divider: true },
       detailsSection,
@@ -5533,7 +5297,7 @@ export async function getSecurityStatusPanel(guild) {
     ]
   };
 
-  return { components: [container], files: [bannerAttachment], flags: MessageFlags.IsComponentsV2 };
+  return { components: [container], flags: MessageFlags.IsComponentsV2 };
 }
 
 export async function getSecurityLiveRecordsPanel(guild, page = 0) {
@@ -5813,34 +5577,9 @@ async function handleQrManager(guild, moderator, action, roleArg, channelArg) {
 
     const configuredCount = [category, role, channel, vc].filter(Boolean).length;
 
-    const qrAccent = configuredCount === 4 ? (updatedConfig?.accentColor || '#00ff88') : configuredCount > 0 ? '#f97316' : '#ef4444';
-    const bannerAttachment = await generateCommandStatusBanner({
-      title: 'QUARANTINE ENFORCEMENT HUD',
-      subtitle: `${guild.name.toUpperCase()} // CONTAINMENT PROTOCOL`,
-      badge: configuredCount === 4 ? 'SYSTEM: FULLY ARMED' : configuredCount > 0 ? 'PARTIAL SETUP' : 'SYSTEM UNBOUND',
-      badgeColor: configuredCount === 4 ? qrAccent : '#ef4444',
-      iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-      fallbackInitial: guild.name[0] || 'Q',
-      current: configuredCount,
-      total: 4,
-      unit: 'COMPONENTS BOUND',
-      accentColor: qrAccent,
-      metrics: [
-        { label: 'ROLE', value: role ? 'BOUND' : 'MISSING' },
-        { label: 'CATEGORY', value: category ? 'BOUND' : 'MISSING' },
-        { label: 'STATUS', value: configuredCount === 4 ? 'ARMED' : 'INCOMPLETE' }
-      ],
-      attachmentName: 'qr_banner.gif',
-      animated: true
-    });
-
     const statusContainer = {
       type: 17,
       components: [
-        {
-          type: 12,
-          items: [{ media: { url: 'attachment://qr_banner.gif' } }]
-        },
         { type: 10, content: `# ${getRandomHeadingGlyph()} Quarantine System Status | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
@@ -5864,7 +5603,6 @@ async function handleQrManager(guild, moderator, action, roleArg, channelArg) {
 
     return {
       components: [statusContainer],
-      files: [bannerAttachment],
       flags: MessageFlags.IsComponentsV2
     };
   }
@@ -6568,34 +6306,7 @@ const allMembers = guild.members.cache;
   const botAuditProgress = renderSleekProgressBar(safeBotsCount, totalBotsCount, 14);
   const isOptimal = (unauthorizedBots.length === 0 && highRiskHumans.length === 0 && onboardingDangerousRoles.length === 0);
 
-  const scanConfig = db.getGuildConfig(guild.id);
-  const scanAccent = isOptimal ? (scanConfig?.accentColor || '#00ff88') : '#f97316';
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'SERVER THREAT AUDIT HUD',
-    subtitle: `${guild.name.toUpperCase()} // BOT & PERM SCAN`,
-    badge: isOptimal ? 'SYSTEM: OPTIMAL' : 'THREATS DETECTED',
-    badgeColor: isOptimal ? scanAccent : '#ef4444',
-    iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-    fallbackInitial: guild.name[0] || 'S',
-    current: safeBotsCount,
-    total: totalBotsCount,
-    unit: 'BOTS VERIFIED',
-    accentColor: scanAccent,
-    metrics: [
-      { label: 'SAFE BOTS', value: `${safeBotsCount}/${allBots.size}` },
-      { label: 'RISK USERS', value: String(highRiskHumans.length) },
-      { label: 'EXPLOITS', value: String(onboardingDangerousRoles.length + dangerousInviteLinks.length) }
-    ],
-    attachmentName: 'scan_banner.gif',
-    animated: true
-  });
-
   const cv2Components = [];
-  cv2Components.push({
-    type: 12,
-    items: [{ media: { url: 'attachment://scan_banner.gif' } }]
-  });
-  cv2Components.push({ type: 14, divider: true });
   cv2Components.push({ type: 10, content: `# ${getRandomHeadingGlyph()} **SERVER SECURITY SCANNER**` });
   cv2Components.push({ type: 14, divider: true });
   
@@ -6730,7 +6441,7 @@ const allMembers = guild.members.cache;
     cv2Components.push(...actionRows.map(r => r.toJSON ? r.toJSON() : r));
   }
 
-  return { components: [container], files: [bannerAttachment], flags: MessageFlags.IsComponentsV2 };
+  return { components: [container], flags: MessageFlags.IsComponentsV2 };
 }
 
 export async function handleAutoModBypass(guild, action, role) {
@@ -6817,33 +6528,8 @@ export async function getAutoModPanel(guild) {
   const automodProgress = renderSleekProgressBar(activeFilters, 10, 14);
 
   const automodAccent = config?.accentColor || (activeFilters >= 8 ? '#00f0ff' : '#a855f7');
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'AUTOMOD HEURISTIC MATRIX',
-    subtitle: `${guild.name.toUpperCase()} // FILTER INTEGRITY`,
-    badge: activeFilters >= 8 ? 'STATUS: FORTIFIED' : activeFilters >= 4 ? 'STATUS: ACTIVE' : 'STATUS: VULNERABLE',
-    badgeColor: activeFilters >= 8 ? automodAccent : activeFilters >= 4 ? '#eab308' : '#ef4444',
-    iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-    fallbackInitial: guild.name[0] || 'A',
-    current: activeFilters,
-    total: 10,
-    unit: 'FILTERS ARMED',
-    accentColor: automodAccent,
-    metrics: [
-      { label: 'ACTIVE', value: `${activeFilters}/10` },
-      { label: 'BYPASSES', value: String(Object.keys(bypasses).length) },
-      { label: 'HONEYPOT', value: `${honeypotTimeout}m` }
-    ],
-    attachmentName: 'automod_banner.gif',
-    animated: true
-  });
 
   const panelContainer = new ContainerBuilder();
-
-  panelContainer.addMediaGalleryComponents(
-    new MediaGalleryBuilder().addItems({ media: { url: 'attachment://automod_banner.gif' } })
-  );
-
-  panelContainer.addSeparatorComponents(new SeparatorBuilder().setDivider(true));
 
   panelContainer.addTextDisplayComponents(new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} AUTOMOD | HEURISTIC FILTERING & SECURITY MATRIX\n` +
     `**Athena Unbypassable !**\n\n` +
@@ -6942,7 +6628,7 @@ export async function getAutoModPanel(guild) {
   );
 
   panelContainer.addActionRowComponents(row1, row2, row3, row4, row5);
-  return { components: [panelContainer.toJSON ? panelContainer.toJSON() : panelContainer], files: [bannerAttachment], flags: MessageFlags.IsComponentsV2 };
+  return { components: [panelContainer.toJSON ? panelContainer.toJSON() : panelContainer], flags: MessageFlags.IsComponentsV2 };
 }
 
 export async function getGranularBypassPanel(guild, roleId) {

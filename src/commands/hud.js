@@ -2,7 +2,6 @@ import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJ
 import { PermissionFlagsBits, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import db from '../database.js';
 import os from 'os';
-import { generateCommandStatusBanner } from '../utils/canvasCards.js';
 import { cleanDisplayName } from '../utils/helpers.js';
 
 export const commands = [
@@ -53,25 +52,6 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
       await guild.members.fetch().catch(() => null);
     }
     const boostLevel = guild.premiumTier || 0;
-    const bannerAttachment = await generateCommandStatusBanner({
-      title: cleanDisplayName(guild.name).toUpperCase(),
-      subtitle: `${guild.id} // COMMAND CENTER`,
-      badge: boostLevel > 0 ? `BOOST LEVEL ${boostLevel}` : 'ACTIVE DEFENSE',
-      badgeColor: boostLevel > 0 ? '#ff73fa' : '#00f0ff',
-      iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-      fallbackInitial: guild.name[0] || 'S',
-      current: guild.memberCount,
-      total: Math.max(100, Math.ceil(guild.memberCount / 100) * 100),
-      unit: 'MEMBERS',
-      accentColor: accentColor,
-      metrics: [
-        { label: 'MEMBERS', value: `${guild.memberCount}` },
-        { label: 'ROLES', value: `${guild.roles.cache.size}` },
-        { label: 'CHANNELS', value: `${guild.channels.cache.size}` }
-      ],
-      attachmentName: 'warroom_server.gif',
-      animated: true
-    }).catch(() => null);
 
     const actionRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('hud_mode_telemetry').setLabel('Core Telemetry').setStyle(ButtonStyle.Secondary),
@@ -83,7 +63,6 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
     const container = {
       type: 17,
       components: [
-        ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://warroom_server.gif' } }] }] : []),
         { type: 10, content: `# ${getRandomHeadingGlyph()} **${cleanDisplayName(guild.name)} // War-Room Dashboard** | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
@@ -102,7 +81,7 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
 
     return {
       components: [container, actionRow],
-      files: bannerAttachment ? [bannerAttachment] : [],
+      files: [],
       flags: MessageFlags.IsComponentsV2
     };
   }
@@ -112,26 +91,6 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
     const raidActive = Boolean(config?.raidMode);
     const isEmergency = Boolean(db.getEmergencyState(guild.id));
     const isAlert = Boolean(lockdown || raidActive || isEmergency);
-
-    const bannerAttachment = await generateCommandStatusBanner({
-      title: isAlert ? 'DEFCON 1: SERVER THREAT DETECTED' : 'DEFCON 5: ALL SYSTEMS NORMAL',
-      subtitle: `${guild.name.toUpperCase()} // DEFENSE MATRIX`,
-      badge: isEmergency ? 'BLACKOUT EMERGENCY' : lockdown ? (lockdown.tierLabel || 'LOCKDOWN ACTIVE') : raidActive ? 'RAID MODE ACTIVE' : 'PEACETIME GUARDED',
-      badgeColor: isAlert ? '#ff2a4b' : '#00f0ff',
-      iconUrl: guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-      fallbackInitial: guild.name[0] || 'D',
-      current: isAlert ? 100 : 25,
-      total: 100,
-      unit: 'THREAT LVL',
-      accentColor: isAlert ? '#ff2a4b' : '#00f0ff',
-      metrics: [
-        { label: 'LOCKDOWN', value: lockdown ? 'ACTIVE' : 'STANDBY' },
-        { label: 'RAID SHIELD', value: raidActive ? 'ARMED' : 'ONLINE' },
-        { label: 'VERIFICATION', value: guild.verificationLevel >= 4 ? 'PHONE REQ' : 'NORMAL' }
-      ],
-      attachmentName: 'warroom_defcon.gif',
-      animated: true
-    }).catch(() => null);
 
     const actionRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId('hud_mode_telemetry').setLabel('Core Telemetry').setStyle(ButtonStyle.Secondary),
@@ -143,7 +102,6 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
     const container = {
       type: 17,
       components: [
-        ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://warroom_defcon.gif' } }] }] : []),
         { type: 10, content: `# ${getRandomHeadingGlyph()} **DEFCON Defense Matrix Status** | <a:03_tick_circle:1565665642084827206>` },
         { type: 14, divider: true },
         {
@@ -161,7 +119,7 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
 
     return {
       components: [container, actionRow],
-      files: bannerAttachment ? [bannerAttachment] : [],
+      files: [],
       flags: MessageFlags.IsComponentsV2
     };
   }
@@ -177,26 +135,6 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
   const totalMemMB = Math.round(os.totalmem() / 1024 / 1024);
   const totalServers = client.guilds.cache.size;
 
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'ATHENA PRIME CORE TELEMETRY',
-    subtitle: `${client.user.username.toUpperCase()} // SYSTEM HEALTH & CLUSTERS`,
-    badge: 'ONLINE // ALL SYSTEMS NOMINAL',
-    badgeColor: '#00ff88',
-    iconUrl: client.user.displayAvatarURL({ extension: 'png', size: 256, forceStatic: true }) || null,
-    fallbackInitial: 'A',
-    current: heapMB,
-    total: Math.max(500, Math.round(totalMemMB / 4)),
-    unit: 'MB HEAP',
-    accentColor: accentColor,
-    metrics: [
-      { label: 'SERVERS', value: `${totalServers}` },
-      { label: 'PING', value: `${client.ws.ping}MS` },
-      { label: 'UPTIME', value: `${d}D ${h}H` }
-    ],
-    attachmentName: 'warroom_telemetry.gif',
-    animated: true
-  }).catch(() => null);
-
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('hud_mode_telemetry').setLabel('Core Telemetry').setStyle(ButtonStyle.Primary).setDisabled(true),
     new ButtonBuilder().setCustomId('hud_mode_server').setLabel('Server Dashboard').setStyle(ButtonStyle.Secondary),
@@ -207,7 +145,6 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
   const container = {
     type: 17,
     components: [
-      ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://warroom_telemetry.gif' } }] }] : []),
       { type: 10, content: `# ${getRandomHeadingGlyph()} **Athena Prime Core Telemetry** | <a:03_tick_circle:1565665642084827206>` },
       { type: 14, divider: true },
       {
@@ -226,7 +163,7 @@ export async function buildHudResponse(guild, client, mode = 'telemetry', reques
 
   return {
     components: [container, actionRow],
-    files: bannerAttachment ? [bannerAttachment] : [],
+    files: [],
     flags: MessageFlags.IsComponentsV2
   };
 }

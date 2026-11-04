@@ -2,7 +2,6 @@ import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJ
 import { PermissionFlagsBits, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import db from '../database.js';
 import os from 'os';
-import { generateCommandStatusBanner } from '../utils/canvasCards.js';
 import { cleanDisplayName } from '../utils/helpers.js';
 
 export const commands = [
@@ -123,26 +122,6 @@ export async function buildDashboardResponse(guild, client, requester = null) {
 
   const badgeColor = isAlert ? '#ff2a4b' : '#00ff88';
 
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'ATHENA PRIME // COMMAND CENTER',
-    subtitle: `${guild ? cleanDisplayName(guild.name).toUpperCase() : 'SYSTEM CLUSTERS'} // UNIFIED OMNI MATRIX`,
-    badge: badgeText,
-    badgeColor: badgeColor,
-    iconUrl: (guild?.iconURL({ extension: 'png', size: 256, forceStatic: true })) || (client.user.displayAvatarURL({ extension: 'png', size: 256, forceStatic: true })),
-    fallbackInitial: guild?.name[0] || 'A',
-    current: isAlert ? 100 : heapMB,
-    total: isAlert ? 100 : Math.max(500, Math.round(totalMemMB / 4)),
-    unit: isAlert ? 'THREAT LVL' : 'MB HEAP',
-    accentColor: isAlert ? '#ff2a4b' : accentColor,
-    metrics: [
-      { label: 'MEMBERS', value: guild ? `${guild.memberCount}` : `${totalGuilds} GUILDS` },
-      { label: 'PING', value: `${client.ws.ping}MS` },
-      { label: 'DEFENSE', value: isAlert ? 'DEFCON 1' : 'DEFCON 5' }
-    ],
-    attachmentName: 'command_center.gif',
-    animated: true
-  }).catch(() => null);
-
   // 5. Construct Interactive ActionRow (5 Buttons Max)
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('dash_refresh').setLabel('Refresh Matrix').setStyle(ButtonStyle.Secondary),
@@ -177,7 +156,6 @@ export async function buildDashboardResponse(guild, client, requester = null) {
 
   // 6. Build Discord Components V2 Container
   const containerComponents = [
-    ...(bannerAttachment ? [{ type: 12, items: [{ media: { url: 'attachment://command_center.gif' } }] }] : []),
     { type: 10, content: `# ${getRandomHeadingGlyph()} Athena Prime Unified Command Center | <a:03_tick_circle:1565665642084827206>` },
     { type: 14, divider: true },
     {
@@ -236,7 +214,7 @@ export async function buildDashboardResponse(guild, client, requester = null) {
 
   return {
     components: finalComponents,
-    files: bannerAttachment ? [bannerAttachment] : [],
+    files: [],
     flags: MessageFlags.IsComponentsV2
   };
 }

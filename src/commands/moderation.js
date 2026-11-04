@@ -5,7 +5,6 @@ import cv2 from '../cv2.js';
 import { parseDuration, canModerate, logToSecurityChannel, isBotOwnerSync, isExtraOwner, getUserTierName, cleanDisplayName, renderSleekProgressBar, sendGuildMemberDM } from '../utils/helpers.js';
 import { executeQuarantine } from './security.js';
 import { logServerEvent } from '../utils/serverLogger.js'; // We will implement security.js next
-import { generateCommandStatusBanner } from '../utils/canvasCards.js';
 
 export const commands = [
   // --- MUTEALL COMMAND ---
@@ -1782,26 +1781,6 @@ async function handleWarnings(guild, target) {
   const initial = (target.user?.username || target.username || 'W')[0] || 'W';
   const warnProgress = renderSleekProgressBar(warns.length, maxWarnings, 14);
 
-  const bannerAttachment = await generateCommandStatusBanner({
-    title: 'INFRACTION TRACKER HUD',
-    subtitle: `${targetTag.toUpperCase()} // WARNING STRIKES`,
-    badge: warns.length >= maxWarnings ? 'LIMIT EXCEEDED' : warns.length > 0 ? `${warns.length}/${maxWarnings} STRIKES` : '0 STRIKES : PRISTINE',
-    badgeColor: warns.length >= maxWarnings ? '#ef4444' : warns.length > 0 ? '#eab308' : '#22c55e',
-    iconUrl: targetAvatarUrl,
-    fallbackInitial: initial,
-    current: warns.length,
-    total: maxWarnings,
-    unit: 'STRIKES RECORDED',
-    accentColor: warns.length >= maxWarnings ? '#ef4444' : warns.length > 0 ? '#f97316' : '#22c55e',
-    metrics: [
-      { label: 'WARNINGS', value: `${warns.length}/${maxWarnings}` },
-      { label: 'STATUS', value: warns.length >= maxWarnings ? 'PUNISHABLE' : warns.length > 0 ? 'ACTIVE' : 'CLEAN' },
-      { label: 'ESCALATION', value: config.warnAction || 'QUARANTINE' }
-    ],
-    attachmentName: 'warn_banner.gif',
-    animated: true
-  });
-
   let warnDetails = '';
   if (warns.length === 0) {
     warnDetails = `-# ${BULLET_EMOJI} **Member has a clean disciplinary record with zero active warnings.**`;
@@ -1818,11 +1797,6 @@ async function handleWarnings(guild, target) {
   const container = {
     type: 17,
     components: [
-      {
-        type: 12,
-        items: [{ media: { url: 'attachment://warn_banner.gif' } }]
-      },
-      { type: 14, divider: true },
       {
         type: 10,
         content: `# ${getRandomHeadingGlyph()} INFRACTION AUDIT: ${targetTag}\n` +
@@ -1846,7 +1820,6 @@ async function handleWarnings(guild, target) {
 
   return {
     components: [container],
-    files: [bannerAttachment],
     flags: MessageFlags.IsComponentsV2
   };
 }
