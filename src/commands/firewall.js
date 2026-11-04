@@ -72,10 +72,11 @@ async function handleUnbypassable(context, isSlash, args = []) {
       return await context.reply(idlePayload).catch(() => null);
     }
 
-    if (guild.members.me?.permissions.has(PermissionFlagsBits.ManageRoles)) {
+    const botMe = guild.members.me || (guild.members.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id ? await guild.members.fetch(guild.client.user.id).catch(() => null) : null);
+    if (botMe?.permissions.has(PermissionFlagsBits.ManageRoles)) {
       try {
         const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-        await ensureUnbypassableRole(guild);
+        await ensureUnbypassableRole(guild, { force: true });
       } catch {}
     }
   }

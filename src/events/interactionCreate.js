@@ -3270,6 +3270,9 @@ async function handleSecurityInteractions(interaction, guild) {
               }
             }
 
+            // Acknowledge interaction immediately so Discord API's 3-second token limit does not expire during role creation
+            await interaction.deferUpdate().catch(() => null);
+
             updateData.securityEnabled = true;
             updateData.antiNukeEnabled = true;
             updateData.antiNukePunishment = config.antiNukePunishment || 'ban';
@@ -3287,17 +3290,23 @@ async function handleSecurityInteractions(interaction, guild) {
             db.updateGuildConfig(guild.id, updateData);
 
             const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-            const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+            const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(err => {
+              console.error('[toggle_antinuke] ensureUnbypassableRole error:', err);
+              return null;
+            });
             if (roleRes) {
-              updateData.firewallRoleId = roleRes.firewallRole.id;
-              updateData.unbypassableRoleId = roleRes.unbypassableRole.id;
-              updateData.athenFirewallRoleId = roleRes.firewallRole.id;
-              updateData.athenaUnbypassableRoleId = roleRes.unbypassableRole.id;
+              updateData.firewallRoleId = roleRes.firewallRole?.id || null;
+              updateData.unbypassableRoleId = roleRes.unbypassableRole?.id || null;
+              updateData.athenFirewallRoleId = roleRes.firewallRole?.id || null;
+              updateData.athenaUnbypassableRoleId = roleRes.unbypassableRole?.id || null;
+              db.updateGuildConfig(guild.id, updateData);
             }
 
             const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
             snapshotGuildInfrastructure(guild);
           } else {
+            await interaction.deferUpdate().catch(() => null);
+
             const { removePersistenceRoles } = await import('../utils/antiStrip.js');
             await removePersistenceRoles(guild).catch(() => null);
 
@@ -3347,7 +3356,11 @@ async function handleSecurityInteractions(interaction, guild) {
         if (customId === 'sec_status_back' || customId === 'sec_status_view') {
            await interaction.deferUpdate().catch(() => null);
            const sec = await import('../commands/security.js');
-           return interaction.update(await sec.getSecurityStatusPanel(guild));
+           const panel = await sec.getSecurityStatusPanel(guild);
+           if (interaction.deferred || interaction.replied) {
+             return interaction.editReply(panel);
+           }
+           return interaction.update(panel);
         }
         if (customId === 'antinuke_config') {
            const sec = await import('../commands/security.js');
@@ -3361,7 +3374,11 @@ async function handleSecurityInteractions(interaction, guild) {
           const db = (await import('../database.js')).default;
           db.updateGuildConfig(guild.id, updateData);
           const sec = await import('../commands/security.js');
-          return interaction.update(await sec.getAntinukeConfigPanel(guild));
+          const panel = await sec.getAntinukeConfigPanel(guild);
+          if (interaction.deferred || interaction.replied) {
+            return await interaction.editReply(panel).catch(() => null);
+          }
+          return await interaction.update(panel).catch(() => null);
         }
       } catch (e) { console.error(e); }
     }

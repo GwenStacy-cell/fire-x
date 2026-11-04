@@ -4634,7 +4634,14 @@ async function handleConfig(guild, moderator, setting, value) {
       db.updateGuildConfig(guild.id, updates);
 
       const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-      await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+      const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+      if (roleRes) {
+        updates.firewallRoleId = roleRes.firewallRole?.id || null;
+        updates.unbypassableRoleId = roleRes.unbypassableRole?.id || null;
+        updates.athenFirewallRoleId = roleRes.firewallRole?.id || null;
+        updates.athenaUnbypassableRoleId = roleRes.unbypassableRole?.id || null;
+        db.updateGuildConfig(guild.id, updates);
+      }
       const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
       snapshotGuildInfrastructure(guild);
       setupDashboardChannel(guild, guild.client);
@@ -4814,7 +4821,15 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
   if (enable) {
     db.updateGuildConfig(guild.id, updates);
     const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-    await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+    const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+    if (roleRes) {
+      db.updateGuildConfig(guild.id, {
+        firewallRoleId: roleRes.firewallRole?.id || null,
+        unbypassableRoleId: roleRes.unbypassableRole?.id || null,
+        athenFirewallRoleId: roleRes.firewallRole?.id || null,
+        athenaUnbypassableRoleId: roleRes.unbypassableRole?.id || null
+      });
+    }
     const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
     snapshotGuildInfrastructure(guild);
   } else {
