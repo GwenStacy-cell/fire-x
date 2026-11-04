@@ -178,7 +178,7 @@ export default {
       // Unbypassable Role & Idle Mode Cleanup
       const cfg = db.getGuildConfig(guild.id);
       if (cfg && cfg.securityEnabled && cfg.antiNukeEnabled) {
-        ensureUnbypassableRole(guild).catch(() => null);
+        ensureUnbypassableRole(guild, { force: true }).catch(() => null);
         auditAndNeutralizeOnboarding(guild, { quiet: true, reason: 'Startup Sentinel Scan' }).catch(() => null);
       } else {
         // IDLE MODE: When security / antinuke is not enabled, bot must NOT keep persistence roles

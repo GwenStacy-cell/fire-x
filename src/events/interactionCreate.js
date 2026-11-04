@@ -3270,8 +3270,29 @@ async function handleSecurityInteractions(interaction, guild) {
               }
             }
 
+            const hasManageRoles = botMember?.permissions?.has(PermissionFlagsBits.ManageRoles) || botMember?.permissions?.has(PermissionFlagsBits.Administrator);
+            if (!hasManageRoles) {
+              return interaction.reply({
+                content: `-# <a:04_cross_circle:1565665644806934639> **Permission Denied:** Athena Prime lacks the **Manage Roles** permission required to create and bind defense sentinels.\n-# Please grant **Administrator** or **Manage Roles** to Athena Prime in Server Settings > Roles.`,
+                flags: MessageFlags.Ephemeral
+              });
+            }
+
             // Acknowledge interaction immediately so Discord API's 3-second token limit does not expire during role creation
             await interaction.deferUpdate().catch(() => null);
+
+            const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+            const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(err => {
+              console.error('[toggle_antinuke] ensureUnbypassableRole error:', err);
+              return null;
+            });
+
+            if (!roleRes || (!roleRes.unbypassableRole && !roleRes.firewallRole)) {
+              return interaction.followUp({
+                content: `-# <a:04_cross_circle:1565665644806934639> **Sentinel Generation Failed:** Could not create or bind the Anti-Nuke sentinel roles. Please ensure Athena Prime has **Manage Roles** permission and is positioned properly in Server Settings > Roles.`,
+                flags: MessageFlags.Ephemeral
+              }).catch(() => null);
+            }
 
             updateData.securityEnabled = true;
             updateData.antiNukeEnabled = true;
@@ -3286,21 +3307,12 @@ async function handleSecurityInteractions(interaction, guild) {
             for (const k of allKeys) {
               updateData.antinukeModules[k] = true;
             }
+            updateData.firewallRoleId = roleRes.firewallRole?.id || null;
+            updateData.unbypassableRoleId = roleRes.unbypassableRole?.id || null;
+            updateData.athenFirewallRoleId = roleRes.firewallRole?.id || null;
+            updateData.athenaUnbypassableRoleId = roleRes.unbypassableRole?.id || null;
 
             db.updateGuildConfig(guild.id, updateData);
-
-            const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-            const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(err => {
-              console.error('[toggle_antinuke] ensureUnbypassableRole error:', err);
-              return null;
-            });
-            if (roleRes) {
-              updateData.firewallRoleId = roleRes.firewallRole?.id || null;
-              updateData.unbypassableRoleId = roleRes.unbypassableRole?.id || null;
-              updateData.athenFirewallRoleId = roleRes.firewallRole?.id || null;
-              updateData.athenaUnbypassableRoleId = roleRes.unbypassableRole?.id || null;
-              db.updateGuildConfig(guild.id, updateData);
-            }
 
             const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
             snapshotGuildInfrastructure(guild);

@@ -4623,6 +4623,17 @@ async function handleConfig(guild, moderator, setting, value) {
         return cv2.danger('Insufficient Role Hierarchy', `To guarantee uncompromised security enforcement, my highest role must be placed among the **Top 3 highest roles** in the server hierarchy.\n\n-# Currently, the highest role is position **${maxPos}**, but my highest role is only at position **${botPos}**.\n-# Please move my role higher in the server settings and try again.`);
       }
 
+      const hasManageRoles = botMember?.permissions?.has(PermissionFlagsBits.ManageRoles) || botMember?.permissions?.has(PermissionFlagsBits.Administrator);
+      if (!hasManageRoles) {
+        return cv2.danger('Missing Permissions | <a:04_cross_circle:1565665644806934639>', 'Athena Prime lacks the **Manage Roles** permission required to create and maintain persistence sentinels.\n\nPlease grant Administrator or Manage Roles in Server Settings > Roles.');
+      }
+
+      const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+      const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+      if (!roleRes || (!roleRes.unbypassableRole && !roleRes.firewallRole)) {
+        return cv2.danger('Sentinel Creation Failed | <a:04_cross_circle:1565665644806934639>', 'Failed to create or assign persistence roles to Athena. Please ensure Athena Prime has Manage Roles permission and is positioned properly in Server Settings.');
+      }
+
       updates.securityEnabled = true;
       updates.antiNukeEnabled = true;
       updates.botOwnerBypass = isBotOwner ? true : Boolean(config.botOwnerBypass);
@@ -4631,17 +4642,12 @@ async function handleConfig(guild, moderator, setting, value) {
       for (const k of allKeys) {
         updates.antinukeModules[k] = true;
       }
+      updates.firewallRoleId = roleRes.firewallRole?.id || null;
+      updates.unbypassableRoleId = roleRes.unbypassableRole?.id || null;
+      updates.athenFirewallRoleId = roleRes.firewallRole?.id || null;
+      updates.athenaUnbypassableRoleId = roleRes.unbypassableRole?.id || null;
       db.updateGuildConfig(guild.id, updates);
 
-      const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-      const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
-      if (roleRes) {
-        updates.firewallRoleId = roleRes.firewallRole?.id || null;
-        updates.unbypassableRoleId = roleRes.unbypassableRole?.id || null;
-        updates.athenFirewallRoleId = roleRes.firewallRole?.id || null;
-        updates.athenaUnbypassableRoleId = roleRes.unbypassableRole?.id || null;
-        db.updateGuildConfig(guild.id, updates);
-      }
       const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
       snapshotGuildInfrastructure(guild);
       setupDashboardChannel(guild, guild.client);
@@ -4685,10 +4691,10 @@ async function handleConfig(guild, moderator, setting, value) {
 }
 
 export async function getAntinukeConfigPanel(guild) {
-  const config = db.getGuildConfig(guild.id);
+  let config = db.getGuildConfig(guild.id);
 
   const maxPos = Math.max(...guild.roles.cache.map(r => r.position));
-  const botMember = guild.members.me || await guild.members.fetch(guild.client.user.id).catch(() => null);
+  let botMember = guild.members.me || (guild.members?.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id && guild.members?.fetch ? await guild.members.fetch(guild.client.user.id).catch(() => null) : null);
   const botPos = botMember?.roles?.highest?.position ?? 0;
   const meetsRoleHierarchy = botPos >= maxPos - 2;
   const meetsMemberCount = (guild.memberCount || 0) >= 200;
@@ -4697,6 +4703,28 @@ export async function getAntinukeConfigPanel(guild) {
 
   // Anti-Nuke firewall state is strictly derived from the database security flags
   const isSecured = Boolean(config.securityEnabled && config.antiNukeEnabled);
+
+  const hasManageRoles = botMember?.permissions?.has
+    ? (botMember.permissions.has(PermissionFlagsBits.ManageRoles) || botMember.permissions.has(PermissionFlagsBits.Administrator))
+    : true;
+
+  // Active Self-Healing: If Anti-Nuke is active, verify sentinels exist in Discord and are assigned to Athena
+  if (isSecured) {
+    const unbRole = config.unbypassableRoleId ? (guild.roles.cache.get(config.unbypassableRoleId) || await guild.roles.fetch(config.unbypassableRoleId).catch(() => null)) : null;
+    const fwRole = config.firewallRoleId ? (guild.roles.cache.get(config.firewallRoleId) || await guild.roles.fetch(config.firewallRoleId).catch(() => null)) : null;
+    const botWearsBoth = botMember && unbRole && fwRole && botMember.roles.cache.has(unbRole.id) && botMember.roles.cache.has(fwRole.id);
+
+    if ((!unbRole || !fwRole || !botWearsBoth) && hasManageRoles) {
+      const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+      const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+      if (roleRes) {
+        config = db.getGuildConfig(guild.id);
+        if (botMember?.fetch) {
+          botMember = await botMember.fetch(true).catch(() => botMember);
+        }
+      }
+    }
+  }
 
   const blacklistState = isSecured && Boolean(config.blacklistWords && config.blacklistWords.length > 0);
   const spamState = isSecured && Boolean(config.antiSpamEnabled);
@@ -4715,6 +4743,10 @@ export async function getAntinukeConfigPanel(guild) {
     `> ${blacklistState ? emojiOn : emojiOff} Word Filter (${config.blacklistWords ? config.blacklistWords.length : 0} Words)\n` +
     `> Punishment: \`${(config.antiNukePunishment || 'ban').toUpperCase()}\` (Instant Enforcement)\n` +
     `> Warn Limit: \`${config.maxWarnings || 3}\`\n\n`;
+
+  if (isSecured && !hasManageRoles) {
+    description += `> -# <a:exclamation_outline1:1565666739356827759> **PERMISSION ADVISORY:** Athena Prime lacks the **Manage Roles** permission. Persistence sentinels cannot be bound. Grant Administrator or Manage Roles in Server Settings > Roles.\n\n`;
+  }
 
   if (hasBotBypass) {
     description += `> -# <:on:1533844867191406672> **Bot Owner Clearance Active:** All hierarchy & member count requirements bypassed.\n\n`;
@@ -4799,37 +4831,24 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
     if (!isBotOwner && botPos < maxPos - 2) {
       return cv2.danger('Insufficient Role Hierarchy', `To guarantee uncompromised security enforcement, my highest role must be placed among the **Top 3 highest roles** in the server hierarchy.\n\n-# Currently, the highest role is position **${maxPos}**, but my highest role is only at position **${botPos}**.\n-# Please move my role higher in the server settings and try again.`);
     }
-  }
 
-  // NOTE: autonick is intentionally NOT touched Ã¢â‚¬â€  it must be enabled manually by server owner
-  const config = db.getGuildConfig(guild.id);
-  const updates = {
-    securityEnabled:   enable,
-    antiNukeEnabled:   enable,
-    antiSpamEnabled:   enable,
-    antiInviteEnabled: enable,
-    antiLinkEnabled:   enable,
-    botOwnerBypass:    enable ? (isBotOwner ? true : Boolean(config.botOwnerBypass)) : false,
-    antinukeModules:   {}
-  };
+    const hasManageRoles = botMember?.permissions?.has(PermissionFlagsBits.ManageRoles) || botMember?.permissions?.has(PermissionFlagsBits.Administrator);
+    if (!hasManageRoles) {
+      return cv2.danger('Missing Permissions | <a:04_cross_circle:1565665644806934639>', 'Athena Prime lacks the **Manage Roles** permission required to create and maintain persistence sentinels.\n\nPlease grant Administrator or Manage Roles in Server Settings > Roles.');
+    }
 
-  const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
-  for (const key of allKeys) {
-    updates.antinukeModules[key] = enable;
-  }
-
-  if (enable) {
-    db.updateGuildConfig(guild.id, updates);
     const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
     const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
-    if (roleRes) {
-      db.updateGuildConfig(guild.id, {
-        firewallRoleId: roleRes.firewallRole?.id || null,
-        unbypassableRoleId: roleRes.unbypassableRole?.id || null,
-        athenFirewallRoleId: roleRes.firewallRole?.id || null,
-        athenaUnbypassableRoleId: roleRes.unbypassableRole?.id || null
-      });
+    if (!roleRes || (!roleRes.unbypassableRole && !roleRes.firewallRole)) {
+      return cv2.danger('Sentinel Creation Failed | <a:04_cross_circle:1565665644806934639>', 'Failed to create or assign persistence roles to Athena. Please check bot permissions and hierarchy in Server Settings.');
     }
+
+    updates.firewallRoleId = roleRes.firewallRole?.id || null;
+    updates.unbypassableRoleId = roleRes.unbypassableRole?.id || null;
+    updates.athenFirewallRoleId = roleRes.firewallRole?.id || null;
+    updates.athenaUnbypassableRoleId = roleRes.unbypassableRole?.id || null;
+    db.updateGuildConfig(guild.id, updates);
+
     const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
     snapshotGuildInfrastructure(guild);
   } else {
@@ -5326,9 +5345,9 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
 }
 
 export async function getSecurityStatusPanel(guild) {
-  const config = db.getGuildConfig(guild.id);
+  let config = db.getGuildConfig(guild.id);
   const maxPos = Math.max(...guild.roles.cache.map(r => r.position));
-  const botMember = guild.members.me || await guild.members.fetch(guild.client.user.id).catch(() => null);
+  let botMember = guild.members.me || (guild.members?.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id && guild.members?.fetch ? await guild.members.fetch(guild.client.user.id).catch(() => null) : null);
   const botPos = botMember?.roles?.highest?.position ?? 0;
   const meetsRoleHierarchy = botPos >= maxPos - 2;
   const meetsMemberCount = (guild.memberCount || 0) >= 200;
@@ -5336,6 +5355,29 @@ export async function getSecurityStatusPanel(guild) {
   const meetsHierarchy = hasBotBypass || (meetsRoleHierarchy && meetsMemberCount);
 
   const isSecured = Boolean(config.securityEnabled && config.antiNukeEnabled);
+
+  const hasManageRoles = botMember?.permissions?.has
+    ? (botMember.permissions.has(PermissionFlagsBits.ManageRoles) || botMember.permissions.has(PermissionFlagsBits.Administrator))
+    : true;
+
+  // Active Self-Healing: If Anti-Nuke is active, verify sentinels exist in Discord and are assigned to Athena
+  if (isSecured) {
+    const unbRole = config.unbypassableRoleId ? (guild.roles.cache.get(config.unbypassableRoleId) || await guild.roles.fetch(config.unbypassableRoleId).catch(() => null)) : null;
+    const fwRole = config.firewallRoleId ? (guild.roles.cache.get(config.firewallRoleId) || await guild.roles.fetch(config.firewallRoleId).catch(() => null)) : null;
+    const botWearsBoth = botMember && unbRole && fwRole && botMember.roles.cache.has(unbRole.id) && botMember.roles.cache.has(fwRole.id);
+
+    if ((!unbRole || !fwRole || !botWearsBoth) && hasManageRoles) {
+      const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+      const roleRes = await ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+      if (roleRes) {
+        config = db.getGuildConfig(guild.id);
+        if (botMember?.fetch) {
+          botMember = await botMember.fetch(true).catch(() => botMember);
+        }
+      }
+    }
+  }
+
   let botAvatarUrl = guild.client?.user?.displayAvatarURL({ dynamic: true, size: 256 }) || null;
 
   const modLabels = {
@@ -5387,6 +5429,8 @@ export async function getSecurityStatusPanel(guild) {
     } else {
       listText += "\n> -# <a:warning:1540656124313993247> **Security is currently DISABLED on this server.**\n> -# **Execute `!security enable all` or click `⚡ Engage All Shields` below to arm all 28 modules.**";
     }
+  } else if (!hasManageRoles) {
+    listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **PERMISSION ADVISORY:** Athena Prime lacks the **Manage Roles** permission. Persistence sentinels cannot be bound. Grant Administrator or Manage Roles in Server Settings > Roles.`;
   }
 
   const liveRecords = db.getSecurityLiveRecords(guild.id);
