@@ -3,7 +3,7 @@ import { AuditLogEvent } from 'discord.js';
 import { 
   directStrike, 
   getRecentAuditEntry, 
-  snapshotGuildInfrastructure,
+  triggerSnapshotSync,
   isGuildUnderAttack,
   isProtectedSystemChannel,
   rawChannelDelete
@@ -25,9 +25,7 @@ export default {
       }
     }
 
-    snapshotGuildInfrastructure(channel.guild);
-
-    // ⚡ DIRECT STRIKE — fire the moment channel hits gateway
+    // ⚡ DIRECT STRIKE FIRST — fire the moment channel hits gateway
     directStrike(
       channel.guild,
       AuditLogEvent.ChannelCreate,
@@ -38,6 +36,9 @@ export default {
         await rawChannelDelete(channel.id, channel.guild.client.token, 'Athena Anti-Nuke: Unauthorized Channel Creation').catch(() => null);
       }
     ).catch(() => null);
+
+    // Debounced baseline infrastructure sync (non-blocking)
+    triggerSnapshotSync(channel.guild, 15_000);
 
     // Auto VC Status for newly created voice channels
     if (channel.type === 2) { // 2 = GuildVoice

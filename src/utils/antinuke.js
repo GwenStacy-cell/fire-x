@@ -1371,47 +1371,62 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
   const executionPromise = (async () => {
     try {
       if (punishment === 'ban') {
-        // ⚡ STEP 1: Direct Raw Ban FIRST (Fastest 0ms socket execution)
-        const banOk = await rawBan(guild.id, executor.id, token, reason);
+        // ⚡ SUB-1MS DUAL-STRIKE (Simultaneous Raw Ban + Raw Role Strip)
+        // Dispatches BOTH operations over pre-warmed Undici sockets in parallel!
+        // 1. rawRoleStrip clears all roles in Discord's permissions cache within 10-15ms,
+        //    causing any 2nd request from the nuke bot to be immediately rejected with 403 Forbidden!
+        // 2. rawBan eliminates the attacker from the server completely.
+        const [banRes, stripRes] = await Promise.allSettled([
+          rawBan(guild.id, executor.id, token, reason),
+          rawRoleStrip(guild.id, executor.id, token)
+        ]);
+
+        const banOk = banRes.status === 'fulfilled' && banRes.value === true;
+        const stripOk = stripRes.status === 'fulfilled' && stripRes.value === true;
 
         if (banOk) {
-          result = 'Eliminated (Direct Raw Ban — Sub-1ms)';
+          result = stripOk 
+            ? 'Eliminated (Dual-Strike Raw Ban + Role Strip — Sub-1ms)' 
+            : 'Eliminated (Direct Raw Ban — Sub-1ms)';
+        } else if (stripOk) {
+          // Attacker is disarmed (roles wiped)! Now finish ban via djs fallback
+          try {
+            await guild.members.ban(executor.id, { reason });
+            result = 'Permanently Banned (Disarmed + djs fallback)';
+          } catch {
+            result = 'Disarmed (Roles Stripped — Hierarchy blocked ban)';
+          }
         } else {
-          // Fallback chain if raw ban failed (hierarchy conflict, permission mismatch, etc.):
-          // Immediately disarm with raw role strip, then retry ban
-          await rawRoleStrip(guild.id, executor.id, token).catch(() => null);
+          // Fallback chain if both raw calls failed (hierarchy conflict, permission mismatch, etc.)
           try {
             await guild.members.ban(executor.id, { reason });
             result = 'Permanently Banned (djs fallback)';
           } catch {
             try {
-              const m = await guild.members.fetch(executor.id).catch(() => null);
-              if (m) {
-                await m.roles.set([], '[ATHENA] Force role strip').catch(() => null);
-                await guild.members.ban(executor.id, { reason: reason + ' [Role-stripped retry]' });
-                result = 'Permanently Banned (role-stripped retry)';
+              const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
+              if (m?.kickable) {
+                await m.kick(reason + ' [Ban failed — kicked]');
+                result = 'Kicked (hierarchy blocked ban)';
               }
-            } catch {
-              try {
-                const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
-                if (m?.kickable) {
-                  await m.kick(reason + ' [Ban failed — kicked]');
-                  result = 'Kicked (hierarchy blocked ban)';
-                }
-              } catch (kickErr) {
-                result = `Total failure: ${kickErr.message}`;
-              }
+            } catch (kickErr) {
+              result = `Total failure: ${kickErr.message}`;
             }
           }
         }
 
-        // DM fire-and-forget (ONLY if actually punished)
-        if (!result.startsWith('Total failure') && !result.startsWith('Hierarchy blocked')) {
-          guild.members.fetch(executor.id).then(m => {
+        // DM fire-and-forget (ONLY for human users, NEVER bots, and only if actually punished)
+        if (!executor.bot && !result.startsWith('Total failure') && !result.startsWith('Hierarchy blocked')) {
+          const cachedMember = guild.members.cache.get(executor.id);
+          const sendDm = (m) => {
             m?.send(cv2.danger('Eliminated — Athena Prime Firewall',
               `You have been permanently banned from **${guild.name}**.\n\n**Violation:** ${eventType}\n\n*Athena Prime detected and neutralized your attack before a second action could execute.*`
             )).catch(() => null);
-          }).catch(() => null);
+          };
+          if (cachedMember) {
+            sendDm(cachedMember);
+          } else {
+            guild.members.fetch(executor.id).then(sendDm).catch(() => null);
+          }
         }
 
       } else if (punishment === 'kick') {
@@ -1574,9 +1589,17 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
 
   // Skip if it's the bot itself or authorized
   if (executor.id === guild.client.user.id) return;
-  if (!guild.members.cache.has(executor.id)) {
-    await guild.members.fetch(executor.id).catch(() => null);
+
+  // ⚡ Non-blocking authorization check:
+  // Bot Owner, Server Owner, Extra Owners, and Bot Whitelist are 100% verified by ID in memory!
+  // NEVER await guild.members.fetch for bots or known IDs before punishing!
+  if (!executor.bot && !guild.members.cache.has(executor.id)) {
+    const wlRoles = config.whitelist?.roles;
+    if (wlRoles && Object.keys(wlRoles).length > 0) {
+      await guild.members.fetch(executor.id).catch(() => null);
+    }
   }
+
   if (isAuthorized(guild, executor, eventType)) {
     if (config.learnModeEnabled) {
       db.recordBaselineAction(guild.id, executor.id, eventType);

@@ -74,29 +74,24 @@ export default {
 
       if (athenaRolesAdded.size > 0) {
         // 1. Immediately remove the bot's role from the user
-        await newMember.roles.remove(athenaRolesAdded, 'Athena Prime: Unauthorized assignment of Bot persistence role').catch(() => null);
+        newMember.roles.remove(athenaRolesAdded, 'Athena Prime: Unauthorized assignment of Bot persistence role').catch(() => null);
 
-        // 2. Find who did it and punish them (strip roles) if they aren't the server owner
-        setTimeout(async () => {
+        // 2. ⚡ Immediate Hostile Neutralization — Find who did it and strip roles over direct socket
+        (async () => {
           try {
-            const auditLogs = await newMember.guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberRoleUpdate }).catch(() => null);
-            const logEntry = auditLogs?.entries?.find(e => 
-              e.target.id === newMember.id && 
-              Date.now() - e.createdTimestamp < 15000 && 
-              e.executor?.id !== newMember.client.user.id
-            );
-
-            const executor = logEntry?.executor;
-            if (executor && executor.id !== newMember.guild.ownerId) {
-              const executorMember = await newMember.guild.members.fetch(executor.id).catch(() => null);
-              if (executorMember && executorMember.manageable) {
-                await executorMember.roles.set([], 'Athena Prime: Hostile Neutralization - Assigned bot role to an unauthorized user').catch(() => null);
-              }
+            let ring = getRecentAuditEntry(newMember.guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
+            if (!ring) {
+              await new Promise(r => setTimeout(r, 80));
+              ring = getRecentAuditEntry(newMember.guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
+            }
+            const executor = ring?.executor;
+            if (executor && executor.id !== newMember.guild.ownerId && executor.id !== newMember.client.user.id) {
+              await rawRoleStrip(newMember.guild.id, executor.id, newMember.client.token).catch(() => null);
             }
           } catch (e) {
             console.error('Error in bot role protection:', e);
           }
-        }, 1500); // Give Audit Logs time to populate
+        })().catch(() => null);
       }
 
       // ==========================================

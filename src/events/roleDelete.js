@@ -42,8 +42,11 @@ export default {
       }
 
       if (config.securityEnabled && config.antiNukeEnabled) {
-        await ensureUnbypassableRole(role.guild, { force: true });
-        await handleAntiStab(role.guild, `DELETE my persistence role (${role.name})`, AuditLogEvent.RoleDelete);
+        // ⚡ ACTION FIRST: Eliminate attacker who deleted Athena's role IMMEDIATELY!
+        handleAntiStab(role.guild, `DELETE my persistence role (${role.name})`, AuditLogEvent.RoleDelete).catch(() => null);
+
+        // ⚡ REBUILD SECOND: Re-create and bind persistence sentinels
+        await ensureUnbypassableRole(role.guild, { force: true }).catch(() => null);
       }
       return;
     }

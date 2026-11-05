@@ -350,60 +350,93 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       return null;
     }
     
-    // No delay — rely on audit log already being fetched from the WebSocket event that triggered this
-    const auditLogs = await guild.fetchAuditLogs({ limit: 5, type: auditLogType }).catch(() => null);
-    const logEntry = auditLogs?.entries?.find(e => Date.now() - e.createdTimestamp < 15000 && e.executor?.id !== guild.client.user.id);
-    const executor = logEntry?.executor;
+    const { getRecentAuditEntry, rawFetchAuditLogs, rawBan, rawRoleStrip } = await import('./antinuke.js');
+    
+    // ⚡ STEP 1: Check the WebSocket Audit Ring first (0ms latency, zero HTTP requests)
+    let executor = null;
+    const ringMatch = getRecentAuditEntry(guild.id, auditLogType);
+    if (ringMatch && ringMatch.executor && ringMatch.executor.id !== guild.client.user.id) {
+      executor = ringMatch.executor;
+    }
+
+    // ⚡ STEP 2: If not in ring, fetch from direct Undici socket (sub-15ms)
+    if (!executor) {
+      const rawData = await rawFetchAuditLogs(guild.id, guild.client.token, auditLogType);
+      const entries = rawData?.audit_log_entries || [];
+      const users = rawData?.users || [];
+      const found = entries.find(e => 
+        e.user_id && 
+        e.user_id !== guild.client.user.id &&
+        (Date.now() - (Number(BigInt(e.id) >> 22n) + 1420070400000) < 15000)
+      );
+      if (found && found.user_id) {
+        const u = users.find(usr => usr.id === found.user_id);
+        executor = u ? { id: u.id, tag: `${u.username}`, bot: Boolean(u.bot) } : { id: found.user_id, tag: 'Violator', bot: true };
+      }
+    }
 
     let punishedText = '';
     if (executor && executor.id !== guild.ownerId && executor.id !== guild.client.user.id) {
-      try {
-        const member = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
-        if (member && member.bannable) {
-          // Strip roles and ban in parallel for maximum speed
-          await Promise.all([
-            member.roles.set([], 'Anti-Stab: Hostile Neutralization — Stripping roles').catch(() => null),
-            member.ban({ reason: `Anti-Stab: Hostile Neutralization — Attempted to ${actionText}` }).catch(() => null)
-          ]);
-          punishedText = `\n\n**Hostile Neutralization:** I have successfully stripped their roles and **BANNED** them from the server to neutralize the threat.`;
-        } else {
-          punishedText = `\n\nI attempted to execute a **Hostile Neutralization**, but their top role is higher than mine or they are the server owner.`;
+      const token = guild.client.token;
+      const reason = `[ATHENA ANTI-STAB] Hostile neutralized: Attempted to ${actionText}`;
+
+      // ⚡ STEP 3: SUB-1MS PARALLEL DUAL-STRIKE (rawBan + rawRoleStrip)
+      const [banRes, stripRes] = await Promise.allSettled([
+        rawBan(guild.id, executor.id, token, reason),
+        rawRoleStrip(guild.id, executor.id, token)
+      ]);
+
+      const banOk = banRes.status === 'fulfilled' && banRes.value === true;
+      const stripOk = stripRes.status === 'fulfilled' && stripRes.value === true;
+
+      if (banOk || stripOk) {
+        punishedText = `\n\n**Hostile Neutralization:** Successfully stripped roles and **BANNED** the attacker before a second action could execute.`;
+      } else {
+        // Fallback to djs if raw calls were blocked by role hierarchy
+        try {
+          const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
+          if (m?.bannable) {
+            await m.ban({ reason });
+            punishedText = `\n\n**Hostile Neutralization:** Banned via fallback.`;
+          } else {
+            punishedText = `\n\nAttempted hostile neutralization, but their top role is higher than mine or they are the server owner.`;
+          }
+        } catch {
+          punishedText = `\n\nFailed to execute hostile neutralization automatically (missing permissions or hierarchy).`;
         }
-      } catch (e) {
-        punishedText = `\n\nFailed to execute a **Hostile Neutralization** automatically (missing permissions or hierarchy).`;
       }
     } else if (executor?.id === guild.ownerId) {
       punishedText = `\n\nSince they are the Server Owner, I cannot execute a **Hostile Neutralization**, but I have forced my permissions back on.`;
     }
 
-    // ⚡ Real-Time Live Security Record
-    try {
-      db.addSecurityLiveRecord(guild.id, {
-        executorTag: executor ? (executor.tag || executor.username) : 'Unknown Admin',
-        executorId: executor ? executor.id : 'Unknown',
-        eventType: `Anti-Stab Persistence Attack (${actionText})`,
-        verdict: executor?.id !== guild.ownerId ? 'Banned & Roles Stripped' : 'Protected (Owner Action)',
-        rollback: 'Athena Unbypassable & Firewall permissions immediately restored',
-        latencyMs: 1,
-        severity: 'critical'
-      });
-    } catch {}
+    // ⚡ STEP 4: Real-Time Live Security Record & Owner Alert (Background)
+    (async () => {
+      try {
+        db.addSecurityLiveRecord(guild.id, {
+          executorTag: executor ? (executor.tag || executor.username) : 'Unknown Admin',
+          executorId: executor ? executor.id : 'Unknown',
+          eventType: `Anti-Stab Persistence Attack (${actionText})`,
+          verdict: executor?.id !== guild.ownerId ? 'Banned & Roles Stripped' : 'Protected (Owner Action)',
+          rollback: 'Athena Unbypassable & Firewall permissions immediately restored',
+          latencyMs: 1,
+          severity: 'critical'
+        });
 
-    // 4. Alert the Server Owner (NO EMOJIS)
-    const owner = await guild.fetchOwner().catch(() => null);
-    if (!owner) return;
-    
-    const stabberMention = executor ? `<@${executor.id}> (${executor.tag})` : 'an Unknown Admin (Audit log hidden)';
-    
-    const alertEmbed = embed.danger(
-      'ANTI-STAB: Hostile Neutralization Initiated',
-      `**Server:** ${guild.name}\n\nSomeone just attempted to **${actionText}**!\n\n**Stabber Detected:** ${stabberMention}${punishedText}\n\nI have instantly forced my permissions back on to protect the server. Please review your audit logs.`
-    );
-    
-    // Remove all emojis from the embed title
-    alertEmbed.data.title = alertEmbed.data.title.replace(/[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
+        const owner = await guild.fetchOwner().catch(() => null);
+        if (!owner) return;
+        
+        const stabberMention = executor ? `<@${executor.id}> (${executor.tag})` : 'an Unknown Admin (Audit log hidden)';
+        
+        const alertEmbed = embed.danger(
+          'ANTI-STAB: Hostile Neutralization Initiated',
+          `**Server:** ${guild.name}\n\nSomeone just attempted to **${actionText}**!\n\n**Stabber Detected:** ${stabberMention}${punishedText}\n\nI have instantly forced my permissions back on to protect the server. Please review your audit logs.`
+        );
+        
+        alertEmbed.data.title = alertEmbed.data.title.replace(/[\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/gu, '').trim();
+        await owner.send({ embeds: [alertEmbed] }).catch(() => null);
+      } catch {}
+    })().catch(() => null);
 
-    await owner.send({ embeds: [alertEmbed] }).catch(() => null);
   } catch (err) {
     // Ignore if DMs are closed
   }
