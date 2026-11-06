@@ -46,14 +46,21 @@ async function fetchFromKlipy(query) {
       });
       if (res.ok) {
         const data = await res.json();
-        const items = (data?.data || data?.results || [])
+        const rawList = Array.isArray(data?.data) ? data.data : (data?.data?.data || data?.results || []);
+        const items = rawList
           .map(item => {
-            const url = item?.media?.gif?.url || item?.url || item?.gif;
+            const url = item?.file?.hd?.gif?.url || 
+                        item?.file?.md?.gif?.url || 
+                        item?.file?.sm?.gif?.url || 
+                        item?.file?.hd?.webp?.url || 
+                        item?.media?.gif?.url || 
+                        item?.url || 
+                        item?.gif;
             if (!url) return null;
             return {
               image: url,
               title: item.title || `${query} GIF`,
-              sourceUrl: item.url || `https://klipy.com/search?q=${encodeURIComponent(query)}`,
+              sourceUrl: (item.slug ? `https://klipy.com/gif/${item.slug}` : item.url) || `https://klipy.com/search?q=${encodeURIComponent(query)}`,
               source: 'klipy.com'
             };
           })

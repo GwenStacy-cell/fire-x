@@ -1004,8 +1004,15 @@ async function fetchFromKlipy(action) {
       });
       if (res.ok) {
         const data = await res.json();
-        const urls = (data?.data || data?.results || [])
-          .map(item => item?.media?.gif?.url || item?.url || item?.gif)
+        const rawList = Array.isArray(data?.data) ? data.data : (data?.data?.data || data?.results || []);
+        const urls = rawList
+          .map(item => item?.file?.hd?.gif?.url || 
+                       item?.file?.md?.gif?.url || 
+                       item?.file?.sm?.gif?.url || 
+                       item?.file?.hd?.webp?.url || 
+                       item?.media?.gif?.url || 
+                       item?.url || 
+                       item?.gif)
           .filter(Boolean);
         if (urls.length > 0) return urls;
       }
