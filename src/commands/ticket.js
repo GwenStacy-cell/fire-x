@@ -995,10 +995,31 @@ export async function handleTicketButtons(interaction) {
         new ButtonBuilder().setCustomId('ticket_info').setLabel('Ticket Info').setStyle(ButtonStyle.Secondary)
       );
 
-      await textChannel.send({
-        components: [container, row1, row2],
-        flags: 32768
-      });
+      container.components.push(row1.toJSON(), row2.toJSON());
+
+      try {
+        await textChannel.send({
+          components: [container],
+          flags: 32768
+        });
+      } catch (sendErr) {
+        console.warn('[Ticket Create textChannel.send CV2 fallback]:', sendErr.message);
+        await textChannel.send({
+          content: pings,
+          embeds: [{
+            title: `Support Ticket #${ticketId}`,
+            description:
+              `**Welcome <@${user.id}>!** Please describe your request or issue below.\n` +
+              `A staff member will assist you shortly.\n\n` +
+              `<a:target_blink:1565667466984554588> **Dedicated Voice Room:** <#${voiceChannel.id}>\n` +
+              `<a:target_blink:1565667466984554588> **Associated Text Channel:** <#${textChannel.id}>\n` +
+              `<a:target_blink:1565667466984554588> **Forensic Archival:** Live conversation will be exported upon closure.`,
+            color: 0x5865F2,
+            footer: { text: 'Athena Prime Support & Security Matrix • V1.0.0' }
+          }],
+          components: [row1, row2]
+        });
+      }
 
       if (ticketConfig.aiTriage) {
         try {
@@ -1255,10 +1276,26 @@ export async function handleTicketModals(interaction) {
         new ButtonBuilder().setCustomId('ticket_info').setLabel('Ticket Info').setStyle(ButtonStyle.Secondary)
       );
 
-      await textChannel.send({
-        components: [container, row1, row2],
-        flags: 32768
-      });
+      container.components.push(row1.toJSON(), row2.toJSON());
+
+      try {
+        await textChannel.send({
+          components: [container],
+          flags: 32768
+        });
+      } catch (sendErr) {
+        console.warn('[Ticket Modal textChannel.send CV2 fallback]:', sendErr.message);
+        await textChannel.send({
+          content: pings,
+          embeds: [{
+            title: `${reason} Ticket #${ticketId}`,
+            description: infoContent,
+            color: 0x5865F2,
+            footer: { text: 'Athena Prime Support & Security Matrix • V1.0.0' }
+          }],
+          components: [row1, row2]
+        });
+      }
 
       if (ticketConfig.aiTriage) {
         try {

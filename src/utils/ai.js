@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from './emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, UPTIME_EMOJI } from './emojis.js';
 import fetch from 'node-fetch';
 
 /**
@@ -664,14 +664,14 @@ export async function generateTicketTriage({ title, inquiry, docs, details, user
  * Builds an interactive Components V2 / CV2 container card for staff triage
  */
 export function buildTicketTriageContainer({ category, priority, summary, recommendedAction, user }) {
-  const priorityEmoji = priority === 'Urgent' ? '<:danger:1533844874271391785>' : (priority === 'High' ? '<:warning:1533844881665949706>' : '<a:uptime:1552608831060844575>');
+  const priorityEmoji = priority === 'Urgent' ? WRONG_EMOJI : (priority === 'High' ? WARN_EMOJI : UPTIME_EMOJI);
 
   return {
     type: 17,
     components: [
       {
         type: 10,
-        content: `# ${getRandomHeadingGlyph()} Smart Ticket Triage | <a:03_tick_circle:1565665642084827206>`
+        content: `# ${getRandomHeadingGlyph()} Smart Ticket Triage | ${TICK_EMOJI}`
       },
       { type: 14, divider: true },
       {
@@ -683,7 +683,7 @@ export function buildTicketTriageContainer({ category, priority, summary, recomm
           `**AI Executive Summary:**\n` +
           `-# ${summary}\n\n` +
           `**Recommended Staff Action:**\n` +
-          `-# • ${recommendedAction}`
+          `-# ${BULLET_EMOJI} ${recommendedAction}`
       },
       { type: 14, divider: true },
       {
