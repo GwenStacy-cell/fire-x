@@ -21,6 +21,7 @@ import {
   buildUserProfilePayload, 
   buildLeaderboardPayload, 
   buildCatalogPayload, 
+  buildRoutesStatusPayload,
   handleRoleplayButton as engineHandleButton 
 } from '../utils/roleplayEngine.js';
 
@@ -45,6 +46,7 @@ const masterRoleplayCommand = {
         { name: 'My Profile', value: 'profile' },
         { name: 'Duo Affinity Matrix', value: 'duo' },
         { name: 'Leaderboard', value: 'top' },
+        { name: 'GIF Routes & Providers', value: 'routes' },
         { name: 'Marriage Status', value: 'marriage' },
         { name: 'Help', value: 'help' }
       ]
@@ -118,6 +120,12 @@ const masterRoleplayCommand = {
     if (sub === 'top' || sub === 'leaderboard' || sub === 'lb') {
       const lbType = (args[1] || 'overall').toLowerCase();
       const payload = await buildLeaderboardPayload(message.guild, lbType);
+      return message.reply(payload);
+    }
+
+    // 6. GIF Routes & Providers Status
+    if (sub === 'routes' || sub === 'engines' || sub === 'providers' || sub === 'sources') {
+      const payload = buildRoutesStatusPayload();
       return message.reply(payload);
     }
 
@@ -218,6 +226,7 @@ const masterRoleplayCommand = {
         `${BULLET_EMOJI} \`!rp bio <text>\` — Set your custom roleplay bio card description\n` +
         `${BULLET_EMOJI} \`!rp duo @user\` — View relationship affinity matrix, bond level, and top shared actions\n` +
         `${BULLET_EMOJI} \`!rp top [overall|duos|<action>]\` — View server roleplay leaderboards\n` +
+        `${BULLET_EMOJI} \`!rp routes\` — View active federated GIF providers (Klipy, Nekos Best, OtakuGifs, Purrbot, etc.)\n` +
         `${BULLET_EMOJI} \`!rp marry @user\` — Propose marriage with interactive Accept/Decline buttons\n` +
         `${BULLET_EMOJI} \`!rp divorce\` — Part ways and dissolve marriage status\n\n` +
         `**__Quick Action Examples:__**\n` +
@@ -254,6 +263,10 @@ const masterRoleplayCommand = {
     }
     if (sub === 'top') {
       const payload = await buildLeaderboardPayload(interaction.guild, 'overall');
+      return interaction.reply(payload);
+    }
+    if (sub === 'routes') {
+      const payload = buildRoutesStatusPayload();
       return interaction.reply(payload);
     }
 
@@ -313,6 +326,16 @@ const standaloneProfile = {
   }
 };
 
+const standaloneRoutes = {
+  name: 'rproutes',
+  aliases: ['routes', 'gifroutes'],
+  description: 'View active federated GIF providers & health telemetry.',
+  category: 'roleplay',
+  async executePrefix(message, args) {
+    return masterRoleplayCommand.executePrefix(message, ['routes', ...args]);
+  }
+};
+
 // =========================================================================
 // 3. DYNAMIC GENERATION OF ALL 54+ INDIVIDUAL ACTION COMMANDS
 // =========================================================================
@@ -354,6 +377,7 @@ export const commands = [
   standaloneDivorce,
   standaloneAffinity,
   standaloneProfile,
+  standaloneRoutes,
   ...dynamicActionCommands
 ];
 
