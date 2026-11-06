@@ -47,6 +47,7 @@ import { commands as hideCmds } from './hide.js';
 import { commands as userinfoCmds } from './userinfo.js';
 import { commands as rolemanagerCmds } from './rolemanager.js';
 import { commands as theaterCmds } from './theater.js';
+import { commands as cinemaCmds } from './cinema.js';
 import { commands as bumpCmds } from './bump.js';
 import { commands as musicCmds } from './music.js';
 import { commands as rateCmds } from './rate.js';
@@ -201,6 +202,7 @@ export const allCommands = [
   ...userinfoCmds,
   ...rolemanagerCmds,
   ...theaterCmds,
+  ...cinemaCmds,
   ...bumpCmds,
   ...musicCmds,
   ...rateCmds,

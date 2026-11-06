@@ -2708,6 +2708,7 @@ export const helpModules = [
     "`!countlb / !counting lb` - Server Counting records & leaderboard `[Public]`",
     "`!music / !play <query>` - Open Music Dashboard (Play, Skip, Queue, Volume) `[Public]`",
     "`!setupmusic` - Deploy 24/7 compact music controller channel `[Extra Owner]`",
+    "`!movie / !cinema <play|list|pause|forward|rewind|seek|party|folder|stop>` - Stream local PC movies with surround voice audio & responsive mobile theater `[Public]`",
     "`!media <url>` - Download TikTok/Insta/Twitter/YouTube videos directly `[Public]`",
     "`!mp3 <url>` - Extract audio from video links `[Public]`",
     "`!setmedia / !unsetmedia` - Bind Auto Media Downloader to channel `[Extra Owner]`",

@@ -3,6 +3,7 @@ import { XMLParser } from 'fast-xml-parser';
 import db from '../database.js';
 import chalk from 'chalk';
 import { sendYouTubeNotification } from './youtubeNotifier.js';
+import { registerCinemaRoutes } from './cinemaEngine.js';
 
 const app = express();
 const xmlParser = new XMLParser({ ignoreAttributes: false });
@@ -78,6 +79,9 @@ export function initWebSub(client) {
       console.error('[WebSub] Error processing push notification:', err);
     }
   });
+
+  // Register Athena Cinema HTTP 206 Video Streaming & Responsive Web Theater routes
+  registerCinemaRoutes(app);
 
   app.listen(port, () => {
     console.log(chalk.green(`[WebSub] Server listening on port ${port}`));

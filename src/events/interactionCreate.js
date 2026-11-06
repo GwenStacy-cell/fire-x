@@ -827,6 +827,13 @@ export default {
       return;
     }
 
+    if (interaction.isButton() && interaction.customId.startsWith('cinema_')) {
+      import('../commands/cinema.js').then(m => {
+        if (m.handleCinemaButtons) m.handleCinemaButtons(interaction).catch(e => console.error(e));
+      }).catch(e => console.error(e));
+      return;
+    }
+
     if (interaction.customId && interaction.customId.startsWith('vcrole_')) {
       import('../commands/community.js').then(m => {
         if (m.handleVoiceRoleInteraction) m.handleVoiceRoleInteraction(interaction).catch(()=>{});
