@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, UPTIME_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, UPTIME_EMOJI, DELETE_BEAT_EMOJI } from '../utils/emojis.js';
 import {
   PermissionFlagsBits,
   ActionRowBuilder,
@@ -153,7 +153,6 @@ export const commands = [
           new ButtonBuilder()
             .setCustomId('ticket_open_general')
             .setLabel('Open Ticket')
-            .setEmoji('<:139707ticket:1533859896620089485>')
             .setStyle(ButtonStyle.Primary)
         );
 
@@ -279,7 +278,6 @@ export const commands = [
           new ButtonBuilder()
             .setCustomId('ticket_open_general')
             .setLabel('Open Ticket')
-            .setEmoji('<:139707ticket:1533859896620089485>')
             .setStyle(ButtonStyle.Primary)
         );
 
@@ -986,15 +984,15 @@ export async function handleTicketButtons(interaction) {
       };
 
       const row1 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('ticket_claim').setLabel('Claim Ticket').setEmoji('<:Hand:1537877232230469733>').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('ticket_close').setLabel('Close Ticket').setEmoji('<:133036close:1533858021183209594>').setStyle(ButtonStyle.Danger),
-        new ButtonBuilder().setCustomId('ticket_lock').setLabel('Lock Ticket').setEmoji('<:584347lock:1533858039302721546>').setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('ticket_claim').setLabel('Claim Ticket').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('ticket_close').setLabel('Close Ticket').setEmoji(DELETE_BEAT_EMOJI).setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId('ticket_lock').setLabel('Lock Ticket').setStyle(ButtonStyle.Secondary)
       );
 
       const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('ticket_add_user').setLabel('Add User').setEmoji('<:1614_Plus_Light:1534958611116232704>').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('ticket_rem_user').setLabel('Remove User').setEmoji('<:Minus_Light:1534958569835888642>').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('ticket_info').setLabel('Ticket Info').setEmoji('<:info:1538520779774365778>').setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('ticket_add_user').setLabel('Add User').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('ticket_rem_user').setLabel('Remove User').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('ticket_info').setLabel('Ticket Info').setStyle(ButtonStyle.Secondary)
       );
 
       await textChannel.send({
@@ -1246,15 +1244,15 @@ export async function handleTicketModals(interaction) {
       };
 
       const row1 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('ticket_claim').setLabel('Claim Ticket').setEmoji('<:Hand:1537877232230469733>').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('ticket_close').setLabel('Close Ticket').setEmoji('<:133036close:1533858021183209594>').setStyle(ButtonStyle.Danger),
-        new ButtonBuilder().setCustomId('ticket_lock').setLabel('Lock Ticket').setEmoji('<:584347lock:1533858039302721546>').setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('ticket_claim').setLabel('Claim Ticket').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('ticket_close').setLabel('Close Ticket').setEmoji(DELETE_BEAT_EMOJI).setStyle(ButtonStyle.Danger),
+        new ButtonBuilder().setCustomId('ticket_lock').setLabel('Lock Ticket').setStyle(ButtonStyle.Secondary)
       );
 
       const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('ticket_add_user').setLabel('Add User').setEmoji('<:1614_Plus_Light:1534958611116232704>').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('ticket_rem_user').setLabel('Remove User').setEmoji('<:Minus_Light:1534958569835888642>').setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder().setCustomId('ticket_info').setLabel('Ticket Info').setEmoji('<:info:1538520779774365778>').setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId('ticket_add_user').setLabel('Add User').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('ticket_rem_user').setLabel('Remove User').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId('ticket_info').setLabel('Ticket Info').setStyle(ButtonStyle.Secondary)
       );
 
       await textChannel.send({

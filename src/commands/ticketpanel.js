@@ -44,7 +44,6 @@ export function buildTicketPanelPayload(guildId) {
       new ButtonBuilder()
         .setCustomId('ticket_open_general')
         .setLabel('Open Ticket')
-        .setEmoji('<:139707ticket:1533859896620089485>')
         .setStyle(ButtonStyle.Primary)
     );
   }
