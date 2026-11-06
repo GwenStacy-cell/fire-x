@@ -259,7 +259,13 @@ export const commands = [
 
       if (subcommand === 'play') {
         const query = interaction.options.getString('query');
-        return handlePlayCinema(guild, member, query, (payload) => interaction.reply(payload), (payload) => interaction.editReply(payload));
+        return handlePlayCinema({
+          guild,
+          member,
+          channel: interaction.channel,
+          query,
+          interaction
+        });
       }
 
       if (subcommand === 'pause') {
@@ -495,7 +501,13 @@ export const commands = [
 
       if (sub === 'play') {
         const query = args.slice(1).join(' ') || (message.attachments.first() ? message.attachments.first().url : null);
-        return handlePlayCinema(guild, member, query, (payload) => message.reply(payload));
+        return handlePlayCinema({
+          guild,
+          member,
+          channel: message.channel,
+          query,
+          message
+        });
       }
     }
   }
@@ -504,23 +516,37 @@ export const commands = [
 /**
  * Common handler for starting cinema playback
  */
-async function handlePlayCinema(guild, member, query, replyFn, editFn = null) {
+async function handlePlayCinema({ guild, member, channel, query, interaction = null, message = null }) {
   const voiceChannel = member.voice?.channel;
   if (!voiceChannel) {
-    return replyFn(cv2.warn(
+    const warnPayload = cv2.warn(
       `Voice Channel Required | ${WARN_EMOJI}`,
       `You must be connected to a voice channel so Athena can stream surround audio!`
-    ));
+    );
+    if (interaction) return interaction.reply({ ...warnPayload, flags: 64 });
+    return message.reply(warnPayload);
   }
 
-  const initialMsg = await replyFn({
-    content: `-# <a:loading:1542155051286396938> **Initializing Athena Cinema Engine & resolving media stream...**`
-  });
+  // 1. Initial loading indicator
+  let loadingMsg = null;
+  if (interaction) {
+    await interaction.reply({
+      content: `-# <a:loading:1542155051286396938> **Connecting to media stream...**`,
+      flags: 64
+    }).catch(() => {});
+  } else if (message) {
+    loadingMsg = await message.reply({
+      content: `-# <a:loading:1542155051286396938> **Connecting to media stream...**`
+    }).catch(() => null);
+  }
 
   const updateProgress = async (text) => {
     try {
-      if (editFn) await editFn({ content: `-# <a:loading:1542155051286396938> **${text}**` });
-      else if (initialMsg && typeof initialMsg.edit === 'function') await initialMsg.edit({ content: `-# <a:loading:1542155051286396938> **${text}**` });
+      if (interaction) {
+        await interaction.editReply({ content: `-# <a:loading:1542155051286396938> **${text}**` });
+      } else if (loadingMsg) {
+        await loadingMsg.edit({ content: `-# <a:loading:1542155051286396938> **${text}**` });
+      }
     } catch (e) {}
   };
 
@@ -533,9 +559,9 @@ async function handlePlayCinema(guild, member, query, replyFn, editFn = null) {
         `${BULLET_EMOJI} **Local Storage:** Use \`/cinema list\` to view all movies in \`${getMoviesDir()}\`.\n` +
         `${BULLET_EMOJI} **Web Streaming:** Provide a link from **YouTube**, **Instagram Reels**, **Twitch**, **TikTok**, **Twitter/X**, or direct video URL!`
       );
-      if (editFn) return editFn(warnPayload);
-      if (initialMsg && typeof initialMsg.edit === 'function') return initialMsg.edit(warnPayload);
-      return replyFn(warnPayload);
+      if (interaction) return interaction.editReply(warnPayload);
+      if (loadingMsg) return loadingMsg.edit(warnPayload);
+      return channel.send(warnPayload);
     }
 
     const session = await startCinemaSession({
@@ -554,15 +580,41 @@ async function handlePlayCinema(guild, member, query, replyFn, editFn = null) {
 
     const deckPayload = buildCinemaControlDeck(session);
 
+    // Delete loading text message so the clean Components V2 deck stands alone
+    if (loadingMsg) {
+      await loadingMsg.delete().catch(() => {});
+    }
+
+    // Post the brand new pristine Components V2 Control Deck message to the channel
     let deckMessage = null;
-    if (editFn) {
-      deckMessage = await editFn(deckPayload);
-    } else if (initialMsg && typeof initialMsg.edit === 'function') {
-      deckMessage = await initialMsg.edit(deckPayload);
+    try {
+      deckMessage = await channel.send(deckPayload);
+    } catch (cv2Err) {
+      console.warn('[handlePlayCinema CV2 fallback]:', cv2Err.message);
+      // Fallback: send standard message without flags 32768
+      deckMessage = await channel.send({
+        embeds: [{
+          title: `Athena Cinema • ${session.title}`,
+          description:
+            `**Now Playing:** \`${session.title}\`\n` +
+            `**Voice Channel:** <#${session.voiceChannelId}>\n` +
+            `**Platform:** \`${session.platform || 'Local Library'}\`\n\n` +
+            `**Watch Video Screen:**\n[Click here to watch on phone/browser](${getLocalIp()}/cinema/watch/${session.sessionId})`,
+          color: 0x5865F2,
+          footer: { text: 'Athena Prime Cinema Suite • Surround Voice Audio + Video Screen Sync' }
+        }],
+        components: deckPayload.components[0]?.components?.filter(c => c.type === 1) || []
+      });
     }
 
     if (deckMessage) {
       session.deckMessage = deckMessage;
+    }
+
+    if (interaction) {
+      await interaction.editReply({
+        content: `-# <a:03_tick_circle:1565665642084827206> **Cinema stream started in <#${voiceChannel.id}>!**`
+      }).catch(() => {});
     }
   } catch (err) {
     console.error('[handlePlayCinema Error]:', err);
@@ -570,9 +622,9 @@ async function handlePlayCinema(guild, member, query, replyFn, editFn = null) {
       `Playback Initialization Failed | ${WRONG_EMOJI}`,
       `Failed to initialize cinema stream: \`${err.message}\``
     );
-    if (editFn) return editFn(errPayload);
-    if (initialMsg && typeof initialMsg.edit === 'function') return initialMsg.edit(errPayload);
-    return replyFn(errPayload);
+    if (interaction) return interaction.editReply(errPayload);
+    if (loadingMsg) return loadingMsg.edit(errPayload);
+    return channel.send(errPayload);
   }
 }
 
