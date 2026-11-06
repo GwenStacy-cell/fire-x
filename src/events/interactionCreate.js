@@ -524,6 +524,21 @@ export default {
     }
 
     // ==========================================
+    // ROLEPLAY & AFFINITY SYSTEM INTERACTIONS
+    // ==========================================
+    if (interaction.customId && interaction.customId.startsWith('rp_')) {
+      try {
+        const { handleRoleplayButton } = await import('../utils/roleplayEngine.js');
+        if (handleRoleplayButton) {
+          const handled = await handleRoleplayButton(interaction);
+          if (handled) return;
+        }
+      } catch (e) {
+        console.error('[InteractionCreate] Error handling roleplay interaction:', e);
+      }
+    }
+
+    // ==========================================
     // PERSISTENT ARCHITECTURE & EXPLAIN INTERACTIONS
     // ==========================================
     if (interaction.customId && (interaction.customId.startsWith('arch_') || interaction.customId.startsWith('explain_'))) {

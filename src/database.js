@@ -88,7 +88,10 @@ const DEFAULT_SCHEMA = {
   incidentReports: {},      // guildId -> [ { id, timestamp, type, attackerId, attackerTag, actionsAttempted, actionsBlocked, latencyMs, status, details } ]
   staffMetrics: {},         // guildId -> { userId -> { bans, kicks, warns, timeouts, purges, tickets, lastActionAt } }
   pendingDualKey: {},       // actionId -> { id, guildId, initiatorId, initiatorTag, commandName, rawArgs, createdAt, expiresAt }
-  burnRooms: {}             // channelId -> { channelId, guildId, creatorId, expiresAt, durationMinutes }
+  burnRooms: {},            // channelId -> { channelId, guildId, creatorId, expiresAt, durationMinutes }
+  roleplay: {},             // guildId -> { duoKey -> { users: [id1, id2], totalInteractions, actions: {}, firstInteractionAt, lastInteractionAt, lastAction } }
+  roleplayUsers: {},        // guildId -> { userId -> { sentCount, receivedCount, actionsSent: {}, actionsReceived: {}, partners: {}, favoriteAction, customBio, lastActive } }
+  roleplayMarriages: {}     // guildId -> { duoKey -> { users: [id1, id2], marriedAt, ringType, vows } }
 };
 
 class Database {
@@ -3504,6 +3507,249 @@ class Database {
     Object.assign(cfg.dualKey, updates);
     this.save();
     return cfg.dualKey;
+  }
+
+  // ==========================================
+  // --- 7. ATHENA ROLEPLAY & AFFINITY ENGINE ---
+  // ==========================================
+
+  getRoleplayDuoKey(user1Id, user2Id) {
+    if (!user1Id || !user2Id) return null;
+    return [String(user1Id), String(user2Id)].sort().join('_');
+  }
+
+  recordRoleplayAction(guildId, authorId, targetId, actionName) {
+    if (!guildId || !authorId || !targetId || !actionName) return null;
+    guildId = String(guildId);
+    authorId = String(authorId);
+    targetId = String(targetId);
+    actionName = String(actionName).toLowerCase();
+
+    if (!this.cache.roleplay) this.cache.roleplay = {};
+    if (!this.cache.roleplay[guildId]) this.cache.roleplay[guildId] = {};
+
+    if (!this.cache.roleplayUsers) this.cache.roleplayUsers = {};
+    if (!this.cache.roleplayUsers[guildId]) this.cache.roleplayUsers[guildId] = {};
+
+    const duoKey = this.getRoleplayDuoKey(authorId, targetId);
+    const now = Date.now();
+
+    // 1. Update Duo Record (Mutual Matrix)
+    if (!this.cache.roleplay[guildId][duoKey]) {
+      this.cache.roleplay[guildId][duoKey] = {
+        users: [authorId, targetId].sort(),
+        totalInteractions: 0,
+        actions: {},
+        firstInteractionAt: now,
+        lastInteractionAt: now,
+        lastAction: actionName
+      };
+    }
+
+    const duo = this.cache.roleplay[guildId][duoKey];
+    duo.totalInteractions = (duo.totalInteractions || 0) + 1;
+    if (!duo.actions) duo.actions = {};
+    duo.actions[actionName] = (duo.actions[actionName] || 0) + 1;
+    duo.lastInteractionAt = now;
+    duo.lastAction = actionName;
+
+    // 2. Update Author Stats (Sender)
+    if (!this.cache.roleplayUsers[guildId][authorId]) {
+      this.cache.roleplayUsers[guildId][authorId] = {
+        userId: authorId,
+        sentCount: 0,
+        receivedCount: 0,
+        actionsSent: {},
+        actionsReceived: {},
+        partners: {},
+        favoriteAction: actionName,
+        customBio: '',
+        lastActive: now
+      };
+    }
+    const aStats = this.cache.roleplayUsers[guildId][authorId];
+    aStats.sentCount = (aStats.sentCount || 0) + 1;
+    if (!aStats.actionsSent) aStats.actionsSent = {};
+    aStats.actionsSent[actionName] = (aStats.actionsSent[actionName] || 0) + 1;
+    if (!aStats.partners) aStats.partners = {};
+    aStats.partners[targetId] = (aStats.partners[targetId] || 0) + 1;
+    aStats.lastActive = now;
+
+    // Determine author's favorite action
+    let favAction = actionName;
+    let maxCount = 0;
+    for (const [act, cnt] of Object.entries(aStats.actionsSent)) {
+      if (cnt > maxCount) {
+        maxCount = cnt;
+        favAction = act;
+      }
+    }
+    aStats.favoriteAction = favAction;
+
+    // 3. Update Target Stats (Receiver)
+    if (!this.cache.roleplayUsers[guildId][targetId]) {
+      this.cache.roleplayUsers[guildId][targetId] = {
+        userId: targetId,
+        sentCount: 0,
+        receivedCount: 0,
+        actionsSent: {},
+        actionsReceived: {},
+        partners: {},
+        favoriteAction: 'none',
+        customBio: '',
+        lastActive: now
+      };
+    }
+    const tStats = this.cache.roleplayUsers[guildId][targetId];
+    tStats.receivedCount = (tStats.receivedCount || 0) + 1;
+    if (!tStats.actionsReceived) tStats.actionsReceived = {};
+    tStats.actionsReceived[actionName] = (tStats.actionsReceived[actionName] || 0) + 1;
+    if (!tStats.partners) tStats.partners = {};
+    tStats.partners[authorId] = (tStats.partners[authorId] || 0) + 1;
+    tStats.lastActive = now;
+
+    this.save();
+    return { duo, authorStats: aStats, targetStats: tStats };
+  }
+
+  getRoleplayDuo(guildId, user1Id, user2Id) {
+    if (!guildId || !user1Id || !user2Id) return null;
+    const duoKey = this.getRoleplayDuoKey(user1Id, user2Id);
+    return this.cache.roleplay?.[String(guildId)]?.[duoKey] || null;
+  }
+
+  getRoleplayUser(guildId, userId) {
+    if (!guildId || !userId) return null;
+    return this.cache.roleplayUsers?.[String(guildId)]?.[String(userId)] || {
+      userId: String(userId),
+      sentCount: 0,
+      receivedCount: 0,
+      actionsSent: {},
+      actionsReceived: {},
+      partners: {},
+      favoriteAction: 'none',
+      customBio: '',
+      lastActive: 0
+    };
+  }
+
+  setRoleplayBio(guildId, userId, bioText) {
+    if (!guildId || !userId) return;
+    guildId = String(guildId);
+    userId = String(userId);
+    if (!this.cache.roleplayUsers) this.cache.roleplayUsers = {};
+    if (!this.cache.roleplayUsers[guildId]) this.cache.roleplayUsers[guildId] = {};
+    if (!this.cache.roleplayUsers[guildId][userId]) {
+      this.cache.roleplayUsers[guildId][userId] = {
+        userId,
+        sentCount: 0,
+        receivedCount: 0,
+        actionsSent: {},
+        actionsReceived: {},
+        partners: {},
+        favoriteAction: 'none',
+        customBio: '',
+        lastActive: Date.now()
+      };
+    }
+    this.cache.roleplayUsers[guildId][userId].customBio = String(bioText).slice(0, 150);
+    this.save();
+    return this.cache.roleplayUsers[guildId][userId];
+  }
+
+  getRoleplayLeaderboard(guildId, category = 'overall', limit = 10) {
+    if (!guildId) return [];
+    guildId = String(guildId);
+    const usersMap = this.cache.roleplayUsers?.[guildId] || {};
+    const entries = Object.values(usersMap);
+
+    if (category === 'overall') {
+      return entries
+        .map(u => ({ userId: u.userId, score: (u.sentCount || 0) + (u.receivedCount || 0), sent: u.sentCount || 0, received: u.receivedCount || 0 }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+    } else if (category === 'givers' || category === 'sent') {
+      return entries
+        .map(u => ({ userId: u.userId, score: u.sentCount || 0, sent: u.sentCount || 0, received: u.receivedCount || 0 }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+    } else if (category === 'receivers' || category === 'received') {
+      return entries
+        .map(u => ({ userId: u.userId, score: u.receivedCount || 0, sent: u.sentCount || 0, received: u.receivedCount || 0 }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+    } else {
+      // Specific action, e.g. 'hug', 'slap', 'kiss'
+      const act = category.toLowerCase();
+      return entries
+        .map(u => ({
+          userId: u.userId,
+          score: (u.actionsSent?.[act] || 0) + (u.actionsReceived?.[act] || 0),
+          sent: u.actionsSent?.[act] || 0,
+          received: u.actionsReceived?.[act] || 0
+        }))
+        .filter(item => item.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+    }
+  }
+
+  getRoleplayTopDuos(guildId, limit = 10) {
+    if (!guildId) return [];
+    guildId = String(guildId);
+    const duosMap = this.cache.roleplay?.[guildId] || {};
+    return Object.values(duosMap)
+      .sort((a, b) => (b.totalInteractions || 0) - (a.totalInteractions || 0))
+      .slice(0, limit);
+  }
+
+  // --- Roleplay Marriage Registry ---
+  getMarriage(guildId, userId) {
+    if (!guildId || !userId) return null;
+    guildId = String(guildId);
+    userId = String(userId);
+    const marriages = this.cache.roleplayMarriages?.[guildId] || {};
+    for (const [key, m] of Object.entries(marriages)) {
+      if (m.users && m.users.includes(userId)) {
+        const partnerId = m.users.find(id => id !== userId);
+        return { ...m, key, partnerId };
+      }
+    }
+    return null;
+  }
+
+  setMarriage(guildId, user1Id, user2Id, ringType = 'Diamond Band') {
+    if (!guildId || !user1Id || !user2Id) return null;
+    guildId = String(guildId);
+    user1Id = String(user1Id);
+    user2Id = String(user2Id);
+    const duoKey = this.getRoleplayDuoKey(user1Id, user2Id);
+
+    if (!this.cache.roleplayMarriages) this.cache.roleplayMarriages = {};
+    if (!this.cache.roleplayMarriages[guildId]) this.cache.roleplayMarriages[guildId] = {};
+
+    const record = {
+      duoKey,
+      users: [user1Id, user2Id].sort(),
+      marriedAt: Date.now(),
+      ringType: ringType || 'Diamond Band',
+      vows: 'United in eternal roleplay harmony.'
+    };
+    this.cache.roleplayMarriages[guildId][duoKey] = record;
+    this.save();
+    return record;
+  }
+
+  divorceMarriage(guildId, userId) {
+    if (!guildId || !userId) return null;
+    guildId = String(guildId);
+    userId = String(userId);
+    const marriage = this.getMarriage(guildId, userId);
+    if (!marriage) return null;
+
+    delete this.cache.roleplayMarriages[guildId][marriage.key];
+    this.save();
+    return marriage;
   }
 }
 const dbInstance = new Database();

@@ -2733,7 +2733,14 @@ export const helpModules = [
     "`!giveaway / !gw` - Manage server giveaways `[Extra Owner]`",
     "`!date / !go-on-date @user` - Go on a special interactive date `[Public]`",
     "`!app` - Manage Staff Application system `[Extra Owner]`",
-    "`!hug / !kiss / !slap / !pat` - Roleplay interactions with other users `[Public]`"
+    "`!rp / !roleplay` - Complete Athena Roleplay & Affinity Engine (54+ actions, profiles, duo matrix, marriages) `[Public]`",
+    "`!rp actions [category]` - Catalog of all 54+ actions (Affection, Playful, Combat, Reactions) `[Public]`",
+    "`!rp profile [@user] / !rp stats` - Roleplay activity card, custom bio & top partner rankings `[Public]`",
+    "`!rp duo <@user> / !affinity` - Interactive Duo Affinity Matrix, bond level progress bar & dynamics `[Public]`",
+    "`!rp top / !rp leaderboard` - Server leaderboards for top duos and active roleplayers `[Public]`",
+    "`!rp marry <@user> / !marry` - Propose marriage with interactive Accept/Decline buttons `[Public]`",
+    "`!rp divorce / !divorce` - Dissolve roleplay marriage `[Public]`",
+    "`!hug / !kiss / !pat / !slap / !cuddle / !bonk / !yeet` - 54+ interactive roleplay actions with bidirectional counter buttons `[Public]`"
   ] },
 
   { id: 'chess', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Chess', label: 'Grandmaster Chess', emoji: 'chess', commands: [
