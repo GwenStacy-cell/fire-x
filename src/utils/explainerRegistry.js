@@ -2076,10 +2076,10 @@ export const DETAILED_COMMANDS = {
     aliases: ['newticket', 'tickets'],
     category: 'Community & Engagement',
     clearance: 'Extra Owner (Setup & AI Toggle) / Public (Opening Tickets)',
-    syntax: '!ticket setup <#category> <@staffRole> [ai_on] | !ticket log <#channel> | !ticket export | !close',
-    purpose: 'Quick ticket system deployment, dedicated transcript logging, live HTML/TXT exports, and AI triage configuration.',
+    syntax: '!ticket setup <#category> <@staffRole> [ai_on] | !ticket log <#channel> | !ticket export | !ticket claim | !ticket lock/unlock | !ticket add/remove @user | !close',
+    purpose: 'Support ticket system featuring dual text & voice channel provisioning, forensic transcript auto-exports, and AI triage.',
     architecture: 
-`• **Fast Deployment (!ticket setup):** Directly posts a standard single-button panel into the current channel with the "Open Ticket" button (\`ticket_open_general\`). Permanently stores the Category ID and Staff Role IDs in database (\`db.updateTicketConfig\`). Private text and voice channels are generated dynamically when a member opens a ticket.
+`• **Dual Text & Voice Channel Provisioning:** Every ticket creation automatically provisions BOTH a private text channel (\`ticket-XXXX\`) AND an associated private voice room (\`Ticket XXXX VC\`) under the configured category, with synchronized permission overrides for member and staff.
 • **Automated Forensic Transcript Auto-Export Engine:** When a ticket is closed (via \`!close\` or \`Close Ticket\` button), Athena fetches all messages chronologically (up to 1,000 messages) and compiles:
   - High-fidelity **HTML interactive transcripts** with dark cyber styling, searchable timeline, avatars, code blocks, embeds, and attachments.
   - Complete **UTF-8 TXT archive** with precise ISO timestamps and user IDs.
@@ -2095,24 +2095,44 @@ export const DETAILED_COMMANDS = {
     example: '!ticket setup #tickets @Staff ai_on'
   },
 
+  close: {
+    name: 'close',
+    aliases: ['ticketclose', 'resolve'],
+    category: 'Community & Engagement',
+    clearance: 'Public (Ticket Participants & Staff)',
+    syntax: '!close',
+    purpose: 'Resolves the active support ticket, auto-exports forensic HTML and TXT transcripts to owner and staff, and deletes paired channels.',
+    architecture: 
+`• **Forensic Conversation Capture:** Before channel termination, captures up to 1,000 messages with iterative pagination in strict chronological order.
+• **Automatic Multi-Party Dispatch:** Dispatches copies of the full conversation (HTML interactive viewer and plain-text UTF-8 archive) to:
+  - Server Owner DM
+  - Assigned / Claimed Staff DM
+  - Ticket Closer DM
+  - Ticket Creator (Member) DM
+  - Dedicated Log Channel (\`!ticket log <#channel>\`)
+• **Staff Pulse Telemetry:** Directly records staff activity quota in the Staff Pulse matrix (\`db.recordStaffAction\`).
+• **Paired Channel Obliteration:** Safely deletes both the text channel and associated voice channel after file transfers settle.`,
+    example: '!close'
+  },
+
   ticketpanel: {
     name: 'ticketpanel',
     aliases: ['tp', 'ticket-panel', 'ticketmgr'],
     category: 'Community & Engagement',
     clearance: 'Extra Owner',
     syntax: '!ticketpanel',
-    purpose: 'Interactive visual Ticket Panel Manager dashboard with real-time UI controls to customize and deploy bespoke ticket panels.',
+    purpose: 'Interactive visual Ticket Panel Manager dashboard with real-time UI controls to customize and deploy bespoke ticket panels with paired voice rooms.',
     architecture: 
 `• **Interactive Manager UI:** Running \`!ticketpanel\` opens the management control panel in Discord (\`updateManagerMessage\`) with buttons, select menus, and modals to customize settings in real-time.
 • **Visual Customization Modals:** 
   - \`Edit Title & Desc\` (\`tp_edit_text\`): Customize the panel's title, greeting, and support guidelines.
-  - \`Edit Media & Placeholder\` (\`tp_edit_media\`): Configure banner image URLs, thumbnail URLs, and dropdown placeholder text.
+  - \`Edit Media & Placeholder\` (\`tp_edit_media\`): Configure banner image URLs, thumbnail URLs, and dropdown placeholder text (supports direct Pinterest \`pin.it\` master extraction).
 • **Dropdown Reasons Builder (\`tp_add_option\` / \`tp_reset_options\`):** Allows admins to add custom ticket category reasons (e.g. "General Support", "Billing & Store", "Ban Appeal", "Report User"). When options exist, the deployed panel automatically uses a Discord String Select Menu instead of a basic button!
-• **Target Channel & Closing Roles Selectors:**
+• **Target Channel & Transcript Archive Selectors:**
   - \`Target Channel\` (\`tp_target_channel\`): Pick any specific text channel to deploy the panel into.
+  - \`Transcript Archive Channel\` (\`tp_log_channel\`): Designate the dedicated channel for auto-exported conversation archives.
   - \`Closing Roles\` (\`tp_close_roles\`): Select specific staff roles authorized to close tickets.
-• **Deploy Panel (\`tp_send\`):** Compiles all settings from SQLite (\`db.getTickets\`) and deploys the finished interactive panel to the target channel.
-• **Clarification on Channel Creation:** Like \`!ticket setup\`, deploying a panel does NOT create a private ticket channel immediately. Private channels are ONLY created dynamically when a user clicks the button or chooses an option from the dropdown menu.`,
+• **Dual Text & Voice Channel Architecture:** Panels automatically trigger the creation of synchronized paired text and voice rooms upon ticket launch.`,
     example: '!ticketpanel'
   },
 

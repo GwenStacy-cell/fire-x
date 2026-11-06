@@ -513,12 +513,40 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Dynamic Variables:** Full support for \`{membercount}\`, \`{ordinal}\`, \`{user}\`, \`{avatar}\`, \`{server}\`, and 15+ guild metadata tokens.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
                     `> ${BULLET_EMOJI} \`${prefix}${targetCmd.name}\` - Open the interactive visual configuration dashboard.`;
+              } else if (targetCmd.name === "ticket" || targetCmd.name === "tickets" || targetCmd.name === "newticket") {
+                  descContent = `Full-featured support ticket system featuring dual text & voice channel provisioning, automated forensic transcript exports, and AI triage.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Dual Text & Voice Channel Provisioning:__**\n` +
+                    `> ${BULLET_EMOJI} **Paired Dual Rooms:** Every opened ticket automatically generates both a private text channel (\`ticket-XXXX\`) AND an associated private voice channel (\`Ticket XXXX VC\`).\n` +
+                    `> ${BULLET_EMOJI} **Synchronized Access:** Permissions are isolated strictly to the member and support staff across both text and voice.\n\n` +
+                    `> -# **__Forensic Transcript Auto-Export Engine:__**\n` +
+                    `> ${BULLET_EMOJI} **Pre-Deletion Message Extraction:** Extracts full chat history (up to 1,000 messages) into interactive HTML transcripts and UTF-8 TXT files.\n` +
+                    `> ${BULLET_EMOJI} **Multi-Party Dispatch:** Automatically sent to Server Owner DMs, Assigned Staff DMs, Closer DMs, Member DMs, and the dedicated log channel.\n` +
+                    `> ${BULLET_EMOJI} **Staff Pulse Quota Credit:** Resolving tickets automatically awards credit in Staff Pulse telemetry.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ticket setup <#cat> <@staffRole> [ai_on]\` — Deploy basic ticket panel.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ticket log <#channel>\` — Set automatic transcript archive channel.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ticket export\` — Export live HTML/TXT transcript without closing.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ticket claim\` — Claim active ticket (awards Staff Pulse quota).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ticket lock | unlock\` — Lock/unlock member messaging in ticket.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}ticket add @user | remove @user\` — Grant or revoke member access.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}close\` — Resolve ticket, auto-export transcripts & delete channels.`;
+              } else if (targetCmd.name === "close" || targetCmd.name === "ticketclose" || targetCmd.name === "resolve") {
+                  descContent = `Resolves and terminates an active support ticket, auto-exporting conversation transcripts before channel deletion.\n\n` +
+                    `> -# **__Transcript Auto-Export Engine:__**\n` +
+                    `> ${BULLET_EMOJI} **Interactive HTML Transcript:** Searchable conversation stream with avatars, markdown, and attachments.\n` +
+                    `> ${BULLET_EMOJI} **Plaintext UTF-8 Log:** Chronological archive with exact ISO timestamps and author IDs.\n` +
+                    `> ${BULLET_EMOJI} **Multi-Party Recipients:** Dispatches copies directly to Server Owner, Assigned Staff, Closer, and Member.\n` +
+                    `> ${BULLET_EMOJI} **Dedicated Archive:** Dispatches to the configured transcript log channel.\n` +
+                    `> ${BULLET_EMOJI} **Dual Channel Cleanup:** Deletes both the text channel and associated voice channel.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}close\` — Close and archive the current ticket.`;
               } else if (targetCmd.name === "ticketpanel") {
-                  descContent = `Interactive visual ticket panel deployment dashboard with AI triage and custom media integration.\n\n` +
-                    `> -# **__Features & Media Support:__**\n` +
+                  descContent = `Interactive visual ticket panel deployment dashboard with AI triage, dual voice rooms, and custom media integration.\n\n` +
+                    `> -# **__Features & Architecture:__**\n` +
+                    `> ${BULLET_EMOJI} **Dual Text & Voice Channel Architecture:** Automatically provisions paired text and voice channels per ticket.\n` +
                     `> ${BULLET_EMOJI} **Universal Pinterest Support:** Panel banner and thumbnail inputs support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic uncompressed extraction.\n` +
                     `> ${BULLET_EMOJI} **Smart AI Triage:** Classifies incoming inquiries into urgency tiers with staff executive summaries.\n` +
-                    `> ${BULLET_EMOJI} **Interactive Customization:** Buttons, dropdown reasons, target channels, and closing roles.\n\n` +
+                    `> ${BULLET_EMOJI} **Interactive Customization:** Buttons, dropdown reasons, target channels, transcript archive channels, and closing roles.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
                     `> ${BULLET_EMOJI} \`${prefix}ticketpanel\` - Open the interactive panel manager.`;
               } else if (targetCmd.name === "announce" || targetCmd.name === "aiannounce") {
@@ -1093,12 +1121,40 @@ export const commands = [
             `> ${BULLET_EMOJI} **Dynamic Variables:** Full support for \`{membercount}\`, \`{ordinal}\`, \`{user}\`, \`{avatar}\`, \`{server}\`, and 15+ guild metadata tokens.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
             `> ${BULLET_EMOJI} \`${prefix}${targetCmd.name}\` - Open the interactive visual configuration dashboard.`;
+        } else if (targetCmd.name === "ticket" || targetCmd.name === "tickets" || targetCmd.name === "newticket") {
+          descContent = `Full-featured support ticket system featuring dual text & voice channel provisioning, automated forensic transcript exports, and AI triage.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Dual Text & Voice Channel Provisioning:__**\n` +
+            `> ${BULLET_EMOJI} **Paired Dual Rooms:** Every opened ticket automatically generates both a private text channel (\`ticket-XXXX\`) AND an associated private voice channel (\`Ticket XXXX VC\`).\n` +
+            `> ${BULLET_EMOJI} **Synchronized Access:** Permissions are isolated strictly to the member and support staff across both text and voice.\n\n` +
+            `> -# **__Forensic Transcript Auto-Export Engine:__**\n` +
+            `> ${BULLET_EMOJI} **Pre-Deletion Message Extraction:** Extracts full chat history (up to 1,000 messages) into interactive HTML transcripts and UTF-8 TXT files.\n` +
+            `> ${BULLET_EMOJI} **Multi-Party Dispatch:** Automatically sent to Server Owner DMs, Assigned Staff DMs, Closer DMs, Member DMs, and the dedicated log channel.\n` +
+            `> ${BULLET_EMOJI} **Staff Pulse Quota Credit:** Resolving tickets automatically awards credit in Staff Pulse telemetry.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ticket setup <#cat> <@staffRole> [ai_on]\` — Deploy basic ticket panel.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ticket log <#channel>\` — Set automatic transcript archive channel.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ticket export\` — Export live HTML/TXT transcript without closing.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ticket claim\` — Claim active ticket (awards Staff Pulse quota).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ticket lock | unlock\` — Lock/unlock member messaging in ticket.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}ticket add @user | remove @user\` — Grant or revoke member access.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}close\` — Resolve ticket, auto-export transcripts & delete channels.`;
+        } else if (targetCmd.name === "close" || targetCmd.name === "ticketclose" || targetCmd.name === "resolve") {
+          descContent = `Resolves and terminates an active support ticket, auto-exporting conversation transcripts before channel deletion.\n\n` +
+            `> -# **__Transcript Auto-Export Engine:__**\n` +
+            `> ${BULLET_EMOJI} **Interactive HTML Transcript:** Searchable conversation stream with avatars, markdown, and attachments.\n` +
+            `> ${BULLET_EMOJI} **Plaintext UTF-8 Log:** Chronological archive with exact ISO timestamps and author IDs.\n` +
+            `> ${BULLET_EMOJI} **Multi-Party Recipients:** Dispatches copies directly to Server Owner, Assigned Staff, Closer, and Member.\n` +
+            `> ${BULLET_EMOJI} **Dedicated Archive:** Dispatches to the configured transcript log channel.\n` +
+            `> ${BULLET_EMOJI} **Dual Channel Cleanup:** Deletes both the text channel and associated voice channel.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}close\` — Close and archive the current ticket.`;
         } else if (targetCmd.name === "ticketpanel") {
-          descContent = `Interactive visual ticket panel deployment dashboard with AI triage and custom media integration.\n\n` +
-            `> -# **__Features & Media Support:__**\n` +
+          descContent = `Interactive visual ticket panel deployment dashboard with AI triage, dual voice rooms, and custom media integration.\n\n` +
+            `> -# **__Features & Architecture:__**\n` +
+            `> ${BULLET_EMOJI} **Dual Text & Voice Channel Architecture:** Automatically provisions paired text and voice channels per ticket.\n` +
             `> ${BULLET_EMOJI} **Universal Pinterest Support:** Panel banner and thumbnail inputs support direct Pinterest links (\`pin.it\` & \`pinterest.com\`) with automatic uncompressed extraction.\n` +
             `> ${BULLET_EMOJI} **Smart AI Triage:** Classifies incoming inquiries into urgency tiers with staff executive summaries.\n` +
-            `> ${BULLET_EMOJI} **Interactive Customization:** Buttons, dropdown reasons, target channels, and closing roles.\n\n` +
+            `> ${BULLET_EMOJI} **Interactive Customization:** Buttons, dropdown reasons, target channels, transcript archive channels, and closing roles.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
             `> ${BULLET_EMOJI} \`${prefix}ticketpanel\` - Open the interactive panel manager.`;
         } else if (targetCmd.name === "announce" || targetCmd.name === "aiannounce") {
