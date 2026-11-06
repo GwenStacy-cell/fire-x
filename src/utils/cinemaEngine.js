@@ -218,6 +218,43 @@ export function listLocalMovies() {
 }
 
 /**
+ * Deletes a movie file from the local library or cache
+ */
+export function deleteMovieFile(query) {
+  if (!query) return null;
+  const str = String(query).trim();
+  const movies = listLocalMovies();
+  let target = null;
+
+  if (/^\d+$/.test(str)) {
+    const idx = parseInt(str, 10) - 1;
+    if (idx >= 0 && idx < movies.length) {
+      target = movies[idx];
+    }
+  } else {
+    target = movies.find(m => m.name.toLowerCase().includes(str.toLowerCase()));
+  }
+
+  if (!target) return null;
+
+  try {
+    if (fs.existsSync(target.fullPath)) {
+      fs.unlinkSync(target.fullPath);
+      return {
+        success: true,
+        name: target.name,
+        path: target.fullPath,
+        sizeFormatted: target.sizeFormatted
+      };
+    }
+  } catch (err) {
+    console.error('[CinemaEngine deleteMovieFile Error]:', err.message);
+    throw err;
+  }
+  return null;
+}
+
+/**
  * Probes the duration of a video or audio file using ffmpeg
  */
 export function probeMediaDuration(filePathOrUrl) {

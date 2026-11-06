@@ -395,6 +395,7 @@ var _m = function(eph) {
     },
     info:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
     card:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
+    panel:    function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
     raid:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0xED4245); },
     owner:    function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
     security: function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
@@ -469,6 +470,7 @@ export var cv2 = Object.assign(_m(false), {
   buildContainer: buildContainer,
   make:           make,
   card:           function(t, d, f, ft, acc) { return make(t, d, f, false, ft, acc || 0x5865F2); },
+  panel:          function(t, d, f, ft, acc) { return make(t, d, f, false, ft, acc || 0x5865F2); },
   edit:           edit,
   
   respond: async function(ctx, payload, type = 4) {

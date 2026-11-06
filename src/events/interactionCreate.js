@@ -827,9 +827,13 @@ export default {
       return;
     }
 
-    if (interaction.isButton() && interaction.customId.startsWith('cinema_')) {
+    if ((interaction.isButton() || interaction.isAnySelectMenu()) && interaction.customId.startsWith('cinema_')) {
       import('../commands/cinema.js').then(m => {
-        if (m.handleCinemaButtons) m.handleCinemaButtons(interaction).catch(e => console.error(e));
+        if (interaction.isAnySelectMenu() && m.handleCinemaSelectMenu) {
+          m.handleCinemaSelectMenu(interaction).catch(e => console.error(e));
+        } else if (m.handleCinemaButtons) {
+          m.handleCinemaButtons(interaction).catch(e => console.error(e));
+        }
       }).catch(e => console.error(e));
       return;
     }

@@ -2,6 +2,7 @@ import {
   ActionRowBuilder, 
   ButtonBuilder, 
   ButtonStyle, 
+  StringSelectMenuBuilder,
   ChannelType, 
   PermissionFlagsBits 
 } from 'discord.js';
@@ -23,6 +24,7 @@ import {
   formatSeconds,
   resolveMediaSource,
   downloadMovieToServer,
+  deleteMovieFile,
   startCinemaSession,
   pauseCinemaSession,
   resumeCinemaSession,
@@ -50,6 +52,50 @@ function parseTimestamp(input) {
   return 0;
 }
 
+/**
+ * Builds the interactive movie library listing with Delete & Refresh controls
+ */
+export function buildLibraryPayload() {
+  const movies = listLocalMovies();
+  if (movies.length === 0) {
+    return cv2.warn(
+      `No Movies Found | ${WARN_EMOJI}`,
+      `No video files were detected in host \`movies/\` folder.\n\n` +
+      `${BULLET_EMOJI} **Folder Location:** \`${getMoviesDir()}\`\n` +
+      `${BULLET_EMOJI} **Supported Formats:** \`.mp4\`, \`.mkv\`, \`.webm\`, \`.avi\`, \`.mov\`, \`.flv\`, \`.m4v\`\n` +
+      `${BULLET_EMOJI} Drop movie files into that folder or run \`!movie download <url>\`!`
+    );
+  }
+
+  const lines = movies.map((m, i) => 
+    `${BULLET_EMOJI} **#${i + 1}** \`${m.name}\` — \`${m.sizeFormatted}\` (\`${m.ext}\`)`
+  ).join('\n');
+
+  const panel = cv2.panel(
+    `Local Movie Library | ${TICK_EMOJI}`,
+    `Found **${movies.length}** downloaded movie(s) stored on host server:\n\n${lines}\n\n` +
+    `Use \`!movie play <number>\` or \`/cinema play query:<number>\` to start streaming!\n` +
+    `Click **Delete Movie** below to permanently remove a file from server storage.`
+  );
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('cinema_open_delete')
+      .setLabel('Delete Movie')
+      .setEmoji(DELETE_BEAT_EMOJI)
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId('cinema_list_refresh')
+      .setLabel('Refresh List')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  return {
+    ...panel,
+    components: [...(panel.components || []), row]
+  };
+}
+
 export const commands = [
   {
     name: 'cinema',
@@ -74,6 +120,19 @@ export const commands = [
         name: 'list',
         description: 'View all downloaded movie and video files stored on the host PC',
         type: 1
+      },
+      {
+        name: 'delete',
+        description: 'Delete a downloaded movie from host server storage',
+        type: 1,
+        options: [
+          {
+            name: 'movie',
+            description: 'Movie number from list or filename to permanently delete',
+            type: 3,
+            required: true
+          }
+        ]
       },
       {
         name: 'pause',
@@ -186,27 +245,24 @@ export const commands = [
         }
       }
 
-      if (subcommand === 'list') {
-        const movies = listLocalMovies();
-        if (movies.length === 0) {
-          return interaction.reply(cv2.warn(
-            `No Movies Found | ${WARN_EMOJI}`,
-            `No video files were detected in the host \`movies/\` folder.\n\n` +
-            `${BULLET_EMOJI} **Folder Location:** \`${getMoviesDir()}\`\n` +
-            `${BULLET_EMOJI} **Supported Formats:** \`.mp4\`, \`.mkv\`, \`.webm\`, \`.avi\`, \`.mov\`, \`.flv\`, \`.m4v\`\n` +
-            `${BULLET_EMOJI} Drop your movie files into that folder on the PC and run \`/cinema list\` again!`
+      if (subcommand === 'delete') {
+        const query = interaction.options.getString('movie');
+        try {
+          const res = deleteMovieFile(query);
+          if (!res) {
+            return interaction.reply(cv2.warn(`Movie Not Found | ${WARN_EMOJI}`, `Could not locate movie matching \`${query}\` in server storage.`));
+          }
+          return interaction.reply(cv2.success(
+            `Movie Deleted | ${TICK_EMOJI}`,
+            `Permanently deleted **${res.name}** (\`${res.sizeFormatted}\`) from server storage.`
           ));
+        } catch (err) {
+          return interaction.reply(cv2.error(`Delete Failed | ${WRONG_EMOJI}`, `Failed to delete movie: \`${err.message}\``));
         }
+      }
 
-        const lines = movies.map((m, i) => 
-          `${BULLET_EMOJI} **#${i + 1}** \`${m.name}\` — \`${m.sizeFormatted}\` (\`${m.ext}\`)`
-        ).join('\n');
-
-        return interaction.reply(cv2.panel(
-          `Local Movie Library | ${TICK_EMOJI}`,
-          `Found **${movies.length}** downloaded movie(s) ready to stream:\n\n${lines}\n\n` +
-          `Use \`/cinema play <number>\` or \`!movie play <number>\` to start streaming!`
-        ));
+      if (subcommand === 'list') {
+        return interaction.reply(buildLibraryPayload());
       }
 
       if (subcommand === 'folder') {
@@ -340,7 +396,8 @@ export const commands = [
           `Stream local downloaded PC movies or online streams (**YouTube**, **Instagram Reels**, **Twitch**, **TikTok**, **Twitter/X**) with synchronized surround audio in voice and interactive mobile web screen!\n\n` +
           `${BULLET_EMOJI} \`!movie play <number | link>\` — Stream movie or YouTube/IG/Twitch/TikTok link\n` +
           `${BULLET_EMOJI} \`!movie download <url> [name]\` — Download online movie directly to server storage\n` +
-          `${BULLET_EMOJI} \`!movie list\` — List all downloaded movies in \`${dir}\`\n` +
+          `${BULLET_EMOJI} \`!movie delete <number | name>\` — Delete movie from server storage\n` +
+          `${BULLET_EMOJI} \`!movie list\` — List all downloaded movies with delete buttons\n` +
           `${BULLET_EMOJI} \`!movie pause\` / \`!movie resume\` — Toggle playback\n` +
           `${BULLET_EMOJI} \`!movie forward [secs]\` / \`!movie rewind [secs]\` — Seek delta\n` +
           `${BULLET_EMOJI} \`!movie seek <MM:SS>\` — Jump to specific timestamp\n` +
@@ -352,26 +409,26 @@ export const commands = [
       }
 
       if (sub === 'list') {
-        const movies = listLocalMovies();
-        if (movies.length === 0) {
-          return message.reply(cv2.warn(
-            `No Movies Found | ${WARN_EMOJI}`,
-            `No video files were detected in host \`movies/\` folder.\n\n` +
-            `${BULLET_EMOJI} **Folder Location:** \`${getMoviesDir()}\`\n` +
-            `${BULLET_EMOJI} **Supported Formats:** \`.mp4\`, \`.mkv\`, \`.webm\`, \`.avi\`, \`.mov\`, \`.flv\`, \`.m4v\`\n` +
-            `Drop movie files into that folder and run \`!movie list\` again!`
-          ));
+        return message.reply(buildLibraryPayload());
+      }
+
+      if (sub === 'delete' || sub === 'del' || sub === 'remove' || sub === 'rm') {
+        const query = args.slice(1).join(' ');
+        if (!query) {
+          return message.reply(cv2.warn(`Movie Required | ${WARN_EMOJI}`, 'Please specify movie number or name to delete: `!movie delete <number | name>`.'));
         }
-
-        const lines = movies.map((m, i) => 
-          `${BULLET_EMOJI} **#${i + 1}** \`${m.name}\` — \`${m.sizeFormatted}\` (\`${m.ext}\`)`
-        ).join('\n');
-
-        return message.reply(cv2.panel(
-          `Local Movie Library | ${TICK_EMOJI}`,
-          `Found **${movies.length}** downloaded movie(s) ready to stream:\n\n${lines}\n\n` +
-          `Use \`!movie play <number>\` to start streaming!`
-        ));
+        try {
+          const res = deleteMovieFile(query);
+          if (!res) {
+            return message.reply(cv2.warn(`Movie Not Found | ${WARN_EMOJI}`, `Could not locate movie matching \`${query}\` in server storage.`));
+          }
+          return message.reply(cv2.success(
+            `Movie Deleted | ${TICK_EMOJI}`,
+            `Permanently deleted **${res.name}** (\`${res.sizeFormatted}\`) from server storage.`
+          ));
+        } catch (err) {
+          return message.reply(cv2.error(`Delete Failed | ${WRONG_EMOJI}`, `Failed to delete movie: \`${err.message}\``));
+        }
       }
 
       if (sub === 'folder') {
@@ -629,12 +686,45 @@ async function handlePlayCinema({ guild, member, channel, query, interaction = n
 }
 
 /**
- * Handles all interactive button clicks from the Cinema Control Deck
+ * Handles all interactive button clicks from Cinema Deck & Library List
  */
 export async function handleCinemaButtons(interaction) {
   const { customId, guild, member } = interaction;
-  const session = getCinemaSession(guild.id);
 
+  // 1. Library buttons (which work even when no cinema session is active)
+  if (customId === 'cinema_list_refresh') {
+    const payload = buildLibraryPayload();
+    return interaction.update(payload);
+  }
+
+  if (customId === 'cinema_open_delete') {
+    const movies = listLocalMovies();
+    if (movies.length === 0) {
+      return interaction.reply({ content: `-# ${WARN_EMOJI} **No movies available to delete in server storage.**`, flags: 64 });
+    }
+
+    const selectOptions = movies.slice(0, 25).map(m => ({
+      label: m.name.slice(0, 50),
+      description: `Size: ${m.sizeFormatted} • Ext: ${m.ext}`,
+      value: String(m.index)
+    }));
+
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId('cinema_select_delete')
+      .setPlaceholder('Select a movie to permanently delete from server storage...')
+      .addOptions(selectOptions);
+
+    const row = new ActionRowBuilder().addComponents(selectMenu);
+
+    return interaction.reply({
+      content: `-# <a:02_delete_beat:1567037365547962449> **Select the movie you wish to delete from host server storage:**`,
+      components: [row],
+      flags: 64
+    });
+  }
+
+  // 2. Playback Control Deck buttons (which require an active session)
+  const session = getCinemaSession(guild.id);
   if (!session) {
     return interaction.reply({
       content: `-# ${WARN_EMOJI} **This cinema session has ended or is no longer active.**`,
@@ -729,5 +819,33 @@ export async function handleCinemaButtons(interaction) {
       components: [row],
       flags: 64
     });
+  }
+}
+
+/**
+ * Handles movie deletion select menu dropdown
+ */
+export async function handleCinemaSelectMenu(interaction) {
+  const { customId, values } = interaction;
+  if (customId === 'cinema_select_delete') {
+    const selectedIdx = values[0];
+    try {
+      const res = deleteMovieFile(selectedIdx);
+      if (!res) {
+        return interaction.update({
+          content: `-# ${WRONG_EMOJI} **Could not find selected movie #${selectedIdx} in server storage.**`,
+          components: []
+        });
+      }
+      return interaction.update({
+        content: `-# <a:03_tick_circle:1565665642084827206> **Permanently deleted \`${res.name}\` (\`${res.sizeFormatted}\`) from server storage!**`,
+        components: []
+      });
+    } catch (err) {
+      return interaction.update({
+        content: `-# ${WRONG_EMOJI} **Failed to delete movie:** \`${err.message}\``,
+        components: []
+      });
+    }
   }
 }
