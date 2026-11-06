@@ -358,6 +358,8 @@ export const commands = [
                   usageText = `${prefix}weather <location/maps_url> / ${prefix}wtr / ${prefix}climate / ${prefix}forecast / ${prefix}temp / /weather [location]`;
               } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
                   usageText = `${prefix}image <query> / ${prefix}pic / ${prefix}img / ${prefix}photo / ${prefix}picture / ${prefix}searchimg / /image [query]`;
+              } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
+                  usageText = `${prefix}gif <need> / ${prefix}findgif / ${prefix}searchgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / /gif [query]`;
               } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
                   usageText = `${prefix}stock [symbol] / ${prefix}market / ${prefix}stocks / ${prefix}ticker [symbol] / /stock [symbol]`;
               } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
@@ -642,6 +644,19 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
                     `> ${BULLET_EMOJI} \`/image [query]\` - Slash command equivalent.`;
+              } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
+                  descContent = `Federated animated GIF search engine delivering high-resolution GIFs inside an accent borderless Components V2 container.\n\n` +
+                    `> -# **__Features & Intelligence:__**\n` +
+                    `> ${BULLET_EMOJI} **Multi-Route GIF Federation:** Queries KLIPY, Tenor, Giphy, OtakuGifs, and Nekos Best to discover authentic looping GIFs for any action, expression, meme, or keyword.\n` +
+                    `> ${BULLET_EMOJI} **Accent Borderless CV2 Container:** Formatted inside a dark rounded Discord Components V2 container with media gallery and full query metadata.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Navigation Controls:** Browse results seamlessly with \`Prev\`, \`Next\`, and \`Random\` buttons.\n` +
+                    `> ${BULLET_EMOJI} **Fresh Batch Button:** Click \`[Fresh Batch]\` to retrieve brand new GIFs dynamically.\n` +
+                    `> ${BULLET_EMOJI} **Direct Link Button:** Instant 1-click button to view the original GIF URL directly.\n\n` +
+                    `> -# **__All Aliases & Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}gif <need>\` - Primary GIF search directive (e.g. \`${prefix}gif cat dancing\`, \`${prefix}gif anime hug\`).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}findgif <query>\` / \`${prefix}searchgif <query>\` - Explicit discovery aliases.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}gifs <query>\` / \`${prefix}tenor <query>\` / \`${prefix}klipy <query>\` - Provider-direct search aliases.\n` +
+                    `> ${BULLET_EMOJI} \`/gif [query]\` - Slash command equivalent.`;
               } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
                   descContent = `Universal real-time stock, ETF, and cryptocurrency telemetry engine with terminal-grade Canvas charts, autonomous self-learning database, and market intelligence.\n\n` +
                     `> -# **__Features & Telemetry Pipeline:__**\n` +
@@ -1068,6 +1083,8 @@ export const commands = [
           usageText = `${prefix}weather <location/maps_url> / ${prefix}wtr / ${prefix}climate / ${prefix}forecast / ${prefix}temp / /weather [location]`;
         } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
           usageText = `${prefix}image <query> / ${prefix}pic / ${prefix}img / ${prefix}photo / ${prefix}picture / ${prefix}searchimg / /image [query]`;
+        } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
+          usageText = `${prefix}gif <need> / ${prefix}findgif / ${prefix}searchgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / /gif [query]`;
         } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
           usageText = `${prefix}stock [symbol] / ${prefix}market / ${prefix}stocks / ${prefix}ticker [symbol] / /stock [symbol]`;
         } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
@@ -1250,6 +1267,19 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}img <query>\` / \`${prefix}photo <query>\` - Visual media search aliases.\n` +
             `> ${BULLET_EMOJI} \`${prefix}picture <query>\` / \`${prefix}searchimg <query>\` - Descriptive net lookup aliases.\n` +
             `> ${BULLET_EMOJI} \`/image [query]\` - Slash command equivalent.`;
+        } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
+          descContent = `Federated animated GIF search engine delivering high-resolution GIFs inside an accent borderless Components V2 container.\n\n` +
+            `> -# **__Features & Intelligence:__**\n` +
+            `> ${BULLET_EMOJI} **Multi-Route GIF Federation:** Queries KLIPY, Tenor, Giphy, OtakuGifs, and Nekos Best to discover authentic looping GIFs for any action, expression, meme, or keyword.\n` +
+            `> ${BULLET_EMOJI} **Accent Borderless CV2 Container:** Formatted inside a dark rounded Discord Components V2 container with media gallery and full query metadata.\n` +
+            `> ${BULLET_EMOJI} **Interactive Navigation Controls:** Browse results seamlessly with \`Prev\`, \`Next\`, and \`Random\` buttons.\n` +
+            `> ${BULLET_EMOJI} **Fresh Batch Button:** Click \`[Fresh Batch]\` to retrieve brand new GIFs dynamically.\n` +
+            `> ${BULLET_EMOJI} **Direct Link Button:** Instant 1-click button to view the original GIF URL directly.\n\n` +
+            `> -# **__All Aliases & Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}gif <need>\` - Primary GIF search directive (e.g. \`${prefix}gif cat dancing\`, \`${prefix}gif anime hug\`).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}findgif <query>\` / \`${prefix}searchgif <query>\` - Explicit discovery aliases.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}gifs <query>\` / \`${prefix}tenor <query>\` / \`${prefix}klipy <query>\` - Provider-direct search aliases.\n` +
+            `> ${BULLET_EMOJI} \`/gif [query]\` - Slash command equivalent.`;
         } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
           descContent = `Universal real-time stock, ETF, and cryptocurrency telemetry engine with terminal-grade Canvas charts, autonomous self-learning database, and market intelligence.\n\n` +
             `> -# **__Features & Telemetry Pipeline:__**\n` +
@@ -2800,6 +2830,7 @@ export const helpModules = [
     "`!help / !h [module/command]` - Displays this interactive menu `[Public]`",
     "`!weather / !wtr / !climate / !forecast / !temp <location/url>` - Live global weather with satellite world map & 3-day forecast `[Public]`",
     "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Real-time web picture retrieval with interactive pagination & source link `[Public]`",
+    "`!gif / !findgif / !searchgif / !gifs / !tenor / !klipy <need>` - Federated animated GIF search across KLIPY, Tenor, Giphy & OtakuGifs inside an accent borderless CV2 container `[Public]`",
     "`!pinterest / !pin <link>` - Extract & download master uncompressed original images or MP4 videos from Pinterest `[Public]`",
     "`!dashboard / !commandcenter / !omni / !warroomall / !allinone` - Flagship Unified War-Room Command Center combining Telemetry & DEFCON `[Public / Extra Owner]`",
     "`!hud / !warroom / !corehud / !matrixhud` - Flagship Animated Cyber War-Room HUD with live mode switching `[Public / Extra Owner]`",

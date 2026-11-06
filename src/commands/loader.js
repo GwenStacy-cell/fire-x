@@ -104,6 +104,7 @@ import { commands as studioCmds } from './studio.js';
 import { commands as athenaCmds } from './athena.js';
 import { commands as weatherCmds } from './weather.js';
 import { commands as imageCmds } from './image.js';
+import { commands as gifCmds } from './gif.js';
 import { commands as stockCmds } from './stock.js';
 import { commands as entryCmds } from './entry.js';
 import { commands as honeypotCmds } from './honeypot.js';
@@ -132,6 +133,7 @@ export const allCommands = [
   ...athenaCmds,
   ...weatherCmds,
   ...imageCmds,
+  ...gifCmds,
   ...stockCmds,
   ...askCmds,
   ...economyCmds,

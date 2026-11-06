@@ -3467,6 +3467,77 @@ async function handleSecurityInteractions(interaction, guild) {
       }
     }
 
+    // Federated GIF Search Interactive Navigation Buttons
+    if (customId && customId.startsWith('gif:')) {
+      try {
+        const {
+          buildGifResultPayload,
+          gifSessions,
+          getOrRecoverGifSession,
+          fetchFreshBatchForGifSession,
+          extractQueryFromGifMessage
+        } = await import('../utils/gifSearch.js');
+
+        const parts = customId.split(':');
+        const action = parts[1] || 'next'; // 'prev', 'next', 'rand', 'fresh'
+        const sessionId = parts[2] || '';
+        const targetIndex = parseInt(parts[3]) || 0;
+
+        const fallbackQuery = extractQueryFromGifMessage(interaction.message);
+
+        // Fresh Batch requested: fetch brand new GIFs with next offset
+        if (action === 'fresh') {
+          await interaction.deferUpdate().catch(() => null);
+          const session = await fetchFreshBatchForGifSession(sessionId, fallbackQuery);
+          if (session && session.results.length > 0) {
+            const payload = buildGifResultPayload(session.id || sessionId, 0);
+            return interaction.editReply(payload);
+          }
+          return interaction.followUp({
+            content: `-# <a:exclamation_outline1:1565666739356827759> Unable to fetch a fresh batch of GIFs at this moment.`,
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        // Check if session is already cached in memory
+        let session = gifSessions.get(sessionId);
+
+        // Transparent session recovery if lost / bot restarted
+        if (!session || !session.results || session.results.length === 0) {
+          if (fallbackQuery) {
+            await interaction.deferUpdate().catch(() => null);
+            session = await getOrRecoverGifSession(sessionId, fallbackQuery);
+            if (session && session.results.length > 0) {
+              const reqIdx = action === 'rand'
+                ? Math.floor(Math.random() * session.results.length)
+                : targetIndex;
+              const payload = buildGifResultPayload(sessionId, reqIdx);
+              return interaction.editReply(payload);
+            }
+          }
+          return interaction.reply({
+            content: `-# <a:exclamation_outline1:1565666739356827759> GIF search session expired. Please run a new \`!gif <query>\` command.`,
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        // Session exists in memory: instant response without defer lag
+        if (action === 'rand') {
+          let randIndex = Math.floor(Math.random() * session.results.length);
+          if (session.results.length > 1 && randIndex === session.index) {
+            randIndex = (randIndex + 1) % session.results.length;
+          }
+          const payload = buildGifResultPayload(sessionId, randIndex);
+          return interaction.update(payload);
+        } else {
+          const payload = buildGifResultPayload(sessionId, targetIndex);
+          return interaction.update(payload);
+        }
+      } catch (err) {
+        console.error('[GifInteraction Error]', err);
+      }
+    }
+
     if (['toggle_antinuke', 'toggle_spam', 'toggle_invite', 'cycle_punishment', 'sec_status_back', 'sec_status_view', 'sec_architecture_guide', 'antinuke_config', 'save_panel'].includes(customId)) {
       try {
         let updated = false;
