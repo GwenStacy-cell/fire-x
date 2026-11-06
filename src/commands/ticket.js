@@ -733,6 +733,141 @@ async function executeTicketRename(guild, channel, member, newName, replyFn) {
 }
 
 /**
+ * Robust Ticket Channel Provisioner:
+ * Automatically provisions BOTH a private text channel AND a private associated voice channel
+ * under the configured category with synchronized permissions for user and staff.
+ */
+export async function createTicketChannels({ guild, user, reason = 'General Support' }) {
+  const config = db.getTickets(guild.id);
+  if (!config || !config.categoryId || !config.staffRoleIds || config.staffRoleIds.length === 0) {
+    throw new Error('Ticket system is not fully configured (missing category or staff roles).');
+  }
+
+  const category = guild.channels.cache.get(config.categoryId) || (await guild.channels.fetch(config.categoryId).catch(() => null));
+  if (!category) {
+    throw new Error('Configured ticket category channel not found.');
+  }
+
+  config.ticketCount = (config.ticketCount || 0) + 1;
+  const ticketId = config.ticketCount.toString().padStart(4, '0');
+
+  // Text Channel Overwrites
+  const textOverwrites = [
+    {
+      id: guild.id,
+      deny: [PermissionFlagsBits.ViewChannel]
+    },
+    {
+      id: user.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks
+      ]
+    },
+    {
+      id: guild.members.me.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.ManageChannels,
+        PermissionFlagsBits.ManageRoles,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks
+      ]
+    }
+  ];
+
+  // Associated Voice Channel Overwrites
+  const voiceOverwrites = [
+    {
+      id: guild.id,
+      deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect]
+    },
+    {
+      id: user.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.Connect,
+        PermissionFlagsBits.Speak,
+        PermissionFlagsBits.Stream,
+        PermissionFlagsBits.UseVAD
+      ]
+    },
+    {
+      id: guild.members.me.id,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.Connect,
+        PermissionFlagsBits.Speak,
+        PermissionFlagsBits.ManageChannels,
+        PermissionFlagsBits.MuteMembers,
+        PermissionFlagsBits.DeafenMembers,
+        PermissionFlagsBits.MoveMembers
+      ]
+    }
+  ];
+
+  for (const roleId of config.staffRoleIds) {
+    textOverwrites.push({
+      id: roleId,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.SendMessages,
+        PermissionFlagsBits.ReadMessageHistory,
+        PermissionFlagsBits.AttachFiles,
+        PermissionFlagsBits.EmbedLinks
+      ]
+    });
+    voiceOverwrites.push({
+      id: roleId,
+      allow: [
+        PermissionFlagsBits.ViewChannel,
+        PermissionFlagsBits.Connect,
+        PermissionFlagsBits.Speak,
+        PermissionFlagsBits.Stream,
+        PermissionFlagsBits.UseVAD,
+        PermissionFlagsBits.MuteMembers,
+        PermissionFlagsBits.MoveMembers
+      ]
+    });
+  }
+
+  // 1. Create text channel
+  const textChannel = await guild.channels.create({
+    name: `ticket-${ticketId}`,
+    type: ChannelType.GuildText,
+    parent: category.id,
+    topic: `Ticket #${ticketId} | Owner: <@${user.id}> (${user.tag}) | Reason: ${reason}`,
+    permissionOverwrites: textOverwrites
+  });
+
+  // 2. Create associated voice channel
+  const voiceChannel = await guild.channels.create({
+    name: `Ticket ${ticketId} VC`,
+    type: ChannelType.GuildVoice,
+    parent: category.id,
+    permissionOverwrites: voiceOverwrites
+  });
+
+  // 3. Save to activeTickets
+  if (!config.activeTickets) config.activeTickets = {};
+  config.activeTickets[ticketId] = {
+    textId: textChannel.id,
+    voiceId: voiceChannel.id,
+    ownerId: user.id,
+    createdAt: Date.now(),
+    reason
+  };
+  db.save();
+
+  return { ticketId, textChannel, voiceChannel, config };
+}
+
+/**
  * Handles all button interactions starting with `ticket_`.
  */
 export async function handleTicketButtons(interaction) {
@@ -744,9 +879,6 @@ export async function handleTicketButtons(interaction) {
     if (!config || !config.categoryId || !config.staffRoleIds || config.staffRoleIds.length === 0) {
       return interaction.reply({ content: '-# **Configuration Error:** Ticket system is not fully configured.', flags: 64 }).catch(() => null);
     }
-
-    const category = guild.channels.cache.get(config.categoryId);
-    if (!category) return interaction.reply({ content: '-# **Configuration Error:** Ticket category not found.', flags: 64 }).catch(() => null);
 
     // Rate Limit: Check if user already has an active ticket
     let alreadyOpen = false;
@@ -760,48 +892,16 @@ export async function handleTicketButtons(interaction) {
       return interaction.reply({ content: '-# **Rate Limit:** You already have an open ticket in this server!', flags: 64 }).catch(() => null);
     }
 
-    await interaction.reply({ content: '-# <a:loading:1542155051286396938> **Creating your secure support channels...**', flags: 64 }).catch(() => null);
+    await interaction.reply({ content: '-# <a:loading:1542155051286396938> **Creating your secure text & voice ticket channels...**', flags: 64 }).catch(() => null);
 
     try {
-      config.ticketCount = (config.ticketCount || 0) + 1;
-      const ticketId = config.ticketCount.toString().padStart(4, '0');
-
-      const permissionOverwrites = [
-        { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-        { id: user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
-        { id: guild.members.me.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageRoles] }
-      ];
-
-      for (const roleId of config.staffRoleIds) {
-        permissionOverwrites.push({ id: roleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] });
-      }
-
-      const textChannel = await guild.channels.create({
-        name: `ticket-${ticketId}`,
-        type: 0, // GuildText
-        parent: category.id,
-        permissionOverwrites
+      const { ticketId, textChannel, voiceChannel, config: ticketConfig } = await createTicketChannels({
+        guild,
+        user,
+        reason: 'General Support'
       });
 
-      const voiceChannel = await guild.channels.create({
-        name: `Ticket ${ticketId} VC`,
-        type: 2, // GuildVoice
-        parent: category.id,
-        permissionOverwrites: permissionOverwrites.map(p => {
-          return { ...p, allow: p.allow.filter(a => a !== PermissionFlagsBits.SendMessages).concat([PermissionFlagsBits.Connect, PermissionFlagsBits.Speak]) };
-        })
-      });
-
-      if (!config.activeTickets) config.activeTickets = {};
-      config.activeTickets[ticketId] = {
-        textId: textChannel.id,
-        voiceId: voiceChannel.id,
-        ownerId: user.id,
-        createdAt: Date.now()
-      };
-      db.save();
-
-      const pings = `<@${user.id}> ${config.staffRoleIds.map(id => `<@&${id}>`).join(' ')}`;
+      const pings = `<@${user.id}> ${ticketConfig.staffRoleIds.map(id => `<@&${id}>`).join(' ')}`;
       const container = {
         type: 17,
         components: [
@@ -814,6 +914,7 @@ export async function handleTicketButtons(interaction) {
               `**Welcome <@${user.id}>!** Please describe your request or issue below.\n` +
               `A staff member will assist you shortly.\n\n` +
               `<a:target_blink:1565667466984554588> **Dedicated Voice Room:** <#${voiceChannel.id}>\n` +
+              `<a:target_blink:1565667466984554588> **Associated Text Channel:** <#${textChannel.id}>\n` +
               `<a:target_blink:1565667466984554588> **Forensic Archival:** Live conversation will be exported upon closure.`
           },
           { type: 14, divider: true },
@@ -838,7 +939,7 @@ export async function handleTicketButtons(interaction) {
         flags: 32768
       });
 
-      if (config.aiTriage) {
+      if (ticketConfig.aiTriage) {
         try {
           const triage = await generateTicketTriage({ title: 'General Support', inquiry: 'General member assistance ticket opened.', user });
           const triageCard = buildTicketTriageContainer({ ...triage, user });
@@ -848,10 +949,12 @@ export async function handleTicketButtons(interaction) {
         }
       }
 
-      await interaction.editReply({ content: `-# <a:03_tick_circle:1565665642084827206> **Ticket created:** <#${textChannel.id}>` }).catch(() => null);
+      await interaction.editReply({
+        content: `-# <a:03_tick_circle:1565665642084827206> **Ticket Channels Created:** Text <#${textChannel.id}> | Voice <#${voiceChannel.id}>`
+      }).catch(() => null);
     } catch (error) {
-      console.error(error);
-      await interaction.editReply({ content: '-# **Error:** Failed to create ticket channels. Ensure I have Manage Channels permission.' }).catch(() => null);
+      console.error('[Ticket Create]', error);
+      await interaction.editReply({ content: `-# **Error:** ${error.message || 'Failed to create ticket channels. Ensure I have Manage Channels permission.'}` }).catch(() => null);
     }
     return;
   }
@@ -1018,6 +1121,19 @@ export async function handleTicketModals(interaction) {
       SendMessages: true,
       ReadMessageHistory: true
     }).catch(() => null);
+
+    const ticketInfo = getTicketData(guild, interaction.channel);
+    if (ticketInfo?.data?.voiceId) {
+      const vc = guild.channels.cache.get(ticketInfo.data.voiceId) || (await guild.channels.fetch(ticketInfo.data.voiceId).catch(() => null));
+      if (vc) {
+        await vc.permissionOverwrites.edit(targetRole.id, {
+          ViewChannel: true,
+          Connect: true,
+          Speak: true
+        }).catch(() => null);
+      }
+    }
+
     return interaction.reply(cv2.success('Role Access Granted | <a:03_tick_circle:1565665642084827206>', `Role <@&${targetRole.id}> (\`${targetRole.name}\`) has been given access to this ticket.`));
   }
 
@@ -1030,60 +1146,26 @@ export async function handleTicketModals(interaction) {
       return interaction.reply({ content: '-# **Configuration Error:** Ticket system is not fully configured.', flags: 64 }).catch(() => null);
     }
 
-    const category = guild.channels.cache.get(config.categoryId);
-    if (!category) return interaction.reply({ content: '-# **Configuration Error:** Ticket category not found.', flags: 64 }).catch(() => null);
-
-    await interaction.reply({ content: '-# <a:loading:1542155051286396938> **Creating your ticket channels...**', flags: 64 }).catch(() => null);
+    await interaction.reply({ content: '-# <a:loading:1542155051286396938> **Creating your secure text & voice ticket channels...**', flags: 64 }).catch(() => null);
 
     try {
-      config.ticketCount = (config.ticketCount || 0) + 1;
-      const ticketId = config.ticketCount.toString().padStart(4, '0');
-
-      const permissionOverwrites = [
-        { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
-        { id: user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] },
-        { id: guild.members.me.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageRoles] }
-      ];
-
-      for (const roleId of config.staffRoleIds) {
-        permissionOverwrites.push({ id: roleId, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ReadMessageHistory] });
-      }
-
-      const textChannel = await guild.channels.create({
-        name: `ticket-${ticketId}`,
-        type: 0,
-        parent: category.id,
-        permissionOverwrites
+      const { ticketId, textChannel, voiceChannel, config: ticketConfig } = await createTicketChannels({
+        guild,
+        user,
+        reason
       });
-
-      const voiceChannel = await guild.channels.create({
-        name: `Ticket ${ticketId} VC`,
-        type: 2,
-        parent: category.id,
-        permissionOverwrites: permissionOverwrites.map(p => {
-          return { ...p, allow: p.allow.filter(a => a !== PermissionFlagsBits.SendMessages).concat([PermissionFlagsBits.Connect, PermissionFlagsBits.Speak]) };
-        })
-      });
-
-      if (!config.activeTickets) config.activeTickets = {};
-      config.activeTickets[ticketId] = {
-        textId: textChannel.id,
-        voiceId: voiceChannel.id,
-        ownerId: user.id,
-        createdAt: Date.now()
-      };
-      db.save();
 
       const inquiry = fields.getTextInputValue('inquiry');
       const docs = fields.getTextInputValue('docs');
       const details = fields.getTextInputValue('details');
       const nowStr = new Date().toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-      const pings = `<@${user.id}> ${config.staffRoleIds.map(id => `<@&${id}>`).join(' ')}`;
+      const pings = `<@${user.id}> ${ticketConfig.staffRoleIds.map(id => `<@&${id}>`).join(' ')}`;
       const infoContent =
         `${pings}\n\n` +
         `**Welcome <@${user.id}>!** Your support ticket has been created.\nA staff member will assist you shortly.\n\n` +
         `<a:target_blink:1565667466984554588> **Dedicated Voice Room:** <#${voiceChannel.id}>\n` +
+        `<a:target_blink:1565667466984554588> **Associated Text Channel:** <#${textChannel.id}>\n` +
         `<a:target_blink:1565667466984554588> **Created By:** <@${user.id}>\n` +
         `<a:target_blink:1565667466984554588> **Inquiry Type:** \`${reason}\`\n` +
         `<a:target_blink:1565667466984554588> **Timestamp:** \`${nowStr}\`\n\n` +
@@ -1120,7 +1202,7 @@ export async function handleTicketModals(interaction) {
         flags: 32768
       });
 
-      if (config.aiTriage) {
+      if (ticketConfig.aiTriage) {
         try {
           const triage = await generateTicketTriage({ title: reason, inquiry, docs, details, user });
           const triageCard = buildTicketTriageContainer({ ...triage, user });
@@ -1130,10 +1212,12 @@ export async function handleTicketModals(interaction) {
         }
       }
 
-      await interaction.editReply({ content: `-# <a:03_tick_circle:1565665642084827206> **Ticket created:** <#${textChannel.id}>` }).catch(() => null);
+      await interaction.editReply({
+        content: `-# <a:03_tick_circle:1565665642084827206> **Ticket Channels Created:** Text <#${textChannel.id}> | Voice <#${voiceChannel.id}>`
+      }).catch(() => null);
     } catch (error) {
-      console.error(error);
-      await interaction.editReply({ content: '-# **Error:** Failed to create ticket channels.' }).catch(() => null);
+      console.error('[Ticket Modal Create]', error);
+      await interaction.editReply({ content: `-# **Error:** ${error.message || 'Failed to create ticket channels.'}` }).catch(() => null);
     }
   }
 }
