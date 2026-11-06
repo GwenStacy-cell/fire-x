@@ -324,7 +324,27 @@ export const commands = [
               let usageText = `${prefix}${targetCmd.name}`;
               if (targetCmd.name === "unbypassable") {
                   usageText = `${prefix}unbypassable / /unbypassable`;
-              } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
+              } else if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
+                  usageText = `${prefix}honeypot [setup|remove|status] / ${prefix}trap / ${prefix}ghosttrap`;
+              } else if (targetCmd.name === "decapitate" || targetCmd.name === "purgehooks" || targetCmd.name === "antiwebhook") {
+                  usageText = `${prefix}decapitate / ${prefix}purgehooks / ${prefix}antiwebhook`;
+              } else if (targetCmd.name === "timemachine" || targetCmd.name === "snapshot" || targetCmd.name === "deltarollback") {
+                  usageText = `${prefix}timemachine [create|list|restore|diff] / ${prefix}snapshot / ${prefix}tm`;
+              } else if (targetCmd.name === "exploitscan" || targetCmd.name === "auditperms" || targetCmd.name === "secscan") {
+                  usageText = `${prefix}exploitscan [patch] / ${prefix}auditperms / ${prefix}secscan`;
+              } else if (targetCmd.name === "incident" || targetCmd.name === "raidreport" || targetCmd.name === "forensics") {
+                  usageText = `${prefix}incident [view|list|clear] / ${prefix}raidreport / ${prefix}forensics`;
+              } else if (targetCmd.name === "anomaly" || targetCmd.name === "staffanomaly" || targetCmd.name === "burstguard") {
+                  usageText = `${prefix}anomaly [on|off|threshold|unlock] / ${prefix}burstguard`;
+              } else if (targetCmd.name === "gatekeeper" || targetCmd.name === "raidgate" || targetCmd.name === "accountgate") {
+                  usageText = `${prefix}gatekeeper [on|off|minage|avatar|action] / ${prefix}raidgate`;
+              } else if (targetCmd.name === "staffpulse" || targetCmd.name === "modstats" || targetCmd.name === "staffstats") {
+                  usageText = `${prefix}staffpulse [@user|reset] / ${prefix}modstats`;
+              } else if (targetCmd.name === "dualkey" || targetCmd.name === "twomanrule" || targetCmd.name === "nuclearauth") {
+                  usageText = `${prefix}dualkey [toggle|auth|abort] / ${prefix}twomanrule`;
+              } else if (targetCmd.name === "burn" || targetCmd.name === "whisper" || targetCmd.name === "burnroom") {
+                  usageText = `${prefix}burn [@users...] [minutes] / ${prefix}whisper / ${prefix}burn end`;
+              } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening") {
                   usageText = `${prefix}entry <deploy|channel|log|role|holding|questions|enable|disable|list|accept|deny|remote> / ${prefix}gate / ${prefix}screening`;
               } else if (targetCmd.name === "security") {
                   usageText = `${prefix}security <enable all|disable all|status|records|enable|disable> / ${prefix}sec / ${prefix}ss`;
@@ -375,7 +395,106 @@ export const commands = [
                   : '`None`';
 
               let descContent = targetCmd.description || "No description provided.";
-              if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
+              if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
+                  descContent = `Ghost Honeypot Sentinel - Configures invisible tripwire canary channels and roles.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Zero-Tolerance Tripwire:__**\n` +
+                    `> ${BULLET_EMOJI} **Canary Decoy Channel:** Automatically creates \`#canary-trap-sentinel\` with @everyone denied ViewChannel. Invisible to humans, but visible to token scrapers and mass selfbots that enumerate internal channels.\n` +
+                    `> ${BULLET_EMOJI} **Instant Dual-Strike Ban:** Any raider transmitting packets into the canary channel is banned in <15ms via parallel \`rawBan\` + \`rawRoleStrip\`.\n` +
+                    `> ${BULLET_EMOJI} **Decoy Sentinel Role:** Tracks a canary role bound to the database. Any unauthorized role addition or deletion trips the sentinel.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}honeypot setup\` — Deploy the canary channel and decoy role.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}honeypot status\` — Inspect live tripwire status and intruders neutralized.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}honeypot remove\` — Permanently disarm and remove the canary channel and role.`;
+              } else if (targetCmd.name === "decapitate" || targetCmd.name === "purgehooks" || targetCmd.name === "antiwebhook") {
+                  descContent = `Malicious Webhook Decapitation Engine - Rapid parallel sweep and eradication of rogue webhooks.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Perimeter Webhook Purge:__**\n` +
+                    `> ${BULLET_EMOJI} **Parallel Wiretap Sweep:** Queries all guild webhooks in a single REST request and eradicates unauthorized webhooks concurrently across all channels.\n` +
+                    `> ${BULLET_EMOJI} **Sub-15ms Eradication:** Employs \`Promise.allSettled\` parallel sockets to wipe hostile endpoints before they can broadcast phishing payloads.\n` +
+                    `> ${BULLET_EMOJI} **Forensic Telemetry:** Logs cleansed channels and webhook owners directly to the database.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}decapitate\` — Sweep and eradicate all rogue webhooks immediately.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}purgehooks\` / \`${prefix}antiwebhook\` — Alternative quick-aliases.`;
+              } else if (targetCmd.name === "timemachine" || targetCmd.name === "snapshot" || targetCmd.name === "deltarollback") {
+                  descContent = `Time-Machine Server Snapshots & Delta Rollback - Lightweight rapid structural checkpoints.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Hierarchy Checkpoints:__**\n` +
+                    `> ${BULLET_EMOJI} **Delta Architecture:** Freezes channel names, types, parent categories, positions, and permission overwrites alongside role hierarchies in database memory.\n` +
+                    `> ${BULLET_EMOJI} **1-Click Delta Restoration:** Automatically computes differences between current guild state and the snapshot, recreating missing channels, roles, and permissions.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}timemachine create [label]\` — Capture an instant server snapshot.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}timemachine list\` — View saved checkpoints with 1-click restore buttons.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}timemachine restore <id>\` — Roll back and recreate missing channels and roles.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}timemachine diff <id>\` — Compare current guild state against a snapshot.`;
+              } else if (targetCmd.name === "exploitscan" || targetCmd.name === "auditperms" || targetCmd.name === "secscan") {
+                  descContent = `Server Permission Exploit Scanner - Deep permission vulnerability scanner with 1-click Auto-Patch.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Deep Heuristic Inspection:__**\n` +
+                    `> ${BULLET_EMOJI} **@everyone Vulnerability Scan:** Detects dangerous permissions (Administrator, Manage Server, Manage Roles, Ban, Kick) granted to @everyone.\n` +
+                    `> ${BULLET_EMOJI} **Role Hierarchy Leaks:** Identifies roles holding Administrator placed higher than Athena's highest role.\n` +
+                    `> ${BULLET_EMOJI} **1-Click Auto-Patch:** Strip dangerous permissions and secure verification levels with one button click.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}exploitscan\` — Run deep permission audit and display scorecard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}exploitscan patch\` — Auto-patch all dangerous @everyone permissions.`;
+              } else if (targetCmd.name === "incident" || targetCmd.name === "raidreport" || targetCmd.name === "forensics") {
+                  descContent = `Post-Raid Forensic Incident Report - Detailed telemetry of intercepted attacks and raiders.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Military Threat Telemetry:__**\n` +
+                    `> ${BULLET_EMOJI} **Automated Threat Logging:** Every blocked attack, honeypot trigger, and rogue bot addition is automatically indexed with attacker snowflake ID and sub-wire response latency.\n` +
+                    `> ${BULLET_EMOJI} **Forensic Analysis:** Inspect exact action payloads, timestamps, and enforcement outcomes.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}incident\` — View latest threat briefing.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}incident list\` — View table of recent security incidents.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}incident view <id>\` — Inspect forensic breakdown for specific incident.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}incident clear\` — Purge resolved incident records.`;
+              } else if (targetCmd.name === "anomaly" || targetCmd.name === "staffanomaly" || targetCmd.name === "burstguard") {
+                  descContent = `Staff Behavioral Anomaly Detection & Soft-Lock - Pre-emptive staff token breach protector.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Zero-Trust Staff Protection:__**\n` +
+                    `> ${BULLET_EMOJI} **Burst Velocity Monitoring:** Detects rapid bursts of moderation actions (bans, kicks, role deletes) by staff accounts exceeding normal baseline.\n` +
+                    `> ${BULLET_EMOJI} **Automated Soft-Lock:** Temporarily strips administrative roles into quarantine vault to halt compromised staff accounts.\n` +
+                    `> ${BULLET_EMOJI} **Owner Authorization:** DMs Server Owner with 1-click **[Authorize & Restore]** or **[Confirm Breach & Ban]** buttons.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}anomaly\` — View Anomaly Sentry dashboard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}anomaly on / off\` — Toggle anomaly monitoring.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}anomaly threshold <num>\` — Set action burst limit (default: 4 actions in 15s).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}anomaly unlock <@user>\` — Manually clear soft-lock and restore vaulted roles.`;
+              } else if (targetCmd.name === "gatekeeper" || targetCmd.name === "raidgate" || targetCmd.name === "accountgate") {
+                  descContent = `Raid Account Age & Avatar Gating - Filters incoming accounts by age and default avatar.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Perimeter Screening:__**\n` +
+                    `> ${BULLET_EMOJI} **Account Age Gate:** Blocks throwaway accounts created less than X hours ago (default: 24h, configurable 1-720h).\n` +
+                    `> ${BULLET_EMOJI} **Default Avatar Check:** Requires incoming users to have a custom profile avatar.\n` +
+                    `> ${BULLET_EMOJI} **Configurable Enforcement:** Quarantine, kick, or ban failing accounts before they can post messages.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}gatekeeper\` — Interactive configuration dashboard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}gatekeeper on / off\` — Arm or disarm Gatekeeper perimeter.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}gatekeeper minage <hours>\` — Configure minimum account age in hours.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}gatekeeper avatar on / off\` — Toggle custom avatar requirement.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}gatekeeper action [quarantine|kick|ban]\` — Set penalty protocol.`;
+              } else if (targetCmd.name === "staffpulse" || targetCmd.name === "modstats" || targetCmd.name === "staffstats") {
+                  descContent = `Staff Pulse & Moderation Quota Tracker - Real-time metrics on staff actions and activity quotas.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Staff Accountability:__**\n` +
+                    `> ${BULLET_EMOJI} **Action Telemetry:** Tracks bans, kicks, timeouts, warns, purges, and tickets closed for all staff members.\n` +
+                    `> ${BULLET_EMOJI} **Rankings & Health Index:** Real-time leaderboard ranking top moderators and surfacing inactive staff.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}staffpulse\` — Server-wide moderation quota overview and rankings.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}staffpulse @user\` — Detailed profile scorecard for specific staff member.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}staffpulse reset\` — Reset current quota tracking cycle.`;
+              } else if (targetCmd.name === "dualkey" || targetCmd.name === "twomanrule" || targetCmd.name === "nuclearauth") {
+                  descContent = `Dual-Key Nuclear Authorizations - Two-man rule requiring secondary authorization before nuclear actions execute.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Two-Man Rule Protocol:__**\n` +
+                    `> ${BULLET_EMOJI} **Destructive Action Hold:** Protects \`!unbanall\`, \`!emergency\`, \`!wipeemojis\`, and \`!lockdown 3\` by placing them on operational hold.\n` +
+                    `> ${BULLET_EMOJI} **Mandatory Secondary Signature:** A distinct Extra Owner or the Server Owner must sign off within 5 minutes. The initiator cannot self-authorize.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}dualkey\` — View status and list of protected commands.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}dualkey toggle\` (or \`on\` / \`off\`) — Toggle Dual-Key requirement.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}dualkey auth <actionId>\` — Authorize a pending nuclear request.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}dualkey abort <actionId>\` — Discard a pending request.`;
+              } else if (targetCmd.name === "burn" || targetCmd.name === "whisper" || targetCmd.name === "burnroom") {
+                  descContent = `Self-Destructing Burn-After-Reading Rooms - Ephemeral private channels that auto-purge after a timer.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Ephemeral Containment:__**\n` +
+                    `> ${BULLET_EMOJI} **End-to-End Private Channel:** Deploys an isolated channel visible only to you and invited members.\n` +
+                    `> ${BULLET_EMOJI} **Zero Audit Residue:** Completely obliterates the channel and all messages when the countdown timer reaches zero (or immediately via the Self-Destruct button).\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}burn [@users...] [minutes]\` — Create an ephemeral room (default: 10m).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}burn list\` — View active burn rooms in the server.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}burn end\` — Trigger immediate self-destruction from inside the room.`;
+              } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
                   descContent = `Extracts and downloads uncompressed original master-resolution images and MP4 videos from any Pinterest link or short URL (pin.it).\n\n` +
                     `> -# **__Features & Pipeline:__**\n` +
                     `> ${BULLET_EMOJI} **Full Master Resolution:** Automatically expands shortened \`pin.it\` redirects and upgrades 736x/564x preview thumbnails to uncompressed master quality (/originals/).\n` +

@@ -6,6 +6,7 @@ import db from '../database.js';
 import cv2 from '../cv2.js';
 import statsDB from '../statsDB.js';
 import { isBotOwnerSync } from '../utils/helpers.js';
+import { BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI } from '../utils/emojis.js';
 import { 
   createCloudBackup, 
   manualRestore, 
@@ -371,11 +372,11 @@ export const commands = [
         `> -# **Local Database Size:** \`${sizeKb} KB\`\n\n` +
         formatDatabaseMetrics(m, { sizeKb }) +
         `\n\n**Management Commands:**\n` +
-        `-# • \`!db backup\` — Force immediate cloud backup\n` +
-        `-# • \`!db restore latest\` — Pull & restore latest cloud backup from Discord\n` +
-        `-# • \`!db export\` — Download raw \`db.json\` & \`stats.db\`\n` +
-        `-# • \`!db restore\` — Restore from uploaded file\n` +
-        `-# • \`!db setchannel #channel\` — Change cloud backup channel`
+        `-# ${BULLET_EMOJI} \`!db backup\` — Force immediate cloud backup\n` +
+        `-# ${BULLET_EMOJI} \`!db restore latest\` — Pull & restore latest cloud backup from Discord\n` +
+        `-# ${BULLET_EMOJI} \`!db export\` — Download raw \`db.json\` & \`stats.db\`\n` +
+        `-# ${BULLET_EMOJI} \`!db restore\` — Restore from uploaded file\n` +
+        `-# ${BULLET_EMOJI} \`!db setchannel #channel\` — Change cloud backup channel`
       ));
     }
   }

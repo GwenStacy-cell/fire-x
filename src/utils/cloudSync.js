@@ -284,6 +284,17 @@ export function getDatabaseMetrics(client = null) {
   // Mass Role Batches
   const massRolesCount = Object.values(cache.massRoles || {}).reduce((acc, rMap) => acc + Object.keys(rMap || {}).length, 0);
 
+  // Athena Defense Expansion Metrics
+  const timeMachineSnapshotsCount = Object.values(cache.timeMachineSnapshots || {}).reduce((acc, l) => acc + (Array.isArray(l) ? l.length : 0), 0);
+  const incidentReportsCount = Object.values(cache.incidentReports || {}).reduce((acc, l) => acc + (Array.isArray(l) ? l.length : 0), 0);
+  const staffPulseTrackedUsers = Object.values(cache.staffMetrics || {}).reduce((acc, m) => acc + Object.keys(m || {}).length, 0);
+  const pendingDualKeyCount = Object.keys(cache.pendingDualKey || {}).length;
+  const burnRoomsActive = Object.keys(cache.burnRooms || {}).length;
+  const gatekeeperServers = guilds.filter(g => g && g.gatekeeper && g.gatekeeper.enabled).length;
+  const anomalySentryServers = guilds.filter(g => g && g.anomalyDetection && g.anomalyDetection.enabled).length;
+  const dualKeyServers = guilds.filter(g => g && g.dualKey && g.dualKey.enabled).length;
+  const honeypotCanaries = guilds.filter(g => g && (g.honeypotChannelId || g.honeypotRoleId)).length;
+
   return {
     guilds: Object.keys(cache.guilds || {}).length,
     customPrefixes: guilds.filter(g => g && g.prefix && g.prefix !== '!').length,
@@ -517,7 +528,17 @@ export function getDatabaseMetrics(client = null) {
     youtubeNotifierFeeds,
     botCommandsRun,
     exploitTaintsCount,
-    massRolesCount
+    massRolesCount,
+
+    timeMachineSnapshotsCount,
+    incidentReportsCount,
+    staffPulseTrackedUsers,
+    pendingDualKeyCount,
+    burnRoomsActive,
+    gatekeeperServers,
+    anomalySentryServers,
+    dualKeyServers,
+    honeypotCanaries
   };
 }
 
@@ -544,9 +565,13 @@ export function formatDatabaseMetrics(m, options = {}) {
     `> -# Bindings: \`Stats: ${m.serverStats || 0} counters | Suggestions: ${m.suggestionChannels || 0} chs | Starboard: ${m.starboardChannels || 0} chs | Voice Roles: ${m.voiceRolesCount || 0} | Verification: ${m.verification} gates (${m.captchaVerification || 0} cap) | Reaction Roles: ${m.reactionRoles} menus (${m.reactionRolesMappingsCount || 0} map)\`\n\n` +
 
     `-# **__Security & Anti-Nuke Engine:__**\n` +
-    `> -# Shields: \`${m.securityServers} armed\` | Honeypots: \`${m.honeypots}\` | Raid Mode: \`${m.raidModeServers}\` | Thresholds: \`${m.antiNukeThresholds}\` | GhostPing: \`${m.antiGhostPingServers || 0}\`\n` +
+    `> -# Shields: \`${m.securityServers} armed\` | Honeypots: \`${m.honeypotCanaries || m.honeypots || 0}\` | Raid Mode: \`${m.raidModeServers}\` | Thresholds: \`${m.antiNukeThresholds}\` | GhostPing: \`${m.antiGhostPingServers || 0}\`\n` +
     `> -# 28 Modules: \`Roles: ${m.antiRoleModulesServers}, Chs: ${m.antiChannelModulesServers}, Webhooks: ${m.antiWebhookServers}, Bots: ${m.antiBotAddServers}, Linked: ${m.antiLinkedRoleServers || 0}\`\n` +
-    `> -# Persistence: \`Unbypassable: ${m.unbypassableRolesCount || 0}, FW: ${m.firewallRolesCount || 0} | Incidents: ${m.securityLiveTotal || 0} | Panic: ${m.panicHistoryTotal || 0} | Emergencies: ${m.emergencySnapshots || 0} | Locks: ${m.channelLockSnapshotsCount || 0} chs, ${m.lockdownSnapshots || 0} tiers\`\n\n` +
+    `> -# Persistence: \`Unbypassable: ${m.unbypassableRolesCount || 0}, FW: ${m.firewallRolesCount || 0} | Incidents: ${m.incidentReportsCount || m.securityLiveTotal || 0} | Panic: ${m.panicHistoryTotal || 0} | Emergencies: ${m.emergencySnapshots || 0} | Locks: ${m.channelLockSnapshotsCount || 0} chs, ${m.lockdownSnapshots || 0} tiers\`\n\n` +
+
+    `-# **__Advanced Defense & Telemetry Suite:__**\n` +
+    `> -# Telemetry: \`Incidents: ${m.incidentReportsCount || 0} recorded | Staff Pulse: ${m.staffPulseTrackedUsers || 0} moderators tracked | Time-Machine: ${m.timeMachineSnapshotsCount || 0} snapshots\`\n` +
+    `> -# Sentry Sentinels: \`Honeypots: ${m.honeypotCanaries || 0} canaries | Gatekeeper: ${m.gatekeeperServers || 0} perimeters | Anomaly Sentry: ${m.anomalySentryServers || 0} servers | Dual-Key: ${m.dualKeyServers || 0} servers (${m.pendingDualKeyCount || 0} pending) | Burn Rooms: ${m.burnRoomsActive || 0} active\`\n\n` +
 
     `-# **__Server Join Gatekeeper (!entry / !gate):__**\n` +
     `> -# Screening: \`${m.entryActive || 0} active (${m.entryServers || 0} cfg) | Gates: ${m.entryGateChannels || 0} chs, Logs: ${m.entryLogChannels || 0} chs | Verified: ${m.entryVerifiedRoles || 0} roles, Holding: ${m.entryHoldingRoles || 0} roles\`\n` +

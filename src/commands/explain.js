@@ -118,7 +118,12 @@ export const commands = [
           { name: 'Command: !scanserver (Dangerous Permissions Audit)', value: 'scanserver' },
           { name: 'Command: !setup (ID-Backed Resource Binding)', value: 'setup' },
           { name: 'Command: !backup / !restore (Cloud Snapshot Serialization)', value: 'backup' },
-          { name: 'Command: !db (Database Cloud Sync & Recovery)', value: 'db' }
+          { name: 'Command: !db (Database Cloud Sync & Recovery)', value: 'db' },
+          { name: 'Command: !honeypot (Ghost Honeypot Sentinel)', value: 'honeypot' },
+          { name: 'Command: !decapitate (Webhook Decapitation Engine)', value: 'decapitate' },
+          { name: 'Command: !timemachine (Time-Machine Delta Rollback)', value: 'timemachine' },
+          { name: 'Command: !exploitscan (Server Permission Exploit Scanner)', value: 'exploitscan' },
+          { name: 'Command: !dualkey (Dual-Key Nuclear Authorizations)', value: 'dualkey' }
         ];
 
         const filtered = choices
