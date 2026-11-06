@@ -1807,7 +1807,9 @@ class Database {
         panelImage: null,
         panelThumbnail: null,
         panelPlaceholder: 'Select a reason...',
-        panelOptions: [] // { label, description, emoji, value }
+        panelOptions: [], // { label, description, emoji, value }
+        logChannelId: null,
+        closedTickets: {}
       };
       this.save();
     }
@@ -1826,6 +1828,7 @@ class Database {
     config.ticketCount = (config.ticketCount || 0) + 1;
     const ticketId = config.ticketCount.toString().padStart(4, '0');
     
+    if (!config.activeTickets) config.activeTickets = {};
     config.activeTickets[ticketId] = {
       textId,
       voiceId,
@@ -1837,11 +1840,22 @@ class Database {
     return ticketId;
   }
 
-  closeTicket(guildId, ticketId) {
+  closeTicket(guildId, ticketId, closedMetadata = null) {
     const config = this.getTickets(guildId);
     if (config.activeTickets && config.activeTickets[ticketId]) {
       const ticketData = config.activeTickets[ticketId];
       delete config.activeTickets[ticketId];
+      if (!config.closedTickets) config.closedTickets = {};
+      config.closedTickets[ticketId] = {
+        ...ticketData,
+        closedAt: Date.now(),
+        ...(closedMetadata || {})
+      };
+      // Keep only last 100 closed tickets to keep cache size optimal
+      const closedKeys = Object.keys(config.closedTickets);
+      if (closedKeys.length > 100) {
+        delete config.closedTickets[closedKeys[0]];
+      }
       this.save();
       return ticketData;
     }

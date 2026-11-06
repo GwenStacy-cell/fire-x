@@ -89,7 +89,11 @@ export const PUBLIC_COMMANDS = new Set([
 
   // Public Music Commands
   'play', 'pause', 'resume', 'skip', 'stop', 'queue', 'nowplaying',
-  'volume', 'disconnect', 'liked', 'like', 'dislike', 'tts', 'autotts', 'theatermode'
+  'volume', 'disconnect', 'liked', 'like', 'dislike', 'tts', 'autotts', 'theatermode',
+
+  // Ticket Operations (Permissions strictly enforced inside ticket handler)
+  'close', 'ticketclose', 'resolve', 'ticketexport', 'tickettranscript', 'transcript',
+  'claim', 'ticketclaim', 'rename', 'ticketrename'
 ]);
 
 /**

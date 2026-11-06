@@ -2478,20 +2478,24 @@ export const helpModules = [
 
   { id: 'tickets', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Tickets', label: 'Ticket System', emoji: 'tickets', commands: [
     "`!ticket setup <#category> <@staffRole> [ai_on]` - Configure category, staff roles & optional AI triage `[Extra Owner]`",
+    "`!ticket log <#channel>` - Configure automatic transcript export archive channel `[Extra Owner]`",
     "`!ticket ai on|off` - Toggle Smart Ban Appeals & AI Ticket Triage `[Extra Owner]`",
-    "`!ticketpanel` - Deploy interactive ticket panel with one-click AI triage & Pinterest banner support `[Extra Owner]`",
-    "`!add @user` - Add a user to an active ticket channel `[Extra Owner]`",
-    "`!remove @user` - Remove a user from an active ticket channel `[Extra Owner]`",
-    "`!close` - Close and archive the active ticket channel `[Public]`",
-    "`!rename <name>` - Rename an active ticket channel `[Extra Owner]`",
+    "`!ticket export / !ticket transcript` - Export live HTML & UTF-8 TXT transcript of current ticket `[Public]`",
+    "`!ticket claim / !claim` - Claim active ticket ownership (awards Staff Pulse quota) `[Staff]`",
+    "`!ticket lock / !ticket unlock` - Lock/unlock member messaging inside ticket `[Staff]`",
+    "`!ticket add @user` - Add a member to active ticket channels `[Staff]`",
+    "`!ticket remove @user` - Remove a member from active ticket channels `[Staff]`",
+    "`!close` - Resolve ticket & auto-export transcripts to Server Owner, Staff, Closer & Member `[Public]`",
+    "`!rename <name>` - Rename active ticket channel `[Staff]`",
+    "`!ticketpanel` - Deploy interactive ticket panel manager with custom dropdowns & Pinterest media `[Extra Owner]`",
     "",
     "-# **__Ticket System Capabilities:__**",
+    "-# <a:target_blink:1565667466984554588> **__Auto-Export Engine:__** On ticket closure, automatically compiles forensic **HTML interactive transcripts** and **UTF-8 TXT archives** and dispatches them to Server Owner DMs, Assigned Staff DMs, Closer DMs, Member DMs, and the dedicated log channel.",
+    "-# <a:target_blink:1565667466984554588> **__Staff Pulse Quota Credit:__** Resolving and claiming tickets automatically feeds the Staff Pulse moderation activity telemetry.",
     "-# <a:target_blink:1565667466984554588> Features **__Dropdown Menus__**, **__Interactive Q&A Modals__**, and **__Beautiful CV2 Welcome Embeds__**.",
     "-# <a:target_blink:1565667466984554588> **__Universal Media & Pinterest Support:__** Ticket panel banner and thumbnail inputs support direct Pinterest links (`pin.it` & `pinterest.com`) with automatic uncompressed extraction.",
     "-# <a:target_blink:1565667466984554588> **__Smart Ban Appeals & AI Triage (Optional):__** Categorizes inquiries (Ban Appeal, Store/Coins, Bugs, Harassment) and creates executive summaries for staff.",
-    "-# <a:target_blink:1565667466984554588> Automatically creates paired Voice Channels and Text Channels per ticket.",
-    "-# <a:target_blink:1565667466984554588> **__Step 1:__** Run `!ticket setup <#category> <@staffRole> [ai_on]` to configure category and staff roles.",
-    "-# <a:target_blink:1565667466984554588> **__Step 2:__** Run `!ticketpanel` to deploy and customize the public interactive panel."
+    "-# <a:target_blink:1565667466984554588> Automatically creates paired Voice Channels and Text Channels per ticket."
   ] },
   { id: 'tracking', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Tracking', label: 'Tracking & Logs', emoji: 'tracking', commands: [
     "`!serverlogs` - View interactive server event logs `[Extra Owner]`",

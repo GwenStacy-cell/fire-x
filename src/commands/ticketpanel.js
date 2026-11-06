@@ -57,6 +57,7 @@ export function buildTicketManagerPayload(guildId) {
   const config = db.getTickets(guildId);
 
   const targetChannelText = config.targetChannelId ? `<#${config.targetChannelId}>` : 'Current Channel';
+  const logChannelText = config.logChannelId ? `<#${config.logChannelId}>` : 'Server Owner & Staff DMs (Default)';
   const closeRolesText = config.closeTicketRoleIds && config.closeTicketRoleIds.length > 0
     ? config.closeTicketRoleIds.map(id => `<@&${id}>`).join(' ')
     : 'Anyone (Default)';
@@ -76,6 +77,7 @@ export function buildTicketManagerPayload(guildId) {
           `**Placeholder:** ${config.panelPlaceholder || 'Select a reason...'}\n` +
           `**AI Triage:** ${config.aiTriage ? '<:on:1533844867191406672>' : '<:off:1533844858983157851>'}\n` +
           `**Target Channel:** ${targetChannelText}\n` +
+          `**Transcript Log Channel:** ${logChannelText}\n` +
           `**Closing Roles:** ${closeRolesText}\n` +
           `**Image Banner:** ${config.panelImage ? `[Link](${config.panelImage})` : 'None'}\n` +
           `**Thumbnail:** ${config.panelThumbnail ? `[Link](${config.panelThumbnail})` : 'None'}`
@@ -130,6 +132,13 @@ export function buildTicketManagerPayload(guildId) {
       .setChannelTypes(ChannelType.GuildText)
   );
 
+  const rowLog = new ActionRowBuilder().addComponents(
+    new ChannelSelectMenuBuilder()
+      .setCustomId('tp_log_channel')
+      .setPlaceholder('Select dedicated transcript archive channel...')
+      .setChannelTypes(ChannelType.GuildText)
+  );
+
   const row4 = new ActionRowBuilder().addComponents(
     new RoleSelectMenuBuilder()
       .setCustomId('tp_close_roles')
@@ -138,7 +147,7 @@ export function buildTicketManagerPayload(guildId) {
       .setMaxValues(10)
   );
 
-  container.components.push(row3.toJSON(), row4.toJSON(), row1.toJSON(), row2.toJSON());
+  container.components.push(row3.toJSON(), rowLog.toJSON(), row4.toJSON(), row1.toJSON(), row2.toJSON());
   return { components: [container], flags: 32768 };
 }
 
@@ -258,6 +267,13 @@ export async function handleTicketPanelMenus(interaction) {
   if (customId === 'tp_target_channel') {
     const channelId = values[0];
     db.updateTicketConfig(guild.id, { targetChannelId: channelId });
+    await interaction.deferUpdate();
+    return updateManagerMessage(interaction.message);
+  }
+
+  if (customId === 'tp_log_channel') {
+    const channelId = values[0];
+    db.updateTicketConfig(guild.id, { logChannelId: channelId });
     await interaction.deferUpdate();
     return updateManagerMessage(interaction.message);
   }

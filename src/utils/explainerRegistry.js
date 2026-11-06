@@ -2076,13 +2076,22 @@ export const DETAILED_COMMANDS = {
     aliases: ['newticket', 'tickets'],
     category: 'Community & Engagement',
     clearance: 'Extra Owner (Setup & AI Toggle) / Public (Opening Tickets)',
-    syntax: '!ticket setup <#category> <@staffRole> [@additionalRoles...] [ai_on] | !ticket ai on|off',
-    purpose: 'Quick one-command ticket system deployment and AI triage configuration.',
+    syntax: '!ticket setup <#category> <@staffRole> [ai_on] | !ticket log <#channel> | !ticket export | !close',
+    purpose: 'Quick ticket system deployment, dedicated transcript logging, live HTML/TXT exports, and AI triage configuration.',
     architecture: 
-`• **Fast Deployment (!ticket setup):** Directly posts a standard single-button panel into the current channel with the "Open Ticket" button (\`ticket_open_general\`). Permanently stores the Category ID and Staff Role IDs in SQLite (\`db.updateTicketConfig\`). NOTE: Running this command does NOT create private channels immediately; it only deploys the panel.
-• **Dynamic Channel Generation:** A private text channel (\`ticket-username\`) and private voice channel (\`ticket-username-voice\`) are ONLY generated when a member actually clicks the "Open Ticket" button or selects a reason. Permissions dynamically isolate \`@everyone\` (deny View/Connect) while explicitly allowing the ticket author and configured staff roles.
-• **Smart Ban Appeals & AI Triage (!ticket ai on|off):** Toggles neural ticket classification. When enabled, prompts users with an appeal/inquiry modal, categorizes urgency (Ban Appeal, Billing, Bug Report, Harassment), and posts an executive summary for staff.
-• **Transcript Archival & Lifecycle:** In-ticket buttons allow staff to claim tickets (\`ticket_claim\`) and close tickets (\`ticket_close\`), archiving the full chat history into HTML transcripts before deleting the channels.`,
+`• **Fast Deployment (!ticket setup):** Directly posts a standard single-button panel into the current channel with the "Open Ticket" button (\`ticket_open_general\`). Permanently stores the Category ID and Staff Role IDs in database (\`db.updateTicketConfig\`). Private text and voice channels are generated dynamically when a member opens a ticket.
+• **Automated Forensic Transcript Auto-Export Engine:** When a ticket is closed (via \`!close\` or \`Close Ticket\` button), Athena fetches all messages chronologically (up to 1,000 messages) and compiles:
+  - High-fidelity **HTML interactive transcripts** with dark cyber styling, searchable timeline, avatars, code blocks, embeds, and attachments.
+  - Complete **UTF-8 TXT archive** with precise ISO timestamps and user IDs.
+  - Automatically dispatches copies to:
+    1. **Server Owner DM**
+    2. **Assigned / Claimed Staff DM**
+    3. **Ticket Closer DM**
+    4. **Ticket Creator (Member) DM** (as their official resolution receipt)
+    5. **Dedicated Ticket Log Channel** (\`!ticket log <#channel>\`)
+• **Staff Pulse Quota Telemetry:** Resolving or claiming tickets automatically credits staff activity in the Staff Pulse matrix (\`db.recordStaffAction\`).
+• **In-Ticket Controls & Modals:** Includes live claiming (\`!ticket claim\`), member message locking (\`!ticket lock\`), member access management (\`!ticket add @user\`, \`!ticket remove @user\`), and on-demand live exports (\`!ticket export\`).
+• **Smart Ban Appeals & AI Triage (!ticket ai on|off):** Toggles neural ticket classification. When enabled, prompts users with an appeal/inquiry modal, categorizes urgency (Ban Appeal, Billing, Bug Report, Harassment), and posts an executive summary for staff.`,
     example: '!ticket setup #tickets @Staff ai_on'
   },
 
