@@ -85,8 +85,9 @@ export async function fetchTicketMessages(channel, limit = 1000) {
       allMessages.push(msg);
     }
 
-    lastId = batch.last().id;
-    if (batch.size < 100) break;
+    const batchArr = Array.from(batch.values());
+    lastId = batch.last ? batch.last()?.id : batchArr[batchArr.length - 1]?.id;
+    if (batch.size < 100 || !lastId) break;
   }
 
   // Reverse to strictly chronological order (oldest -> newest)
@@ -123,7 +124,7 @@ export function generateHtmlTranscript({ guild, channel, ticketId, ticketData, m
 
   const closerTag = closedBy?.user?.tag || closedBy?.tag || (closedBy?.id ? `<@${closedBy.id}>` : 'Staff');
   const closerId = closedBy?.id || 'Unknown';
-  const guildIconUrl = guild.iconURL({ dynamic: true, size: 128 }) || 'https://cdn.discordapp.com/embed/avatars/0.png';
+  const guildIconUrl = guild.iconURL?.({ dynamic: true, size: 128 }) || 'https://cdn.discordapp.com/embed/avatars/0.png';
 
   let messagesHtml = '';
 
@@ -131,9 +132,11 @@ export function generateHtmlTranscript({ guild, channel, ticketId, ticketData, m
     const author = msg.author;
     const authorTag = author ? (author.tag || `${author.username}#${author.discriminator}`) : 'Unknown User';
     const authorId = author ? author.id : '0';
-    const avatarUrl = author ? author.displayAvatarURL({ dynamic: true, size: 64 }) : 'https://cdn.discordapp.com/embed/avatars/0.png';
+    const avatarUrl = author?.displayAvatarURL?.({ dynamic: true, size: 64 }) || 'https://cdn.discordapp.com/embed/avatars/0.png';
     const isBot = author?.bot;
-    const timeStr = new Date(msg.createdTimestamp).toLocaleString('en-US', {
+    const msgTs = msg.createdTimestamp || (msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now());
+    const validDate = isNaN(msgTs) ? new Date() : new Date(msgTs);
+    const timeStr = validDate.toLocaleString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -650,7 +653,9 @@ export function generateTextTranscript({ guild, channel, ticketId, ticketData, m
   out += '================================================================================\n\n';
 
   for (const msg of messages) {
-    const timeStr = new Date(msg.createdTimestamp).toISOString().replace('T', ' ').slice(0, 19);
+    const msgTs = msg.createdTimestamp || (msg.createdAt ? new Date(msg.createdAt).getTime() : Date.now());
+    const validDate = isNaN(msgTs) ? new Date() : new Date(msgTs);
+    const timeStr = validDate.toISOString().replace('T', ' ').slice(0, 19);
     const authorTag = msg.author ? (msg.author.tag || `${msg.author.username}#${msg.author.discriminator}`) : 'Unknown User';
     const authorId = msg.author ? msg.author.id : '0';
     const isBot = msg.author?.bot ? ' [BOT]' : '';
@@ -788,15 +793,57 @@ export async function dispatchTicketExports({ guild, channel, ticketId, ticketDa
   });
 
   const dispatched = [];
+  const deliveredUserIds = new Set();
+
+  /**
+   * Dispatches both the Components V2 visual report card AND the downloadable transcript attachments.
+   * Sending the files in a clean standard message (without flags: 32768) ensures Discord renders
+   * the native downloadable file chips for both HTML and TXT formats.
+   */
+  async function deliverArchivePackage(target, summaryCard, label) {
+    if (!target) return false;
+
+    // 1. Send the Components V2 card
+    if (summaryCard) {
+      try {
+        await target.send({
+          components: [summaryCard],
+          flags: 32768
+        });
+      } catch (err) {
+        console.warn(`[deliverArchivePackage: ${label} card]`, err.message);
+      }
+    }
+
+    // 2. Send the downloadable files WITHOUT flags: 32768 so Discord renders native file attachment chips
+    try {
+      await target.send({
+        content:
+          `### ${getRandomHeadingGlyph()} **Forensic Transcripts Attached • Ticket #${ticketId}** | ${TICK_EMOJI}\n` +
+          `> -# **Server:** **${guild.name}**\n` +
+          `> -# Complete conversation archive compiled in both **Interactive HTML** (open in any browser) and **UTF-8 Plain Text**.\n\n` +
+          `<a:target_blink:1565667466984554588> Download your official transcripts below:`,
+        files: [
+          new AttachmentBuilder(htmlBuffer, { name: `ticket-${ticketId}-transcript.html` }),
+          new AttachmentBuilder(txtBuffer, { name: `ticket-${ticketId}-transcript.txt` })
+        ]
+      });
+      return true;
+    } catch (err) {
+      console.warn(`[deliverArchivePackage: ${label} files]`, err.message);
+      return false;
+    }
+  }
 
   // 3. Dispatch to Server Owner
   try {
     const owner = await guild.fetchOwner().catch(() => null);
     if (owner) {
+      deliveredUserIds.add(owner.id);
       const ownerSummary = {
         type: 17,
         components: [
-          { type: 10, content: `# ${getRandomHeadingGlyph()} **Ticket #${ticketId} Closed • Server Owner Report** | <a:03_tick_circle:1565665642084827206>` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} **Ticket #${ticketId} Closed • Server Owner Report** | ${TICK_EMOJI}` },
           { type: 14, divider: true },
           {
             type: 10,
@@ -815,14 +862,7 @@ export async function dispatchTicketExports({ guild, channel, ticketId, ticketDa
         ]
       };
 
-      await owner.send({
-        components: [ownerSummary],
-        files: [
-          new AttachmentBuilder(htmlBuffer, { name: `ticket-${ticketId}-transcript.html` }),
-          new AttachmentBuilder(txtBuffer, { name: `ticket-${ticketId}-transcript.txt` })
-        ],
-        flags: 32768
-      }).catch(() => null);
+      await deliverArchivePackage(owner, ownerSummary, 'Owner');
       dispatched.push(`Owner (${owner.id})`);
     }
   } catch (err) {
@@ -830,14 +870,15 @@ export async function dispatchTicketExports({ guild, channel, ticketId, ticketDa
   }
 
   // 4. Dispatch to Ticket Creator (Member)
-  if (openerId) {
+  if (openerId && !deliveredUserIds.has(openerId)) {
     try {
       const openerUser = await guild.client.users.fetch(openerId).catch(() => null);
       if (openerUser) {
+        deliveredUserIds.add(openerId);
         const memberSummary = {
           type: 17,
           components: [
-            { type: 10, content: `# ${getRandomHeadingGlyph()} **Support Ticket #${ticketId} Resolved** | <a:03_tick_circle:1565665642084827206>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} **Support Ticket #${ticketId} Resolved** | ${TICK_EMOJI}` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -853,14 +894,7 @@ export async function dispatchTicketExports({ guild, channel, ticketId, ticketDa
           ]
         };
 
-        await openerUser.send({
-          components: [memberSummary],
-          files: [
-            new AttachmentBuilder(htmlBuffer, { name: `ticket-${ticketId}-transcript.html` }),
-            new AttachmentBuilder(txtBuffer, { name: `ticket-${ticketId}-transcript.txt` })
-          ],
-          flags: 32768
-        }).catch(() => null);
+        await deliverArchivePackage(openerUser, memberSummary, 'Member');
         dispatched.push(`Member (${openerId})`);
       }
     } catch (err) {
@@ -869,14 +903,15 @@ export async function dispatchTicketExports({ guild, channel, ticketId, ticketDa
   }
 
   // 5. Dispatch to Claimed Staff Member
-  if (claimedId && claimedId !== guild.ownerId) {
+  if (claimedId && !deliveredUserIds.has(claimedId)) {
     try {
       const staffUser = await guild.client.users.fetch(claimedId).catch(() => null);
       if (staffUser) {
+        deliveredUserIds.add(claimedId);
         const staffSummary = {
           type: 17,
           components: [
-            { type: 10, content: `# ${getRandomHeadingGlyph()} **Ticket #${ticketId} Closed • Staff Assignment Report** | <a:03_tick_circle:1565665642084827206>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} **Ticket #${ticketId} Closed • Staff Assignment Report** | ${TICK_EMOJI}` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -892,14 +927,7 @@ export async function dispatchTicketExports({ guild, channel, ticketId, ticketDa
           ]
         };
 
-        await staffUser.send({
-          components: [staffSummary],
-          files: [
-            new AttachmentBuilder(htmlBuffer, { name: `ticket-${ticketId}-transcript.html` }),
-            new AttachmentBuilder(txtBuffer, { name: `ticket-${ticketId}-transcript.txt` })
-          ],
-          flags: 32768
-        }).catch(() => null);
+        await deliverArchivePackage(staffUser, staffSummary, 'Claimed Staff');
         dispatched.push(`Claimed Staff (${claimedId})`);
       }
     } catch (err) {
@@ -907,15 +935,16 @@ export async function dispatchTicketExports({ guild, channel, ticketId, ticketDa
     }
   }
 
-  // 6. Dispatch to Closer (if staff member and not owner, not opener, and not claimed staff)
-  if (closedById && closedById !== 'Unknown' && closedById !== guild.ownerId && closedById !== openerId && closedById !== claimedId) {
+  // 6. Dispatch to Closer (if staff member and not already delivered)
+  if (closedById && closedById !== 'Unknown' && !deliveredUserIds.has(closedById)) {
     try {
-      const closerUser = closedBy.user || (await guild.client.users.fetch(closedById).catch(() => null));
+      const closerUser = closedBy?.user || (await guild.client.users.fetch(closedById).catch(() => null));
       if (closerUser) {
+        deliveredUserIds.add(closedById);
         const closerSummary = {
           type: 17,
           components: [
-            { type: 10, content: `# ${getRandomHeadingGlyph()} **Ticket #${ticketId} Closed • Staff Closure Archive** | <a:03_tick_circle:1565665642084827206>` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} **Ticket #${ticketId} Closed • Staff Closure Archive** | ${TICK_EMOJI}` },
             { type: 14, divider: true },
             {
               type: 10,
@@ -930,14 +959,7 @@ export async function dispatchTicketExports({ guild, channel, ticketId, ticketDa
           ]
         };
 
-        await closerUser.send({
-          components: [closerSummary],
-          files: [
-            new AttachmentBuilder(htmlBuffer, { name: `ticket-${ticketId}-transcript.html` }),
-            new AttachmentBuilder(txtBuffer, { name: `ticket-${ticketId}-transcript.txt` })
-          ],
-          flags: 32768
-        }).catch(() => null);
+        await deliverArchivePackage(closerUser, closerSummary, 'Closer');
         dispatched.push(`Closer (${closedById})`);
       }
     } catch (err) {
@@ -954,14 +976,7 @@ export async function dispatchTicketExports({ guild, channel, ticketId, ticketDa
     try {
       const logChannel = guild.channels.cache.get(logChannelId) || (await guild.channels.fetch(logChannelId).catch(() => null));
       if (logChannel && logChannel.isTextBased()) {
-        await logChannel.send({
-          components: [summaryCard],
-          files: [
-            new AttachmentBuilder(htmlBuffer, { name: `ticket-${ticketId}-transcript.html` }),
-            new AttachmentBuilder(txtBuffer, { name: `ticket-${ticketId}-transcript.txt` })
-          ],
-          flags: 32768
-        }).catch(() => null);
+        await deliverArchivePackage(logChannel, summaryCard, 'Log Channel');
         dispatched.push(`Log Channel (${logChannelId})`);
       }
     } catch (err) {

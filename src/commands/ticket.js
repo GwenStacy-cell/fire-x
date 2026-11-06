@@ -467,7 +467,13 @@ export async function executeTicketClose(guild, channel, closerMemberOrUser, rep
     console.error('[executeTicketClose] Export error:', err);
   }
 
-  // Graceful 3-second delay for Discord file transfers to finish cleanly
+  if (exportResult?.dispatched?.length > 0) {
+    await channel.send({
+      content: `-# <a:03_tick_circle:1565665642084827206> **Forensic archives successfully compiled & dispatched to:** ${exportResult.dispatched.join(', ')}`
+    }).catch(() => null);
+  }
+
+  // Graceful 5-second delay for Discord file transfers to finish cleanly
   setTimeout(async () => {
     // Voice channel cleanup
     let voiceChannel = null;
@@ -493,7 +499,7 @@ export async function executeTicketClose(guild, channel, closerMemberOrUser, rep
         duration: exportResult?.durationStr || 'Unknown'
       });
     }
-  }, 3500);
+  }, 5000);
 }
 
 /**
@@ -531,13 +537,19 @@ export async function executeTicketExport(guild, channel, member, replyFn) {
     ]
   };
 
-  return channel.send({
+  await channel.send({
     components: [container],
+    flags: 32768
+  }).catch(() => null);
+
+  return channel.send({
+    content:
+      `### ${getRandomHeadingGlyph()} **Forensic Live Transcripts Attached • Ticket #${ticketId}** | ${TICK_EMOJI}\n` +
+      `> -# Download the official interactive HTML and UTF-8 plain text archives below:`,
     files: [
       new AttachmentBuilder(htmlBuffer, { name: `ticket-${ticketId}-live-transcript.html` }),
       new AttachmentBuilder(txtBuffer, { name: `ticket-${ticketId}-live-transcript.txt` })
-    ],
-    flags: 32768
+    ]
   }).catch(() => null);
 }
 
