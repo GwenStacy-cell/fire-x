@@ -21,6 +21,7 @@ import {
   getLocalIp,
   formatBytes,
   formatSeconds,
+  resolveMediaSource,
   startCinemaSession,
   pauseCinemaSession,
   resumeCinemaSession,
@@ -52,17 +53,17 @@ export const commands = [
   {
     name: 'cinema',
     aliases: ['movie', 'stream', 'screenshare'],
-    description: 'Stream local movie files with synchronized surround voice audio and mobile web theater',
+    description: 'Stream local PC movies or online links (YouTube, Instagram Reels, Twitch, TikTok, Twitter/X) with synchronized surround voice audio and mobile web theater',
     type: 1, // CHAT_INPUT
     options: [
       {
         name: 'play',
-        description: 'Stream a movie from the host PC or direct URL/attachment into your voice channel',
+        description: 'Stream a movie from host PC, YouTube, Instagram, Twitch, TikTok, or video link',
         type: 1,
         options: [
           {
             name: 'query',
-            description: 'Movie number from list, filename, or direct video URL',
+            description: 'Movie number from list, YouTube/Instagram/Twitch link, or direct video URL',
             type: 3, // STRING
             required: false
           }
@@ -294,8 +295,8 @@ export const commands = [
         const dir = getMoviesDir();
         return message.reply(cv2.panel(
           `Athena Cinema Streamer Suite | ${TICK_EMOJI}`,
-          `Stream local downloaded movies from your PC with synchronized surround audio in voice and interactive mobile web screen!\n\n` +
-          `${BULLET_EMOJI} \`!movie play <number | name>\` — Start streaming movie\n` +
+          `Stream local downloaded PC movies or online streams (**YouTube**, **Instagram Reels**, **Twitch**, **TikTok**, **Twitter/X**) with synchronized surround audio in voice and interactive mobile web screen!\n\n` +
+          `${BULLET_EMOJI} \`!movie play <number | link>\` — Stream movie or YouTube/IG/Twitch/TikTok link\n` +
           `${BULLET_EMOJI} \`!movie list\` — List all downloaded movies in \`${dir}\`\n` +
           `${BULLET_EMOJI} \`!movie pause\` / \`!movie resume\` — Toggle playback\n` +
           `${BULLET_EMOJI} \`!movie forward [secs]\` / \`!movie rewind [secs]\` — Seek delta\n` +
@@ -458,41 +459,43 @@ async function handlePlayCinema(guild, member, query, replyFn, editFn = null) {
     ));
   }
 
-  const movies = listLocalMovies();
-  let selectedMovie = null;
-
-  if (query) {
-    const num = parseInt(query, 10);
-    if (!isNaN(num) && num >= 1 && num <= movies.length) {
-      selectedMovie = movies[num - 1];
-    } else {
-      selectedMovie = movies.find(m => m.name.toLowerCase().includes(query.toLowerCase()));
-    }
-  } else if (movies.length > 0) {
-    selectedMovie = movies[0];
-  }
-
-  if (!selectedMovie && !query?.startsWith('http')) {
-    return replyFn(cv2.warn(
-      `Movie Not Found | ${WARN_EMOJI}`,
-      `Could not locate movie matching \`${query || 'default'}\`.\n\n` +
-      `Use \`/cinema list\` to view all available downloaded movies in \`${getMoviesDir()}\`.`
-    ));
-  }
-
-  const source = selectedMovie ? selectedMovie.absolutePath : query;
-  const title = selectedMovie ? selectedMovie.name : 'Web Stream Video';
-
   const initialMsg = await replyFn({
-    content: `-# <a:loading:1542155051286396938> **Initializing Athena Cinema Engine & surround voice pipeline...**`
+    content: `-# <a:loading:1542155051286396938> **Initializing Athena Cinema Engine & resolving media stream...**`
   });
 
+  const updateProgress = async (text) => {
+    try {
+      if (editFn) await editFn({ content: `-# <a:loading:1542155051286396938> **${text}**` });
+      else if (initialMsg && typeof initialMsg.edit === 'function') await initialMsg.edit({ content: `-# <a:loading:1542155051286396938> **${text}**` });
+    } catch (e) {}
+  };
+
   try {
+    const resolved = await resolveMediaSource(query, updateProgress);
+    if (!resolved) {
+      const warnPayload = cv2.warn(
+        `Media Source Not Found | ${WARN_EMOJI}`,
+        `Could not locate media matching \`${query || 'default'}\`.\n\n` +
+        `${BULLET_EMOJI} **Local Storage:** Use \`/cinema list\` to view all movies in \`${getMoviesDir()}\`.\n` +
+        `${BULLET_EMOJI} **Web Streaming:** Provide a link from **YouTube**, **Instagram Reels**, **Twitch**, **TikTok**, **Twitter/X**, or direct video URL!`
+      );
+      if (editFn) return editFn(warnPayload);
+      if (initialMsg && typeof initialMsg.edit === 'function') return initialMsg.edit(warnPayload);
+      return replyFn(warnPayload);
+    }
+
     const session = await startCinemaSession({
       guild,
       voiceChannel,
-      source,
-      title
+      source: resolved.source,
+      title: resolved.title,
+      member,
+      isLive: resolved.isLive,
+      platform: resolved.platform,
+      originalUrl: resolved.originalUrl,
+      streamUrl: resolved.streamUrl,
+      duration: resolved.duration,
+      filePath: resolved.filePath
     });
 
     const deckPayload = buildCinemaControlDeck(session);

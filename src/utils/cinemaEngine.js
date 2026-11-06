@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { spawn } from 'child_process';
+import util from 'util';
+import { spawn, exec } from 'child_process';
 import ffmpegPath from 'ffmpeg-static';
 import { 
   joinVoiceChannel, 
@@ -28,6 +29,9 @@ import {
   UPTIME_EMOJI, 
   DELETE_BEAT_EMOJI 
 } from './emojis.js';
+import { getCookieArg } from './mediaDownloader.js';
+
+const execPromise = util.promisify(exec);
 
 // Supported movie & video container formats
 const SUPPORTED_EXTS = new Set(['.mp4', '.mkv', '.webm', '.avi', '.mov', '.flv', '.m4v']);
@@ -50,6 +54,35 @@ export function getMoviesDir() {
     fs.mkdirSync(dir, { recursive: true });
   }
   return dir;
+}
+
+/**
+ * Resolves yt-dlp binary path on host
+ */
+export function getYtDlpPath() {
+  const isWin = process.platform === 'win32';
+  const binName = isWin ? 'yt-dlp.exe' : 'yt-dlp_linux';
+  const rootBin = path.resolve(process.cwd(), binName);
+  if (fs.existsSync(rootBin)) return rootBin;
+  return 'yt-dlp';
+}
+
+/**
+ * Detects online platform from URL
+ */
+export function detectPlatform(url) {
+  if (!url || typeof url !== 'string') return 'Local Library';
+  const u = url.toLowerCase();
+  if (u.includes('youtube.com') || u.includes('youtu.be')) return 'YouTube';
+  if (u.includes('instagram.com')) return 'Instagram';
+  if (u.includes('twitch.tv')) return 'Twitch';
+  if (u.includes('tiktok.com')) return 'TikTok';
+  if (u.includes('twitter.com') || u.includes('x.com')) return 'Twitter / X';
+  if (u.includes('facebook.com') || u.includes('fb.watch')) return 'Facebook';
+  if (u.includes('reddit.com')) return 'Reddit';
+  if (u.includes('vimeo.com')) return 'Vimeo';
+  if (/^https?:\/\//i.test(u)) return 'Direct Web Stream';
+  return 'Local Library';
 }
 
 /**
@@ -128,33 +161,45 @@ export function renderProgressBar(current, total, length = 16) {
   if (!total || total <= 0) return '🔘' + '▬'.repeat(length - 1);
   const progress = Math.min(1, Math.max(0, current / total));
   const progressChars = Math.round(progress * (length - 1));
-  const emptyChars = (length - 1) - progressChars;
-  return '▬'.repeat(progressChars) + '🔘' + '▬'.repeat(emptyChars);
+  let bar = '';
+  for (let i = 0; i < length; i++) {
+    if (i === progressChars) {
+      bar += '🔘';
+    } else {
+      bar += '▬';
+    }
+  }
+  return bar;
 }
 
 /**
- * Scans the movies folder and returns all available videos
+ * Scans host movies directory for valid movie files
  */
 export function listLocalMovies() {
   const dir = getMoviesDir();
   const results = [];
 
-  function scan(currentDir) {
+  function scan(currentDir, relativePath = '') {
     try {
       const entries = fs.readdirSync(currentDir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(currentDir, entry.name);
+        const relPath = relativePath ? path.join(relativePath, entry.name) : entry.name;
+
+        // Skip internal cache folder in list
+        if (entry.isDirectory() && entry.name === 'web_cache') continue;
+
         if (entry.isDirectory()) {
-          scan(fullPath);
+          scan(fullPath, relPath);
         } else if (entry.isFile()) {
           const ext = path.extname(entry.name).toLowerCase();
           if (SUPPORTED_EXTS.has(ext)) {
             const stats = fs.statSync(fullPath);
             results.push({
-              name: entry.name,
-              relativePath: path.relative(dir, fullPath),
-              fullPath: fullPath,
-              ext: ext,
+              name: path.basename(entry.name, ext),
+              relativePath: relPath,
+              fullPath,
+              ext,
               sizeBytes: stats.size,
               sizeFormatted: formatBytes(stats.size),
               mtime: stats.mtime
@@ -196,6 +241,175 @@ export function probeMediaDuration(filePathOrUrl) {
 }
 
 /**
+ * Resolves media source from either:
+ * 1) Online URL (YouTube, Instagram, Twitch, TikTok, Twitter/X, direct video link)
+ * 2) Movie index number from list
+ * 3) Local filename query from movies/
+ */
+export async function resolveMediaSource(input, progressCallback = null) {
+  const str = (input || '').trim();
+
+  // 1. Online Web Stream or Social Media URL
+  if (/^https?:\/\//i.test(str)) {
+    const platform = detectPlatform(str);
+    if (progressCallback) progressCallback(`Connecting to **${platform}** and extracting stream metadata...`);
+
+    const ytdlp = getYtDlpPath();
+    const cookieArg = getCookieArg();
+    const cacheDir = path.resolve(getMoviesDir(), 'web_cache');
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+
+    // 1a. Query metadata via yt-dlp
+    let info = null;
+    try {
+      const metaCmd = `"${ytdlp}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" --dump-json --no-playlist "${str}"`;
+      const { stdout } = await execPromise(metaCmd, { maxBuffer: 10 * 1024 * 1024 });
+      info = JSON.parse(stdout);
+    } catch (e) {
+      console.warn('[CinemaEngine resolveMediaSource] Metadata probe warning:', e.message);
+    }
+
+    const title = (info?.title || `${platform} Video`).replace(/[\\/*?:"<>|]/g, '').trim().slice(0, 100);
+    const duration = info?.duration || 0;
+    const isLive = Boolean(info?.is_live);
+
+    // 1b. If it is a Live stream (Twitch live, YouTube live)
+    if (isLive) {
+      if (progressCallback) progressCallback(`Extracting live broadcast HLS stream for: **${title}**...`);
+      try {
+        const getUrlCmd = `"${ytdlp}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" -g -f best "${str}"`;
+        const { stdout } = await execPromise(getUrlCmd);
+        const liveUrl = stdout.trim().split('\n')[0];
+        return {
+          type: 'live',
+          title: `[LIVE] ${title}`,
+          source: liveUrl,
+          streamUrl: liveUrl,
+          filePath: null,
+          duration: 0,
+          isLive: true,
+          platform,
+          originalUrl: str
+        };
+      } catch (liveErr) {
+        console.warn('[CinemaEngine] Live HLS extraction warning:', liveErr.message);
+      }
+    }
+
+    // 1c. If it's a recorded video (YouTube, Instagram Reel, Twitch clip, TikTok, Twitter/X)
+    const videoId = info?.id || Buffer.from(str).toString('hex').slice(0, 16);
+    const targetFile = path.resolve(cacheDir, `${videoId}.mp4`);
+
+    if (fs.existsSync(targetFile) && fs.statSync(targetFile).size > 10000) {
+      if (progressCallback) progressCallback(`Found ready video in cache: **${title}**`);
+      return {
+        type: 'web_cached',
+        title,
+        source: targetFile,
+        filePath: targetFile,
+        duration,
+        isLive: false,
+        platform,
+        originalUrl: str
+      };
+    }
+
+    // Download/buffer for zero-latency seeking and phone streaming
+    if (progressCallback) progressCallback(`Buffering stream for: **${title}**...`);
+    try {
+      const downloadCmd = `"${ytdlp}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" -f "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --no-playlist -o "${targetFile}" "${str}"`;
+      await execPromise(downloadCmd, { maxBuffer: 25 * 1024 * 1024 });
+      if (fs.existsSync(targetFile)) {
+        return {
+          type: 'web_cached',
+          title,
+          source: targetFile,
+          filePath: targetFile,
+          duration,
+          isLive: false,
+          platform,
+          originalUrl: str
+        };
+      }
+    } catch (downErr) {
+      console.warn('[CinemaEngine] Direct download failed, falling back to direct URL stream:', downErr.message);
+    }
+
+    // Fallback: extract direct stream URL
+    try {
+      const directUrlCmd = `"${ytdlp}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" -g -f best "${str}"`;
+      const { stdout: directStreamOut } = await execPromise(directUrlCmd);
+      const directStreamUrl = directStreamOut.trim().split('\n')[0];
+      return {
+        type: 'direct_stream',
+        title,
+        source: directStreamUrl,
+        streamUrl: directStreamUrl,
+        filePath: null,
+        duration,
+        isLive: false,
+        platform,
+        originalUrl: str
+      };
+    } catch (streamErr) {
+      throw new Error(`Failed to extract playable stream from ${platform}: ${streamErr.message}`);
+    }
+  }
+
+  // 2. Is it a local movie index or name?
+  const movies = listLocalMovies();
+  if (/^\d+$/.test(str)) {
+    const idx = parseInt(str, 10) - 1;
+    if (idx >= 0 && idx < movies.length) {
+      return {
+        type: 'local',
+        title: movies[idx].name,
+        source: movies[idx].fullPath,
+        filePath: movies[idx].fullPath,
+        duration: 0,
+        isLive: false,
+        platform: 'Local Storage',
+        originalUrl: null
+      };
+    }
+  }
+
+  if (str) {
+    const found = movies.find(m => m.name.toLowerCase().includes(str.toLowerCase()));
+    if (found) {
+      return {
+        type: 'local',
+        title: found.name,
+        source: found.fullPath,
+        filePath: found.fullPath,
+        duration: 0,
+        isLive: false,
+        platform: 'Local Storage',
+        originalUrl: null
+      };
+    }
+  }
+
+  // Fallback to first local movie if no query provided
+  if (movies.length > 0 && !str) {
+    return {
+      type: 'local',
+      title: movies[0].name,
+      source: movies[0].fullPath,
+      filePath: movies[0].fullPath,
+      duration: 0,
+      isLive: false,
+      platform: 'Local Storage',
+      originalUrl: null
+    };
+  }
+
+  return null;
+}
+
+/**
  * Starts or seeks an audio streaming process via ffmpeg into the Discord audio player
  */
 function playAudioSegment(session, offsetSeconds = 0) {
@@ -211,9 +425,12 @@ function playAudioSegment(session, offsetSeconds = 0) {
   session.isPaused = false;
 
   const args = [];
-  if (offsetSeconds > 0) {
+  if (session.isLive) {
+    args.push('-re');
+  } else if (offsetSeconds > 0) {
     args.push('-ss', String(offsetSeconds));
   }
+  
   args.push(
     '-i', session.source,
     '-vn',
@@ -243,15 +460,28 @@ function playAudioSegment(session, offsetSeconds = 0) {
 /**
  * Starts an Athena Cinema streaming session
  */
-export async function startCinemaSession({ guild, voiceChannel, source, title, startOffset = 0, member }) {
+export async function startCinemaSession({ 
+  guild, 
+  voiceChannel, 
+  source, 
+  title, 
+  startOffset = 0, 
+  member,
+  isLive = false,
+  platform = 'Local Storage',
+  originalUrl = null,
+  streamUrl = null,
+  duration = 0,
+  filePath = null
+}) {
   const guildId = guild.id;
   let session = activeSessions.get(guildId);
 
   // Generate unique session id for HTTP range streaming & theater UI
   const sessionId = `${guildId}_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
 
-  // Probe total duration in background
-  const totalDuration = await probeMediaDuration(source);
+  // Determine total duration
+  const totalDuration = duration > 0 ? duration : (isLive ? 0 : await probeMediaDuration(source));
 
   if (session) {
     // Re-use connection
@@ -263,6 +493,11 @@ export async function startCinemaSession({ guild, voiceChannel, source, title, s
     session.totalDuration = totalDuration;
     session.sessionId = sessionId;
     session.startedBy = member?.id;
+    session.isLive = isLive;
+    session.platform = platform;
+    session.originalUrl = originalUrl;
+    session.streamUrl = streamUrl;
+    session.filePath = filePath || (source && fs.existsSync(source) ? source : null);
   } else {
     const player = createAudioPlayer();
     const connection = joinVoiceChannel({
@@ -280,6 +515,8 @@ export async function startCinemaSession({ guild, voiceChannel, source, title, s
       ffmpegProcess: null,
       resource: null,
       source,
+      filePath: filePath || (source && fs.existsSync(source) ? source : null),
+      streamUrl,
       title: title || path.basename(source),
       totalDuration,
       currentOffset: startOffset,
@@ -289,7 +526,10 @@ export async function startCinemaSession({ guild, voiceChannel, source, title, s
       volume: 1.0,
       sessionId,
       startedBy: member?.id,
-      deckMessage: null
+      deckMessage: null,
+      isLive,
+      platform,
+      originalUrl
     };
 
     // Auto-reconnect on disconnect
@@ -304,15 +544,14 @@ export async function startCinemaSession({ guild, voiceChannel, source, title, s
       }
     });
 
-    // Handle end of playback
+    // Lifecycle: handle track finish & loop
     player.on(AudioPlayerStatus.Idle, () => {
-      if (session.isLoop) {
-        playAudioSegment(session, 0);
-      } else {
-        // Playback finished
-        session.isPaused = true;
-        session.currentOffset = session.totalDuration || 0;
-        updateSessionControlDeck(session).catch(() => null);
+      const active = activeSessions.get(guildId);
+      if (!active) return;
+      if (active.isLoop && !active.isLive) {
+        playAudioSegment(active, 0);
+      } else if (!active.isLive) {
+        // Stream finished
       }
     });
 
@@ -322,21 +561,24 @@ export async function startCinemaSession({ guild, voiceChannel, source, title, s
 
   sessionsById.set(sessionId, session);
   playAudioSegment(session, startOffset);
+
   return session;
 }
 
 /**
- * Returns current playback timestamp in seconds
+ * Calculates currently elapsed playback time in seconds
  */
 export function getCurrentPlaybackSeconds(session) {
   if (!session) return 0;
-  if (session.isPaused) return session.currentOffset;
-  const elapsed = (Date.now() - session.startedAt) / 1000;
-  const current = session.currentOffset + elapsed;
-  if (session.totalDuration && current > session.totalDuration) {
+  if (session.isLive) return 0;
+  let elapsed = session.currentOffset || 0;
+  if (!session.isPaused && session.startedAt) {
+    elapsed += (Date.now() - session.startedAt) / 1000;
+  }
+  if (session.totalDuration && elapsed > session.totalDuration) {
     return session.totalDuration;
   }
-  return current;
+  return Math.max(0, elapsed);
 }
 
 /**
@@ -345,6 +587,7 @@ export function getCurrentPlaybackSeconds(session) {
 export function pauseCinemaSession(guildId) {
   const session = activeSessions.get(guildId);
   if (!session || session.isPaused) return false;
+
   session.currentOffset = getCurrentPlaybackSeconds(session);
   session.isPaused = true;
   session.player.pause();
@@ -357,21 +600,22 @@ export function pauseCinemaSession(guildId) {
 export function resumeCinemaSession(guildId) {
   const session = activeSessions.get(guildId);
   if (!session || !session.isPaused) return false;
-  session.startedAt = Date.now();
+
   session.isPaused = false;
+  session.startedAt = Date.now();
   session.player.unpause();
   return true;
 }
 
 /**
- * Seeks to a specific timestamp in seconds
+ * Seeks to target timestamp in seconds
  */
 export function seekCinemaSession(guildId, targetSeconds) {
   const session = activeSessions.get(guildId);
-  if (!session) return false;
-  let target = targetSeconds;
-  if (session.totalDuration && target > session.totalDuration) target = session.totalDuration - 2;
-  if (target < 0) target = 0;
+  if (!session) return null;
+  if (session.isLive) return null; // Live streams cannot seek backward/forward
+
+  const target = Math.max(0, Math.min(targetSeconds, session.totalDuration || targetSeconds));
   playAudioSegment(session, target);
   return target;
 }
@@ -381,7 +625,7 @@ export function seekCinemaSession(guildId, targetSeconds) {
  */
 export function forwardCinemaSession(guildId, deltaSeconds = 30) {
   const session = activeSessions.get(guildId);
-  if (!session) return null;
+  if (!session || session.isLive) return null;
   const current = getCurrentPlaybackSeconds(session);
   return seekCinemaSession(guildId, current + deltaSeconds);
 }
@@ -391,7 +635,7 @@ export function forwardCinemaSession(guildId, deltaSeconds = 30) {
  */
 export function rewindCinemaSession(guildId, deltaSeconds = 30) {
   const session = activeSessions.get(guildId);
-  if (!session) return null;
+  if (!session || session.isLive) return null;
   const current = getCurrentPlaybackSeconds(session);
   return seekCinemaSession(guildId, Math.max(0, current - deltaSeconds));
 }
@@ -401,7 +645,7 @@ export function rewindCinemaSession(guildId, deltaSeconds = 30) {
  */
 export function toggleLoopCinemaSession(guildId) {
   const session = activeSessions.get(guildId);
-  if (!session) return false;
+  if (!session || session.isLive) return false;
   session.isLoop = !session.isLoop;
   return session.isLoop;
 }
@@ -464,27 +708,44 @@ export function buildCinemaControlDeck(session, options = {}) {
   const progressBar = renderProgressBar(currentSecs, totalSecs, 14);
 
   const baseHost = getLocalIp();
-  const streamUrl = `${baseHost}/cinema/stream/${session.sessionId}`;
   const theaterUrl = `${baseHost}/cinema/watch/${session.sessionId}`;
+  const isLive = Boolean(session.isLive);
+  const platform = session.platform || 'Local Storage';
+
+  let statusSection = '';
+  if (isLive) {
+    statusSection =
+      `<a:target_blink:1565667466984554588> **Now Streaming:** \`${session.title}\`\n` +
+      `<a:target_blink:1565667466984554588> **Platform:** \`${platform}\`\n` +
+      `<a:target_blink:1565667466984554588> **Voice Channel:** <#${session.voiceChannelId}>\n` +
+      `<a:target_blink:1565667466984554588> **Broadcast Status:** ${UPTIME_EMOJI} \`[LIVE BROADCAST]\`\n` +
+      (session.originalUrl ? `<a:target_blink:1565667466984554588> **Original Link:** [Open in ${platform}](${session.originalUrl})\n\n` : '\n') +
+      `**Mobile & Web Live Video Screen:**\n` +
+      `Tap the button below to watch the live video screen with real-time surround audio in VC!`;
+  } else {
+    statusSection =
+      `<a:target_blink:1565667466984554588> **Now Playing:** \`${session.title}\`\n` +
+      `<a:target_blink:1565667466984554588> **Platform:** \`${platform}\`\n` +
+      (session.originalUrl ? `<a:target_blink:1565667466984554588> **Original Link:** [Open in ${platform}](${session.originalUrl})\n` : '') +
+      `<a:target_blink:1565667466984554588> **Voice Channel:** <#${session.voiceChannelId}>\n` +
+      `<a:target_blink:1565667466984554588> **Playback State:** ${session.isPaused ? '`[PAUSED]`' : `${UPTIME_EMOJI} \`[STREAMING LIVE]\``} | **Loop:** \`${session.isLoop ? 'ON' : 'OFF'}\`\n` +
+      `<a:target_blink:1565667466984554588> **Timestamp:** \`[${currentStr} / ${durationStr}]\` (${percentage}%)\n` +
+      `<a:target_blink:1565667466984554588> **Progress:** \`${progressBar}\`\n\n` +
+      `**Mobile & Web Video Screen:**\n` +
+      `Tap the button below or open the **Watch Video Screen** link on your phone/browser to view the synced video with native controls!`;
+  }
 
   const container = {
     type: 17,
     components: [
       {
         type: 10,
-        content: `# ${getRandomHeadingGlyph()} **Athena Cinema • Movie Streamer** | ${TICK_EMOJI}`
+        content: `# ${getRandomHeadingGlyph()} **Athena Cinema • Movie & Stream Player** | ${TICK_EMOJI}`
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content:
-          `<a:target_blink:1565667466984554588> **Now Playing:** \`${session.title}\`\n` +
-          `<a:target_blink:1565667466984554588> **Voice Channel:** <#${session.voiceChannelId}>\n` +
-          `<a:target_blink:1565667466984554588> **Playback State:** ${session.isPaused ? '`[PAUSED]`' : `${UPTIME_EMOJI} \`[STREAMING LIVE]\``} | **Loop:** \`${session.isLoop ? 'ON' : 'OFF'}\`\n` +
-          `<a:target_blink:1565667466984554588> **Timestamp:** \`[${currentStr} / ${durationStr}]\` (${percentage}%)\n` +
-          `<a:target_blink:1565667466984554588> **Progress:** \`${progressBar}\`\n\n` +
-          `**Mobile & Web Video Screen:**\n` +
-          `Tap the button below or open the **Watch Video Screen** link on your phone/browser to view the synced video with native controls!`
+        content: statusSection
       },
       { type: 14, divider: true },
       {
@@ -494,29 +755,48 @@ export function buildCinemaControlDeck(session, options = {}) {
     ]
   };
 
-  // Row 1: Playback seeking controls
-  const row1 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('cinema_rewind_60')
-      .setLabel('Rewind 1m')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('cinema_rewind_30')
-      .setLabel('Rewind 30s')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('cinema_play_pause')
-      .setLabel(session.isPaused ? 'Play' : 'Pause')
-      .setStyle(session.isPaused ? ButtonStyle.Success : ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('cinema_forward_30')
-      .setLabel('Forward 30s')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('cinema_forward_60')
-      .setLabel('Forward 1m')
-      .setStyle(ButtonStyle.Secondary)
-  );
+  // Row 1: Seeking controls (or Live sync controls for live broadcasts)
+  let row1 = null;
+  if (isLive) {
+    row1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('cinema_refresh')
+        .setLabel('Live Sync')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('cinema_play_pause')
+        .setLabel(session.isPaused ? 'Resume Audio' : 'Pause Audio')
+        .setStyle(session.isPaused ? ButtonStyle.Success : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('cinema_stop')
+        .setLabel('Stop Broadcast')
+        .setEmoji(DELETE_BEAT_EMOJI)
+        .setStyle(ButtonStyle.Danger)
+    );
+  } else {
+    row1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('cinema_rewind_60')
+        .setLabel('Rewind 1m')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('cinema_rewind_30')
+        .setLabel('Rewind 30s')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('cinema_play_pause')
+        .setLabel(session.isPaused ? 'Play' : 'Pause')
+        .setStyle(session.isPaused ? ButtonStyle.Success : ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('cinema_forward_30')
+        .setLabel('Forward 30s')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('cinema_forward_60')
+        .setLabel('Forward 1m')
+        .setStyle(ButtonStyle.Secondary)
+    );
+  }
 
   // Row 2: Navigation & Session controls
   const row2Components = [
@@ -527,21 +807,29 @@ export function buildCinemaControlDeck(session, options = {}) {
     new ButtonBuilder()
       .setCustomId('cinema_activity')
       .setLabel('Watch Together')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('cinema_loop')
-      .setLabel(session.isLoop ? 'Loop (ON)' : 'Loop (OFF)')
-      .setStyle(session.isLoop ? ButtonStyle.Success : ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('cinema_refresh')
-      .setLabel('Sync')
-      .setStyle(ButtonStyle.Secondary),
+      .setStyle(ButtonStyle.Secondary)
+  ];
+
+  if (!isLive) {
+    row2Components.push(
+      new ButtonBuilder()
+        .setCustomId('cinema_loop')
+        .setLabel(session.isLoop ? 'Loop (ON)' : 'Loop (OFF)')
+        .setStyle(session.isLoop ? ButtonStyle.Success : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('cinema_refresh')
+        .setLabel('Sync')
+        .setStyle(ButtonStyle.Secondary)
+    );
+  }
+
+  row2Components.push(
     new ButtonBuilder()
       .setCustomId('cinema_stop')
       .setLabel('Stop')
       .setEmoji(DELETE_BEAT_EMOJI)
       .setStyle(ButtonStyle.Danger)
-  ];
+  );
 
   const row2 = new ActionRowBuilder().addComponents(row2Components);
 
@@ -569,12 +857,18 @@ export function registerCinemaRoutes(app) {
   // 1. HTTP 206 Partial Content Video Streaming Endpoint
   app.get('/cinema/stream/:sessionId', (req, res) => {
     const session = sessionsById.get(req.params.sessionId);
-    if (!session || !session.source) {
+    if (!session) {
       return res.status(404).send('Cinema session not found or expired.');
     }
 
-    const filePath = session.source;
-    if (!fs.existsSync(filePath)) {
+    // If session has direct stream URL and no local file, redirect or stream directly
+    if (!session.filePath && session.streamUrl) {
+      return res.redirect(session.streamUrl);
+    }
+
+    const filePath = session.filePath || session.source;
+    if (!filePath || !fs.existsSync(filePath)) {
+      if (session.streamUrl) return res.redirect(session.streamUrl);
       return res.status(404).send('Source movie file not found on disk.');
     }
 
@@ -638,7 +932,9 @@ export function registerCinemaRoutes(app) {
       currentTime: current,
       duration: session.totalDuration || 0,
       isPaused: session.isPaused,
-      isLoop: session.isLoop
+      isLoop: session.isLoop,
+      isLive: Boolean(session.isLive),
+      platform: session.platform
     });
   });
 
@@ -657,6 +953,8 @@ export function registerCinemaRoutes(app) {
 
     const currentSecs = getCurrentPlaybackSeconds(session);
     const videoStreamUrl = `/cinema/stream/${session.sessionId}`;
+    const isLive = Boolean(session.isLive);
+    const streamSource = isLive ? (session.streamUrl || videoStreamUrl) : videoStreamUrl;
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -664,6 +962,7 @@ export function registerCinemaRoutes(app) {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Athena Cinema • ${session.title}</title>
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -700,6 +999,9 @@ export function registerCinemaRoutes(app) {
       border-radius: 12px;
       text-transform: uppercase;
       font-weight: 800;
+    }
+    .badge.live {
+      background: #ef4444;
     }
     .video-container {
       flex: 1;
@@ -739,14 +1041,17 @@ export function registerCinemaRoutes(app) {
       display: flex;
       align-items: center;
       gap: 6px;
+      transition: background 0.2s;
     }
-    .sync-btn:hover { background: #475569; }
+    .sync-btn:hover {
+      background: #475569;
+    }
     .live-dot {
+      display: inline-block;
       width: 8px;
       height: 8px;
-      background: #22c55e;
+      background: #ef4444;
       border-radius: 50%;
-      display: inline-block;
       animation: pulse 1.5s infinite;
     }
     @keyframes pulse {
@@ -761,43 +1066,55 @@ export function registerCinemaRoutes(app) {
     <div class="brand">
       <span class="live-dot"></span>
       <span>${session.title}</span>
-      <span class="badge">Live Sync</span>
+      <span class="badge ${isLive ? 'live' : ''}">${isLive ? 'Live Broadcast' : session.platform}</span>
     </div>
     <button class="sync-btn" onclick="syncWithVoice()">⚡ Sync to Discord VC</button>
   </header>
 
   <div class="video-container">
-    <video id="player" controls autoplay playsinline preload="auto">
-      <source src="${videoStreamUrl}" type="video/mp4">
-      Your browser does not support HTML5 video playback.
-    </video>
+    <video id="player" controls autoplay playsinline preload="auto"></video>
   </div>
 
   <footer>
     <div>Athena Cinema Engine • Synced to Discord Voice Channel</div>
-    <div id="statusText">Playing at ${formatSeconds(currentSecs)}</div>
+    <div id="statusText">${isLive ? 'Streaming Live' : 'Playing at ' + formatSeconds(currentSecs)}</div>
   </footer>
 
   <script>
     const player = document.getElementById('player');
     const statusText = document.getElementById('statusText');
     const sessionId = "${session.sessionId}";
+    const isLiveStream = ${isLive};
+    const streamSrc = "${streamSource}";
     let initialSyncDone = false;
 
-    // Set initial start timestamp
-    player.addEventListener('loadedmetadata', () => {
-      if (!initialSyncDone) {
-        player.currentTime = ${Math.max(0, currentSecs)};
-        initialSyncDone = true;
-      }
-    });
+    // Load stream: HLS for live or direct for mp4
+    if (isLiveStream && Hls.isSupported() && streamSrc.includes('.m3u8')) {
+      const hls = new Hls();
+      hls.loadSource(streamSrc);
+      hls.attachMedia(player);
+      hls.on(Hls.Events.MANIFEST_PARSED, () => player.play().catch(() => {}));
+    } else {
+      player.src = streamSrc;
+      player.play().catch(() => {});
+    }
+
+    // Set initial start timestamp for VOD
+    if (!isLiveStream) {
+      player.addEventListener('loadedmetadata', () => {
+        if (!initialSyncDone) {
+          player.currentTime = ${Math.max(0, currentSecs)};
+          initialSyncDone = true;
+        }
+      });
+    }
 
     async function syncWithVoice() {
       try {
         const res = await fetch('/cinema/status/' + sessionId);
         if (!res.ok) return;
         const data = await res.json();
-        if (Math.abs(player.currentTime - data.currentTime) > 2) {
+        if (!data.isLive && Math.abs(player.currentTime - data.currentTime) > 2) {
           player.currentTime = data.currentTime;
         }
         if (data.isPaused && !player.paused) {
@@ -805,12 +1122,16 @@ export function registerCinemaRoutes(app) {
         } else if (!data.isPaused && player.paused) {
           player.play().catch(() => {});
         }
-        statusText.innerText = 'Synced at ' + Math.floor(player.currentTime) + 's';
+        if (!data.isLive) {
+          statusText.innerText = 'Synced at ' + Math.floor(player.currentTime) + 's';
+        }
       } catch (e) {}
     }
 
-    // Auto-poll sync every 5 seconds
-    setInterval(syncWithVoice, 5000);
+    // Auto-poll sync every 5 seconds for recorded video
+    if (!isLiveStream) {
+      setInterval(syncWithVoice, 5000);
+    }
   </script>
 </body>
 </html>`;
