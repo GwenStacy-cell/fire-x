@@ -53,9 +53,13 @@ export function buildTicketPanelPayload(guildId) {
   return { components: [container], flags: 32768 };
 }
 
-export function buildTicketManagerPayload(guildId) {
+export function buildTicketManagerPayload(guildId, view = 'core') {
   const config = db.getTickets(guildId);
 
+  const categoryText = config.categoryId ? `<#${config.categoryId}>` : '*Auto-provisioned on first ticket (`Support Tickets`)*';
+  const staffRolesText = config.staffRoleIds && config.staffRoleIds.length > 0
+    ? config.staffRoleIds.map(id => `<@&${id}>`).join(' ')
+    : '*Auto-detected from server staff/moderator roles*';
   const targetChannelText = config.targetChannelId ? `<#${config.targetChannelId}>` : 'Current Channel';
   const logChannelText = config.logChannelId ? `<#${config.logChannelId}>` : 'Server Owner & Staff DMs (Default)';
   const closeRolesText = config.closeTicketRoleIds && config.closeTicketRoleIds.length > 0
@@ -70,89 +74,133 @@ export function buildTicketManagerPayload(guildId) {
       {
         type: 10,
         content:
-          '-# **Use the controls below to customize your Ticket Panel. When ready, click Deploy Panel.**\n\n' +
-          `**Title:** ${config.panelTitle || 'Support Tickets'}\n` +
-          `**Description:** ${(config.panelDescription || 'Need help? Open a ticket below.').substring(0, 500)}\n` +
-          `**Options Count:** ${(config.panelOptions || []).length}\n` +
-          `**Placeholder:** ${config.panelPlaceholder || 'Select a reason...'}\n` +
-          `**AI Triage:** ${config.aiTriage ? '<:on:1533844867191406672>' : '<:off:1533844858983157851>'}\n` +
-          `**Target Channel:** ${targetChannelText}\n` +
-          `**Transcript Log Channel:** ${logChannelText}\n` +
-          `**Closing Roles:** ${closeRolesText}\n` +
-          `**Image Banner:** ${config.panelImage ? `[Link](${config.panelImage})` : 'None'}\n` +
-          `**Thumbnail:** ${config.panelThumbnail ? `[Link](${config.panelThumbnail})` : 'None'}`
+          '-# **Use the interactive controls below to configure your bulletproof ticket system.**\n\n' +
+          `<a:target_blink:1565667466984554588> **Ticket Category:** ${categoryText}\n` +
+          `<a:target_blink:1565667466984554588> **Staff Roles:** ${staffRolesText}\n` +
+          `<a:target_blink:1565667466984554588> **Deployment Channel:** ${targetChannelText}\n` +
+          `<a:target_blink:1565667466984554588> **Transcript Archive:** ${logChannelText}\n` +
+          `<a:target_blink:1565667466984554588> **Closing Authority:** ${closeRolesText}\n` +
+          `<a:target_blink:1565667466984554588> **AI Triage Sentry:** ${config.aiTriage ? '<:on:1533844867191406672>' : '<:off:1533844858983157851>'}\n` +
+          `<a:target_blink:1565667466984554588> **Panel Title:** ${config.panelTitle || 'Support Tickets'}\n` +
+          `<a:target_blink:1565667466984554588> **Description:** ${(config.panelDescription || 'Need help? Open a ticket below.').substring(0, 300)}\n` +
+          `<a:target_blink:1565667466984554588> **Custom Options:** ${(config.panelOptions || []).length} configured\n` +
+          `<a:target_blink:1565667466984554588> **Banner:** ${config.panelImage ? `[Link](${config.panelImage})` : 'None'} | **Thumbnail:** ${config.panelThumbnail ? `[Link](${config.panelThumbnail})` : 'None'}`
       },
       { type: 14, divider: true },
-      { type: 10, content: '-# **Athena Prime Ticket System \u2022 V1.0.0**' }
+      { type: 10, content: '-# **Athena Prime Support & Security Matrix \u2022 V1.0.0**' }
     ]
   };
 
-  const row1 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('tp_edit_text')
-      .setLabel('Edit Title & Desc')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('tp_edit_media')
-      .setLabel('Edit Media & Placeholder')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('tp_add_option')
-      .setLabel('Add Option')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('tp_toggle_ai')
-      .setLabel(`AI Triage: ${config.aiTriage ? 'ON' : 'OFF'}`)
-      .setStyle(config.aiTriage ? ButtonStyle.Success : ButtonStyle.Secondary)
-  );
+  if (view === 'adv') {
+    const rowLog = new ActionRowBuilder().addComponents(
+      new ChannelSelectMenuBuilder()
+        .setCustomId('tp_log_channel')
+        .setPlaceholder('Select dedicated transcript archive channel...')
+        .setChannelTypes(ChannelType.GuildText)
+    );
 
-  const row2 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('tp_clear_options')
-      .setLabel('Clear Options')
-      .setStyle(ButtonStyle.Danger),
-    new ButtonBuilder()
-      .setCustomId('tp_test')
-      .setLabel('Test Panel')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('tp_deploy')
-      .setLabel('Deploy Panel')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId('tp_cancel')
-      .setLabel('Save & Close')
-      .setStyle(ButtonStyle.Secondary)
-  );
+    const rowClose = new ActionRowBuilder().addComponents(
+      new RoleSelectMenuBuilder()
+        .setCustomId('tp_close_roles')
+        .setPlaceholder('Select roles allowed to close tickets...')
+        .setMinValues(1)
+        .setMaxValues(10)
+    );
 
-  const row3 = new ActionRowBuilder().addComponents(
-    new ChannelSelectMenuBuilder()
-      .setCustomId('tp_target_channel')
-      .setPlaceholder('Select target channel for deployment...')
-      .setChannelTypes(ChannelType.GuildText)
-  );
+    const rowAdvNav = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('tp_view_core')
+        .setLabel('◀ Core Setup View')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('tp_test')
+        .setLabel('Test Panel')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('tp_deploy')
+        .setLabel('Deploy Panel')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('tp_cancel')
+        .setLabel('Save & Close')
+        .setStyle(ButtonStyle.Secondary)
+    );
 
-  const rowLog = new ActionRowBuilder().addComponents(
-    new ChannelSelectMenuBuilder()
-      .setCustomId('tp_log_channel')
-      .setPlaceholder('Select dedicated transcript archive channel...')
-      .setChannelTypes(ChannelType.GuildText)
-  );
+    container.components.push(rowLog.toJSON(), rowClose.toJSON(), rowAdvNav.toJSON());
+  } else {
+    // Core View
+    const rowCat = new ActionRowBuilder().addComponents(
+      new ChannelSelectMenuBuilder()
+        .setCustomId('tp_category')
+        .setPlaceholder('Select Ticket Category (where text & voice open)...')
+        .setChannelTypes(ChannelType.GuildCategory)
+    );
 
-  const row4 = new ActionRowBuilder().addComponents(
-    new RoleSelectMenuBuilder()
-      .setCustomId('tp_close_roles')
-      .setPlaceholder('Select roles that can close tickets (leave empty for everyone)...')
+    const rowStaff = new RoleSelectMenuBuilder()
+      .setCustomId('tp_staff_roles')
+      .setPlaceholder('Select Staff Roles (who view & answer tickets)...')
       .setMinValues(1)
-      .setMaxValues(10)
-  );
+      .setMaxValues(10);
 
-  container.components.push(row3.toJSON(), rowLog.toJSON(), row4.toJSON(), row1.toJSON(), row2.toJSON());
+    const rowStaffWrap = new ActionRowBuilder().addComponents(rowStaff);
+
+    const rowTarget = new ActionRowBuilder().addComponents(
+      new ChannelSelectMenuBuilder()
+        .setCustomId('tp_target_channel')
+        .setPlaceholder('Select Deployment Channel (where panel is posted)...')
+        .setChannelTypes(ChannelType.GuildText)
+    );
+
+    const rowBtns1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('tp_edit_text')
+        .setLabel('Edit Text')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('tp_edit_media')
+        .setLabel('Edit Media')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('tp_add_option')
+        .setLabel('Add Option')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('tp_toggle_ai')
+        .setLabel(`AI Triage: ${config.aiTriage ? 'ON' : 'OFF'}`)
+        .setStyle(config.aiTriage ? ButtonStyle.Success : ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('tp_view_adv')
+        .setLabel('Advanced Logs ⚙️')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    const rowBtns2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('tp_clear_options')
+        .setLabel('Clear Options')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('tp_test')
+        .setLabel('Test Panel')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('tp_deploy')
+        .setLabel('Deploy Panel')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('tp_cancel')
+        .setLabel('Save & Close')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    container.components.push(rowCat.toJSON(), rowStaffWrap.toJSON(), rowTarget.toJSON(), rowBtns1.toJSON(), rowBtns2.toJSON());
+  }
+
   return { components: [container], flags: 32768 };
 }
 
-export async function updateManagerMessage(message) {
-  const payload = buildTicketManagerPayload(message.guild.id);
+export async function updateManagerMessage(message, view = 'core') {
+  const payload = buildTicketManagerPayload(message.guild.id, view);
 
   if (message.author?.id === message.client.user.id) {
     await message.edit(payload).catch(() => null);
@@ -223,6 +271,16 @@ export async function handleTicketPanelButtons(interaction) {
     return updateManagerMessage(interaction.message);
   }
 
+  if (customId === 'tp_view_adv') {
+    await interaction.deferUpdate();
+    return updateManagerMessage(interaction.message, 'adv');
+  }
+
+  if (customId === 'tp_view_core') {
+    await interaction.deferUpdate();
+    return updateManagerMessage(interaction.message, 'core');
+  }
+
   if (customId === 'tp_test') {
     const payload = buildTicketPanelPayload(guild.id);
     await interaction.channel.send(payload).catch(err => {
@@ -230,7 +288,7 @@ export async function handleTicketPanelButtons(interaction) {
       return null;
     });
     return interaction.reply({
-      content: '<a:uptime:1552608831060844575> Test ticket panel sent to this channel!',
+      content: `-# **Test Panel Dispatched | <a:03_tick_circle:1565665642084827206>**\nInteractive test ticket panel sent to this channel!`,
       flags: 64
     }).catch(() => null);
   }
@@ -238,12 +296,61 @@ export async function handleTicketPanelButtons(interaction) {
   if (customId === 'tp_deploy') {
     const config = db.getTickets(guild.id);
     if (!config.targetChannelId) {
-      return interaction.reply({ content: '-# **Error:** Please select a target channel from the dropdown first!', flags: 64 }).catch(() => null);
+      return interaction.reply({
+        content: `-# **Deployment Blocked | <a:04_cross_circle:1565665644806934639>**\nPlease select a target deployment channel from the dropdown first!`,
+        flags: 64
+      }).catch(() => null);
     }
-    const targetChannel = guild.channels.cache.get(config.targetChannelId);
+    const targetChannel = guild.channels.cache.get(config.targetChannelId) || (await guild.channels.fetch(config.targetChannelId).catch(() => null));
     if (!targetChannel) {
-      return interaction.reply({ content: '-# **Error:** Target channel not found.', flags: 64 }).catch(() => null);
+      return interaction.reply({
+        content: `-# **Deployment Error | <a:04_cross_circle:1565665644806934639>**\nTarget deployment channel could not be found.`,
+        flags: 64
+      }).catch(() => null);
     }
+
+    // Auto-heal category if unset
+    if (!config.categoryId) {
+      let category = targetChannel.parentId ? guild.channels.cache.get(targetChannel.parentId) : null;
+      if (!category) {
+        category = guild.channels.cache.find
+          ? guild.channels.cache.find(c => c.type === ChannelType.GuildCategory && /tickets?|support/i.test(c.name))
+          : Array.from(guild.channels.cache.values()).find(c => c.type === ChannelType.GuildCategory && /tickets?|support/i.test(c.name));
+      }
+      if (!category) {
+        try {
+          category = await guild.channels.create({
+            name: 'Support Tickets',
+            type: ChannelType.GuildCategory,
+            permissionOverwrites: [
+              { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+              { id: guild.members?.me?.id || guild.client?.user?.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageRoles] }
+            ]
+          });
+        } catch (e) {
+          console.warn('[TicketPanel Auto-Provision] Could not create category:', e.message);
+        }
+      }
+      if (category) {
+        config.categoryId = category.id;
+      }
+    }
+
+    // Auto-heal staff roles if unset
+    if (!config.staffRoleIds || config.staffRoleIds.length === 0) {
+      const allRoles = guild.roles.cache.values ? Array.from(guild.roles.cache.values()) : [];
+      const detectedStaff = allRoles.filter(r =>
+        !r.managed && r.id !== guild.id &&
+        (r.permissions?.has(PermissionFlagsBits.ManageChannels) ||
+         r.permissions?.has(PermissionFlagsBits.ModerateMembers) ||
+         /staff|support|mod|admin|helper/i.test(r.name))
+      );
+      if (detectedStaff.length > 0) {
+        const sorted = [...detectedStaff].sort((a, b) => (b.position || 0) - (a.position || 0));
+        config.staffRoleIds = sorted.slice(0, 3).map(r => r.id);
+      }
+    }
+    db.save();
 
     const payload = buildTicketPanelPayload(guild.id);
     await targetChannel.send(payload).catch(err => {
@@ -251,7 +358,7 @@ export async function handleTicketPanelButtons(interaction) {
       return null;
     });
     return interaction.reply({
-      content: `<a:uptime:1552608831060844575> **Success:** Ticket panel deployed to <#${config.targetChannelId}>!`,
+      content: `-# **Panel Deployed | <a:03_tick_circle:1565665642084827206>**\nTicket panel successfully deployed to <#${config.targetChannelId}>!`,
       flags: 64
     }).catch(() => null);
   }
@@ -263,6 +370,19 @@ export async function handleTicketPanelButtons(interaction) {
 
 export async function handleTicketPanelMenus(interaction) {
   const { customId, guild, values } = interaction;
+
+  if (customId === 'tp_category') {
+    const categoryId = values[0];
+    db.updateTicketConfig(guild.id, { categoryId });
+    await interaction.deferUpdate();
+    return updateManagerMessage(interaction.message);
+  }
+
+  if (customId === 'tp_staff_roles') {
+    db.updateTicketConfig(guild.id, { staffRoleIds: values });
+    await interaction.deferUpdate();
+    return updateManagerMessage(interaction.message);
+  }
 
   if (customId === 'tp_target_channel') {
     const channelId = values[0];

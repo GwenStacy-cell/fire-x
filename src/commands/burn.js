@@ -250,7 +250,7 @@ export const commands = [
         }
       }
 
-      const invitedUsers = Array.from(message.mentions.users.values());
+      const invitedUsers = message.mentions?.users ? Array.from(message.mentions.users.values()) : [];
       const res = await createBurnRoom(guild, message.author, invitedUsers, durationMinutes);
 
       if (!res.success) {

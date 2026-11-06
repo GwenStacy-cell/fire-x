@@ -182,7 +182,7 @@ export const commands = [
       }
 
       // Target user
-      const targetUser = message.mentions.users.first();
+      const targetUser = message.mentions?.users?.first?.();
       if (targetUser) {
         const metrics = db.getStaffMetrics(guild.id, targetUser.id);
         return message.reply(buildUserPulseCard(targetUser, metrics)).catch(() => null);

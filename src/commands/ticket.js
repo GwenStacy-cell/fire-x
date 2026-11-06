@@ -736,16 +736,80 @@ async function executeTicketRename(guild, channel, member, newName, replyFn) {
  * Robust Ticket Channel Provisioner:
  * Automatically provisions BOTH a private text channel AND a private associated voice channel
  * under the configured category with synchronized permissions for user and staff.
+ * Features built-in auto-healing if categoryId or staffRoleIds were not explicitly set.
  */
-export async function createTicketChannels({ guild, user, reason = 'General Support' }) {
+export async function createTicketChannels({ guild, user, reason = 'General Support', interactionChannel = null }) {
   const config = db.getTickets(guild.id);
-  if (!config || !config.categoryId || !config.staffRoleIds || config.staffRoleIds.length === 0) {
-    throw new Error('Ticket system is not fully configured (missing category or staff roles).');
+
+  // 1. Resolve or Auto-Provision Category
+  let category = null;
+  if (config.categoryId) {
+    category = guild.channels.cache.get(config.categoryId) || (await guild.channels.fetch(config.categoryId).catch(() => null));
   }
 
-  const category = guild.channels.cache.get(config.categoryId) || (await guild.channels.fetch(config.categoryId).catch(() => null));
   if (!category) {
-    throw new Error('Configured ticket category channel not found.');
+    // Check if the interaction channel is in a category
+    if (interactionChannel?.parentId) {
+      category = guild.channels.cache.get(interactionChannel.parentId) || (await guild.channels.fetch(interactionChannel.parentId).catch(() => null));
+    }
+    // Check if configured target deployment channel has a category
+    if (!category && config.targetChannelId) {
+      const tc = guild.channels.cache.get(config.targetChannelId);
+      if (tc?.parentId) {
+        category = guild.channels.cache.get(tc.parentId) || (await guild.channels.fetch(tc.parentId).catch(() => null));
+      }
+    }
+    // Search for any existing category with tickets/support in name
+    if (!category) {
+      category = guild.channels.cache.find
+        ? guild.channels.cache.find(c => c.type === ChannelType.GuildCategory && /tickets?|support/i.test(c.name))
+        : Array.from(guild.channels.cache.values()).find(c => c.type === ChannelType.GuildCategory && /tickets?|support/i.test(c.name));
+    }
+    // Auto-create "Support Tickets" category if still not found
+    if (!category) {
+      try {
+        category = await guild.channels.create({
+          name: 'Support Tickets',
+          type: ChannelType.GuildCategory,
+          permissionOverwrites: [
+            { id: guild.id, deny: [PermissionFlagsBits.ViewChannel] },
+            { id: guild.members?.me?.id || guild.client?.user?.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ManageRoles] }
+          ]
+        });
+      } catch (err) {
+        console.warn('[Ticket Auto-Provision] Could not create category:', err.message);
+      }
+    }
+    if (category) {
+      config.categoryId = category.id;
+      db.save();
+    }
+  }
+
+  // 2. Resolve or Auto-Heal Staff Roles
+  if (!Array.isArray(config.staffRoleIds)) config.staffRoleIds = [];
+  config.staffRoleIds = config.staffRoleIds.filter(id => guild.roles.cache.has(id));
+
+  if (config.staffRoleIds.length === 0) {
+    // Check closeTicketRoleIds if configured
+    if (Array.isArray(config.closeTicketRoleIds) && config.closeTicketRoleIds.length > 0) {
+      config.staffRoleIds = config.closeTicketRoleIds.filter(id => guild.roles.cache.has(id));
+    }
+    // Auto-detect any staff/support/moderator role
+    if (config.staffRoleIds.length === 0) {
+      const allRoles = guild.roles.cache.values ? Array.from(guild.roles.cache.values()) : [];
+      const detectedStaff = allRoles.filter(r =>
+        !r.managed && r.id !== guild.id &&
+        (r.permissions?.has(PermissionFlagsBits.ManageChannels) ||
+         r.permissions?.has(PermissionFlagsBits.ModerateMembers) ||
+         /staff|support|mod|admin|helper/i.test(r.name))
+      );
+      if (detectedStaff.length > 0) {
+        const sorted = [...detectedStaff].sort((a, b) => (b.position || 0) - (a.position || 0));
+        config.staffRoleIds = sorted.slice(0, 3).map(r => r.id);
+      }
+    }
+    db.save();
   }
 
   config.ticketCount = (config.ticketCount || 0) + 1;
@@ -840,7 +904,7 @@ export async function createTicketChannels({ guild, user, reason = 'General Supp
   const textChannel = await guild.channels.create({
     name: `ticket-${ticketId}`,
     type: ChannelType.GuildText,
-    parent: category.id,
+    parent: category ? category.id : undefined,
     topic: `Ticket #${ticketId} | Owner: <@${user.id}> (${user.tag}) | Reason: ${reason}`,
     permissionOverwrites: textOverwrites
   });
@@ -849,7 +913,7 @@ export async function createTicketChannels({ guild, user, reason = 'General Supp
   const voiceChannel = await guild.channels.create({
     name: `Ticket ${ticketId} VC`,
     type: ChannelType.GuildVoice,
-    parent: category.id,
+    parent: category ? category.id : undefined,
     permissionOverwrites: voiceOverwrites
   });
 
@@ -876,9 +940,6 @@ export async function handleTicketButtons(interaction) {
   // OPEN TICKET (General / Default)
   if (customId === 'ticket_open' || customId === 'ticket_open_general') {
     const config = db.getTickets(guild.id);
-    if (!config || !config.categoryId || !config.staffRoleIds || config.staffRoleIds.length === 0) {
-      return interaction.reply({ content: '-# **Configuration Error:** Ticket system is not fully configured.', flags: 64 }).catch(() => null);
-    }
 
     // Rate Limit: Check if user already has an active ticket
     let alreadyOpen = false;
@@ -898,10 +959,12 @@ export async function handleTicketButtons(interaction) {
       const { ticketId, textChannel, voiceChannel, config: ticketConfig } = await createTicketChannels({
         guild,
         user,
-        reason: 'General Support'
+        reason: 'General Support',
+        interactionChannel: interaction.channel
       });
 
-      const pings = `<@${user.id}> ${ticketConfig.staffRoleIds.map(id => `<@&${id}>`).join(' ')}`;
+      const rolePings = (ticketConfig.staffRoleIds || []).map(id => `<@&${id}>`).join(' ');
+      const pings = `<@${user.id}>${rolePings ? ' ' + rolePings : ''}`;
       const container = {
         type: 17,
         components: [
@@ -1141,18 +1204,14 @@ export async function handleTicketModals(interaction) {
   if (customId.startsWith('ticket_modal_submit_')) {
     const reason = decodeURIComponent(customId.replace('ticket_modal_submit_', ''));
 
-    const config = db.getTickets(guild.id);
-    if (!config || !config.categoryId || !config.staffRoleIds || config.staffRoleIds.length === 0) {
-      return interaction.reply({ content: '-# **Configuration Error:** Ticket system is not fully configured.', flags: 64 }).catch(() => null);
-    }
-
     await interaction.reply({ content: '-# <a:loading:1542155051286396938> **Creating your secure text & voice ticket channels...**', flags: 64 }).catch(() => null);
 
     try {
       const { ticketId, textChannel, voiceChannel, config: ticketConfig } = await createTicketChannels({
         guild,
         user,
-        reason
+        reason,
+        interactionChannel: interaction.channel
       });
 
       const inquiry = fields.getTextInputValue('inquiry');
@@ -1160,7 +1219,8 @@ export async function handleTicketModals(interaction) {
       const details = fields.getTextInputValue('details');
       const nowStr = new Date().toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-      const pings = `<@${user.id}> ${ticketConfig.staffRoleIds.map(id => `<@&${id}>`).join(' ')}`;
+      const rolePings = (ticketConfig.staffRoleIds || []).map(id => `<@&${id}>`).join(' ');
+      const pings = `<@${user.id}>${rolePings ? ' ' + rolePings : ''}`;
       const infoContent =
         `${pings}\n\n` +
         `**Welcome <@${user.id}>!** Your support ticket has been created.\nA staff member will assist you shortly.\n\n` +
