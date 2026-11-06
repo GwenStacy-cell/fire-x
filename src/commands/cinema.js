@@ -22,6 +22,7 @@ import {
   formatBytes,
   formatSeconds,
   resolveMediaSource,
+  downloadMovieToServer,
   startCinemaSession,
   pauseCinemaSession,
   resumeCinemaSession,
@@ -142,6 +143,25 @@ export const commands = [
         name: 'folder',
         description: 'Show host PC movie directory and file transfer instructions',
         type: 1
+      },
+      {
+        name: 'download',
+        description: 'Download an online movie directly onto the bot server library',
+        type: 1,
+        options: [
+          {
+            name: 'url',
+            description: 'Online movie URL, YouTube link, direct MP4 link, etc.',
+            type: 3,
+            required: true
+          },
+          {
+            name: 'name',
+            description: 'Custom filename for the movie (optional)',
+            type: 3,
+            required: false
+          }
+        ]
       }
     ],
 
@@ -149,6 +169,22 @@ export const commands = [
       const subcommand = interaction.options.getSubcommand();
       const guild = interaction.guild;
       const member = interaction.member;
+
+      if (subcommand === 'download') {
+        const url = interaction.options.getString('url');
+        const customName = interaction.options.getString('name');
+        await interaction.reply({ content: `-# <a:loading:1542155051286396938> **Downloading movie directly onto server storage...**` });
+        try {
+          const res = await downloadMovieToServer(url, customName, (msg) => interaction.editReply({ content: `-# <a:loading:1542155051286396938> **${msg}**` }));
+          return interaction.editReply(cv2.success(
+            `Movie Saved to Server | ${TICK_EMOJI}`,
+            `Movie **${res.name}** (\`${res.sizeFormatted}\`) has been downloaded directly into your hosting server's \`movies/\` library!\n\n` +
+            `${BULLET_EMOJI} You can now stream it anytime with \`/cinema play query:${res.name}\` or \`!movie play ${res.name}\` without internet buffering!`
+          ));
+        } catch (err) {
+          return interaction.editReply(cv2.error(`Download Failed | ${WRONG_EMOJI}`, `Failed to download movie onto server: \`${err.message}\``));
+        }
+      }
 
       if (subcommand === 'list') {
         const movies = listLocalMovies();
@@ -297,6 +333,7 @@ export const commands = [
           `Athena Cinema Streamer Suite | ${TICK_EMOJI}`,
           `Stream local downloaded PC movies or online streams (**YouTube**, **Instagram Reels**, **Twitch**, **TikTok**, **Twitter/X**) with synchronized surround audio in voice and interactive mobile web screen!\n\n` +
           `${BULLET_EMOJI} \`!movie play <number | link>\` — Stream movie or YouTube/IG/Twitch/TikTok link\n` +
+          `${BULLET_EMOJI} \`!movie download <url> [name]\` — Download online movie directly to server storage\n` +
           `${BULLET_EMOJI} \`!movie list\` — List all downloaded movies in \`${dir}\`\n` +
           `${BULLET_EMOJI} \`!movie pause\` / \`!movie resume\` — Toggle playback\n` +
           `${BULLET_EMOJI} \`!movie forward [secs]\` / \`!movie rewind [secs]\` — Seek delta\n` +
@@ -437,6 +474,23 @@ export const commands = [
         if (!session) return message.reply(cv2.warn(`No Active Session | ${WARN_EMOJI}`, 'No active cinema session is streaming in this server.'));
         stopCinemaSession(guild.id);
         return message.reply(cv2.success(`Session Ended | ${TICK_EMOJI}`, `Movie stream stopped and bot disconnected from voice channel.`));
+      }
+
+      if (sub === 'download' || sub === 'save') {
+        const url = args[1];
+        const customName = args.slice(2).join(' ') || null;
+        if (!url) return message.reply(cv2.warn(`URL Required | ${WARN_EMOJI}`, 'Please provide a movie or video URL to download: `!movie download <url> [name]`.'));
+        const init = await message.reply({ content: `-# <a:loading:1542155051286396938> **Downloading movie directly onto server storage...**` });
+        try {
+          const res = await downloadMovieToServer(url, customName, (msg) => init.edit({ content: `-# <a:loading:1542155051286396938> **${msg}**` }));
+          return init.edit(cv2.success(
+            `Movie Saved to Server | ${TICK_EMOJI}`,
+            `Movie **${res.name}** (\`${res.sizeFormatted}\`) has been downloaded directly into your hosting server's \`movies/\` library!\n\n` +
+            `${BULLET_EMOJI} You can now stream it anytime with \`!movie play ${res.name}\` without internet buffering!`
+          ));
+        } catch (err) {
+          return init.edit(cv2.error(`Download Failed | ${WRONG_EMOJI}`, `Failed to download movie onto server: \`${err.message}\``));
+        }
       }
 
       if (sub === 'play') {

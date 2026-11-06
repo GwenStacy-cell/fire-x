@@ -410,6 +410,47 @@ export async function resolveMediaSource(input, progressCallback = null) {
 }
 
 /**
+ * Downloads an online movie directly onto the host server storage
+ */
+export async function downloadMovieToServer(url, customName = null, progressCallback = null) {
+  const ytdlp = getYtDlpPath();
+  const cookieArg = getCookieArg();
+  const moviesDir = getMoviesDir();
+
+  if (progressCallback) progressCallback('Resolving video stream metadata...');
+  let title = customName;
+  if (!title) {
+    try {
+      const metaCmd = `"${ytdlp}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" --dump-json --no-playlist "${url}"`;
+      const { stdout } = await execPromise(metaCmd, { maxBuffer: 10 * 1024 * 1024 });
+      const info = JSON.parse(stdout);
+      title = info.title || 'Downloaded Movie';
+    } catch (e) {
+      title = 'Downloaded Movie ' + Date.now();
+    }
+  }
+
+  const cleanName = title.replace(/[\\/*?:"<>|]/g, '').trim().slice(0, 80);
+  const targetPath = path.resolve(moviesDir, `${cleanName}.mp4`);
+
+  if (progressCallback) progressCallback(`Downloading **${cleanName}** onto host server storage...`);
+  const downloadCmd = `"${ytdlp}" ${cookieArg} --ffmpeg-location "${ffmpegPath}" -f "best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best" --no-playlist -o "${targetPath}" "${url}"`;
+  await execPromise(downloadCmd, { maxBuffer: 50 * 1024 * 1024 });
+
+  if (fs.existsSync(targetPath)) {
+    const stats = fs.statSync(targetPath);
+    return {
+      success: true,
+      name: cleanName,
+      path: targetPath,
+      sizeFormatted: formatBytes(stats.size)
+    };
+  }
+
+  throw new Error('Download finished but movie file was not found on disk.');
+}
+
+/**
  * Starts or seeks an audio streaming process via ffmpeg into the Discord audio player
  */
 function playAudioSegment(session, offsetSeconds = 0) {

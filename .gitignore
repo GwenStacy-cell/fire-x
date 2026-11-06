@@ -25,3 +25,15 @@ test_insta_*
 test_tw_*
 test_rd_*
 scratch/
+
+# Movie files (do not push gigabyte videos to GitHub due to 100MB limit)
+movies/*.mp4
+movies/*.mkv
+movies/*.avi
+movies/*.mov
+movies/*.webm
+movies/*.flv
+movies/*.m4v
+!movies/demo_sample.mp4
+!movies/README.txt
+movies/web_cache/
