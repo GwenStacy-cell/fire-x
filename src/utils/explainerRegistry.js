@@ -429,23 +429,101 @@ Athena Prime supports full parity across standard text prefixes and Discord slas
   },
   honeypot: {
     id: 'honeypot',
-    label: 'Honeypot Trap Security',
-    aliases: ['trap', 'honeypots', 'antispam_trap'],
-    title: 'Honeypot Channel Trap & Zero-Tolerance Defense | <a:03_tick_circle:1565665642084827206>',
-    description: 'Decoy channel baiting automated raiders and selfbots into instant timeout and message purge.',
+    label: 'Ghost Honeypot Sentinel',
+    aliases: ['trap', 'honeypots', 'ghosttrap', 'canary'],
+    title: 'Ghost Honeypot Sentinel & Decoy Architecture | <a:03_tick_circle:1565665642084827206>',
+    description: 'Invisible canary channel & role trapping token scrapers, selfbots, and raiders with instant dual-strike ban.',
     pages: [
       {
         pageTitle: 'Under-the-Hood Honeypot Mechanics',
-        content: `# ${getRandomHeadingGlyph()} 1. What is a Honeypot Trap?
-A Honeypot is a designated text channel configured with permissions hidden or silenced for human users, but left visible to automated selfbots, token scrapers, and mass raid accounts that spam every channel.
+        content: `# ${getRandomHeadingGlyph()} 1. What is a Ghost Honeypot Sentinel?
+A Honeypot is an invisible text channel and decoy role configured strictly hidden from normal human members (@everyone Deny ViewChannel), but visible to token scrapers, rogue userbots, and mass raid automation scripts that enumerate guild channels via raw WebSocket gateways.
 
-# 2. Athena's Zero-Latency Tripwire Protocol
-• **Channel ID Binding:** The designated channel is tracked strictly by ID (\`dbConfig.honeypotChannelId\`) in SQLite.
-• **Instant Message Interception:** In \`src/events/messageCreate.js\`, any message received in the honeypot channel triggers an instant security response:
-  1. **Purge:** Message is deleted from Discord in sub-millisecond execution.
-  2. **Automated Timeout:** Offender is immediately timed out for \`honeypotTimeoutMinutes\` (default 15 minutes).
-  3. **Security Audit Log:** Comprehensive security incident logged with user ID, channel ID, and message snippet.
-  4. **Immunity Validation:** Server Owner, Bot Owner, and Extra Owners are bypassed safely.`
+# 2. Athena's Zero-Latency Dual-Strike Tripwire
+• **Channel & Role ID Binding:** Both decoy entities are tracked strictly by Discord Snowflake ID (\`dbConfig.honeypotChannelId\` and \`dbConfig.honeypotRoleId\`) in SQLite.
+• **Instant Message Interception:** In \`src/events/messageCreate.js\`, any packet received in the honeypot channel triggers an instant security execution:
+  1. **Dual-Strike Ban:** Parallel HTTP requests dispatch \`rawBan\` and \`rawRoleStrip\` concurrently via \`Promise.allSettled\`. Offender is banned and stripped in <15ms!
+  2. **Forensic Telemetry:** Incident is logged into \`db.recordIncident\` with attacker ID, payload snippet, and sub-wire response latency.
+  3. **Immunity Matrix:** Server Owner, Extra Owners, and Bot Owner are immune to false trips.`
+      }
+    ]
+  },
+  decapitate: {
+    id: 'decapitate',
+    label: 'Webhook Decapitation Engine',
+    aliases: ['purgehooks', 'antiwebhook', 'wipehooks'],
+    title: 'Malicious Webhook Decapitation Engine | <a:03_tick_circle:1565665642084827206>',
+    description: 'Ultra-fast parallel sweep and eradication of rogue webhook endpoints across all guild channels.',
+    pages: [
+      {
+        pageTitle: 'Webhook Attack Vectors & Parallel Sweeping',
+        content: `# ${getRandomHeadingGlyph()} 1. The Webhook Zero-Day Threat
+Webhooks represent one of Discord's most devastating silent attack vectors. When a staff account or bot is compromised, attackers frequently generate hidden webhooks across dozens of channels. Even if the compromised account is banned, the webhooks remain active and can be used to spam malicious phishing links or mass-mention @everyone repeatedly.
+
+# 2. Parallel Decapitation Mechanics (\`!decapitate\`)
+• **Single-Call Enumeration:** Fetches all guild webhooks in one REST call via \`guild.fetchWebhooks()\`.
+• **Whitelist Filtering:** Preserves verified webhooks owned by Athena Prime or explicitly whitelisted by the Server Owner.
+• **Concurrent Destruction:** Dispatches parallel deletion calls across all rogue endpoints concurrently using \`Promise.allSettled\`, eliminating dozens of hostile webhooks in under 15ms.`
+      }
+    ]
+  },
+  timemachine: {
+    id: 'timemachine',
+    label: 'Time-Machine Delta Rollback',
+    aliases: ['snapshot', 'deltarollback', 'tm'],
+    title: 'Time-Machine Snapshots & Delta Rollback | <a:03_tick_circle:1565665642084827206>',
+    description: 'Lightweight rapid structural snapshots of channels, permissions, and roles with 1-click delta restoration.',
+    pages: [
+      {
+        pageTitle: 'Delta Snapshots & Hierarchy Reconstruction',
+        content: `# ${getRandomHeadingGlyph()} 1. Time-Machine Architecture
+Unlike bulky full-server clones that trigger severe Discord API rate limits, Athena's Time-Machine captures a lightweight **Delta Snapshot** focusing purely on structural architecture:
+• Channel names, types, category parents, positions, and permission overwrites.
+• Role names, colors, hoists, positions, permissions, and mentionable states.
+
+# 2. Automated Delta Rollback (\`!timemachine restore <id>\`)
+• Computes the difference (delta) between current server state and the snapshot.
+• Reconstructs missing roles and channels with exact permission overwrites.
+• Re-applies category parents and ordering with 3-tier precedence.`
+      }
+    ]
+  },
+  exploitscan: {
+    id: 'exploitscan',
+    label: 'Server Permission Exploit Scanner',
+    aliases: ['auditperms', 'secscan', 'permscan'],
+    title: 'Server Permission Exploit Scanner | <a:03_tick_circle:1565665642084827206>',
+    description: 'Deep heuristic scanning of @everyone permissions, role hierarchy leaks, and unshielded integration vectors with 1-click Auto-Patch.',
+    pages: [
+      {
+        pageTitle: 'Vulnerability Analysis & Auto-Patch',
+        content: `# ${getRandomHeadingGlyph()} 1. Permission Matrix Exploit Scanning
+Over 80% of server security breaches stem from misconfigured permissions:
+• **@everyone Leaks:** Dangerous permissions accidentally granted globally (Administrator, Manage Server, Manage Roles, Manage Channels, Ban Members, Kick Members).
+• **Hierarchy Inversions:** Roles with Administrator placed higher than Athena's highest role, preventing automated interception.
+• **Verification Vulnerabilities:** Servers set to None verification allowing unverified disposable bots to join and spam.
+
+# 2. 1-Click Auto-Patch (\`!exploitscan patch\`)
+• With a single button click, Athena automatically strips all administrative and moderation permissions from @everyone and secures the server perimeter.`
+      }
+    ]
+  },
+  dualkey: {
+    id: 'dualkey',
+    label: 'Dual-Key Nuclear Authorizations',
+    aliases: ['twomanrule', 'nuclearauth'],
+    title: 'Dual-Key Nuclear Authorizations & Two-Man Rule | <a:03_tick_circle:1565665642084827206>',
+    description: 'Military two-man rule preventing rogue actions by requiring secondary Extra Owner authorization.',
+    pages: [
+      {
+        pageTitle: 'The Two-Man Rule Security Standard',
+        content: `# ${getRandomHeadingGlyph()} 1. Why Dual-Key Security?
+In high-security environments, destructive commands (like \`!unbanall\`, \`!emergency\`, \`!wipeemojis\`, and \`!lockdown 3\`) can cause catastrophic server disruption if triggered by a single compromised staff account.
+
+# 2. Dual-Key Execution Workflow
+• When enabled (\`!dualkey on\`), executing a protected command freezes the command on operational hold for 5 minutes.
+• A distinct Extra Owner or the Server Owner must approve the action by clicking **[Authorize Nuclear Action]** or typing \`!dualkey auth <id>\`.
+• Self-authorization is strictly prohibited.`
       }
     ]
   },

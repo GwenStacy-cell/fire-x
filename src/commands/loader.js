@@ -104,8 +104,28 @@ import { commands as weatherCmds } from './weather.js';
 import { commands as imageCmds } from './image.js';
 import { commands as stockCmds } from './stock.js';
 import { commands as entryCmds } from './entry.js';
+import { commands as honeypotCmds } from './honeypot.js';
+import { commands as decapitateCmds } from './decapitate.js';
+import { commands as timemachineCmds } from './timemachine.js';
+import { commands as exploitscanCmds } from './exploitscan.js';
+import { commands as incidentCmds } from './incident.js';
+import { commands as anomalyCmds } from './anomaly.js';
+import { commands as gatekeeperCmds } from './gatekeeper.js';
+import { commands as staffpulseCmds } from './staffpulse.js';
+import { commands as dualkeyCmds } from './dualkey.js';
+import { commands as burnCmds } from './burn.js';
 
 export const allCommands = [
+  ...honeypotCmds,
+  ...decapitateCmds,
+  ...timemachineCmds,
+  ...exploitscanCmds,
+  ...incidentCmds,
+  ...anomalyCmds,
+  ...gatekeeperCmds,
+  ...staffpulseCmds,
+  ...dualkeyCmds,
+  ...burnCmds,
   ...entryCmds,
   ...athenaCmds,
   ...weatherCmds,

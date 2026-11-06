@@ -51,6 +51,11 @@ export default {
       return;
     }
 
+    if (config.honeypotRoleId && role.id === config.honeypotRoleId) {
+      config.honeypotRoleId = null;
+      db.save();
+    }
+
     if (role.managed) return;
 
     // ⚡ STEP 1: Synchronous Deduplication Lock

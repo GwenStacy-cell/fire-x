@@ -553,6 +553,208 @@ export default {
       }
     }
 
+    // ==========================================
+    // ATHENA EXPANSION SECURITY INTERACTIONS
+    // ==========================================
+    if (interaction.isButton() && interaction.customId) {
+      const cid = interaction.customId;
+
+      // 1. Ghost Honeypot Sentinel
+      if (cid.startsWith('honeypot_')) {
+        const { buildHoneypotPanel, setupHoneypot, removeHoneypot } = await import('../commands/honeypot.js');
+        const guild = interaction.guild;
+        if (!guild) return;
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+        if (!isAuth) {
+          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> You do not have permission to configure Honeypots.', flags: MessageFlags.Ephemeral });
+        }
+        await interaction.deferUpdate().catch(() => null);
+        if (cid === 'honeypot_setup') {
+          await setupHoneypot(guild, interaction.user);
+        } else if (cid === 'honeypot_remove') {
+          await removeHoneypot(guild);
+        }
+        const updatedPanel = buildHoneypotPanel(guild);
+        return cv2.respond(interaction, updatedPanel, 7);
+      }
+
+      // 2. Exploit Scanner & Auto-Patch
+      if (cid.startsWith('exploitscan_')) {
+        const { buildExploitScanCard, executeAutoPatch } = await import('../commands/exploitscan.js');
+        const guild = interaction.guild;
+        if (!guild) return;
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+        if (!isAuth) {
+          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> You do not have permission to patch server exploits.', flags: MessageFlags.Ephemeral });
+        }
+        await interaction.deferUpdate().catch(() => null);
+        if (cid === 'exploitscan_autopatch') {
+          await executeAutoPatch(guild, interaction.user);
+        }
+        const updatedCard = buildExploitScanCard(guild);
+        return cv2.respond(interaction, updatedCard, 7);
+      }
+
+      // 3. Time-Machine Delta Rollback
+      if (cid.startsWith('tm_restore_')) {
+        const snapshotId = cid.replace('tm_restore_', '');
+        const guild = interaction.guild;
+        if (!guild) return;
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+        if (!isAuth) {
+          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> Only Administrators can restore Time-Machine snapshots.', flags: MessageFlags.Ephemeral });
+        }
+        const snapshot = db.getTimeMachineSnapshot(guild.id, snapshotId);
+        if (!snapshot) {
+          return interaction.reply({ content: '-# Snapshot no longer exists in cache.', flags: MessageFlags.Ephemeral });
+        }
+        await interaction.deferUpdate().catch(() => null);
+        const { restoreFromSnapshot } = await import('../commands/timemachine.js');
+        const res = await restoreFromSnapshot(guild, snapshot);
+        const doneCard = cv2.card(
+          `Time-Machine Restoration Complete | ${cv2.TICK_EMOJI}`,
+          `> -# <a:uptime:1552608831060844575> **Server Hierarchy Successfully Restored.**\n` +
+          `> -# Restored \`${res.restoredRoles} roles\` and \`${res.restoredChannels} channels\`.`,
+          [],
+          'Athena Prime Security Suite • Time-Machine Engine'
+        );
+        return cv2.respond(interaction, doneCard, 7);
+      }
+
+      // 4. Staff Anomaly Sentry
+      if (cid.startsWith('anomaly_')) {
+        const guild = interaction.guild;
+        if (!guild) return;
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id);
+        if (!isAuth) {
+          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> Only the Server Owner and Extra Owners can manage Staff Anomaly controls.', flags: MessageFlags.Ephemeral });
+        }
+        const { buildAnomalyPanel } = await import('../commands/anomaly.js');
+        if (cid === 'anomaly_toggle') {
+          const cfg = db.getGuildConfig(guild.id);
+          const current = Boolean(cfg.anomalyDetection?.enabled);
+          db.updateAnomalyConfig(guild.id, { enabled: !current });
+          await interaction.deferUpdate().catch(() => null);
+          return cv2.respond(interaction, buildAnomalyPanel(guild), 7);
+        }
+        if (cid === 'anomaly_refresh') {
+          await interaction.deferUpdate().catch(() => null);
+          return cv2.respond(interaction, buildAnomalyPanel(guild), 7);
+        }
+        if (cid.startsWith('anomaly_restore_')) {
+          const targetId = cid.replace('anomaly_restore_', '');
+          const qRecord = db.cache.quarantines?.[guild.id]?.[targetId];
+          const member = guild.members.cache.get(targetId) || await guild.members.fetch(targetId).catch(() => null);
+          if (member && qRecord?.roles) {
+            await member.roles.add(qRecord.roles, '[Athena Anomaly] Roles restored by Owner button authorization').catch(() => null);
+          }
+          if (db.cache.quarantines?.[guild.id]?.[targetId]) {
+            delete db.cache.quarantines[guild.id][targetId];
+            db.save();
+          }
+          await interaction.update({
+            content: `-# <a:03_tick_circle:1565665642084827206> **Staff Account Cleared:** <@${targetId}> has been restored.`,
+            components: []
+          }).catch(() => null);
+          return;
+        }
+        if (cid.startsWith('anomaly_ban_')) {
+          const targetId = cid.replace('anomaly_ban_', '');
+          await guild.members.ban(targetId, { reason: '[Athena Anomaly] Compromised staff account confirmed and banned by Server Owner' }).catch(() => null);
+          if (db.cache.quarantines?.[guild.id]?.[targetId]) {
+            delete db.cache.quarantines[guild.id][targetId];
+            db.save();
+          }
+          await interaction.update({
+            content: `-# <a:04_cross_circle:1565665644806934639> **Breach Confirmed:** <@${targetId}> has been permanently banned from the server.`,
+            components: []
+          }).catch(() => null);
+          return;
+        }
+      }
+
+      // 5. Gatekeeper Perimeter Sentry
+      if (cid.startsWith('gk_')) {
+        const guild = interaction.guild;
+        if (!guild) return;
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+        if (!isAuth) {
+          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> You do not have permission to configure Gatekeeper.', flags: MessageFlags.Ephemeral });
+        }
+        const { buildGatekeeperPanel } = await import('../commands/gatekeeper.js');
+        const cfg = db.getGuildConfig(guild.id);
+        const gk = cfg.gatekeeper || { enabled: false, minAgeHours: 24, requireAvatar: false, action: 'quarantine' };
+
+        if (cid === 'gk_toggle') {
+          db.updateGatekeeperConfig(guild.id, { enabled: !gk.enabled });
+        } else if (cid === 'gk_avatar_toggle') {
+          db.updateGatekeeperConfig(guild.id, { requireAvatar: !gk.requireAvatar });
+        }
+        await interaction.deferUpdate().catch(() => null);
+        return cv2.respond(interaction, buildGatekeeperPanel(guild), 7);
+      }
+
+      // 6. Dual-Key Nuclear Authorizations
+      if (cid.startsWith('dualkey_')) {
+        const guild = interaction.guild;
+        if (!guild) return;
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id);
+        if (!isAuth) {
+          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> Only the Server Owner, Extra Owners, and Bot Owner can interact with Dual-Key Authorizations.', flags: MessageFlags.Ephemeral });
+        }
+        const { buildDualKeyDashboard } = await import('../commands/dualkey.js');
+
+        if (cid === 'dualkey_toggle') {
+          const cfg = db.getGuildConfig(guild.id);
+          const current = Boolean(cfg.dualKey?.enabled);
+          db.updateDualKeyConfig(guild.id, { enabled: !current });
+          await interaction.deferUpdate().catch(() => null);
+          return cv2.respond(interaction, buildDualKeyDashboard(guild), 7);
+        }
+        if (cid === 'dualkey_refresh') {
+          await interaction.deferUpdate().catch(() => null);
+          return cv2.respond(interaction, buildDualKeyDashboard(guild), 7);
+        }
+        if (cid.startsWith('dualkey_auth_')) {
+          const actionId = cid.replace('dualkey_auth_', '');
+          const action = db.getPendingDualKey(actionId);
+          if (!action) {
+            return interaction.reply({ content: '-# This authorization request has expired or was already completed.', flags: MessageFlags.Ephemeral });
+          }
+          if (action.initiatorId === interaction.user.id && !isBotOwnerSync(interaction.user.id)) {
+            return interaction.reply({ content: '-# Two-man rule requires a DIFFERENT authorized administrator to sign off.', flags: MessageFlags.Ephemeral });
+          }
+          db.removePendingDualKey(actionId);
+          await interaction.update({
+            content: `-# <a:03_tick_circle:1565665642084827206> **Nuclear Action Authorized:** <@${interaction.user.id}> granted secondary authorization for \`!${action.commandName}\` initiated by <@${action.initiatorId}>.`,
+            components: []
+          }).catch(() => null);
+          return;
+        }
+        if (cid.startsWith('dualkey_abort_')) {
+          const actionId = cid.replace('dualkey_abort_', '');
+          db.removePendingDualKey(actionId);
+          await interaction.update({
+            content: `-# <a:04_cross_circle:1565665644806934639> **Nuclear Action Aborted:** The operational request was discarded by <@${interaction.user.id}>.`,
+            components: []
+          }).catch(() => null);
+          return;
+        }
+      }
+
+      // 7. Ephemeral Burn Room Self-Destruction
+      if (cid.startsWith('burn_destruct_')) {
+        const channelId = cid.replace('burn_destruct_', '');
+        db.removeBurnRoom(channelId);
+        await interaction.reply({ content: '-# <a:03_tick_circle:1565665642084827206> Initiating immediate self-destruction...', flags: MessageFlags.Ephemeral }).catch(() => null);
+        const channel = interaction.guild?.channels.cache.get(channelId);
+        if (channel && channel.deletable) {
+          setTimeout(() => channel.delete('[Athena Burn Room] Manual self-destruction requested').catch(() => null), 1500);
+        }
+        return;
+      }
+    }
+
     // --- COUNTING ENGINE INTERACTIONS ---
     if (interaction.customId && interaction.customId.startsWith('counting_')) {
       import('../commands/counting.js').then(m => {

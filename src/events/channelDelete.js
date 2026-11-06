@@ -17,6 +17,13 @@ export default {
     if (!channel.guild) return;
     if (db.isModModeActive(channel.guild.id)) return;
 
+    // Honeypot Canary Sync
+    const cfg = db.getGuildConfig(channel.guild.id);
+    if (cfg?.honeypotChannelId && channel.id === cfg.honeypotChannelId) {
+      cfg.honeypotChannelId = null;
+      db.save();
+    }
+
     // ⚡ STEP 1: Synchronous Deduplication Lock
     // Prevents duplicate restorations between gateway channelDelete and auditLogEntryCreate
     if (isRestorationHandled(channel.id)) return;

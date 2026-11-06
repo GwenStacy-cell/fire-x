@@ -231,6 +231,21 @@ export default {
     }
 
     // ==========================================
+    // 0.8. GATEKEEPER PERIMETER GATING (ACCOUNT AGE & AVATAR)
+    // ==========================================
+    if (!member.user.bot && member.id !== guild.ownerId && !isBotOwnerSync(member.id) && !db.isExtraOwner(guild.id, member.id)) {
+      try {
+        const { evaluateIncomingMember } = await import('../commands/gatekeeper.js');
+        const gkResult = await evaluateIncomingMember(member);
+        if (!gkResult.passed) {
+          return;
+        }
+      } catch (err) {
+        console.error('[Gatekeeper] Evaluation error:', err);
+      }
+    }
+
+    // ==========================================
     // 1. QUARANTINE BYPASS PROTECTION
     // ==========================================
     const quarantineRecord = db.getQuarantine(guild.id, userId);

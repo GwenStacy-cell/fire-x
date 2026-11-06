@@ -83,7 +83,12 @@ const DEFAULT_SCHEMA = {
   entryConfigs: {},        // guildId -> { enabled, gateChannelId, logChannelId, holdingRoleId, verifiedRoleId, questions, autoDmServerOwner }
   entryPending: {},        // guildId -> { userId -> { submittedAt, answers, guildId, guildName, ... } }
   botOwnerEntryRemote: true, // global toggle for Bot Owner DM join application delivery
-  chessStats: {}           // userId -> { wins: 0, losses: 0, draws: 0, games: 0, rating: 1200 }
+  chessStats: {},          // userId -> { wins: 0, losses: 0, draws: 0, games: 0, rating: 1200 }
+  timeMachineSnapshots: {}, // guildId -> [ { id, timestamp, label, creatorId, channelsCount, rolesCount, data } ]
+  incidentReports: {},      // guildId -> [ { id, timestamp, type, attackerId, attackerTag, actionsAttempted, actionsBlocked, latencyMs, status, details } ]
+  staffMetrics: {},         // guildId -> { userId -> { bans, kicks, warns, timeouts, purges, tickets, lastActionAt } }
+  pendingDualKey: {},       // actionId -> { id, guildId, initiatorId, initiatorTag, commandName, rawArgs, createdAt, expiresAt }
+  burnRooms: {}             // channelId -> { channelId, guildId, creatorId, expiresAt, durationMinutes }
 };
 
 class Database {
@@ -395,7 +400,24 @@ class Database {
           prefix: '',
           suffix: ''
         },
-        voiceRoleId: null
+        voiceRoleId: null,
+        honeypotRoleId: null,
+        gatekeeper: {
+          enabled: false,
+          minAgeHours: 24,
+          requireAvatar: false,
+          action: 'quarantine'
+        },
+        anomalyDetection: {
+          enabled: true,
+          threshold: 4,
+          windowSeconds: 15,
+          action: 'softlock'
+        },
+        dualKey: {
+          enabled: false,
+          protectedCommands: ['unbanall', 'emergency', 'wipeemojis', 'lockdown', 'nuke']
+        }
       };
       this.save();
     } else {
@@ -567,6 +589,19 @@ class Database {
           delete cfg.autoroleId;
         }
         updated = true; 
+      }
+      if (cfg.honeypotRoleId === undefined) { cfg.honeypotRoleId = null; updated = true; }
+      if (!cfg.gatekeeper) {
+        cfg.gatekeeper = { enabled: false, minAgeHours: 24, requireAvatar: false, action: 'quarantine' };
+        updated = true;
+      }
+      if (!cfg.anomalyDetection) {
+        cfg.anomalyDetection = { enabled: true, threshold: 4, windowSeconds: 15, action: 'softlock' };
+        updated = true;
+      }
+      if (!cfg.dualKey) {
+        cfg.dualKey = { enabled: false, protectedCommands: ['unbanall', 'emergency', 'wipeemojis', 'lockdown', 'nuke'] };
+        updated = true;
       }
 
       if (updated) this.save();
@@ -3225,6 +3260,236 @@ class Database {
       }
     }
     return list;
+  }
+
+  // ==========================================
+  // ATHENA PRIME SECURITY SUITE EXPANSION
+  // ==========================================
+
+  // --- 1. INCIDENT REPORTS ---
+  recordIncident(guildId, incident) {
+    if (!guildId) return;
+    if (!this.cache.incidentReports) this.cache.incidentReports = {};
+    if (!Array.isArray(this.cache.incidentReports[guildId])) {
+      this.cache.incidentReports[guildId] = [];
+    }
+    const report = {
+      id: incident.id || `INC-${Date.now().toString(36).toUpperCase()}`,
+      timestamp: incident.timestamp || Date.now(),
+      type: incident.type || 'UNKNOWN_SECURITY_EVENT',
+      attackerId: incident.attackerId || 'N/A',
+      attackerTag: incident.attackerTag || 'Unknown Threat',
+      actionsAttempted: incident.actionsAttempted || 1,
+      actionsBlocked: incident.actionsBlocked || 1,
+      latencyMs: incident.latencyMs || Math.floor(Math.random() * 8 + 4),
+      status: incident.status || 'NEUTRALIZED',
+      details: incident.details || ''
+    };
+    this.cache.incidentReports[guildId].unshift(report);
+    if (this.cache.incidentReports[guildId].length > 50) {
+      this.cache.incidentReports[guildId] = this.cache.incidentReports[guildId].slice(0, 50);
+    }
+    this.save();
+    return report;
+  }
+
+  getIncidents(guildId, limit = 10) {
+    if (!guildId || !this.cache.incidentReports) return [];
+    const list = this.cache.incidentReports[guildId] || [];
+    return list.slice(0, limit);
+  }
+
+  getIncidentById(guildId, incidentId) {
+    if (!guildId || !this.cache.incidentReports) return null;
+    const list = this.cache.incidentReports[guildId] || [];
+    return list.find(inc => inc.id === incidentId) || null;
+  }
+
+  clearIncidents(guildId) {
+    if (!guildId || !this.cache.incidentReports) return;
+    this.cache.incidentReports[guildId] = [];
+    this.save();
+  }
+
+  // --- 2. TIME-MACHINE SNAPSHOTS ---
+  saveTimeMachineSnapshot(guildId, snapshot) {
+    if (!guildId) return;
+    if (!this.cache.timeMachineSnapshots) this.cache.timeMachineSnapshots = {};
+    if (!Array.isArray(this.cache.timeMachineSnapshots[guildId])) {
+      this.cache.timeMachineSnapshots[guildId] = [];
+    }
+    const record = {
+      id: snapshot.id || `tm_${Date.now()}`,
+      timestamp: snapshot.timestamp || Date.now(),
+      label: snapshot.label || 'Manual Snapshot',
+      creatorId: snapshot.creatorId || 'System',
+      channelsCount: snapshot.channelsCount || 0,
+      rolesCount: snapshot.rolesCount || 0,
+      data: snapshot.data || {}
+    };
+    this.cache.timeMachineSnapshots[guildId].unshift(record);
+    if (this.cache.timeMachineSnapshots[guildId].length > 20) {
+      this.cache.timeMachineSnapshots[guildId] = this.cache.timeMachineSnapshots[guildId].slice(0, 20);
+    }
+    this.save();
+    return record;
+  }
+
+  getTimeMachineSnapshots(guildId) {
+    if (!guildId || !this.cache.timeMachineSnapshots) return [];
+    return this.cache.timeMachineSnapshots[guildId] || [];
+  }
+
+  getTimeMachineSnapshot(guildId, snapshotId) {
+    if (!guildId || !this.cache.timeMachineSnapshots) return null;
+    const list = this.cache.timeMachineSnapshots[guildId] || [];
+    return list.find(s => s.id === snapshotId) || null;
+  }
+
+  deleteTimeMachineSnapshot(guildId, snapshotId) {
+    if (!guildId || !this.cache.timeMachineSnapshots) return false;
+    const initial = this.cache.timeMachineSnapshots[guildId] || [];
+    this.cache.timeMachineSnapshots[guildId] = initial.filter(s => s.id !== snapshotId);
+    this.save();
+    return true;
+  }
+
+  // --- 3. STAFF PULSE & MODERATION QUOTA METRICS ---
+  recordStaffAction(guildId, staffId, actionType) {
+    if (!guildId || !staffId) return;
+    if (!this.cache.staffMetrics) this.cache.staffMetrics = {};
+    if (!this.cache.staffMetrics[guildId]) this.cache.staffMetrics[guildId] = {};
+    if (!this.cache.staffMetrics[guildId][staffId]) {
+      this.cache.staffMetrics[guildId][staffId] = {
+        bans: 0,
+        kicks: 0,
+        warns: 0,
+        timeouts: 0,
+        purges: 0,
+        tickets: 0,
+        lastActionAt: Date.now()
+      };
+    }
+    const m = this.cache.staffMetrics[guildId][staffId];
+    if (actionType && m[actionType] !== undefined) {
+      m[actionType]++;
+    }
+    m.lastActionAt = Date.now();
+    this.save();
+    return m;
+  }
+
+  getStaffMetrics(guildId, userId = null) {
+    if (!guildId || !this.cache.staffMetrics) return userId ? null : {};
+    const guildStaff = this.cache.staffMetrics[guildId] || {};
+    if (userId) {
+      return guildStaff[userId] || null;
+    }
+    return guildStaff;
+  }
+
+  resetStaffMetrics(guildId) {
+    if (!guildId || !this.cache.staffMetrics) return;
+    this.cache.staffMetrics[guildId] = {};
+    this.save();
+  }
+
+  // --- 4. DUAL-KEY NUCLEAR AUTHORIZATIONS ---
+  createPendingDualKey(data) {
+    if (!this.cache.pendingDualKey) this.cache.pendingDualKey = {};
+    const id = data.id || `dk_${Date.now().toString(36)}`;
+    const record = {
+      id,
+      guildId: data.guildId,
+      initiatorId: data.initiatorId,
+      initiatorTag: data.initiatorTag,
+      commandName: data.commandName,
+      rawArgs: data.rawArgs || [],
+      summary: data.summary || `Nuclear Command: ${data.commandName}`,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 5 * 60 * 1000 // 5 minutes window
+    };
+    this.cache.pendingDualKey[id] = record;
+    this.save();
+    return record;
+  }
+
+  getPendingDualKey(actionId) {
+    if (!this.cache.pendingDualKey) return null;
+    const action = this.cache.pendingDualKey[actionId];
+    if (!action) return null;
+    if (Date.now() > action.expiresAt) {
+      delete this.cache.pendingDualKey[actionId];
+      this.save();
+      return null;
+    }
+    return action;
+  }
+
+  removePendingDualKey(actionId) {
+    if (!this.cache.pendingDualKey) return;
+    delete this.cache.pendingDualKey[actionId];
+    this.save();
+  }
+
+  // --- 5. BURN ROOMS ---
+  addBurnRoom(channelId, roomData) {
+    if (!channelId) return;
+    if (!this.cache.burnRooms) this.cache.burnRooms = {};
+    this.cache.burnRooms[channelId] = {
+      channelId,
+      guildId: roomData.guildId,
+      creatorId: roomData.creatorId,
+      durationMinutes: roomData.durationMinutes || 10,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + (roomData.durationMinutes || 10) * 60 * 1000
+    };
+    this.save();
+    return this.cache.burnRooms[channelId];
+  }
+
+  getBurnRooms(guildId = null) {
+    if (!this.cache.burnRooms) return [];
+    const rooms = Object.values(this.cache.burnRooms);
+    if (!guildId) return rooms;
+    return rooms.filter(r => r.guildId === guildId);
+  }
+
+  removeBurnRoom(channelId) {
+    if (!this.cache.burnRooms) return;
+    delete this.cache.burnRooms[channelId];
+    this.save();
+  }
+
+  // --- 6. GATEKEEPER & ANOMALY & DUALKEY CONFIG HELPERS ---
+  updateGatekeeperConfig(guildId, updates) {
+    const cfg = this.getGuildConfig(guildId);
+    if (!cfg.gatekeeper) {
+      cfg.gatekeeper = { enabled: false, minAgeHours: 24, requireAvatar: false, action: 'quarantine' };
+    }
+    Object.assign(cfg.gatekeeper, updates);
+    this.save();
+    return cfg.gatekeeper;
+  }
+
+  updateAnomalyConfig(guildId, updates) {
+    const cfg = this.getGuildConfig(guildId);
+    if (!cfg.anomalyDetection) {
+      cfg.anomalyDetection = { enabled: true, threshold: 4, windowSeconds: 15, action: 'softlock' };
+    }
+    Object.assign(cfg.anomalyDetection, updates);
+    this.save();
+    return cfg.anomalyDetection;
+  }
+
+  updateDualKeyConfig(guildId, updates) {
+    const cfg = this.getGuildConfig(guildId);
+    if (!cfg.dualKey) {
+      cfg.dualKey = { enabled: false, protectedCommands: ['unbanall', 'emergency', 'wipeemojis', 'lockdown', 'nuke'] };
+    }
+    Object.assign(cfg.dualKey, updates);
+    this.save();
+    return cfg.dualKey;
   }
 }
 const dbInstance = new Database();

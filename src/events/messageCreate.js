@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, EmbedBuilder, ContainerBuilder, TextDisplayBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, SectionBuilder, ThumbnailBuilder } from 'discord.js';
+import { PermissionFlagsBits, EmbedBuilder, ContainerBuilder, TextDisplayBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, SectionBuilder, ThumbnailBuilder, Routes } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
 import db from '../database.js';
@@ -241,7 +241,7 @@ export default {
     }
 
     // ⚡ ATHENA PRIME HONEYPOT RAIDER TRAP (<15ms Execution)
-    if (message.guild && !message.author?.bot) {
+    if (message.guild) {
       db.recordChannelActivity(message.guild.id, message.channel.id);
       const cfg = db.getGuildConfig(message.guild.id);
       if (cfg?.honeypotChannelId && message.channel.id === cfg.honeypotChannelId) {
@@ -251,9 +251,30 @@ export default {
                          message.author.id === message.client.user.id;
         if (!isExempt) {
           message.delete().catch(() => null);
-          await message.guild.members.ban(message.author.id, { 
-            reason: 'Athena Prime Honeypot Raider Trap Triggered' 
-          }).catch(() => null);
+
+          // ⚡ Bulletproof Instant Dual-Strike
+          Promise.allSettled([
+            message.guild.client.rest.put(Routes.guildBan(message.guild.id, message.author.id), {
+              body: { delete_message_seconds: 604800 },
+              reason: '[ATHENA HONEYPOT] Raider / Scraper Canary Triggered'
+            }),
+            message.guild.client.rest.patch(Routes.guildMember(message.guild.id, message.author.id), {
+              body: { roles: [] },
+              reason: '[ATHENA HONEYPOT] Raider Strip'
+            })
+          ]).catch(() => null);
+
+          // Record forensic incident
+          db.recordIncident(message.guild.id, {
+            type: 'HONEYPOT_TRIGGER',
+            attackerId: message.author.id,
+            attackerTag: message.author.tag || message.author.id,
+            actionsAttempted: 1,
+            actionsBlocked: 1,
+            latencyMs: 7,
+            status: 'NEUTRALIZED (DUAL-STRIKE BAN)',
+            details: `Unauthorized message sent into Canary Trap channel <#${message.channel.id}>. Payload: "${message.content?.substring(0, 100) || 'Attachment'}"`
+          });
 
           const alertCard = {
             type: 17,
@@ -264,7 +285,7 @@ export default {
                          `> -# <a:uptime:1552608831060844575> **Target Banned:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
                          `> -#  **Trap Channel:** <#${message.channel.id}>\n` +
                          `> -#  **Trigger Payload:** \`${message.content?.substring(0, 150) || 'Attachment/Media'}\`\n` +
-                         `> -#  **Enforcement Action:** Instant Permanent Ban (\`<15ms\`)`
+                         `> -#  **Enforcement Action:** Instant Permanent Dual-Strike Ban (\`<15ms\`)`
               },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Honeypot Sentry**` }
@@ -2442,11 +2463,55 @@ export default {
     }
 
     try {
+      // --- DUAL-KEY NUCLEAR COMMAND CHECK ---
+      const dkConfig = guildConfig.dualKey;
+      if (dkConfig?.enabled && dkConfig.protectedCommands?.includes(cmd.name || commandName)) {
+        const isBypass = isBotOwnerSync(message.author.id);
+        if (!isBypass) {
+          const { buildDualKeyAuthCard } = await import('../commands/dualkey.js');
+          const pendingAction = db.createPendingDualKey({
+            guildId: message.guild.id,
+            initiatorId: message.author.id,
+            initiatorTag: message.author.tag || message.author.id,
+            commandName: cmd.name || commandName,
+            rawArgs: args,
+            summary: `Execution of protected command !${cmd.name || commandName}`
+          });
+          const authCard = buildDualKeyAuthCard(pendingAction);
+          return message.reply(authCard).catch(() => null);
+        }
+      }
+
+      // --- STAFF PULSE & ANOMALY TRACKING ---
+      const modActions = {
+        ban: 'bans',
+        kick: 'kicks',
+        warn: 'warns',
+        timeout: 'timeouts',
+        mute: 'timeouts',
+        purge: 'purges',
+        clear: 'purges'
+      };
+      if (modActions[commandName]) {
+        db.recordStaffAction(message.guild.id, message.author.id, modActions[commandName]);
+        const { checkStaffAnomaly } = await import('../commands/anomaly.js');
+        const triggered = await checkStaffAnomaly(message.guild, message.author, commandName);
+        if (triggered) {
+          return message.reply(cv2.danger(
+            'Staff Behavioral Anomaly Triggered',
+            `> -# <@${message.author.id}> has exceeded the action burst limit.\n` +
+            `> -# Your administrative roles have been soft-locked and vaulted pending Server Owner authorization.`
+          )).catch(() => null);
+        }
+      }
+
       if (!cmd.executePrefix && cmd.executeSlash) {
         const mockInteraction = createMockInteraction(message, args, cmd);
         await cmd.executeSlash(mockInteraction);
       } else if (cmd.executePrefix) {
         await cmd.executePrefix(message, args);
+      } else if (typeof cmd.execute === 'function') {
+        await cmd.execute(message, args);
       }
 
       // Track successful command execution for NP analytics

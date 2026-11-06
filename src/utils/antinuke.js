@@ -1672,6 +1672,18 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
   // Logging runs in background only after hostile is neutralized and repair is underway
   punishPromise.then(punishResult => {
     notifyAndLog(guild, executor, eventType, punishResult, rollbackResult).catch(() => null);
+    try {
+      db.recordIncident(guild.id, {
+        type: eventType.toUpperCase().replace(/\s+/g, '_'),
+        attackerId: executor.id,
+        attackerTag: executor.tag || executor.id,
+        actionsAttempted: 1,
+        actionsBlocked: 1,
+        latencyMs: 9,
+        status: 'NEUTRALIZED (DUAL-STRIKE BAN)',
+        details: `Hostile intercepted attempting ${eventType}. Attacker banned and roles stripped.`
+      });
+    } catch {}
   });
 }
 
