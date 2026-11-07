@@ -3828,7 +3828,8 @@ async function handleSecurityInteractions(interaction, guild) {
         const action = parts[1]; // 'play', 'radio', 'stop'
         const soundKey = parts[2];
 
-        const voiceChannel = member.voice?.channel;
+        const member = interaction.member;
+        const voiceChannel = member?.voice?.channel;
         if (!voiceChannel && action !== 'stop') {
           return interaction.reply({
             content: `-# <a:exclamation_outline1:1565666739356827759> You must be in a voice channel to trigger soundboard effects!`,
@@ -3859,7 +3860,8 @@ async function handleSecurityInteractions(interaction, guild) {
         }
 
         if (action === 'stop') {
-          stopVoicePlayback(guild.id);
+          const guildId = interaction.guildId || guild?.id;
+          stopVoicePlayback(guildId);
           return interaction.reply({
             content: `-# <a:03_tick_circle:1565665642084827206> Soundboard & radio playback stopped. Disconnected from voice.`,
             flags: MessageFlags.Ephemeral

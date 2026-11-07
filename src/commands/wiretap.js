@@ -126,6 +126,101 @@ export const commands = [
         const payload = buildWiretapBroadcastPayload(latest);
         return message.reply(payload);
       }
+    },
+
+    async executeSlash(interaction) {
+      const action = (interaction.options.getString('action') || 'list').toLowerCase();
+
+      if (action === 'list') {
+        const list = db.getWiretaps(interaction.guild.id);
+        if (list.length === 0) {
+          return interaction.reply({
+            ...cv2.warn(`No Wiretaps Active | ${WARN_EMOJI}`, `No automated social broadcasters are configured in this server.`),
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        const lines = list.map((w, i) => 
+          `${BULLET_EMOJI} **#${i + 1}** \`[${w.platform.toUpperCase()}]\` **Target:** \`${w.target}\` \u2192 <#${w.channelId}> (ID: \`${w.id}\`)`
+        ).join('\n');
+
+        return interaction.reply(cv2.panel(
+          `Social Media Wiretap Matrix | ${TICK_EMOJI}`,
+          `Currently monitoring **${list.length}** social feed(s) for automated broadcasts:\n\n${lines}`
+        ));
+      }
+
+      if (action === 'add') {
+        const platform = (interaction.options.getString('platform') || '').toLowerCase();
+        let target = interaction.options.getString('target');
+        const channel = interaction.options.getChannel('channel') || interaction.channel;
+
+        if (!['youtube', 'reddit', 'yt'].includes(platform) || !target) {
+          return interaction.reply({
+            ...cv2.warn(`Parameters Required | ${WARN_EMOJI}`, `Please specify platform and target.`),
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        await interaction.deferReply();
+        const normalizedPlatform = platform === 'yt' ? 'youtube' : platform;
+        let resolvedTarget = target;
+
+        if (normalizedPlatform === 'youtube') {
+          resolvedTarget = await resolveYoutubeChannelId(target);
+        } else if (normalizedPlatform === 'reddit') {
+          resolvedTarget = target.replace(/^r\//i, '').trim();
+        }
+
+        const item = db.addWiretap(interaction.guild.id, normalizedPlatform, resolvedTarget, channel.id);
+        return interaction.editReply(cv2.success(
+          `Wiretap Configured | ${TICK_EMOJI}`,
+          `Successfully deployed **${normalizedPlatform.toUpperCase()}** broadcaster for \`${target}\` in <#${channel.id}> (ID: \`${item.id}\`).`
+        ));
+      }
+
+      if (action === 'remove') {
+        const target = interaction.options.getString('target');
+        if (!target) {
+          return interaction.reply({
+            ...cv2.warn(`ID Required | ${WARN_EMOJI}`, `Please specify the wiretap ID in the target option.`),
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        const removed = db.removeWiretap(interaction.guild.id, target);
+        if (!removed) {
+          return interaction.reply({
+            ...cv2.warn(`Not Found | ${WARN_EMOJI}`, `No wiretap found matching ID \`${target}\`.`),
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        return interaction.reply(cv2.success(`Wiretap Removed | ${TICK_EMOJI}`, `Successfully disabled broadcaster.`));
+      }
+
+      if (action === 'check') {
+        const list = db.getWiretaps(interaction.guild.id);
+        if (list.length === 0) {
+          return interaction.reply({
+            ...cv2.warn(`No Wiretaps | ${WARN_EMOJI}`, `No active wiretaps to test.`),
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        await interaction.deferReply();
+        const first = list[0];
+        let latest = null;
+        if (first.platform === 'youtube') latest = await fetchLatestYoutubeVideo(first.target);
+        else if (first.platform === 'reddit') latest = await fetchLatestRedditPost(first.target);
+
+        if (!latest) {
+          return interaction.editReply(cv2.warn(`No Feed Data | ${WARN_EMOJI}`, `Could not retrieve latest post for \`${first.target}\`.`));
+        }
+
+        const payload = buildWiretapBroadcastPayload(latest);
+        return interaction.editReply(payload);
+      }
     }
   }
 ];

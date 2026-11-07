@@ -152,7 +152,7 @@ export const commands = [
 
       try {
         const res = await fetch(imageUrl);
-        const imgBuffer = await res.buffer();
+        const imgBuffer = Buffer.from(await res.arrayBuffer());
         const captionedBuffer = await captionImage(imgBuffer, text);
         const attachment = new AttachmentBuilder(captionedBuffer, { name: 'captioned.png' });
 
@@ -210,7 +210,7 @@ export const commands = [
 
       try {
         const res = await fetch(imageUrl);
-        const imgBuffer = await res.buffer();
+        const imgBuffer = Buffer.from(await res.arrayBuffer());
         const filteredBuffer = await applyImageFilter(imgBuffer, sub);
         const attachment = new AttachmentBuilder(filteredBuffer, { name: `filter_${sub}.png` });
 

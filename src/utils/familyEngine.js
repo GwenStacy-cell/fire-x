@@ -39,12 +39,12 @@ export function buildProposalPayload(proposer, target, ring = 'Flawless Diamond 
       .setCustomId(`fam:prop:accept:${proposalId}`)
       .setLabel('Accept Proposal')
       .setEmoji('1565665642084827206')
-      .setStyle(ButtonStyle.Success),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`fam:prop:decline:${proposalId}`)
       .setLabel('Decline')
       .setEmoji('1565665644806934639')
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Secondary)
   );
 
   const container = {
@@ -87,12 +87,12 @@ export function buildAdoptionPayload(parent, child) {
       .setCustomId(`fam:adopt:accept:${adoptionId}`)
       .setLabel('Accept Adoption')
       .setEmoji('1565665642084827206')
-      .setStyle(ButtonStyle.Success),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`fam:adopt:decline:${adoptionId}`)
       .setLabel('Decline')
       .setEmoji('1565665644806934639')
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Secondary)
   );
 
   const container = {

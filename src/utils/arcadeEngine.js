@@ -276,12 +276,12 @@ export function buildBlackjackPayload(gameId) {
     new ButtonBuilder()
       .setCustomId(`arc:bj:${gameId}:hit`)
       .setLabel('Hit')
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
       .setDisabled(game.status !== 'player_turn'),
     new ButtonBuilder()
       .setCustomId(`arc:bj:${gameId}:stand`)
       .setLabel('Stand')
-      .setStyle(ButtonStyle.Success)
+      .setStyle(ButtonStyle.Secondary)
       .setDisabled(game.status !== 'player_turn'),
     new ButtonBuilder()
       .setCustomId(`arc:bj:${gameId}:double`)
@@ -416,7 +416,7 @@ export function buildTriviaPayload(gameId) {
       else if (idx === game.selectedIndex && !game.isCorrect) btn.setStyle(ButtonStyle.Danger);
       else btn.setStyle(ButtonStyle.Secondary);
     } else {
-      btn.setStyle(ButtonStyle.Primary);
+      btn.setStyle(ButtonStyle.Secondary);
     }
     row.addComponents(btn);
   });

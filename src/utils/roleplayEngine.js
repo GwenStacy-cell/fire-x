@@ -1386,7 +1386,7 @@ export async function buildRoleplayPayload(guild, authorUser, targetUser, action
         new ButtonBuilder()
           .setCustomId(`rp_${c.id}_${targetUser.id}_${authorUser.id}`)
           .setLabel(c.label)
-          .setStyle(c.style || ButtonStyle.Primary)
+          .setStyle(ButtonStyle.Secondary)
       );
     }
     components.push(row);
@@ -1436,20 +1436,20 @@ export async function buildDuoAffinityPayload(guild, user1, user2) {
     )
     .setFooter({ text: 'Athena Roleplay & Affinity Matrix • V2.0' });
 
-  // Quick action buttons
+  // Quick action buttons (all colourless Secondary buttons)
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`rp_hug_${user2.id}_${user1.id}`)
       .setLabel('Hug')
-      .setStyle(ButtonStyle.Success),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`rp_kiss_${user2.id}_${user1.id}`)
       .setLabel('Kiss')
-      .setStyle(ButtonStyle.Danger),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`rp_pat_${user2.id}_${user1.id}`)
       .setLabel('Pat')
-      .setStyle(ButtonStyle.Primary),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`rp_slap_${user2.id}_${user1.id}`)
       .setLabel('Slap')

@@ -56,6 +56,27 @@ export const commands = [
       const game = createTicTacToeGame(message.guild.id, message.author, opponent);
       const payload = buildTicTacToePayload(game.id);
       return message.reply(payload);
+    },
+
+    async executeSlash(interaction) {
+      const opponent = interaction.options.getUser('opponent');
+      if (opponent.id === interaction.user.id) {
+        return interaction.reply({
+          ...cv2.warn(`Invalid Challenge | ${WARN_EMOJI}`, `You cannot play Tic-Tac-Toe against yourself!`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      if (opponent.bot) {
+        return interaction.reply({
+          ...cv2.warn(`Invalid Challenge | ${WARN_EMOJI}`, `You cannot play Tic-Tac-Toe against bots.`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const game = createTicTacToeGame(interaction.guild.id, interaction.user, opponent);
+      const payload = buildTicTacToePayload(game.id);
+      return interaction.reply(payload);
     }
   },
 
@@ -86,6 +107,24 @@ export const commands = [
       const game = createBlackjackGame(message.guild.id, message.author, bet);
       const payload = buildBlackjackPayload(game.id);
       return message.reply(payload);
+    },
+
+    async executeSlash(interaction) {
+      let bet = interaction.options.getInteger('bet') || 100;
+      if (bet <= 0) bet = 100;
+      if (bet > 1000000) bet = 1000000;
+
+      const userEco = db.cache.economy?.[interaction.guild.id]?.[interaction.user.id];
+      if (userEco && (userEco.wallet || 0) < bet) {
+        return interaction.reply({
+          ...cv2.warn(`Insufficient Balance | ${WARN_EMOJI}`, `You only have **${(userEco.wallet || 0).toLocaleString()} coins** in your wallet.`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const game = createBlackjackGame(interaction.guild.id, interaction.user, bet);
+      const payload = buildBlackjackPayload(game.id);
+      return interaction.reply(payload);
     }
   },
 
@@ -118,6 +157,21 @@ export const commands = [
         if (loading) return loading.edit(errPayload);
         return message.reply(errPayload);
       }
+    },
+
+    async executeSlash(interaction) {
+      const category = (interaction.options.getString('category') || 'all').toLowerCase();
+      await interaction.deferReply();
+
+      try {
+        const questionData = await fetchTriviaQuestion(category);
+        const game = createTriviaGame(interaction.guild.id, questionData);
+        const payload = buildTriviaPayload(game.id);
+        return interaction.editReply(payload);
+      } catch (err) {
+        console.error('[TriviaSlash Error]:', err);
+        return interaction.editReply(cv2.error('Trivia Failed', `Could not fetch question: \`${err.message}\``));
+      }
     }
   },
 
@@ -140,6 +194,26 @@ export const commands = [
       const trv = stats?.trivia || { wins: 0, correct: 0, total: 0 };
 
       return message.reply(cv2.panel(
+        `Arcade Telemetry Matrix | ${TICK_EMOJI}`,
+        `Competitive gaming statistics for <@${target.id}>:\n\n` +
+        `**__Tic-Tac-Toe:__**\n` +
+        `${BULLET_EMOJI} **Wins:** \`${ttt.wins}\` \u00b7 **Losses:** \`${ttt.losses}\` \u00b7 **Draws:** \`${ttt.ties}\`\n\n` +
+        `**__Blackjack Casino:__**\n` +
+        `${BULLET_EMOJI} **Wins:** \`${bj.wins}\` \u00b7 **Losses:** \`${bj.losses}\` \u00b7 **Net Earnings:** \`${(bj.profit || 0).toLocaleString()} Coins\`\n\n` +
+        `**__Trivia Arena:__**\n` +
+        `${BULLET_EMOJI} **Correct Answers:** \`${trv.correct}\` questions nailed`
+      ));
+    },
+
+    async executeSlash(interaction) {
+      const target = interaction.options.getUser('user') || interaction.user;
+      const stats = db.getArcadeStats(interaction.guild.id, target.id);
+
+      const ttt = stats?.tictactoe || { wins: 0, losses: 0, ties: 0 };
+      const bj = stats?.blackjack || { wins: 0, losses: 0, ties: 0, profit: 0 };
+      const trv = stats?.trivia || { wins: 0, correct: 0, total: 0 };
+
+      return interaction.reply(cv2.panel(
         `Arcade Telemetry Matrix | ${TICK_EMOJI}`,
         `Competitive gaming statistics for <@${target.id}>:\n\n` +
         `**__Tic-Tac-Toe:__**\n` +

@@ -22,7 +22,7 @@ setInterval(() => {
       gifSessions.delete(id);
     }
   }
-}, 10 * 60 * 1000);
+}, 10 * 60 * 1000).unref();
 
 // Known anime reaction action keywords
 const ANIME_ACTIONS = new Set([
@@ -447,13 +447,13 @@ export function buildGifResultPayload(sessionId, index = 0) {
       .setCustomId(`gif:prev:${sessionId}:${prevIndex}`)
       .setLabel('Prev')
       .setEmoji(NAV_EMOJI_IDS.PREV)
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
       .setDisabled(total <= 1),
     new ButtonBuilder()
       .setCustomId(`gif:next:${sessionId}:${nextIndex}`)
       .setLabel('Next')
       .setEmoji(NAV_EMOJI_IDS.NEXT)
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Secondary)
       .setDisabled(total <= 1),
     new ButtonBuilder()
       .setCustomId(`gif:rand:${sessionId}`)
@@ -463,7 +463,7 @@ export function buildGifResultPayload(sessionId, index = 0) {
     new ButtonBuilder()
       .setCustomId(`gif:fresh:${sessionId}`)
       .setLabel('Fresh Batch')
-      .setStyle(ButtonStyle.Success),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setLabel('Direct GIF')
       .setStyle(ButtonStyle.Link)

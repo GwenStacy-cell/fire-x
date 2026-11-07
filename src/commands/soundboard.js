@@ -29,6 +29,11 @@ export const commands = [
     async executePrefix(message) {
       const payload = buildSoundboardPanel(message.guild);
       return message.reply(payload);
+    },
+
+    async executeSlash(interaction) {
+      const payload = buildSoundboardPanel(interaction.guild);
+      return interaction.reply(payload);
     }
   },
 
@@ -73,6 +78,29 @@ export const commands = [
       return message.reply({
         content: `-# <a:03_tick_circle:1565665642084827206> Playing **${res.sound.name}** in <#${voiceChannel.id}>!`
       });
+    },
+
+    async executeSlash(interaction) {
+      const voiceChannel = interaction.member?.voice?.channel;
+      if (!voiceChannel) {
+        return interaction.reply({
+          ...cv2.warn(`Voice Channel Required | ${WARN_EMOJI}`, `You must join a voice channel so Athena can play the sound effect!`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const soundName = interaction.options.getString('sound');
+      await interaction.deferReply();
+      const res = await playSoundEffect(voiceChannel, soundName);
+      if (!res.success) {
+        return interaction.editReply(
+          cv2.warn(`Sound Not Found | ${WARN_EMOJI}`, `Could not locate sound effect \`${soundName}\`. Run \`!sfx\` to view available sounds.`)
+        );
+      }
+
+      return interaction.editReply({
+        content: `-# <a:03_tick_circle:1565665642084827206> Playing **${res.sound.name}** in <#${voiceChannel.id}>!`
+      });
     }
   },
 
@@ -99,6 +127,26 @@ export const commands = [
       const res = await startRadioStream(voiceChannel, stationKey);
 
       return message.reply(cv2.success(
+        `Radio Streaming | ${TICK_EMOJI}`,
+        `Now streaming **${res.station.name}** in <#${voiceChannel.id}>!\n` +
+        `Enjoy 24/7 background beats. Run \`!stopsound\` to disconnect.`
+      ));
+    },
+
+    async executeSlash(interaction) {
+      const voiceChannel = interaction.member?.voice?.channel;
+      if (!voiceChannel) {
+        return interaction.reply({
+          ...cv2.warn(`Voice Channel Required | ${WARN_EMOJI}`, `You must join a voice channel to start the radio stream!`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const stationKey = (interaction.options.getString('station') || 'lofi').toLowerCase();
+      await interaction.deferReply();
+      const res = await startRadioStream(voiceChannel, stationKey);
+
+      return interaction.editReply(cv2.success(
         `Radio Streaming | ${TICK_EMOJI}`,
         `Now streaming **${res.station.name}** in <#${voiceChannel.id}>!\n` +
         `Enjoy 24/7 background beats. Run \`!stopsound\` to disconnect.`
@@ -144,6 +192,25 @@ export const commands = [
         `Successfully added custom sound **\`${sound.name}\`** to the server soundboard!\n` +
         `Play it anytime with \`!sfx ${sound.name}\`.`
       ));
+    },
+
+    async executeSlash(interaction) {
+      const name = interaction.options.getString('name');
+      const audioUrl = interaction.options.getString('url');
+
+      if (!audioUrl || !/^https?:\/\//i.test(audioUrl)) {
+        return interaction.reply({
+          ...cv2.warn(`Audio URL Required | ${WARN_EMOJI}`, `Please provide a valid direct audio URL (\`.mp3\`/\`.wav\`).`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const sound = db.addServerSound(interaction.guild.id, name, audioUrl, interaction.user.id);
+      return interaction.reply(cv2.success(
+        `Sound Added | ${TICK_EMOJI}`,
+        `Successfully added custom sound **\`${sound.name}\`** to the server soundboard!\n` +
+        `Play it anytime with \`!sfx ${sound.name}\`.`
+      ));
     }
   },
 
@@ -161,6 +228,18 @@ export const commands = [
       }
 
       return message.reply(cv2.success(`Voice Stopped | ${TICK_EMOJI}`, `Stopped voice playback and disconnected from voice channel.`));
+    },
+
+    async executeSlash(interaction) {
+      const stopped = stopVoicePlayback(interaction.guild.id);
+      if (!stopped) {
+        return interaction.reply({
+          ...cv2.warn(`Not Active | ${WARN_EMOJI}`, `Athena is not currently playing audio in any voice channel.`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      return interaction.reply(cv2.success(`Voice Stopped | ${TICK_EMOJI}`, `Stopped voice playback and disconnected from voice channel.`));
     }
   }
 ];

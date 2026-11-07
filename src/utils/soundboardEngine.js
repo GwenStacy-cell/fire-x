@@ -4,8 +4,13 @@ import {
   createAudioResource, 
   AudioPlayerStatus, 
   NoSubscriberBehavior,
-  getVoiceConnection 
+  getVoiceConnection,
+  VoiceConnectionStatus,
+  entersState,
+  StreamType
 } from '@discordjs/voice';
+import { Readable } from 'stream';
+import fetch from 'node-fetch';
 import { 
   ActionRowBuilder, 
   ButtonBuilder, 
@@ -67,8 +72,14 @@ export async function playSoundEffect(voiceChannel, soundKeyOrUrl) {
   if (!soundObj) return { success: false, reason: 'Sound effect not found' };
 
   let session = activeVoiceSessions.get(guild.id);
-  if (!session || !getVoiceConnection(guild.id)) {
-    const connection = joinVoiceChannel({
+  let connection = getVoiceConnection(guild.id);
+
+  if (!session || !connection || connection.joinConfig.channelId !== voiceChannel.id) {
+    if (connection) {
+      try { connection.destroy(); } catch {}
+    }
+
+    connection = joinVoiceChannel({
       channelId: voiceChannel.id,
       guildId: guild.id,
       adapterCreator: guild.voiceAdapterCreator,
@@ -79,10 +90,19 @@ export async function playSoundEffect(voiceChannel, soundKeyOrUrl) {
     const player = createAudioPlayer({
       behaviors: { noSubscriber: NoSubscriberBehavior.Play }
     });
-    connection.subscribe(player);
 
+    player.on('error', err => console.warn('[Soundboard Player Notice]', err.message));
+    connection.on('error', err => console.warn('[Soundboard Connection Notice]', err.message));
+
+    connection.subscribe(player);
     session = { connection, player, isRadio: false, timeout: null };
     activeVoiceSessions.set(guild.id, session);
+  }
+
+  try {
+    await entersState(session.connection, VoiceConnectionStatus.Ready, 5_000);
+  } catch (err) {
+    console.warn('[Soundboard] Voice connection took too long to reach Ready:', err.message);
   }
 
   if (session.timeout) {
@@ -90,21 +110,41 @@ export async function playSoundEffect(voiceChannel, soundKeyOrUrl) {
     session.timeout = null;
   }
 
-  const resource = createAudioResource(soundObj.url, { inlineVolume: true });
+  session.isRadio = false;
+
+  let resource;
+  try {
+    const audioRes = await fetch(soundObj.url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    if (audioRes.ok) {
+      const arrayBuffer = await audioRes.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const stream = Readable.from(buffer);
+      resource = createAudioResource(stream, { inputType: StreamType.Arbitrary, inlineVolume: true });
+    } else {
+      resource = createAudioResource(soundObj.url, { inlineVolume: true });
+    }
+  } catch (err) {
+    resource = createAudioResource(soundObj.url, { inlineVolume: true });
+  }
+
   resource.volume?.setVolume(0.85);
   session.player.play(resource);
 
-  // Auto-cleanup after 12 seconds if not a radio stream
-  if (!session.isRadio) {
-    session.timeout = setTimeout(() => {
-      try {
-        if (!session.isRadio) {
-          session.connection.destroy();
-          activeVoiceSessions.delete(guild.id);
-        }
-      } catch {}
-    }, 12000);
-  }
+  // Auto-cleanup after 12 seconds if not switched to a radio stream
+  session.timeout = setTimeout(() => {
+    try {
+      const current = activeVoiceSessions.get(guild.id);
+      if (current && !current.isRadio) {
+        current.player?.stop();
+        current.connection?.destroy();
+        activeVoiceSessions.delete(guild.id);
+      }
+    } catch {}
+  }, 12000);
 
   return { success: true, sound: soundObj };
 }
@@ -114,8 +154,14 @@ export async function startRadioStream(voiceChannel, stationKey = 'lofi') {
   const station = RADIO_STATIONS[stationKey.toLowerCase()] || RADIO_STATIONS['lofi'];
 
   let session = activeVoiceSessions.get(guild.id);
-  if (!session || !getVoiceConnection(guild.id)) {
-    const connection = joinVoiceChannel({
+  let connection = getVoiceConnection(guild.id);
+
+  if (!session || !connection || connection.joinConfig.channelId !== voiceChannel.id) {
+    if (connection) {
+      try { connection.destroy(); } catch {}
+    }
+
+    connection = joinVoiceChannel({
       channelId: voiceChannel.id,
       guildId: guild.id,
       adapterCreator: guild.voiceAdapterCreator,
@@ -126,17 +172,45 @@ export async function startRadioStream(voiceChannel, stationKey = 'lofi') {
     const player = createAudioPlayer({
       behaviors: { noSubscriber: NoSubscriberBehavior.Play }
     });
-    connection.subscribe(player);
 
+    player.on('error', err => console.warn('[Radio Player Notice]', err.message));
+    connection.on('error', err => console.warn('[Radio Connection Notice]', err.message));
+
+    connection.subscribe(player);
     session = { connection, player, isRadio: true, stationName: station.name, timeout: null };
     activeVoiceSessions.set(guild.id, session);
   } else {
     session.isRadio = true;
     session.stationName = station.name;
-    if (session.timeout) clearTimeout(session.timeout);
+    if (session.timeout) {
+      clearTimeout(session.timeout);
+      session.timeout = null;
+    }
   }
 
-  const resource = createAudioResource(station.url, { inlineVolume: true });
+  try {
+    await entersState(session.connection, VoiceConnectionStatus.Ready, 5_000);
+  } catch (err) {
+    console.warn('[Radio] Voice connection took too long to reach Ready:', err.message);
+  }
+
+  let resource;
+  try {
+    const res = await fetch(station.url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+    if (res.ok && res.body) {
+      const stream = Readable.fromWeb(res.body);
+      resource = createAudioResource(stream, { inputType: StreamType.Arbitrary, inlineVolume: true });
+    } else {
+      resource = createAudioResource(station.url, { inlineVolume: true });
+    }
+  } catch {
+    resource = createAudioResource(station.url, { inlineVolume: true });
+  }
+
   resource.volume?.setVolume(0.65);
   session.player.play(resource);
 
@@ -147,8 +221,9 @@ export function stopVoicePlayback(guildId) {
   const session = activeVoiceSessions.get(guildId);
   if (session) {
     try {
-      session.player.stop();
-      session.connection.destroy();
+      if (session.timeout) clearTimeout(session.timeout);
+      session.player?.stop();
+      session.connection?.destroy();
     } catch {}
     activeVoiceSessions.delete(guildId);
     return true;
@@ -159,30 +234,30 @@ export function stopVoicePlayback(guildId) {
 export function buildSoundboardPanel(guild) {
   const customSounds = db.getServerSounds(guild.id);
   
-  // Row 1: Common Meme Sounds
+  // Row 1: Common Meme Sounds (all colourless Secondary buttons)
   const row1 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('sfx:play:airhorn').setLabel('Air Horn').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('sfx:play:vineboom').setLabel('Vine Boom').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('sfx:play:airhorn').setLabel('Air Horn').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('sfx:play:vineboom').setLabel('Vine Boom').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('sfx:play:bruh').setLabel('Bruh').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('sfx:play:emotional').setLabel('Emotional Damage').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('sfx:play:animewow').setLabel('Anime Wow').setStyle(ButtonStyle.Success)
+    new ButtonBuilder().setCustomId('sfx:play:emotional').setLabel('Emotional Damage').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('sfx:play:animewow').setLabel('Anime Wow').setStyle(ButtonStyle.Secondary)
   );
 
-  // Row 2: Reaction & Fanfares
+  // Row 2: Reaction & Fanfares (all colourless Secondary buttons)
   const row2 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('sfx:play:fbi').setLabel('FBI Open Up').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId('sfx:play:victory').setLabel('Victory Fanfare').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('sfx:play:applause').setLabel('Applause').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('sfx:play:fbi').setLabel('FBI Open Up').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('sfx:play:victory').setLabel('Victory Fanfare').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('sfx:play:applause').setLabel('Applause').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('sfx:play:oof').setLabel('Roblox Oof').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('sfx:play:crickets').setLabel('Crickets').setStyle(ButtonStyle.Secondary)
   );
 
-  // Row 3: Radio Streams & Controls
+  // Row 3: Radio Streams & Controls (all colourless Secondary buttons)
   const row3 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('sfx:radio:lofi').setLabel('24/7 Lo-Fi Radio').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('sfx:radio:synthwave').setLabel('Synthwave Radio').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('sfx:radio:anime').setLabel('Anime OST Radio').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('sfx:stop').setLabel('Stop / Disconnect').setStyle(ButtonStyle.Danger)
+    new ButtonBuilder().setCustomId('sfx:radio:lofi').setLabel('24/7 Lo-Fi Radio').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('sfx:radio:synthwave').setLabel('Synthwave Radio').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('sfx:radio:anime').setLabel('Anime OST Radio').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('sfx:stop').setLabel('Stop / Disconnect').setStyle(ButtonStyle.Secondary)
   );
 
   const container = {

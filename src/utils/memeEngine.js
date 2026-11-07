@@ -64,7 +64,8 @@ export async function generateMemeImage(templateName, topText, bottomText) {
   try {
     const res = await fetch(url, { timeout: 6000 });
     if (res.ok) {
-      const buffer = await res.buffer();
+      const arrayBuf = await res.arrayBuffer();
+      const buffer = Buffer.from(arrayBuf);
       return { buffer, url, templateId };
     }
   } catch (err) {

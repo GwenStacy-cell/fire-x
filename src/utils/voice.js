@@ -67,12 +67,21 @@ export async function connectToHomeVc(guild, channelId, force = false) {
     return { success: true, connection, alreadyConnected: true };
   }
 
-  // Check if music is actively playing
+  // Check if music or soundboard is actively playing
   try {
     const { getQueue } = await import('./musicManager.js');
     const queue = getQueue(guild.id);
     if (!force && queue && (queue.isPlaying || queue.current || queue.songs.length > 0 || queue.isPreparing)) {
       return { success: false, reason: 'Bot is currently playing music in another channel.' };
+    }
+  } catch (err) {
+    // ignore
+  }
+
+  try {
+    const { activeVoiceSessions } = await import('./soundboardEngine.js').catch(() => ({ activeVoiceSessions: new Map() }));
+    if (!force && activeVoiceSessions && activeVoiceSessions.has(guild.id)) {
+      return { success: false, reason: 'Bot is currently active in a soundboard or radio voice session.' };
     }
   } catch (err) {
     // ignore

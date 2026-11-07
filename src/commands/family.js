@@ -67,6 +67,45 @@ export const commands = [
 
       const payload = buildProposalPayload(message.author, target, ringName);
       return message.reply(payload);
+    },
+
+    async executeSlash(interaction) {
+      const target = interaction.options.getUser('partner');
+      if (target.id === interaction.user.id) {
+        return interaction.reply({
+          ...cv2.warn(`Self-Marriage Forbidden | ${WARN_EMOJI}`, `You cannot marry yourself!`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      if (target.bot) {
+        return interaction.reply({
+          ...cv2.warn(`Bot Marriage Forbidden | ${WARN_EMOJI}`, `You cannot marry bots!`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const authorMarriage = db.getMarriage(interaction.guild.id, interaction.user.id);
+      if (authorMarriage) {
+        return interaction.reply({
+          ...cv2.warn(`Already Married | ${WARN_EMOJI}`, `You are already married to <@${authorMarriage.partnerId}>! Run \`!divorce\` first.`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const targetMarriage = db.getMarriage(interaction.guild.id, target.id);
+      if (targetMarriage) {
+        return interaction.reply({
+          ...cv2.warn(`Partner Taken | ${WARN_EMOJI}`, `<@${target.id}> is already married to <@${targetMarriage.partnerId}>!`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const ringKey = (interaction.options.getString('ring') || 'diamond').toLowerCase();
+      const ringName = RING_TIERS[ringKey] || 'Flawless Diamond Ring';
+
+      const payload = buildProposalPayload(interaction.user, target, ringName);
+      return interaction.reply(payload);
     }
   },
 
@@ -93,6 +132,24 @@ export const commands = [
         `Marriage Dissolved | ${WRONG_EMOJI}`,
         `<@${message.author.id}> has filed for divorce and severed their holy bond with <@${exPartnerId}>.\n` +
         `Both members are now officially single.`
+      ));
+    },
+
+    async executeSlash(interaction) {
+      const marriage = db.getMarriage(interaction.guild.id, interaction.user.id);
+      if (!marriage) {
+        return interaction.reply({
+          ...cv2.warn(`Not Married | ${WARN_EMOJI}`, `You are currently single! Find someone special using \`/marry\`.`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const exPartnerId = marriage.partnerId;
+      db.divorceMarriage(interaction.guild.id, interaction.user.id);
+
+      return interaction.reply(cv2.danger(
+        `Marriage Dissolved | ${WRONG_EMOJI}`,
+        `<@${interaction.user.id}> has filed for divorce and severed their holy bond with <@${exPartnerId}>.\nBoth members are now officially single.`
       ));
     }
   },
@@ -134,6 +191,34 @@ export const commands = [
 
       const payload = buildAdoptionPayload(message.author, target);
       return message.reply(payload);
+    },
+
+    async executeSlash(interaction) {
+      const target = interaction.options.getUser('child');
+      if (target.id === interaction.user.id) {
+        return interaction.reply({
+          ...cv2.warn(`Self-Adoption Forbidden | ${WARN_EMOJI}`, `You cannot adopt yourself!`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      if (target.bot) {
+        return interaction.reply({
+          ...cv2.warn(`Bot Adoption Forbidden | ${WARN_EMOJI}`, `You cannot adopt bots!`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const fam = db.getFamily(interaction.guild.id, target.id);
+      if (fam.parentId) {
+        return interaction.reply({
+          ...cv2.warn(`Already Adopted | ${WARN_EMOJI}`, `<@${target.id}> already has a registered parent: <@${fam.parentId}>!`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const payload = buildAdoptionPayload(interaction.user, target);
+      return interaction.reply(payload);
     }
   },
 
@@ -168,6 +253,22 @@ export const commands = [
         `Family Tie Severed | ${WRONG_EMOJI}`,
         `<@${message.author.id}> has disowned <@${target.id}> from their family lineage.`
       ));
+    },
+
+    async executeSlash(interaction) {
+      const target = interaction.options.getUser('child');
+      const success = db.disownChild(interaction.guild.id, interaction.user.id, target.id);
+      if (!success) {
+        return interaction.reply({
+          ...cv2.warn(`Not Your Child | ${WARN_EMOJI}`, `<@${target.id}> is not registered as your child.`),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      return interaction.reply(cv2.danger(
+        `Family Tie Severed | ${WRONG_EMOJI}`,
+        `<@${interaction.user.id}> has disowned <@${target.id}> from their family lineage.`
+      ));
     }
   },
 
@@ -185,6 +286,12 @@ export const commands = [
       const target = message.mentions.users.first() || message.author;
       const payload = buildFamilyTreePayload(message.guild, target);
       return message.reply(payload);
+    },
+
+    async executeSlash(interaction) {
+      const target = interaction.options.getUser('user') || interaction.user;
+      const payload = buildFamilyTreePayload(interaction.guild, target);
+      return interaction.reply(payload);
     }
   }
 ];
