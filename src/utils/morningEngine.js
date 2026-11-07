@@ -325,12 +325,12 @@ export function startMorningBroadcaster(client) {
   if (isBroadcasterStarted) return;
   isBroadcasterStarted = true;
 
-  console.log('[MorningEngine] Morning Thought Broadcaster daemon initialized (30s sweep).');
+  console.log('[MorningEngine] Morning Thought Broadcaster daemon initialized (60s sweep).');
   // Initial check
   checkAndDispatchAllMorningMessages(client).catch(() => null);
 
-  // Periodic 30-second sweep
+  // Periodic 60-second sweep
   setInterval(() => {
     checkAndDispatchAllMorningMessages(client).catch(() => null);
-  }, 30 * 1000);
+  }, 60 * 1000);
 }

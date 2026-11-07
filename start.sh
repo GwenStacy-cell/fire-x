@@ -21,7 +21,7 @@ while true; do
   fi
 
   echo "[Athena Prime] Starting bot process..."
-  node index.js
+  node --max-old-space-size=1024 --no-warnings index.js
   EXIT_CODE=$?
 
   echo "[Athena Prime] Bot process exited (code: $EXIT_CODE). Checking updates and restarting in 2 seconds..."

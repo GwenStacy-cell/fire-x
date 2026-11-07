@@ -303,11 +303,11 @@ export async function checkAllYouTubeFeeds(client) {
  * Starts the YouTube notification polling loop.
  */
 export function startYouTubeNotifier(client) {
-  console.log('[YouTube Notifier] Starting YouTube video polling engine (30s interval)...');
+  console.log('[YouTube Notifier] Starting YouTube video polling engine (90s interval)...');
 
   // Initial check 5 seconds after startup
   setTimeout(() => checkAllYouTubeFeeds(client), 5000);
 
-  // Polling loop every 30 seconds
-  setInterval(() => checkAllYouTubeFeeds(client), 30000);
+  // Polling loop every 90 seconds (cuts outbound HTTP polling by 66%)
+  setInterval(() => checkAllYouTubeFeeds(client), 90000);
 }

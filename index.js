@@ -1,7 +1,7 @@
 import { attachWiretap } from './src/utils/fastWiretap.js';
 import { checkAndInstallDependencies } from './src/autoInstall.js';
 checkAndInstallDependencies();
-import { Client, GatewayIntentBits, Partials, Collection } from 'discord.js';
+import { Client, GatewayIntentBits, Partials, Collection, Options, Sweepers } from 'discord.js';
 
 import { CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction } from 'discord.js';
 
@@ -41,7 +41,7 @@ if (!token || token === 'YOUR_BOT_TOKEN_HERE') {
   process.exit(1);
 }
 
-// Construct Client with proper Privileged Intents and Partials
+// Construct Client with proper Privileged Intents and Partials + Lightweight Memory Management
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -63,7 +63,36 @@ const client = new Client({
     Partials.Message,
     Partials.Channel,
     Partials.Reaction
-  ]
+  ],
+  makeCache: Options.cacheWithLimits({
+    MessageManager: 25, // Only store 25 recent messages per channel (prevents 250k+ message heap bloat)
+    PresenceManager: 0, // Stop storing tens of thousands of idle member presences in RAM
+    ReactionManager: 0,
+    ReactionUserManager: 0,
+    StageInstanceManager: 0,
+    ThreadMemberManager: 0,
+    VoiceStateManager: 100,
+    AutoModerationRuleManager: 0,
+    GuildScheduledEventManager: 0,
+    GuildBanManager: 0,
+    GuildInviteManager: 10
+  }),
+  sweepers: {
+    ...Sweepers.filterByLifetime({
+      messages: {
+        lifetime: 1800, // Sweep messages older than 30 mins
+        sweepInterval: 300 // Sweep every 5 mins
+      },
+      threads: {
+        lifetime: 3600,
+        sweepInterval: 600
+      }
+    }),
+    users: {
+      interval: 1800,
+      filter: () => user => user.id !== client.user?.id && !client.guilds.cache.some(g => g.ownerId === user.id)
+    }
+  }
 });
 
 global.client = client; // Make client globally accessible
@@ -373,13 +402,13 @@ function isContainer(c) {
     return res;
   }
 
-function stripAccentColors(obj) {
-  if (!obj || typeof obj !== 'object') return;
+function stripAccentColors(obj, depth = 0) {
+  if (!obj || typeof obj !== 'object' || depth > 8) return;
   if ('accent_color' in obj) delete obj.accent_color;
   if (obj.data && 'accent_color' in obj.data) delete obj.data.accent_color;
   for (const key of Object.keys(obj)) {
     if (obj[key] && typeof obj[key] === 'object') {
-      stripAccentColors(obj[key]);
+      stripAccentColors(obj[key], depth + 1);
     }
   }
 }
@@ -388,11 +417,17 @@ function interceptPayload(body) {
     if (!body) return false;
     const target = body.json?.data || body.json || body.data || body;
     
+    // Fast path: avoid re-processing payload when post/patch calls request() internally
+    if (target._cv2Done) return true;
+
     if (target._skipCV2 || body._skipCV2) {
       delete target._skipCV2;
       delete body._skipCV2;
+      target._cv2Done = true;
       return false;
     }
+
+    target._cv2Done = true;
 
     // Unconditionally strip all accent borders globally
     stripAccentColors(target);
@@ -577,54 +612,7 @@ client.login(token).catch(err => {
   process.exit(1);
 });
 
-import { startYtStatsEngine } from './src/utils/ytStatsEngine.js';
-import { startGitWatcher } from './src/utils/gitWatcher.js';
-import { checkAndAutoRestore, startCloudBackupScheduler, createCloudBackup } from './src/utils/cloudSync.js';
-
-client.once('clientReady', async () => {
-  // 1. Check if fresh host boot and auto-restore database from cloud backup!
-  await checkAndAutoRestore(client);
-
-  // 2. Start automated cloud backup scheduler (every 20 minutes)
-  startCloudBackupScheduler(client, 20);
-
-  // Start background auto-deploy watcher (checks every 20s)
-  startGitWatcher(20000);
-
-  const all = db.getAllQuarantinedUsers();
-  let restored = 0;
-  for (const record of all) {
-    if (!record.expiresAt) continue; // permanent quarantine, skip
-    const remaining = record.expiresAt - Date.now();
-    if (remaining <= 0) {
-      // Already expired while bot was offline — unquarantine now
-      try {
-        const guild = client.guilds.cache.get(record.guildId);
-        if (guild) {
-          const member = await guild.members.fetch(record.userId).catch(() => null);
-          if (member) {
-            const { executeUnquarantine } = await import('./src/commands/security.js');
-            await executeUnquarantine(guild, member, guild.members.me);
-          } else {
-            db.removeQuarantine(record.guildId, record.userId);
-          }
-        }
-      } catch { /* ignore */ }
-    } else {
-      scheduleAutoUnquarantine(client, record.guildId, record.userId, remaining);
-      restored++;
-    }
-  }
-  if (restored > 0) {
-    console.log(chalk.cyan(`⏰ Restored ${restored} auto-unquarantine timer(s) from database.`));
-  }
-
-  // Restore active unended VC drag sessions from database
-  try {
-    const { restoreActiveVcDrags } = await import('./src/commands/vcdrag.js');
-    await restoreActiveVcDrags(client);
-  } catch {}
-});
+import { createCloudBackup } from './src/utils/cloudSync.js';
 
 // Graceful Shutdown to ensure DB flushes and cloud backup is taken
 async function handleShutdown(signal) {

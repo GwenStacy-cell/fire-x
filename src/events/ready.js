@@ -1,6 +1,7 @@
 import { startMorningBroadcaster } from '../utils/morningEngine.js';
 import { REST, Routes, ActivityType, EmbedBuilder } from 'discord.js';
 import chalk from 'chalk';
+import crypto from 'crypto';
 import { allCommands } from '../commands/loader.js';
 import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
@@ -18,6 +19,8 @@ import { startDailyStockBroadcaster } from '../utils/stockBroadcaster.js';
 import { buildStatusPanel } from '../commands/globalcontrols.js';
 import { formatServerStatChannelName } from '../commands/serverstats.js';
 import { initWebSub } from '../utils/websub.js';
+import { startGitWatcher } from '../utils/gitWatcher.js';
+import { restoreActiveVcDrags } from '../commands/vcdrag.js';
 
 import { startYtStatsEngine } from '../utils/ytStatsEngine.js';
 import { startYouTubeNotifier } from '../utils/youtubeNotifier.js';
@@ -244,13 +247,13 @@ export default {
     // Initial status
     updatePresence();
 
-    // Rotate Activity every 5 seconds
+    // Rotate Activity every 35 seconds (saves 85% gateway websocket traffic)
     setInterval(() => {
       statusIndex = (statusIndex + 1) % customStatuses.length;
       updatePresence();
-    }, 5000);
+    }, 35000);
 
-    // Rotate Server Nickname every 30 minutes
+    // Rotate Server Nickname every 60 minutes with staggered REST calls (prevents rate limit starvation)
     const nicknameSuffixes = [
       'Armed',
       'Dev Prince',
@@ -263,7 +266,6 @@ export default {
       nicknameIndex = (nicknameIndex + 1) % nicknameSuffixes.length;
       const currentSuffix = nicknameSuffixes[nicknameIndex];
 
-      // Use a standard for loop to avoid overwhelming the API and cache simultaneously
       for (const [guildId, guild] of client.guilds.cache) {
         try {
           const me = guild.members.me;
@@ -296,6 +298,7 @@ export default {
           // Only update if it actually changed
           if (me.nickname !== newNickname) {
             await me.setNickname(newNickname).catch(() => null);
+            await new Promise(r => setTimeout(r, 400)); // Stagger to prevent rate limit spikes
           }
         } catch (err) {
           // Ignore individual guild failures (e.g. Missing Permissions)
@@ -303,8 +306,9 @@ export default {
       }
     };
 
-    rotateNickname(); // Run instantly on boot
-    setInterval(rotateNickname, 10 * 60 * 1000); // Then every 10 minutes
+    // Stagger first run after 2 minutes instead of blocking boot
+    setTimeout(rotateNickname, 2 * 60 * 1000);
+    setInterval(rotateNickname, 60 * 60 * 1000); // Then every 60 minutes
 
 
 
@@ -494,21 +498,16 @@ export default {
       }
     }, 3 * 60 * 1000);
 
-    // Start WebSub Push Notification Server
-    // Continuous Latency History Sampler
-    client.pingHistory = client.pingHistory || [];
-    setInterval(() => {
-      const p = Math.round(client.ws.ping);
-      if (p > 0) {
-        client.pingHistory.push(p);
-        if (client.pingHistory.length > 20) client.pingHistory.shift();
-      }
-    }, 15000);
-
     initWebSub(client);
     startYouTubeNotifier(client);
     startYtStatsEngine(client);
     startMorningBroadcaster(client);
+
+    // Background auto-deploy watcher (checks every 60s)
+    startGitWatcher(60000);
+
+    // Restore active unended VC drag sessions from database
+    restoreActiveVcDrags(client).catch(() => {});
 
     // Automated Social Wiretap Broadcaster (every 4 minutes)
     import('../utils/wiretapEngine.js').then(({ pollWiretaps }) => {
@@ -570,14 +569,23 @@ export default {
           };
         }).slice(0, 100);
 
-      const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN || client.token);
+      // ⚡ Zero-Latency Hash Matching: Avoid redundant global REST registration if commands haven't changed!
+      const currentSlashHash = crypto.createHash('sha256').update(JSON.stringify(slashData)).digest('hex');
+      if (db.cache.lastSlashHash === currentSlashHash) {
+        console.log(chalk.green(` All ${slashData.length} Slash Commands are already synchronized (0ms hash match).`));
+      } else {
+        const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN || client.token);
 
-      await rest.put(
-        Routes.applicationCommands(client.user.id),
-        { body: slashData }
-      );
+        await rest.put(
+          Routes.applicationCommands(client.user.id),
+          { body: slashData }
+        );
 
-      console.log(chalk.hex('#FFD700').bold(` Successfully synced all ${slashData.length} Slash Commands with Discord Gateway.`));
+        db.cache.lastSlashHash = currentSlashHash;
+        db.save();
+        console.log(chalk.hex('#FFD700').bold(` Successfully synced all ${slashData.length} Slash Commands with Discord Gateway.`));
+      }
+
       console.log(chalk.hex('#FFD700').bold('\n============================================='));
       console.log(chalk.hex('#FFD700').bold('️  Athena Bulletproof Security System · V1.0.0  ️'));
       console.log(chalk.hex('#FFD700').bold('=============================================\n'));

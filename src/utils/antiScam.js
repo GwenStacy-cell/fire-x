@@ -1,5 +1,4 @@
 import fetch from 'node-fetch';
-import { createWorker } from 'tesseract.js';
 let canvasMod = null;
 let canvasFailed = false;
 async function getCanvas() {
@@ -15,18 +14,28 @@ async function getCanvas() {
   }
 }
 
-// Initialize a persistent worker to make OCR scanning as fast as possible
-let workerPromise = null;
+// On-demand lazy worker to eliminate startup memory overhead (~150MB saved)
+let workerInstance = null;
+let isInitializingWorker = false;
 
-async function initWorker() {
-  try {
-    return await createWorker('eng');
-  } catch (error) {
-    console.error('Failed to initialize Tesseract worker:', error);
-    return null;
+async function getWorker() {
+  if (workerInstance) return workerInstance;
+  if (isInitializingWorker) {
+    while (isInitializingWorker) await new Promise(r => setTimeout(r, 50));
+    return workerInstance;
   }
+  isInitializingWorker = true;
+  try {
+    const { createWorker } = await import('tesseract.js');
+    workerInstance = await createWorker('eng');
+  } catch (error) {
+    console.error('Failed to initialize Tesseract worker on demand:', error);
+    workerInstance = null;
+  } finally {
+    isInitializingWorker = false;
+  }
+  return workerInstance;
 }
-workerPromise = initWorker();
 
 export const flaggedMessages = new Set();
 
@@ -60,7 +69,7 @@ export function scanTextForScam(text) {
  * @returns {Promise<boolean>} - Returns true if scam text is detected.
  */
 export async function scanImageForScam(url) {
-  const worker = await workerPromise;
+  const worker = await getWorker();
   if (!worker) return false;
   
   try {
