@@ -16,6 +16,11 @@ export function scanForPhishing(content) {
     return { isPhishing: false };
   }
 
+  // Fast pre-flight check: Phishing domains and fake nitro URLs always contain a period or http
+  if (!content.includes('.') && !content.includes('http')) {
+    return { isPhishing: false };
+  }
+
   // 1. Direct regex match against domain spoofs
   if (PHISHING_DOMAINS_REGEX.test(content)) {
     const match = content.match(PHISHING_DOMAINS_REGEX);

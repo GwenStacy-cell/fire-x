@@ -24,14 +24,25 @@ import { scanForPhishing } from '../utils/phishingShield.js';
 import { scanToxicityAndSentiment } from '../utils/ai.js';
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 
+const triggerRegexCache = new Map();
+function getTriggerRegex(keyword) {
+  let cached = triggerRegexCache.get(keyword);
+  if (!cached) {
+    if (triggerRegexCache.size > 2000) triggerRegexCache.clear();
+    const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    cached = new RegExp('(^|\\s|[^a-zA-Z0-9_])' + escaped + '($|\\s|[^a-zA-Z0-9_])', 'i');
+    triggerRegexCache.set(keyword, cached);
+  }
+  return cached;
+}
+
 function matchesTrigger(messageContent, triggerKeyword) {
   if (!messageContent || !triggerKeyword) return false;
   const content = messageContent.trim().toLowerCase();
   const keyword = triggerKeyword.trim().toLowerCase();
   if (content === keyword) return true;
-  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp('(^|\\s|[^a-zA-Z0-9_])' + escaped + '($|\\s|[^a-zA-Z0-9_])', 'i');
-  return regex.test(content);
+  if (!content.includes(keyword)) return false; // Microsecond pre-flight
+  return getTriggerRegex(keyword).test(content);
 }
 
 export { getCachedGif } from '../utils/roleplayEngine.js';

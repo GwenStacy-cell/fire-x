@@ -83,6 +83,17 @@ export const PUBLIC_COMMANDS = new Set([
   'minigames', 'blackjack', 'roulette', 'trivia', 'gamestats', 
   'balance', 'daily', 'pay', 'coinflip', 'suggest',
   
+  // Animated GIF Search & Klipy Expression Engine
+  'gif', 'findgif', 'searchgif', 'tenor', 'klipy',
+
+  // Roleplay Engine & Social Affinities
+  'rp', 'roleplay', 'marry', 'divorce', 'family', 'adopt', 'disown',
+  'hug', 'kiss', 'pat', 'cuddle', 'slap', 'poke', 'bite', 'bonk', 'tickle',
+
+  // Meme Lab, CV2 Arcade & Soundboard Suite
+  'meme', 'memegen', 'caption', 'arcade', 'c4', 'connect4', 'ttt', 'tictactoe', 'minesweeper',
+  'soundboard', 'sfx', 'radio', 'sounds', 'cinema', 'theater', 'persona', 'personas', 'wiretap',
+  
   // Public Stock Telemetry (Reading market quotes & indices)
   'stock', 'stockai', 'movers', 'crypto', 'stocknews', 'symbols', 
   'nifty', 'banknifty', 'sensex', 'niftyit', 'indiavix',

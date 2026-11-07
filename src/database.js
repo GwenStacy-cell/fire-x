@@ -225,9 +225,26 @@ class Database {
       } else {
         this.save();
       }
+
+      // Initialize microsecond Set lookups for high-velocity hot paths
+      this._botBlacklistSet = new Set(this.cache.botBlacklist || []);
+      this._spamPermittedSet = new Set(this.cache.spamPermitted || []);
+      this._bannedServersSet = new Set(this.cache.bannedServers || []);
+      this._extraOwnersSets = new Map();
+      if (this.cache.extraOwners) {
+        for (const [gid, arr] of Object.entries(this.cache.extraOwners)) {
+          if (Array.isArray(arr) && arr.length > 0) {
+            this._extraOwnersSets.set(gid, new Set(arr));
+          }
+        }
+      }
     } catch (error) {
       console.error('Error loading database:', error);
       this.cache = DEFAULT_SCHEMA;
+      this._botBlacklistSet = new Set();
+      this._spamPermittedSet = new Set();
+      this._bannedServersSet = new Set();
+      this._extraOwnersSets = new Map();
     }
   }
 
@@ -869,8 +886,16 @@ class Database {
   }
 
   isExtraOwner(guildId, userId) {
-    if (!this.cache.extraOwners[guildId]) return false;
-    return this.cache.extraOwners[guildId].includes(userId);
+    if (!guildId || !userId) return false;
+    if (!this._extraOwnersSets) this._extraOwnersSets = new Map();
+    let set = this._extraOwnersSets.get(guildId);
+    if (!set) {
+      const arr = this.cache.extraOwners?.[guildId];
+      if (!arr || arr.length === 0) return false;
+      set = new Set(arr);
+      this._extraOwnersSets.set(guildId, set);
+    }
+    return set.has(userId);
   }
 
   addExtraOwner(guildId, userId) {
@@ -879,6 +904,14 @@ class Database {
     }
     if (!this.cache.extraOwners[guildId].includes(userId)) {
       this.cache.extraOwners[guildId].push(userId);
+      if (!this._extraOwnersSets) this._extraOwnersSets = new Map();
+      let set = this._extraOwnersSets.get(guildId);
+      if (!set) {
+        set = new Set(this.cache.extraOwners[guildId]);
+        this._extraOwnersSets.set(guildId, set);
+      } else {
+        set.add(userId);
+      }
       this.save();
       return true;
     }
@@ -890,6 +923,10 @@ class Database {
     const index = this.cache.extraOwners[guildId].indexOf(userId);
     if (index !== -1) {
       this.cache.extraOwners[guildId].splice(index, 1);
+      if (this._extraOwnersSets) {
+        const set = this._extraOwnersSets.get(guildId);
+        if (set) set.delete(userId);
+      }
       this.save();
       return true;
     }
@@ -1211,6 +1248,8 @@ class Database {
     this.cache.spamPermitted = this.cache.spamPermitted || [];
     if (!this.cache.spamPermitted.includes(userId)) {
       this.cache.spamPermitted.push(userId);
+      if (!this._spamPermittedSet) this._spamPermittedSet = new Set(this.cache.spamPermitted);
+      this._spamPermittedSet.add(userId);
       this.save();
       return true;
     }
@@ -1222,6 +1261,7 @@ class Database {
     const idx = this.cache.spamPermitted.indexOf(userId);
     if (idx !== -1) {
       this.cache.spamPermitted.splice(idx, 1);
+      if (this._spamPermittedSet) this._spamPermittedSet.delete(userId);
       this.save();
       return true;
     }
@@ -1229,8 +1269,8 @@ class Database {
   }
 
   isSpamPermitted(userId) {
-    this.cache.spamPermitted = this.cache.spamPermitted || [];
-    return this.cache.spamPermitted.includes(userId);
+    if (!this._spamPermittedSet) this._spamPermittedSet = new Set(this.cache.spamPermitted || []);
+    return this._spamPermittedSet.has(userId);
   }
 
   getSpamPermitted() {
@@ -2106,8 +2146,8 @@ class Database {
   }
 
   isUserBotBlacklisted(userId) {
-    if (!this.cache.botBlacklist) this.cache.botBlacklist = [];
-    return this.cache.botBlacklist.includes(userId);
+    if (!this._botBlacklistSet) this._botBlacklistSet = new Set(this.cache.botBlacklist || []);
+    return this._botBlacklistSet.has(userId);
   }
 
   addUserToBotBlacklist(userId, reason = null) {
@@ -2116,6 +2156,8 @@ class Database {
     if (!this.cache.botBlacklist.includes(userId)) {
       this.cache.botBlacklist.push(userId);
     }
+    if (!this._botBlacklistSet) this._botBlacklistSet = new Set(this.cache.botBlacklist);
+    this._botBlacklistSet.add(userId);
     this.cache.botBlacklistData[userId] = {
       userId,
       reason: reason || 'Violation of Athena Bot Rules & Security Protocols',
@@ -2129,6 +2171,7 @@ class Database {
     if (!this.cache.botBlacklist) this.cache.botBlacklist = [];
     const initialLen = this.cache.botBlacklist.length;
     this.cache.botBlacklist = this.cache.botBlacklist.filter(id => id !== userId);
+    if (this._botBlacklistSet) this._botBlacklistSet.delete(userId);
     if (this.cache.botBlacklistData && this.cache.botBlacklistData[userId]) {
       delete this.cache.botBlacklistData[userId];
     }
@@ -2277,6 +2320,8 @@ class Database {
     if (!this.cache.bannedServers) this.cache.bannedServers = [];
     if (!this.cache.bannedServers.includes(guildId)) {
       this.cache.bannedServers.push(guildId);
+      if (!this._bannedServersSet) this._bannedServersSet = new Set(this.cache.bannedServers);
+      this._bannedServersSet.add(guildId);
       this.save();
       return true;
     }
@@ -2288,6 +2333,7 @@ class Database {
     const idx = this.cache.bannedServers.indexOf(guildId);
     if (idx > -1) {
       this.cache.bannedServers.splice(idx, 1);
+      if (this._bannedServersSet) this._bannedServersSet.delete(guildId);
       this.save();
       return true;
     }
@@ -2295,8 +2341,8 @@ class Database {
   }
 
   isServerBanned(guildId) {
-    if (!this.cache.bannedServers) return false;
-    return this.cache.bannedServers.includes(guildId);
+    if (!this._bannedServersSet) this._bannedServersSet = new Set(this.cache.bannedServers || []);
+    return this._bannedServersSet.has(guildId);
   }
 
   // --- STICKY MESSAGES ---

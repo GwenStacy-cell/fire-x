@@ -20,6 +20,29 @@ let _getInviter = null;
 let _logLeave = null;
 let _syncInvites = null;
 
+// Pre-compiled prepared transactions for sub-microsecond zero-allocation activity logging
+let _logMessageTx = null;
+let _logVoiceTx = null;
+
+// Pre-compiled query statements
+let _getUserStatsStmt = null;
+let _getServerRanksMsgStmt = null;
+let _getServerRanksVcStmt = null;
+let _getUserCheckStmt = null;
+let _getTopMsgChannelsStmt = null;
+let _getTopVcChannelsStmt = null;
+let _getChartDataStmt = null;
+let _getServerOverviewStatsStmt = null;
+let _getTopMsgMemberStmt = null;
+let _getTopVcMemberStmt = null;
+let _getTopMsgChannelStmt = null;
+let _getTopVcChannelStmt = null;
+let _getOverviewChartRowsStmt = null;
+let _getTopMembersStmt = null;
+let _getTopVoiceMembersStmt = null;
+let _getTopInvitesStmt = null;
+let _getUserInvitesStmt = null;
+
 function initDatabase() {
   if (db && db.open) {
     try { db.close(); } catch {}
@@ -27,6 +50,9 @@ function initDatabase() {
 
   db = new Database(path.join(DB_DIR, 'stats.db'));
   db.pragma('journal_mode = WAL');
+  db.pragma('synchronous = NORMAL');
+  db.pragma('temp_store = MEMORY');
+  db.pragma('cache_size = -8000'); // 8MB memory cache
 
   // Initialize tables
   db.exec(`
@@ -126,6 +152,166 @@ function initDatabase() {
     ON CONFLICT(guild_id, user_id)
     DO UPDATE SET regular = MAX(regular, excluded.regular);
   `);
+
+  // Pre-compile transactions once on load
+  _logMessageTx = db.transaction((guildId, userId, channelId) => {
+    _logMessageUser.run(guildId, userId);
+    _logMessageChannel.run(guildId, userId, channelId);
+  });
+
+  _logVoiceTx = db.transaction((guildId, userId, channelId, seconds) => {
+    _logVoiceUser.run(guildId, userId, seconds, seconds);
+    _logVoiceChannel.run(guildId, userId, channelId, seconds, seconds);
+  });
+
+  // Pre-compile frequently accessed query statements
+  _getUserStatsStmt = db.prepare(`
+    SELECT 
+      SUM(CASE WHEN date = date('now') THEN messages ELSE 0 END) as d1_msg,
+      SUM(CASE WHEN date = date('now') THEN voice_seconds ELSE 0 END) as d1_vc,
+      SUM(CASE WHEN date >= date('now', '-6 days') THEN messages ELSE 0 END) as d7_msg,
+      SUM(CASE WHEN date >= date('now', '-6 days') THEN voice_seconds ELSE 0 END) as d7_vc,
+      SUM(CASE WHEN date >= date('now', '-13 days') THEN messages ELSE 0 END) as d14_msg,
+      SUM(CASE WHEN date >= date('now', '-13 days') THEN voice_seconds ELSE 0 END) as d14_vc,
+      SUM(messages) as d30_msg,
+      SUM(voice_seconds) as d30_vc
+    FROM user_activity
+    WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')
+  `);
+
+  _getServerRanksMsgStmt = db.prepare(`
+    SELECT count(*) as rank FROM (
+      SELECT user_id, SUM(messages) as total FROM user_activity
+      WHERE guild_id = ? AND date >= date('now', '-29 days')
+      GROUP BY user_id
+      HAVING total > (
+        SELECT SUM(messages) FROM user_activity 
+        WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')
+      )
+    )
+  `);
+
+  _getServerRanksVcStmt = db.prepare(`
+    SELECT count(*) as rank FROM (
+      SELECT user_id, SUM(voice_seconds) as total FROM user_activity
+      WHERE guild_id = ? AND date >= date('now', '-29 days')
+      GROUP BY user_id
+      HAVING total > (
+        SELECT SUM(voice_seconds) FROM user_activity 
+        WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')
+      )
+    )
+  `);
+
+  _getUserCheckStmt = db.prepare(`
+    SELECT SUM(messages) as m, SUM(voice_seconds) as v 
+    FROM user_activity 
+    WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')
+  `);
+
+  _getTopMsgChannelsStmt = db.prepare(`
+    SELECT channel_id, SUM(messages) as total FROM channel_activity
+    WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days') AND messages > 0
+    GROUP BY channel_id
+    ORDER BY total DESC
+    LIMIT 3
+  `);
+
+  _getTopVcChannelsStmt = db.prepare(`
+    SELECT channel_id, SUM(voice_seconds) as total FROM channel_activity
+    WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days') AND voice_seconds > 0
+    GROUP BY channel_id
+    ORDER BY total DESC
+    LIMIT 3
+  `);
+
+  _getChartDataStmt = db.prepare(`
+    SELECT date, messages, voice_seconds 
+    FROM user_activity 
+    WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')
+    ORDER BY date ASC
+  `);
+
+  _getServerOverviewStatsStmt = db.prepare(`
+    SELECT 
+      SUM(CASE WHEN date = date('now') THEN messages ELSE 0 END) as d1_msg,
+      SUM(CASE WHEN date = date('now') THEN voice_seconds ELSE 0 END) as d1_vc,
+      COUNT(DISTINCT CASE WHEN date = date('now') AND (messages > 0 OR voice_seconds > 0) THEN user_id ELSE NULL END) as d1_contributors,
+
+      SUM(CASE WHEN date >= date('now', '-6 days') THEN messages ELSE 0 END) as d7_msg,
+      SUM(CASE WHEN date >= date('now', '-6 days') THEN voice_seconds ELSE 0 END) as d7_vc,
+      COUNT(DISTINCT CASE WHEN date >= date('now', '-6 days') AND (messages > 0 OR voice_seconds > 0) THEN user_id ELSE NULL END) as d7_contributors,
+
+      SUM(CASE WHEN date >= date('now', '-13 days') THEN messages ELSE 0 END) as d14_msg,
+      SUM(CASE WHEN date >= date('now', '-13 days') THEN voice_seconds ELSE 0 END) as d14_vc,
+      COUNT(DISTINCT CASE WHEN date >= date('now', '-13 days') AND (messages > 0 OR voice_seconds > 0) THEN user_id ELSE NULL END) as d14_contributors
+    FROM user_activity
+    WHERE guild_id = ? AND date >= date('now', '-13 days')
+  `);
+
+  _getTopMsgMemberStmt = db.prepare(`
+    SELECT user_id, SUM(messages) as total FROM user_activity
+    WHERE guild_id = ? AND date >= date('now', '-13 days') AND messages > 0
+    GROUP BY user_id ORDER BY total DESC LIMIT 1
+  `);
+
+  _getTopVcMemberStmt = db.prepare(`
+    SELECT user_id, SUM(voice_seconds) as total FROM user_activity
+    WHERE guild_id = ? AND date >= date('now', '-13 days') AND voice_seconds > 0
+    GROUP BY user_id ORDER BY total DESC LIMIT 1
+  `);
+
+  _getTopMsgChannelStmt = db.prepare(`
+    SELECT channel_id, SUM(messages) as total FROM channel_activity
+    WHERE guild_id = ? AND date >= date('now', '-13 days') AND messages > 0
+    GROUP BY channel_id ORDER BY total DESC LIMIT 1
+  `);
+
+  _getTopVcChannelStmt = db.prepare(`
+    SELECT channel_id, SUM(voice_seconds) as total FROM channel_activity
+    WHERE guild_id = ? AND date >= date('now', '-13 days') AND voice_seconds > 0
+    GROUP BY channel_id ORDER BY total DESC LIMIT 1
+  `);
+
+  _getOverviewChartRowsStmt = db.prepare(`
+    SELECT date, SUM(messages) as messages, SUM(voice_seconds) as voice_seconds
+    FROM user_activity
+    WHERE guild_id = ? AND date >= date('now', '-13 days')
+    GROUP BY date
+    ORDER BY date ASC
+  `);
+
+  _getTopMembersStmt = db.prepare(`
+    SELECT user_id, SUM(messages) as total
+    FROM user_activity
+    WHERE guild_id = ? AND date >= date('now', '-13 days') AND messages > 0
+    GROUP BY user_id
+    ORDER BY total DESC
+    LIMIT ?
+  `);
+
+  _getTopVoiceMembersStmt = db.prepare(`
+    SELECT user_id, SUM(voice_seconds) as total
+    FROM user_activity
+    WHERE guild_id = ? AND date >= date('now', '-13 days') AND voice_seconds > 0
+    GROUP BY user_id
+    ORDER BY total DESC
+    LIMIT ?
+  `);
+
+  _getTopInvitesStmt = db.prepare(`
+    SELECT user_id, regular, leaves, fake, (regular - leaves - fake) as net
+    FROM user_invites
+    WHERE guild_id = ? AND (regular - leaves - fake) > 0
+    ORDER BY net DESC
+    LIMIT ?
+  `);
+
+  _getUserInvitesStmt = db.prepare(`
+    SELECT regular, leaves, fake, (regular - leaves - fake) as net
+    FROM user_invites
+    WHERE guild_id = ? AND user_id = ?
+  `);
 }
 
 // Initialize on load
@@ -158,11 +344,9 @@ export function reopen() {
 
 export function logMessage(guildId, userId, channelId) {
   try {
-    const transaction = db.transaction(() => {
-      _logMessageUser.run(guildId, userId);
-      _logMessageChannel.run(guildId, userId, channelId);
-    });
-    transaction();
+    if (_logMessageTx) {
+      _logMessageTx(guildId, userId, channelId);
+    }
   } catch (e) {
     console.error('Error logging message stat:', e);
   }
@@ -171,11 +355,9 @@ export function logMessage(guildId, userId, channelId) {
 export function logVoice(guildId, userId, channelId, seconds) {
   if (seconds <= 0) return;
   try {
-    const transaction = db.transaction(() => {
-      _logVoiceUser.run(guildId, userId, seconds, seconds);
-      _logVoiceChannel.run(guildId, userId, channelId, seconds, seconds);
-    });
-    transaction();
+    if (_logVoiceTx) {
+      _logVoiceTx(guildId, userId, channelId, seconds);
+    }
   } catch (e) {
     console.error('Error logging voice stat:', e);
   }
@@ -191,65 +373,24 @@ export function pruneOldStats() {
 }
 
 export function getUserStats(guildId, userId) {
-  // 1d = today, 7d = last 7 days, 14d = last 14 days, 30d = last 30 days
-  const stmt = db.prepare(`
-    SELECT 
-      SUM(CASE WHEN date = date('now') THEN messages ELSE 0 END) as d1_msg,
-      SUM(CASE WHEN date = date('now') THEN voice_seconds ELSE 0 END) as d1_vc,
-      SUM(CASE WHEN date >= date('now', '-6 days') THEN messages ELSE 0 END) as d7_msg,
-      SUM(CASE WHEN date >= date('now', '-6 days') THEN voice_seconds ELSE 0 END) as d7_vc,
-      SUM(CASE WHEN date >= date('now', '-13 days') THEN messages ELSE 0 END) as d14_msg,
-      SUM(CASE WHEN date >= date('now', '-13 days') THEN voice_seconds ELSE 0 END) as d14_vc,
-      SUM(messages) as d30_msg,
-      SUM(voice_seconds) as d30_vc
-    FROM user_activity
-    WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')
-  `);
-  
-  const row = stmt.get(guildId, userId) || {};
+  const row = _getUserStatsStmt ? _getUserStatsStmt.get(guildId, userId) : {};
+  const data = row || {};
   return {
-    msg_1d:  row.d1_msg  || 0,
-    msg_7d:  row.d7_msg  || 0,
-    msg_14d: row.d14_msg || 0,
-    msg_30d: row.d30_msg || 0,
-    vc_1d:   row.d1_vc   || 0,
-    vc_7d:   row.d7_vc   || 0,
-    vc_14d:  row.d14_vc  || 0,
-    vc_30d:  row.d30_vc  || 0
+    msg_1d:  data.d1_msg  || 0,
+    msg_7d:  data.d7_msg  || 0,
+    msg_14d: data.d14_msg || 0,
+    msg_30d: data.d30_msg || 0,
+    vc_1d:   data.d1_vc   || 0,
+    vc_7d:   data.d7_vc   || 0,
+    vc_14d:  data.d14_vc  || 0,
+    vc_30d:  data.d30_vc  || 0
   };
 }
 
 export function getServerRanks(guildId, userId) {
-  // Rank for messages (30d)
-  const msgRankStmt = db.prepare(`
-    SELECT count(*) as rank FROM (
-      SELECT user_id, SUM(messages) as total FROM user_activity
-      WHERE guild_id = ? AND date >= date('now', '-29 days')
-      GROUP BY user_id
-      HAVING total > (
-        SELECT SUM(messages) FROM user_activity 
-        WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')
-      )
-    )
-  `);
-  
-  // Rank for voice (30d)
-  const vcRankStmt = db.prepare(`
-    SELECT count(*) as rank FROM (
-      SELECT user_id, SUM(voice_seconds) as total FROM user_activity
-      WHERE guild_id = ? AND date >= date('now', '-29 days')
-      GROUP BY user_id
-      HAVING total > (
-        SELECT SUM(voice_seconds) FROM user_activity 
-        WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')
-      )
-    )
-  `);
-
-  const msgRankRow = msgRankStmt.get(guildId, guildId, userId);
-  const vcRankRow = vcRankStmt.get(guildId, guildId, userId);
-
-  const userCheck = db.prepare(`SELECT SUM(messages) as m, SUM(voice_seconds) as v FROM user_activity WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')`).get(guildId, userId);
+  const msgRankRow = _getServerRanksMsgStmt ? _getServerRanksMsgStmt.get(guildId, guildId, userId) : { rank: 0 };
+  const vcRankRow = _getServerRanksVcStmt ? _getServerRanksVcStmt.get(guildId, guildId, userId) : { rank: 0 };
+  const userCheck = _getUserCheckStmt ? _getUserCheckStmt.get(guildId, userId) : null;
 
   return {
     msg_rank: (userCheck && userCheck.m > 0) ? (msgRankRow.rank + 1) : null,
@@ -258,21 +399,8 @@ export function getServerRanks(guildId, userId) {
 }
 
 export function getTopChannels(guildId, userId) {
-  const msgChannels = db.prepare(`
-    SELECT channel_id, SUM(messages) as total FROM channel_activity
-    WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days') AND messages > 0
-    GROUP BY channel_id
-    ORDER BY total DESC
-    LIMIT 3
-  `).all(guildId, userId);
-
-  const vcChannels = db.prepare(`
-    SELECT channel_id, SUM(voice_seconds) as total FROM channel_activity
-    WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days') AND voice_seconds > 0
-    GROUP BY channel_id
-    ORDER BY total DESC
-    LIMIT 3
-  `).all(guildId, userId);
+  const msgChannels = _getTopMsgChannelsStmt ? _getTopMsgChannelsStmt.all(guildId, userId) : [];
+  const vcChannels = _getTopVcChannelsStmt ? _getTopVcChannelsStmt.all(guildId, userId) : [];
 
   return {
     messages: msgChannels,
@@ -281,12 +409,7 @@ export function getTopChannels(guildId, userId) {
 }
 
 export function getChartData(guildId, userId) {
-  const rows = db.prepare(`
-    SELECT date, messages, voice_seconds 
-    FROM user_activity 
-    WHERE guild_id = ? AND user_id = ? AND date >= date('now', '-29 days')
-    ORDER BY date ASC
-  `).all(guildId, userId);
+  const rows = _getChartDataStmt ? _getChartDataStmt.all(guildId, userId) : [];
 
   const dataMap = {};
   for (const row of rows) {
@@ -319,60 +442,18 @@ export function getChartData(guildId, userId) {
 }
 
 export function getServerOverviewStats(guildId) {
-  // 1d, 7d, 14d stats
-  const statsStmt = db.prepare(`
-    SELECT 
-      SUM(CASE WHEN date = date('now') THEN messages ELSE 0 END) as d1_msg,
-      SUM(CASE WHEN date = date('now') THEN voice_seconds ELSE 0 END) as d1_vc,
-      COUNT(DISTINCT CASE WHEN date = date('now') AND (messages > 0 OR voice_seconds > 0) THEN user_id ELSE NULL END) as d1_contributors,
-
-      SUM(CASE WHEN date >= date('now', '-6 days') THEN messages ELSE 0 END) as d7_msg,
-      SUM(CASE WHEN date >= date('now', '-6 days') THEN voice_seconds ELSE 0 END) as d7_vc,
-      COUNT(DISTINCT CASE WHEN date >= date('now', '-6 days') AND (messages > 0 OR voice_seconds > 0) THEN user_id ELSE NULL END) as d7_contributors,
-
-      SUM(CASE WHEN date >= date('now', '-13 days') THEN messages ELSE 0 END) as d14_msg,
-      SUM(CASE WHEN date >= date('now', '-13 days') THEN voice_seconds ELSE 0 END) as d14_vc,
-      COUNT(DISTINCT CASE WHEN date >= date('now', '-13 days') AND (messages > 0 OR voice_seconds > 0) THEN user_id ELSE NULL END) as d14_contributors
-    FROM user_activity
-    WHERE guild_id = ? AND date >= date('now', '-13 days')
-  `);
-  
-  const statsRow = statsStmt.get(guildId) || {};
+  const statsRow = _getServerOverviewStatsStmt ? (_getServerOverviewStatsStmt.get(guildId) || {}) : {};
 
   // Top Members
-  const topMsgMember = db.prepare(`
-    SELECT user_id, SUM(messages) as total FROM user_activity
-    WHERE guild_id = ? AND date >= date('now', '-13 days') AND messages > 0
-    GROUP BY user_id ORDER BY total DESC LIMIT 1
-  `).get(guildId) || null;
-
-  const topVcMember = db.prepare(`
-    SELECT user_id, SUM(voice_seconds) as total FROM user_activity
-    WHERE guild_id = ? AND date >= date('now', '-13 days') AND voice_seconds > 0
-    GROUP BY user_id ORDER BY total DESC LIMIT 1
-  `).get(guildId) || null;
+  const topMsgMember = _getTopMsgMemberStmt ? (_getTopMsgMemberStmt.get(guildId) || null) : null;
+  const topVcMember = _getTopVcMemberStmt ? (_getTopVcMemberStmt.get(guildId) || null) : null;
 
   // Top Channels
-  const topMsgChannel = db.prepare(`
-    SELECT channel_id, SUM(messages) as total FROM channel_activity
-    WHERE guild_id = ? AND date >= date('now', '-13 days') AND messages > 0
-    GROUP BY channel_id ORDER BY total DESC LIMIT 1
-  `).get(guildId) || null;
-
-  const topVcChannel = db.prepare(`
-    SELECT channel_id, SUM(voice_seconds) as total FROM channel_activity
-    WHERE guild_id = ? AND date >= date('now', '-13 days') AND voice_seconds > 0
-    GROUP BY channel_id ORDER BY total DESC LIMIT 1
-  `).get(guildId) || null;
+  const topMsgChannel = _getTopMsgChannelStmt ? (_getTopMsgChannelStmt.get(guildId) || null) : null;
+  const topVcChannel = _getTopVcChannelStmt ? (_getTopVcChannelStmt.get(guildId) || null) : null;
 
   // Chart Data
-  const chartRows = db.prepare(`
-    SELECT date, SUM(messages) as messages, SUM(voice_seconds) as voice_seconds
-    FROM user_activity
-    WHERE guild_id = ? AND date >= date('now', '-13 days')
-    GROUP BY date
-    ORDER BY date ASC
-  `).all(guildId);
+  const chartRows = _getOverviewChartRowsStmt ? _getOverviewChartRowsStmt.all(guildId) : [];
 
   const dataMap = {};
   for (const row of chartRows) {
@@ -426,27 +507,12 @@ export function getServerOverviewStats(guildId) {
 }
 
 export function getTopMembers(guildId, limit = 10) {
-  return db.prepare(`
-    SELECT user_id, SUM(messages) as total
-    FROM user_activity
-    WHERE guild_id = ? AND date >= date('now', '-13 days') AND messages > 0
-    GROUP BY user_id
-    ORDER BY total DESC
-    LIMIT ?
-  `).all(guildId, limit);
+  return _getTopMembersStmt ? _getTopMembersStmt.all(guildId, limit) : [];
 }
 
 export function getTopVoiceMembers(guildId, limit = 10) {
-  return db.prepare(`
-    SELECT user_id, SUM(voice_seconds) as total
-    FROM user_activity
-    WHERE guild_id = ? AND date >= date('now', '-13 days') AND voice_seconds > 0
-    GROUP BY user_id
-    ORDER BY total DESC
-    LIMIT ?
-  `).all(guildId, limit);
+  return _getTopVoiceMembersStmt ? _getTopVoiceMembersStmt.all(guildId, limit) : [];
 }
-
 
 // ============================================================
 // INVITE TRACKING
@@ -479,21 +545,11 @@ export function logLeave(guildId, leavingUserId) {
 }
 
 export function getTopInvites(guildId, limit = 10) {
-  return db.prepare(`
-    SELECT user_id, regular, leaves, fake, (regular - leaves - fake) as net
-    FROM user_invites
-    WHERE guild_id = ? AND (regular - leaves - fake) > 0
-    ORDER BY net DESC
-    LIMIT ?
-  `).all(guildId, limit);
+  return _getTopInvitesStmt ? _getTopInvitesStmt.all(guildId, limit) : [];
 }
 
 export function getUserInvites(guildId, userId) {
-  return db.prepare(`
-    SELECT regular, leaves, fake, (regular - leaves - fake) as net
-    FROM user_invites
-    WHERE guild_id = ? AND user_id = ?
-  `).get(guildId, userId) || { regular: 0, leaves: 0, fake: 0, net: 0 };
+  return _getUserInvitesStmt ? (_getUserInvitesStmt.get(guildId, userId) || { regular: 0, leaves: 0, fake: 0, net: 0 }) : { regular: 0, leaves: 0, fake: 0, net: 0 };
 }
 
 
