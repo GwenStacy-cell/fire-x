@@ -288,7 +288,10 @@ export const commands = [
                 ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
                 ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
                 ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
-                ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess')
+                ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
+                ((cmdName === 'rp' || cmdName === 'roleplay' || cmdName === 'affinity' || cmdName === 'actions' || cmdName === 'duo') && m.id === 'roleplay') ||
+                ((cmdName === 'arcade' || cmdName === 'casino' || cmdName === 'tictactoe' || cmdName === 'ttt' || cmdName === 'arcadestats') && m.id === 'arcade') ||
+                ((cmdName === 'soundboard' || cmdName === 'sfx' || cmdName === 'radio' || cmdName === 'lofi' || cmdName === 'sounds') && m.id === 'soundboard')
               );
               if (matchingModule) {
                 const container = buildHelpContainer(message.client, message.guild.id, matchingModule.id);
@@ -388,6 +391,22 @@ export const commands = [
                   usageText = `${prefix}morning [panel|enable|disable|channel|auto|ping|test|add|list] / ${prefix}goodmorning / /morning [subcommand]`;
               } else if (targetCmd.name === "dm" || targetCmd.name === "dms") {
                   usageText = `${prefix}dm [on|off|status] / ${prefix}dms / /dm [action]`;
+              } else if (targetCmd.name === "roleplay" || targetCmd.name === "rp" || targetCmd.name === "affinity") {
+                  usageText = `${prefix}rp [action|profile|duo|bio|marry|divorce|top|actions|routes] / ${prefix}roleplay / ${prefix}affinity <@user>`;
+              } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
+                  usageText = `${prefix}gif <need> / ${prefix}findgif / ${prefix}searchgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / /gif [query]`;
+              } else if (targetCmd.name === "meme" || targetCmd.name === "memegen" || targetCmd.name === "caption" || targetCmd.name === "filter") {
+                  usageText = `${prefix}meme <template> [top text] | [bottom text] / ${prefix}caption <text> / ${prefix}filter <name>`;
+              } else if (targetCmd.name === "arcade" || targetCmd.name === "tictactoe" || targetCmd.name === "ttt" || targetCmd.name === "arcadestats") {
+                  usageText = `${prefix}tictactoe @user / ${prefix}ttt @user / ${prefix}blackjack [bet] / ${prefix}trivia [category] / ${prefix}arcadestats [@user]`;
+              } else if (targetCmd.name === "family" || targetCmd.name === "tree" || targetCmd.name === "marry" || targetCmd.name === "adopt" || targetCmd.name === "disown" || targetCmd.name === "divorce") {
+                  usageText = `${prefix}family [@user] / ${prefix}tree / ${prefix}marry @user [ring] / ${prefix}divorce / ${prefix}adopt @user / ${prefix}disown @user`;
+              } else if (targetCmd.name === "soundboard" || targetCmd.name === "sfx" || targetCmd.name === "radio" || targetCmd.name === "uploadsound" || targetCmd.name === "stopsound") {
+                  usageText = `${prefix}soundboard / ${prefix}sounds / ${prefix}sfx <name> / ${prefix}radio [station] / ${prefix}uploadsound <name> <url> / ${prefix}stopsound`;
+              } else if (targetCmd.name === "wiretap" || targetCmd.name === "feed") {
+                  usageText = `${prefix}wiretap <add|list|remove|check> / ${prefix}feed`;
+              } else if (targetCmd.name === "persona") {
+                  usageText = `${prefix}persona <tsundere|cyberpunk|butler|sensei|default|list> / /persona [name]`;
               } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -979,6 +998,112 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}chess theme\` — Select from 20 aesthetic board styles (Walnut, Glass, Neon, Retro, etc.) \`[Public]\`\n` +
                     `> ${BULLET_EMOJI} \`${prefix}chess stop\` — Resign or terminate active match \`[Public]\`\n` +
                     `> ${BULLET_EMOJI} Move by simply typing standard algebraic (\`e4\`, \`Nf3\`), UCI (\`e7e5\`), or castling (\`O-O\`) in chat!`;
+              } else if (targetCmd.name === "roleplay" || targetCmd.name === "rp" || targetCmd.name === "affinity") {
+                  descContent = `Complete Athena Roleplay, Expressive Actions & Affinity Matrix Engine featuring 54+ interactive actions, relationship meter, dynamic duos, and marriage registry.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__54+ Expressive Roleplay Actions Catalog:__**\n` +
+                    `> ${BULLET_EMOJI} **Affection & Romance:** \`hug\`, \`kiss\`, \`pat\`, \`cuddle\`, \`snuggle\`, \`holdhands\`, \`nuzzle\`, \`feed\`, \`headpat\`, \`smooch\`, \`nom\`, \`pull\`.\n` +
+                    `> ${BULLET_EMOJI} **Playful & Friendly:** \`poke\`, \`tickle\`, \`boop\`, \`bonk\`, \`highfive\`, \`dance\`, \`wink\`, \`wave\`, \`spank\`, \`tease\`, \`chase\`.\n` +
+                    `> ${BULLET_EMOJI} **Combat & Chaos:** \`slap\`, \`bite\`, \`punch\`, \`kick\`, \`yeet\`, \`shoot\`, \`bully\`, \`tableflip\`, \`glare\`, \`push\`, \`dodge\`.\n` +
+                    `> ${BULLET_EMOJI} **Emotions & Reactions:** \`cry\`, \`blush\`, \`pout\`, \`smug\`, \`shrug\`, \`stare\`, \`cheer\`, \`sleep\`, \`nervous\`, \`confused\`, \`yawn\`, \`laugh\`, \`smile\`, \`bleh\`, \`sip\`, \`run\`.\n\n` +
+                    `> -# **__Dynamic Duo Affinity Matrix (${prefix}rp duo @user):__**\n` +
+                    `> ${BULLET_EMOJI} **Bond Level Progress Bar:** Visual progress meter tracking relationship milestones from Level 1 Acquaintances to Level 10 Eternal Soulmates 💍.\n` +
+                    `> ${BULLET_EMOJI} **Relationship Dynamic Engine:** Categorizes bonds into *Sweethearts & Soulmates*, *Sparring Partners & Friendly Rivals*, *Chaotic Menace Duo*, or *Harmonious Buddies* based on interaction distribution.\n` +
+                    `> ${BULLET_EMOJI} **Counter Action Buttons:** Interactive buttons allow targets to reciprocate in real-time.\n\n` +
+                    `> -# **__Profiles, Marriage Registry & Federations:__**\n` +
+                    `> ${BULLET_EMOJI} **Roleplay Profiles (${prefix}rp profile [@user]):** Tracks total actions sent/received, favorite move, and top partner rankings.\n` +
+                    `> ${BULLET_EMOJI} **Custom Roleplay Bio (${prefix}rp bio <text>):** Personalize your roleplay card with custom bio lore.\n` +
+                    `> ${BULLET_EMOJI} **Marriage & Proposal Registry (${prefix}rp marry @user):** Interactive proposal card with [Yes, I Accept! 💍] and [Decline 💔] buttons. Recorded permanently in SQLite.\n` +
+                    `> ${BULLET_EMOJI} **8-Route Federated GIF Engine:** High-velocity failover across KLIPY, Purrbot, OtakuGifs, Nekos.best, Waifu.pics, Nekos.life, Tenor & Giphy.`;
+              } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
+                  descContent = `Federated Animated GIF Search Engine displaying results inside an accent borderless Components V2 container with interactive carousel navigation.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Federated Route Pipeline & Bridges:__**\n` +
+                    `> ${BULLET_EMOJI} **KLIPY Expression Platform (klipy.com / api.klipy.com):** Connects to KLIPY Partner API via \`KLIPY_API_KEY\` with static asset scraping fallback directly from \`static.klipy.com\`.\n` +
+                    `> ${BULLET_EMOJI} **Purrbot Anime Media Gateway (purrbot.site):** High-velocity anime action CDN supporting 18+ expressions.\n` +
+                    `> ${BULLET_EMOJI} **OtakuGifs SFW Network (otakugifs.xyz):** 25+ specialized WebP/AVIF/GIF reaction endpoints.\n` +
+                    `> ${BULLET_EMOJI} **Nekos.best & Waifu.pics:** Curated anime reaction pools with sub-millisecond in-memory caching.\n` +
+                    `> ${BULLET_EMOJI} **Google Tenor v2 & GIPHY REST APIs:** Global fallback keyword search when API keys are configured.\n\n` +
+                    `> -# **__Container & Interactive Controls:__**\n` +
+                    `> ${BULLET_EMOJI} **Accent Borderless CV2 Container:** Formatted with server theme accent colors, media gallery layout, and attribution.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Navigation Buttons:** Cycle through results with [Previous ◀️] and [Next GIF 🎬] or grab direct URL via [Copy Link 🔗].\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}gif <need>\` — Search animated GIF (e.g. \`${prefix}gif anime hug\`, \`${prefix}gif cat vibing\`, \`${prefix}gif rickroll\`).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}klipy <query>\` / \`${prefix}tenor <query>\` — Dedicated provider search shortcuts.\n` +
+                    `> ${BULLET_EMOJI} \`/gif query:<need>\` — Modern slash command interface.`;
+              } else if (targetCmd.name === "meme" || targetCmd.name === "memegen" || targetCmd.name === "caption" || targetCmd.name === "filter") {
+                  descContent = `AI Meme Studio & FX Lab - Create viral image memes, modern captions, and aesthetic visual FX filters with high-resolution Canvas rendering.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Meme Studio Features & Templates:__**\n` +
+                    `> ${BULLET_EMOJI} **25+ Classic Templates:** Drake, Distracted Boyfriend, Two Buttons, Change My Mind, Doge, Expanding Brain, Winnie Pooh, Trade Offer, Buff Doge vs Cheems, Disaster Girl, and more.\n` +
+                    `> ${BULLET_EMOJI} **Smart Text Wrapping & Outlines:** Auto-scaled Impact typography with clean black borders ensuring readability over any image background.\n` +
+                    `> ${BULLET_EMOJI} **Modern Caption Header (${prefix}caption <text>):** Adds white top banner with bold sans-serif text to attached images, URLs, or user avatars.\n` +
+                    `> ${BULLET_EMOJI} **Visual FX Filters (${prefix}filter <name>):** 7 high-performance Canvas shaders: \`deepfry\`, \`glitch\`, \`grayscale\`, \`sepia\`, \`invert\`, \`pixelate\`, and \`polaroid\`.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}meme <template> [top text] | [bottom text]\` — Generate meme from template.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}meme list\` — Browse all 25+ available meme templates.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}caption <text>\` — Add top caption to image attachment or mentioned user's avatar.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}filter <deepfry|glitch|grayscale|sepia|invert|pixelate|polaroid>\` — Apply visual FX shader.`;
+              } else if (targetCmd.name === "arcade" || targetCmd.name === "tictactoe" || targetCmd.name === "ttt" || targetCmd.name === "arcadestats") {
+                  descContent = `Components V2 Arcade & Casino Matrix featuring interactive button-based mini-games, competitive leaderboards, and coin wagers.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Arcade Games Suite:__**\n` +
+                    `> ${BULLET_EMOJI} **Tic-Tac-Toe (${prefix}tictactoe @user / ${prefix}ttt):** Live 3x3 interactive button grid with move timers, win detection across rows/cols/diagonals, and draw resolution.\n` +
+                    `> ${BULLET_EMOJI} **Blackjack (${prefix}blackjack [bet] / ${prefix}bj):** Casino blackjack table against Athena dealer with Hit, Stand, Double Down, insurance, and 3:2 natural payouts.\n` +
+                    `> ${BULLET_EMOJI} **Multiplayer Trivia Arena (${prefix}trivia [category]):** 4-choice timed tournament across Anime, Gaming, Tech, Science & History with coin rewards.\n` +
+                    `> ${BULLET_EMOJI} **Arcade Stats HUD (${prefix}arcadestats [@user]):** Tracks total matches played, win streaks, win rates, and net coin profits.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}tictactoe @user\` (or \`${prefix}ttt\`) — Challenge another member to 3x3 Tic-Tac-Toe.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}blackjack [wager]\` — Play high-stakes casino blackjack against Athena.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}trivia [anime|gaming|tech|science]\` — Start timed trivia tournament.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}arcadestats [@user]\` — View detailed arcade and casino records.`;
+              } else if (targetCmd.name === "family" || targetCmd.name === "tree" || targetCmd.name === "marry" || targetCmd.name === "adopt" || targetCmd.name === "disown" || targetCmd.name === "divorce") {
+                  descContent = `Family Tree & Kinship Dynasty Engine - Build, expand, and visualize server family lineages with marriages, adoptions, and generational trees.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Kinship System Architecture:__**\n` +
+                    `> ${BULLET_EMOJI} **Marriage Registry (${prefix}marry @user):** Propose marriage with custom vows and ring selection. Targets accept or decline via interactive buttons.\n` +
+                    `> ${BULLET_EMOJI} **Adoption Agency (${prefix}adopt @user):** Adopt server members as your official children; creates parent-child links in SQLite.\n` +
+                    `> ${BULLET_EMOJI} **Family Tree Visualizer (${prefix}family / ${prefix}tree):** Beautiful Components V2 lineage chart displaying spouse, parents, children, and siblings.\n` +
+                    `> ${BULLET_EMOJI} **Disown & Divorce:** Dissolve marriages with \`${prefix}divorce\` or release lineage ties with \`${prefix}disown @user\`.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}family [@user]\` (or \`${prefix}tree\`) — Inspect family lineage card.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}marry @user [ring]\` — Propose marriage to server member.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}divorce\` — Dissolve active marriage bond.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}adopt @user\` — Propose adoption to become official parent.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}disown @user\` — Disown a child from your family tree.`;
+              } else if (targetCmd.name === "soundboard" || targetCmd.name === "sfx" || targetCmd.name === "radio" || targetCmd.name === "uploadsound" || targetCmd.name === "stopsound") {
+                  descContent = `Voice Soundboard & 24/7 Lo-Fi Radio Suite featuring 12 instant sound triggers, custom sound uploads, and continuous background music streams.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Voice Soundboard & Radio Features:__**\n` +
+                    `> ${BULLET_EMOJI} **Interactive Soundboard Deck (${prefix}soundboard / ${prefix}sounds):** Spawns an interactive button deck with 12 instant sound triggers for your voice channel.\n` +
+                    `> ${BULLET_EMOJI} **12 Built-in SFX Library:** \`airhorn\`, \`vineboom\`, \`bruh\`, \`tada\`, \`quack\`, \`applause\`, \`crickets\`, \`fart\`, \`rimshot\`, \`sad_trombone\`, \`drumroll\`, \`bell\`.\n` +
+                    `> ${BULLET_EMOJI} **24/7 Lo-Fi Radio Stations (${prefix}radio [station]):** 4 non-stop background music streams: \`lofi\` (Chill Beats), \`synthwave\` (Retro Neon), \`anime\` (Anime Chill), and \`coffee\` (Cafe Ambience).\n` +
+                    `> ${BULLET_EMOJI} **Custom Sound Uploads (${prefix}uploadsound <name> <url>):** Upload custom server audio clips.\n` +
+                    `> ${BULLET_EMOJI} **Stop & Disconnect (${prefix}stopsound / ${prefix}stopradio):** Immediately halts audio and disconnects Athena from VC.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}soundboard\` (or \`${prefix}sounds\`) — Open interactive soundboard deck in voice.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}sfx <name>\` — Play specific sound effect in VC.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}radio [lofi|synthwave|anime|coffee]\` — Start 24/7 background radio stream.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stopsound\` — Halt playback and disconnect from VC.`;
+              } else if (targetCmd.name === "wiretap" || targetCmd.name === "feed") {
+                  descContent = `Social Media Wiretap Engine - Automated real-time content syndication broadcaster for YouTube channels and Reddit communities.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Syndication Architecture:__**\n` +
+                    `> ${BULLET_EMOJI} **Multi-Platform Support:** Monitors YouTube channels and Reddit subreddits (\`/r/...\`) via background daemon.\n` +
+                    `> ${BULLET_EMOJI} **Accent Borderless Containers:** Automatically dispatches newly posted videos or hot Reddit posts formatted inside sleek CV2 container cards.\n` +
+                    `> ${BULLET_EMOJI} **Deduplication Engine:** SQLite ledger tracks delivered post IDs to guarantee zero repeated notifications.\n` +
+                    `> ${BULLET_EMOJI} **High-Frequency Background Polling:** Evaluates active wiretaps every 3 minutes with sub-millisecond execution.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}wiretap add youtube <channelId/username> <#channel>\` — Bind YouTube uploads to Discord channel \`[Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}wiretap add reddit <subreddit> <#channel>\` — Bind Reddit posts to Discord channel \`[Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}wiretap list\` — Display active syndication feeds \`[Public]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}wiretap remove <id>\` — Delete a feed subscription \`[Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}wiretap check\` — Force immediate polling sweep \`[Extra Owner]\`.`;
+              } else if (targetCmd.name === "persona") {
+                  descContent = `Athena Conversational AI Persona Matrix - Dynamically swap Athena's personality, conversational tone, and response style across server chats.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Available AI Personalities:__**\n` +
+                    `> ${BULLET_EMOJI} **Default (Athena Prime):** The authoritative, ultra-intelligent, precise God of War cybersecurity sentinel.\n` +
+                    `> ${BULLET_EMOJI} **Tsundere (Anime Companion):** Feisty, sharp-tongued, secretly caring, and dramatic anime heroine.\n` +
+                    `> ${BULLET_EMOJI} **Cyberpunk (Netrunner 2077):** Cynical, high-tech rebel speaking in futuristic hacker slang and neon aesthetics.\n` +
+                    `> ${BULLET_EMOJI} **Butler (Aristocratic Royal):** Ultra-polite, sophisticated, elegant Victorian butler attending to distinguished guests.\n` +
+                    `> ${BULLET_EMOJI} **Sensei (Martial Master):** Wise, calm, philosophical mentor guiding students with profound discipline and insight.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}persona <name>\` — Switch server's conversational AI personality \`[Extra Owner]\`.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}persona list\` — View all available personalities and current active persona \`[Public]\`.\n` +
+                    `> ${BULLET_EMOJI} \`/persona name:<name>\` — Slash command interface.`;
               }
 
               const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
@@ -1037,7 +1162,10 @@ export const commands = [
           ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
           ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
           ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
-          ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess')
+          ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
+          ((cmdName === 'rp' || cmdName === 'roleplay' || cmdName === 'affinity' || cmdName === 'actions' || cmdName === 'duo') && m.id === 'roleplay') ||
+          ((cmdName === 'arcade' || cmdName === 'casino' || cmdName === 'tictactoe' || cmdName === 'ttt' || cmdName === 'arcadestats') && m.id === 'arcade') ||
+          ((cmdName === 'soundboard' || cmdName === 'sfx' || cmdName === 'radio' || cmdName === 'lofi' || cmdName === 'sounds') && m.id === 'soundboard')
         );
         if (matchingModule) {
           const container = buildHelpContainer(interaction.client, interaction.guild?.id, matchingModule.id);
@@ -1113,6 +1241,22 @@ export const commands = [
           usageText = `${prefix}morning [panel|enable|disable|channel|auto|ping|test|add|list] / ${prefix}goodmorning / /morning [subcommand]`;
         } else if (targetCmd.name === "dm" || targetCmd.name === "dms") {
           usageText = `${prefix}dm [on|off|status] / ${prefix}dms / /dm [action]`;
+        } else if (targetCmd.name === "roleplay" || targetCmd.name === "rp" || targetCmd.name === "affinity") {
+          usageText = `${prefix}rp [action|profile|duo|bio|marry|divorce|top|actions|routes] / ${prefix}roleplay / ${prefix}affinity <@user>`;
+        } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
+          usageText = `${prefix}gif <need> / ${prefix}findgif / ${prefix}searchgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / /gif [query]`;
+        } else if (targetCmd.name === "meme" || targetCmd.name === "memegen" || targetCmd.name === "caption" || targetCmd.name === "filter") {
+          usageText = `${prefix}meme <template> [top text] | [bottom text] / ${prefix}caption <text> / ${prefix}filter <name>`;
+        } else if (targetCmd.name === "arcade" || targetCmd.name === "tictactoe" || targetCmd.name === "ttt" || targetCmd.name === "arcadestats") {
+          usageText = `${prefix}tictactoe @user / ${prefix}ttt @user / ${prefix}blackjack [bet] / ${prefix}trivia [category] / ${prefix}arcadestats [@user]`;
+        } else if (targetCmd.name === "family" || targetCmd.name === "tree" || targetCmd.name === "marry" || targetCmd.name === "adopt" || targetCmd.name === "disown" || targetCmd.name === "divorce") {
+          usageText = `${prefix}family [@user] / ${prefix}tree / ${prefix}marry @user [ring] / ${prefix}divorce / ${prefix}adopt @user / ${prefix}disown @user`;
+        } else if (targetCmd.name === "soundboard" || targetCmd.name === "sfx" || targetCmd.name === "radio" || targetCmd.name === "uploadsound" || targetCmd.name === "stopsound") {
+          usageText = `${prefix}soundboard / ${prefix}sounds / ${prefix}sfx <name> / ${prefix}radio [station] / ${prefix}uploadsound <name> <url> / ${prefix}stopsound`;
+        } else if (targetCmd.name === "wiretap" || targetCmd.name === "feed") {
+          usageText = `${prefix}wiretap <add|list|remove|check> / ${prefix}feed`;
+        } else if (targetCmd.name === "persona") {
+          usageText = `${prefix}persona <tsundere|cyberpunk|butler|sensei|default|list> / /persona [name]`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -1568,6 +1712,112 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}morning test\` - Dispatch an immediate test thought card to preview the output.\n` +
             `> ${BULLET_EMOJI} \`${prefix}morning add <thought>\` - Add a custom pleasant quote to your server's rotation.\n` +
             `> ${BULLET_EMOJI} \`${prefix}morning list\` - Display custom server quotes.`;
+        } else if (targetCmd.name === "roleplay" || targetCmd.name === "rp" || targetCmd.name === "affinity") {
+          descContent = `Complete Athena Roleplay, Expressive Actions & Affinity Matrix Engine featuring 54+ interactive actions, relationship meter, dynamic duos, and marriage registry.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__54+ Expressive Roleplay Actions Catalog:__**\n` +
+            `> ${BULLET_EMOJI} **Affection & Romance:** \`hug\`, \`kiss\`, \`pat\`, \`cuddle\`, \`snuggle\`, \`holdhands\`, \`nuzzle\`, \`feed\`, \`headpat\`, \`smooch\`, \`nom\`, \`pull\`.\n` +
+            `> ${BULLET_EMOJI} **Playful & Friendly:** \`poke\`, \`tickle\`, \`boop\`, \`bonk\`, \`highfive\`, \`dance\`, \`wink\`, \`wave\`, \`spank\`, \`tease\`, \`chase\`.\n` +
+            `> ${BULLET_EMOJI} **Combat & Chaos:** \`slap\`, \`bite\`, \`punch\`, \`kick\`, \`yeet\`, \`shoot\`, \`bully\`, \`tableflip\`, \`glare\`, \`push\`, \`dodge\`.\n` +
+            `> ${BULLET_EMOJI} **Emotions & Reactions:** \`cry\`, \`blush\`, \`pout\`, \`smug\`, \`shrug\`, \`stare\`, \`cheer\`, \`sleep\`, \`nervous\`, \`confused\`, \`yawn\`, \`laugh\`, \`smile\`, \`bleh\`, \`sip\`, \`run\`.\n\n` +
+            `> -# **__Dynamic Duo Affinity Matrix (${prefix}rp duo @user):__**\n` +
+            `> ${BULLET_EMOJI} **Bond Level Progress Bar:** Visual progress meter tracking relationship milestones from Level 1 Acquaintances to Level 10 Eternal Soulmates 💍.\n` +
+            `> ${BULLET_EMOJI} **Relationship Dynamic Engine:** Categorizes bonds into *Sweethearts & Soulmates*, *Sparring Partners & Friendly Rivals*, *Chaotic Menace Duo*, or *Harmonious Buddies* based on interaction distribution.\n` +
+            `> ${BULLET_EMOJI} **Counter Action Buttons:** Interactive buttons allow targets to reciprocate in real-time.\n\n` +
+            `> -# **__Profiles, Marriage Registry & Federations:__**\n` +
+            `> ${BULLET_EMOJI} **Roleplay Profiles (${prefix}rp profile [@user]):** Tracks total actions sent/received, favorite move, and top partner rankings.\n` +
+            `> ${BULLET_EMOJI} **Custom Roleplay Bio (${prefix}rp bio <text>):** Personalize your roleplay card with custom bio lore.\n` +
+            `> ${BULLET_EMOJI} **Marriage & Proposal Registry (${prefix}rp marry @user):** Interactive proposal card with [Yes, I Accept! 💍] and [Decline 💔] buttons. Recorded permanently in SQLite.\n` +
+            `> ${BULLET_EMOJI} **8-Route Federated GIF Engine:** High-velocity failover across KLIPY, Purrbot, OtakuGifs, Nekos.best, Waifu.pics, Nekos.life, Tenor & Giphy.`;
+        } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
+          descContent = `Federated Animated GIF Search Engine displaying results inside an accent borderless Components V2 container with interactive carousel navigation.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Federated Route Pipeline & Bridges:__**\n` +
+            `> ${BULLET_EMOJI} **KLIPY Expression Platform (klipy.com / api.klipy.com):** Connects to KLIPY Partner API via \`KLIPY_API_KEY\` with static asset scraping fallback directly from \`static.klipy.com\`.\n` +
+            `> ${BULLET_EMOJI} **Purrbot Anime Media Gateway (purrbot.site):** High-velocity anime action CDN supporting 18+ expressions.\n` +
+            `> ${BULLET_EMOJI} **OtakuGifs SFW Network (otakugifs.xyz):** 25+ specialized WebP/AVIF/GIF reaction endpoints.\n` +
+            `> ${BULLET_EMOJI} **Nekos.best & Waifu.pics:** Curated anime reaction pools with sub-millisecond in-memory caching.\n` +
+            `> ${BULLET_EMOJI} **Google Tenor v2 & GIPHY REST APIs:** Global fallback keyword search when API keys are configured.\n\n` +
+            `> -# **__Container & Interactive Controls:__**\n` +
+            `> ${BULLET_EMOJI} **Accent Borderless CV2 Container:** Formatted with server theme accent colors, media gallery layout, and attribution.\n` +
+            `> ${BULLET_EMOJI} **Interactive Navigation Buttons:** Cycle through results with [Previous ◀️] and [Next GIF 🎬] or grab direct URL via [Copy Link 🔗].\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}gif <need>\` — Search animated GIF (e.g. \`${prefix}gif anime hug\`, \`${prefix}gif cat vibing\`, \`${prefix}gif rickroll\`).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}klipy <query>\` / \`${prefix}tenor <query>\` — Dedicated provider search shortcuts.\n` +
+            `> ${BULLET_EMOJI} \`/gif query:<need>\` — Modern slash command interface.`;
+        } else if (targetCmd.name === "meme" || targetCmd.name === "memegen" || targetCmd.name === "caption" || targetCmd.name === "filter") {
+          descContent = `AI Meme Studio & FX Lab - Create viral image memes, modern captions, and aesthetic visual FX filters with high-resolution Canvas rendering.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Meme Studio Features & Templates:__**\n` +
+            `> ${BULLET_EMOJI} **25+ Classic Templates:** Drake, Distracted Boyfriend, Two Buttons, Change My Mind, Doge, Expanding Brain, Winnie Pooh, Trade Offer, Buff Doge vs Cheems, Disaster Girl, and more.\n` +
+            `> ${BULLET_EMOJI} **Smart Text Wrapping & Outlines:** Auto-scaled Impact typography with clean black borders ensuring readability over any image background.\n` +
+            `> ${BULLET_EMOJI} **Modern Caption Header (${prefix}caption <text>):** Adds white top banner with bold sans-serif text to attached images, URLs, or user avatars.\n` +
+            `> ${BULLET_EMOJI} **Visual FX Filters (${prefix}filter <name>):** 7 high-performance Canvas shaders: \`deepfry\`, \`glitch\`, \`grayscale\`, \`sepia\`, \`invert\`, \`pixelate\`, and \`polaroid\`.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}meme <template> [top text] | [bottom text]\` — Generate meme from template.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}meme list\` — Browse all 25+ available meme templates.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}caption <text>\` — Add top caption to image attachment or mentioned user's avatar.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}filter <deepfry|glitch|grayscale|sepia|invert|pixelate|polaroid>\` — Apply visual FX shader.`;
+        } else if (targetCmd.name === "arcade" || targetCmd.name === "tictactoe" || targetCmd.name === "ttt" || targetCmd.name === "arcadestats") {
+          descContent = `Components V2 Arcade & Casino Matrix featuring interactive button-based mini-games, competitive leaderboards, and coin wagers.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Arcade Games Suite:__**\n` +
+            `> ${BULLET_EMOJI} **Tic-Tac-Toe (${prefix}tictactoe @user / ${prefix}ttt):** Live 3x3 interactive button grid with move timers, win detection across rows/cols/diagonals, and draw resolution.\n` +
+            `> ${BULLET_EMOJI} **Blackjack (${prefix}blackjack [bet] / ${prefix}bj):** Casino blackjack table against Athena dealer with Hit, Stand, Double Down, insurance, and 3:2 natural payouts.\n` +
+            `> ${BULLET_EMOJI} **Multiplayer Trivia Arena (${prefix}trivia [category]):** 4-choice timed tournament across Anime, Gaming, Tech, Science & History with coin rewards.\n` +
+            `> ${BULLET_EMOJI} **Arcade Stats HUD (${prefix}arcadestats [@user]):** Tracks total matches played, win streaks, win rates, and net coin profits.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}tictactoe @user\` (or \`${prefix}ttt\`) — Challenge another member to 3x3 Tic-Tac-Toe.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}blackjack [wager]\` — Play high-stakes casino blackjack against Athena.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}trivia [anime|gaming|tech|science]\` — Start timed trivia tournament.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}arcadestats [@user]\` — View detailed arcade and casino records.`;
+        } else if (targetCmd.name === "family" || targetCmd.name === "tree" || targetCmd.name === "marry" || targetCmd.name === "adopt" || targetCmd.name === "disown" || targetCmd.name === "divorce") {
+          descContent = `Family Tree & Kinship Dynasty Engine - Build, expand, and visualize server family lineages with marriages, adoptions, and generational trees.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Kinship System Architecture:__**\n` +
+            `> ${BULLET_EMOJI} **Marriage Registry (${prefix}marry @user):** Propose marriage with custom vows and ring selection. Targets accept or decline via interactive buttons.\n` +
+            `> ${BULLET_EMOJI} **Adoption Agency (${prefix}adopt @user):** Adopt server members as your official children; creates parent-child links in SQLite.\n` +
+            `> ${BULLET_EMOJI} **Family Tree Visualizer (${prefix}family / ${prefix}tree):** Beautiful Components V2 lineage chart displaying spouse, parents, children, and siblings.\n` +
+            `> ${BULLET_EMOJI} **Disown & Divorce:** Dissolve marriages with \`${prefix}divorce\` or release lineage ties with \`${prefix}disown @user\`.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}family [@user]\` (or \`${prefix}tree\`) — Inspect family lineage card.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}marry @user [ring]\` — Propose marriage to server member.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}divorce\` — Dissolve active marriage bond.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}adopt @user\` — Propose adoption to become official parent.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}disown @user\` — Disown a child from your family tree.`;
+        } else if (targetCmd.name === "soundboard" || targetCmd.name === "sfx" || targetCmd.name === "radio" || targetCmd.name === "uploadsound" || targetCmd.name === "stopsound") {
+          descContent = `Voice Soundboard & 24/7 Lo-Fi Radio Suite featuring 12 instant sound triggers, custom sound uploads, and continuous background music streams.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Voice Soundboard & Radio Features:__**\n` +
+            `> ${BULLET_EMOJI} **Interactive Soundboard Deck (${prefix}soundboard / ${prefix}sounds):** Spawns an interactive button deck with 12 instant sound triggers for your voice channel.\n` +
+            `> ${BULLET_EMOJI} **12 Built-in SFX Library:** \`airhorn\`, \`vineboom\`, \`bruh\`, \`tada\`, \`quack\`, \`applause\`, \`crickets\`, \`fart\`, \`rimshot\`, \`sad_trombone\`, \`drumroll\`, \`bell\`.\n` +
+            `> ${BULLET_EMOJI} **24/7 Lo-Fi Radio Stations (${prefix}radio [station]):** 4 non-stop background music streams: \`lofi\` (Chill Beats), \`synthwave\` (Retro Neon), \`anime\` (Anime Chill), and \`coffee\` (Cafe Ambience).\n` +
+            `> ${BULLET_EMOJI} **Custom Sound Uploads (${prefix}uploadsound <name> <url>):** Upload custom server audio clips.\n` +
+            `> ${BULLET_EMOJI} **Stop & Disconnect (${prefix}stopsound / ${prefix}stopradio):** Immediately halts audio and disconnects Athena from VC.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}soundboard\` (or \`${prefix}sounds\`) — Open interactive soundboard deck in voice.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}sfx <name>\` — Play specific sound effect in VC.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}radio [lofi|synthwave|anime|coffee]\` — Start 24/7 background radio stream.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stopsound\` — Halt playback and disconnect from VC.`;
+        } else if (targetCmd.name === "wiretap" || targetCmd.name === "feed") {
+          descContent = `Social Media Wiretap Engine - Automated real-time content syndication broadcaster for YouTube channels and Reddit communities.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Syndication Architecture:__**\n` +
+            `> ${BULLET_EMOJI} **Multi-Platform Support:** Monitors YouTube channels and Reddit subreddits (\`/r/...\`) via background daemon.\n` +
+            `> ${BULLET_EMOJI} **Accent Borderless Containers:** Automatically dispatches newly posted videos or hot Reddit posts formatted inside sleek CV2 container cards.\n` +
+            `> ${BULLET_EMOJI} **Deduplication Engine:** SQLite ledger tracks delivered post IDs to guarantee zero repeated notifications.\n` +
+            `> ${BULLET_EMOJI} **High-Frequency Background Polling:** Evaluates active wiretaps every 3 minutes with sub-millisecond execution.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}wiretap add youtube <channelId/username> <#channel>\` — Bind YouTube uploads to Discord channel \`[Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}wiretap add reddit <subreddit> <#channel>\` — Bind Reddit posts to Discord channel \`[Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}wiretap list\` — Display active syndication feeds \`[Public]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}wiretap remove <id>\` — Delete a feed subscription \`[Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}wiretap check\` — Force immediate polling sweep \`[Extra Owner]\`.`;
+        } else if (targetCmd.name === "persona") {
+          descContent = `Athena Conversational AI Persona Matrix - Dynamically swap Athena's personality, conversational tone, and response style across server chats.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Available AI Personalities:__**\n` +
+            `> ${BULLET_EMOJI} **Default (Athena Prime):** The authoritative, ultra-intelligent, precise God of War cybersecurity sentinel.\n` +
+            `> ${BULLET_EMOJI} **Tsundere (Anime Companion):** Feisty, sharp-tongued, secretly caring, and dramatic anime heroine.\n` +
+            `> ${BULLET_EMOJI} **Cyberpunk (Netrunner 2077):** Cynical, high-tech rebel speaking in futuristic hacker slang and neon aesthetics.\n` +
+            `> ${BULLET_EMOJI} **Butler (Aristocratic Royal):** Ultra-polite, sophisticated, elegant Victorian butler attending to distinguished guests.\n` +
+            `> ${BULLET_EMOJI} **Sensei (Martial Master):** Wise, calm, philosophical mentor guiding students with profound discipline and insight.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}persona <name>\` — Switch server's conversational AI personality \`[Extra Owner]\`.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}persona list\` — View all available personalities and current active persona \`[Public]\`.\n` +
+            `> ${BULLET_EMOJI} \`/persona name:<name>\` — Slash command interface.`;
         }
 
         const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
@@ -2727,6 +2977,20 @@ export const helpModules = [
     "`!theatermode` - Toggle Theater Mode in current VC `[Extra Owner]`",
     "`!botvoice / !bv` - Control bot server mute and deafen status `[Extra Owner]`"
   ] },
+  { id: 'soundboard', category: 'VOICE & MEDIA', shortLabel: 'Soundboard', label: 'Soundboard & Lo-Fi Radio', emoji: 'soundboard', commands: [
+    "`!soundboard / !sounds` - Interactive voice soundboard control deck with 12 instant sound triggers `[Public]`",
+    "`!sfx <name>` - Play specific sound effect directly into your active voice channel `[Public]`",
+    "`!radio [lofi|synthwave|anime|coffee]` - 24/7 continuous low-latency background music streams in VC `[Public]`",
+    "`!uploadsound <name> <url>` - Register custom soundboard audio for your server `[Extra Owner]`",
+    "`!stopsound / !stopradio` - Immediately halt audio playback and disconnect Athena from VC `[Public]`",
+    "`!tts <message>` - Broadcast celebrity or character AI Text-to-Speech in VC `[Public]`",
+    "`!tts voices` - Explore 14 celebrity AI voices (`trump`, `modi`, `mj`, `taylor`, `ariana`, `sabrina`, `bieber`) `[Public]`",
+    "",
+    "-# **__Soundboard & Radio Features:__**",
+    "-# <a:target_blink:1565667466984554588> **__Built-in SFX Library (12 Sounds):__** `airhorn`, `vineboom`, `bruh`, `tada`, `quack`, `applause`, `crickets`, `fart`, `rimshot`, `sad_trombone`, `drumroll`, `bell`.",
+    "-# <a:target_blink:1565667466984554588> **__24/7 Lo-Fi Radio Stations:__** 4 high-fidelity streams (`lofi` [Chill Beats], `synthwave` [Retro Neon], `anime` [Anime Chill], `coffee` [Cafe Ambience]).",
+    "-# <a:target_blink:1565667466984554588> **__High-Performance Audio Pipeline:__** Utilizes `@discordjs/voice` with Opus audio encoding, jitter buffer, and automatic idle disconnect."
+  ] },
   { id: 'community', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Community', label: 'Community Tools', emoji: 'community', commands: [
     "`!suggest / !suggestion <idea>` - Submit a suggestion `[Public]`",
     "`!setsuggestions / !suggestchannel <#channel>` - Set designated channel for suggestions `[Extra Owner]`",
@@ -2742,30 +3006,16 @@ export const helpModules = [
     "`!media <url>` - Download TikTok/Insta/Twitter/YouTube videos directly `[Public]`",
     "`!mp3 <url>` - Extract audio from video links `[Public]`",
     "`!setmedia / !unsetmedia` - Bind Auto Media Downloader to channel `[Extra Owner]`",
-    "`!chess / !chess ai / !chess engine` - Grandmaster Chess: 11 AI engines (Stockfish 16.1, Mittens 🐾, AlphaZero, Torch, Leela, etc.), PvP, themes & dropdown `[Public]`",
     "`!ship @user1 @user2` - Calculate love compatibility between two users `[Public]`",
     "`!birthday` - Set your birthday and view upcoming birthdays `[Public]`",
     "`!quote / !q <msg_id>` - Quote a message beautifully `[Public]`",
-    "`!meme / !memegen <template> [top text] | [bottom text]` - Generate memes from popular templates `[Public]`",
-    "`!caption <text>` - Add modern meme caption header to any image or avatar `[Public]`",
-    "`!filter <deepfry|glitch|grayscale|sepia|invert|pixelate|polaroid>` - Apply visual FX filters to pictures `[Public]`",
-    "`!tictactoe / !ttt @user` - Interactive 3x3 Tic-Tac-Toe match using Components V2 buttons `[Public]`",
-    "`!blackjack / !bj [bet]` - High-stakes casino Blackjack against Athena with coin betting `[Public]`",
-    "`!trivia / !quiz [category]` - Timed multiplayer trivia battle across Anime, Gaming, Tech & Science `[Public]`",
-    "`!arcadestats [@user]` - View competitive arcade and casino records `[Public]`",
+    "`!quote setchannel / !setquote <#channel|none>` - Bind Auto-Quote channel to turn typed messages into quotes `[Extra Owner]`",
+    "`!unsetquote` - Disable dedicated Auto-Quote channel `[Extra Owner]`",
+    "`!quotemaker` - Launch interactive Canvas Quote Generator `[Public]`",
     "`!marry / !propose @user [ring]` - Propose marriage with custom rings & vows `[Public]`",
     "`!divorce` - Dissolve married bond `[Public]`",
     "`!adopt / !disown @user` - Expand family lineage through adoptions `[Public]`",
     "`!family / !tree [@user]` - View official family lineage tree `[Public]`",
-    "`!soundboard / !sounds` - Open interactive voice soundboard control deck with 1-click sound triggers `[Public]`",
-    "`!sfx <name>` - Play short sound effect into voice channel `[Public]`",
-    "`!radio [lofi|synthwave|anime]` - 24/7 continuous background music stream in VC `[Public]`",
-    "`!stopsound` - Stop sound effect / radio and disconnect Athena from voice `[Public]`",
-    "`!wiretap <add|list|remove|check>` - Automated social media broadcaster for YouTube & Reddit `[Extra Owner]`",
-    "`!persona <tsundere|cyberpunk|butler|sensei|default>` - Switch Athena conversational AI personality `[Extra Owner]`",
-    "`!quote setchannel / !setquote <#channel|none>` - Bind Auto-Quote channel to turn typed messages into quotes `[Extra Owner]`",
-    "`!unsetquote` - Disable dedicated Auto-Quote channel `[Extra Owner]`",
-    "`!quotemaker` - Launch interactive Canvas Quote Generator `[Public]`",
     "`!youtube add|remove|list` - Configure YouTube video upload notification alerts `[Extra Owner]`",
     "`!ccmd / !customcmd add <trigger> <reply>` - Create a custom command response `[Extra Owner]`",
     "`!autoreply / !ar` - Custom keyword auto-replies with accent borderless CV2 embeds, GIFs & direct Pinterest links `[Extra Owner]`",
@@ -2779,15 +3029,56 @@ export const helpModules = [
     "`!rrsetup / !reactionrole` - Interactive Reaction Role builder `[Extra Owner]`",
     "`!giveaway / !gw` - Manage server giveaways `[Extra Owner]`",
     "`!date / !go-on-date @user` - Go on a special interactive date `[Public]`",
-    "`!app` - Manage Staff Application system `[Extra Owner]`",
+    "`!app` - Manage Staff Application system `[Extra Owner]`"
+  ] },
+  { id: 'roleplay', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Roleplay', label: 'Roleplay & Affinity Matrix', emoji: 'roleplay', commands: [
     "`!rp / !roleplay` - Complete Athena Roleplay & Affinity Engine (54+ actions, profiles, duo matrix, marriages) `[Public]`",
     "`!rp actions [category]` - Catalog of all 54+ actions (Affection, Playful, Combat, Reactions) `[Public]`",
     "`!rp profile [@user] / !rp stats` - Roleplay activity card, custom bio & top partner rankings `[Public]`",
-    "`!rp duo <@user> / !affinity` - Interactive Duo Affinity Matrix, bond level progress bar & dynamics `[Public]`",
+    "`!rp duo <@user> / !affinity <@user>` - Interactive Duo Affinity Matrix, bond level progress bar & dynamics `[Public]`",
     "`!rp top / !rp leaderboard` - Server leaderboards for top duos and active roleplayers `[Public]`",
-    "`!rp marry <@user> / !marry` - Propose marriage with interactive Accept/Decline buttons `[Public]`",
+    "`!rp bio <text>` - Personalize your public roleplay bio `[Public]`",
+    "`!rp marry <@user> / !marry <@user>` - Propose marriage with interactive [Accept 💍] / [Decline 💔] buttons `[Public]`",
     "`!rp divorce / !divorce` - Dissolve roleplay marriage `[Public]`",
-    "`!hug / !kiss / !pat / !slap / !cuddle / !bonk / !yeet` - 54+ interactive roleplay actions with bidirectional counter buttons `[Public]`"
+    "`!rp routes / !gifroutes` - Inspect live status of all 8 federated GIF search and reaction providers `[Public]`",
+    "`!gif / !klipy / !tenor <need>` - Search animated GIFs with interactive navigation & copy link `[Public]`",
+    "`!hug / !kiss / !pat / !cuddle / !snuggle / !holdhands / !nuzzle / !feed / !headpat / !smooch / !nom / !pull` - Affection & Romance `[Public]`",
+    "`!poke / !tickle / !boop / !bonk / !highfive / !dance / !wink / !wave / !spank / !tease / !chase` - Playful & Friendly `[Public]`",
+    "`!slap / !bite / !punch / !kick / !yeet / !shoot / !bully / !tableflip / !glare / !push / !dodge` - Combat & Chaos `[Public]`",
+    "`!cry / !blush / !pout / !smug / !shrug / !stare / !cheer / !sleep / !nervous / !confused / !yawn / !laugh` - Emotions & Reactions `[Public]`",
+    "",
+    "-# **__54+ Expressive Roleplay Actions Catalog:__**",
+    "-# <a:target_blink:1565667466984554588> **__Affection & Romance:__** `hug`, `kiss`, `pat`, `cuddle`, `snuggle`, `holdhands`, `nuzzle`, `feed`, `headpat`, `smooch`, `nom`, `pull`.",
+    "-# <a:target_blink:1565667466984554588> **__Playful & Friendly:__** `poke`, `tickle`, `boop`, `bonk`, `highfive`, `dance`, `wink`, `wave`, `spank`, `tease`, `chase`.",
+    "-# <a:target_blink:1565667466984554588> **__Combat & Chaos:__** `slap`, `bite`, `punch`, `kick`, `yeet`, `shoot`, `bully`, `tableflip`, `glare`, `push`, `dodge`.",
+    "-# <a:target_blink:1565667466984554588> **__Emotions & Reactions:__** `cry`, `blush`, `pout`, `smug`, `shrug`, `stare`, `cheer`, `sleep`, `nervous`, `confused`, `yawn`, `laugh`, `smile`, `bleh`, `sip`, `run`.",
+    "",
+    "-# **__Dynamic Relationship Meter & Affinity Matrix (`!rp duo @user`):__**",
+    "-# <a:target_blink:1565667466984554588> Calculates real-time affinity tiers (`Level 1 Acquaintances` to `Level 10 Eternal Soulmates 💍`) with dynamic visual progress bar.",
+    "-# <a:target_blink:1565667466984554588> **Relationship Dynamic Engine:** Categorizes bonds into *Sweethearts & Soulmates*, *Sparring Partners & Friendly Rivals*, *Chaotic Menace Duo*, or *Harmonious Buddies* based on action distribution.",
+    "",
+    "-# **__Federated GIF Route Pipeline (8 Redundant Bridges):__**",
+    "-# <a:target_blink:1565667466984554588> **KLIPY Expression Platform (`klipy.com` / `api.klipy.com`):** Direct partner API bridge & uncompressed static asset scraper.",
+    "-# <a:target_blink:1565667466984554588> **Purrbot Anime Gateway (`purrbot.site`):** Dedicated high-velocity SFW anime reaction CDN supporting 18+ actions.",
+    "-# <a:target_blink:1565667466984554588> **OtakuGifs SFW Network (`otakugifs.xyz`):** 25+ specialized WebP/AVIF/GIF reaction endpoints.",
+    "-# <a:target_blink:1565667466984554588> **Nekos.best, Waifu.pics & Nekos.life:** Multi-tier failover ensures 100% zero-failure rate."
+  ] },
+  { id: 'arcade', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Arcade', label: 'Arcade & Casino Matrix', emoji: 'arcade', commands: [
+    "`!tictactoe / !ttt @user` - Interactive 3x3 Tic-Tac-Toe battle with Components V2 buttons & move timers `[Public]`",
+    "`!blackjack / !bj [bet]` - High-stakes casino Blackjack against Athena with Hit, Stand, Double Down & insurance `[Public]`",
+    "`!roulette / !roul <bet> <space>` - European roulette wheel betting (Red, Black, Green, Even, Odd, 0-36) `[Public]`",
+    "`!coinflip <heads|tails> <bet>` - Double-or-nothing coin wager with real-time flip animations `[Public]`",
+    "`!trivia / !quiz [category]` - 4-choice timed tournament across Anime, Gaming, Tech, Science & History `[Public]`",
+    "`!arcadestats [@user]` - Comprehensive arcade & casino records, win streaks, win rates and net coin profit `[Public]`",
+    "`!balance / !bal [@user]` - View wallet coins, vault reserves, and leaderboard ranking `[Public]`",
+    "`!daily` - Claim daily coin stipend with consecutive streak multipliers `[Public]`",
+    "`!pay @user <amount>` - Direct peer-to-peer coin transfers `[Public]`",
+    "",
+    "-# **__Arcade & Casino Capabilities:__**",
+    "-# <a:target_blink:1565667466984554588> **Components V2 Interactive Controls:** Built using Discord interactive buttons with real-time UI updates and state management.",
+    "-# <a:target_blink:1565667466984554588> **Tic-Tac-Toe Engine:** Live 3x3 grid with turn tracking, win detection (rows, columns, diagonals), draw detection, and forfeit timers.",
+    "-# <a:target_blink:1565667466984554588> **Blackjack Engine:** Complete dealer rules (dealer stands on 17), natural 21 (3:2 payout), Double Down, and instant bankroll reconciliation.",
+    "-# <a:target_blink:1565667466984554588> **Multiplayer Trivia Arena:** Dynamic question banks with 15-second response timers, coin prize pools, and immediate answer reveals."
   ] },
 
   { id: 'chess', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Chess', label: 'Grandmaster Chess', emoji: 'chess', commands: [
@@ -2848,6 +3139,11 @@ export const helpModules = [
     "`!weather / !wtr / !climate / !forecast / !temp <location/url>` - Live global weather with satellite world map & 3-day forecast `[Public]`",
     "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Real-time web picture retrieval with interactive pagination & source link `[Public]`",
     "`!gif / !findgif / !searchgif / !gifs / !tenor / !klipy <need>` - Federated animated GIF search across KLIPY, Tenor, Giphy & OtakuGifs inside an accent borderless CV2 container `[Public]`",
+    "`!meme / !memegen <template> [top text] | [bottom text]` - Generate memes from 25+ viral templates `[Public]`",
+    "`!caption <text>` - Add modern meme caption header to any image or avatar `[Public]`",
+    "`!filter <deepfry|glitch|grayscale|sepia|invert|pixelate|polaroid>` - Apply visual FX filters to pictures `[Public]`",
+    "`!wiretap <add|list|remove|check>` - Automated social media broadcaster for YouTube & Reddit `[Extra Owner]`",
+    "`!persona <tsundere|cyberpunk|butler|sensei|default>` - Switch Athena conversational AI personality `[Extra Owner]`",
     "`!pinterest / !pin <link>` - Extract & download master uncompressed original images or MP4 videos from Pinterest `[Public]`",
     "`!dashboard / !commandcenter / !omni / !warroomall / !allinone` - Flagship Unified War-Room Command Center combining Telemetry & DEFCON `[Public / Extra Owner]`",
     "`!hud / !warroom / !corehud / !matrixhud` - Flagship Animated Cyber War-Room HUD with live mode switching `[Public / Extra Owner]`",
@@ -2907,7 +3203,11 @@ export function buildHelpContainer(client, guildId, moduleId) {
         'stock': GLOBAL_STOCK_ICON,
         'stocks': GLOBAL_STOCK_ICON,
         'globalstock': GLOBAL_STOCK_ICON,
-        'chess': CHESS_ICON
+        'chess': CHESS_ICON,
+        'roleplay': '<a:z_arrow_pink1:1523082728004653138>',
+        'rp': '<a:z_arrow_pink1:1523082728004653138>',
+        'arcade': '<a:trophy:1533859922599481577>',
+        'soundboard': '<:music:1528159649780732046>'
       };
       if (designatedCustomEmojis[name]) return designatedCustomEmojis[name];
 
@@ -2948,6 +3248,15 @@ export function buildHelpContainer(client, guildId, moduleId) {
         'finance': MARKET_CAP_ICON,
         'nifty': MARKET_CAP_ICON,
         'chess': CHESS_ICON,
+        'roleplay': '<a:z_arrow_pink1:1523082728004653138>',
+        'rp': '<a:z_arrow_pink1:1523082728004653138>',
+        'arcade': '<a:trophy:1533859922599481577>',
+        'soundboard': '<:music:1528159649780732046>',
+        'sfx': '<:music:1528159649780732046>',
+        'radio': '<:music:1528159649780732046>',
+        'meme': '<:pencil:1523770653528817835>',
+        'wiretap': '<a:uptime:1552608831060844575>',
+        'persona': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
         'home': HOME_BEAT_EMOJI
       };
       return customEmojiFallback[name] || fallback;
@@ -2962,6 +3271,8 @@ export function buildHelpContainer(client, guildId, moduleId) {
       topText += `> -# Commands operate strictly on: **Bot Owner** > **Server Owner** > **Extra Owner** (\`${prefix}extraowner\`) > **Public**.\n`;
       topText += `> -# Native Discord \`Administrator\` permissions do NOT grant access to Athena server management commands. Only the **Server Owner** and designated **Extra Owners** can configure or manage the server.\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **To set Custom Prefix use <@${botId}> \`${prefix}prefix " your custom prefix "\`**\n\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Athena Roleplay & Arcade Matrix: 54+ Expressive actions (\`${prefix}hug\`, \`${prefix}kiss\`, \`${prefix}slap\`), Dynamic Duo Affinity Meter (\`${prefix}rp duo\`), 8 Federated GIF routes (\`${prefix}gif\`), Components V2 Arcade (\`${prefix}tictactoe\`, \`${prefix}blackjack\`), Soundboard & 24/7 Lo-Fi Radio (\`${prefix}soundboard\`, \`${prefix}radio\`), Meme Studio (\`${prefix}meme\`), Social Wiretap (\`${prefix}wiretap\`), and AI Personas (\`${prefix}persona\`)!**\n\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Indian Benchmarks Suite (\`${prefix}nifty\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Indian Benchmarks Suite (\`${prefix}nifty\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Grandmaster Chess Matrix: Play against 11 AI engines (Stockfish 16.1, Mittens 🐾, AlphaZero, Torch, Leela, Komodo, Magnus, Hikaru, Martin) or challenge friends via \`${prefix}chess\` & \`${prefix}chess engine\` \`[100% Public]\`!**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Server Mention DM Alerts: Toggle automated Athena DM notifications dispatched when users are tagged in chat via \`${prefix}dm [on|off|status]\` \`[Extra Owner]\`!**\n\n`;
