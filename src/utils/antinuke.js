@@ -53,9 +53,12 @@ export async function rawRoleStrip(guildId, userId, token) {
       headers: {
         'Authorization': `Bot ${token}`,
         'Content-Type': 'application/json',
-        'X-Audit-Log-Reason': encodeURIComponent('[ATHENA FIREWALL] Emergency role strip — hostile neutralization')
+        'X-Audit-Log-Reason': encodeURIComponent('[ATHENA FIREWALL] Emergency role strip & isolation — hostile neutralization')
       },
-      body: JSON.stringify({ roles: [] }),
+      body: JSON.stringify({ 
+        roles: [],
+        communication_disabled_until: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString()
+      }),
       dispatcher
     });
     return res.ok || res.status === 200;
@@ -2061,9 +2064,10 @@ export async function handleAuditLogEntry(guild, entry) {
 
     if (action === AuditLogEvent.BotAdd) {
       if (targetId && targetId !== guild.client.user.id) {
-        await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Unauthorized bot addition').then(ok => {
-          if (!ok) rawRoleStrip(guild.id, targetId, guild.client.token).catch(() => null);
-        }).catch(() => null);
+        await Promise.allSettled([
+          rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Unauthorized bot addition'),
+          rawRoleStrip(guild.id, targetId, guild.client.token)
+        ]).catch(() => null);
       }
       rollbackResult = `Unauthorized bot <@${targetId}> banned instantly`;
     }

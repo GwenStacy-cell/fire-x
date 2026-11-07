@@ -3090,9 +3090,9 @@ async function handleSecurityInteractions(interaction, guild) {
     // ⚡ One-Click Engage All Security Shields
     if (customId === 'sec_enable_all') {
       const isBotOwner = isBotOwnerSync(interaction.user.id);
-      const isAllowed = isBotOwner || interaction.user.id === guild.ownerId;
+      const isAllowed = isBotOwner || interaction.user.id === guild.ownerId || db.isExtraOwner(guild.id, interaction.user.id);
       if (!isAllowed) {
-        return interaction.reply({ content: '-# Only the **Server Owner** or **Bot Owner** can engage all security shields.', flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: '-# Only the **Server Owner**, **Extra Owners**, or **Bot Owner** can engage all security shields.', flags: MessageFlags.Ephemeral });
       }
 
       const sec = await import('../commands/security.js');
@@ -3134,9 +3134,9 @@ async function handleSecurityInteractions(interaction, guild) {
 
     if (customId === 'sec_disable_all_btn') {
       const isBotOwner = isBotOwnerSync(interaction.user.id);
-      const isAllowed = isBotOwner || interaction.user.id === guild.ownerId;
+      const isAllowed = isBotOwner || interaction.user.id === guild.ownerId || db.isExtraOwner(guild.id, interaction.user.id);
       if (!isAllowed) {
-        return interaction.reply({ content: '-# Only the **Server Owner** or **Bot Owner** can disengage security shields.', flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: '-# Only the **Server Owner**, **Extra Owners**, or **Bot Owner** can disengage security shields.', flags: MessageFlags.Ephemeral });
       }
       const sec = await import('../commands/security.js');
       await interaction.deferReply();
@@ -3879,25 +3879,21 @@ async function handleSecurityInteractions(interaction, guild) {
         
         if (customId === 'toggle_antinuke') {
           const isBotOwner = isBotOwnerSync(interaction.user.id);
-          const isAllowed = isBotOwner || interaction.user.id === guild.ownerId;
+          const isAllowed = isBotOwner || interaction.user.id === guild.ownerId || db.isExtraOwner(guild.id, interaction.user.id);
           if (!isAllowed) {
-            return interaction.reply({ content: '-# Only the **Server Owner** or **Bot Owner** can configure the Anti-Nuke Firewall.', flags: MessageFlags.Ephemeral });
+            return interaction.reply({ content: '-# Only the **Server Owner**, **Extra Owners**, or **Bot Owner** can configure the Anti-Nuke Firewall.', flags: MessageFlags.Ephemeral });
           }
 
           const maxPos = Math.max(...guild.roles.cache.map(r => r.position));
           const botMember = guild.members.me || await guild.members.fetch(interaction.client.user.id).catch(() => null);
           const botPos = botMember?.roles?.highest?.position ?? 0;
           const meetsRoleHierarchy = botPos >= maxPos - 2;
-          const meetsMemberCount = (guild.memberCount || 0) >= 200;
 
           const isCurrentlyActive = Boolean(config.securityEnabled && config.antiNukeEnabled);
           const isEnabling = !isCurrentlyActive;
 
           if (isEnabling) {
             if (!isBotOwner) {
-              if (!meetsMemberCount) {
-                return interaction.reply({ content: `-# Server requires at least **200 members** to activate Anti-Nuke firewall. (Currently: **${guild.memberCount || 0}** members).\n-# **Only the Bot Owner can bypass this clearance criteria.**`, flags: MessageFlags.Ephemeral });
-              }
               if (!meetsRoleHierarchy) {
                 return interaction.reply({ content: `-# **Role Hierarchy Requirement:** Move Athena's role to the top 3 highest roles in Server Settings so she can enforce bulletproof security.\n-# Currently, the highest role is at position **${maxPos}**, but Athena's role is at position **${botPos}**.\n-# **Only the Bot Owner can bypass this clearance criteria.**`, flags: MessageFlags.Ephemeral });
               }
