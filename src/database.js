@@ -91,7 +91,12 @@ const DEFAULT_SCHEMA = {
   burnRooms: {},            // channelId -> { channelId, guildId, creatorId, expiresAt, durationMinutes }
   roleplay: {},             // guildId -> { duoKey -> { users: [id1, id2], totalInteractions, actions: {}, firstInteractionAt, lastInteractionAt, lastAction } }
   roleplayUsers: {},        // guildId -> { userId -> { sentCount, receivedCount, actionsSent: {}, actionsReceived: {}, partners: {}, favoriteAction, customBio, lastActive } }
-  roleplayMarriages: {}     // guildId -> { duoKey -> { users: [id1, id2], marriedAt, ringType, vows } }
+  roleplayMarriages: {},    // guildId -> { duoKey -> { users: [id1, id2], marriedAt, ringType, vows } }
+  family: {},               // guildId -> { userId -> { parentId, children: [], siblings: [] } }
+  arcadeStats: {},          // guildId -> { userId -> { tictactoe, connect4, trivia, blackjack, rps } }
+  wiretaps: {},             // guildId -> [ { id, platform, target, channelId, lastId, createdAt } ]
+  guildPersonas: {},        // guildId -> { persona, customTone, updatedAt }
+  serverSoundboard: {}      // guildId -> [ { name, url, addedBy, duration } ]
 };
 
 class Database {
@@ -3750,6 +3755,220 @@ class Database {
     delete this.cache.roleplayMarriages[guildId][marriage.key];
     this.save();
     return marriage;
+  }
+
+  // --- Family & Kinship Registry ---
+  getFamily(guildId, userId) {
+    if (!guildId || !userId) return { parentId: null, children: [], siblings: [], spouseId: null };
+    guildId = String(guildId);
+    userId = String(userId);
+    if (!this.cache.family) this.cache.family = {};
+    if (!this.cache.family[guildId]) this.cache.family[guildId] = {};
+    
+    const userFam = this.cache.family[guildId][userId] || { parentId: null, children: [], siblings: [] };
+    const marriage = this.getMarriage(guildId, userId);
+    return {
+      parentId: userFam.parentId || null,
+      children: Array.isArray(userFam.children) ? userFam.children : [],
+      siblings: Array.isArray(userFam.siblings) ? userFam.siblings : [],
+      spouseId: marriage?.partnerId || null,
+      marriedAt: marriage?.marriedAt || null,
+      ringType: marriage?.ringType || null
+    };
+  }
+
+  adoptChild(guildId, parentId, childId) {
+    if (!guildId || !parentId || !childId) return false;
+    guildId = String(guildId);
+    parentId = String(parentId);
+    childId = String(childId);
+    if (parentId === childId) return false;
+
+    if (!this.cache.family) this.cache.family = {};
+    if (!this.cache.family[guildId]) this.cache.family[guildId] = {};
+    if (!this.cache.family[guildId][parentId]) {
+      this.cache.family[guildId][parentId] = { parentId: null, children: [], siblings: [] };
+    }
+    if (!this.cache.family[guildId][childId]) {
+      this.cache.family[guildId][childId] = { parentId: null, children: [], siblings: [] };
+    }
+
+    const parentFam = this.cache.family[guildId][parentId];
+    const childFam = this.cache.family[guildId][childId];
+
+    if (!parentFam.children.includes(childId)) {
+      parentFam.children.push(childId);
+    }
+    childFam.parentId = parentId;
+
+    this.save();
+    return true;
+  }
+
+  disownChild(guildId, parentId, childId) {
+    if (!guildId || !parentId || !childId) return false;
+    guildId = String(guildId);
+    parentId = String(parentId);
+    childId = String(childId);
+
+    const parentFam = this.cache.family?.[guildId]?.[parentId];
+    const childFam = this.cache.family?.[guildId]?.[childId];
+    if (!parentFam && !childFam) return false;
+
+    if (parentFam && Array.isArray(parentFam.children)) {
+      parentFam.children = parentFam.children.filter(id => id !== childId);
+    }
+    if (childFam && childFam.parentId === parentId) {
+      childFam.parentId = null;
+    }
+
+    this.save();
+    return true;
+  }
+
+  // --- Arcade & Minigames Engine ---
+  getArcadeStats(guildId, userId) {
+    if (!guildId || !userId) return null;
+    guildId = String(guildId);
+    userId = String(userId);
+    if (!this.cache.arcadeStats) this.cache.arcadeStats = {};
+    if (!this.cache.arcadeStats[guildId]) this.cache.arcadeStats[guildId] = {};
+
+    if (!this.cache.arcadeStats[guildId][userId]) {
+      this.cache.arcadeStats[guildId][userId] = {
+        tictactoe: { wins: 0, losses: 0, ties: 0 },
+        connect4: { wins: 0, losses: 0, ties: 0 },
+        trivia: { wins: 0, correct: 0, total: 0 },
+        blackjack: { wins: 0, losses: 0, ties: 0, profit: 0 },
+        rps: { wins: 0, losses: 0, ties: 0 }
+      };
+    }
+    return this.cache.arcadeStats[guildId][userId];
+  }
+
+  recordArcadeGame(guildId, userId, game, result, earnings = 0) {
+    if (!guildId || !userId || !game) return;
+    const stats = this.getArcadeStats(guildId, userId);
+    if (!stats[game]) stats[game] = { wins: 0, losses: 0, ties: 0 };
+
+    if (result === 'win') stats[game].wins = (stats[game].wins || 0) + 1;
+    else if (result === 'loss') stats[game].losses = (stats[game].losses || 0) + 1;
+    else if (result === 'tie') stats[game].ties = (stats[game].ties || 0) + 1;
+
+    if (game === 'blackjack') {
+      stats.blackjack.profit = (stats.blackjack.profit || 0) + earnings;
+    }
+    this.save();
+    return stats[game];
+  }
+
+  // --- Wiretap & Social Feeds ---
+  getWiretaps(guildId) {
+    if (!guildId) return [];
+    guildId = String(guildId);
+    return this.cache.wiretaps?.[guildId] || [];
+  }
+
+  addWiretap(guildId, platform, target, channelId) {
+    if (!guildId || !platform || !target || !channelId) return null;
+    guildId = String(guildId);
+    if (!this.cache.wiretaps) this.cache.wiretaps = {};
+    if (!this.cache.wiretaps[guildId]) this.cache.wiretaps[guildId] = [];
+
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    const item = {
+      id,
+      platform: platform.toLowerCase(),
+      target: target.trim(),
+      channelId,
+      lastId: null,
+      createdAt: Date.now()
+    };
+    this.cache.wiretaps[guildId].push(item);
+    this.save();
+    return item;
+  }
+
+  removeWiretap(guildId, id) {
+    if (!guildId || !id) return false;
+    guildId = String(guildId);
+    if (!this.cache.wiretaps?.[guildId]) return false;
+    const initialLen = this.cache.wiretaps[guildId].length;
+    this.cache.wiretaps[guildId] = this.cache.wiretaps[guildId].filter(w => w.id !== id && w.target.toLowerCase() !== id.toLowerCase());
+    const removed = this.cache.wiretaps[guildId].length < initialLen;
+    if (removed) this.save();
+    return removed;
+  }
+
+  updateWiretapLastId(guildId, wiretapId, lastId) {
+    if (!guildId || !wiretapId) return;
+    guildId = String(guildId);
+    const list = this.cache.wiretaps?.[guildId] || [];
+    const item = list.find(w => w.id === wiretapId);
+    if (item) {
+      item.lastId = lastId;
+      this.save();
+    }
+  }
+
+  // --- Guild AI Personas ---
+  getGuildPersona(guildId) {
+    if (!guildId) return 'default';
+    guildId = String(guildId);
+    return this.cache.guildPersonas?.[guildId]?.persona || 'default';
+  }
+
+  setGuildPersona(guildId, persona, customTone = '') {
+    if (!guildId) return 'default';
+    guildId = String(guildId);
+    if (!this.cache.guildPersonas) this.cache.guildPersonas = {};
+    this.cache.guildPersonas[guildId] = {
+      persona: persona.toLowerCase(),
+      customTone,
+      updatedAt: Date.now()
+    };
+    this.save();
+    return this.cache.guildPersonas[guildId];
+  }
+
+  // --- Server Soundboard ---
+  getServerSounds(guildId) {
+    if (!guildId) return [];
+    guildId = String(guildId);
+    return this.cache.serverSoundboard?.[guildId] || [];
+  }
+
+  addServerSound(guildId, name, url, addedBy, duration = 5) {
+    if (!guildId || !name || !url) return false;
+    guildId = String(guildId);
+    if (!this.cache.serverSoundboard) this.cache.serverSoundboard = {};
+    if (!this.cache.serverSoundboard[guildId]) this.cache.serverSoundboard[guildId] = [];
+
+    const cleanName = name.toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 32);
+    // Replace existing if matching name
+    this.cache.serverSoundboard[guildId] = this.cache.serverSoundboard[guildId].filter(s => s.name !== cleanName);
+    const soundObj = {
+      name: cleanName,
+      url,
+      addedBy,
+      duration,
+      createdAt: Date.now()
+    };
+    this.cache.serverSoundboard[guildId].push(soundObj);
+    this.save();
+    return soundObj;
+  }
+
+  removeServerSound(guildId, name) {
+    if (!guildId || !name) return false;
+    guildId = String(guildId);
+    if (!this.cache.serverSoundboard?.[guildId]) return false;
+    const cleanName = name.toLowerCase().trim();
+    const len = this.cache.serverSoundboard[guildId].length;
+    this.cache.serverSoundboard[guildId] = this.cache.serverSoundboard[guildId].filter(s => s.name !== cleanName);
+    const removed = this.cache.serverSoundboard[guildId].length < len;
+    if (removed) this.save();
+    return removed;
   }
 }
 const dbInstance = new Database();

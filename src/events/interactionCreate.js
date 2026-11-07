@@ -3538,6 +3538,338 @@ async function handleSecurityInteractions(interaction, guild) {
       }
     }
 
+    // Arcade & Casino Games Interactive Buttons
+    if (customId && customId.startsWith('arc:')) {
+      try {
+        const { 
+          activeGames, 
+          buildTicTacToePayload, 
+          buildBlackjackPayload, 
+          calculateHandValue, 
+          buildTriviaPayload 
+        } = await import('../utils/arcadeEngine.js');
+
+        const parts = customId.split(':');
+        const subGame = parts[1]; // 'ttt', 'bj', 'trv'
+        const gameId = parts[2];
+
+        const game = activeGames.get(gameId);
+        if (!game) {
+          return interaction.reply({
+            content: `-# <a:exclamation_outline1:1565666739356827759> This arcade game session has expired.`,
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        // --- TIC TAC TOE ---
+        if (subGame === 'ttt') {
+          const row = parseInt(parts[3], 10);
+          const col = parseInt(parts[4], 10);
+
+          if (interaction.user.id !== game.currentTurn) {
+            return interaction.reply({
+              content: `-# <a:exclamation_outline1:1565666739356827759> It is not your turn! Waiting for <@${game.currentTurn}>.`,
+              flags: MessageFlags.Ephemeral
+            });
+          }
+
+          if (game.board[row][col] !== ' ') {
+            return interaction.reply({
+              content: `-# <a:exclamation_outline1:1565666739356827759> That tile is already taken!`,
+              flags: MessageFlags.Ephemeral
+            });
+          }
+
+          const mark = game.currentTurn === game.playerX.id ? 'X' : 'O';
+          game.board[row][col] = mark;
+          game.updatedAt = Date.now();
+
+          // Check win
+          let winMark = null;
+          for (let i = 0; i < 3; i++) {
+            if (game.board[i][0] !== ' ' && game.board[i][0] === game.board[i][1] && game.board[i][1] === game.board[i][2]) winMark = game.board[i][0];
+            if (game.board[0][i] !== ' ' && game.board[0][i] === game.board[1][i] && game.board[1][i] === game.board[2][i]) winMark = game.board[0][i];
+          }
+          if (game.board[0][0] !== ' ' && game.board[0][0] === game.board[1][1] && game.board[1][1] === game.board[2][2]) winMark = game.board[0][0];
+          if (game.board[0][2] !== ' ' && game.board[0][2] === game.board[1][1] && game.board[1][1] === game.board[2][0]) winMark = game.board[0][2];
+
+          if (winMark) {
+            game.status = 'win';
+            game.winner = winMark;
+            const winnerId = winMark === 'X' ? game.playerX.id : game.playerO.id;
+            const loserId = winMark === 'X' ? game.playerO.id : game.playerX.id;
+            db.recordArcadeGame(game.guildId, winnerId, 'tictactoe', 'win');
+            db.recordArcadeGame(game.guildId, loserId, 'tictactoe', 'loss');
+          } else if (game.board.every(r => r.every(c => c !== ' '))) {
+            game.status = 'tie';
+            db.recordArcadeGame(game.guildId, game.playerX.id, 'tictactoe', 'tie');
+            db.recordArcadeGame(game.guildId, game.playerO.id, 'tictactoe', 'tie');
+          } else {
+            game.currentTurn = game.currentTurn === game.playerX.id ? game.playerO.id : game.playerX.id;
+          }
+
+          return interaction.update(buildTicTacToePayload(gameId));
+        }
+
+        // --- BLACKJACK ---
+        if (subGame === 'bj') {
+          const action = parts[3]; // 'hit', 'stand', 'double'
+          if (interaction.user.id !== game.userId) {
+            return interaction.reply({
+              content: `-# <a:exclamation_outline1:1565666739356827759> You are not the player of this hand!`,
+              flags: MessageFlags.Ephemeral
+            });
+          }
+
+          if (game.status !== 'player_turn') {
+            return interaction.reply({
+              content: `-# <a:exclamation_outline1:1565666739356827759> This hand has already concluded.`,
+              flags: MessageFlags.Ephemeral
+            });
+          }
+
+          if (action === 'hit') {
+            game.playerHand.push(game.deck.pop());
+            const score = calculateHandValue(game.playerHand);
+            if (score > 21) {
+              game.status = 'ended';
+              game.result = 'loss';
+              db.recordArcadeGame(game.guildId, game.userId, 'blackjack', 'loss', -game.bet);
+            }
+          } else if (action === 'stand' || action === 'double') {
+            if (action === 'double') {
+              game.bet *= 2;
+              game.playerHand.push(game.deck.pop());
+            }
+
+            const pScore = calculateHandValue(game.playerHand);
+            if (pScore > 21) {
+              game.status = 'ended';
+              game.result = 'loss';
+              db.recordArcadeGame(game.guildId, game.userId, 'blackjack', 'loss', -game.bet);
+            } else {
+              game.status = 'dealer_turn';
+              while (calculateHandValue(game.dealerHand) < 17) {
+                game.dealerHand.push(game.deck.pop());
+              }
+              const dScore = calculateHandValue(game.dealerHand);
+              game.status = 'ended';
+
+              if (dScore > 21 || pScore > dScore) {
+                game.result = 'win';
+                db.recordArcadeGame(game.guildId, game.userId, 'blackjack', 'win', game.bet);
+              } else if (dScore > pScore) {
+                game.result = 'loss';
+                db.recordArcadeGame(game.guildId, game.userId, 'blackjack', 'loss', -game.bet);
+              } else {
+                game.result = 'push';
+                db.recordArcadeGame(game.guildId, game.userId, 'blackjack', 'tie', 0);
+              }
+            }
+          }
+
+          return interaction.update(buildBlackjackPayload(gameId));
+        }
+
+        // --- TRIVIA ARENA ---
+        if (subGame === 'trv') {
+          const selectedIdx = parseInt(parts[3], 10);
+          if (game.status === 'answered') {
+            return interaction.reply({
+              content: `-# <a:exclamation_outline1:1565666739356827759> This question has already been answered!`,
+              flags: MessageFlags.Ephemeral
+            });
+          }
+
+          game.status = 'answered';
+          game.answeredBy = interaction.user.id;
+          game.selectedIndex = selectedIdx;
+          game.isCorrect = selectedIdx === game.correctIndex;
+
+          db.recordArcadeGame(game.guildId, interaction.user.id, 'trivia', game.isCorrect ? 'win' : 'loss');
+
+          return interaction.update(buildTriviaPayload(gameId));
+        }
+      } catch (err) {
+        console.error('[ArcadeInteraction Error]:', err);
+      }
+    }
+
+    // Family & Marriage Interactive Buttons
+    if (customId && customId.startsWith('fam:')) {
+      try {
+        const { pendingProposals, pendingAdoptions } = await import('../utils/familyEngine.js');
+        const parts = customId.split(':');
+        const actionType = parts[1]; // 'prop', 'adopt'
+        const decision = parts[2]; // 'accept', 'decline'
+        const itemId = parts[3];
+
+        if (actionType === 'prop') {
+          const prop = pendingProposals.get(itemId);
+          if (!prop) {
+            return interaction.reply({
+              content: `-# <a:exclamation_outline1:1565666739356827759> This marriage proposal has expired.`,
+              flags: MessageFlags.Ephemeral
+            });
+          }
+
+          if (interaction.user.id !== prop.targetId) {
+            return interaction.reply({
+              content: `-# <a:exclamation_outline1:1565666739356827759> Only <@${prop.targetId}> can respond to this proposal!`,
+              flags: MessageFlags.Ephemeral
+            });
+          }
+
+          pendingProposals.delete(itemId);
+
+          if (decision === 'accept') {
+            db.setMarriage(guild.id, prop.proposerId, prop.targetId, prop.ring);
+            const container = {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `# ${getRandomHeadingGlyph()} Holy Matrimony Finalized | <a:03_tick_circle:1565665642084827206>\n` +
+                           `> -# <a:uptime:1552608831060844575> **The crowd cheers!** <@${prop.targetId}> has said **YES**!\n\n` +
+                           `<a:target_blink:1565667466984554588> <@${prop.proposerId}> and <@${prop.targetId}> are now officially married.\n` +
+                           `<a:target_blink:1565667466984554588> **Engagement Ring:** \`${prop.ring}\`\n` +
+                           `<a:target_blink:1565667466984554588> View your lineage anytime using \`!family\`!`
+                },
+                { type: 14, divider: true },
+                { type: 10, content: `-# **Athena Prime Social Matrix \u00b7 Wedding Registry**` }
+              ]
+            };
+            return interaction.update({
+              components: [container],
+              flags: MessageFlags.IsComponentsV2
+            });
+          } else {
+            const container = {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `# ${getRandomHeadingGlyph()} Proposal Declined | <a:04_cross_circle:1565665644806934639>\n` +
+                           `> -# <a:uptime:1552608831060844575> <@${prop.targetId}> declined the proposal from <@${prop.proposerId}>.`
+                }
+              ]
+            };
+            return interaction.update({
+              components: [container],
+              flags: MessageFlags.IsComponentsV2
+            });
+          }
+        }
+
+        if (actionType === 'adopt') {
+          const adopt = pendingAdoptions.get(itemId);
+          if (!adopt) {
+            return interaction.reply({
+              content: `-# <a:exclamation_outline1:1565666739356827759> This adoption request has expired.`,
+              flags: MessageFlags.Ephemeral
+            });
+          }
+
+          if (interaction.user.id !== adopt.childId) {
+            return interaction.reply({
+              content: `-# <a:exclamation_outline1:1565666739356827759> Only <@${adopt.childId}> can respond to this adoption request!`,
+              flags: MessageFlags.Ephemeral
+            });
+          }
+
+          pendingAdoptions.delete(itemId);
+
+          if (decision === 'accept') {
+            db.adoptChild(guild.id, adopt.parentId, adopt.childId);
+            const container = {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `# ${getRandomHeadingGlyph()} Family Adoption Finalized | <a:03_tick_circle:1565665642084827206>\n` +
+                           `> -# <a:uptime:1552608831060844575> <@${adopt.childId}> has officially accepted <@${adopt.parentId}> as their parent!\n\n` +
+                           `<a:target_blink:1565667466984554588> Check out the updated family tree with \`!family\`!`
+                },
+                { type: 14, divider: true },
+                { type: 10, content: `-# **Athena Prime Social Matrix \u00b7 Family Registry**` }
+              ]
+            };
+            return interaction.update({
+              components: [container],
+              flags: MessageFlags.IsComponentsV2
+            });
+          } else {
+            const container = {
+              type: 17,
+              components: [
+                {
+                  type: 10,
+                  content: `# ${getRandomHeadingGlyph()} Adoption Declined | <a:04_cross_circle:1565665644806934639>\n` +
+                           `> -# <a:uptime:1552608831060844575> <@${adopt.childId}> declined the adoption request from <@${adopt.parentId}>.`
+                }
+              ]
+            };
+            return interaction.update({
+              components: [container],
+              flags: MessageFlags.IsComponentsV2
+            });
+          }
+        }
+      } catch (err) {
+        console.error('[FamilyInteraction Error]:', err);
+      }
+    }
+
+    // Voice Soundboard Interactive Buttons
+    if (customId && customId.startsWith('sfx:')) {
+      try {
+        const { playSoundEffect, startRadioStream, stopVoicePlayback } = await import('../utils/soundboardEngine.js');
+        const parts = customId.split(':');
+        const action = parts[1]; // 'play', 'radio', 'stop'
+        const soundKey = parts[2];
+
+        const voiceChannel = member.voice?.channel;
+        if (!voiceChannel && action !== 'stop') {
+          return interaction.reply({
+            content: `-# <a:exclamation_outline1:1565666739356827759> You must be in a voice channel to trigger soundboard effects!`,
+            flags: MessageFlags.Ephemeral
+          });
+        }
+
+        if (action === 'play') {
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
+          const res = await playSoundEffect(voiceChannel, soundKey);
+          if (res.success) {
+            return interaction.editReply({
+              content: `-# <a:03_tick_circle:1565665642084827206> Triggered **${res.sound.name}** in <#${voiceChannel.id}>!`
+            });
+          } else {
+            return interaction.editReply({
+              content: `-# <a:04_cross_circle:1565665644806934639> Failed to play sound: \`${res.reason}\``
+            });
+          }
+        }
+
+        if (action === 'radio') {
+          await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
+          const res = await startRadioStream(voiceChannel, soundKey);
+          return interaction.editReply({
+            content: `-# <a:03_tick_circle:1565665642084827206> Now streaming **${res.station.name}** in <#${voiceChannel.id}>!`
+          });
+        }
+
+        if (action === 'stop') {
+          stopVoicePlayback(guild.id);
+          return interaction.reply({
+            content: `-# <a:03_tick_circle:1565665642084827206> Soundboard & radio playback stopped. Disconnected from voice.`,
+            flags: MessageFlags.Ephemeral
+          });
+        }
+      } catch (err) {
+        console.error('[SoundboardInteraction Error]:', err);
+      }
+    }
+
     if (['toggle_antinuke', 'toggle_spam', 'toggle_invite', 'cycle_punishment', 'sec_status_back', 'sec_status_view', 'sec_architecture_guide', 'antinuke_config', 'save_panel'].includes(customId)) {
       try {
         let updated = false;

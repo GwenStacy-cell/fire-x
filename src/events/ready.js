@@ -510,6 +510,16 @@ export default {
     startYtStatsEngine(client);
     startMorningBroadcaster(client);
 
+    // Automated Social Wiretap Broadcaster (every 4 minutes)
+    import('../utils/wiretapEngine.js').then(({ pollWiretaps }) => {
+      setInterval(() => {
+        pollWiretaps(client).catch(() => {});
+      }, 4 * 60 * 1000);
+      setTimeout(() => {
+        pollWiretaps(client).catch(() => {});
+      }, 30000);
+    }).catch(() => {});
+
       console.log(chalk.blue(' Updating permissions for existing stats channels...'));
       try {
         for (const guild of client.guilds.cache.values()) {

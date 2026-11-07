@@ -105,6 +105,12 @@ import { commands as athenaCmds } from './athena.js';
 import { commands as weatherCmds } from './weather.js';
 import { commands as imageCmds } from './image.js';
 import { commands as gifCmds } from './gif.js';
+import { commands as memeCmds } from './meme.js';
+import { commands as arcadeCmds } from './arcade.js';
+import { commands as familyCmds } from './family.js';
+import { commands as soundboardCmds } from './soundboard.js';
+import { commands as wiretapCmds } from './wiretap.js';
+import { commands as personaCmds } from './persona.js';
 import { commands as stockCmds } from './stock.js';
 import { commands as entryCmds } from './entry.js';
 import { commands as honeypotCmds } from './honeypot.js';
@@ -134,6 +140,12 @@ export const allCommands = [
   ...weatherCmds,
   ...imageCmds,
   ...gifCmds,
+  ...memeCmds,
+  ...arcadeCmds,
+  ...familyCmds,
+  ...soundboardCmds,
+  ...wiretapCmds,
+  ...personaCmds,
   ...stockCmds,
   ...askCmds,
   ...economyCmds,

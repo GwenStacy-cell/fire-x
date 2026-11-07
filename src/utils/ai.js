@@ -1,5 +1,6 @@
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, UPTIME_EMOJI } from './emojis.js';
 import fetch from 'node-fetch';
+import { getPersonaSystemInstruction } from './personaEngine.js';
 
 /**
  * In-memory response cache to serve repeated prompts with ultra-low latency
@@ -305,7 +306,7 @@ export async function generateAIResponse(prompt, context = {}) {
     }
   }
 
-  const systemInstructions = context.customSystem || [
+  const systemInstructions = context.customSystem || (context.guildId ? getPersonaSystemInstruction(context.guildId) : [
     'You are Athena Prime, the elite security, administration, and community AI assistant for Discord servers.',
     'Temporal Context: The current year is 2026.',
     'Authoritative Real-World Ground Truth (2026 Timeline):',
@@ -322,7 +323,7 @@ export async function generateAIResponse(prompt, context = {}) {
     '- Highlight headings and key concepts using grey bold and underline: "-# **__Heading__**" or "-# • **__Concept:__** Description".',
     '- Always complete your sentences and words cleanly. Never stop mid-word or cut off.',
     '- Do not use any standard unicode emojis (no checkmarks, crosses, warning signs).'
-  ].join(' ');
+  ].join(' '));
 
   // Tier 1: Advanced Google Gemini Model (Gemini 3.8 Flash High Pipeline)
   const geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || process.env.GEMINI_KEY;
