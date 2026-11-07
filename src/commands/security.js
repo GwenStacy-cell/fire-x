@@ -4473,6 +4473,9 @@ async function handleConfig(guild, moderator, setting, value) {
     }
     const config = db.getGuildConfig(guild.id);
     if (enabled) {
+      if (guild.memberCount < 200 && !isBotOwner) {
+        return cv2.danger('Requirement Not Met', 'Your server must have at least **200 members** to enable unbypassable security.\n\n**Bot Owners bypass this restriction.**');
+      }
       const maxPos = Math.max(...guild.roles.cache.map(r => r.position));
       const botMember = guild.members.me || await guild.members.fetch(guild.client.user.id).catch(() => null);
       const botPos = botMember?.roles?.highest?.position ?? 0;
@@ -4554,9 +4557,9 @@ export async function getAntinukeConfigPanel(guild) {
   let botMember = guild.members.me || (guild.members?.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id && guild.members?.fetch ? await guild.members.fetch(guild.client.user.id).catch(() => null) : null);
   const botPos = botMember?.roles?.highest?.position ?? 0;
   const meetsRoleHierarchy = botPos >= maxPos - 2;
-  const meetsMemberCount = true;
+  const meetsMemberCount = (guild.memberCount || 0) >= 200;
   const hasBotBypass = Boolean(config.botOwnerBypass);
-  const meetsHierarchy = hasBotBypass || meetsRoleHierarchy;
+  const meetsHierarchy = hasBotBypass || (meetsRoleHierarchy && meetsMemberCount);
 
   // Anti-Nuke firewall state is strictly derived from the database security flags
   const isSecured = Boolean(config.securityEnabled && config.antiNukeEnabled);
@@ -4606,12 +4609,13 @@ export async function getAntinukeConfigPanel(guild) {
   }
 
   if (hasBotBypass) {
-    description += `> -# <:on:1533844867191406672> **Bot Owner Clearance Active:** All hierarchy requirements bypassed.\n\n`;
+    description += `> -# <:on:1533844867191406672> **Bot Owner Clearance Active:** All hierarchy & member count requirements bypassed.\n\n`;
   } else if (!meetsHierarchy) {
     description +=
-      `-# <a:exclamation_outline1:1565666739356827759> **Hierarchy Requirement Required for Anti-Nuke:**\n` +
+      `-# <a:exclamation_outline1:1565666739356827759> **Hierarchy Requirements Not Met for Anti-Nuke:**\n` +
+      `-# ${BULLET_EMOJI} Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
       `-# ${BULLET_EMOJI} Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3 in Server Settings > Roles)'}\n` +
-      `-# *(Note: Bot Owners bypass role hierarchy criteria)*\n\n`;
+      `-# *(Note: Bot Owners bypass all clearance criteria)*\n\n`;
   }
 
   description +=
@@ -4678,6 +4682,9 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
   }
 
   if (enable) {
+    if (guild.memberCount < 200 && !isBotOwner) {
+      return cv2.danger('Requirement Not Met', 'Your server must have at least **200 members** to enable unbypassable security.\n\n**Bot Owners bypass this restriction.**');
+    }
     const maxPos = Math.max(...guild.roles.cache.map(r => r.position));
     const botMember = guild.members.me || await guild.members.fetch(guild.client.user.id).catch(() => null);
     const botPos = botMember?.roles?.highest?.position ?? 0;
@@ -5063,9 +5070,12 @@ export function checkSecurityRequirements(guild, executor) {
   const hasAdmin = botMember?.permissions?.has(PermissionFlagsBits.Administrator) ?? false;
   
   const meetsRoleHierarchy = botPos >= maxPos - 2;
-  const meetsMemberCount = true;
+  const meetsMemberCount = (guild.memberCount || 0) >= 200;
 
   const reasons = [];
+  if (!meetsMemberCount) {
+    reasons.push(`• **Member Count:** Server requires at least **200 members** (Currently: **${guild.memberCount || 0} / 200**).`);
+  }
   if (!meetsRoleHierarchy) {
     reasons.push(`• **Role Hierarchy:** Athena's role must be placed within the **Top 3 roles** in Server Settings (Currently: **Pos ${botPos}**; Highest: **Pos ${maxPos}**).`);
   }
@@ -5094,9 +5104,10 @@ export function buildSecurityRequirementsWarning(guild, req) {
     `### **How to Resolve:**\n` +
     `> -# 1. Open **Server Settings > Roles**.\n` +
     `> -# 2. Drag **Athena Prime** to the top of your server role list (Top 3).\n` +
-    `> -# 3. Ensure Athena Prime has the **Administrator** permission granted.\n` +
-    `> -# 4. Run \`!security enable all\` or \`!antinuke enable\` again or click **⚡ Engage All Shields**.\n\n` +
-    `> -# <a:uptime:1552608831060844575> **Notice:** Bot Owners bypass all role hierarchy criteria.`;
+    `> -# 3. Ensure the server has at least **200 members**.\n` +
+    `> -# 4. Ensure Athena Prime has the **Administrator** permission granted.\n` +
+    `> -# 5. Run \`!security enable all\` or \`!antinuke enable\` again or click **⚡ Engage All Shields**.\n\n` +
+    `> -# <a:uptime:1552608831060844575> **Notice:** The 200-member and Top 3 role hierarchy criteria can strictly only be bypassed by the **Bot Owner**.`;
 
   const container = {
     type: 17,
@@ -5200,9 +5211,9 @@ export async function getSecurityStatusPanel(guild) {
   let botMember = guild.members.me || (guild.members?.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id && guild.members?.fetch ? await guild.members.fetch(guild.client.user.id).catch(() => null) : null);
   const botPos = botMember?.roles?.highest?.position ?? 0;
   const meetsRoleHierarchy = botPos >= maxPos - 2;
-  const meetsMemberCount = true;
+  const meetsMemberCount = (guild.memberCount || 0) >= 200;
   const hasBotBypass = Boolean(config.botOwnerBypass);
-  const meetsHierarchy = hasBotBypass || meetsRoleHierarchy;
+  const meetsHierarchy = hasBotBypass || (meetsRoleHierarchy && meetsMemberCount);
 
   const isSecured = Boolean(config.securityEnabled && config.antiNukeEnabled);
 
@@ -5272,9 +5283,10 @@ export async function getSecurityStatusPanel(guild) {
 
   if (!isSecured) {
     if (!meetsHierarchy) {
-      listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **Hierarchy Requirement Required for Anti-Nuke:**\n` +
+      listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **Hierarchy Requirements Not Met for Anti-Nuke:**\n` +
+                  `> -# ${BULLET_EMOJI} Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
                   `> -# ${BULLET_EMOJI} Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3 in Server Settings > Roles)'}\n` +
-                  `> -# **Execute \`!security enable all\` or \`!antinuke enable\` or click \`⚡ Engage All Shields\` once Athena is placed in the Top 3.**`;
+                  `> -# **Execute \`!security enable all\` or \`!antinuke enable\` or click \`⚡ Engage All Shields\` once requirements are met. (Bot Owner bypasses all requirements).**`;
     } else {
       listText += "\n> -# <a:exclamation_outline1:1565666739356827759> **Security is currently DISABLED on this server.**\n> -# **Execute `!security enable all` or `!antinuke enable` or click `⚡ Engage All Shields` below to arm all 28 modules.**";
     }
@@ -5289,12 +5301,13 @@ export async function getSecurityStatusPanel(guild) {
     : 0;
 
   const shieldProgress = renderSleekProgressBar(activeModulesCount, totalModules, 14);
+  const memberProgress = renderSleekProgressBar(guild.memberCount || 0, 200, 12);
   const rolePosProgress = renderSleekProgressBar(botPos, Math.max(botPos, maxPos), 12);
 
   const headerSection = { type: 10, content: `# ${getRandomHeadingGlyph()} Security Firewall Status | <a:03_tick_circle:1565665642084827206>\n` +
       "-# Global Status: " + (isSecured ? "**God-Tier Firewall ACTIVE**" : "Offline \u2014 Unprotected") + "\n" +
       "-# " + BULLET_EMOJI + " **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
-      "-# " + BULLET_EMOJI + " **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : (meetsRoleHierarchy ? "<:on:1533844867191406672> Top 3 Verified" : "<:off:1533844858983157851> Pending Hierarchy Placement")) + "\n" +
+      "-# " + BULLET_EMOJI + " **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")") + "\n" +
       "-# " + BULLET_EMOJI + " **Role Position:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : rolePosProgress + " (Pos " + botPos + " / " + maxPos + ")") + "\n" +
       "-# " + BULLET_EMOJI + " **Strike Velocity:** " + (isSecured ? "Ludicrously fast \u2014 **1-3ms execution**" : "Disabled") + "\n" +
       "-# " + BULLET_EMOJI + " **Live Audit Records:** **`" + liveRecords.length + "` threat events neutralized** in real-time\n" +
@@ -5941,7 +5954,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
         const maxPos = Math.max(...guild.roles.cache.map(r => r.position));
         const botMember = guild.members.me;
         const botPos = botMember?.roles?.highest?.position ?? 0;
-        return `\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Server Verification: Passed (${guild.memberCount || 0} Members)\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Role Hierarchy: Pos ${botPos} (Top 3 Gate Passed)`;
+        return `\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Member Count: ${guild.memberCount} / 200 (Verified)\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Role Hierarchy: Pos ${botPos} (Top 3 Gate Passed)`;
       }))) return false;
 
       if (!(await runStep("Registering Server In Athena's Database", async () => {

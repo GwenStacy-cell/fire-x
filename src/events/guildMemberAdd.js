@@ -5,7 +5,7 @@ import { executeQuarantine } from '../commands/security.js';
 import { PermissionFlagsBits, Routes, MessageFlags } from 'discord.js';
 import { logToSecurityChannel, getOrCreateQuarantineRole, getOrCreateQuarantineChannel, isBotOwnerSync, getUserTierName, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
 import { sendWelcomeMessage } from '../commands/welcome.js';
-import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, directStrike } from '../utils/antinuke.js';
+import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, rawRoleStrip, condemn, cascadeToInviter, directStrike } from '../utils/antinuke.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 
@@ -25,11 +25,19 @@ export default {
     if (member.user.bot) {
       if ((config.securityEnabled || config.antiNukeEnabled) && config.antinukeModules?.antiBotAdd !== false) {
         if (!isBotAuthorized(guild, member.id)) {
-          // ⚡ INSTANT 0ms ELIMINATION
-          // We ban the bot instantly without waiting for the audit log!
-          rawBan(guild.id, member.id, guild.client.token, '[ATHENA] Anti-Nuke: Unauthorized Bot Addition').catch(() => null);
+          // ⚡ INSTANT AGGRESSIVE ELIMINATION — BEFORE 2ND ATTEMPT
+          condemn(guild.id, member.id);
+
+          // 1. Parallel Ban + Role Strip + 28-day timeout
+          Promise.allSettled([
+            rawBan(guild.id, member.id, guild.client.token, '[ATHENA] Anti-Nuke: Unauthorized Bot Addition'),
+            rawRoleStrip(guild.id, member.id, guild.client.token)
+          ]).catch(() => null);
+
+          // 2. Immediately hunt and ban the rogue admin who invited this bot
+          cascadeToInviter(guild, member.id).catch(() => null);
           
-          // Fire directStrike to find the executor (who added the bot) and ban them too
+          // 3. Fire directStrike to verify audit log correlation, quarantine fallback, and broadcast
           directStrike(guild, 28 /* AuditLogEvent.BotAdd */, 'Unauthorized Bot Addition', member.id, null).catch(() => null);
         }
       }

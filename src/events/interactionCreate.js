@@ -3888,12 +3888,16 @@ async function handleSecurityInteractions(interaction, guild) {
           const botMember = guild.members.me || await guild.members.fetch(interaction.client.user.id).catch(() => null);
           const botPos = botMember?.roles?.highest?.position ?? 0;
           const meetsRoleHierarchy = botPos >= maxPos - 2;
+          const meetsMemberCount = (guild.memberCount || 0) >= 200;
 
           const isCurrentlyActive = Boolean(config.securityEnabled && config.antiNukeEnabled);
           const isEnabling = !isCurrentlyActive;
 
           if (isEnabling) {
             if (!isBotOwner) {
+              if (!meetsMemberCount) {
+                return interaction.reply({ content: `-# Server requires at least **200 members** to activate Anti-Nuke firewall. (Currently: **${guild.memberCount || 0}** members).\n-# **Only the Bot Owner can bypass this clearance criteria.**`, flags: MessageFlags.Ephemeral });
+              }
               if (!meetsRoleHierarchy) {
                 return interaction.reply({ content: `-# **Role Hierarchy Requirement:** Move Athena's role to the top 3 highest roles in Server Settings so she can enforce bulletproof security.\n-# Currently, the highest role is at position **${maxPos}**, but Athena's role is at position **${botPos}**.\n-# **Only the Bot Owner can bypass this clearance criteria.**`, flags: MessageFlags.Ephemeral });
               }

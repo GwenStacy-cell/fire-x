@@ -1278,7 +1278,7 @@ async function notifyAndLog(guild, executor, eventType, punishResult, rollbackRe
 // ==========================================
 const globalDestructiveLog = new Map(); // guildId -> [timestamps]
 const GLOBAL_BURST_WINDOW_MS = 2_000;   // ⚡ EXACTLY 2 SECONDS (User Requirement)
-const GLOBAL_BURST_THRESHOLD = 3;       // 3 destructive actions in 2s across any accounts
+const GLOBAL_BURST_THRESHOLD = 2;       // ⚡ Aggressive: 2 destructive actions in 2s across any accounts engages instant lockdown
 
 export async function notifyMultiAccountBurst(guild, burstCount) {
   try {
@@ -1528,11 +1528,17 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     if (!fetchPromise) {
       fetchPromise = (async () => {
         const token = guild.client.token;
-        const delays = [0, 35, 75, 120, 200];
+        const delays = [0, 15, 30, 60, 100];
         for (let attempt = 0; attempt < delays.length; attempt++) {
           if (delays[attempt] > 0) {
             await new Promise(r => setTimeout(r, delays[attempt]));
           }
+          // ⚡ Immediate ring buffer check: catches instant WebSocket audit push before REST query
+          const ringCheck = getRecentAuditEntry(guild.id, auditType, targetId);
+          if (ringCheck?.executor && !isAuthorized(guild, ringCheck.executor, eventType)) {
+            return ringCheck.executor;
+          }
+
           const rawData = await rawFetchAuditLogs(guild.id, token, auditType);
           const entries = rawData?.audit_log_entries || [];
           const users = rawData?.users || [];
