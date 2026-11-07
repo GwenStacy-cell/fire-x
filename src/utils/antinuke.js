@@ -203,6 +203,55 @@ export function recordAuditEntry(guildId, entry) {
     cleanList.length = RING_MAX_ENTRIES;
   }
   auditRing.set(guildId, cleanList);
+  notifyRingResolvers(guildId, cleanList[0]);
+}
+
+const ringResolvers = new Set();
+
+export function notifyRingResolvers(guildId, entry) {
+  for (const resolver of ringResolvers) {
+    if (resolver.guildId === guildId) {
+      resolver.check(entry);
+    }
+  }
+}
+
+export function waitForRingMatch(guild, auditType, targetId, eventType, timeoutMs = 20) {
+  return new Promise((resolve) => {
+    let timer = null;
+    const resolver = {
+      guildId: guild.id,
+      check: (entry) => {
+        if (!entry || !entry.executor) return;
+        const matchesType = !auditType || entry.action === auditType;
+        const matchesTarget = !targetId || !entry.targetId || entry.targetId === targetId;
+        if (matchesType && matchesTarget) {
+          if (!isAuthorized(guild, entry.executor, eventType)) {
+            cleanup();
+            resolve(entry.executor);
+          }
+        }
+      }
+    };
+
+    const cleanup = () => {
+      ringResolvers.delete(resolver);
+      if (timer) clearTimeout(timer);
+    };
+
+    ringResolvers.add(resolver);
+
+    const current = getRecentAuditEntry(guild.id, auditType, targetId);
+    if (current?.executor && !isAuthorized(guild, current.executor, eventType)) {
+      cleanup();
+      return resolve(current.executor);
+    }
+
+    timer = setTimeout(() => {
+      cleanup();
+      resolve(null);
+    }, timeoutMs);
+  });
 }
 
 export function getRecentAuditEntry(guildId, auditType, targetId) {
@@ -1362,6 +1411,8 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
 
   if (isPunishmentActive(guild.id, executor.id)) return result;
   lockPunishment(guild.id, executor.id);
+  condemn(guild.id, executor.id);
+  setGuildUnderAttack(guild.id, executor.id, 60_000);
 
   // Upgrade 1: Cascade Bot Inviter Punishment
   const wasBot = executor?.bot || guild.members.cache.get(executor.id)?.user?.bot;
@@ -1518,6 +1569,12 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     if (ringMatch.targetId === targetId || !isAuthorized(guild, ringMatch.executor, eventType)) {
       executor = ringMatch.executor;
     }
+  }
+
+  // ⚡ Step 1.5: 20ms Fast-Track Ring Awaiter
+  // Intercepts the raw WebSocket GUILD_AUDIT_LOG_ENTRY_CREATE packet within 5-15ms without REST latency
+  if (!executor) {
+    executor = await waitForRingMatch(guild, auditType, targetId, eventType, 20);
   }
 
   // ⚡ Step 2: If not in ring, use high-speed raw REST fetch directly over keep-alive socket (sub-15ms)
@@ -1932,18 +1989,23 @@ export async function handleAuditLogEntry(guild, entry) {
       
       if (cpChange && (mods.antiChannelPermUpdate || mods.antiChannelUpdate)) {
         eventType = 'Channel Permission Tampering';
+        forceBan = true;
       } else if (cnChange && (mods.antiChannelNameMod || mods.antiChannelUpdate)) {
         eventType = 'Channel Name Modification';
+        forceBan = true;
       } else if (cposChange && (mods.antiChannelReorder || mods.antiChannelUpdate)) {
         eventType = 'Channel Reorder / Tampering';
+        forceBan = true;
       } else if (mods.antiChannelUpdate) {
         eventType = 'Channel Settings Tampering';
+        forceBan = true;
       }
       break;
 
     case AuditLogEvent.EmojiUpdate:
       if (!mods.antiEmojiUpdate) return;
       eventType = 'Emoji Modification';
+      forceBan = true;
       break;
 
     case AuditLogEvent.GuildScheduledEventCreate:
@@ -1951,6 +2013,7 @@ export async function handleAuditLogEntry(guild, entry) {
     case AuditLogEvent.GuildScheduledEventDelete:
       if (!mods.antiScheduledEvents) return;
       eventType = 'Scheduled Event Tampering';
+      forceBan = true;
       break;
 
     case AuditLogEvent.AutoModerationRuleCreate:
@@ -1972,6 +2035,7 @@ export async function handleAuditLogEntry(guild, entry) {
     case AuditLogEvent.MemberKick:
       if (!mods.antiMemberPurge && !mods.antiKick) return;
       eventType = 'Unauthorized Kick (Purge Module)';
+      forceBan = true;
       break;
 
     case AuditLogEvent.MemberPrune:
@@ -1983,6 +2047,7 @@ export async function handleAuditLogEntry(guild, entry) {
     case AuditLogEvent.MemberBanAdd:
       if (!mods.antiMassBan && !mods.antiBan) return;
       eventType = 'Unauthorized Ban (Mass Ban Module)';
+      forceBan = true;
       break;
 
     default: return;

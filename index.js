@@ -154,6 +154,7 @@ import roleDeleteEvent from './src/events/roleDelete.js';
 import guildBanAddEvent from './src/events/guildBanAdd.js';
 import guildMemberRemoveEvent from './src/events/guildMemberRemove.js';
 import channelCreateEvent from './src/events/channelCreate.js';
+import channelUpdateEvent from './src/events/channelUpdate.js';
 import roleCreateEvent from './src/events/roleCreate.js';
 import guildUpdateEvent from './src/events/guildUpdate.js';
 import guildMemberUpdateEvent from './src/events/guildMemberUpdate.js';
@@ -184,6 +185,7 @@ const events = [
   guildBanAddEvent,
   guildMemberRemoveEvent,
   channelCreateEvent,
+  channelUpdateEvent,
   roleCreateEvent,
   guildUpdateEvent,
   guildMemberUpdateEvent,
@@ -220,12 +222,14 @@ events.forEach(event => {
 
 // ⚡ RAW GATEWAY INTERCEPTOR ⚡
 // Bypasses discord.js cache and managers to achieve 0-latency (light speed) response times
-import { handleAuditLogEntry } from './src/utils/antinuke.js';
+import { handleAuditLogEntry, recordAuditEntry } from './src/utils/antinuke.js';
 client.on('raw', async (packet) => {
   if (packet.t === 'GUILD_AUDIT_LOG_ENTRY_CREATE') {
     try {
       const guild = client.guilds.cache.get(packet.d.guild_id);
       if (!guild) return;
+
+      const user = client.users.cache.get(packet.d.user_id) || { id: packet.d.user_id, bot: true };
 
       // Map raw API changes to djs format
       const mappedChanges = (packet.d.changes || []).map(c => ({
@@ -240,13 +244,17 @@ client.on('raw', async (packet) => {
         action: packet.d.action_type,
         executorId: packet.d.user_id,
         targetId: packet.d.target_id,
-        executor: await client.users.fetch(packet.d.user_id).catch(() => ({ id: packet.d.user_id, bot: false })), // minimal mock if not cached
+        executor: user,
         changes: mappedChanges,
         createdAt: new Date(),
         reason: packet.d.reason
       };
 
-      await handleAuditLogEntry(guild, rawEntry);
+      // ⚡ Immediate 0ms WebSocket ring buffer ingestion & resolver trigger
+      recordAuditEntry(guild.id, rawEntry);
+
+      // Handle audit entry with ZERO latency
+      handleAuditLogEntry(guild, rawEntry).catch(() => null);
     } catch (e) {
       console.error('[AntiNuke] Raw gateway intercept error:', e);
     }
