@@ -206,6 +206,16 @@ export function recordAuditEntry(guildId, entry) {
   notifyRingResolvers(guildId, cleanList[0]);
 }
 
+export function getAuditRingTelemetry(guildId) {
+  const entries = auditRing.get(guildId) || [];
+  return {
+    size: entries.length,
+    maxCapacity: RING_MAX_ENTRIES,
+    ttlMs: RING_TTL_MS,
+    resolversActive: ringResolvers.size
+  };
+}
+
 const ringResolvers = new Set();
 
 export function notifyRingResolvers(guildId, entry) {

@@ -16,11 +16,11 @@ export const commands = [
         required: false,
         choices: [
           { name: 'Master Overview', value: 'overview' },
-          { name: 'Command Telemetry', value: 'commands' },
+          { name: 'V8 Runtime and Kernel', value: 'runtime' },
           { name: 'Speed and Latencies', value: 'speed' },
-          { name: 'Antinuke Matrix', value: 'antinuke' },
-          { name: 'Database Records', value: 'database' },
-          { name: 'Daemons and Voice', value: 'daemons' }
+          { name: 'Antinuke and Heuristics', value: 'antinuke' },
+          { name: 'Command Telemetry', value: 'commands' },
+          { name: 'Storage and Daemons', value: 'storage' }
         ]
       }
     ],
@@ -28,11 +28,11 @@ export const commands = [
     async executePrefix(message, args) {
       const rawArg = (args[0] || 'overview').toLowerCase();
       let activeView = 'overview';
-      if (['cmd', 'cmds', 'command', 'commands', 'telemetry'].includes(rawArg)) activeView = 'commands';
+      if (['runtime', 'v8', 'elu', 'kernel', 'cpu', 'memory', 'mem'].includes(rawArg)) activeView = 'runtime';
       else if (['speed', 'latency', 'perf', 'ping', 'bench'].includes(rawArg)) activeView = 'speed';
-      else if (['antinuke', 'security', 'shield', 'defense', 'sec'].includes(rawArg)) activeView = 'antinuke';
-      else if (['database', 'db', 'data', 'storage', 'records'].includes(rawArg)) activeView = 'database';
-      else if (['daemons', 'daemon', 'voice', 'sound', 'sfx', 'radio', 'vc', 'jobs', 'watchers', 'git'].includes(rawArg)) activeView = 'daemons';
+      else if (['antinuke', 'security', 'shield', 'defense', 'sec', 'ring', 'heuristic'].includes(rawArg)) activeView = 'antinuke';
+      else if (['cmd', 'cmds', 'command', 'commands', 'telemetry'].includes(rawArg)) activeView = 'commands';
+      else if (['storage', 'db', 'data', 'disk', 'database', 'records', 'daemons', 'daemon', 'voice', 'sound', 'sfx', 'radio', 'vc', 'jobs', 'watchers', 'git'].includes(rawArg)) activeView = 'storage';
 
       const payload = await buildLiveOpsPanel(message.guild, message.client, activeView);
       return message.reply(payload);
