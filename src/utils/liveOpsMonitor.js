@@ -723,6 +723,20 @@ export async function handleLiveOpsInteraction(interaction) {
   const customId = interaction.customId;
   if (!customId.startsWith('livemon:')) return;
 
+  const { isExtraOwnerOrHigher } = await import('./helpers.js');
+  const { WRONG_EMOJI } = await import('./emojis.js');
+  const cv2 = (await import('../cv2.js')).default;
+
+  if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+    return interaction.reply({
+      ...cv2.danger(
+        `Access Denied | ${WRONG_EMOJI}`,
+        'Only the **Server Owner** and authorized **Extra Owners** can interact with the LiveOps Telemetry Matrix.'
+      ),
+      flags: 64
+    }).catch(() => null);
+  }
+
   recordButtonInteraction();
 
   if (customId === 'livemon:close') {

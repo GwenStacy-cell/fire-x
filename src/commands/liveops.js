@@ -1,6 +1,8 @@
-import { MessageFlags } from 'discord.js';
+import { MessageFlags, PermissionFlagsBits } from 'discord.js';
 import cv2 from '../cv2.js';
 import { buildLiveOpsPanel } from '../utils/liveOpsMonitor.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
+import { WRONG_EMOJI } from '../utils/emojis.js';
 
 export const commands = [
   {
@@ -8,6 +10,7 @@ export const commands = [
     aliases: ['livemonitor', 'telemetry', 'sysmon', 'matrixmon', 'perfmon', 'mon'],
     description: 'Real-time live operational monitor with speeds, latencies, antinuke matrix, and daemon metrics',
     category: 'utility',
+    permissions: [PermissionFlagsBits.Administrator],
     options: [
       {
         name: 'view',
@@ -26,6 +29,13 @@ export const commands = [
     ],
 
     async executePrefix(message, args) {
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger(
+          `Access Denied | ${WRONG_EMOJI}`,
+          'Only the **Server Owner** and authorized **Extra Owners** can access the LiveOps Telemetry Matrix.'
+        )).catch(() => null);
+      }
+
       const rawArg = (args[0] || 'overview').toLowerCase();
       let activeView = 'overview';
       if (['runtime', 'v8', 'elu', 'kernel', 'cpu', 'memory', 'mem'].includes(rawArg)) activeView = 'runtime';
@@ -39,6 +49,16 @@ export const commands = [
     },
 
     async executeSlash(interaction) {
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({
+          ...cv2.danger(
+            `Access Denied | ${WRONG_EMOJI}`,
+            'Only the **Server Owner** and authorized **Extra Owners** can access the LiveOps Telemetry Matrix.'
+          ),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
       await interaction.deferReply();
       const activeView = interaction.options.getString('view') || 'overview';
       const payload = await buildLiveOpsPanel(interaction.guild, interaction.client, activeView);

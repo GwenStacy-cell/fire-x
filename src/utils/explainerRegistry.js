@@ -468,12 +468,15 @@ A Honeypot is an invisible text channel and decoy role configured strictly hidde
     pages: [
       {
         pageTitle: 'LiveOps Architecture & Telemetry Subsystems',
-        content: `# ${getRandomHeadingGlyph()} 1. Command Activation & Aliases
+        content: `# ${getRandomHeadingGlyph()} 1. Clearance & Access Control
+• **Clearance Required:** Strictly restricted to the **Server Owner** and authorized **Extra Owners** (and Bot Owner). Unauthorized users are strictly blocked.
+
+# 2. Command Activation & Aliases
 • **Prefix Command:** \`!liveops\` (Aliases: \`!livemonitor\`, \`!telemetry\`, \`!sysmon\`, \`!matrixmon\`, \`!perfmon\`, \`!mon\`)
 • **Slash Command:** \`/liveops [view: overview | speed | antinuke | voice | daemons]\`
 • **Direct View Jump:** \`!liveops speed\`, \`!liveops antinuke\`, \`!liveops voice\`, \`!liveops daemons\`
 
-# 2. Telemetry Subsystems
+# 3. Telemetry Subsystems
 • **Master Overview:** Realtime memory heap, RSS, external buffers, CPU user/system clock, Node.js event loop lag, SQLite WAL cache status, WebSocket heartbeat, and live REST HTTPS roundtrip ping.
 • **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, role strip, channel lock, timeout, DB read/write, and audit log polling.
 • **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.
@@ -1749,7 +1752,7 @@ export const DETAILED_COMMANDS = {
     name: 'liveops',
     aliases: ['livemonitor', 'telemetry', 'sysmon', 'matrixmon', 'perfmon', 'mon'],
     category: 'Utility & System Telemetry',
-    clearance: 'Public (Everyone)',
+    clearance: 'Server Owner / Extra Owner',
     syntax: '!liveops [overview|speed|antinuke|voice|daemons] / /liveops [view]',
     purpose: 'Real-time live operational monitor with speeds, latencies, antinuke matrix, and daemon metrics.',
     architecture:

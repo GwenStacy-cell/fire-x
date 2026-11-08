@@ -435,7 +435,9 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Disarm Trap:** \`${prefix}honeypot remove\` (or \`${prefix}honeypot disarm\` / \`/honeypot disarm\`)`;
               } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
                   descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
-                    `> -# <a:uptime:1552608831060844575> **__Command Activation & Aliases:__**\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner & Extra Owner\` (and Bot Owner). Unauthorized users are strictly denied.\n\n` +
+                    `> -# **__Command Activation & Aliases:__**\n` +
                     `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}liveops\` (Aliases: \`${prefix}livemonitor\`, \`${prefix}telemetry\`, \`${prefix}sysmon\`, \`${prefix}matrixmon\`, \`${prefix}perfmon\`, \`${prefix}mon\`)\n` +
                     `> ${BULLET_EMOJI} **Slash Command:** \`/liveops [view: overview | speed | antinuke | voice | daemons]\`\n` +
                     `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
@@ -1303,7 +1305,9 @@ export const commands = [
             `> ${BULLET_EMOJI} **Disarm Trap:** \`${prefix}honeypot remove\` (or \`${prefix}honeypot disarm\` / \`/honeypot disarm\`)`;
         } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
           descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
-            `> -# <a:uptime:1552608831060844575> **__Command Activation & Aliases:__**\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner & Extra Owner\` (and Bot Owner). Unauthorized users are strictly denied.\n\n` +
+            `> -# **__Command Activation & Aliases:__**\n` +
             `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}liveops\` (Aliases: \`${prefix}livemonitor\`, \`${prefix}telemetry\`, \`${prefix}sysmon\`, \`${prefix}matrixmon\`, \`${prefix}perfmon\`, \`${prefix}mon\`)\n` +
             `> ${BULLET_EMOJI} **Slash Command:** \`/liveops [view: overview | speed | antinuke | voice | daemons]\`\n` +
             `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
@@ -3221,7 +3225,7 @@ export const helpModules = [
     "`!dev / !developer` - Displays developer information and credits `[Public]`",
     "`!ping / !p / !latency` - View bot latency and heartbeat graph `[Public]`",
     "`!status` - Live bot engine performance, cluster health & security telemetry `[Public]`",
-    "`!liveops / !telemetry / !sysmon [overview|speed|antinuke|voice|daemons]` - Real-time LiveOps telemetry matrix with sub-second benchmarks & daemon diagnostics `[Public]`",
+    "`!liveops / !telemetry / !sysmon [overview|speed|antinuke|voice|daemons]` - Real-time LiveOps telemetry matrix with sub-second benchmarks & daemon diagnostics `[Server Owner / Extra Owner]`",
     "`!db <status|backup|restore>` - View database cloud backup status, force backup or reload from Discord cloud `[Bot Owner]`",
     "`!modmail / !mm <setup #channel | disable>` - Direct Message support ticket bridge `[Extra Owner]`",
     "`!reply <message>` - Reply to member inside active ModMail ticket `[Extra Owner]`",
