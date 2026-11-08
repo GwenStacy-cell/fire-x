@@ -104,11 +104,36 @@ export default {
         if (!isExempt) {
           message.delete().catch(() => null);
 
-          // ⚡ Instant Permanent Direct Ban (Single API call, zero role-strip overhead)
-          message.guild.client.rest.put(Routes.guildBan(message.guild.id, message.author.id), {
-            body: { delete_message_seconds: 604800 },
-            reason: '[ATHENA HONEYPOT] Raider / Scraper Canary Triggered'
-          }).catch(() => null);
+          const punishment = (cfg.honeypotPunishment || 'ban').toLowerCase();
+          let statusText = 'NEUTRALIZED (DIRECT BAN)';
+          let actionLabel = 'Instant Permanent Direct Ban (`<10ms`)';
+          let headingStatus = 'Target Banned';
+
+          if (punishment === 'timeout') {
+            // Apply maximum 28-day timeout via single direct REST call
+            const timeoutUntil = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString();
+            message.guild.client.rest.patch(Routes.guildMember(message.guild.id, message.author.id), {
+              body: { communication_disabled_until: timeoutUntil },
+              reason: '[ATHENA HONEYPOT] Raider / Scraper Canary Triggered (28D Timeout)'
+            }).catch(() => null);
+            statusText = 'NEUTRALIZED (28D TIMEOUT)';
+            actionLabel = 'Maximum 28-Day Timeout (`<10ms`)';
+            headingStatus = 'Target Timed Out (28 Days)';
+          } else if (punishment === 'kick') {
+            // Instant Kick via single direct REST call
+            message.guild.client.rest.delete(Routes.guildMember(message.guild.id, message.author.id), {
+              reason: '[ATHENA HONEYPOT] Raider / Scraper Canary Triggered (Kicked)'
+            }).catch(() => null);
+            statusText = 'NEUTRALIZED (KICKED)';
+            actionLabel = 'Instant Server Kick (`<10ms`)';
+            headingStatus = 'Target Kicked';
+          } else {
+            // Default: Instant Permanent Direct Ban (Single API call, zero role-strip overhead)
+            message.guild.client.rest.put(Routes.guildBan(message.guild.id, message.author.id), {
+              body: { delete_message_seconds: 604800 },
+              reason: '[ATHENA HONEYPOT] Raider / Scraper Canary Triggered'
+            }).catch(() => null);
+          }
 
           // Record forensic incident
           db.recordIncident(message.guild.id, {
@@ -118,8 +143,8 @@ export default {
             actionsAttempted: 1,
             actionsBlocked: 1,
             latencyMs: 7,
-            status: 'NEUTRALIZED (DIRECT BAN)',
-            details: `Unauthorized message sent into Canary Trap channel <#${message.channel.id}>. Payload: "${message.content?.substring(0, 100) || 'Attachment'}"`
+            status: statusText,
+            details: `Unauthorized message sent into Canary Trap channel <#${message.channel.id}>. Punishment: ${punishment.toUpperCase()}. Payload: "${message.content?.substring(0, 100) || 'Attachment'}"`
           });
 
           const alertCard = {
@@ -128,10 +153,10 @@ export default {
               {
                 type: 10,
                 content: `# ${getRandomHeadingGlyph()} Honeypot Intruder Neutralized | <a:03_tick_circle:1565665642084827206>\n` +
-                         `> -# <a:uptime:1552608831060844575> **Target Banned:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
+                         `> -# <a:uptime:1552608831060844575> **${headingStatus}:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
                          `> -# ${BULLET_EMOJI} **Trap Channel:** <#${message.channel.id}>\n` +
                          `> -# ${BULLET_EMOJI} **Trigger Payload:** \`${message.content?.substring(0, 150) || 'Attachment/Media'}\`\n` +
-                         `> -# ${BULLET_EMOJI} **Enforcement Action:** Instant Permanent Direct Ban (\`<10ms\`)`
+                         `> -# ${BULLET_EMOJI} **Enforcement Action:** ${actionLabel}`
               },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Honeypot Sentry**` }

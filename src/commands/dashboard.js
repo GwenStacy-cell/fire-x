@@ -74,10 +74,7 @@ export async function buildDashboardResponse(guild, client, requester = null) {
   let verifStr = 'N/A';
 
   if (guild) {
-    if (guild.memberCount !== guild.members.cache.size) {
-      await guild.members.fetch().catch(() => null);
-    }
-    owner = await guild.fetchOwner().catch(() => null);
+    owner = guild.members.cache.get(guild.ownerId) || (await guild.fetchOwner().catch(() => null));
     bots = guild.members.cache.filter(m => m.user.bot).size;
     humans = Math.max(0, guild.memberCount - bots);
 

@@ -4,7 +4,8 @@ import {
   MessageFlags, 
   ActionRowBuilder, 
   ButtonBuilder, 
-  ButtonStyle 
+  ButtonStyle,
+  SlashCommandBuilder
 } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -30,6 +31,7 @@ export function buildHoneypotPanel(guild) {
   const cfg = db.getGuildConfig(guild.id);
   const channelId = cfg.honeypotChannelId;
   const roleId = cfg.honeypotRoleId;
+  const punishment = (cfg.honeypotPunishment || 'ban').toLowerCase();
 
   const channel = channelId ? guild.channels.cache.get(channelId) : null;
   const role = roleId ? guild.roles.cache.get(roleId) : null;
@@ -40,6 +42,10 @@ export function buildHoneypotPanel(guild) {
   const statusBadge = isArmed 
     ? `${UPTIME_EMOJI} **ARMED & SENTINEL ACTIVE**` 
     : `${WARN_EMOJI} **DISARMED / STANDBY**`;
+
+  let strikeText = '`Instant Direct Ban (<10ms)`';
+  if (punishment === 'timeout') strikeText = '`28-Day Maximum Timeout (<10ms)`';
+  else if (punishment === 'kick') strikeText = '`Instant Server Kick (<10ms)`';
 
   const fields = [
     {
@@ -54,7 +60,7 @@ export function buildHoneypotPanel(guild) {
     },
     {
       name: 'Counter-Measure Strike',
-      value: '`Instant Dual-Strike Ban (<15ms)`',
+      value: strikeText,
       inline: true
     },
     {
@@ -73,7 +79,7 @@ export function buildHoneypotPanel(guild) {
     `Ghost Honeypot Sentinel Matrix | ${isArmed ? TICK_EMOJI : WARN_EMOJI}`,
     `> -# ${statusBadge}\n` +
     `> -# Honeypots act as invisible tripwire decoys that human members never interact with.\n` +
-    `> -# Selfbots, token scrapers, and automated raid engines that broadcast across all guild channels trip this sensor and are **instantly wiped out** before they can touch legitimate members.`,
+    `> -# Selfbots, token scrapers, and automated raid engines that broadcast across all guild channels trip this sensor and are **instantly penalized** before they can touch legitimate members.`,
     fields,
     'Athena Prime Security Suite • Ghost Honeypot Sentinel'
   );
@@ -83,6 +89,10 @@ export function buildHoneypotPanel(guild) {
       .setCustomId('honeypot_setup')
       .setLabel(isArmed ? 'Re-Deploy Tripwire' : 'Deploy Honeypot Trap')
       .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('honeypot_cycle_punish')
+      .setLabel(`Punishment: ${punishment.toUpperCase()}`)
+      .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('honeypot_remove')
       .setLabel('Disarm Tripwire')
@@ -103,7 +113,7 @@ export function buildHoneypotPanel(guild) {
   };
 }
 
-export async function setupHoneypot(guild, user) {
+export async function setupHoneypot(guild, user, punishment = null) {
   const botMe = guild.members.me || (guild.members.fetchMe ? await guild.members.fetchMe().catch(() => null) : null);
   if (!botMe?.permissions.has(PermissionFlagsBits.ManageChannels)) {
     return { success: false, error: 'Athena lacks the `Manage Channels` permission to deploy the honeypot canary channel.' };
@@ -113,6 +123,13 @@ export async function setupHoneypot(guild, user) {
   }
 
   const cfg = db.getGuildConfig(guild.id);
+
+  // Normalize punishment (ban | timeout | kick)
+  let selectedPunishment = (punishment || cfg.honeypotPunishment || 'ban').toLowerCase().trim();
+  if (!['ban', 'timeout', 'kick'].includes(selectedPunishment)) {
+    selectedPunishment = 'ban';
+  }
+  cfg.honeypotPunishment = selectedPunishment;
 
   // 1. Clean existing decoy role if present
   if (cfg.honeypotRoleId) {
@@ -141,11 +158,20 @@ export async function setupHoneypot(guild, user) {
   }).catch(() => null);
 
   // 4. Create Honeypot Trap Channel
-  // Deny ViewChannel to @everyone so real members never see it, but selfbots / scrapers inspecting internal channels trip it
+  let topicRule = 'immediate permanent ban';
+  let bannerRule = 'instantly banned';
+  if (selectedPunishment === 'timeout') {
+    topicRule = 'immediate 28-day timeout';
+    bannerRule = 'instantly timed out for 28 days';
+  } else if (selectedPunishment === 'kick') {
+    topicRule = 'immediate server kick';
+    bannerRule = 'instantly kicked';
+  }
+
   const canaryChannel = await guild.channels.create({
     name: 'canary-trap-sentinel',
     type: ChannelType.GuildText,
-    topic: 'Athena Prime Ghost Honeypot Sentinel. Any message or automated injection sent here triggers an immediate dual-strike ban.',
+    topic: `Athena Prime Ghost Honeypot Sentinel. Any message or automated injection sent here triggers an ${topicRule}.`,
     permissionOverwrites: [
       {
         id: guild.roles.everyone.id,
@@ -179,14 +205,16 @@ export async function setupHoneypot(guild, user) {
     `> -# <a:uptime:1552608831060844575> **Tripwire Armed:** This is an isolated decoy containment room.\n` +
     `> -# ${BULLET_EMOJI} **Channel ID:** \`${canaryChannel.id}\`\n` +
     `> -# ${BULLET_EMOJI} **Decoy Role:** ${canaryRole ? `<@&${canaryRole.id}>` : '`None`'}\n` +
-    `> -# ${BULLET_EMOJI} **Rule:** Any automated selfbot or unauthorized user transmitting packets here will be **instantly banned** within <15ms.`
+    `> -# ${BULLET_EMOJI} **Punishment:** \`${selectedPunishment.toUpperCase()}\`\n` +
+    `> -# ${BULLET_EMOJI} **Rule:** Any automated selfbot or unauthorized user transmitting packets here will be **${bannerRule}** within <10ms.`
   );
   await canaryChannel.send(warningCard).catch(() => null);
 
   return { 
     success: true, 
     channelId: canaryChannel.id, 
-    roleId: canaryRole?.id || null 
+    roleId: canaryRole?.id || null,
+    punishment: selectedPunishment
   };
 }
 
@@ -222,6 +250,46 @@ export const commands = [
     aliases: ['trap', 'ghosttrap', 'canary'],
     description: 'Ghost Honeypot Sentinel - Configures invisible tripwire canary channels and roles.',
     category: 'Security',
+    slashDef: new SlashCommandBuilder()
+      .setName('honeypot')
+      .setDescription('Configure invisible Ghost Honeypot tripwires and canary traps')
+      .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+      .addSubcommand(sub =>
+        sub.setName('panel')
+          .setDescription('Display the Honeypot Sentinel dashboard')
+      )
+      .addSubcommand(sub =>
+        sub.setName('setup')
+          .setDescription('Deploy honeypot trap with configurable counter-measure')
+          .addStringOption(opt =>
+            opt.setName('punishment')
+              .setDescription('Action to take against intruders (default: ban)')
+              .setRequired(false)
+              .addChoices(
+                { name: 'Direct Ban (Default)', value: 'ban' },
+                { name: '28-Day Maximum Timeout', value: 'timeout' },
+                { name: 'Server Kick', value: 'kick' }
+              )
+          )
+      )
+      .addSubcommand(sub =>
+        sub.setName('punishment')
+          .setDescription('Change the punishment applied to honeypot intruders')
+          .addStringOption(opt =>
+            opt.setName('action')
+              .setDescription('Action to take against intruders')
+              .setRequired(true)
+              .addChoices(
+                { name: 'Direct Ban', value: 'ban' },
+                { name: '28-Day Maximum Timeout', value: 'timeout' },
+                { name: 'Server Kick', value: 'kick' }
+              )
+          )
+      )
+      .addSubcommand(sub =>
+        sub.setName('disarm')
+          .setDescription('Disarm and delete the honeypot trap channel and role')
+      ),
     async execute(message, args) {
       const guild = message.guild;
       if (!guild) return;
@@ -236,7 +304,12 @@ export const commands = [
       const sub = (args[0] || '').toLowerCase();
 
       if (sub === 'setup' || sub === 'deploy' || sub === 'arm') {
-        const res = await setupHoneypot(guild, message.author);
+        const punishmentArg = (args[1] || '').toLowerCase();
+        let targetPunishment = null;
+        if (['ban', 'timeout', 'kick'].includes(punishmentArg)) {
+          targetPunishment = punishmentArg;
+        }
+        const res = await setupHoneypot(guild, message.author, targetPunishment);
         if (!res.success) {
           return message.reply(cv2.danger(`Honeypot Deployment Failed | ${WRONG_EMOJI}`, res.error)).catch(() => null);
         }
@@ -244,7 +317,25 @@ export const commands = [
           `Ghost Honeypot Sentinel Deployed | ${TICK_EMOJI}`,
           `> -# **Sentinel Channel:** <#${res.channelId}> (\`${res.channelId}\`)\n` +
           `> -# **Decoy Role:** ${res.roleId ? `<@&${res.roleId}> (\`${res.roleId}\`)` : '`None`'}\n` +
+          `> -# **Punishment Strike:** \`${res.punishment.toUpperCase()}\` (<10ms execution)\n` +
           `> -# **Tripwire Status:** Active. Any selfbot or token scraper transmitting packets is eliminated on contact.`
+        )).catch(() => null);
+      }
+
+      if (sub === 'punish' || sub === 'punishment' || sub === 'action') {
+        const choice = (args[1] || '').toLowerCase();
+        if (!['ban', 'timeout', 'kick'].includes(choice)) {
+          return message.reply(cv2.warn(
+            `Invalid Punishment Choice | ${WARN_EMOJI}`,
+            `Please specify a valid punishment: \`ban\`, \`timeout\`, or \`kick\`.\nExample: \`!honeypot punish timeout\``
+          )).catch(() => null);
+        }
+        const cfg = db.getGuildConfig(guild.id);
+        cfg.honeypotPunishment = choice;
+        db.save();
+        return message.reply(cv2.success(
+          `Honeypot Punishment Updated | ${TICK_EMOJI}`,
+          `Intruders tripping the honeypot canary trap will now be penalized with: **\`${choice.toUpperCase()}\`**.`
         )).catch(() => null);
       }
 
@@ -259,6 +350,56 @@ export const commands = [
       // Default: Display Status Panel
       const panel = buildHoneypotPanel(guild);
       return message.reply(panel).catch(() => null);
+    },
+    async executeSlash(interaction) {
+      const guild = interaction.guild;
+      if (!guild) return;
+
+      if (!isAuthorized(guild, interaction.member, interaction.user.id)) {
+        return interaction.reply({
+          ...cv2.danger(`Access Denied | ${WRONG_EMOJI}`, 'Only Server Owners, Extra Owners, and Administrators can manage Honeypot Sentinels.'),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const sub = interaction.options.getSubcommand();
+      if (sub === 'setup') {
+        await interaction.deferReply();
+        const punishment = interaction.options.getString('punishment') || 'ban';
+        const res = await setupHoneypot(guild, interaction.user, punishment);
+        if (!res.success) {
+          return interaction.editReply(cv2.danger(`Honeypot Deployment Failed | ${WRONG_EMOJI}`, res.error));
+        }
+        return interaction.editReply(cv2.success(
+          `Ghost Honeypot Sentinel Deployed | ${TICK_EMOJI}`,
+          `> -# **Sentinel Channel:** <#${res.channelId}> (\`${res.channelId}\`)\n` +
+          `> -# **Decoy Role:** ${res.roleId ? `<@&${res.roleId}> (\`${res.roleId}\`)` : '`None`'}\n` +
+          `> -# **Punishment Strike:** \`${res.punishment.toUpperCase()}\` (<10ms execution)\n` +
+          `> -# **Tripwire Status:** Active. Any selfbot or token scraper transmitting packets is eliminated on contact.`
+        ));
+      }
+      if (sub === 'punishment') {
+        const choice = interaction.options.getString('action');
+        const cfg = db.getGuildConfig(guild.id);
+        cfg.honeypotPunishment = choice;
+        db.save();
+        return interaction.reply(cv2.success(
+          `Honeypot Punishment Updated | ${TICK_EMOJI}`,
+          `Intruders tripping the honeypot canary trap will now be penalized with: **\`${choice.toUpperCase()}\`**.`
+        ));
+      }
+      if (sub === 'disarm') {
+        await interaction.deferReply();
+        await removeHoneypot(guild);
+        return interaction.editReply(cv2.success(
+          `Ghost Honeypot Sentinel Disarmed | ${TICK_EMOJI}`,
+          'Canary tripwire channel and role have been permanently decommissioned.'
+        ));
+      }
+
+      // Default: panel
+      const panel = buildHoneypotPanel(guild);
+      return interaction.reply(panel);
     }
   }
 ];

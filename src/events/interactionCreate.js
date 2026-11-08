@@ -581,13 +581,19 @@ export default {
         if (!guild) return;
         const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
         if (!isAuth) {
-          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> You do not have permission to configure Honeypots.', flags: MessageFlags.Ephemeral });
+          return interaction.reply({ content: `-# ${WRONG_EMOJI} You do not have permission to configure Honeypots.`, flags: MessageFlags.Ephemeral });
         }
         await interaction.deferUpdate().catch(() => null);
         if (cid === 'honeypot_setup') {
           await setupHoneypot(guild, interaction.user);
         } else if (cid === 'honeypot_remove') {
           await removeHoneypot(guild);
+        } else if (cid === 'honeypot_cycle_punish') {
+          const cfg = db.getGuildConfig(guild.id);
+          const current = (cfg.honeypotPunishment || 'ban').toLowerCase();
+          const next = current === 'ban' ? 'timeout' : (current === 'timeout' ? 'kick' : 'ban');
+          cfg.honeypotPunishment = next;
+          db.save();
         }
         const updatedPanel = buildHoneypotPanel(guild);
         return cv2.respond(interaction, updatedPanel, 7);

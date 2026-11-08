@@ -10,14 +10,10 @@ export const commands = [
         const guild = message.guild;
         if (!guild) return;
 
-        // Fetch members if not fully cached
-        if (guild.memberCount !== guild.members.cache.size) {
-            await guild.members.fetch().catch(() => null);
-        }
-
-        const owner = await guild.fetchOwner().catch(() => null);
+        // Instant O(1) cache lookup for owner and counts
+        const owner = guild.members.cache.get(guild.ownerId) || (await guild.fetchOwner().catch(() => null));
         const bots = guild.members.cache.filter(m => m.user.bot).size;
-        const humans = guild.memberCount - bots;
+        const humans = Math.max(0, guild.memberCount - bots);
         
         const textChannels = guild.channels.cache.filter(c => c.type === 0).size;
         const voiceChannels = guild.channels.cache.filter(c => c.type === 2).size;

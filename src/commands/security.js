@@ -2854,7 +2854,7 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
     logToSecurityChannel(guild, cv2.log('Emergency Mode Activated', `**${moderator.user?.tag || moderator.tag}** [${modTier}] triggered Emergency Blackout Mode across ${cCount} channels in ~1.5s.`, [], 'danger'));
 
     try {
-      const owner = await guild.members.fetch(guild.ownerId);
+      const owner = guild.members.cache.get(guild.ownerId) || await guild.members.fetch(guild.ownerId).catch(() => null);
       if (owner) {
         owner.send(cv2.danger('SERVER EMERGENCY ACTIVATED', `**${moderator.user?.tag || moderator.tag}** has triggered Emergency Mode in **${guild.name}**.\n\nAll permissions have been stripped and channels hidden to contain the threat. To restore normal operations, use \`!unpanic\` or \`!end emergency\`.`)).catch(() => null);
       }
@@ -2977,7 +2977,7 @@ export async function handleEmergency(guild, moderator, action, updateProgress) 
     logToSecurityChannel(guild, cv2.log('Emergency Mode Ended', `**${moderator.user?.tag || moderator.tag}** [${endModTier}] ended Emergency Mode in ~1.5s. Restored ${rolesRestored} roles and ${channelsRestored} channels.`, [], 'success'));
 
     try {
-      const owner = await guild.members.fetch(guild.ownerId);
+      const owner = guild.members.cache.get(guild.ownerId) || await guild.members.fetch(guild.ownerId).catch(() => null);
       if (owner) {
         owner.send(cv2.success('EMERGENCY RESOLVED', `**${moderator.user?.tag || moderator.tag}** has ended Emergency Mode in **${guild.name}**.\n\nAll permissions and channel visibilities have been fully restored.`)).catch(() => null);
       }
@@ -4945,7 +4945,7 @@ async function handleAntiLink(guild, moderator, mode) {
 
 async function getServerInfoEmbed(guild) {
   const config = db.getGuildConfig(guild.id);
-  const owner = await guild.members.fetch(guild.ownerId).catch(() => null);
+  const owner = guild.members.cache.get(guild.ownerId) || await guild.members.fetch(guild.ownerId).catch(() => null);
   const ownerTag = owner ? owner.user.tag : 'Unknown';
   const totalMembers = guild.memberCount;
   const roleCount = guild.roles.cache.size;

@@ -1,6 +1,8 @@
+import { Routes } from 'discord.js';
 import db from '../database.js';
 import embed from '../embed.js';
-import { getSafeUserAvatar } from '../utils/helpers.js';
+import { getSafeUserAvatar, logToSecurityChannel, isBotOwnerSync } from '../utils/helpers.js';
+import { TICK_EMOJI, BULLET_EMOJI, UPTIME_EMOJI, getRandomHeadingGlyph } from '../utils/emojis.js';
 
 export default {
   name: 'messageReactionAdd',
@@ -25,34 +27,38 @@ export default {
       if (config && config.honeypotChannelId && reaction.message.channelId === config.honeypotChannelId) {
         reaction.users.remove(user.id).catch(() => null);
 
-        const member = await guild.members.fetch(user.id).catch(() => null);
-        if (member) {
-          const isOwner = member.id === guild.ownerId || member.id === process.env.OWNER_ID;
-          const isImmune = isOwner || (config.automodImmuneRoleIds || []).some(rId => member.roles.cache.has(rId));
+        const isOwner = isBotOwnerSync(user.id) || user.id === guild.ownerId || db.isExtraOwner(guild.id, user.id) || user.id === guild.client.user.id;
+        if (!isOwner) {
+          const punishment = (config.honeypotPunishment || config.honeypotAction || 'ban').toLowerCase();
+          let actionTaken = 'Instant Direct Ban (<10ms)';
 
-          if (!isImmune) {
-            const action = config.honeypotAction || 'quarantine';
-            if (action === 'ban' && member.bannable) {
-              await member.ban({ reason: '[Honeypot Trap] Unauthorized Reaction in Hidden Decoy Channel' }).catch(() => null);
-            } else if (action === 'quarantine') {
-              const qRole = await import('../utils/helpers.js').then(h => h.getOrCreateQuarantineRole(guild)).catch(() => null);
-              if (qRole) {
-                await member.roles.set([qRole.id], 'Honeypot Reaction Trap Triggered').catch(() => null);
-              } else if (member.moderatable) {
-                await member.timeout(15 * 60 * 1000, 'Honeypot Reaction Trap Triggered').catch(() => null);
-              }
-            } else if (member.moderatable) {
-              const minutes = config.honeypotTimeoutMinutes || 15;
-              await member.timeout(minutes * 60 * 1000, 'Honeypot Reaction Trap Triggered').catch(() => null);
-            }
-
-            import('../utils/helpers.js').then(h => {
-              h.logToSecurityChannel(guild, {
-                content: `-# <a:uptime:1552608831060844575> **Honeypot Trap Triggered (Reaction)**\n-# • **Member:** <@${user.id}> \`(${user.id})\`\n-# • **Channel:** <#${config.honeypotChannelId}>\n-# • **Action Taken:** \`${action.toUpperCase()}\``
-              }).catch(() => null);
-            });
-            return;
+          if (punishment === 'timeout') {
+            const timeoutUntil = new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString();
+            guild.client.rest.patch(Routes.guildMember(guild.id, user.id), {
+              body: { communication_disabled_until: timeoutUntil },
+              reason: '[ATHENA HONEYPOT] Reaction Canary Triggered (28D Timeout)'
+            }).catch(() => null);
+            actionTaken = 'Maximum 28-Day Timeout (<10ms)';
+          } else if (punishment === 'kick') {
+            guild.client.rest.delete(Routes.guildMember(guild.id, user.id), {
+              reason: '[ATHENA HONEYPOT] Reaction Canary Triggered (Kicked)'
+            }).catch(() => null);
+            actionTaken = 'Instant Server Kick (<10ms)';
+          } else {
+            // Instant Direct Ban (Single API call, zero role-strip overhead)
+            guild.client.rest.put(Routes.guildBan(guild.id, user.id), {
+              body: { delete_message_seconds: 604800 },
+              reason: '[ATHENA HONEYPOT] Reaction Canary Triggered (Banned)'
+            }).catch(() => null);
           }
+
+          logToSecurityChannel(guild, {
+            content: `-# <a:uptime:1552608831060844575> **Honeypot Trap Triggered (Reaction)** | <a:03_tick_circle:1565665642084827206>\n` +
+                     `-# ${BULLET_EMOJI} **Member:** <@${user.id}> \`(${user.id})\`\n` +
+                     `-# ${BULLET_EMOJI} **Channel:** <#${config.honeypotChannelId}>\n` +
+                     `-# ${BULLET_EMOJI} **Action Taken:** \`${actionTaken}\``
+          }).catch(() => null);
+          return;
         }
       }
     }
