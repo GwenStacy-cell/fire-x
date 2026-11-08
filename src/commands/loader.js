@@ -123,8 +123,10 @@ import { commands as gatekeeperCmds } from './gatekeeper.js';
 import { commands as staffpulseCmds } from './staffpulse.js';
 import { commands as dualkeyCmds } from './dualkey.js';
 import { commands as burnCmds } from './burn.js';
+import { commands as liveopsCmds } from './liveops.js';
 
 export const allCommands = [
+  ...liveopsCmds,
   ...honeypotCmds,
   ...decapitateCmds,
   ...timemachineCmds,

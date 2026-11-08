@@ -3872,6 +3872,16 @@ async function handleSecurityInteractions(interaction, guild) {
       }
     }
 
+    // Live Real-Time Operational Monitor Interactive Buttons
+    if (customId && customId.startsWith('livemon:')) {
+      try {
+        const { handleLiveOpsInteraction } = await import('../utils/liveOpsMonitor.js');
+        return await handleLiveOpsInteraction(interaction);
+      } catch (err) {
+        console.error('[LiveOpsMonitor Interaction Error]:', err);
+      }
+    }
+
     if (['toggle_antinuke', 'toggle_spam', 'toggle_invite', 'cycle_punishment', 'sec_status_back', 'sec_status_view', 'sec_architecture_guide', 'antinuke_config', 'save_panel'].includes(customId)) {
       try {
         let updated = false;
