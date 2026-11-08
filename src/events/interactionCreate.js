@@ -1001,7 +1001,8 @@ export default {
       }
 
       if (interaction.isButton()) {
-if (interaction.customId.startsWith('xp_view_rank_')) {
+        import('../utils/liveOpsMonitor.js').then(m => m.recordButtonInteraction()).catch(() => null);
+        if (interaction.customId.startsWith('xp_view_rank_')) {
           const targetUserId = interaction.customId.replace('xp_view_rank_', '');
           await interaction.deferReply({ flags: MessageFlags.Ephemeral });
           const targetMember = await interaction.guild.members.fetch(targetUserId).catch(() => interaction.member);
@@ -1715,7 +1716,11 @@ if (interaction.customId.startsWith('xp_view_rank_')) {
 
       try {
         await command.executeSlash(interaction);
+        import('../utils/liveOpsMonitor.js').then(m => m.recordCommandExecution(interaction.commandName, 'slash')).catch(() => null);
+        if (!db.cache.botAnalytics) db.cache.botAnalytics = { joins: 0, leaves: 0, cmds: {} };
+        db.cache.botAnalytics.cmds[interaction.commandName] = (db.cache.botAnalytics.cmds[interaction.commandName] || 0) + 1;
       } catch (error) {
+        import('../utils/liveOpsMonitor.js').then(m => m.recordCommandExecution(interaction.commandName, 'slash', true)).catch(() => null);
         if (error.code === 10062 || error.code === 10015 || error.code === 40060) {
           console.warn(`[InteractionCreate] Interaction expired or already handled: ${error.message}`);
           return;

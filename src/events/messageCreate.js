@@ -2127,7 +2127,8 @@ export default {
         await cmd.execute(message, args);
       }
 
-      // Track successful command execution for NP analytics
+      // Track successful command execution for NP analytics & LiveOps Telemetry
+      import('../utils/liveOpsMonitor.js').then(m => m.recordCommandExecution(commandName, 'prefix')).catch(() => null);
       if (!db.cache.botAnalytics) db.cache.botAnalytics = { joins: 0, leaves: 0, cmds: {} };
       db.cache.botAnalytics.cmds[commandName] = (db.cache.botAnalytics.cmds[commandName] || 0) + 1;
       db.save();

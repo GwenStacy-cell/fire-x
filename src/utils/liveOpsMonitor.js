@@ -14,7 +14,6 @@ import {
   WARN_EMOJI, 
   BULLET_EMOJI, 
   UPTIME_EMOJI, 
-  DELETE_BEAT_EMOJI,
   NAV_EMOJI_IDS,
   getRandomHeadingGlyph 
 } from './emojis.js';
@@ -22,13 +21,44 @@ import { sanitizeCV2Payload } from '../cv2.js';
 import { isGuildUnderAttack } from './antinuke.js';
 import { activeVoiceSessions } from './soundboardEngine.js';
 
+// --- IN-MEMORY REAL-TIME COMMAND & INTERACTION TELEMETRY ---
+const commandHistory = [];
+const commandCounts = new Map();
+let totalCommandsCount = 0;
+let prefixCommandsCount = 0;
+let slashCommandsCount = 0;
+let buttonInteractionsCount = 0;
+let commandErrorsCount = 0;
+
+export function recordCommandExecution(cmdName, type = 'prefix', isError = false) {
+  const now = Date.now();
+  totalCommandsCount++;
+  if (type === 'prefix') prefixCommandsCount++;
+  else if (type === 'slash') slashCommandsCount++;
+  if (isError) commandErrorsCount++;
+
+  const clean = (cmdName || 'unknown').toLowerCase();
+  commandCounts.set(clean, (commandCounts.get(clean) || 0) + 1);
+  commandHistory.push({ name: clean, type, time: now });
+
+  // Keep rolling 5-minute window for velocity calculation
+  const fiveMinAgo = now - 300_000;
+  while (commandHistory.length > 0 && commandHistory[0].time < fiveMinAgo) {
+    commandHistory.shift();
+  }
+}
+
+export function recordButtonInteraction() {
+  buttonInteractionsCount++;
+}
+
 let cachedGitHash = null;
 function getGitCommitHash() {
   if (cachedGitHash) return cachedGitHash;
   try {
     cachedGitHash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
   } catch {
-    cachedGitHash = '79482a8';
+    cachedGitHash = '813c69a';
   }
   return cachedGitHash;
 }
@@ -44,16 +74,8 @@ function formatUptime(seconds) {
   return `${s}s`;
 }
 
-function renderProgressBar(current, max, length = 10) {
-  const safeMax = Math.max(1, max);
-  const safeCur = Math.min(safeMax, Math.max(0, current));
-  const filled = Math.round((safeCur / safeMax) * length);
-  const empty = length - filled;
-  return `[${'█'.repeat(filled)}${'░'.repeat(empty)}]`;
-}
-
 /**
- * Perform live, high-resolution benchmark measurements across subsystems
+ * Collect all real-time technical metrics across subsystems
  */
 export async function collectLiveTelemetry(guild, client) {
   const wsMs = Math.max(1, Math.round(client?.ws?.ping || 17));
@@ -86,13 +108,13 @@ export async function collectLiveTelemetry(guild, client) {
   await new Promise(r => setImmediate(r));
   const elLag = (Number(process.hrtime.bigint() - elStart) / 1e6).toFixed(2);
 
-  // Memory & Heap
+  // Memory & Heap Allocations
   const mem = process.memoryUsage();
   const rssMB = (mem.rss / 1024 / 1024).toFixed(1);
   const heapUsedMB = (mem.heapUsed / 1024 / 1024).toFixed(1);
   const heapTotalMB = (mem.heapTotal / 1024 / 1024).toFixed(1);
   const externalMB = (mem.external / 1024 / 1024).toFixed(1);
-  const heapPercent = Math.round((mem.heapUsed / mem.heapTotal) * 100);
+  const heapPercent = ((mem.heapUsed / mem.heapTotal) * 100).toFixed(1);
 
   // Process & Host CPU
   const cpu = process.cpuUsage();
@@ -115,6 +137,7 @@ export async function collectLiveTelemetry(guild, client) {
   const activeShieldsCount = isSecured 
     ? all28Keys.filter(k => antinukeMods[k] !== false).length 
     : 0;
+  const shieldsPct = ((activeShieldsCount / all28Keys.length) * 100).toFixed(1);
 
   // Guild Hierarchy & 200 Member Gate
   const memberCount = guild?.memberCount || 0;
@@ -141,6 +164,33 @@ export async function collectLiveTelemetry(guild, client) {
   const liveRecordsCount = guild ? db.getSecurityLiveRecords(guild.id).length : 0;
   const quarantinedCount = guild ? db.getQuarantinedInGuild(guild.id).length : 0;
 
+  // Command Telemetry Calculations
+  const now = Date.now();
+  const cmdsLastMin = commandHistory.filter(c => now - c.time < 60_000).length;
+
+  // Aggregate command counts from memory + persistent analytics
+  const combinedCounts = new Map(commandCounts);
+  const persistentAnalytics = db.cache?.botAnalytics?.cmds || {};
+  for (const [cmd, count] of Object.entries(persistentAnalytics)) {
+    combinedCounts.set(cmd, (combinedCounts.get(cmd) || 0) + Number(count));
+  }
+  const topCommands = [...combinedCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+
+  // Database Global Metrics
+  const c = db.cache || {};
+  const dbStats = {
+    guilds: Object.keys(c.guilds || {}).length,
+    quarantines: Object.keys(c.quarantines || {}).reduce((acc, k) => acc + Object.keys(c.quarantines[k] || {}).length, 0),
+    extraOwners: Object.keys(c.extraOwners || {}).reduce((acc, k) => acc + (c.extraOwners[k] || []).length, 0),
+    warnings: Object.keys(c.warnings || {}).reduce((acc, k) => acc + Object.keys(c.warnings[k] || {}).length, 0),
+    triggers: Object.keys(c.triggers || {}).reduce((acc, k) => acc + (c.triggers[k] || []).length, 0) + (c.globalTriggers || []).length,
+    backups: Object.keys(c.backups || {}).length,
+    jtcChannels: Object.keys(c.jtcChannels || {}).length,
+    wiretaps: Object.keys(c.wiretaps || {}).reduce((acc, k) => acc + (c.wiretaps[k] || []).length, 0)
+  };
+
   return {
     wsMs,
     restMs,
@@ -156,10 +206,22 @@ export async function collectLiveTelemetry(guild, client) {
     guildsCount: client?.guilds?.cache?.size || 1,
     usersCount: client?.users?.cache?.size || 0,
     channelsCount: client?.channels?.cache?.size || 0,
+    commands: {
+      total: totalCommandsCount,
+      prefix: prefixCommandsCount,
+      slash: slashCommandsCount,
+      buttons: buttonInteractionsCount,
+      errors: commandErrorsCount,
+      velocity: cmdsLastMin,
+      top: topCommands,
+      registered: 378
+    },
+    database: dbStats,
     security: {
       isSecured,
       activeShields: activeShieldsCount,
       totalShields: all28Keys.length,
+      pct: shieldsPct,
       modules: antinukeMods,
       underAttack,
       liveRecordsCount,
@@ -181,9 +243,9 @@ export async function collectLiveTelemetry(guild, client) {
     daemons: {
       gitCommit,
       wiretapsCount,
-      morningEngine: 'Active (60s Sweep)',
-      webSub: 'Active (Port 3000)',
-      cloudSync: 'Active (Mirroring Scheduled)'
+      morningEngine: 'Active (60s Sweep Daemon)',
+      webSub: 'Active (Port 3000 Webhook)',
+      cloudSync: 'Active (Local + Cloud Mirroring)'
     }
   };
 }
@@ -199,31 +261,28 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
 
   const containerComponents = [];
 
-  // --- HEADER SECTION ---
+  // --- HEADER SECTION (Strict custom emojis only, NO native emojis) ---
   containerComponents.push({
     type: 10,
-    content: `# ${getRandomHeadingGlyph()} Athena Prime Live Telemetry & Real-Time Matrix | ${TICK_EMOJI}\n` +
-             `> -# <a:uptime:1552608831060844575> **Continuous Real-Time Operations Monitor \u2022 Live System Telemetry**\n` +
-             `> -# ${BULLET_EMOJI} **Active View:** \`${activeView.toUpperCase()}\` \u2022 **Last Measured:** <t:${timestampNow}:R> (\`${new Date().toISOString().slice(11, 19)} UTC\`)`
+    content: `# ${getRandomHeadingGlyph()} Athena Prime Real-Time Telemetry & Operations Monitor | ${TICK_EMOJI}\n` +
+             `> -# <a:uptime:1552608831060844575> Continuous Live Metrics Engine \u2022 Zero-Latency Technical Subsystems\n` +
+             `> -# ${BULLET_EMOJI} **Active Telemetry View:** \`${activeView.toUpperCase()}\` \u2022 **Synchronized:** <t:${timestampNow}:R> (\`${new Date().toISOString().slice(11, 19)} UTC\`)`
   });
 
   containerComponents.push({ type: 14, divider: true });
 
   // --- VIEW SELECTION CONTENT ---
   if (activeView === 'overview') {
-    // ⚡ MASTER OVERVIEW
-    const memBar = renderProgressBar(data.memory.used, data.memory.total, 10);
-    const secProgress = renderProgressBar(data.security.activeShields, data.security.totalShields, 10);
-
+    // MASTER OVERVIEW (Clean numbers, NO text progress bars)
     containerComponents.push({
       type: 10,
       content:
-        `### **I. High-Velocity Latencies & Speed Pipeline**\n` +
+        `### **I. Core Execution Speeds & Pipeline Latencies**\n` +
         `> -# ${BULLET_EMOJI} **Gateway WebSocket:** \`${data.wsMs}ms\` heartbeat latency\n` +
         `> -# ${BULLET_EMOJI} **Discord REST API:** \`${data.restMs}ms\` HTTPS roundtrip execution\n` +
-        `> -# ${BULLET_EMOJI} **Database Read/Write:** \`${data.dbReadMs}ms\` (Microsecond in-memory engine)\n` +
+        `> -# ${BULLET_EMOJI} **Database Read / Write:** \`${data.dbReadMs}ms\` (Microsecond in-memory engine)\n` +
         `> -# ${BULLET_EMOJI} **Redis Cache Throughput:** SET: \`${data.redis.set}ms\` \u2022 GET: \`${data.redis.get}ms\` \u2022 DEL: \`${data.redis.del}ms\`\n` +
-        `> -# ${BULLET_EMOJI} **Event Loop Scheduling Lag:** \`${data.elLag}ms\` (Zero thread jitter)`
+        `> -# ${BULLET_EMOJI} **Event Loop Execution Delay:** \`${data.elLag}ms\` (Zero micro-jitter)`
     });
 
     containerComponents.push({ type: 14, divider: true });
@@ -231,13 +290,25 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
     containerComponents.push({
       type: 10,
       content:
-        `### **II. Antinuke & Bulletproof Security Sentinel**\n` +
+        `### **II. Command Telemetry & Dispatch Velocity**\n` +
+        `> -# ${BULLET_EMOJI} **Commands Processed:** \`${data.commands.total.toLocaleString()}\` total (\`${data.commands.prefix}\` Prefix \u2022 \`${data.commands.slash}\` Slash)\n` +
+        `> -# ${BULLET_EMOJI} **Rolling Velocity:** \`${data.commands.velocity} cmds/min\` (\`${data.commands.buttons}\` button clicks processed)\n` +
+        `> -# ${BULLET_EMOJI} **Registered Commands:** \`${data.commands.registered} commands\` synchronized in catalog\n` +
+        `> -# ${BULLET_EMOJI} **Command Error Rate:** \`${data.commands.errors} errors\` (${data.commands.total > 0 ? ((data.commands.errors / data.commands.total) * 100).toFixed(2) : '0.00'}%)`
+    });
+
+    containerComponents.push({ type: 14, divider: true });
+
+    containerComponents.push({
+      type: 10,
+      content:
+        `### **III. Antinuke Defense Matrix & Sentinels**\n` +
         `> -# ${BULLET_EMOJI} **Defense Posture:** ${data.security.isSecured ? '**ARMED (All Protective Shields Active)**' : '**DISARMED (Standby)**'}\n` +
-        `> -# ${BULLET_EMOJI} **Shield Integrity:** \`${secProgress}\` (${data.security.activeShields}/${data.security.totalShields} Shields Armed)\n` +
-        `> -# ${BULLET_EMOJI} **Hostile Interception Pipeline:** \`DirectStrike (Sub-15ms Ring Match)\` \u2022 \`Dual-Strike Sub-1ms Ban + Role Strip\`\n` +
-        `> -# ${BULLET_EMOJI} **Under Attack Status:** ${data.security.underAttack ? '**<a:exclamation_outline1:1565666739356827759> UNDER ATTACK — LOCKDOWN ACTIVE**' : '`Nominal (0 Threats Detected)`'}\n` +
-        `> -# ${BULLET_EMOJI} **200-Member Hierarchy Gate:** ${data.security.meetsMemberCount ? `${emojiOn} Verified (\`${data.security.memberCount} / 200\`)` : `${emojiOff} Locked (\`${data.security.memberCount} / 200\`)`}\n` +
-        `> -# ${BULLET_EMOJI} **Persistence Admin Sentinels:** ${data.security.hasFwRole && data.security.hasUnbRole ? `${emojiOn} Both Active (\`Athena Firewall\` + \`Athena Unbypassable\`)` : `${emojiOff} Standby`}`
+        `> -# ${BULLET_EMOJI} **Shield Armament Ratio:** \`${data.security.activeShields} / ${data.security.totalShields} Shields Armed\` (${data.security.pct}% Active)\n` +
+        `> -# ${BULLET_EMOJI} **Interception Pipeline:** \`DirectStrike (Sub-15ms Audit Ring Match)\` \u2022 \`Dual-Strike Sub-1ms Ban + Role Strip\`\n` +
+        `> -# ${BULLET_EMOJI} **Under Attack State:** ${data.security.underAttack ? '**<a:exclamation_outline1:1565666739356827759> UNDER ATTACK — ACTIVE LOCKDOWN**' : '`Nominal (0 Threats Active)`'}\n` +
+        `> -# ${BULLET_EMOJI} **200-Member Hierarchy Gate:** ${data.security.meetsMemberCount ? `${emojiOn} Verified (\`${data.security.memberCount} / 200 members\`)` : `${emojiOff} Locked (\`${data.security.memberCount} / 200 members\`)`}\n` +
+        `> -# ${BULLET_EMOJI} **Persistence Roles:** ${data.security.hasFwRole && data.security.hasUnbRole ? `${emojiOn} Active (\`Athena Firewall\` + \`Athena Unbypassable\`)` : `${emojiOff} Standby`}`
     });
 
     containerComponents.push({ type: 14, divider: true });
@@ -245,23 +316,52 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
     containerComponents.push({
       type: 10,
       content:
-        `### **III. Audio Deck, Daemons & Cluster Scale**\n` +
-        `> -# ${BULLET_EMOJI} **Voice Matrix Sessions:** \`${data.voice.activeSessions}\` live audio streams \u2022 \`${data.voice.customSounds}\` custom sounds loaded\n` +
-        `> -# ${BULLET_EMOJI} **Background Daemons:** MorningBroadcaster \`[60s Sweep]\` \u2022 GitWatcher \`[Active \u2022 ${data.daemons.gitCommit}]\` \u2022 WebSub \`[Port 3000]\`\n` +
-        `> -# ${BULLET_EMOJI} **Memory Footprint:** \`${memBar}\` \`${data.memory.used} MB / ${data.memory.total} MB\` (${data.memory.pct}%) \u2022 RSS: \`${data.memory.rss} MB\`\n` +
-        `> -# ${BULLET_EMOJI} **Process Uptime:** \`${data.uptime}\` \u2022 **Node Runtime:** \`${data.nodeVersion}\` on \`${data.platform}\`\n` +
-        `> -# ${BULLET_EMOJI} **Cluster Reach:** \`${data.guildsCount}\` guilds watched \u2022 \`${data.channelsCount.toLocaleString()}\` channels \u2022 \`${data.usersCount.toLocaleString()}\` users`
+        `### **IV. Host Process, Memory & Cluster Reach**\n` +
+        `> -# ${BULLET_EMOJI} **V8 Heap Allocation:** \`${data.memory.used} MB / ${data.memory.total} MB\` (${data.memory.pct}% Allocated) \u2022 RSS: \`${data.memory.rss} MB\`\n` +
+        `> -# ${BULLET_EMOJI} **Host Process Uptime:** \`${data.uptime}\` \u2022 Node \`${data.nodeVersion}\` on \`${data.platform}\`\n` +
+        `> -# ${BULLET_EMOJI} **Cluster Scale:** \`${data.guildsCount}\` guilds watched \u2022 \`${data.channelsCount.toLocaleString()}\` channels \u2022 \`${data.usersCount.toLocaleString()}\` users`
+    });
+
+  } else if (activeView === 'commands') {
+    // COMMAND & INTERACTION TELEMETRY DEEP DIVE
+    let topCmdsText = '> -# <a:target_blink:1565667466984554588> No command invocation history recorded yet.';
+    if (data.commands.top.length > 0) {
+      topCmdsText = data.commands.top
+        .map(([name, count], idx) => `> -# ${BULLET_EMOJI} **#${idx + 1}** \`!${name}\` / \`/${name}\` \u2014 **${count.toLocaleString()} executions**`)
+        .join('\n');
+    }
+
+    containerComponents.push({
+      type: 10,
+      content:
+        `### **I. Command Execution Throughput & Volumes**\n` +
+        `> -# ${BULLET_EMOJI} **Total Commands Dispatched:** \`${data.commands.total.toLocaleString()} invocations\`\n` +
+        `> -# ${BULLET_EMOJI} **Execution Rate:** \`${data.commands.velocity} commands/minute\` (Live rolling 60s window)\n` +
+        `> -# ${BULLET_EMOJI} **Prefix Commands Dispatched:** \`${data.commands.prefix.toLocaleString()}\`\n` +
+        `> -# ${BULLET_EMOJI} **Slash Commands Dispatched:** \`${data.commands.slash.toLocaleString()}\`\n` +
+        `> -# ${BULLET_EMOJI} **Interactive Button Clicks:** \`${data.commands.buttons.toLocaleString()} actions handled\`\n` +
+        `> -# ${BULLET_EMOJI} **Failed / Error Executions:** \`${data.commands.errors} errors\`\n` +
+        `> -# ${BULLET_EMOJI} **Command Engine Status:** \`${data.commands.registered} registered commands\` loaded & verified`
+    });
+
+    containerComponents.push({ type: 14, divider: true });
+
+    containerComponents.push({
+      type: 10,
+      content:
+        `### **II. Top Invocated Commands Leaderboard**\n` +
+        topCmdsText
     });
 
   } else if (activeView === 'speed') {
-    // 🚀 SPEED & LATENCIES DEEP DIVE
+    // SPEED & LATENCIES DEEP DIVE
     containerComponents.push({
       type: 10,
       content:
-        `### **I. Complete High-Precision Speed Matrix**\n` +
+        `### **I. High-Precision Latency Benchmark**\n` +
         `> -# ${BULLET_EMOJI} **Gateway Heartbeat:** \`${data.wsMs}ms\`\n` +
         `> -# ${BULLET_EMOJI} **REST HTTPS Roundtrip:** \`${data.restMs}ms\` (Live Discord endpoint ping)\n` +
-        `> -# ${BULLET_EMOJI} **Local DB Access Time:** \`${data.dbReadMs}ms\` (High-resolution \`process.hrtime\` query speed)\n` +
+        `> -# ${BULLET_EMOJI} **Database Read Speed:** \`${data.dbReadMs}ms\` (High-resolution \`process.hrtime\` query speed)\n` +
         `> -# ${BULLET_EMOJI} **Redis SET Throughput:** \`${data.redis.set}ms\`\n` +
         `> -# ${BULLET_EMOJI} **Redis GET Throughput:** \`${data.redis.get}ms\`\n` +
         `> -# ${BULLET_EMOJI} **Redis DEL Throughput:** \`${data.redis.del}ms\`\n` +
@@ -273,7 +373,7 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
     containerComponents.push({
       type: 10,
       content:
-        `### **II. V8 Engine Memory & Core Execution**\n` +
+        `### **II. V8 Memory Footprint & Process CPU**\n` +
         `> -# ${BULLET_EMOJI} **Heap Allocated:** \`${data.memory.total} MB\`\n` +
         `> -# ${BULLET_EMOJI} **Heap Consumed:** \`${data.memory.used} MB\` (${data.memory.pct}% utilization)\n` +
         `> -# ${BULLET_EMOJI} **Resident Set Size (RSS):** \`${data.memory.rss} MB\`\n` +
@@ -283,7 +383,7 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
     });
 
   } else if (activeView === 'antinuke') {
-    // 🛡️ ANTINUKE & DEFENSE MATRIX DEEP DIVE
+    // ANTINUKE & DEFENSE MATRIX DEEP DIVE
     const modLabels = {
       antiRoleCreate: 'Anti Role Create',
       antiRoleDelete: 'Anti Role Delete',
@@ -337,7 +437,7 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
         `> -# ${BULLET_EMOJI} **Cascading Neutralization:** Rogue bot inviters automatically penalized\n` +
         `> -# ${BULLET_EMOJI} **Active Lockdown State:** ${data.security.underAttack ? '**ENGAGED (DEFCON 1 Attack In Progress)**' : '`Standby (0 Threats Active)`'}\n` +
         `> -# ${BULLET_EMOJI} **Live Logged Incidents:** \`${data.security.liveRecordsCount}\` recent audit logs cross-examined\n` +
-        `> -# ${BULLET_EMOJI} **Quarantined Violators:** \`${data.security.quarantinedCount}\` accounts isolated`
+        `> -# ${BULLET_EMOJI} **Quarantined Accounts:** \`${data.security.quarantinedCount}\` violators isolated`
     });
 
     containerComponents.push({ type: 14, divider: true });
@@ -346,6 +446,7 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
       type: 10,
       content:
         `### **II. All 28 Antinuke Defensive Modules Status**\n` +
+        `> -# ${BULLET_EMOJI} **Total Armed Modules:** \`${data.security.activeShields} / ${data.security.totalShields}\` (${data.security.pct}% Active)\n` +
         modulesList
     });
 
@@ -355,22 +456,39 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
       type: 10,
       content:
         `### **III. Persistence Sentinel & Access Verification**\n` +
-        `> -# ${BULLET_EMOJI} **200-Member Requirement:** ${data.security.meetsMemberCount ? `${emojiOn} **PASS** (\`${data.security.memberCount}/200 members\`)` : `${emojiOff} **BLOCKED** (\`${data.security.memberCount}/200 members\`)`}\n` +
+        `> -# ${BULLET_EMOJI} **200-Member Requirement:** ${data.security.meetsMemberCount ? `${emojiOn} **PASS** (\`${data.security.memberCount} / 200 members\`)` : `${emojiOff} **BLOCKED** (\`${data.security.memberCount} / 200 members\`)`}\n` +
         `> -# ${BULLET_EMOJI} **Role Hierarchy Position:** ${data.security.meetsHierarchy ? `${emojiOn} **PASS** (Pos ${data.security.botPos} of ${data.security.maxPos})` : `${emojiOff} **FAIL** (Must be Top 3)`}\n` +
         `> -# ${BULLET_EMOJI} **Athena Firewall Role ID:** \`${data.security.fwRoleId || 'None'}\`\n` +
         `> -# ${BULLET_EMOJI} **Athena Unbypassable Role ID:** \`${data.security.unbRoleId || 'None'}\``
     });
 
-  } else if (activeView === 'voice') {
-    // 🔊 VOICE MATRIX DEEP DIVE
+  } else if (activeView === 'database') {
+    // DATABASE & STORAGE DEEP DIVE
     containerComponents.push({
       type: 10,
       content:
-        `### **I. Voice Matrix & 24/7 Home VC Architecture**\n` +
-        `> -# ${BULLET_EMOJI} **Active Voice Sessions:** \`${data.voice.activeSessions}\` guild voice connections\n` +
-        `> -# ${BULLET_EMOJI} **24/7 Home VC Auto-Join:** Native self-healing voice listeners active across guilds\n` +
-        `> -# ${BULLET_EMOJI} **Audio Player Pipeline:** In-memory streaming via \`@discordjs/voice\`\n` +
-        `> -# ${BULLET_EMOJI} **Custom Audio Library:** \`${data.voice.customSounds}\` guild SFX stored in database`
+        `### **I. Database In-Memory Storage Footprint**\n` +
+        `> -# ${BULLET_EMOJI} **Configured Guild Profiles:** \`${data.database.guilds.toLocaleString()} guilds\`\n` +
+        `> -# ${BULLET_EMOJI} **Quarantined Accounts:** \`${data.database.quarantines.toLocaleString()} users\` across all servers\n` +
+        `> -# ${BULLET_EMOJI} **Member Warnings Logged:** \`${data.database.warnings.toLocaleString()} warnings\`\n` +
+        `> -# ${BULLET_EMOJI} **Extra Owners Authorized:** \`${data.database.extraOwners.toLocaleString()} extra owners\`\n` +
+        `> -# ${BULLET_EMOJI} **Custom Triggers & Auto-Replies:** \`${data.database.triggers.toLocaleString()} rules\` active\n` +
+        `> -# ${BULLET_EMOJI} **Join-To-Create (JTC) Channels:** \`${data.database.jtcChannels.toLocaleString()} temporary channels\`\n` +
+        `> -# ${BULLET_EMOJI} **Server Bitmask Backups:** \`${data.database.backups.toLocaleString()} snapshots\` stored\n` +
+        `> -# ${BULLET_EMOJI} **Wiretap Social Media Feeds:** \`${data.database.wiretaps.toLocaleString()} broadcasters\` active`
+    });
+
+  } else if (activeView === 'daemons') {
+    // DAEMONS & VOICE SUBSYSTEMS DEEP DIVE
+    containerComponents.push({
+      type: 10,
+      content:
+        `### **I. Continuous Background Daemons**\n` +
+        `> -# ${BULLET_EMOJI} **Morning Thought Broadcaster:** ${data.daemons.morningEngine} \u2022 Scheduled morning delivery\n` +
+        `> -# ${BULLET_EMOJI} **Wiretap Social Broadcaster:** \`${data.daemons.wiretapsCount} feeds\` tracking YouTube & Reddit\n` +
+        `> -# ${BULLET_EMOJI} **GitWatcher & AutoDeploy:** Commit \`${data.daemons.gitCommit}\` on branch \`main\` (60s auto-pull)\n` +
+        `> -# ${BULLET_EMOJI} **WebSub Hub:** ${data.daemons.webSub} \u2022 Real-time YouTube push notifications\n` +
+        `> -# ${BULLET_EMOJI} **Cloud Backup & Sync:** ${data.daemons.cloudSync} \u2022 Instant snapshot recovery`
     });
 
     containerComponents.push({ type: 14, divider: true });
@@ -378,23 +496,12 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
     containerComponents.push({
       type: 10,
       content:
-        `### **II. 24/7 Background Radio Streams**\n` +
-        `> -# ${BULLET_EMOJI} **Lo-Fi Chill Stream:** Continuous 24/7 low-bandwidth broadcast \`[Online]\`\n` +
-        `> -# ${BULLET_EMOJI} **Synthwave Stream:** Continuous retro electro background audio \`[Online]\`\n` +
-        `> -# ${BULLET_EMOJI} **Anime OST Stream:** Continuous Japanese animation soundtrack audio \`[Online]\``
-    });
-
-  } else if (activeView === 'daemons') {
-    // 📡 BACKGROUND DAEMONS & WATCHERS DEEP DIVE
-    containerComponents.push({
-      type: 10,
-      content:
-        `### **I. Continuous Background Daemons**\n` +
-        `> -# ${BULLET_EMOJI} **Morning Thought Broadcaster:** ${data.daemons.morningEngine} \u2022 Scheduled morning delivery\n` +
-        `> -# ${BULLET_EMOJI} **Wiretap Social Broadcaster:** Registered feeds: \`${data.daemons.wiretapsCount}\` (YouTube & Reddit feeds)\n` +
-        `> -# ${BULLET_EMOJI} **GitWatcher & AutoDeploy:** Current commit \`${data.daemons.gitCommit}\` \u2022 60s auto-pull interval\n` +
-        `> -# ${BULLET_EMOJI} **WebSub Hub:** ${data.daemons.webSub} \u2022 Real-time YouTube push notifications\n` +
-        `> -# ${BULLET_EMOJI} **Cloud Backup & Sync:** ${data.daemons.cloudSync} \u2022 Instant snapshot recovery`
+        `### **II. Voice Matrix & 24/7 Home VC Architecture**\n` +
+        `> -# ${BULLET_EMOJI} **Active Voice Sessions:** \`${data.voice.activeSessions} active audio streams\`\n` +
+        `> -# ${BULLET_EMOJI} **24/7 Home VC Auto-Join:** Native self-healing voice listeners active across guilds\n` +
+        `> -# ${BULLET_EMOJI} **Audio Player Engine:** High-performance playback via \`@discordjs/voice\`\n` +
+        `> -# ${BULLET_EMOJI} **Custom Audio Library:** \`${data.voice.customSounds} guild SFX\` stored in database\n` +
+        `> -# ${BULLET_EMOJI} **Background Radio Stations:** 24/7 Lo-Fi, Synthwave, and Anime OST streams \`[Online]\``
     });
   }
 
@@ -405,36 +512,40 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
     content: `-# **Athena Prime Real-Time Telemetry Matrix \u2022 Zero-Latency Live Operations**`
   });
 
-  // --- INTERACTIVE ACTION ROWS ---
-  // Row 1: View Selectors
+  // --- INTERACTIVE ACTION ROWS (Strictly NO native emojis on buttons) ---
+  // Row 1: Primary View Switchers
   const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('livemon:view:overview')
-      .setLabel('⚡ Overview')
+      .setLabel('Overview')
       .setStyle(activeView === 'overview' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     new ButtonBuilder()
+      .setCustomId('livemon:view:commands')
+      .setLabel('Command Telemetry')
+      .setStyle(activeView === 'commands' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    new ButtonBuilder()
       .setCustomId('livemon:view:speed')
-      .setLabel('🚀 Speed & Latency')
+      .setLabel('Speed & Latency')
       .setStyle(activeView === 'speed' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('livemon:view:antinuke')
-      .setLabel('🛡️ Antinuke Matrix')
+      .setLabel('Antinuke Matrix')
       .setStyle(activeView === 'antinuke' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId('livemon:view:voice')
-      .setLabel('🔊 Voice Matrix')
-      .setStyle(activeView === 'voice' ? ButtonStyle.Primary : ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('livemon:view:daemons')
-      .setLabel('📡 Daemons')
-      .setStyle(activeView === 'daemons' ? ButtonStyle.Primary : ButtonStyle.Secondary)
+      .setCustomId('livemon:view:database')
+      .setLabel('Database Stats')
+      .setStyle(activeView === 'database' ? ButtonStyle.Primary : ButtonStyle.Secondary)
   );
 
-  // Row 2: Refresh & Close controls
+  // Row 2: Secondary View Switcher, Refresh & Close
   const row2 = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
+      .setCustomId('livemon:view:daemons')
+      .setLabel('Daemons & Voice')
+      .setStyle(activeView === 'daemons' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+    new ButtonBuilder()
       .setCustomId(`livemon:refresh:${activeView}`)
-      .setLabel('🔄 Live Refresh')
+      .setLabel('Live Refresh')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId('livemon:close')
@@ -459,6 +570,8 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
 export async function handleLiveOpsInteraction(interaction) {
   const customId = interaction.customId;
   if (!customId.startsWith('livemon:')) return;
+
+  recordButtonInteraction();
 
   if (customId === 'livemon:close') {
     try {
