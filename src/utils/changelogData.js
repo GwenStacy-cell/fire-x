@@ -234,13 +234,13 @@ export function buildChangelogPayload(page = 1) {
   const entry = activeEntries[clampedPage - 1];
 
   const headerText = `# ${NINJA_BULLET} Athena Prime Changelog ${NINJA_BULLET_RTL}`;
-  const dateText = `### ≡ ${entry.date}`;
+  const dateText = `### ${entry.date}`;
   const headlineBlock = `## ${getRandomHeadingGlyph()} ${entry.version}: ${entry.headline}\n> -# **__Overview:__** ${entry.summary}`;
 
   let sectionsText = '';
 
   if (entry.whatsNew && entry.whatsNew.length > 0) {
-    sectionsText += `### ≡ What's New\n`;
+    sectionsText += `### What's New\n`;
     for (const item of entry.whatsNew) {
       sectionsText += `${BULLET_EMOJI} **__${item.title}:__** ${item.desc}\n`;
     }
@@ -248,7 +248,7 @@ export function buildChangelogPayload(page = 1) {
 
   if (entry.improvements && entry.improvements.length > 0) {
     if (sectionsText) sectionsText += '\n';
-    sectionsText += `### ≡ Improvements & Optimizations\n`;
+    sectionsText += `### Improvements & Optimizations\n`;
     for (const item of entry.improvements) {
       sectionsText += `${BULLET_EMOJI} **__${item.title}:__** ${item.desc}\n`;
     }
@@ -256,7 +256,7 @@ export function buildChangelogPayload(page = 1) {
 
   if (entry.fixes && entry.fixes.length > 0) {
     if (sectionsText) sectionsText += '\n';
-    sectionsText += `### ≡ Fixes & Security Hardening\n`;
+    sectionsText += `### Fixes & Security Hardening\n`;
     for (const item of entry.fixes) {
       sectionsText += `${BULLET_EMOJI} **__${item.title}:__** ${item.desc}\n`;
     }
