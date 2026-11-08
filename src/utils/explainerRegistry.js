@@ -430,21 +430,55 @@ Athena Prime supports full parity across standard text prefixes and Discord slas
   honeypot: {
     id: 'honeypot',
     label: 'Ghost Honeypot Sentinel',
-    aliases: ['trap', 'honeypots', 'ghosttrap', 'canary'],
+    aliases: ['trap', 'honeypots', 'ghosttrap', 'canary', 'hp', 'raidertrap'],
     title: 'Ghost Honeypot Sentinel & Decoy Architecture | <a:03_tick_circle:1565665642084827206>',
-    description: 'Invisible canary channel & role trapping token scrapers, selfbots, and raiders with instant dual-strike ban.',
+    description: 'Invisible canary channel & role trapping token scrapers, selfbots, and raiders with configurable sub-10ms counter-measures.',
     pages: [
       {
         pageTitle: 'Under-the-Hood Honeypot Mechanics',
         content: `# ${getRandomHeadingGlyph()} 1. What is a Ghost Honeypot Sentinel?
 A Honeypot is an invisible text channel and decoy role configured strictly hidden from normal human members (@everyone Deny ViewChannel), but visible to token scrapers, rogue userbots, and mass raid automation scripts that enumerate guild channels via raw WebSocket gateways.
 
-# 2. Athena's Zero-Latency Dual-Strike Tripwire
+# 2. Configurable Counter-Measure Strikes
+• **Setup with Choice:** Choose the punishment during setup:
+  - **Prefix:** \`!honeypot setup [ban|timeout|kick]\` (e.g. \`!honeypot setup timeout\`)
+  - **Slash:** \`/honeypot setup [punishment: Direct Ban | 28-Day Maximum Timeout | Server Kick]\`
+• **Interactive Dashboard Toggle:** The honeypot panel features a dedicated \`[Punishment: BAN / TIMEOUT / KICK]\` cycle button to switch punishments with one click.
+• **Dedicated Subcommand:** Change punishments at any time with \`!honeypot punish <ban|timeout|kick>\` or \`/honeypot punishment <action>\`.
+• **Sub-10ms Direct Execution:**
+  - **Ban:** Single direct REST ban (\`Routes.guildBan\`) with 7-day message purge.
+  - **Timeout:** Instant 28-day maximum timeout via direct \`Routes.guildMember\` PATCH.
+  - **Kick:** Instant direct removal via \`Routes.guildMember\` DELETE.
+  - Zero redundant role-stripping overhead before enforcement.
+
+# 3. Sentinel Tripwire Architecture
 • **Channel & Role ID Binding:** Both decoy entities are tracked strictly by Discord Snowflake ID (\`dbConfig.honeypotChannelId\` and \`dbConfig.honeypotRoleId\`) in SQLite.
-• **Instant Message Interception:** In \`src/events/messageCreate.js\`, any packet received in the honeypot channel triggers an instant security execution:
-  1. **Dual-Strike Ban:** Parallel HTTP requests dispatch \`rawBan\` and \`rawRoleStrip\` concurrently via \`Promise.allSettled\`. Offender is banned and stripped in <15ms!
-  2. **Forensic Telemetry:** Incident is logged into \`db.recordIncident\` with attacker ID, payload snippet, and sub-wire response latency.
-  3. **Immunity Matrix:** Server Owner, Extra Owners, and Bot Owner are immune to false trips.`
+• **Instant Message Interception:** In \`src/events/messageCreate.js\`, any packet received in the honeypot channel triggers an instant security execution in <10ms.
+• **Forensic Telemetry:** Incident is logged into \`db.recordIncident\` with attacker ID, payload snippet, and sub-wire response latency.
+• **Immunity Matrix:** Server Owner, Extra Owners, and Bot Owner are immune to false trips.`
+      }
+    ]
+  },
+  liveops: {
+    id: 'liveops',
+    label: 'LiveOps Telemetry Matrix',
+    aliases: ['livemonitor', 'telemetry', 'sysmon', 'matrixmon', 'perfmon', 'mon'],
+    title: 'LiveOps Telemetry & Performance Matrix | <a:03_tick_circle:1565665642084827206>',
+    description: 'Real-time operational monitor displaying hardware telemetry, execution benchmarks, antinuke velocity, and daemon health.',
+    pages: [
+      {
+        pageTitle: 'LiveOps Architecture & Telemetry Subsystems',
+        content: `# ${getRandomHeadingGlyph()} 1. Command Activation & Aliases
+• **Prefix Command:** \`!liveops\` (Aliases: \`!livemonitor\`, \`!telemetry\`, \`!sysmon\`, \`!matrixmon\`, \`!perfmon\`, \`!mon\`)
+• **Slash Command:** \`/liveops [view: overview | speed | antinuke | voice | daemons]\`
+• **Direct View Jump:** \`!liveops speed\`, \`!liveops antinuke\`, \`!liveops voice\`, \`!liveops daemons\`
+
+# 2. Telemetry Subsystems
+• **Master Overview:** Realtime memory heap, RSS, external buffers, CPU user/system clock, Node.js event loop lag, SQLite WAL cache status, WebSocket heartbeat, and live REST HTTPS roundtrip ping.
+• **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, role strip, channel lock, timeout, DB read/write, and audit log polling.
+• **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.
+• **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.
+• **Storage & Daemons:** Background worker telemetry (auto-deploy watcher, backup sync, thought broadcaster, stats channels).`
       }
     ]
   },
@@ -1683,6 +1717,53 @@ export const DETAILED_COMMANDS = {
 • **Condemned Cache:** Known malicious actors are immediately isolated without redundant audit evaluations.
 • **Channel & Role Healing:** Automatically reconstructs deleted channels and roles with original permissions intact.`,
     example: '!antinuke config'
+  },
+
+  honeypot: {
+    name: 'honeypot',
+    aliases: ['trap', 'ghosttrap', 'canary', 'hp', 'raidertrap'],
+    category: 'Security & Antinuke Defense',
+    clearance: 'Extra Owner (or Server Owner)',
+    syntax: '!honeypot [setup [ban|timeout|kick] | punish <ban|timeout|kick> | remove | status] / /honeypot',
+    purpose: 'Ghost Honeypot Sentinel configuring invisible tripwire canary channels and roles with configurable counter-measures (ban, timeout, kick).',
+    architecture:
+`• **Zero-Tolerance Decoy Trap:**
+  - Creates isolated \`#canary-trap-sentinel\` hidden from normal members (@everyone Deny ViewChannel) but visible to selfbots and token scrapers enumerating channels.
+  - Canary role strictly bound by Discord Snowflake ID in database.
+• **Configurable Counter-Measure Strikes:**
+  - Setup with Choice: \`!honeypot setup [ban|timeout|kick]\` (e.g. \`!honeypot setup timeout\`).
+  - Slash: \`/honeypot setup [punishment: Direct Ban | 28-Day Maximum Timeout | Server Kick]\`.
+  - Subcommand: \`!honeypot punish <ban|timeout|kick>\` or \`/honeypot punishment <action>\`.
+  - 1-Click Dashboard Toggle: Cycle punishments directly with the \`[Punishment: BAN / TIMEOUT / KICK]\` button.
+• **Sub-10ms Direct Execution:**
+  - Single REST API action with zero lag and zero redundant role stripping before enforcement.
+  - Ban: Instant permanent ban (\`Routes.guildBan\`) with 7-day message wipe.
+  - Timeout: Instant 28-day maximum timeout via direct \`Routes.guildMember\` PATCH.
+  - Kick: Instant direct removal via \`Routes.guildMember\` DELETE.
+• **Forensic Telemetry:**
+  - Intercepted messages automatically log intruder ID, payload snippet, and latency to the security channel.`,
+    example: '!honeypot setup timeout'
+  },
+
+  liveops: {
+    name: 'liveops',
+    aliases: ['livemonitor', 'telemetry', 'sysmon', 'matrixmon', 'perfmon', 'mon'],
+    category: 'Utility & System Telemetry',
+    clearance: 'Public (Everyone)',
+    syntax: '!liveops [overview|speed|antinuke|voice|daemons] / /liveops [view]',
+    purpose: 'Real-time live operational monitor with speeds, latencies, antinuke matrix, and daemon metrics.',
+    architecture:
+`• **Command Activation & Aliases:**
+  - Prefix: \`!liveops\` (Aliases: \`!livemonitor\`, \`!telemetry\`, \`!sysmon\`, \`!matrixmon\`, \`!perfmon\`, \`!mon\`).
+  - Slash: \`/liveops [view: overview | speed | antinuke | voice | daemons]\`.
+  - Direct View Jump: \`!liveops speed\`, \`!liveops antinuke\`, \`!liveops voice\`, \`!liveops daemons\`.
+• **Telemetry Subsystems:**
+  - **Master Overview:** Realtime memory heap, RSS, external buffers, CPU user/system clock, Node.js event loop lag, SQLite WAL cache status, WebSocket heartbeat, and live REST HTTPS roundtrip ping.
+  - **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, role strip, channel lock, timeout, DB read/write, and audit log polling.
+  - **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.
+  - **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.
+  - **Storage & Daemons:** Background worker telemetry (auto-deploy watcher, backup sync, thought broadcaster, stats channels).`,
+    example: '!liveops speed'
   },
 
   firewall: {

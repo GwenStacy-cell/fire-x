@@ -286,6 +286,7 @@ export const commands = [
                 ((cmdName === 'count' || cmdName === 'counting') && m.id === 'counting') ||
                 ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
                 ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
+          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon') && m.id === 'utilities') ||
                 ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
                 ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
                 ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
@@ -328,7 +329,9 @@ export const commands = [
               if (targetCmd.name === "unbypassable") {
                   usageText = `${prefix}unbypassable / /unbypassable`;
               } else if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
-                  usageText = `${prefix}honeypot [setup|remove|status] / ${prefix}trap / ${prefix}ghosttrap`;
+                  usageText = `${prefix}honeypot [setup [ban|timeout|kick] | punish <ban|timeout|kick> | remove | status] / /honeypot`;
+              } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
+                  usageText = `${prefix}liveops [overview|speed|antinuke|voice|daemons] / /liveops [view]`;
               } else if (targetCmd.name === "decapitate" || targetCmd.name === "purgehooks" || targetCmd.name === "antiwebhook") {
                   usageText = `${prefix}decapitate / ${prefix}purgehooks / ${prefix}antiwebhook`;
               } else if (targetCmd.name === "timemachine" || targetCmd.name === "snapshot" || targetCmd.name === "deltarollback") {
@@ -417,15 +420,31 @@ export const commands = [
 
               let descContent = targetCmd.description || "No description provided.";
               if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
-                  descContent = `Ghost Honeypot Sentinel - Configures invisible tripwire canary channels and roles.\n\n` +
-                    `> -# <a:uptime:1552608831060844575> **__Zero-Tolerance Tripwire:__**\n` +
+                  descContent = `Ghost Honeypot Sentinel - Configures invisible tripwire canary channels and roles with configurable counter-measures.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Ghost Honeypot Sentinel & Configurable Counter-Measures:__**\n` +
                     `> ${BULLET_EMOJI} **Canary Decoy Channel:** Automatically creates \`#canary-trap-sentinel\` with @everyone denied ViewChannel. Invisible to humans, but visible to token scrapers and mass selfbots that enumerate internal channels.\n` +
-                    `> ${BULLET_EMOJI} **Instant Dual-Strike Ban:** Any raider transmitting packets into the canary channel is banned in <15ms via parallel \`rawBan\` + \`rawRoleStrip\`.\n` +
-                    `> ${BULLET_EMOJI} **Decoy Sentinel Role:** Tracks a canary role bound to the database. Any unauthorized role addition or deletion trips the sentinel.\n\n` +
+                    `> ${BULLET_EMOJI} **Configurable Punishment Strike:** Choose between Direct Ban (default), 28-Day Maximum Timeout, or Server Kick.\n` +
+                    `> ${BULLET_EMOJI} **Sub-10ms Direct Execution:** Dispatches single direct REST actions (\`Routes.guildBan\` or \`Routes.guildMember\`) in <10ms with zero lag and zero redundant role-stripping before enforcement.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Dashboard Toggle:** The honeypot panel features a dedicated \`[Punishment: BAN / TIMEOUT / KICK]\` cycle button to switch punishments on the fly.\n` +
+                    `> ${BULLET_EMOJI} **Decoy Sentinel Role:** Tracks a canary role bound strictly to the database.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> ${BULLET_EMOJI} \`${prefix}honeypot setup\` — Deploy the canary channel and decoy role.\n` +
-                    `> ${BULLET_EMOJI} \`${prefix}honeypot status\` — Inspect live tripwire status and intruders neutralized.\n` +
-                    `> ${BULLET_EMOJI} \`${prefix}honeypot remove\` — Permanently disarm and remove the canary channel and role.`;
+                    `> ${BULLET_EMOJI} **Setup with Choice:** \`${prefix}honeypot setup [ban|timeout|kick]\` (e.g. \`${prefix}honeypot setup timeout\`)\n` +
+                    `> ${BULLET_EMOJI} **Slash Setup:** \`/honeypot setup [punishment: Direct Ban | 28-Day Maximum Timeout | Server Kick]\`\n` +
+                    `> ${BULLET_EMOJI} **Change Punishment:** \`${prefix}honeypot punish <ban|timeout|kick>\` or \`/honeypot punishment <action>\`\n` +
+                    `> ${BULLET_EMOJI} **Interactive Panel:** \`${prefix}honeypot\` (or \`${prefix}honeypot status\` / \`/honeypot panel\`)\n` +
+                    `> ${BULLET_EMOJI} **Disarm Trap:** \`${prefix}honeypot remove\` (or \`${prefix}honeypot disarm\` / \`/honeypot disarm\`)`;
+              } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
+                  descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Command Activation & Aliases:__**\n` +
+                    `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}liveops\` (Aliases: \`${prefix}livemonitor\`, \`${prefix}telemetry\`, \`${prefix}sysmon\`, \`${prefix}matrixmon\`, \`${prefix}perfmon\`, \`${prefix}mon\`)\n` +
+                    `> ${BULLET_EMOJI} **Slash Command:** \`/liveops [view: overview | speed | antinuke | voice | daemons]\`\n` +
+                    `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
+                    `> -# **__Live Telemetry Subsystems:__**\n` +
+                    `> ${BULLET_EMOJI} **Master Overview:** Realtime memory heap, RSS, external buffers, CPU user/system clock, Node.js event loop lag, SQLite WAL cache status, WebSocket heartbeat, and live REST HTTPS roundtrip ping.\n` +
+                    `> ${BULLET_EMOJI} **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, role strip, channel lock, timeout, DB read/write, and audit log polling.\n` +
+                    `> ${BULLET_EMOJI} **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
+                    `> ${BULLET_EMOJI} **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.\n` +
+                    `> ${BULLET_EMOJI} **Storage & Daemons:** Background worker telemetry (auto-deploy watcher, backup sync, thought broadcaster, stats channels).`;
               } else if (targetCmd.name === "decapitate" || targetCmd.name === "purgehooks" || targetCmd.name === "antiwebhook") {
                   descContent = `Malicious Webhook Decapitation Engine - Rapid parallel sweep and eradication of rogue webhooks.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Perimeter Webhook Purge:__**\n` +
@@ -1160,6 +1179,7 @@ export const commands = [
           (cmdName === 'count' && m.id === 'counting') ||
           ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
           ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
+          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon') && m.id === 'utilities') ||
           ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
           ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
           ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
@@ -1197,6 +1217,10 @@ export const commands = [
         let usageText = `${prefix}${targetCmd.name}`;
         if (targetCmd.name === "unbypassable") {
           usageText = `${prefix}unbypassable / /unbypassable`;
+        } else if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
+          usageText = `${prefix}honeypot [setup [ban|timeout|kick] | punish <ban|timeout|kick> | remove | status] / /honeypot`;
+        } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
+          usageText = `${prefix}liveops [overview|speed|antinuke|voice|daemons] / /liveops [view]`;
         } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
           usageText = `${prefix}entry <deploy|channel|log|role|holding|questions|enable|disable|list|accept|deny|remote> / ${prefix}gate / ${prefix}screening`;
         } else if (targetCmd.name === "security") {
@@ -1263,7 +1287,33 @@ export const commands = [
           : '`None`';
 
         let descContent = targetCmd.description || "No description provided.";
-        if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
+        if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
+          descContent = `Ghost Honeypot Sentinel - Configures invisible tripwire canary channels and roles with configurable counter-measures.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Ghost Honeypot Sentinel & Configurable Counter-Measures:__**\n` +
+            `> ${BULLET_EMOJI} **Canary Decoy Channel:** Automatically creates \`#canary-trap-sentinel\` with @everyone denied ViewChannel. Invisible to humans, but visible to token scrapers and mass selfbots that enumerate internal channels.\n` +
+            `> ${BULLET_EMOJI} **Configurable Punishment Strike:** Choose between Direct Ban (default), 28-Day Maximum Timeout, or Server Kick.\n` +
+            `> ${BULLET_EMOJI} **Sub-10ms Direct Execution:** Dispatches single direct REST actions (\`Routes.guildBan\` or \`Routes.guildMember\`) in <10ms with zero lag and zero redundant role-stripping before enforcement.\n` +
+            `> ${BULLET_EMOJI} **Interactive Dashboard Toggle:** The honeypot panel features a dedicated \`[Punishment: BAN / TIMEOUT / KICK]\` cycle button to switch punishments on the fly.\n` +
+            `> ${BULLET_EMOJI} **Decoy Sentinel Role:** Tracks a canary role bound strictly to the database.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} **Setup with Choice:** \`${prefix}honeypot setup [ban|timeout|kick]\` (e.g. \`${prefix}honeypot setup timeout\`)\n` +
+            `> ${BULLET_EMOJI} **Slash Setup:** \`/honeypot setup [punishment: Direct Ban | 28-Day Maximum Timeout | Server Kick]\`\n` +
+            `> ${BULLET_EMOJI} **Change Punishment:** \`${prefix}honeypot punish <ban|timeout|kick>\` or \`/honeypot punishment <action>\`\n` +
+            `> ${BULLET_EMOJI} **Interactive Panel:** \`${prefix}honeypot\` (or \`${prefix}honeypot status\` / \`/honeypot panel\`)\n` +
+            `> ${BULLET_EMOJI} **Disarm Trap:** \`${prefix}honeypot remove\` (or \`${prefix}honeypot disarm\` / \`/honeypot disarm\`)`;
+        } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
+          descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Command Activation & Aliases:__**\n` +
+            `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}liveops\` (Aliases: \`${prefix}livemonitor\`, \`${prefix}telemetry\`, \`${prefix}sysmon\`, \`${prefix}matrixmon\`, \`${prefix}perfmon\`, \`${prefix}mon\`)\n` +
+            `> ${BULLET_EMOJI} **Slash Command:** \`/liveops [view: overview | speed | antinuke | voice | daemons]\`\n` +
+            `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
+            `> -# **__Live Telemetry Subsystems:__**\n` +
+            `> ${BULLET_EMOJI} **Master Overview:** Realtime memory heap, RSS, external buffers, CPU user/system clock, Node.js event loop lag, SQLite WAL cache status, WebSocket heartbeat, and live REST HTTPS roundtrip ping.\n` +
+            `> ${BULLET_EMOJI} **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, role strip, channel lock, timeout, DB read/write, and audit log polling.\n` +
+            `> ${BULLET_EMOJI} **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
+            `> ${BULLET_EMOJI} **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.\n` +
+            `> ${BULLET_EMOJI} **Storage & Daemons:** Background worker telemetry (auto-deploy watcher, backup sync, thought broadcaster, stats channels).`;
+        } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
           descContent = `Extracts and downloads uncompressed original master-resolution images and MP4 videos from any Pinterest link or short URL (pin.it).\n\n` +
             `> -# **__Features & Pipeline:__**\n` +
             `> ${BULLET_EMOJI} **Full Master Resolution:** Automatically expands shortened \`pin.it\` redirects and upgrades 736x/564x preview thumbnails to uncompressed master quality (/originals/).\n` +
@@ -2648,7 +2698,7 @@ export const helpModules = [
     "`!lockdown / !ld <1|2|3|off>` - Batched channel lockdown (Tier 1 Soft, Tier 2 Medium, Tier 3 Nuclear) `[Extra Owner]`",
     "`!unlockdown / !unld` - Restore exact pre-lockdown channel permissions and bitmasks from database snapshot `[Extra Owner]`",
     "`!serverhealth / !audit / !secscore / !health` - Real-time hierarchy integrity, permissions & audit socket diagnostics `[Extra Owner]`",
-    "`!honeypot / !hp / !raidertrap [setup|remove|status]` - Ghost Honeypot Sentinel: invisible tripwire canary channel trapping scrapers with dual-strike ban `[Extra Owner]`",
+    "`!honeypot / !trap [setup [ban|timeout|kick] | punish | remove]` - Ghost Honeypot Sentinel: invisible canary tripwire with configurable counter-measures (ban, timeout, kick) `[Extra Owner]`",
     "`!decapitate / !purgehooks` - Malicious Webhook Decapitation Engine: sub-15ms parallel sweep & eradication of rogue webhooks `[Extra Owner]`",
     "`!timemachine / !snapshot [create|list|restore|diff]` - Time-Machine Server Snapshots: lightweight hierarchy snapshots with 1-click delta restore `[Extra Owner]`",
     "`!exploitscan / !auditperms [patch]` - Deep permission vulnerability scanner for @everyone & hierarchy leaks with 1-click Auto-Patch `[Extra Owner]`",
@@ -3171,6 +3221,7 @@ export const helpModules = [
     "`!dev / !developer` - Displays developer information and credits `[Public]`",
     "`!ping / !p / !latency` - View bot latency and heartbeat graph `[Public]`",
     "`!status` - Live bot engine performance, cluster health & security telemetry `[Public]`",
+    "`!liveops / !telemetry / !sysmon [overview|speed|antinuke|voice|daemons]` - Real-time LiveOps telemetry matrix with sub-second benchmarks & daemon diagnostics `[Public]`",
     "`!db <status|backup|restore>` - View database cloud backup status, force backup or reload from Discord cloud `[Bot Owner]`",
     "`!modmail / !mm <setup #channel | disable>` - Direct Message support ticket bridge `[Extra Owner]`",
     "`!reply <message>` - Reply to member inside active ModMail ticket `[Extra Owner]`",

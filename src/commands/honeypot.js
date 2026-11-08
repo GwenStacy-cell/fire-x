@@ -290,6 +290,54 @@ export const commands = [
         sub.setName('disarm')
           .setDescription('Disarm and delete the honeypot trap channel and role')
       ),
+    options: [
+      {
+        name: 'panel',
+        description: 'Display the Honeypot Sentinel dashboard',
+        type: 1
+      },
+      {
+        name: 'setup',
+        description: 'Deploy honeypot trap with configurable counter-measure',
+        type: 1,
+        options: [
+          {
+            name: 'punishment',
+            description: 'Action to take against intruders (default: ban)',
+            type: 3,
+            required: false,
+            choices: [
+              { name: 'Direct Ban (Default)', value: 'ban' },
+              { name: '28-Day Maximum Timeout', value: 'timeout' },
+              { name: 'Server Kick', value: 'kick' }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'punishment',
+        description: 'Change the punishment applied to honeypot intruders',
+        type: 1,
+        options: [
+          {
+            name: 'action',
+            description: 'Action to take against intruders',
+            type: 3,
+            required: true,
+            choices: [
+              { name: 'Direct Ban', value: 'ban' },
+              { name: '28-Day Maximum Timeout', value: 'timeout' },
+              { name: 'Server Kick', value: 'kick' }
+            ]
+          }
+        ]
+      },
+      {
+        name: 'disarm',
+        description: 'Disarm and delete the honeypot trap channel and role',
+        type: 1
+      }
+    ],
     async execute(message, args) {
       const guild = message.guild;
       if (!guild) return;
