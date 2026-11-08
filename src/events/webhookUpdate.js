@@ -29,14 +29,13 @@ export default {
         if (owner) {
           if (isAuthorized(guild, owner, 'antiwebhooks')) continue;
 
-          // ⚡ Rogue webhook detected! Parallel Dual-Strike FIRST (Ban + Role Strip + Webhook Delete in sub-1ms)
+          // ⚡ Rogue webhook detected! Instant Raw Ban + Webhook Annihilation (Zero redundant role-strip overhead)
           condemn(guild.id, owner.id);
           setGuildUnderAttack(guild.id, owner.id, 60_000);
           
           Promise.allSettled([
             rawDeleteWebhook(whId, token, '[ATHENA SENTINEL] Rogue Webhook Neutralized'),
-            rawBan(guild.id, owner.id, token, '[ATHENA SENTINEL] Unauthorized Webhook Creation'),
-            rawRoleStrip(guild.id, owner.id, token)
+            rawBan(guild.id, owner.id, token, '[ATHENA SENTINEL] Unauthorized Webhook Creation')
           ]).catch(() => null);
 
           // Trigger directStrike for server log, quarantine fallback, and owner DM

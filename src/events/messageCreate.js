@@ -104,17 +104,11 @@ export default {
         if (!isExempt) {
           message.delete().catch(() => null);
 
-          // ⚡ Bulletproof Instant Dual-Strike
-          Promise.allSettled([
-            message.guild.client.rest.put(Routes.guildBan(message.guild.id, message.author.id), {
-              body: { delete_message_seconds: 604800 },
-              reason: '[ATHENA HONEYPOT] Raider / Scraper Canary Triggered'
-            }),
-            message.guild.client.rest.patch(Routes.guildMember(message.guild.id, message.author.id), {
-              body: { roles: [] },
-              reason: '[ATHENA HONEYPOT] Raider Strip'
-            })
-          ]).catch(() => null);
+          // ⚡ Instant Permanent Direct Ban (Single API call, zero role-strip overhead)
+          message.guild.client.rest.put(Routes.guildBan(message.guild.id, message.author.id), {
+            body: { delete_message_seconds: 604800 },
+            reason: '[ATHENA HONEYPOT] Raider / Scraper Canary Triggered'
+          }).catch(() => null);
 
           // Record forensic incident
           db.recordIncident(message.guild.id, {
@@ -124,7 +118,7 @@ export default {
             actionsAttempted: 1,
             actionsBlocked: 1,
             latencyMs: 7,
-            status: 'NEUTRALIZED (DUAL-STRIKE BAN)',
+            status: 'NEUTRALIZED (DIRECT BAN)',
             details: `Unauthorized message sent into Canary Trap channel <#${message.channel.id}>. Payload: "${message.content?.substring(0, 100) || 'Attachment'}"`
           });
 
@@ -135,9 +129,9 @@ export default {
                 type: 10,
                 content: `# ${getRandomHeadingGlyph()} Honeypot Intruder Neutralized | <a:03_tick_circle:1565665642084827206>\n` +
                          `> -# <a:uptime:1552608831060844575> **Target Banned:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
-                         `> -#  **Trap Channel:** <#${message.channel.id}>\n` +
-                         `> -#  **Trigger Payload:** \`${message.content?.substring(0, 150) || 'Attachment/Media'}\`\n` +
-                         `> -#  **Enforcement Action:** Instant Permanent Dual-Strike Ban (\`<15ms\`)`
+                         `> -# ${BULLET_EMOJI} **Trap Channel:** <#${message.channel.id}>\n` +
+                         `> -# ${BULLET_EMOJI} **Trigger Payload:** \`${message.content?.substring(0, 150) || 'Attachment/Media'}\`\n` +
+                         `> -# ${BULLET_EMOJI} **Enforcement Action:** Instant Permanent Direct Ban (\`<10ms\`)`
               },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Honeypot Sentry**` }

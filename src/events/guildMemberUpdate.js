@@ -147,11 +147,8 @@ export default {
                 const giver = matchingEntry?.executor;
                 let giverBanned = false;
                 if (giver && giver.id !== guild.ownerId && !isBotOwnerSync(giver.id) && !db.isExtraOwner(guild.id, giver.id)) {
-                  // Eliminate illegal role giver: Simultaneous Direct Ban + Role Strip & Timeout
-                  Promise.allSettled([
-                    rawBan(guild.id, giver.id, guild.client.token, `[ATHENA ANTINUKE] Illegal Role Grant: Assigned iconic/dangerous permissions to exploit-tainted member ${newMember.user?.tag || newMember.id}`),
-                    rawRoleStrip(guild.id, giver.id, guild.client.token)
-                  ]).catch(() => null);
+                  // Eliminate illegal role giver: Instant Direct Ban (0ms overhead)
+                  rawBan(guild.id, giver.id, guild.client.token, `[ATHENA ANTINUKE] Illegal Role Grant: Assigned iconic/dangerous permissions to exploit-tainted member ${newMember.user?.tag || newMember.id}`).catch(() => null);
                   db.addExploitTaint(guild.id, giver.id, 'Illegal Role Grant Executor (Target was exploit-tainted)');
                   giverBanned = true;
                 }
@@ -296,11 +293,8 @@ export default {
                   let giverBanned = false;
                   if (isIllegalGrant && executor) {
                     if (executor.id !== guild.ownerId && !isBotOwnerSync(executor.id) && !db.isExtraOwner(guild.id, executor.id)) {
-                      // Eliminate illegal role giver: Simultaneous Direct Ban + Role Strip & Timeout
-                      Promise.allSettled([
-                        rawBan(guild.id, executor.id, guild.client.token, `[ATHENA ANTINUKE] Illegal Role Grant: Assigned dangerous/iconic permissions to ${newMember.user?.tag || newMember.id}`),
-                        rawRoleStrip(guild.id, executor.id, guild.client.token)
-                      ]).catch(() => null);
+                      // Eliminate illegal role giver: Instant Direct Ban (0ms overhead)
+                      rawBan(guild.id, executor.id, guild.client.token, `[ATHENA ANTINUKE] Illegal Role Grant: Assigned dangerous/iconic permissions to ${newMember.user?.tag || newMember.id}`).catch(() => null);
                       db.addExploitTaint(guild.id, executor.id, 'Illegal Role Grant Executor');
                       giverBanned = true;
                     }

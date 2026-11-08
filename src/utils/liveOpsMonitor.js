@@ -408,7 +408,7 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
         `### **III. Antinuke Defense Matrix & Sentinels**\n` +
         `> -# ${BULLET_EMOJI} **Defense Posture:** ${data.security.isSecured ? '**ARMED (All Protective Shields Active)**' : '**DISARMED (Standby)**'}\n` +
         `> -# ${BULLET_EMOJI} **Shield Armament Ratio:** \`${data.security.activeShields} / ${data.security.totalShields} Shields Armed\` (${data.security.pct}% Active)\n` +
-        `> -# ${BULLET_EMOJI} **Interception Pipeline:** \`DirectStrike (Sub-15ms Audit Ring Match)\` \u2022 \`Dual-Strike Sub-1ms Ban + Role Strip\`\n` +
+        `> -# ${BULLET_EMOJI} **Interception Pipeline:** \`DirectStrike (Sub-15ms Audit Ring Match)\` \u2022 \`Instant Direct Ban (Zero-Lag Execution)\`\n` +
         `> -# ${BULLET_EMOJI} **Under Attack State:** ${data.security.underAttack ? '**<a:exclamation_outline1:1565666739356827759> UNDER ATTACK — ACTIVE LOCKDOWN**' : '`Nominal (0 Threats Active)`'}\n` +
         `> -# ${BULLET_EMOJI} **200-Member Hierarchy Gate:** ${data.security.meetsMemberCount ? `${emojiOn} Verified (\`${data.security.memberCount} / 200 members\`)` : `${emojiOff} Locked (\`${data.security.memberCount} / 200 members\`)`}\n` +
         `> -# ${BULLET_EMOJI} **Persistence Roles:** ${data.security.hasFwRole && data.security.hasUnbRole ? `${emojiOn} Active (\`Athena Firewall\` + \`Athena Unbypassable\`)` : `${emojiOff} Standby`}`
@@ -550,8 +550,8 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
       content:
         `### **I. Hostile Elimination & Interception Architecture**\n` +
         `> -# ${BULLET_EMOJI} **Interception Engine:** \`DirectStrike (0ms WebSocket Audit Ring Buffer)\`\n` +
-        `> -# ${BULLET_EMOJI} **Elimination Speed:** \`Sub-1ms Dual-Strike Raw HTTP (Role Strip + Ban in Parallel)\`\n` +
-        `> -# ${BULLET_EMOJI} **Zero-Tolerance Protocol:** Nuke bots stripped and banned before their 2nd attempt\n` +
+        `> -# ${BULLET_EMOJI} **Elimination Speed:** \`Sub-1ms Instant Direct Raw Ban (Single Request \u2022 Zero Lag)\`\n` +
+        `> -# ${BULLET_EMOJI} **Zero-Tolerance Protocol:** Nuke bots banned immediately on 1st attempt with no lag overhead\n` +
         `> -# ${BULLET_EMOJI} **WebSocket Audit Ring Buffer:** \`${data.security.ring.size} / ${data.security.ring.maxCapacity} entries\` (TTL: \`${data.security.ring.ttlMs / 1000}s\` \u2022 \`${data.security.ring.resolversActive} fast-track resolvers\`)\n` +
         `> -# ${BULLET_EMOJI} **Infrastructure Ground-Truth:** \`${data.security.snapshots.channelsCount} channels\` \u2022 \`${data.security.snapshots.rolesCount} roles cached in RAM\`\n` +
         `> -# ${BULLET_EMOJI} **Restoration Queue Depth:** \`${data.security.snapshots.restorationsQueued} queued\` (\`${data.security.snapshots.deletedItemsCached} deleted items cached\`)\n` +

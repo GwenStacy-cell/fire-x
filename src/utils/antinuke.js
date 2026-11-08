@@ -1411,8 +1411,9 @@ export async function cascadeToInviter(guild, botId) {
 }
 
 // ==========================================
-// CORE PUNISHMENT ENGINE (SUB-1MS DUAL STRIKE)
-// Role strip + Raw Ban in parallel ensures permissions are revoked within 10ms!
+// CORE PUNISHMENT ENGINE (INSTANT DIRECT BAN)
+// Dispatches a single, immediate rawBan request over pre-warmed Undici sockets (0ms overhead)
+// No redundant role-strip HTTP requests before banning to eliminate lag and conserve API rate limits
 // ==========================================
 async function punish(guild, executor, eventType, config, forceBan = true) {
   const punishment = forceBan ? 'ban' : (config.antiNukePunishment || 'ban');
@@ -1435,45 +1436,31 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
   const executionPromise = (async () => {
     try {
       if (punishment === 'ban') {
-        // ⚡ SUB-1MS DUAL-STRIKE (Simultaneous Raw Ban + Raw Role Strip)
-        // Dispatches BOTH operations over pre-warmed Undici sockets in parallel!
-        // 1. rawRoleStrip clears all roles in Discord's permissions cache within 10-15ms,
-        //    causing any 2nd request from the nuke bot to be immediately rejected with 403 Forbidden!
-        // 2. rawBan eliminates the attacker from the server completely.
-        const [banRes, stripRes] = await Promise.allSettled([
-          rawBan(guild.id, executor.id, token, reason),
-          rawRoleStrip(guild.id, executor.id, token)
-        ]);
-
-        const banOk = banRes.status === 'fulfilled' && banRes.value === true;
-        const stripOk = stripRes.status === 'fulfilled' && stripRes.value === true;
+        // ⚡ INSTANT DIRECT BAN: Single direct API call, zero wasted role-strip latency
+        const banOk = await rawBan(guild.id, executor.id, token, reason);
 
         if (banOk) {
-          result = stripOk 
-            ? 'Eliminated (Dual-Strike Raw Ban + Role Strip — Sub-1ms)' 
-            : 'Eliminated (Direct Raw Ban — Sub-1ms)';
-        } else if (stripOk) {
-          // Attacker is disarmed (roles wiped)! Now finish ban via djs fallback
-          try {
-            await guild.members.ban(executor.id, { reason });
-            result = 'Permanently Banned (Disarmed + djs fallback)';
-          } catch {
-            result = 'Disarmed (Roles Stripped — Hierarchy blocked ban)';
-          }
+          result = 'Eliminated (Direct Raw Ban — Instant)';
         } else {
-          // Fallback chain if both raw calls failed (hierarchy conflict, permission mismatch, etc.)
+          // If direct raw ban was blocked (hierarchy conflict), attempt Discord.js fallback
           try {
             await guild.members.ban(executor.id, { reason });
             result = 'Permanently Banned (djs fallback)';
           } catch {
-            try {
-              const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
-              if (m?.kickable) {
-                await m.kick(reason + ' [Ban failed — kicked]');
-                result = 'Kicked (hierarchy blocked ban)';
+            // Disarm fallback: only strip roles if ban was completely blocked by hierarchy
+            const stripOk = await rawRoleStrip(guild.id, executor.id, token).catch(() => false);
+            if (stripOk) {
+              result = 'Disarmed (Hierarchy blocked ban — Roles stripped)';
+            } else {
+              try {
+                const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
+                if (m?.kickable) {
+                  await m.kick(reason + ' [Ban failed — kicked]');
+                  result = 'Kicked (hierarchy blocked ban)';
+                }
+              } catch (kickErr) {
+                console.error(`[AntiNuke Kick Fallback Error for ${executor.id}]:`, kickErr.message);
               }
-            } catch (kickErr) {
-              result = `Total failure: ${kickErr.message}`;
             }
           }
         }
@@ -1492,7 +1479,6 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
             guild.members.fetch(executor.id).then(sendDm).catch(() => null);
           }
         }
-
       } else if (punishment === 'kick') {
         const executorMember = await guild.members.fetch(executor.id).catch(() => null);
         if (!executorMember) return 'Failed (User not in server)';
@@ -2080,13 +2066,13 @@ export async function handleAuditLogEntry(guild, entry) {
   checkGlobalBurst(guild, action, executor.id);
 
   // ⚡ STEP 1: ELIMINATE THE VIOLATOR FIRST! (0ms Delay)
-  // Lock attacker and dispatch raw API role strip + ban over pre-warmed sockets immediately
+  // Lock attacker and dispatch instant raw API ban over pre-warmed sockets immediately
   condemn(guild.id, executor.id);
   const punishPromise = punish(guild, executor, eventType, config, forceBan);
 
   // ⚡ STEP 2: REPAIR DAMAGE SECOND (Strictly prioritized after hostile elimination)
   const rollbackPromise = (async () => {
-    // Wait for ban / role strip to land so restorations do not contend for Discord API rate limits
+    // Wait for ban to land so restorations do not contend for Discord API rate limits
     await punishPromise.catch(() => null);
 
     let rollbackResult = 'No rollback needed';
@@ -2145,10 +2131,7 @@ export async function handleAuditLogEntry(guild, entry) {
 
     if (action === AuditLogEvent.BotAdd) {
       if (targetId && targetId !== guild.client.user.id) {
-        await Promise.allSettled([
-          rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Unauthorized bot addition'),
-          rawRoleStrip(guild.id, targetId, guild.client.token)
-        ]).catch(() => null);
+        await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Unauthorized bot addition').catch(() => null);
       }
       rollbackResult = `Unauthorized bot <@${targetId}> banned instantly`;
     }

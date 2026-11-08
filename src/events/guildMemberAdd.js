@@ -28,11 +28,8 @@ export default {
           // ⚡ INSTANT AGGRESSIVE ELIMINATION — BEFORE 2ND ATTEMPT
           condemn(guild.id, member.id);
 
-          // 1. Parallel Ban + Role Strip + 28-day timeout
-          Promise.allSettled([
-            rawBan(guild.id, member.id, guild.client.token, '[ATHENA] Anti-Nuke: Unauthorized Bot Addition'),
-            rawRoleStrip(guild.id, member.id, guild.client.token)
-          ]).catch(() => null);
+          // 1. Direct Instant Raw Ban (Single API call, zero redundant role-strip overhead)
+          rawBan(guild.id, member.id, guild.client.token, '[ATHENA] Anti-Nuke: Unauthorized Bot Addition').catch(() => null);
 
           // 2. Immediately hunt and ban the rogue admin who invited this bot
           cascadeToInviter(guild, member.id).catch(() => null);
