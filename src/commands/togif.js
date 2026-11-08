@@ -205,6 +205,11 @@ export const commands = [
             },
             { type: 14, divider: true },
             {
+              type: 12,
+              items: [{ media: { url: `attachment://${gifFilename}` } }]
+            },
+            { type: 14, divider: true },
+            {
               type: 10,
               content: `-# **Athena Prime Multimedia Engine \u00b7 High-Fidelity Dual-Pass Palette Renderer**`
             }
@@ -314,6 +319,11 @@ export const commands = [
                        `> ${BULLET_EMOJI} **Render Duration:** \`Up to ${gifBuffer.duration || duration}s\` \u00b7 \`Speed: ${speed}x\`\n` +
                        `> ${BULLET_EMOJI} **Converted File Size:** \`${formatBytes(gifBuffer.length)}\`\n` +
                        `> ${BULLET_EMOJI} **Requested By:** <@${interaction.user.id}>`
+            },
+            { type: 14, divider: true },
+            {
+              type: 12,
+              items: [{ media: { url: `attachment://${gifFilename}` } }]
             },
             { type: 14, divider: true },
             {
