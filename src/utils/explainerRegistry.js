@@ -1769,6 +1769,28 @@ export const DETAILED_COMMANDS = {
     example: '!liveops speed'
   },
 
+  changelog: {
+    name: 'changelog',
+    aliases: ['updates', 'changes', 'cl', 'release', 'notes'],
+    category: 'Utility & Release History',
+    clearance: 'Public (Everyone)',
+    syntax: '!changelog [page] / /changelog [page]',
+    purpose: 'View the latest Athena Prime updates, optimizations, and release history across the last 5 days.',
+    architecture:
+`• **Command Activation & Aliases:**
+  - Prefix: \`!changelog [page]\` (Aliases: \`!updates\`, \`!changes\`, \`!cl\`, \`!release\`, \`!notes\`).
+  - Slash: \`/changelog [page: 1 to 5]\`.
+• **5-Day Rolling Release History:**
+  - Page 1 (Today · 08 Nov 2026): Sub-10ms direct ban velocity, configurable honeypot punishments (ban, timeout, kick), and LiveOps telemetry matrix.
+  - Page 2 (07 Nov 2026): Flagship entertainment suites (Meme Lab, CV2 Arcade, Family Tree, Voice Soundboard) & raw gateway wiretaps.
+  - Page 3 (06 Nov 2026): Support ticket overhaul with transcript auto-exports & autonomous defense swarm.
+  - Page 4 (05 Nov 2026): Components V2 borderless theme, symmetrical typography & animated beat navigation controls.
+  - Page 5 (04 Nov 2026): Persistence sentinel roles (Athena Unbypassable/Firewall) & strict database Snowflake ID binding.
+• **Components V2 Pagination Engine:**
+  - Animated beat navigation buttons (Previous, Latest/Home, Next, Close) for seamless in-place container state transitions.`,
+    example: '!changelog 1'
+  },
+
   firewall: {
     name: 'firewall',
     aliases: ['fw', 'matrix', 'telemetry', 'statusnet'],

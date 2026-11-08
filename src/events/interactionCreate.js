@@ -3893,6 +3893,16 @@ async function handleSecurityInteractions(interaction, guild) {
       }
     }
 
+    // Changelog Interactive Pagination Buttons
+    if (customId && customId.startsWith('changelog_')) {
+      try {
+        const { handleChangelogInteraction } = await import('../utils/changelogData.js');
+        return await handleChangelogInteraction(interaction);
+      } catch (err) {
+        console.error('[Changelog Interaction Error]:', err);
+      }
+    }
+
     if (['toggle_antinuke', 'toggle_spam', 'toggle_invite', 'cycle_punishment', 'sec_status_back', 'sec_status_view', 'sec_architecture_guide', 'antinuke_config', 'save_panel'].includes(customId)) {
       try {
         let updated = false;

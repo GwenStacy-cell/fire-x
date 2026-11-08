@@ -286,7 +286,7 @@ export const commands = [
                 ((cmdName === 'count' || cmdName === 'counting') && m.id === 'counting') ||
                 ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
                 ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
-          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon') && m.id === 'utilities') ||
+          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon' || cmdName === 'changelog' || cmdName === 'updates' || cmdName === 'changes' || cmdName === 'cl' || cmdName === 'release' || cmdName === 'notes') && m.id === 'utilities') ||
                 ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
                 ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
                 ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
@@ -332,6 +332,8 @@ export const commands = [
                   usageText = `${prefix}honeypot [setup [ban|timeout|kick] | punish <ban|timeout|kick> | remove | status] / /honeypot`;
               } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
                   usageText = `${prefix}liveops [overview|speed|antinuke|voice|daemons] / /liveops [view]`;
+              } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
+                  usageText = `${prefix}changelog [page] / /changelog [page]`;
               } else if (targetCmd.name === "decapitate" || targetCmd.name === "purgehooks" || targetCmd.name === "antiwebhook") {
                   usageText = `${prefix}decapitate / ${prefix}purgehooks / ${prefix}antiwebhook`;
               } else if (targetCmd.name === "timemachine" || targetCmd.name === "snapshot" || targetCmd.name === "deltarollback") {
@@ -447,6 +449,22 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
                     `> ${BULLET_EMOJI} **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.\n` +
                     `> ${BULLET_EMOJI} **Storage & Daemons:** Background worker telemetry (auto-deploy watcher, backup sync, thought broadcaster, stats channels).`;
+              } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
+                  descContent = `Athena Prime 5-Day Rolling Changelog & Release History - Real-time updates, optimizations, and security patches.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` - All server members can view the changelog.\n\n` +
+                    `> -# **__Command Activation & Aliases:__**\n` +
+                    `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}changelog [page]\` (Aliases: \`${prefix}updates\`, \`${prefix}changes\`, \`${prefix}cl\`, \`${prefix}release\`, \`${prefix}notes\`)\n` +
+                    `> ${BULLET_EMOJI} **Slash Command:** \`/changelog [page: 1 to 5]\`\n` +
+                    `> ${BULLET_EMOJI} **Direct Page Jump:** \`${prefix}changelog 1\`, \`${prefix}changelog 2\`, \`${prefix}changelog 5\`\n\n` +
+                    `> -# **__5-Day Rolling Release Architecture:__**\n` +
+                    `> ${BULLET_EMOJI} **Page 1 (Today · 08 Nov 2026):** Sub-10ms direct ban velocity, configurable honeypot punishments (ban, timeout, kick), and LiveOps telemetry matrix.\n` +
+                    `> ${BULLET_EMOJI} **Page 2 (07 Nov 2026):** Flagship entertainment suites (Meme Lab, CV2 Arcade, Family Tree, Soundboard) & raw gateway wiretaps.\n` +
+                    `> ${BULLET_EMOJI} **Page 3 (06 Nov 2026):** Support ticket overhaul with transcript auto-exports & autonomous defense swarm.\n` +
+                    `> ${BULLET_EMOJI} **Page 4 (05 Nov 2026):** Components V2 borderless theme, symmetrical typography & animated beat navigation controls.\n` +
+                    `> ${BULLET_EMOJI} **Page 5 (04 Nov 2026):** Persistence sentinel roles (Athena Unbypassable/Firewall) & strict database Snowflake ID binding.\n\n` +
+                    `> -# **__Interactive Pagination:__**\n` +
+                    `> ${BULLET_EMOJI} Uses animated beat emojis for Previous, Latest/Home, Next, and Close controls with in-place container re-rendering.`;
               } else if (targetCmd.name === "decapitate" || targetCmd.name === "purgehooks" || targetCmd.name === "antiwebhook") {
                   descContent = `Malicious Webhook Decapitation Engine - Rapid parallel sweep and eradication of rogue webhooks.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Perimeter Webhook Purge:__**\n` +
@@ -1181,7 +1199,7 @@ export const commands = [
           (cmdName === 'count' && m.id === 'counting') ||
           ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
           ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
-          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon') && m.id === 'utilities') ||
+          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon' || cmdName === 'changelog' || cmdName === 'updates' || cmdName === 'changes' || cmdName === 'cl' || cmdName === 'release' || cmdName === 'notes') && m.id === 'utilities') ||
           ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
           ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
           ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
@@ -1223,6 +1241,8 @@ export const commands = [
           usageText = `${prefix}honeypot [setup [ban|timeout|kick] | punish <ban|timeout|kick> | remove | status] / /honeypot`;
         } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
           usageText = `${prefix}liveops [overview|speed|antinuke|voice|daemons] / /liveops [view]`;
+        } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
+          usageText = `${prefix}changelog [page] / /changelog [page]`;
         } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
           usageText = `${prefix}entry <deploy|channel|log|role|holding|questions|enable|disable|list|accept|deny|remote> / ${prefix}gate / ${prefix}screening`;
         } else if (targetCmd.name === "security") {
@@ -1317,6 +1337,22 @@ export const commands = [
             `> ${BULLET_EMOJI} **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
             `> ${BULLET_EMOJI} **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.\n` +
             `> ${BULLET_EMOJI} **Storage & Daemons:** Background worker telemetry (auto-deploy watcher, backup sync, thought broadcaster, stats channels).`;
+        } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
+          descContent = `Athena Prime 5-Day Rolling Changelog & Release History - Real-time updates, optimizations, and security patches.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` - All server members can view the changelog.\n\n` +
+            `> -# **__Command Activation & Aliases:__**\n` +
+            `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}changelog [page]\` (Aliases: \`${prefix}updates\`, \`${prefix}changes\`, \`${prefix}cl\`, \`${prefix}release\`, \`${prefix}notes\`)\n` +
+            `> ${BULLET_EMOJI} **Slash Command:** \`/changelog [page: 1 to 5]\`\n` +
+            `> ${BULLET_EMOJI} **Direct Page Jump:** \`${prefix}changelog 1\`, \`${prefix}changelog 2\`, \`${prefix}changelog 5\`\n\n` +
+            `> -# **__5-Day Rolling Release Architecture:__**\n` +
+            `> ${BULLET_EMOJI} **Page 1 (Today · 08 Nov 2026):** Sub-10ms direct ban velocity, configurable honeypot punishments (ban, timeout, kick), and LiveOps telemetry matrix.\n` +
+            `> ${BULLET_EMOJI} **Page 2 (07 Nov 2026):** Flagship entertainment suites (Meme Lab, CV2 Arcade, Family Tree, Soundboard) & raw gateway wiretaps.\n` +
+            `> ${BULLET_EMOJI} **Page 3 (06 Nov 2026):** Support ticket overhaul with transcript auto-exports & autonomous defense swarm.\n` +
+            `> ${BULLET_EMOJI} **Page 4 (05 Nov 2026):** Components V2 borderless theme, symmetrical typography & animated beat navigation controls.\n` +
+            `> ${BULLET_EMOJI} **Page 5 (04 Nov 2026):** Persistence sentinel roles (Athena Unbypassable/Firewall) & strict database Snowflake ID binding.\n\n` +
+            `> -# **__Interactive Pagination:__**\n` +
+            `> ${BULLET_EMOJI} Uses animated beat emojis for Previous, Latest/Home, Next, and Close controls with in-place container re-rendering.`;
         } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
           descContent = `Extracts and downloads uncompressed original master-resolution images and MP4 videos from any Pinterest link or short URL (pin.it).\n\n` +
             `> -# **__Features & Pipeline:__**\n` +
@@ -3226,6 +3262,7 @@ export const helpModules = [
     "`!ping / !p / !latency` - View bot latency and heartbeat graph `[Public]`",
     "`!status` - Live bot engine performance, cluster health & security telemetry `[Public]`",
     "`!liveops / !telemetry / !sysmon [overview|speed|antinuke|voice|daemons]` - Real-time LiveOps telemetry matrix with sub-second benchmarks & daemon diagnostics `[Server Owner / Extra Owner]`",
+    "`!changelog / !updates / !cl [page]` - View latest updates, optimizations & release history across the last 5 days `[Public]`",
     "`!db <status|backup|restore>` - View database cloud backup status, force backup or reload from Discord cloud `[Bot Owner]`",
     "`!modmail / !mm <setup #channel | disable>` - Direct Message support ticket bridge `[Extra Owner]`",
     "`!reply <message>` - Reply to member inside active ModMail ticket `[Extra Owner]`",

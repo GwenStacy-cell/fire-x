@@ -124,8 +124,10 @@ import { commands as staffpulseCmds } from './staffpulse.js';
 import { commands as dualkeyCmds } from './dualkey.js';
 import { commands as burnCmds } from './burn.js';
 import { commands as liveopsCmds } from './liveops.js';
+import { commands as changelogCmds } from './changelog.js';
 
 export const allCommands = [
+  ...changelogCmds,
   ...liveopsCmds,
   ...honeypotCmds,
   ...decapitateCmds,
