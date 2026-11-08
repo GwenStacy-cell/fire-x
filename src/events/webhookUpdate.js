@@ -1,6 +1,6 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, rawDeleteWebhook, rawRoleStrip, rawBan, isAuthorized, condemn } from '../utils/antinuke.js';
+import { directStrike, rawDeleteWebhook, rawRoleStrip, rawBan, isAuthorized, condemn, setGuildUnderAttack } from '../utils/antinuke.js';
 
 export default {
   name: 'webhooksUpdate',
@@ -31,6 +31,7 @@ export default {
 
           // ⚡ Rogue webhook detected! Parallel Dual-Strike FIRST (Ban + Role Strip + Webhook Delete in sub-1ms)
           condemn(guild.id, owner.id);
+          setGuildUnderAttack(guild.id, owner.id, 60_000);
           
           Promise.allSettled([
             rawDeleteWebhook(whId, token, '[ATHENA SENTINEL] Rogue Webhook Neutralized'),

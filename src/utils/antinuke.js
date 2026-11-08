@@ -159,7 +159,7 @@ export async function unbanVictimsParallel(guild, victimIds = []) {
 // ==========================================
 export async function rawFetchAuditLogs(guildId, token, auditType = null) {
   try {
-    let url = `https://discord.com/api/v10/guilds/${guildId}/audit-logs?limit=20`;
+    let url = `https://discord.com/api/v10/guilds/${guildId}/audit-logs?limit=6`;
     if (auditType != null) url += `&action_type=${auditType}`;
     const res = await fetch(url, {
       method: 'GET',

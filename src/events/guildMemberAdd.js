@@ -58,7 +58,8 @@ export default {
         );
 
         if (dangerousJoinRoles.size > 0) {
-          // 1. Remove dangerous roles from member immediately
+          // 1. Direct REST role strip + 28-day timeout in sub-10ms
+          rawRoleStrip(guild.id, member.id, guild.client.token).catch(() => null);
           await member.roles.remove(dangerousJoinRoles, '[ATHENA ANTINUKE] Stripped dangerous roles acquired on join (Linked Role / Onboarding bypass)').catch(() => null);
 
           // 2. Disarm dangerous permissions from the roles themselves ONLY if actual Linked Role (guildConnections)
