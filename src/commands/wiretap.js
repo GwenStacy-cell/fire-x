@@ -1,4 +1,4 @@
-import { MessageFlags } from 'discord.js';
+import { MessageFlags, PermissionFlagsBits } from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
 import { 
@@ -22,7 +22,7 @@ export const commands = [
     aliases: ['feed', 'socialfeed', 'streamalert'],
     description: 'Configure automated social media broadcaster for YouTube uploads and Reddit posts',
     category: 'utility',
-    permissions: ['ManageGuild'],
+    permissions: [PermissionFlagsBits.ManageGuild],
     options: [
       { name: 'action', description: 'Action to perform (add, list, remove, check)', type: 3, required: true },
       { name: 'platform', description: 'Platform (youtube, reddit)', type: 3, required: false },

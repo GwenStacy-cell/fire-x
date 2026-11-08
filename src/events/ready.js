@@ -1,5 +1,5 @@
 import { startMorningBroadcaster } from '../utils/morningEngine.js';
-import { REST, Routes, ActivityType, EmbedBuilder } from 'discord.js';
+import { REST, Routes, ActivityType, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import chalk from 'chalk';
 import crypto from 'crypto';
 import { allCommands } from '../commands/loader.js';
@@ -563,9 +563,28 @@ export default {
               ...opt,
               description: (opt.description || 'Option description').slice(0, 100)
             })),
-            default_member_permissions: cmd.permissions && cmd.permissions.length > 0 
-              ? cmd.permissions.reduce((acc, perm) => acc | perm, 0n).toString() 
-              : null
+            default_member_permissions: (() => {
+              if (!cmd.permissions || !cmd.permissions.length) return null;
+              try {
+                let mask = 0n;
+                for (const perm of cmd.permissions) {
+                  if (typeof perm === 'bigint') {
+                    mask |= perm;
+                  } else if (typeof perm === 'number') {
+                    mask |= BigInt(perm);
+                  } else if (typeof perm === 'string') {
+                    if (PermissionFlagsBits && PermissionFlagsBits[perm] !== undefined) {
+                      mask |= BigInt(PermissionFlagsBits[perm]);
+                    } else {
+                      try { mask |= BigInt(perm); } catch {}
+                    }
+                  }
+                }
+                return mask > 0n ? mask.toString() : null;
+              } catch {
+                return null;
+              }
+            })()
           };
         }).slice(0, 100);
 

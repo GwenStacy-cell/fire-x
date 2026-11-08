@@ -1,4 +1,4 @@
-import { MessageFlags } from 'discord.js';
+import { MessageFlags, PermissionFlagsBits } from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
 import { 
@@ -17,7 +17,7 @@ export const commands = [
     aliases: ['aipersona', 'personality', 'tone'],
     description: 'Switch Athena Prime conversational AI personality (Tsundere, Cyberpunk, Butler, Sensei)',
     category: 'utility',
-    permissions: ['ManageGuild'],
+    permissions: [PermissionFlagsBits.ManageGuild],
     options: [
       { name: 'name', description: 'Persona name (default, tsundere, cyberpunk, butler, sensei)', type: 3, required: false }
     ],
