@@ -19,7 +19,8 @@ import { startDailyStockBroadcaster } from '../utils/stockBroadcaster.js';
 import { buildStatusPanel } from '../commands/globalcontrols.js';
 import { formatServerStatChannelName } from '../commands/serverstats.js';
 import { initWebSub } from '../utils/websub.js';
-import { startGitWatcher } from '../utils/gitWatcher.js';
+import { startGitWatcher, getGitCommitCount } from '../utils/gitWatcher.js';
+import { CHANGELOG_ENTRIES } from '../utils/changelogData.js';
 import { restoreActiveVcDrags } from '../commands/vcdrag.js';
 
 import { startYtStatsEngine } from '../utils/ytStatsEngine.js';
@@ -214,6 +215,9 @@ export default {
 
     // Set custom rich activity presence
     const customStatuses = [
+      'Athena {version} is now rolling out.. ⚡',
+      'No. of Git Commits done so far — {commits} 🛠️',
+      'Engineering Velocity: {commits} Commits pushed! 🚀',
       'Fully Armed !',
       "Fortified by Athena's Firewall !",
       'Truly Unbypassable',
@@ -226,14 +230,22 @@ export default {
     ];
     let statusIndex = 0;
 
-    const updatePresence = () => {
+    const updatePresence = async () => {
       let stateStr = customStatuses[statusIndex];
+      if (stateStr.includes('{version}')) {
+        const currentVersion = CHANGELOG_ENTRIES[0]?.version || 'v2.8.0';
+        stateStr = stateStr.replaceAll('{version}', currentVersion);
+      }
+      if (stateStr.includes('{commits}')) {
+        const commits = await getGitCommitCount();
+        stateStr = stateStr.replaceAll('{commits}', commits);
+      }
       if (stateStr.includes('{users}')) {
         const totalUsers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
-        stateStr = stateStr.replace('{users}', totalUsers);
+        stateStr = stateStr.replaceAll('{users}', totalUsers.toLocaleString('en-US'));
       }
       if (stateStr.includes('{servers}')) {
-        stateStr = stateStr.replace('{servers}', client.guilds.cache.size);
+        stateStr = stateStr.replaceAll('{servers}', client.guilds.cache.size.toLocaleString('en-US'));
       }
       
       client.user.setPresence({
@@ -245,12 +257,12 @@ export default {
     };
 
     // Initial status
-    updatePresence();
+    updatePresence().catch(() => null);
 
     // Rotate Activity every 35 seconds (saves 85% gateway websocket traffic)
     setInterval(() => {
       statusIndex = (statusIndex + 1) % customStatuses.length;
-      updatePresence();
+      updatePresence().catch(() => null);
     }, 35000);
 
     // Rotate Server Nickname every 60 minutes with staggered REST calls (prevents rate limit starvation)

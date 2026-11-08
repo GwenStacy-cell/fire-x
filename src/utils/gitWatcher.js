@@ -9,6 +9,27 @@ const execPromise = util.promisify(exec);
 
 let isChecking = false;
 let currentCommit = null;
+let cachedCommitCount = null;
+let lastCountCheck = 0;
+
+/**
+ * Get total number of commits in the git repository (cached for 60 seconds).
+ */
+export async function getGitCommitCount() {
+  const now = Date.now();
+  if (cachedCommitCount && now - lastCountCheck < 60000) {
+    return cachedCommitCount;
+  }
+  try {
+    const { stdout } = await execPromise('git rev-list --count HEAD');
+    const num = parseInt(stdout.trim(), 10);
+    cachedCommitCount = !isNaN(num) ? num.toLocaleString('en-US') : stdout.trim();
+    lastCountCheck = now;
+    return cachedCommitCount;
+  } catch {
+    return cachedCommitCount || '318';
+  }
+}
 
 /**
  * Get the current commit SHA of the local repository.
