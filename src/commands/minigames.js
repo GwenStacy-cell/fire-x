@@ -123,6 +123,7 @@ export const commands = [
     aliases: ['bj', '21'],
     description: 'Play interactive casino Blackjack against Athena with server economy betting',
     category: 'minigames',
+    slashHidden: true,
     options: [
       {
         name: 'bet',
@@ -191,6 +192,7 @@ export const commands = [
     aliases: ['quiz', 'tournament'],
     description: 'Challenge your knowledge with interactive 4-button trivia tournaments and coin rewards',
     category: 'minigames',
+    slashHidden: true,
     options: [
       {
         name: 'wager',

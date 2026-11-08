@@ -2214,6 +2214,7 @@ export const commands = [
     aliases: ['hp', 'raidertrap', 'trapchannel'],
     description: 'Configure automated honeypot channel tripwire with <15ms instant auto-ban',
     category: 'security',
+    slashHidden: true,
     permissions: [PermissionFlagsBits.Administrator],
     options: [
       {

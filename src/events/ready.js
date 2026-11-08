@@ -560,7 +560,18 @@ export default {
         return 0;
       });
 
-      const slashData = eligibleSlash
+      // Deduplicate slash commands strictly by name (case-insensitive) to prevent DiscordAPIError[50035]
+      const seenSlashNames = new Set();
+      const uniqueEligibleSlash = [];
+      for (const cmd of eligibleSlash) {
+        if (!cmd.name || typeof cmd.name !== 'string') continue;
+        const normalizedName = cmd.name.toLowerCase().trim();
+        if (seenSlashNames.has(normalizedName)) continue;
+        seenSlashNames.add(normalizedName);
+        uniqueEligibleSlash.push(cmd);
+      }
+
+      const slashData = uniqueEligibleSlash
         .map(cmd => {
           // Map options and build proper REST format
           if (cmd.slashDef && typeof cmd.slashDef.toJSON === 'function') {

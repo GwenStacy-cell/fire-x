@@ -339,10 +339,13 @@ const standaloneRoutes = {
 // =========================================================================
 // 3. DYNAMIC GENERATION OF ALL 54+ INDIVIDUAL ACTION COMMANDS
 // =========================================================================
+const RP_SLASH_CONFLICT_ACTIONS = new Set(['kick', 'hide', 'ban', 'mute', 'warn', 'timeout', 'lock', 'unlock', 'purge', 'clear']);
+
 const dynamicActionCommands = ROLEPLAY_ACTIONS.map(action => ({
   name: action.id,
   description: `Roleplay: ${action.name} someone!`,
   category: 'roleplay',
+  slashHidden: RP_SLASH_CONFLICT_ACTIONS.has(action.id),
   options: [
     {
       name: 'user',
