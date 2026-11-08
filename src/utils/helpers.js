@@ -78,7 +78,7 @@ export const PUBLIC_COMMANDS = new Set([
   
   // User Utilities & Fun
   'afk', 'calc', 'poll', 'quote', 'quotemaker', 'weather', 'image', 'pic', 'pinterest', 'pin',
-  'media', 'mp3', 'dl', 'download', 'vid', 'video',
+  'media', 'mp3', 'dl', 'download', 'vid', 'video', 'togif', 'mp4togif', 'convertgif', 'gifconvert', 'vidtogif', 'v2g',
   'ship', 'chatlb', 'voicelb', 'invitelb', 'top', 'profile', 'rank', 'leaderboard', 
   'bump', 'rate', 'rateleaderboard', 'chess', 'chessgame', 'counting', 'countlb', 
   'minigames', 'blackjack', 'roulette', 'trivia', 'gamestats', 

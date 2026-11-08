@@ -31,6 +31,10 @@ export const CHANGELOG_ENTRIES = [
       {
         title: 'Owner-Clearance Restricted Telemetry',
         desc: 'Secured LiveOps access strictly to Server Owner and Extra Owners to safeguard sensitive runtime diagnostics and server topology.'
+      },
+      {
+        title: 'Video-to-GIF Converter (!togif, /togif)',
+        desc: 'Dedicated high-fidelity MP4, WebM, and MOV to GIF converter with two-pass Lanczos palette optimization, auto-size compression safeguards, and reply-to-convert support.'
       }
     ],
     improvements: [

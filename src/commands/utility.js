@@ -286,7 +286,7 @@ export const commands = [
                 ((cmdName === 'count' || cmdName === 'counting') && m.id === 'counting') ||
                 ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
                 ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
-          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon' || cmdName === 'changelog' || cmdName === 'updates' || cmdName === 'changes' || cmdName === 'cl' || cmdName === 'release' || cmdName === 'notes') && m.id === 'utilities') ||
+          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon' || cmdName === 'changelog' || cmdName === 'updates' || cmdName === 'changes' || cmdName === 'cl' || cmdName === 'release' || cmdName === 'notes' || cmdName === 'togif' || cmdName === 'mp4togif' || cmdName === 'convertgif' || cmdName === 'gifconvert' || cmdName === 'vidtogif' || cmdName === 'v2g') && m.id === 'utilities') ||
                 ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
                 ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
                 ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
@@ -334,6 +334,8 @@ export const commands = [
                   usageText = `${prefix}liveops [overview|speed|antinuke|voice|daemons] / /liveops [view]`;
               } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
                   usageText = `${prefix}changelog [page] / /changelog [page]`;
+              } else if (targetCmd.name === "togif" || targetCmd.name === "mp4togif" || targetCmd.name === "convertgif" || targetCmd.name === "gifconvert" || targetCmd.name === "vidtogif" || targetCmd.name === "v2g") {
+                  usageText = `${prefix}togif [file/url] / /togif [file] [url] [fps] [duration]`;
               } else if (targetCmd.name === "decapitate" || targetCmd.name === "purgehooks" || targetCmd.name === "antiwebhook") {
                   usageText = `${prefix}decapitate / ${prefix}purgehooks / ${prefix}antiwebhook`;
               } else if (targetCmd.name === "timemachine" || targetCmd.name === "snapshot" || targetCmd.name === "deltarollback") {
@@ -465,6 +467,18 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Page 5 (04 Nov 2026):** Persistence sentinel roles (Athena Unbypassable/Firewall) & strict database Snowflake ID binding.\n\n` +
                     `> -# **__Interactive Pagination:__**\n` +
                     `> ${BULLET_EMOJI} Uses animated beat emojis for Previous, Latest/Home, Next, and Close controls with in-place container re-rendering.`;
+              } else if (targetCmd.name === "togif" || targetCmd.name === "mp4togif" || targetCmd.name === "convertgif" || targetCmd.name === "gifconvert" || targetCmd.name === "vidtogif" || targetCmd.name === "v2g") {
+                  descContent = `Video to Animated GIF Converter - Convert any MP4, MOV, or WebM video file or URL into a high-quality animated looping GIF.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` - All members can convert videos to GIFs.\n\n` +
+                    `> -# **__Command Activation & Aliases:__**\n` +
+                    `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}togif [link]\` (or upload an MP4, or reply to a video with \`${prefix}togif\`)\n` +
+                    `> ${BULLET_EMOJI} **Aliases:** \`${prefix}mp4togif\`, \`${prefix}convertgif\`, \`${prefix}gifconvert\`, \`${prefix}vidtogif\`, \`${prefix}v2g\`\n` +
+                    `> ${BULLET_EMOJI} **Slash Command:** \`/togif [file: attachment] [url: link] [fps: 8-25] [duration: 1-30] [speed]\`\n\n` +
+                    `> -# **__Features & Pipeline:__**\n` +
+                    `> ${BULLET_EMOJI} **Dual-Pass Palette Generation:** Automatically generates a 256-color custom palette using Lanczos scaling for crystal-clear color fidelity.\n` +
+                    `> ${BULLET_EMOJI} **Supported Formats:** \`.mp4\`, \`.mov\`, \`.webm\`, \`.mkv\`, \`.avi\`, and Pinterest video links.\n` +
+                    `> ${BULLET_EMOJI} **Auto-Size Safeguard:** Automatically optimizes file sizes to stay under Discord's 10MB limit.`;
               } else if (targetCmd.name === "decapitate" || targetCmd.name === "purgehooks" || targetCmd.name === "antiwebhook") {
                   descContent = `Malicious Webhook Decapitation Engine - Rapid parallel sweep and eradication of rogue webhooks.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Perimeter Webhook Purge:__**\n` +
@@ -1199,7 +1213,7 @@ export const commands = [
           (cmdName === 'count' && m.id === 'counting') ||
           ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
           ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
-          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon' || cmdName === 'changelog' || cmdName === 'updates' || cmdName === 'changes' || cmdName === 'cl' || cmdName === 'release' || cmdName === 'notes') && m.id === 'utilities') ||
+          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon' || cmdName === 'changelog' || cmdName === 'updates' || cmdName === 'changes' || cmdName === 'cl' || cmdName === 'release' || cmdName === 'notes' || cmdName === 'togif' || cmdName === 'mp4togif' || cmdName === 'convertgif' || cmdName === 'gifconvert' || cmdName === 'vidtogif' || cmdName === 'v2g') && m.id === 'utilities') ||
           ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
           ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
           ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
@@ -1243,6 +1257,8 @@ export const commands = [
           usageText = `${prefix}liveops [overview|speed|antinuke|voice|daemons] / /liveops [view]`;
         } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
           usageText = `${prefix}changelog [page] / /changelog [page]`;
+        } else if (targetCmd.name === "togif" || targetCmd.name === "mp4togif" || targetCmd.name === "convertgif" || targetCmd.name === "gifconvert" || targetCmd.name === "vidtogif" || targetCmd.name === "v2g") {
+          usageText = `${prefix}togif [file/url] / /togif [file] [url] [fps] [duration]`;
         } else if (targetCmd.name === "entry" || targetCmd.name === "gate" || targetCmd.name === "screening" || targetCmd.name === "gatekeeper") {
           usageText = `${prefix}entry <deploy|channel|log|role|holding|questions|enable|disable|list|accept|deny|remote> / ${prefix}gate / ${prefix}screening`;
         } else if (targetCmd.name === "security") {
@@ -1353,6 +1369,18 @@ export const commands = [
             `> ${BULLET_EMOJI} **Page 5 (04 Nov 2026):** Persistence sentinel roles (Athena Unbypassable/Firewall) & strict database Snowflake ID binding.\n\n` +
             `> -# **__Interactive Pagination:__**\n` +
             `> ${BULLET_EMOJI} Uses animated beat emojis for Previous, Latest/Home, Next, and Close controls with in-place container re-rendering.`;
+        } else if (targetCmd.name === "togif" || targetCmd.name === "mp4togif" || targetCmd.name === "convertgif" || targetCmd.name === "gifconvert" || targetCmd.name === "vidtogif" || targetCmd.name === "v2g") {
+          descContent = `Video to Animated GIF Converter - Convert any MP4, MOV, or WebM video file or URL into a high-quality animated looping GIF.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` - All members can convert videos to GIFs.\n\n` +
+            `> -# **__Command Activation & Aliases:__**\n` +
+            `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}togif [link]\` (or upload an MP4, or reply to a video with \`${prefix}togif\`)\n` +
+            `> ${BULLET_EMOJI} **Aliases:** \`${prefix}mp4togif\`, \`${prefix}convertgif\`, \`${prefix}gifconvert\`, \`${prefix}vidtogif\`, \`${prefix}v2g\`\n` +
+            `> ${BULLET_EMOJI} **Slash Command:** \`/togif [file: attachment] [url: link] [fps: 8-25] [duration: 1-30] [speed]\`\n\n` +
+            `> -# **__Features & Pipeline:__**\n` +
+            `> ${BULLET_EMOJI} **Dual-Pass Palette Generation:** Automatically generates a 256-color custom palette using Lanczos scaling for crystal-clear color fidelity.\n` +
+            `> ${BULLET_EMOJI} **Supported Formats:** \`.mp4\`, \`.mov\`, \`.webm\`, \`.mkv\`, \`.avi\`, and Pinterest video links.\n` +
+            `> ${BULLET_EMOJI} **Auto-Size Safeguard:** Automatically optimizes file sizes to stay under Discord's 10MB limit.`;
         } else if (targetCmd.name === "pinterest" || targetCmd.name === "pin") {
           descContent = `Extracts and downloads uncompressed original master-resolution images and MP4 videos from any Pinterest link or short URL (pin.it).\n\n` +
             `> -# **__Features & Pipeline:__**\n` +
@@ -3246,6 +3274,7 @@ export const helpModules = [
     "`!weather / !wtr / !climate / !forecast / !temp <location/url>` - Live global weather with satellite world map & 3-day forecast `[Public]`",
     "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Real-time web picture retrieval with interactive pagination & source link `[Public]`",
     "`!gif / !findgif / !searchgif / !gifs / !tenor / !klipy <need>` - Federated animated GIF search across KLIPY, Tenor, Giphy & OtakuGifs inside an accent borderless CV2 container `[Public]`",
+    "`!togif / !mp4togif / !convertgif [video/url]` - Convert any MP4, MOV, or WebM video file or URL into a looping animated GIF `[Public]`",
     "`!meme / !memegen <template> [top text] | [bottom text]` - Generate memes from 25+ viral templates `[Public]`",
     "`!caption <text>` - Add modern meme caption header to any image or avatar `[Public]`",
     "`!filter <deepfry|glitch|grayscale|sepia|invert|pixelate|polaroid>` - Apply visual FX filters to pictures `[Public]`",

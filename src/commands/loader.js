@@ -125,8 +125,10 @@ import { commands as dualkeyCmds } from './dualkey.js';
 import { commands as burnCmds } from './burn.js';
 import { commands as liveopsCmds } from './liveops.js';
 import { commands as changelogCmds } from './changelog.js';
+import { commands as togifCmds } from './togif.js';
 
 export const allCommands = [
+  ...togifCmds,
   ...changelogCmds,
   ...liveopsCmds,
   ...honeypotCmds,

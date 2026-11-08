@@ -1791,6 +1791,26 @@ export const DETAILED_COMMANDS = {
     example: '!changelog 1'
   },
 
+  togif: {
+    name: 'togif',
+    aliases: ['mp4togif', 'convertgif', 'gifconvert', 'vidtogif', 'v2g'],
+    category: 'Utility & Media Processing',
+    clearance: 'Public (Everyone)',
+    syntax: '!togif [file/url] / /togif [file] [url] [fps] [duration] [speed]',
+    purpose: 'Convert any MP4, MOV, or WebM video file or URL into a high-quality animated looping GIF.',
+    architecture:
+`• **Command Activation & Aliases:**
+  - Prefix: \`!togif [link]\` (or upload an MP4, or reply to a video with \`!togif\`).
+  - Aliases: \`!mp4togif\`, \`!convertgif\`, \`!gifconvert\`, \`!vidtogif\`, \`!v2g\`.
+  - Slash: \`/togif [file: attachment] [url: link] [fps: 8-25] [duration: 1-30] [speed]\`.
+• **Encoding Pipeline & Technology:**
+  - **ffmpeg-static Binary Integration:** Direct headless video frame decoding without requiring host system dependencies.
+  - **Dual-Pass Palette Generation:** Generates a custom 256-color palette using Lanczos scaling for crystal-clear color fidelity and artifact elimination.
+  - **Auto-Size Safeguard:** Automatically monitors output file sizes and engages secondary compression if a GIF exceeds 8MB, ensuring Discord upload acceptance.
+  - **Universal Format Support:** Decodes MP4, MOV, WebM, MKV, AVI, and direct Pinterest video links.`,
+    example: '!togif https://example.com/video.mp4'
+  },
+
   firewall: {
     name: 'firewall',
     aliases: ['fw', 'matrix', 'telemetry', 'statusnet'],
