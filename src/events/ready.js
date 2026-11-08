@@ -215,9 +215,8 @@ export default {
 
     // Set custom rich activity presence
     const customStatuses = [
-      'Athena {version} is now rolling out.. ⚡',
-      'No. of Git Commits done so far — {commits} 🛠️',
-      'Engineering Velocity: {commits} Commits pushed! 🚀',
+      'Athena {version} is now rolling out..',
+      'No of Git Commits Done so far - {commits}',
       'Fully Armed !',
       "Fortified by Athena's Firewall !",
       'Truly Unbypassable',
