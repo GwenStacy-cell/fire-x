@@ -454,7 +454,7 @@ export const commands = [
               } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
                   descContent = `Athena Prime 5-Day Rolling Changelog & Release History - Real-time updates, optimizations, and security patches.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
-                    `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` - All server members can view the changelog.\n\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Extra Owner\` (and Server Owner / Bot Owner). Unauthorized users are strictly denied.\n\n` +
                     `> -# **__Command Activation & Aliases:__**\n` +
                     `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}changelog [page]\` (Aliases: \`${prefix}updates\`, \`${prefix}changes\`, \`${prefix}cl\`, \`${prefix}release\`, \`${prefix}notes\`)\n` +
                     `> ${BULLET_EMOJI} **Slash Command:** \`/changelog [page: 1 to 5]\`\n` +
@@ -470,7 +470,7 @@ export const commands = [
               } else if (targetCmd.name === "togif" || targetCmd.name === "mp4togif" || targetCmd.name === "convertgif" || targetCmd.name === "gifconvert" || targetCmd.name === "vidtogif" || targetCmd.name === "v2g") {
                   descContent = `Video to Animated GIF Converter - Convert any MP4, MOV, or WebM video file or URL into a high-quality animated looping GIF.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
-                    `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` - All members can convert videos to GIFs.\n\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Extra Owner\` (and Server Owner / Bot Owner). Unauthorized users are strictly denied.\n\n` +
                     `> -# **__Command Activation & Aliases:__**\n` +
                     `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}togif [link]\` (or upload an MP4, or reply to a video with \`${prefix}togif\`)\n` +
                     `> ${BULLET_EMOJI} **Aliases:** \`${prefix}mp4togif\`, \`${prefix}convertgif\`, \`${prefix}gifconvert\`, \`${prefix}vidtogif\`, \`${prefix}v2g\`\n` +
@@ -1356,7 +1356,7 @@ export const commands = [
         } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
           descContent = `Athena Prime 5-Day Rolling Changelog & Release History - Real-time updates, optimizations, and security patches.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
-            `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` - All server members can view the changelog.\n\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Extra Owner\` (and Server Owner / Bot Owner). Unauthorized users are strictly denied.\n\n` +
             `> -# **__Command Activation & Aliases:__**\n` +
             `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}changelog [page]\` (Aliases: \`${prefix}updates\`, \`${prefix}changes\`, \`${prefix}cl\`, \`${prefix}release\`, \`${prefix}notes\`)\n` +
             `> ${BULLET_EMOJI} **Slash Command:** \`/changelog [page: 1 to 5]\`\n` +
@@ -1372,7 +1372,7 @@ export const commands = [
         } else if (targetCmd.name === "togif" || targetCmd.name === "mp4togif" || targetCmd.name === "convertgif" || targetCmd.name === "gifconvert" || targetCmd.name === "vidtogif" || targetCmd.name === "v2g") {
           descContent = `Video to Animated GIF Converter - Convert any MP4, MOV, or WebM video file or URL into a high-quality animated looping GIF.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
-            `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` - All members can convert videos to GIFs.\n\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Extra Owner\` (and Server Owner / Bot Owner). Unauthorized users are strictly denied.\n\n` +
             `> -# **__Command Activation & Aliases:__**\n` +
             `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}togif [link]\` (or upload an MP4, or reply to a video with \`${prefix}togif\`)\n` +
             `> ${BULLET_EMOJI} **Aliases:** \`${prefix}mp4togif\`, \`${prefix}convertgif\`, \`${prefix}gifconvert\`, \`${prefix}vidtogif\`, \`${prefix}v2g\`\n` +
@@ -3274,7 +3274,7 @@ export const helpModules = [
     "`!weather / !wtr / !climate / !forecast / !temp <location/url>` - Live global weather with satellite world map & 3-day forecast `[Public]`",
     "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Real-time web picture retrieval with interactive pagination & source link `[Public]`",
     "`!gif / !findgif / !searchgif / !gifs / !tenor / !klipy <need>` - Federated animated GIF search across KLIPY, Tenor, Giphy & OtakuGifs inside an accent borderless CV2 container `[Public]`",
-    "`!togif / !mp4togif / !convertgif [video/url]` - Convert any MP4, MOV, or WebM video file or URL into a looping animated GIF `[Public]`",
+    "`!togif / !mp4togif / !convertgif [video/url]` - Convert any MP4, MOV, or WebM video file or URL into a looping animated GIF `[Extra Owner]`",
     "`!meme / !memegen <template> [top text] | [bottom text]` - Generate memes from 25+ viral templates `[Public]`",
     "`!caption <text>` - Add modern meme caption header to any image or avatar `[Public]`",
     "`!filter <deepfry|glitch|grayscale|sepia|invert|pixelate|polaroid>` - Apply visual FX filters to pictures `[Public]`",
@@ -3291,7 +3291,7 @@ export const helpModules = [
     "`!ping / !p / !latency` - View bot latency and heartbeat graph `[Public]`",
     "`!status` - Live bot engine performance, cluster health & security telemetry `[Public]`",
     "`!liveops / !telemetry / !sysmon [overview|speed|antinuke|voice|daemons]` - Real-time LiveOps telemetry matrix with sub-second benchmarks & daemon diagnostics `[Server Owner / Extra Owner]`",
-    "`!changelog / !updates / !cl [page]` - View latest updates, optimizations & release history across the last 5 days `[Public]`",
+    "`!changelog / !updates / !cl [page]` - View latest updates, optimizations & release history across the last 5 days `[Extra Owner]`",
     "`!db <status|backup|restore>` - View database cloud backup status, force backup or reload from Discord cloud `[Bot Owner]`",
     "`!modmail / !mm <setup #channel | disable>` - Direct Message support ticket bridge `[Extra Owner]`",
     "`!reply <message>` - Reply to member inside active ModMail ticket `[Extra Owner]`",

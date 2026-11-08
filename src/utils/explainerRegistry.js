@@ -1773,7 +1773,7 @@ export const DETAILED_COMMANDS = {
     name: 'changelog',
     aliases: ['updates', 'changes', 'cl', 'release', 'notes'],
     category: 'Utility & Release History',
-    clearance: 'Public (Everyone)',
+    clearance: 'Extra Owner',
     syntax: '!changelog [page] / /changelog [page]',
     purpose: 'View the latest Athena Prime updates, optimizations, and release history across the last 5 days.',
     architecture:
@@ -1795,7 +1795,7 @@ export const DETAILED_COMMANDS = {
     name: 'togif',
     aliases: ['mp4togif', 'convertgif', 'gifconvert', 'vidtogif', 'v2g'],
     category: 'Utility & Media Processing',
-    clearance: 'Public (Everyone)',
+    clearance: 'Extra Owner',
     syntax: '!togif [file/url] / /togif [file] [url] [fps] [duration] [speed]',
     purpose: 'Convert any MP4, MOV, or WebM video file or URL into a high-quality animated looping GIF.',
     architecture:

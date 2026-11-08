@@ -323,6 +323,20 @@ export async function handleChangelogInteraction(interaction) {
   const customId = interaction.customId;
   if (!customId || !customId.startsWith('changelog_')) return false;
 
+  const { isExtraOwnerOrHigher } = await import('./helpers.js');
+  const { WRONG_EMOJI } = await import('./emojis.js');
+  const cv2 = (await import('../cv2.js')).default;
+
+  if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+    return interaction.reply({
+      ...cv2.danger(
+        `Access Denied | ${WRONG_EMOJI}`,
+        'This changelog panel is strictly restricted to **Extra Owners** (or Server Owner).'
+      ),
+      flags: MessageFlags.Ephemeral
+    }).catch(() => null);
+  }
+
   if (customId === 'changelog_close') {
     try {
       if (interaction.message && interaction.message.deletable) {

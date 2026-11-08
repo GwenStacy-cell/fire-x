@@ -1,6 +1,7 @@
 import { 
   AttachmentBuilder, 
   MessageFlags, 
+  PermissionFlagsBits,
   ActionRowBuilder, 
   ButtonBuilder, 
   ButtonStyle 
@@ -21,13 +22,15 @@ import {
   getRandomHeadingGlyph 
 } from '../utils/emojis.js';
 import { isPinterestUrl, fetchPinterestMedia } from '../utils/pinterest.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 export const commands = [
   {
     name: 'togif',
     aliases: ['mp4togif', 'convertgif', 'gifconvert', 'vidtogif', 'v2g'],
-    description: 'Convert any MP4, WebM, or MOV video file or URL into a high-quality animated looping GIF',
+    description: 'Convert any MP4, WebM, or MOV video file or URL into a high-quality animated looping GIF (Extra Owner only)',
     category: 'utility',
+    permissions: [PermissionFlagsBits.Administrator],
     options: [
       {
         name: 'file',
@@ -72,6 +75,13 @@ export const commands = [
     ],
 
     async executePrefix(message, args) {
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger(
+          `Access Denied | ${WRONG_EMOJI}`,
+          'This command is strictly restricted to **Extra Owners** (or Server Owner).'
+        )).catch(() => null);
+      }
+
       const prefix = '!';
       let videoSource = null;
       let filename = 'video.mp4';
@@ -230,6 +240,16 @@ export const commands = [
     },
 
     async executeSlash(interaction) {
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({
+          ...cv2.danger(
+            `Access Denied | ${WRONG_EMOJI}`,
+            'This command is strictly restricted to **Extra Owners** (or Server Owner).'
+          ),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
       await interaction.deferReply();
 
       const fileOption = interaction.options.getAttachment('file');
