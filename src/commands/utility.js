@@ -2751,43 +2751,43 @@ async function getStatusEmbed(client, guild) {
 
 export const helpModules = [
   { id: 'security', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Security', label: 'Security Commands', emoji: 'security', commands: [
-    "`!auth / !tiers` - Manage role authorization tiers (Admin, Mod, Staff) `[Extra Owner]`",
-    "`!tier / !mytier / !perms` - Check your current authorization tier & clearance `[Public]`",
-    "`!antinuke <config | status | records | guide>` - Interactive antinuke control panel, active tripwires & guide `[Extra Owner]`",
-    "`!unbypassable / !unbypassable deploy` - Inspect & deploy Athena Unbypassable persistence sentinel roles `[Extra Owner]`",
-    "`!firewall / !fw / !matrix` - Live system telemetry matrix, gateway ping, SQLite WAL & defense status `[Public]`",
-    "`!explain / !docs [topic|cmd]` - Deep-dive architectural breakdowns & exploit analyses `[Public]`",
-    "`!security <enable all | disable all | status | records | mode>` - Full 28-module unbypassable antinuke firewall matrix with 2s burst lockdown & zero-delay strikes `[Extra Owner]`",
-    "`!security <enable | disable> <module>` - Toggle specific antinuke defense module `[Extra Owner]`",
-    "`!entry / !gate / !screening` - Server Join Application & Gatekeeper with Bot Owner Remote DM Acceptance `[Extra Owner / Bot Owner]`",
-    "`!spampermit / !spamrevoke / !spamlist <@user/id>` - Manage spam protection bypass allowances `[Extra Owner]`",
-    "`!emergency / !panic / !em` - Ultra-fast emergency panic lockdown: instant channel blackout & phone verification elevation `[Server Owner / Bot Owner]`",
-    "`!endemergency / !unpanic / !panicoff` - Resolve emergency mode, lift blackout and restore pre-emergency bitmasks `[Server Owner / Bot Owner]`",
-    "`!lockdown / !ld <1|2|3|off>` - Batched channel lockdown (Tier 1 Soft, Tier 2 Medium, Tier 3 Nuclear) `[Extra Owner]`",
-    "`!unlockdown / !unld` - Restore exact pre-lockdown channel permissions and bitmasks from database snapshot `[Extra Owner]`",
-    "`!serverhealth / !audit / !secscore / !health` - Real-time hierarchy integrity, permissions & audit socket diagnostics `[Extra Owner]`",
-    "`!honeypot / !trap [setup [ban|timeout|kick] | punish | remove]` - Ghost Honeypot Sentinel: invisible canary tripwire with configurable counter-measures (ban, timeout, kick) `[Extra Owner]`",
-    "`!decapitate / !purgehooks` - Malicious Webhook Decapitation Engine: sub-15ms parallel sweep & eradication of rogue webhooks `[Extra Owner]`",
-    "`!timemachine / !snapshot [create|list|restore|diff]` - Time-Machine Server Snapshots: lightweight hierarchy snapshots with 1-click delta restore `[Extra Owner]`",
-    "`!exploitscan / !auditperms [patch]` - Deep permission vulnerability scanner for @everyone & hierarchy leaks with 1-click Auto-Patch `[Extra Owner]`",
-    "`!incident / !raidreport [view|list|clear]` - Post-Raid Forensic Incident Report: military briefing of attacker IDs, entry vectors & response times `[Extra Owner]`",
-    "`!anomaly / !burstguard [on|off|threshold|unlock]` - Staff Behavioral Anomaly Detection & Soft-Lock: zero-trust burst protector `[Extra Owner]`",
-    "`!gatekeeper / !raidgate [on|off|minage|avatar|action]` - Raid Account Age & Avatar Gating: perimeter screening against raid throwaways `[Extra Owner]`",
-    "`!staffpulse / !modstats [@user|reset]` - Staff Pulse & Moderation Quota Tracker: real-time moderation quotas & active rankings `[Staff Supervisor]`",
-    "`!dualkey / !twomanrule [toggle|auth|abort]` - Dual-Key Nuclear Authorizations: two-man rule requiring secondary signature before destructive commands execute `[Server Owner / Extra Owner]`",
-    "`!burn / !whisper [@users] [minutes]` - Ephemeral self-destructing burn-after-reading rooms with automatic permanent obliteration `[Extra Owner]`",
-    "`!antighostping / !ghostping / !agp [on|off|status]` - Real-time sentry against deleted ghost mentions with instant channel alerts `[Extra Owner]`",
-    "`!simnuke / !nukesim / !antinukesim` - Zero-risk ground-truth simulation of nuke attack testing <1ms interception velocity `[Extra Owner]`",
-    "`!panichistory / !lockdownhistory / !defconhistory` - Chronological audit timeline of all DEFCON and lockdown events `[Extra Owner]`",
-    "`!raidmode [status|on|off]` - Unified Server Raid Defense Matrix dashboard & join-velocity lockdown `[Extra Owner]`",
-    "`!lockapps / !unlockapps` - Lock or unlock server app integrations `[Extra Owner]`",
-    "`!scanserver` - Scan server for dangerous bot & onboarding permissions `[Extra Owner]`",
-    "`!neutralizeonboarding / !onboarding` - Audit & neutralize dangerous Onboarding roles `[Extra Owner]`",
+    "`!auth / !tiers` - Manage authorization tiers (Admin, Mod, Staff) `[Extra Owner]`",
+    "`!tier / !mytier / !perms` - Check authorization tier & clearance `[Public]`",
+    "`!antinuke <config|status|records|guide>` - Antinuke control panel & tripwires `[Extra Owner]`",
+    "`!unbypassable / !unbypassable deploy` - Deploy persistence sentinel roles `[Extra Owner]`",
+    "`!firewall / !fw / !matrix` - Live telemetry matrix, ping & defense status `[Public]`",
+    "`!explain / !docs [topic|cmd]` - Architectural breakdowns & exploit analyses `[Public]`",
+    "`!security <enable|disable all|status>` - 28-module antinuke firewall & strikes `[Extra Owner]`",
+    "`!security <enable|disable> <module>` - Toggle specific antinuke defense module `[Extra Owner]`",
+    "`!entry / !gate / !screening` - Member join screening with Bot Owner approval `[Extra Owner]`",
+    "`!spampermit / !spamrevoke <@user>` - Manage spam protection bypasses `[Extra Owner]`",
+    "`!emergency / !panic` - Server channel blackout & verification elevation `[Server Owner]`",
+    "`!endemergency / !unpanic` - Lift blackout & restore permissions `[Server Owner]`",
+    "`!lockdown / !ld <1|2|3|off>` - Batched channel lockdown (Tiers 1-3) `[Extra Owner]`",
+    "`!unlockdown / !unld` - Restore exact pre-lockdown permissions snapshot `[Extra Owner]`",
+    "`!serverhealth / !audit` - Real-time permissions & hierarchy diagnostics `[Extra Owner]`",
+    "`!honeypot / !trap [setup|remove]` - Ghost canary tripwire with auto-punishment `[Extra Owner]`",
+    "`!decapitate / !purgehooks` - Parallel sweep & purge of rogue webhooks `[Extra Owner]`",
+    "`!timemachine / !snapshot [create|list|restore]` - Hierarchy snapshots & delta restore `[Extra Owner]`",
+    "`!exploitscan / !auditperms [patch]` - Vulnerability scanner with Auto-Patch `[Extra Owner]`",
+    "`!incident / !raidreport` - Post-raid attacker dossier & forensic vectors `[Extra Owner]`",
+    "`!anomaly / !burstguard [on|off]` - Staff behavioral anomaly detection `[Extra Owner]`",
+    "`!gatekeeper / !raidgate [on|off]` - Account age & avatar perimeter gating `[Extra Owner]`",
+    "`!staffpulse / !modstats [@user]` - Moderation quota tracker & rankings `[Staff Supervisor]`",
+    "`!dualkey / !twomanrule [toggle|auth]` - Two-man rule requiring secondary approval `[Server Owner]`",
+    "`!burn / !whisper [@users] [mins]` - Self-destructing rooms with auto-purge `[Extra Owner]`",
+    "`!antighostping / !agp [on|off]` - Sentry against deleted ghost mentions `[Extra Owner]`",
+    "`!simnuke / !nukesim` - Simulation testing <1ms interception velocity `[Extra Owner]`",
+    "`!panichistory / !defconhistory` - Audit timeline of DEFCON & lockdown events `[Extra Owner]`",
+    "`!raidmode [status|on|off]` - Raid defense matrix & join-velocity lockdown `[Extra Owner]`",
+    "`!lockapps / !unlockapps` - Lock or unlock server application integrations `[Extra Owner]`",
+    "`!scanserver` - Scan server for dangerous bot & onboarding perms `[Extra Owner]`",
+    "`!neutralizeonboarding` - Audit & neutralize dangerous onboarding roles `[Extra Owner]`",
     "`!autonick` - Interactive auto-nickname enforcer dashboard `[Extra Owner]`",
-    "`!dm / !dms [on|off|status]` - Server-wide automated Athena direct message (DM) notification toggle `[Extra Owner]`",
-    "`!config / !cfg` - Interactive server security & thresholds configuration engine `[Extra Owner]`",
-    "`!learn / !lambda / !ai / !selflearn [status|on|off|flaws|fix|analyze|baseline|signatures|clear]` - Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics `[Extra Owner]`",
-    "`!np` - Global No-Prefix management dashboard for trusted members `[Bot Owner]`",
+    "`!dm / !dms [on|off|status]` - Server-wide automated mention DM alerts `[Extra Owner]`",
+    "`!config / !cfg` - Interactive security & thresholds dashboard `[Extra Owner]`",
+    "`!learn / !lambda / !ai [status|on|off]` - Autonomous self-learning diagnostics `[Extra Owner]`",
+    "`!np` - Global No-Prefix dashboard for trusted members `[Bot Owner]`",
     "`!modmode` - Temporarily pause restore for server edits `[Server Owner]`"
   ] },
   { id: 'filters', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Filters', label: 'Automod Filters', emoji: 'filters', commands: [
@@ -3166,7 +3166,7 @@ export const helpModules = [
     "`!date / !go-on-date @user` - Go on a special interactive date `[Public]`",
     "`!app` - Manage Staff Application system `[Extra Owner]`"
   ] },
-  { id: 'roleplay', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Roleplay', label: 'Roleplay & Affinity Matrix', emoji: 'roleplay', commands: [
+  { id: 'roleplay', category: 'ENTERTAINMENT & ARCADE', shortLabel: 'Roleplay', label: 'Roleplay & Affinity Matrix', emoji: 'roleplay', commands: [
     "`!rp / !roleplay` - Complete Athena Roleplay & Affinity Engine (54+ actions, profiles, duo matrix, marriages) `[Public]`",
     "`!rp actions [category]` - Catalog of all 54+ actions (Affection, Playful, Combat, Reactions) `[Public]`",
     "`!rp profile [@user] / !rp stats` - Roleplay activity card, custom bio & top partner rankings `[Public]`",
@@ -3190,15 +3190,12 @@ export const helpModules = [
     "",
     "-# **__Dynamic Relationship Meter & Affinity Matrix (`!rp duo @user`):__**",
     "-# <a:target_blink:1565667466984554588> Calculates real-time affinity tiers (`Level 1 Acquaintances` to `Level 10 Eternal Soulmates 💍`) with dynamic visual progress bar.",
-    "-# <a:target_blink:1565667466984554588> **Relationship Dynamic Engine:** Categorizes bonds into *Sweethearts & Soulmates*, *Sparring Partners & Friendly Rivals*, *Chaotic Menace Duo*, or *Harmonious Buddies* based on action distribution.",
+    "-# <a:target_blink:1565667466984554588> **Relationship Dynamic Engine:** Categorizes bonds into *Sweethearts & Soulmates*, *Sparring Partners*, *Chaotic Menace Duo*, or *Harmonious Buddies*.",
     "",
     "-# **__Federated GIF Route Pipeline (8 Redundant Bridges):__**",
-    "-# <a:target_blink:1565667466984554588> **KLIPY Expression Platform (`klipy.com` / `api.klipy.com`):** Direct partner API bridge & uncompressed static asset scraper.",
-    "-# <a:target_blink:1565667466984554588> **Purrbot Anime Gateway (`purrbot.site`):** Dedicated high-velocity SFW anime reaction CDN supporting 18+ actions.",
-    "-# <a:target_blink:1565667466984554588> **OtakuGifs SFW Network (`otakugifs.xyz`):** 25+ specialized WebP/AVIF/GIF reaction endpoints.",
-    "-# <a:target_blink:1565667466984554588> **Nekos.best, Waifu.pics & Nekos.life:** Multi-tier failover ensures 100% zero-failure rate."
+    "-# <a:target_blink:1565667466984554588> **KLIPY, Purrbot, OtakuGifs, Nekos.best, Waifu.pics & Nekos.life:** Multi-tier failover ensures 100% zero-failure rate."
   ] },
-  { id: 'arcade', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Arcade', label: 'Arcade & Casino Matrix', emoji: 'arcade', commands: [
+  { id: 'arcade', category: 'ENTERTAINMENT & ARCADE', shortLabel: 'Casino', label: 'Arcade & Casino Matrix', emoji: 'arcade', commands: [
     "`!tictactoe / !ttt @user` - Interactive 3x3 Tic-Tac-Toe battle with Components V2 buttons & move timers `[Public]`",
     "`!blackjack / !bj [bet]` - High-stakes casino Blackjack against Athena with Hit, Stand, Double Down & insurance `[Public]`",
     "`!roulette / !roul <bet> <space>` - European roulette wheel betting (Red, Black, Green, Even, Odd, 0-36) `[Public]`",
@@ -3210,13 +3207,13 @@ export const helpModules = [
     "`!pay @user <amount>` - Direct peer-to-peer coin transfers `[Public]`",
     "",
     "-# **__Arcade & Casino Capabilities:__**",
-    "-# <a:target_blink:1565667466984554588> **Components V2 Interactive Controls:** Built using Discord interactive buttons with real-time UI updates and state management.",
-    "-# <a:target_blink:1565667466984554588> **Tic-Tac-Toe Engine:** Live 3x3 grid with turn tracking, win detection (rows, columns, diagonals), draw detection, and forfeit timers.",
+    "-# <a:target_blink:1565667466984554588> **Components V2 Interactive Controls:** Built using Discord interactive buttons with real-time UI updates.",
+    "-# <a:target_blink:1565667466984554588> **Tic-Tac-Toe Engine:** Live 3x3 grid with turn tracking, win detection, draw detection, and forfeit timers.",
     "-# <a:target_blink:1565667466984554588> **Blackjack Engine:** Complete dealer rules (dealer stands on 17), natural 21 (3:2 payout), Double Down, and instant bankroll reconciliation.",
     "-# <a:target_blink:1565667466984554588> **Multiplayer Trivia Arena:** Dynamic question banks with 15-second response timers, coin prize pools, and immediate answer reveals."
   ] },
 
-  { id: 'chess', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Chess', label: 'Grandmaster Chess', emoji: 'chess', commands: [
+  { id: 'chess', category: 'ENTERTAINMENT & ARCADE', shortLabel: 'Chess', label: 'Grandmaster Chess', emoji: 'chess', commands: [
     "`!chess / !chess ai [bot]` - Play interactive chess against 11 AI engines or challenge a friend `[Public]`",
     "`!chess engine / !chess bot` - Interactive engine selector dropdown to choose active chess engine `[Public]`",
     "`!chess @user` - Challenge another server member to a live 1v1 PvP chess match `[Public]`",
@@ -3225,30 +3222,23 @@ export const helpModules = [
     "`!help chess / /help chess` - Open the interactive Grandmaster Chess Engine Matrix dashboard `[Public]`",
     "",
     "-# **__Grandmaster Chess Engine Matrix (11 Engines & Personalities):__**",
-    "-# <a:target_blink:1565667466984554588> **__Stockfish 16.1 (Ultra GM • 3550 ELO):__** The peak of open-source calculation at depth 15 with razor-sharp tactical lines.",
-    "-# <a:target_blink:1565667466984554588> **__Mittens 🐾 (Menace Cat • 3600+ ELO):__** Chess.com's sinister cat bot that consumes all human hope with terrifying quotes on every move.",
-    "-# <a:target_blink:1565667466984554588> **__AlphaZero (DeepMind • 3500 ELO):__** Groundbreaking neural network known for intuitive piece sacrifices and dynamic piece activity.",
-    "-# <a:target_blink:1565667466984554588> **__Torch 1.0 (Chess.com • 3420 ELO):__** Aggressive king-hunting engine launching relentless central breakthroughs.",
-    "-# <a:target_blink:1565667466984554588> **__Leela Chess Zero (LCZero • 3450 ELO):__** Open-source deep reinforcement learning neural net with suffocating positional squeeze.",
-    "-# <a:target_blink:1565667466984554588> **__Stockfish 15 (Grandmaster • 3200 ELO):__** Classic high-speed NNUE engine calculating razor-sharp lines at depth 12.",
-    "-# <a:target_blink:1565667466984554588> **__Komodo Dragon 3.3 (World Champ • 3350 ELO):__** Former computer world champion blending positional mastery with dynamic counterplay.",
-    "-# <a:target_blink:1565667466984554588> **__Magnus Carlsen AI (Champion • 2882 ELO):__** Emulates the GOAT's legendary endgame grinding and zero-counterplay squeeze.",
-    "-# <a:target_blink:1565667466984554588> **__Hikaru Nakamura AI (Blitz King • 2875 ELO):__** Lightning-fast tactical fireworks, sharp speed-chess complications and venomous attacks.",
-    "-# <a:target_blink:1565667466984554588> **__Stockfish 11 (Master • 2500 ELO):__** Accessible club-level classical engine for competitive practice.",
-    "-# <a:target_blink:1565667466984554588> **__Martin (Chess.com Coach • 250 ELO):__** Beloved goofy dad bot with a 65% blunder rate, friendly dad jokes and chaotic moves.",
-    "",
-    "-# **__Interactive Engine Selector Dropdown (`!chess engine` / `!chess bot`):__**",
-    "-# <a:target_blink:1565667466984554588> Launch the interactive Discord Components V2 dropdown menu to switch the active engine for the server on the fly `[Public]`.",
+    "-# <a:target_blink:1565667466984554588> **Stockfish 16.1 (Ultra GM • 3550 ELO):** Peak calculation at depth 15 with razor-sharp tactics.",
+    "-# <a:target_blink:1565667466984554588> **Mittens 🐾 (Menace Cat • 3600+ ELO):** Sinister cat bot that mocks with menacing quotes on every move.",
+    "-# <a:target_blink:1565667466984554588> **AlphaZero (DeepMind • 3500 ELO):** Neural net famous for dynamic piece sacrifices & relentless pressure.",
+    "-# <a:target_blink:1565667466984554588> **Torch 1.0 (Chess.com • 3420 ELO):** Aggressive king-hunting engine launching central attacks.",
+    "-# <a:target_blink:1565667466984554588> **Leela Chess Zero (LCZero • 3450 ELO):** Deep reinforcement learning net with suffocating positional squeeze.",
+    "-# <a:target_blink:1565667466984554588> **Stockfish 15 (Grandmaster • 3200 ELO):** Fast classical NNUE calculating sharp tactical lines.",
+    "-# <a:target_blink:1565667466984554588> **Komodo Dragon 3.3 (World Champ • 3350 ELO):** Blends positional mastery with dynamic counterplay.",
+    "-# <a:target_blink:1565667466984554588> **Magnus Carlsen AI (Champion • 2882 ELO):** Legendary endgame grinding and zero-counterplay squeeze.",
+    "-# <a:target_blink:1565667466984554588> **Hikaru Nakamura AI (Blitz King • 2875 ELO):** Lightning-fast tactical fireworks and venomous attacks.",
+    "-# <a:target_blink:1565667466984554588> **Stockfish 11 (Master • 2500 ELO):** Accessible club-level classical engine for competitive practice.",
+    "-# <a:target_blink:1565667466984554588> **Martin (Chess.com Coach • 250 ELO):** Friendly beginner coach with a 65% blunder rate and jokes.",
     "",
     "-# **__How to Play & Move Syntax:__**",
-    "-# <a:target_blink:1565667466984554588> **__Direct Challenge:__** Type `!chess ai <bot>` (e.g. `!chess ai mittens`, `!chess ai torch`, `!chess ai alphazero`, `!chess ai martin`).",
-    "-# <a:target_blink:1565667466984554588> **__Move Syntax in Chat:__** When it is your turn, type your move directly in chat:",
-    "-#   - Standard Algebraic: `e4`, `Nf3`, `Bc4`, `Qxd5+`",
-    "-#   - UCI Notation: `e2e4`, `g1f3`, `b8c6`",
-    "-#   - Pawn Promotions: `e8=Q` or shorthand `e8q`, `e7e8q`",
-    "-#   - Castling: `O-O` (Kingside) or `O-O-O` (Queenside)",
-    "-# <a:target_blink:1565667466984554588> **__Zero-Latency Minimax Fallback:__** If the cloud engine times out, local alpha-beta minimax responds in <1ms without move rollbacks.",
-    "-# <a:target_blink:1565667466984554588> **__100% Public Access:__** All chess commands, engine selections, and matches are completely public for all server members!"
+    "-# <a:target_blink:1565667466984554588> **Challenge:** Type `!chess ai <bot>` (e.g. `!chess ai mittens`, `!chess ai torch`, `!chess ai martin`).",
+    "-# <a:target_blink:1565667466984554588> **Move Syntax in Chat:** Algebraic (`e4`, `Nf3`, `Bc4`), UCI (`e2e4`, `g1f3`), Promotions (`e8=Q`), Castling (`O-O`, `O-O-O`).",
+    "-# <a:target_blink:1565667466984554588> **Zero-Latency Fallback:** Local alpha-beta minimax fallback responds in <1ms without move rollbacks.",
+    "-# <a:target_blink:1565667466984554588> **100% Public Access:** All chess commands, engine selections, and matches are completely public!"
   ] },
 
   { id: 'nifty', category: 'STOCK & MARKET INTELLIGENCE', shortLabel: 'Indian Mkts', label: 'Indian Benchmarks (NIFTY 50)', emoji: 'finance', commands: [
@@ -3270,52 +3260,52 @@ export const helpModules = [
   ] },
   
   { id: 'utilities', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Utilities', label: 'General Utilities', emoji: 'utilities', commands: [
-    "`!help / !h [module/command]` - Displays this interactive menu `[Public]`",
-    "`!weather / !wtr / !climate / !forecast / !temp <location/url>` - Live global weather with satellite world map & 3-day forecast `[Public]`",
-    "`!image / !pic / !img / !photo / !picture / !searchimg <query>` - Real-time web picture retrieval with interactive pagination & source link `[Public]`",
-    "`!gif / !findgif / !searchgif / !gifs / !tenor / !klipy <need>` - Federated animated GIF search across KLIPY, Tenor, Giphy & OtakuGifs inside an accent borderless CV2 container `[Public]`",
-    "`!togif / !mp4togif / !convertgif [video/url]` - Convert any MP4, MOV, or WebM video file or URL into a looping animated GIF `[Extra Owner]`",
-    "`!meme / !memegen <template> [top text] | [bottom text]` - Generate memes from 25+ viral templates `[Public]`",
-    "`!caption <text>` - Add modern meme caption header to any image or avatar `[Public]`",
-    "`!filter <deepfry|glitch|grayscale|sepia|invert|pixelate|polaroid>` - Apply visual FX filters to pictures `[Public]`",
-    "`!wiretap <add|list|remove|check>` - Automated social media broadcaster for YouTube & Reddit `[Extra Owner]`",
-    "`!persona <tsundere|cyberpunk|butler|sensei|default>` - Switch Athena conversational AI personality `[Extra Owner]`",
-    "`!pinterest / !pin <link>` - Extract & download master uncompressed original images or MP4 videos from Pinterest `[Public]`",
-    "`!dashboard / !commandcenter / !omni / !warroomall / !allinone` - Flagship Unified War-Room Command Center combining Telemetry & DEFCON `[Public / Extra Owner]`",
-    "`!hud / !warroom / !corehud / !matrixhud` - Flagship Animated Cyber War-Room HUD with live mode switching `[Public / Extra Owner]`",
-    "`!botstats / !botinfo / !bi / !binfo` - View advanced bot performance, cluster metrics & system health `[Public]`",
-    "`!athena / !guide [question]` - Interactive Athena AI Specialist to explain commands, resolve doubts & instruct setups `[Public]`",
-    "`!ask / !askathena / !assistant / !neural / !gemini <prompt>` - Query general AI knowledge powered by Google Gemini 3.8 Flash `[Public]`",
-    "`!aimode <status|on|off|channel>` - Configure conversational AI channel mode `[Extra Owner]`",
-    "`!dev / !developer` - Displays developer information and credits `[Public]`",
-    "`!ping / !p / !latency` - View bot latency and heartbeat graph `[Public]`",
-    "`!status` - Live bot engine performance, cluster health & security telemetry `[Public]`",
-    "`!liveops / !telemetry / !sysmon [overview|speed|antinuke|voice|daemons]` - Real-time LiveOps telemetry matrix with sub-second benchmarks & daemon diagnostics `[Server Owner / Extra Owner]`",
-    "`!changelog / !updates / !cl [page]` - View latest updates, optimizations & release history across the last 5 days `[Extra Owner]`",
-    "`!db <status|backup|restore>` - View database cloud backup status, force backup or reload from Discord cloud `[Bot Owner]`",
-    "`!modmail / !mm <setup #channel | disable>` - Direct Message support ticket bridge `[Extra Owner]`",
-    "`!reply <message>` - Reply to member inside active ModMail ticket `[Extra Owner]`",
-    "`!avatar / !av / !pfp [@user]` - View user's avatar in full resolution `[Public]`",
-    "`!banner / !bnr [@user]` - View user's banner in full resolution `[Public]`",
-    "`!userinfo / !ui / !whois [@user]` - Detailed user profile & permission information `[Public]`",
-    "`!time` - Check current Indian Standard Time (IST) `[Public]`",
-    "`!snipe / !s` - View the last deleted message in current channel `[Public]`",
+    "`!help / !h [cmd]` - Interactive bot command menu `[Public]`",
+    "`!weather / !wtr <location>` - Global weather & satellite map `[Public]`",
+    "`!image / !pic <query>` - Web image retrieval & pagination `[Public]`",
+    "`!gif / !tenor <query>` - Animated GIF search across 8 bridges `[Public]`",
+    "`!togif / !mp4togif [video]` - Video-to-GIF with Lanczos palette `[Extra Owner]`",
+    "`!meme / !memegen <template>` - Memes from 25+ viral templates `[Public]`",
+    "`!caption <text>` - Meme caption header on any image `[Public]`",
+    "`!filter <type>` - Visual FX filters (deepfry, glitch) `[Public]`",
+    "`!wiretap <add|list|remove>` - Social broadcaster for YT & Reddit `[Extra Owner]`",
+    "`!persona <type>` - Switch Athena conversational AI persona `[Extra Owner]`",
+    "`!pinterest / !pin <link>` - Download uncompressed Pinterest media `[Public]`",
+    "`!dashboard / !commandcenter` - War-Room: Telemetry & DEFCON `[Extra Owner]`",
+    "`!hud / !matrixhud` - Cyber War-Room HUD with live modes `[Public]`",
+    "`!botstats / !botinfo` - Bot performance, metrics & system health `[Public]`",
+    "`!athena / !guide [query]` - AI Specialist to instruct setups `[Public]`",
+    "`!ask / !gemini <prompt>` - AI knowledge powered by Gemini `[Public]`",
+    "`!aimode <status|on|off>` - Conversational AI channel mode `[Extra Owner]`",
+    "`!dev / !developer` - Developer info & system credits `[Public]`",
+    "`!ping / !p / !latency` - Bot latency & heartbeat graph `[Public]`",
+    "`!status` - Bot engine performance & telemetry `[Public]`",
+    "`!liveops / !telemetry` - LiveOps matrix & latency benchmarks `[Extra Owner]`",
+    "`!changelog / !cl [page]` - 5-day release history & optimizations `[Extra Owner]`",
+    "`!db <status|backup|restore>` - Database cloud backup & reload `[Bot Owner]`",
+    "`!modmail <setup|disable>` - DM support ticket bridge `[Extra Owner]`",
+    "`!reply <message>` - Reply to member inside ticket `[Extra Owner]`",
+    "`!avatar / !av [@user]` - Full resolution user avatar `[Public]`",
+    "`!banner / !bnr [@user]` - Full resolution user banner `[Public]`",
+    "`!userinfo / !ui [@user]` - Detailed profile & permissions `[Public]`",
+    "`!time` - Current Indian Standard Time (IST) `[Public]`",
+    "`!snipe / !s` - Last deleted message in channel `[Public]`",
     "`!news` - Configure automated RSS news feeds `[Extra Owner]`",
-    "`!shortcuts / !sc / !short enable|disable` - Toggle shortcuts `[Public]`",
+    "`!shortcuts / !sc on|off` - Toggle command shortcuts `[Public]`",
     "`!calculator / !calc` - Interactive button calculator `[Public]`",
-    "`!tts / !tts <text> / !tts voices / !tts voice <name> / !tts stop` - Interactive AI & Celebrity TTS Control Center `[Public]`",
-    "`!qrcode / !qrc / !qrmanager <text/link>` - Generate high-resolution QR code `[Public]`",
-    "`!steal / !stealemoji / !emojisteal / !steal-emoji / !addemoji <emoji/link>` - Steal an emoji to this server `[Extra Owner]`",
-    "`!emojis / !animatedemojis / !emojilist` - Interactive animated & static emoji inventory with raw IDs (<a:name:id>), previews & copyable codeblocks `[Server Owner]`",
-    "`!fileupload / !uploadfile [#channel] [title]` - Upload any file (.exe, .zip, .json, etc.) with a title/note inside an accentborderless container to the designated channel `[Server Owner / Extra Owner]`",
-    "`!morning / !goodmorning [panel|enable|disable|channel|auto|ping|test|add|list]` - Daily pleasant thought dispatcher with per-server randomized morning scheduling & auto active chat detection `[Manage Server]`",
-    "`!afk / !brb [reason]` - Set an AFK status that replies when pinged `[Public]`",
-    "`!bump` - Bump the server (Disboard integration) `[Public]`",
-    "`!sticky / !stick <message>` - Keep a message stuck at bottom of chat `[Extra Owner]`",
-    "`!dm / !dms [on|off|status]` - Server-wide Athena mention & tag DM notifications toggle `[Extra Owner]`",
-    "`!upload <url>` - Upload and mirror file from direct URL `[Public]`",
-    "`!tier / !mytier / !perms` - Check your current Athena Prime authorization tier `[Public]`",
-    "`!profile / !card [@user]` - Official God of War canvas profile card `[Public]`"
+    "`!tts / !tts voices` - AI & Celebrity TTS Voice Center `[Public]`",
+    "`!qrcode / !qrc <link>` - Generate high-res QR code `[Public]`",
+    "`!steal / !stealemoji <emoji>` - Steal emoji to this server `[Extra Owner]`",
+    "`!emojis / !emojilist` - Emoji inventory with IDs & codes `[Server Owner]`",
+    "`!fileupload [#channel]` - Upload & mirror files in channel `[Extra Owner]`",
+    "`!morning [panel|enable]` - Thought dispatcher & scheduler `[Manage Server]`",
+    "`!afk / !brb [reason]` - AFK status auto-reply when pinged `[Public]`",
+    "`!bump` - Bump server (Disboard integration) `[Public]`",
+    "`!sticky <message>` - Sticky message at bottom of chat `[Extra Owner]`",
+    "`!dm [on|off|status]` - Server mention DM alert toggle `[Extra Owner]`",
+    "`!upload <url>` - Mirror file from direct URL `[Public]`",
+    "`!tier / !mytier / !perms` - Current authorization tier `[Public]`",
+    "`!profile / !card [@user]` - Canvas God of War profile card `[Public]`"
   ] }
 ];
 
@@ -3345,6 +3335,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
         'roleplay': '<a:z_arrow_pink1:1523082728004653138>',
         'rp': '<a:z_arrow_pink1:1523082728004653138>',
         'arcade': '<a:trophy:1533859922599481577>',
+        'casino': '<a:trophy:1533859922599481577>',
         'soundboard': '<:music:1528159649780732046>'
       };
       if (designatedCustomEmojis[name]) return designatedCustomEmojis[name];
@@ -3389,6 +3380,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
         'roleplay': '<a:z_arrow_pink1:1523082728004653138>',
         'rp': '<a:z_arrow_pink1:1523082728004653138>',
         'arcade': '<a:trophy:1533859922599481577>',
+        'casino': '<a:trophy:1533859922599481577>',
         'soundboard': '<:music:1528159649780732046>',
         'sfx': '<:music:1528159649780732046>',
         'radio': '<:music:1528159649780732046>',
@@ -3404,17 +3396,12 @@ export function buildHelpContainer(client, guildId, moduleId) {
 
     if (moduleId === 'home') {
       let topText = `# Hey !!! , I am <@${botId}> ,\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Welcome to Athena Prime A bot which is made for unbypassable security features and community management! View down and see our srv management modules listed below:**\n\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Welcome to Athena Prime — Built for unbypassable security and server management! Explore all modules in the directory below:**\n\n`;
       topText += `> <a:z_arrow_pink1:1523082728004653138> **Athena Ownership Clearance Model:**\n`;
       topText += `> -# Commands operate strictly on: **Bot Owner** > **Server Owner** > **Extra Owner** (\`${prefix}extraowner\`) > **Public**.\n`;
-      topText += `> -# Native Discord \`Administrator\` permissions do NOT grant access to Athena server management commands. Only the **Server Owner** and designated **Extra Owners** can configure or manage the server.\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **To set Custom Prefix use <@${botId}> \`${prefix}prefix " your custom prefix "\`**\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Athena Roleplay & Arcade Matrix: 54+ Expressive actions (\`${prefix}hug\`, \`${prefix}kiss\`, \`${prefix}slap\`), Dynamic Duo Affinity Meter (\`${prefix}rp duo\`), 8 Federated GIF routes (\`${prefix}gif\`), Components V2 Arcade (\`${prefix}tictactoe\`, \`${prefix}blackjack\`), Soundboard & 24/7 Lo-Fi Radio (\`${prefix}soundboard\`, \`${prefix}radio\`), Meme Studio (\`${prefix}meme\`), Social Wiretap (\`${prefix}wiretap\`), and AI Personas (\`${prefix}persona\`)!**\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Indian Benchmarks Suite (\`${prefix}nifty\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Flagship Financial Suite: Real-Time Stock & Crypto Telemetry Canvas Engine (\`${prefix}stock\`), Indian Benchmarks Suite (\`${prefix}nifty\`), Universal Ticker Directory (\`${prefix}symbols\`), AI Market Analyst (\`${prefix}stockai\`), and Weather Reconnaissance Satellite Map (\`${prefix}weather\`)!**\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Grandmaster Chess Matrix: Play against 11 AI engines (Stockfish 16.1, Mittens 🐾, AlphaZero, Torch, Leela, Komodo, Magnus, Hikaru, Martin) or challenge friends via \`${prefix}chess\` & \`${prefix}chess engine\` \`[100% Public]\`!**\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Server Mention DM Alerts: Toggle automated Athena DM notifications dispatched when users are tagged in chat via \`${prefix}dm [on|off|status]\` \`[Extra Owner]\`!**\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Hint: For a detailed guide and instruction on any specific command, type \`${prefix}help <command>\` !**`;
+      topText += `> -# Native Discord \`Administrator\` permissions do NOT grant access to management commands. Only the **Server Owner** and designated **Extra Owners** can configure the server.\n\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Prefix Configuration:** Use <@${botId}> \`${prefix}prefix <custom_prefix>\` to set your custom prefix.\n`;
+      topText += `> <a:z_arrow_pink1:1523082728004653138> **Command Explorer:** Type \`${prefix}help <command>\` for detailed syntax and options on any specific command!`;
 
       rawComponents.push({ type: 10, content: topText });
       rawComponents.push({ type: 14, divider: true });
@@ -3422,6 +3409,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
       const categories = [
         { name: 'SECURITY & ACCESS CONTROL', icon: '', catName: 'SECURITY & ACCESS CONTROL' },
         { name: 'SERVER MANAGEMENT', icon: '', catName: 'SERVER MANAGEMENT' },
+        { name: 'ENTERTAINMENT & ARCADE', icon: '', catName: 'ENTERTAINMENT & ARCADE' },
         { name: 'STOCK & MARKET INTELLIGENCE', icon: '', catName: 'STOCK & MARKET INTELLIGENCE' },
         { name: 'AI & SYSTEM INTELLIGENCE', icon: '', catName: 'AI & SYSTEM INTELLIGENCE' },
         { name: 'COMMUNITY & ENGAGEMENT', icon: '', catName: 'COMMUNITY & ENGAGEMENT' },
@@ -3571,36 +3559,6 @@ export function buildHelpContainer(client, guildId, moduleId) {
     rawComponents.push(row2.toJSON());
     rawComponents.push({ type: 14, divider: true });
     rawComponents.push({ type: 10, content: '-# **Athena Prime Unbypassable Security !!**' });
-
-    // Discord Aggregate Displayable Text Limit Safeguard (Hard ceiling: 4,000 characters)
-    let totalTextLength = 0;
-    for (const comp of rawComponents) {
-      if (comp.type === 10 && comp.content) {
-        totalTextLength += comp.content.length;
-      }
-    }
-    if (totalTextLength > 3800) {
-      let runningTotal = 0;
-      for (let i = 0; i < rawComponents.length; i++) {
-        const comp = rawComponents[i];
-        if (comp.type === 10 && comp.content) {
-          if (runningTotal + comp.content.length > 3700) {
-            const allowed = Math.max(0, 3700 - runningTotal - 50);
-            comp.content = comp.content.substring(0, allowed) + '\n\n> *...[Truncated for Discord display limits]*';
-            runningTotal += comp.content.length;
-            for (let j = i + 1; j < rawComponents.length; j++) {
-              if (rawComponents[j].type === 10) {
-                rawComponents[j].content = '';
-              }
-            }
-            break;
-          } else {
-            runningTotal += comp.content.length;
-          }
-        }
-      }
-      rawComponents = rawComponents.filter(c => c.type !== 10 || (c.content && c.content.trim().length > 0));
-    }
 
     const rawContainer = {
       type: 17,
