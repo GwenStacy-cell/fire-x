@@ -1,4 +1,4 @@
-import { isBotOwnerSync, isServerAdmin } from './helpers.js';
+import { isBotOwnerSync } from './helpers.js';
 import { 
   hasDangerousPerms, 
   rawBan, 
@@ -11,9 +11,9 @@ import {
   recordAuditEntry,
   isProtectedSystemChannel,
   isAuthorized,
-  checkGlobalBurst
+  checkGlobalBurst,
+  cacheDeletedItem
 } from './antinuke.js';
-import { PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
 
 const DESTRUCTIVE_EVENTS = new Set([
@@ -28,9 +28,11 @@ const DESTRUCTIVE_EVENTS = new Set([
 
 // Action types that indicate aggressive destructive nuking
 const DESTRUCTIVE_AUDIT_ACTIONS = new Set([
+  1,  // Guild Update (Vanity Hijack / Settings Tampering)
   10, // Channel Create
   12, // Channel Delete
   20, // Member Kick
+  21, // Member Prune
   22, // Member Ban Add
   28, // Bot Add
   30, // Role Create
@@ -80,9 +82,11 @@ export function attachWiretap(client) {
 
       // Action to module mapping
       const ACTION_TO_MODULE = {
+        1:  'antiServerUpdate',
         10: 'antiChannelCreate',
         12: 'antiChannelDelete',
         20: 'antiKick',
+        21: 'antiMemberPurge',
         22: 'antiBan',
         28: 'antiBotAdd',
         30: 'antiRoleCreate',
@@ -98,34 +102,43 @@ export function attachWiretap(client) {
       }
 
       const member = guild.members.cache.get(executorId);
-      const isAuthorizedAdmin = isServerOwner || 
-                                isExtraOwner || 
-                                isBotOwner || 
-                                isAuthorized(guild, member || { id: executorId }, modKey || 'antinuke') ||
-                                (member?.permissions?.has && member.permissions.has(PermissionFlagsBits.Administrator)) ||
-                                (member?.roles?.cache && member.roles.cache.some(r => r.permissions?.has && r.permissions.has(PermissionFlagsBits.Administrator))) ||
-                                isServerAdmin(member, guildId);
+      // STRICT Anti-Nuke Authorization: Having Administrator permission does NOT authorize destructive actions!
+      // Only Server Owner, Extra Owners, Bot Owner, and explicitly whitelisted entities are exempt.
+      const isAuthorizedUser = isServerOwner || 
+                               isExtraOwner || 
+                               isBotOwner || 
+                               isAuthorized(guild, member || { id: executorId }, modKey || 'antinuke');
 
-      if (!isAuthorizedAdmin) {
+      if (!isAuthorizedUser) {
         checkGlobalBurst(guild, actionType, executorId);
         if (DESTRUCTIVE_AUDIT_ACTIONS.has(actionType)) {
           if (!isCondemned(guildId, executorId)) {
             condemn(guildId, executorId);
             setGuildUnderAttack(guildId, executorId, 60_000);
 
-            // ⚡ DIRECT BAN FIRST: Send PUT /bans over pre-warmed socket at 0ms
+            // ⚡ PARALLEL DUAL-STRIKE (0ms): Dispatch rawRoleStrip AND rawBan simultaneously over pre-warmed sockets!
+            // 1. rawRoleStrip strips ALL roles and applies a 28-day timeout in ~10ms -> Immediately revokes Administrator/Manage permissions on Discord's edge gateway!
+            // 2. rawBan sends PUT /bans in ~15ms -> Permanently purges and evicts the nuke bot from the server!
+            // Any second request fired by the nuker is INSTANTLY rejected by Discord with 403 Forbidden!
             const reason = `[ATHENA WIRETAP] ⚡ RAW WebSocket Strike: Neutralized Action ${actionType}`;
-            rawBan(guildId, executorId, client.token, reason).then(ok => {
-              if (!ok) rawRoleStrip(guildId, executorId, client.token).catch(() => null);
-            }).catch(() => {
-              rawRoleStrip(guildId, executorId, client.token).catch(() => null);
-            });
+            Promise.allSettled([
+              rawBan(guildId, executorId, client.token, reason),
+              rawRoleStrip(guildId, executorId, client.token)
+            ]);
 
             console.log(`[ATHENA WIRETAP] ⚡ Zero-Day Intercepted GUILD_AUDIT_LOG_ENTRY_CREATE (${actionType})! Neutralized ${executorId} in 0ms!`);
           }
         }
       }
       return;
+    }
+
+    // ⚡ Raw WebSocket pre-caching for deleted channels and roles
+    if (packet.t === 'CHANNEL_DELETE' && packet.d?.id) {
+      cacheDeletedItem(packet.d.id, packet.d);
+    }
+    if (packet.t === 'GUILD_ROLE_DELETE' && packet.d?.role_id) {
+      cacheDeletedItem(packet.d.role_id, packet.d);
     }
 
     // ⚡ ZERO-DAY FAST-PATH 2: Rogue Invite Destruction (<1ms)

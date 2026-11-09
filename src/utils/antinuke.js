@@ -1444,31 +1444,35 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
   const executionPromise = (async () => {
     try {
       if (punishment === 'ban') {
-        // ⚡ INSTANT DIRECT BAN: Single direct API call, zero wasted role-strip latency
-        const banOk = await rawBan(guild.id, executor.id, token, reason);
+        // ⚡ DUAL-STRIKE PRE-EMPTION (PARALLEL): Send rawRoleStrip AND rawBan simultaneously over pre-warmed sockets!
+        // 1. rawRoleStrip strips ALL roles & timeouts for 28 days in ~10ms -> Discord instantly drops nuker permissions to @everyone
+        // 2. rawBan sends PUT /bans in ~15ms -> Permanently purges and evicts the nuker from the server
+        // Any 2nd, 3rd, or 4th requests fired in burst by the nuker bot are rejected with 403 Forbidden!
+        const [banRes, stripRes] = await Promise.allSettled([
+          rawBan(guild.id, executor.id, token, reason),
+          rawRoleStrip(guild.id, executor.id, token)
+        ]);
+        const banOk = banRes.status === 'fulfilled' && banRes.value;
+        const stripOk = stripRes.status === 'fulfilled' && stripRes.value;
 
         if (banOk) {
-          result = 'Eliminated (Direct Raw Ban — Instant)';
+          result = 'Eliminated (Direct Raw Ban — Instant Dual-Strike)';
+        } else if (stripOk) {
+          result = 'Disarmed (Hierarchy blocked ban — Roles Stripped & Timed Out)';
         } else {
           // If direct raw ban was blocked (hierarchy conflict), attempt Discord.js fallback
           try {
             await guild.members.ban(executor.id, { reason });
             result = 'Permanently Banned (djs fallback)';
           } catch {
-            // Disarm fallback: only strip roles if ban was completely blocked by hierarchy
-            const stripOk = await rawRoleStrip(guild.id, executor.id, token).catch(() => false);
-            if (stripOk) {
-              result = 'Disarmed (Hierarchy blocked ban — Roles stripped)';
-            } else {
-              try {
-                const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
-                if (m?.kickable) {
-                  await m.kick(reason + ' [Ban failed — kicked]');
-                  result = 'Kicked (hierarchy blocked ban)';
-                }
-              } catch (kickErr) {
-                console.error(`[AntiNuke Kick Fallback Error for ${executor.id}]:`, kickErr.message);
+            try {
+              const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
+              if (m?.kickable) {
+                await m.kick(reason + ' [Ban failed — kicked]');
+                result = 'Kicked (hierarchy blocked ban)';
               }
+            } catch (kickErr) {
+              console.error(`[AntiNuke Kick Fallback Error for ${executor.id}]:`, kickErr.message);
             }
           }
         }

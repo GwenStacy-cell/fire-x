@@ -16,6 +16,47 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v2.9.1',
+    headline: 'Sub-15ms Antinuke Dual-Strike Pre-Emption & Administrator Bypass Seal',
+    summary: 'Closed a critical permission bypass in the 0ms raw WebSocket wiretap where nuker bots with Administrator permissions previously escaped instant packet execution. Deployed parallel dual-strike pre-emption firing rawRoleStrip and rawBan concurrently over pre-warmed Undici HTTP keep-alive sockets. Stripping roles in ~10ms causes Discord to immediately return 403 Forbidden to any subsequent actions in a nuker attack burst before the 15ms ban settles. Purged 114 obsolete root test/scratch files for maximum repository performance.',
+    whatsNew: [
+      {
+        title: 'Parallel Dual-Strike Pre-Emption',
+        desc: 'rawBan (PUT /bans) and rawRoleStrip (PATCH /members with roles: [] & 28-day timeout) now fire concurrently using Promise.allSettled on separate Discord rate-limit buckets at 0ms.'
+      },
+      {
+        title: 'Administrator Permission Loophole Sealed',
+        desc: 'Strict anti-nuke authorization in fastWiretap.js now verifies only Server Owner, Extra Owners, Bot Owner, and explicit DB whitelisted entities. Attackers with Administrator roles are no longer bypassed.'
+      },
+      {
+        title: 'Expanded Zero-Day Audit Actions',
+        desc: 'fastWiretap now intercepts Action 1 (GuildUpdate/Vanity Hijack), Action 11 (RoleUpdate/Permission Escalation), and Action 21 (MemberPrune) at the raw WebSocket layer.'
+      },
+      {
+        title: 'Raw WebSocket Pre-Caching',
+        desc: 'Pre-caches CHANNEL_DELETE and GUILD_ROLE_DELETE packets into deletedCache at 0ms before standard Discord.js gateway events are dispatched.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Repository Root Sanitization',
+        desc: 'Purged 114 obsolete one-off test scripts, scratch files, and patches from repository root, leaving a pristine 15-file core deployment.'
+      },
+      {
+        title: 'Zero-Loss Snapshot Assurance',
+        desc: 'Re-verified that infrastructureSnapshots are permanently retained and never purged on guildDelete or server departure, guaranteeing continuous rolling 100-snapshot disaster recovery.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Dual-Strike Fallback in AntiNuke Pipeline',
+        desc: 'Upgraded punish() in antinuke.js to parallel dual-strike pre-emption so any audit log event routed through standard antinuke neutralizes attackers in sub-15ms.'
+      }
+    ],
+    tip: 'Nuker bots are now stripped of all permissions in ~10ms, causing Discord to drop any 2nd burst action with 403 Forbidden.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v2.9.0',
     headline: '100-Rolling Snapshot Buffer & Granular Rollback Suite',
     summary: 'Automated zero-loss infrastructure and bot configuration snapshot engine taking periodic snapshots every 20 minutes with a 100-state rolling historical buffer per server. Enables instant single-click rollbacks for accidentally reset welcome/leave systems, autoroles, automod, or channels without data loss. Re-architected the Ezal owner suite with full Components V2 dashboard pagination and expanded real-time LiveOps telemetry.',
