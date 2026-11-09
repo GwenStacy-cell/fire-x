@@ -977,6 +977,10 @@ export default {
       // Removed premature return to allow auto-mod to run
     }
 
+    if (message.guild && !message.member && message.author?.id) {
+      message.member = await message.guild.members.fetch(message.author.id).catch(() => null);
+    }
+
     const hasAntiInviteImmunity = db.isWhitelisted(message.guild, userId, 'antiinvite');
     const hasAntiLinkImmunity = db.isWhitelisted(message.guild, userId, 'antilink');
     const hasAntiSpamImmunity = db.isWhitelisted(message.guild, userId, 'antispam');
@@ -987,12 +991,13 @@ export default {
       const isBotOwner = isBotOwnerSync(message.author.id);
       const isExtraOwner = db.isExtraOwner(message.guild.id, message.author.id);
       const isServerOwner = message.author.id === message.guild.ownerId;
-      const isAdmin = message.member.permissions.has(PermissionFlagsBits.ManageMessages);
+      const isAdmin = Boolean(message.member?.permissions?.has(PermissionFlagsBits.ManageMessages));
       
       const checkBypass = (filterName, hasImmunity = false) => {
         if (message.author.id === message.client.user.id || isBotOwner || isExtraOwner || isServerOwner || isAdmin || hasImmunity) return true;
         const bypasses = dbConfig.automodBypasses || {};
-        const memberRoles = message.member.roles.cache;
+        const memberRoles = message.member?.roles?.cache;
+        if (!memberRoles) return false;
         
         for (const [roleId, allowedFilters] of Object.entries(bypasses)) {
           if (memberRoles.has(roleId) && allowedFilters.includes(filterName)) {
@@ -1069,7 +1074,9 @@ export default {
             'warning'
           ));
           if (warns.length >= maxWarnings) {
-            const qRes = await executeQuarantine(message.guild, message.member, message.guild.members.me, `Automated: ${headingStr} limit reached`);
+            const qRes = message.member 
+              ? await executeQuarantine(message.guild, message.member, message.guild.members.me, `Automated: ${headingStr} limit reached`)
+              : { message: '' };
             db.clearWarnings(guildId, userId);
             
             const c = new ContainerBuilder();
@@ -1114,7 +1121,7 @@ export default {
                  if (data.count >= 3 && !timeoutTriggered) {
                      timeoutTriggered = true;
                      await message.delete().catch(() => null);
-                     await message.member.timeout(5 * 60 * 1000, "Automated: Mass Mention Spam Filter").catch(() => null);
+                     await message.member?.timeout?.(5 * 60 * 1000, "Automated: Mass Mention Spam Filter").catch(() => null);
                      await applyWarning(`User spam pinged ${user.tag} multiple times.`, `Mass Mentions`, 'Warned Mass Mentions');
                      massMentionCache.delete(cacheKey);
                      return;
