@@ -223,7 +223,9 @@ events.forEach(event => {
 // ⚡ RAW GATEWAY INTERCEPTOR ⚡
 // Bypasses discord.js cache and managers to achieve 0-latency (light speed) response times
 import { handleAuditLogEntry, recordAuditEntry } from './src/utils/antinuke.js';
+import { recordGatewayPacket } from './src/utils/liveOpsMonitor.js';
 client.on('raw', async (packet) => {
+  recordGatewayPacket(packet);
   if (packet.t === 'GUILD_AUDIT_LOG_ENTRY_CREATE') {
     try {
       const guild = client.guilds.cache.get(packet.d.guild_id);

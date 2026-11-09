@@ -23,7 +23,9 @@ export const commands = [
           { name: 'Speed and Latencies', value: 'speed' },
           { name: 'Antinuke and Heuristics', value: 'antinuke' },
           { name: 'Command Telemetry', value: 'commands' },
-          { name: 'Storage and Daemons', value: 'storage' }
+          { name: 'Storage and Daemons', value: 'storage' },
+          { name: 'Gateway & Raw Network', value: 'network' },
+          { name: 'Ecosystem & Analytics', value: 'analytics' }
         ]
       }
     ],
@@ -42,7 +44,9 @@ export const commands = [
       else if (['speed', 'latency', 'perf', 'ping', 'bench'].includes(rawArg)) activeView = 'speed';
       else if (['antinuke', 'security', 'shield', 'defense', 'sec', 'ring', 'heuristic'].includes(rawArg)) activeView = 'antinuke';
       else if (['cmd', 'cmds', 'command', 'commands', 'telemetry'].includes(rawArg)) activeView = 'commands';
-      else if (['storage', 'db', 'data', 'disk', 'database', 'records', 'daemons', 'daemon', 'voice', 'sound', 'sfx', 'radio', 'vc', 'jobs', 'watchers', 'git'].includes(rawArg)) activeView = 'storage';
+      else if (['storage', 'db', 'data', 'disk', 'database', 'records', 'daemons', 'daemon'].includes(rawArg)) activeView = 'storage';
+      else if (['network', 'net', 'gateway', 'gw', 'socket', 'ws', 'packet', 'packets', 'traffic'].includes(rawArg)) activeView = 'network';
+      else if (['analytics', 'eco', 'economy', 'xp', 'stats', 'community', 'cloud', 'backup', 'growth', 'git'].includes(rawArg)) activeView = 'analytics';
 
       const payload = await buildLiveOpsPanel(message.guild, message.client, activeView);
       return message.reply(payload);
