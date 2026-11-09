@@ -4,7 +4,7 @@ import { commands as dmCmds } from './dm.js';
 import { commands as firewallCmds } from './firewall.js';
 import { commands as hudCmds } from './hud.js';
 import { commands as dashboardCmds } from './dashboard.js';
-﻿import { commands as shortcutsCmds } from './shortcuts.js';
+import { commands as shortcutsCmds } from './shortcuts.js';
 import { commands as botvoiceCmds } from './botvoice.js';
 import { commands as authCmds } from './auth.js';
 import { commands as tierCmds } from './tier.js';

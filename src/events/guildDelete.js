@@ -1,4 +1,5 @@
 import db from '../database.js';
+import { infrastructureSnapshots } from '../utils/antinuke.js';
 
 export default {
   name: 'guildDelete',
@@ -6,6 +7,9 @@ export default {
     if (!guild || !guild.client) return;
 
     try {
+      if (guild.id) {
+        infrastructureSnapshots?.delete(guild.id);
+      }
       if (!db.cache.botAnalytics) db.cache.botAnalytics = { joins: 0, leaves: 0, cmds: {} };
       if (!db.cache.botAnalytics.recentLeaves) db.cache.botAnalytics.recentLeaves = [];
       db.cache.botAnalytics.leaves++;

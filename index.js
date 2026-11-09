@@ -630,14 +630,9 @@ async function handleShutdown(signal) {
   // Force immediate save if pending
   if (db.needsSave || db.saveTimeout) {
     console.log(chalk.yellow('[System] Flushing database to disk...'));
-    clearTimeout(db.saveTimeout);
-    db.saveTimeout = null;
-    try {
-      const data = JSON.stringify(db.cache, null, 2);
-      fs.writeFileSync(path.resolve('data', 'db.json'), data, 'utf8');
+    const success = db.flushSync();
+    if (success) {
       console.log(chalk.green('[System] Database saved successfully.'));
-    } catch (err) {
-      console.error(chalk.red('[System] Error flushing database on shutdown:'), err);
     }
   }
 

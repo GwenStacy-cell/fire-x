@@ -23,6 +23,16 @@ import { handleCountingMessage } from '../utils/countingEngine.js';
 import { scanForPhishing } from '../utils/phishingShield.js';
 import { scanToxicityAndSentiment } from '../utils/ai.js';
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
+import { recordCommandExecution } from '../utils/liveOpsMonitor.js';
+
+function markIgnoredDelete(client, messageId) {
+  if (!client || !messageId) return;
+  if (!client.ignoredDeletes) client.ignoredDeletes = new Set();
+  client.ignoredDeletes.add(messageId);
+  setTimeout(() => {
+    client.ignoredDeletes?.delete(messageId);
+  }, 60000).unref();
+}
 
 const triggerRegexCache = new Map();
 function getTriggerRegex(keyword) {
@@ -190,8 +200,7 @@ export default {
       if (cfg && cfg.quoteChannelId === message.channel.id && !isCmd && message.content.trim().length > 0) {
         // Intercept message immediately
           try {
-            if (!message.client.ignoredDeletes) message.client.ignoredDeletes = new Set();
-            message.client.ignoredDeletes.add(message.id);
+            markIgnoredDelete(message.client, message.id);
             message.delete().catch(() => null);
           const loadingMsg = await message.channel.send("<a:loading:1542155051286396938> **Forging aesthetic quote...**");
           
@@ -1008,49 +1017,6 @@ export default {
       };
 
       const maxWarnings = dbConfig.maxWarnings || 3;
-
-      // ==========================================
-      // HONEYPOT TRAP PROTOCOL
-      // ==========================================
-      if (dbConfig.honeypotChannelId && message.channel.id === dbConfig.honeypotChannelId) {
-        if (!checkBypass('Honeypot Trap')) {
-          await message.delete().catch(() => null);
-          const action = dbConfig.honeypotAction || 'quarantine';
-          let actionTaken = `Timeout (${dbConfig.honeypotTimeoutMinutes || 15}m)`;
-
-          if (action === 'ban' && message.member?.bannable) {
-            await message.member.ban({ reason: '[Honeypot Trap] Unauthorized message in decoy channel' }).catch(() => null);
-            actionTaken = 'Banned';
-          } else if (action === 'quarantine') {
-            const qRole = await getOrCreateQuarantineRole(message.guild).catch(() => null);
-            if (qRole && message.member) {
-              await message.member.roles.set([qRole.id], 'Honeypot Trap Triggered').catch(() => null);
-              actionTaken = 'Quarantined';
-            } else if (message.member?.moderatable) {
-              await message.member.timeout(15 * 60 * 1000, 'Automod: Honeypot Trap Triggered').catch(() => null);
-              actionTaken = 'Timeout (15m)';
-            }
-          } else if (message.member?.moderatable) {
-            const timeoutMinutes = dbConfig.honeypotTimeoutMinutes || 15;
-            await message.member.timeout(timeoutMinutes * 60 * 1000, 'Automod: Honeypot Trap Triggered').catch(() => null);
-            actionTaken = `Timeout (${timeoutMinutes}m)`;
-          }
-
-          const authorTier = getUserTierName(message.guild, message.member || message.author);
-          logToSecurityChannel(message.guild, cv2.log(
-            'Honeypot Trap Triggered',
-            `Member triggered honeypot trap channel <#${message.channel.id}>. Message instantly purged and offender penalized.`,
-            [
-              { name: 'Offender', value: `${message.author.tag} (\`${userId}\`) [${authorTier}]`, inline: true },
-              { name: 'Trap Channel', value: `<#${message.channel.id}> (\`${message.channel.id}\`)`, inline: true },
-              { name: 'Penalty Action', value: `\`${actionTaken}\``, inline: true },
-              { name: 'Intercepted Content', value: `\`\`\`${(message.content || 'No text content').slice(0, 250)}\`\`\`` }
-            ],
-            'danger'
-          ));
-          return;
-        }
-      }
       
       const applyWarning = async (logReason, actionStr, headingStr, extraData = null) => {
           const authorTier = getUserTierName(message.guild, message.member || message.author);
@@ -1204,29 +1170,30 @@ export default {
       const isInviteAllowedChannel = dbConfig.inviteAllowedChannel === message.channel.id;
       
       if (!isGlobalInviteAllowed && !isInviteAllowedChannel && dbConfig.antiInviteEnabled && !checkBypass('Anti Invite', hasAntiInviteImmunity)) {
-        const inviteRegex = /(?:https?:\/\/)?(?:www\.)?(?:discord\.(?:gg|io|me|li)|discord(?:app)?\.com\/invite)\/[a-zA-Z0-9-]+/gi;
-        const fallbackRegex = /(discord\.(gg|io|me|li)\/|discord(app)?\.com\/invite\/)/gi;
-        if (inviteRegex.test(message.content) || fallbackRegex.test(message.content)) {
-          const rawMatches = message.content.match(inviteRegex) || [];
-          const detectedInvites = rawMatches.length > 0 ? rawMatches : ['Discord Invite Link'];
-          
-          let highlightedContent = message.content;
-          for (const inv of detectedInvites) {
-            const escaped = inv.replace(/[.*+?^$!()|[\]\\]/g, '\\$&');
-            highlightedContent = highlightedContent.replace(new RegExp(`(${escaped})`, 'gi'), '**||$1||**');
-          }
-          if (highlightedContent.length > 1000) {
-            highlightedContent = highlightedContent.substring(0, 997) + '...';
-          }
+        const rawLower = message.content.toLowerCase();
+        if (rawLower.includes('discord.gg') || rawLower.includes('discord.com/invite') || rawLower.includes('discordapp.com/invite') || rawLower.includes('discord.io') || rawLower.includes('discord.me') || rawLower.includes('discord.li')) {
+          const inviteRegex = /(?:https?:\/\/)?(?:www\.)?(?:discord\.(?:gg|io|me|li)|discord(?:app)?\.com\/invite)\/[a-zA-Z0-9-]+/gi;
+          const fallbackRegex = /(discord\.(gg|io|me|li)\/|discord(app)?\.com\/invite\/)/gi;
+          if (inviteRegex.test(message.content) || fallbackRegex.test(message.content)) {
+            const rawMatches = message.content.match(inviteRegex) || [];
+            const detectedInvites = rawMatches.length > 0 ? rawMatches : ['Discord Invite Link'];
+            
+            let highlightedContent = message.content;
+            for (const inv of detectedInvites) {
+              const escaped = inv.replace(/[.*+?^$!()|[\]\\]/g, '\\$&');
+              highlightedContent = highlightedContent.replace(new RegExp(`(${escaped})`, 'gi'), '**||$1||**');
+            }
+            if (highlightedContent.length > 1000) {
+              highlightedContent = highlightedContent.substring(0, 997) + '...';
+            }
 
-          const authorTier = getUserTierName(message.guild, message.member || message.author);
-          const inviteList = detectedInvites.map(m => `\`||${m}||\``).join(', ');
+            const authorTier = getUserTierName(message.guild, message.member || message.author);
+            const inviteList = detectedInvites.map(m => `\`||${m}||\``).join(', ');
 
-          // Suppress redundant generic messageDelete event log
-          if (!message.client.ignoredDeletes) message.client.ignoredDeletes = new Set();
-          message.client.ignoredDeletes.add(message.id);
+            // Suppress redundant generic messageDelete event log
+            markIgnoredDelete(message.client, message.id);
 
-          await message.delete().catch(() => null);
+            await message.delete().catch(() => null);
 
           // 1. Detailed Security Channel Log
           const securityLog = {
@@ -1280,6 +1247,7 @@ export default {
           return;
         }
       }
+    }
 
       // 1.5 ANTI-LINK (URL FILTER)
       const isLinkAllowedChannel = (dbConfig.linkAllowedChannel === message.channel.id) ||
@@ -1288,28 +1256,28 @@ export default {
                                    (Array.isArray(dbConfig.allowedLinkChannels) && dbConfig.allowedLinkChannels.includes(message.channel.id));
 
       if (dbConfig.allowAllLinks !== true && !isLinkAllowedChannel && dbConfig.antiLinkEnabled && !checkBypass('URL Filter', hasAntiLinkImmunity)) {
-        const linkRegex = /https?:\/\/[^\s]+/gi;
-        const matches = message.content.match(linkRegex);
-        if (matches && matches.length > 0) {
-          const detectedUrls = [...new Set(matches)];
-          const urlList = detectedUrls.map(u => `\`||${u}||\``).join(', ');
+        if (message.content.includes('http://') || message.content.includes('https://')) {
+          const linkRegex = /https?:\/\/[^\s]+/gi;
+          const matches = message.content.match(linkRegex);
+          if (matches && matches.length > 0) {
+            const detectedUrls = [...new Set(matches)];
+            const urlList = detectedUrls.map(u => `\`||${u}||\``).join(', ');
 
-          let highlightedContent = message.content;
-          for (const u of detectedUrls) {
-            const escaped = u.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            highlightedContent = highlightedContent.replace(new RegExp(`(${escaped})`, 'gi'), '**||$1||**');
-          }
-          if (highlightedContent.length > 1000) {
-            highlightedContent = highlightedContent.substring(0, 997) + '...';
-          }
+            let highlightedContent = message.content;
+            for (const u of detectedUrls) {
+              const escaped = u.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              highlightedContent = highlightedContent.replace(new RegExp(`(${escaped})`, 'gi'), '**||$1||**');
+            }
+            if (highlightedContent.length > 1000) {
+              highlightedContent = highlightedContent.substring(0, 997) + '...';
+            }
 
-          const authorTier = getUserTierName(message.guild, message.member || message.author);
+            const authorTier = getUserTierName(message.guild, message.member || message.author);
 
-          // Suppress redundant generic messageDelete event log
-          if (!message.client.ignoredDeletes) message.client.ignoredDeletes = new Set();
-          message.client.ignoredDeletes.add(message.id);
+            // Suppress redundant generic messageDelete event log
+            markIgnoredDelete(message.client, message.id);
 
-          await message.delete().catch(() => null);
+            await message.delete().catch(() => null);
 
           // 1. Detailed Security Channel Log
           const securityLog = {
@@ -1364,6 +1332,7 @@ export default {
           return;
         }
       }
+    }
 
       // 1.6 HIDDEN URL FILTER
       if (dbConfig.hiddenUrlEnabled !== false && !isLinkAllowedChannel && !checkBypass('Hidden URL Filter')) {
@@ -1376,8 +1345,7 @@ export default {
             const textDomainMatch = textPart.match(/([a-z0-9-]+\.[a-z]+)/);
             if (textDomainMatch && !urlPart.includes(textDomainMatch[1])) {
                const deceptiveUrl = match[2];
-               if (!message.client.ignoredDeletes) message.client.ignoredDeletes = new Set();
-               message.client.ignoredDeletes.add(message.id);
+               markIgnoredDelete(message.client, message.id);
                await message.delete().catch(() => null);
 
                const authorTier = getUserTierName(message.guild, message.member || message.author);
@@ -1425,6 +1393,7 @@ export default {
         if (dbConfig.wordFilterEnabled !== false && dbConfig.blacklistWords && dbConfig.blacklistWords.length > 0) {
           const msgLower = message.content.toLowerCase();
           const matchedWords = dbConfig.blacklistWords.filter(word => {
+            if (!word || !msgLower.includes(word.toLowerCase())) return false;
             const escapedWord = word.replace(/[.*+?^$!()|[\]\\]/g, '\\$&');
             return new RegExp(`(?:^|\\W)${escapedWord}(?:$|\\W)`, 'i').test(msgLower);
           });
@@ -1442,8 +1411,7 @@ export default {
             const wordList = matchedWords.map(w => `\`||${w}||\``).join(', ');
 
             // Suppress redundant generic messageDelete event log
-            if (!message.client.ignoredDeletes) message.client.ignoredDeletes = new Set();
-            message.client.ignoredDeletes.add(message.id);
+            markIgnoredDelete(message.client, message.id);
 
             await message.delete().catch(() => null);
 
@@ -2154,34 +2122,29 @@ export default {
       }
 
       // Track successful command execution for NP analytics & LiveOps Telemetry
-      import('../utils/liveOpsMonitor.js').then(m => m.recordCommandExecution(commandName, 'prefix')).catch(() => null);
+      recordCommandExecution(commandName, 'prefix');
       if (!db.cache.botAnalytics) db.cache.botAnalytics = { joins: 0, leaves: 0, cmds: {} };
       db.cache.botAnalytics.cmds[commandName] = (db.cache.botAnalytics.cmds[commandName] || 0) + 1;
-      db.save();
 
       // --- GLOBAL COMMAND LOGGING ---
       const loggedCategories = ['moderation', 'security', 'config', 'enuke', 'modmode', 'utility'];
-      const isModUser = message.member && message.member.permissions.has('ModerateMembers');
+      const isModUser = message.member && message.member.permissions?.has('ModerateMembers');
       const excludedCmds = ['explain', 'help', 'status', 'ping', 'docs', 'architecture'];
       if (!excludedCmds.includes(cmd.name) && (loggedCategories.includes(cmd.category) || isModUser)) {
-          import('../utils/helpers.js').then(helpers => {
-              if (helpers.logToSecurityChannel) {
-                  const logContent = message.content.length > 1000 ? message.content.substring(0, 1000) + '...' : message.content;
-                  const tierName = helpers.getUserTierName(message.guild, message.member);
-                  const embed = cv2.info(
-                      `Command Execution Log | ${cv2.TICK_EMOJI}`,
-                      `User <@${message.author.id}> (\`${message.author.id}\`) executed a command.`,
-                      [
-                          { name: 'Command', value: `\`\`\`\n${logContent}\n\`\`\``, inline: false },
-                          { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
-                          { name: 'Category', value: cmd.category || 'utility', inline: true },
-                          { name: 'Clearance', value: `\`${tierName}\``, inline: true }
-                      ],
-                      cmd.category || 'moderation'
-                  );
-                  helpers.logToSecurityChannel(message.guild, embed).catch(()=>{});
-              }
-          }).catch(()=>{});
+        const logContent = message.content.length > 1000 ? message.content.substring(0, 1000) + '...' : message.content;
+        const tierName = getUserTierName(message.guild, message.member);
+        const embed = cv2.info(
+          `Command Execution Log | ${cv2.TICK_EMOJI}`,
+          `User <@${message.author.id}> (\`${message.author.id}\`) executed a command.`,
+          [
+            { name: 'Command', value: `\`\`\`\n${logContent}\n\`\`\``, inline: false },
+            { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
+            { name: 'Category', value: cmd.category || 'utility', inline: true },
+            { name: 'Clearance', value: `\`${tierName}\``, inline: true }
+          ],
+          cmd.category || 'moderation'
+        );
+        logToSecurityChannel(message.guild, embed).catch(() => {});
       }
 
     } catch (error) {

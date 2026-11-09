@@ -85,10 +85,7 @@ export async function startGitWatcher(intervalMs = 30000) {
         // Flush DB to disk if needed
         try {
           if (db?.needsSave || db?.saveTimeout) {
-            clearTimeout(db.saveTimeout);
-            db.saveTimeout = null;
-            const data = JSON.stringify(db.cache, null, 2);
-            fs.writeFileSync(path.resolve('data', 'db.json'), data, 'utf8');
+            db.flushSync();
           }
         } catch {}
 

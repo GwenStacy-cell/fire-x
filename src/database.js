@@ -294,6 +294,31 @@ class Database {
     }, 3500);
   }
 
+  /**
+   * Synchronously flushes in-memory cache to disk immediately.
+   * Safe against BigInts and circular references. Compact output (0 whitespace bloat).
+   */
+  flushSync() {
+    if (this.saveTimeout) {
+      clearTimeout(this.saveTimeout);
+      this.saveTimeout = null;
+    }
+    this.needsSave = false;
+    try {
+      const replacer = (key, value) => {
+        if (typeof value === 'bigint') return value.toString();
+        if (value && typeof value === 'object' && value.client) return undefined;
+        return value;
+      };
+      const dataStr = JSON.stringify(this.cache, replacer);
+      fs.writeFileSync(DB_FILE, dataStr, 'utf8');
+      return true;
+    } catch (error) {
+      console.error('[Database] flushSync error:', error);
+      return false;
+    }
+  }
+
   // Guild Configurations
 
   // ==========================================

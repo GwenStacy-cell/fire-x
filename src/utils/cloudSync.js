@@ -719,13 +719,9 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
   isBackingUp = true;
 
   try {
-    // 1. Flush any pending memory changes to disk
+    // 1. Flush any pending memory changes to disk synchronously
     if (db.needsSave || db.saveTimeout) {
-      clearTimeout(db.saveTimeout);
-      db.saveTimeout = null;
-      db.needsSave = false;
-      const dataStr = JSON.stringify(db.cache, null, 2);
-      fs.writeFileSync(DB_FILE, dataStr, 'utf8');
+      db.flushSync();
     }
 
     // 2. Checkpoint SQLite WAL mode so all pending transactions are written to stats.db
@@ -762,7 +758,7 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
       formattedText = formattedText.slice(0, 3800) + '\n> -# **__[Snapshot manifest truncated for Discord display limits]__**';
     }
 
-    // 1. Send the signature Accent Borderless CV2 manifest container ONLY
+    // 1. Send the signature Accent Borderless CV2 manifest container WITH backup file attachments
     const cv2Payload = cv2.info(
       `Database Cloud Backup | <a:03_tick_circle:1565665642084827206>`,
       formattedText,
@@ -770,7 +766,7 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
       'Athena Bulletproof Defense Matrix • V1.0.0',
       0x5865F2
     );
-    const sentMsg = await channel.send(cv2Payload);
+    const sentMsg = await channel.send({ ...cv2Payload, files });
 
     // Save metadata
     db.cache.lastCloudBackup = timestamp;
@@ -778,25 +774,14 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
     db.save();
 
     // Rotate and prune old backup messages to avoid channel bloat (keep latest 30)
-    // Clean up any leftover file messages and keep strictly Accent Borderless CV2 manifests
     try {
       const messages = await channel.messages.fetch({ limit: 100 }).catch(() => null);
       if (messages) {
-        // Prune any unwanted file attachment messages from the backup channel
-        const fileMsgs = messages.filter(msg =>
-          msg.author.id === client.user.id &&
-          (msg.attachments.size > 0 || msg.content?.includes('Database Cloud Snapshot Files'))
-        );
-        for (const msg of fileMsgs.values()) {
-          await msg.delete().catch(() => null);
-        }
-
-        // Keep latest 30 CV2 manifest messages
-        const cv2Manifests = messages
-          .filter(m => m.author.id === client.user.id && m.components && m.components.length > 0)
+        const botBackupMsgs = messages
+          .filter(m => m.author.id === client.user.id)
           .sort((a, b) => b.createdTimestamp - a.createdTimestamp);
-        const manifestsToDelete = [...cv2Manifests.values()].slice(30);
-        for (const msg of manifestsToDelete) {
+        const toDelete = [...botBackupMsgs.values()].slice(30);
+        for (const msg of toDelete) {
           await msg.delete().catch(() => null);
         }
       }

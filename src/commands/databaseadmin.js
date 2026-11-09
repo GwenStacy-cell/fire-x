@@ -198,9 +198,7 @@ export const commands = [
 
         // Flush memory
         if (db.needsSave || db.saveTimeout) {
-          clearTimeout(db.saveTimeout);
-          db.saveTimeout = null;
-          fs.writeFileSync(DB_FILE, JSON.stringify(db.cache, null, 2), 'utf8');
+          db.flushSync();
         }
 
         // Checkpoint WAL

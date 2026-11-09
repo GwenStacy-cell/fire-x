@@ -1380,6 +1380,14 @@ export function checkGlobalBurst(guild, actionType, executorId) {
 // ==========================================
 export const botInviterMap = new Map(); // `${guildId}:${botId}` -> inviterId
 
+export function recordBotInviter(guildId, botId, inviterId) {
+  if (botInviterMap.size > 1000) {
+    const oldestKey = botInviterMap.keys().next().value;
+    if (oldestKey) botInviterMap.delete(oldestKey);
+  }
+  botInviterMap.set(`${guildId}:${botId}`, inviterId);
+}
+
 export async function cascadeToInviter(guild, botId) {
   if (!guild || !botId || botId === guild.client.user.id) return;
   try {
@@ -1389,7 +1397,7 @@ export async function cascadeToInviter(guild, botId) {
       const entry = logs?.entries?.find(e => e.targetId === botId);
       if (entry?.executorId) {
         inviterId = entry.executorId;
-        botInviterMap.set(`${guild.id}:${botId}`, inviterId);
+        recordBotInviter(guild.id, botId, inviterId);
       }
     }
 
@@ -1912,7 +1920,7 @@ export async function handleAuditLogEntry(guild, entry) {
 
     case AuditLogEvent.BotAdd:
       if (targetId && executorId) {
-        botInviterMap.set(`${guild.id}:${targetId}`, executorId);
+        recordBotInviter(guild.id, targetId, executorId);
       }
       if (!mods.antiBotAdd) return;
       if (!isAuthorized(guild, executor, 'antibot')) {
