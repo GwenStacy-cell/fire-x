@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, MARKET_CAP_ICON, GLOBAL_STOCK_ICON, CHESS_ICON, NINJA_BULLET, NINJA_BULLET_RTL, HOME_BEAT_EMOJI, DELETE_BEAT_EMOJI, PREVIOUS_BEAT_EMOJI, NEXT_BEAT_EMOJI, NAV_EMOJI_IDS } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, MARKET_CAP_ICON, GLOBAL_STOCK_ICON, CHESS_ICON, ARCADE_CASINO_ICON, ROLEPLAY_MATRIX_ICON, SOUNDBOARD_RADIO_ICON, NINJA_BULLET, NINJA_BULLET_RTL, HOME_BEAT_EMOJI, DELETE_BEAT_EMOJI, PREVIOUS_BEAT_EMOJI, NEXT_BEAT_EMOJI, NAV_EMOJI_IDS } from '../utils/emojis.js';
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, MessageFlags, Routes } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -3332,11 +3332,13 @@ export function buildHelpContainer(client, guildId, moduleId) {
         'stocks': GLOBAL_STOCK_ICON,
         'globalstock': GLOBAL_STOCK_ICON,
         'chess': CHESS_ICON,
-        'roleplay': '<a:z_arrow_pink1:1523082728004653138>',
-        'rp': '<a:z_arrow_pink1:1523082728004653138>',
-        'arcade': '<a:trophy:1533859922599481577>',
-        'casino': '<a:trophy:1533859922599481577>',
-        'soundboard': '<:music:1528159649780732046>'
+        'roleplay': ROLEPLAY_MATRIX_ICON,
+        'rp': ROLEPLAY_MATRIX_ICON,
+        'arcade': ARCADE_CASINO_ICON,
+        'casino': ARCADE_CASINO_ICON,
+        'soundboard': SOUNDBOARD_RADIO_ICON,
+        'radio': SOUNDBOARD_RADIO_ICON,
+        'sfx': SOUNDBOARD_RADIO_ICON
       };
       if (designatedCustomEmojis[name]) return designatedCustomEmojis[name];
 
@@ -3377,13 +3379,13 @@ export function buildHelpContainer(client, guildId, moduleId) {
         'finance': MARKET_CAP_ICON,
         'nifty': MARKET_CAP_ICON,
         'chess': CHESS_ICON,
-        'roleplay': '<a:z_arrow_pink1:1523082728004653138>',
-        'rp': '<a:z_arrow_pink1:1523082728004653138>',
-        'arcade': '<a:trophy:1533859922599481577>',
-        'casino': '<a:trophy:1533859922599481577>',
-        'soundboard': '<:music:1528159649780732046>',
-        'sfx': '<:music:1528159649780732046>',
-        'radio': '<:music:1528159649780732046>',
+        'roleplay': ROLEPLAY_MATRIX_ICON,
+        'rp': ROLEPLAY_MATRIX_ICON,
+        'arcade': ARCADE_CASINO_ICON,
+        'casino': ARCADE_CASINO_ICON,
+        'soundboard': SOUNDBOARD_RADIO_ICON,
+        'sfx': SOUNDBOARD_RADIO_ICON,
+        'radio': SOUNDBOARD_RADIO_ICON,
         'meme': '<:pencil:1523770653528817835>',
         'wiretap': '<a:uptime:1552608831060844575>',
         'persona': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',

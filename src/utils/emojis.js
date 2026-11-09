@@ -14,6 +14,9 @@ export const UPTIME_EMOJI = '<a:uptime:1552608831060844575>';
 export const MARKET_CAP_ICON = '<:market_cap_icon:1566117974920798268>';
 export const GLOBAL_STOCK_ICON = '<:global_stock_icon:1566117971649110066>';
 export const CHESS_ICON = '<:chess_icon:1566117968386064394>';
+export const ARCADE_CASINO_ICON = '<:03_arcade_casino_matrix:1569361549309645000>';
+export const ROLEPLAY_MATRIX_ICON = '<:02_roleplay_affinity_matrix:1569361546621227103>';
+export const SOUNDBOARD_RADIO_ICON = '<:01_soundboard_lofi_radio:1569361543576027266>';
 
 // Navigation & Pagination Beat Emojis
 export const HOME_BEAT_EMOJI = '<a:01_home_beat:1567037361810833428>';
