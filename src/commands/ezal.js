@@ -914,20 +914,20 @@ export function getEhelpPagePayload(page = 1) {
       {
         name: 'Snapshot Commands & Rollback Operations',
         value:
-          `\`ezal snapshot [serverId]\` - Capture an instant snapshot right now\n` +
-          `\`ezal snapshots [serverId] [page]\` - Browse past 100 snapshots with exact date, time, and IDs\n` +
-          `\`ezal rollsnap <serverId> <1-100|snapshotId> [config|infra|full]\` - Rollback server state (e.g. \`ezal rollsnap <id> 1 config\` to recover welcome)\n` +
-          `\`ezal restore <snapshotId|backupId> [targetServerId]\` - Deep restore server from any backup or snapshot\n` +
-          `\`ezal restoresetup <serverId> [1-100]\` - Re-link JTC, Welcome/Leave, News, Quotes, Auto-React, and Server Logs`
+          '`ezal snapshot [serverId]` - Capture an instant snapshot right now\n' +
+          '`ezal snapshots [serverId] [page]` - Browse past 100 snapshots with exact date, time, and IDs\n' +
+          '`ezal rollsnap <serverId> <1-100|snapshotId> [config|infra|full]` - Rollback server state (e.g. `ezal rollsnap <id> 1 config` to recover welcome)\n' +
+          '`ezal restore <snapshotId|backupId> [targetServerId]` - Deep restore server from any backup or snapshot\n' +
+          '`ezal restoresetup <serverId> [1-100]` - Re-link JTC, Welcome/Leave, News, Quotes, Auto-React, and Server Logs'
       },
       {
         name: 'Database Persistence & Cloud Backups',
         value:
-          `\`!db backup\` - Force immediate cloud backup snapshot to Discord\n` +
-          `\`!db status\` - View database health, backup channel & cloud sync status\n` +
-          `\`!db export\` - Download raw \`db.json\` & \`stats.db\` files\n` +
-          `\`!db restore\` - Restore database from cloud or uploaded db.json\n` +
-          `\`!db setchannel #channel\` - Bind or change dedicated Discord cloud backup channel`
+          '`!db backup` - Force immediate cloud backup snapshot to Discord\n' +
+          '`!db status` - View database health, backup channel & cloud sync status\n' +
+          '`!db export` - Download raw `db.json` & `stats.db` files\n' +
+          '`!db restore` - Restore database from cloud or uploaded db.json\n' +
+          '`!db setchannel #channel` - Bind or change dedicated Discord cloud backup channel'
       }
     ];
 
@@ -962,55 +962,82 @@ export function getEhelpPagePayload(page = 1) {
       `> -# Automated 20-minute snapshots buffer maintaining past 100 historical recovery states per server.\n> -# Enables instant rollback of accidentally reset welcome systems, leave configs, roles, and channels.`,
       fields
     );
-    payload.components = [row];
-    return payload;
+    return {
+      ...payload,
+      components: [...payload.components, row.toJSON ? row.toJSON() : row]
+    };
   }
 
-  // PAGE 1: Core Operations
+  // PAGE 1: Core Operations - All original commands fully preserved
   const fields = [
     {
-      name: 'Server Management & Remote Operations',
+      name: 'Backup System & Remote Admin',
       value:
-        `<a:target_blink:1565667466984554588> \`ezal servers\` - List all servers bot is in with backup IDs & stats\n` +
-        `<a:target_blink:1565667466984554588> \`ezal invite <guild_id>\` - Generate a remote instant invite link\n` +
-        `<a:target_blink:1565667466984554588> \`ezal emergency <serverId> [mode|end]\` - Remotely trigger server emergency mode\n` +
-        `<a:target_blink:1565667466984554588> \`ezal banserver <serverId>\` - Ban a server and force leave instantly\n` +
-        `<a:target_blink:1565667466984554588> \`ezal unbanserver <serverId>\` - Unban a server to allow invites\n` +
-        `<a:target_blink:1565667466984554588> \`ezal rvc <channel_id>\` - Remotely set bot VC\n` +
-        `<a:target_blink:1565667466984554588> \`ezal fadmin <server_id>\` - Remotely grant admin role\n` +
-        `<a:target_blink:1565667466984554588> \`ezal unfadmin <server_id>\` - Remotely revoke admin role`
+        '`ezal backup [serverId]` - Backup current or target server\n' +
+        '`ezal backupall` - Mass backup all servers *(Bot Owner only)*\n' +
+        '`ezal bcklist` - List all saved backup IDs & stats\n' +
+        '`ezal restore <backupId> [serverId]` - Restore server from backup *(Owner only)*\n' +
+        '`ezal rvc <channel_id>` - Remotely set bot voice channel\n' +
+        '`ezal fadmin <serverId>` / `unfadmin <serverId>` - Remotely grant/revoke admin'
+    },
+    {
+      name: 'Database Persistence & Cloud Backup',
+      value:
+        '`!db status` - Database health, backup channel & cloud sync\n' +
+        '`!db backup` - Force immediate cloud backup snapshot to Discord\n' +
+        '`!db export` - Download raw db.json & stats.db\n' +
+        '`!db restore` - Restore database from cloud or uploaded db.json\n' +
+        '`!db setchannel #channel` - Bind or change dedicated Discord cloud backup channel'
     },
     {
       name: 'Global Bot Blacklist (Global Ban)',
       value:
-        `<a:target_blink:1565667466984554588> \`!gban <@user|ID> [reason]\` - Globally ban a user from all commands\n` +
-        `> **Aliases:** \`!globalban\`, \`!botban\`, \`!globalblock\`, \`!gblock\`, \`!userblacklist\`\n` +
-        `<a:target_blink:1565667466984554588> \`!gunban <@user|ID>\` - Unban a user and restore global access\n` +
-        `> **Aliases:** \`!globalunban\`, \`!botunban\`, \`!globalunblock\`, \`!gunblock\`\n` +
-        `<a:target_blink:1565667466984554588> \`!gbanlist\` - View all currently blacklisted users`
+        '`!gban <@user|ID> [reason]` - Globally ban user from all bot commands\n' +
+        '`!gunban <@user|ID>` - Unban user & restore global access\n' +
+        '`!gbanlist` - View all currently blacklisted users\n' +
+        '> **Aliases:** `!globalban`, `!botban`, `!gblock`, `!botunban`, `!gblacklist`'
     },
     {
-      name: 'Security & System Diagnostics',
+      name: 'Security & System Health',
       value:
-        `<a:target_blink:1565667466984554588> \`!health\` / \`ezal health [serverId]\` - Hierarchy, permissions & audit socket diagnostics\n` +
-        `<a:target_blink:1565667466984554588> \`!security records [serverId]\` - Live threat audit stream & neutralized hostile incident telemetry\n` +
-        `<a:target_blink:1565667466984554588> \`!security status [serverId]\` - Inspect active protection status across 28 modules\n` +
-        `<a:target_blink:1565667466984554588> \`!raidmode [on|off]\` - Manual server raid lockdown & verification elevation\n` +
-        `<a:target_blink:1565667466984554588> \`!raidmode auto [on|off]\` - Toggle automated join-velocity burst detection`
+        '`!health` / `ezal health [serverId]` - Hierarchy, permissions & socket diagnostics\n' +
+        '`!security records [serverId]` - Threat audit stream & telemetry\n' +
+        '`!security status [serverId]` - Inspect active protection across 28 modules\n' +
+        '`!raidmode [on|off]` - Manual server raid lockdown & verification elevation\n' +
+        '`!raidmode auto [on|off/threshold/window]` - Join burst detection'
     },
     {
-      name: 'Global Voice & Broadcast Controls',
+      name: 'Server Management & Overrides',
       value:
-        `<a:target_blink:1565667466984554588> \`!botvoice save\` - Memorizes current voice states across ALL servers globally\n` +
-        `<a:target_blink:1565667466984554588> \`!botvoice restore\` - Reverts all servers globally back to memorized states\n` +
-        `<a:target_blink:1565667466984554588> \`!botvoice mute|unmute|deafen|undeafen [all]\` - Server Mute/Deafen controls\n` +
-        `<a:target_blink:1565667466984554588> \`!setgloballog <channel_id>\` - Post all cross-server ban/kick events to a channel\n` +
-        `<a:target_blink:1565667466984554588> \`!setstatus <channel_id> [gif_url]\` - Deploy a live auto-updating bot status panel`
+        '`ezal servers` - List all servers bot is in with backup IDs & stats\n' +
+        '`ezal invite <guild_id>` - Generate remote instant invite link\n' +
+        '`ezal emergency <serverId> [mode|end]` - Remote emergency lockdown\n' +
+        '`ezal banserver <serverId>` / `unbanserver <serverId>` - Ban or unban server\n' +
+        '`ezal restoresetup <serverId>` - Restore JTC, Welcome/Leave, Logs, Auto-React\n' +
+        '`ezal security enable/disable all` - Global security enforcement toggle\n' +
+        '`ezal fixjtc` - Re-bind voice master & re-create missing JTC channels\n' +
+        '`ezal givemerole <id>` / `takemyrole <id>` - Grant or strip role\n' +
+        '`ezal cleanbadroles` - Scrub deleted roles from database'
     },
     {
-      name: 'Time Machine & Snapshots Suite',
+      name: 'Spam Access Control',
       value:
-        `> Click **100 Snapshots Grid** below or use \`ezal snapshots\` to view the 100-snapshot rolling buffer, recover accidentally reset welcome systems, and execute server rollbacks.`
+        '`ezal spampermit <id>` / `spamrevoke <id>` - Grant or revoke spam access\n' +
+        '`ezal spamlist` - List all permitted spammers'
+    },
+    {
+      name: 'Global Controls',
+      value:
+        '`!setgloballog <channel_id>` / `!removegloballog` - Cross-server ban/kick logging\n' +
+        '`!setstatus <channel_id> [gif_url]` / `!removestatus` - Live auto-updating status panel'
+    },
+    {
+      name: 'Global Voice Control',
+      value:
+        '`!botvoice save` / `restore` - Memorize & revert voice states globally\n' +
+        '`!botvoice mute/unmute/deafen/undeafen [all]` - Server Mute & Deafen controls\n' +
+        '`!botvoice active/idle/music [all]` - Recording, Quiet & Music mode presets\n' +
+        '> Add `all` to apply globally, or run `botvoice <ServerID> <action>` in DMs'
     }
   ];
 
@@ -1041,12 +1068,14 @@ export function getEhelpPagePayload(page = 1) {
   );
 
   const payload = cv2.info(
-    `Ezal Owner Suite • Core Operations | <a:03_tick_circle:1565665642084827206>`,
-    `> -# Private owner command suite for server management and system-wide controls.\n> -# Click the navigation buttons below to toggle between Core Suite and 100-Rolling Snapshots.`,
+    'Ezal Owner Suite • Core Operations | <a:03_tick_circle:1565665642084827206>',
+    '> -# **Access Notice:** Prefix-only • Restricted to Bot & Server Owner (`restore`/`backupall` Bot Owner only).\n> -# Click **100 Snapshots Grid** below for 20-min rolling buffer & recovery matrix.',
     fields
   );
-  payload.components = [row];
-  return payload;
+  return {
+    ...payload,
+    components: [...payload.components, row.toJSON ? row.toJSON() : row]
+  };
 }
 
 async function handleEhelp(message) {
@@ -1068,14 +1097,14 @@ async function handleEhelp(message) {
         await i.deferReply({ flags: 64 });
         const targetGuild = i.guild;
         if (!targetGuild) {
-          return i.editReply(cv2.warn('Target Required | <a:exclamation_outline1:1565666739356827759>', 'Click this inside a server or run \`ezal snapshot <serverId>\`.'));
+          return i.editReply(cv2.warn('Target Required | <a:exclamation_outline1:1565666739356827759>', 'Click this inside a server or run `ezal snapshot <serverId>`.'));
         }
         await handleTakeSnapshot({ author: i.user, guild: targetGuild, client: i.client, reply: p => i.editReply(p) }, [targetGuild.id]);
       } else if (i.customId === 'ezal_viewsnaps') {
         await i.deferReply({ flags: 64 });
         const targetGuild = i.guild;
         if (!targetGuild) {
-          return i.editReply(cv2.warn('Target Required | <a:exclamation_outline1:1565666739356827759>', 'Click this inside a server or run \`ezal snapshots <serverId>\`.'));
+          return i.editReply(cv2.warn('Target Required | <a:exclamation_outline1:1565666739356827759>', 'Click this inside a server or run `ezal snapshots <serverId>`.'));
         }
         await handleSnapshotsList({ author: i.user, guild: targetGuild, client: i.client, reply: p => i.editReply(p) }, [targetGuild.id]);
       } else if (i.customId === 'ezal_close') {
@@ -1090,10 +1119,14 @@ async function handleEhelp(message) {
 
   collector.on('end', async (_, reason) => {
     if (reason !== 'closed') {
-      const disabledRow = new ActionRowBuilder().addComponents(
-        payload.components[0].components.map(b => ButtonBuilder.from(b).setDisabled(true))
-      );
-      await sent.edit({ components: [disabledRow] }).catch(() => null);
+      const rowComp = payload.components.find(c => c.type === 1);
+      if (rowComp && Array.isArray(rowComp.components)) {
+        const disabledRow = new ActionRowBuilder().addComponents(
+          rowComp.components.map(b => ButtonBuilder.from(b).setDisabled(true))
+        );
+        const containerComp = payload.components.find(c => c.type === 17);
+        await sent.edit({ components: containerComp ? [containerComp, disabledRow] : [disabledRow] }).catch(() => null);
+      }
     }
   });
 
