@@ -287,6 +287,63 @@ export default {
       }
     }
 
+    // ==========================================
+    // EZAL OWNER SUITE & 100-ROLLING SNAPSHOT INTERACTION BUTTONS
+    // ==========================================
+    if (interaction.isButton() && interaction.customId.startsWith('ezal_')) {
+      const { isBotOwnerSync } = await import('../utils/helpers.js');
+      if (!isBotOwnerSync(interaction.user.id)) {
+        return interaction.reply({
+          content: '-# You lack authorization for the Ezal Owner Suite. Clearance restricted to Bot Owner.',
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const { getEhelpPagePayload, handleTakeSnapshot, handleSnapshotsList } = await import('../commands/ezal.js');
+
+      if (interaction.customId === 'ezal_p1') {
+        await interaction.deferUpdate().catch(() => null);
+        return interaction.editReply(getEhelpPagePayload(1)).catch(() => null);
+      }
+
+      if (interaction.customId === 'ezal_p2') {
+        await interaction.deferUpdate().catch(() => null);
+        return interaction.editReply(getEhelpPagePayload(2)).catch(() => null);
+      }
+
+      if (interaction.customId === 'ezal_takesnap') {
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => null);
+        const targetGuild = interaction.guild;
+        if (!targetGuild) {
+          return interaction.editReply({ content: 'Run this button inside a server or execute `ezal snapshot <serverId>`.' });
+        }
+        return handleTakeSnapshot({
+          author: interaction.user,
+          guild: targetGuild,
+          client: interaction.client,
+          reply: p => interaction.editReply(p)
+        }, [targetGuild.id]);
+      }
+
+      if (interaction.customId === 'ezal_viewsnaps') {
+        await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => null);
+        const targetGuild = interaction.guild;
+        if (!targetGuild) {
+          return interaction.editReply({ content: 'Run this button inside a server or execute `ezal snapshots <serverId>`.' });
+        }
+        return handleSnapshotsList({
+          author: interaction.user,
+          guild: targetGuild,
+          client: interaction.client,
+          reply: p => interaction.editReply(p)
+        }, [targetGuild.id]);
+      }
+
+      if (interaction.customId === 'ezal_close') {
+        return interaction.message.delete().catch(() => null);
+      }
+    }
+
     if (interaction.isButton() && (interaction.customId === 'hud_mode_telemetry' || interaction.customId === 'hud_mode_server' || interaction.customId === 'hud_mode_defcon' || interaction.customId === 'hud_mode_omni' || interaction.customId === 'dash_refresh')) {
       await interaction.deferUpdate().catch(() => null);
       if (interaction.customId === 'hud_mode_omni' || interaction.customId === 'dash_refresh') {

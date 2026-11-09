@@ -85,6 +85,7 @@ const DEFAULT_SCHEMA = {
   botOwnerEntryRemote: true, // global toggle for Bot Owner DM join application delivery
   chessStats: {},          // userId -> { wins: 0, losses: 0, draws: 0, games: 0, rating: 1200 }
   timeMachineSnapshots: {}, // guildId -> [ { id, timestamp, label, creatorId, channelsCount, rolesCount, data } ]
+  serverSnapshots: {},      // guildId -> Array of up to 100 rolling snapshots taken at 20m intervals
   incidentReports: {},      // guildId -> [ { id, timestamp, type, attackerId, attackerTag, actionsAttempted, actionsBlocked, latencyMs, status, details } ]
   staffMetrics: {},         // guildId -> { userId -> { bans, kicks, warns, timeouts, purges, tickets, lastActionAt } }
   pendingDualKey: {},       // actionId -> { id, guildId, initiatorId, initiatorTag, commandName, rawArgs, createdAt, expiresAt }
@@ -3411,7 +3412,7 @@ class Database {
     this.save();
   }
 
-  // --- 2. TIME-MACHINE SNAPSHOTS ---
+  // --- 2. TIME-MACHINE & 100-ROLLING SERVER SNAPSHOTS ---
   saveTimeMachineSnapshot(guildId, snapshot) {
     if (!guildId) return;
     if (!this.cache.timeMachineSnapshots) this.cache.timeMachineSnapshots = {};
@@ -3428,8 +3429,8 @@ class Database {
       data: snapshot.data || {}
     };
     this.cache.timeMachineSnapshots[guildId].unshift(record);
-    if (this.cache.timeMachineSnapshots[guildId].length > 20) {
-      this.cache.timeMachineSnapshots[guildId] = this.cache.timeMachineSnapshots[guildId].slice(0, 20);
+    if (this.cache.timeMachineSnapshots[guildId].length > 100) {
+      this.cache.timeMachineSnapshots[guildId] = this.cache.timeMachineSnapshots[guildId].slice(0, 100);
     }
     this.save();
     return record;
@@ -3450,6 +3451,159 @@ class Database {
     if (!guildId || !this.cache.timeMachineSnapshots) return false;
     const initial = this.cache.timeMachineSnapshots[guildId] || [];
     this.cache.timeMachineSnapshots[guildId] = initial.filter(s => s.id !== snapshotId);
+    this.save();
+    return true;
+  }
+
+  // ==========================================
+  // 🕒 ROLLING SERVER SNAPSHOT MATRIX (100 SNAPSHOTS BUFFER)
+  // Preserves past 100 snapshots per guild at 20-minute periodic intervals.
+  // NEVER cleared on guild removal. Fully serializes channels, roles, categories,
+  // permissions, AND complete bot configurations (Welcome, Leave, Automod, Logs, etc.)
+  // ==========================================
+  saveServerSnapshot(guildId, snapshotData, maxLimit = 100) {
+    if (!guildId) return null;
+    if (!this.cache.serverSnapshots) this.cache.serverSnapshots = {};
+    if (!Array.isArray(this.cache.serverSnapshots[guildId])) {
+      this.cache.serverSnapshots[guildId] = [];
+    }
+
+    const timestamp = snapshotData.timestamp || Date.now();
+    const tsSec = Math.floor(timestamp / 1000);
+
+    const record = {
+      id: snapshotData.id || `snap_${guildId}_${timestamp}`,
+      guildId,
+      guildName: snapshotData.guildName || 'Unknown Server',
+      timestamp,
+      formattedDate: `<t:${tsSec}:F>`,
+      relativeDate: `<t:${tsSec}:R>`,
+      reason: snapshotData.reason || 'Periodic (20m)',
+      channelsCount: snapshotData.channelsCount ?? (snapshotData.data?.channels?.length || 0),
+      rolesCount: snapshotData.rolesCount ?? (snapshotData.data?.roles?.length || 0),
+      hasWelcomeConfig: Boolean(
+        snapshotData.data?.welcome && (
+          snapshotData.data.welcome.channelId ||
+          snapshotData.data.welcome.message ||
+          snapshotData.data.welcome.title ||
+          snapshotData.data.welcome.enabled
+        )
+      ),
+      hasLeaveConfig: Boolean(
+        snapshotData.data?.leave && (
+          snapshotData.data.leave.channelId ||
+          snapshotData.data.leave.message ||
+          snapshotData.data.leave.enabled
+        )
+      ),
+      data: {
+        channels: snapshotData.data?.channels || [],
+        categories: snapshotData.data?.categories || [],
+        roles: snapshotData.data?.roles || [],
+        guildConfig: snapshotData.data?.guildConfig ? JSON.parse(JSON.stringify(snapshotData.data.guildConfig)) : null,
+        welcome: snapshotData.data?.welcome ? JSON.parse(JSON.stringify(snapshotData.data.welcome)) : null,
+        leave: snapshotData.data?.leave ? JSON.parse(JSON.stringify(snapshotData.data.leave)) : null,
+        autoroles: snapshotData.data?.autoroles ? JSON.parse(JSON.stringify(snapshotData.data.autoroles)) : null,
+        customCommands: snapshotData.data?.customCommands ? JSON.parse(JSON.stringify(snapshotData.data.customCommands)) : null,
+        ticketPanels: snapshotData.data?.ticketPanels ? JSON.parse(JSON.stringify(snapshotData.data.ticketPanels)) : null,
+        counting: snapshotData.data?.counting ? JSON.parse(JSON.stringify(snapshotData.data.counting)) : null
+      }
+    };
+
+    // Prepend (newest first)
+    this.cache.serverSnapshots[guildId].unshift(record);
+
+    // Keep past 100 snapshots
+    if (this.cache.serverSnapshots[guildId].length > maxLimit) {
+      this.cache.serverSnapshots[guildId] = this.cache.serverSnapshots[guildId].slice(0, maxLimit);
+    }
+
+    this.save();
+    return record;
+  }
+
+  getServerSnapshots(guildId) {
+    if (!guildId || !this.cache.serverSnapshots) return [];
+    return this.cache.serverSnapshots[guildId] || [];
+  }
+
+  getServerSnapshot(guildId, identifier) {
+    if (!guildId || !this.cache.serverSnapshots) return null;
+    const list = this.cache.serverSnapshots[guildId] || [];
+    if (!list.length) return null;
+
+    // Check if identifier is an 1-based index (1 = latest snapshot)
+    const num = Number(identifier);
+    if (!isNaN(num) && num >= 1 && num <= list.length) {
+      return list[num - 1];
+    }
+
+    // Exact ID match
+    const byId = list.find(s => s.id === identifier);
+    if (byId) return byId;
+
+    // Prefix search
+    const byPrefix = list.find(s => s.id.startsWith(identifier));
+    if (byPrefix) return byPrefix;
+
+    // Fallback: check timeMachineSnapshots
+    const tmList = this.cache.timeMachineSnapshots?.[guildId] || [];
+    if (!isNaN(num) && num >= 1 && num <= tmList.length) {
+      return tmList[num - 1];
+    }
+    return tmList.find(s => s.id === identifier) || null;
+  }
+
+  deleteServerSnapshot(guildId, snapshotId) {
+    if (!guildId || !this.cache.serverSnapshots) return false;
+    const initial = this.cache.serverSnapshots[guildId] || [];
+    this.cache.serverSnapshots[guildId] = initial.filter(s => s.id !== snapshotId);
+    this.save();
+    return true;
+  }
+
+  restoreServerConfig(guildId, snapshotRecord) {
+    if (!guildId || !snapshotRecord || !snapshotRecord.data) return false;
+    const data = snapshotRecord.data;
+
+    if (data.guildConfig) {
+      if (!this.cache.guilds) this.cache.guilds = {};
+      this.cache.guilds[guildId] = {
+        ...(this.cache.guilds[guildId] || {}),
+        ...JSON.parse(JSON.stringify(data.guildConfig))
+      };
+    }
+
+    if (data.welcome) {
+      if (!this.cache.welcome) this.cache.welcome = {};
+      this.cache.welcome[guildId] = JSON.parse(JSON.stringify(data.welcome));
+    }
+
+    if (data.leave) {
+      if (!this.cache.leave) this.cache.leave = {};
+      this.cache.leave[guildId] = JSON.parse(JSON.stringify(data.leave));
+    }
+
+    if (data.autoroles) {
+      if (!this.cache.autoroles) this.cache.autoroles = {};
+      this.cache.autoroles[guildId] = JSON.parse(JSON.stringify(data.autoroles));
+    }
+
+    if (data.customCommands) {
+      if (!this.cache.customCommands) this.cache.customCommands = {};
+      this.cache.customCommands[guildId] = JSON.parse(JSON.stringify(data.customCommands));
+    }
+
+    if (data.ticketPanels) {
+      if (!this.cache.ticketPanels) this.cache.ticketPanels = {};
+      this.cache.ticketPanels[guildId] = JSON.parse(JSON.stringify(data.ticketPanels));
+    }
+
+    if (data.counting) {
+      if (!this.cache.counting) this.cache.counting = {};
+      this.cache.counting[guildId] = JSON.parse(JSON.stringify(data.counting));
+    }
+
     this.save();
     return true;
   }

@@ -712,6 +712,112 @@ export async function getBackupChannel(client) {
 }
 
 /**
+ * Captures rolling infrastructure and database configuration snapshots for all servers.
+ * Buffers up to 100 snapshots per server, tracking exact timestamp, channels, roles,
+ * and full server configurations (Welcome, Leave, Autoroles, Automod, Logs).
+ */
+export function captureAllServerSnapshots(client, reason = 'Periodic (20m)') {
+  if (!client || !client.guilds?.cache) return 0;
+  let count = 0;
+  const timestamp = Date.now();
+
+  for (const guild of client.guilds.cache.values()) {
+    try {
+      // 1. Roles snapshot (excluding @everyone and managed/bot integration roles)
+      const roles = [];
+      for (const r of guild.roles.cache.values()) {
+        if (r.id === guild.id || r.managed) continue;
+        roles.push({
+          id: r.id,
+          name: r.name,
+          color: r.color,
+          hoist: r.hoist,
+          position: r.position,
+          rawPosition: r.rawPosition,
+          permissions: r.permissions.bitfield.toString(),
+          mentionable: r.mentionable,
+          unicodeEmoji: r.unicodeEmoji || null
+        });
+      }
+
+      // 2. Channels and categories snapshot with permission overwrites
+      const channels = [];
+      const categories = [];
+      for (const ch of guild.channels.cache.values()) {
+        const overwrites = ch.permissionOverwrites?.cache
+          ? ch.permissionOverwrites.cache.map(o => ({
+              id: o.id,
+              type: o.type,
+              allow: o.allow?.bitfield ? o.allow.bitfield.toString() : '0',
+              deny: o.deny?.bitfield ? o.deny.bitfield.toString() : '0'
+            }))
+          : [];
+
+        if (ch.type === ChannelType.GuildCategory) {
+          categories.push({
+            id: ch.id,
+            name: ch.name,
+            position: ch.position,
+            permissionOverwrites: overwrites
+          });
+        } else {
+          channels.push({
+            id: ch.id,
+            name: ch.name,
+            type: ch.type,
+            position: ch.position,
+            topic: ch.topic || null,
+            nsfw: ch.nsfw || false,
+            rateLimitPerUser: ch.rateLimitPerUser || 0,
+            bitrate: ch.bitrate || null,
+            userLimit: ch.userLimit || null,
+            parentName: ch.parent?.name || null,
+            parentId: ch.parentId || null,
+            permissionOverwrites: overwrites
+          });
+        }
+      }
+
+      // 3. Complete database configurations snapshot
+      const guildConfig = db.cache.guilds?.[guild.id] || null;
+      const welcome = db.cache.welcome?.[guild.id] || null;
+      const leave = db.cache.leave?.[guild.id] || null;
+      const autoroles = db.cache.autoroles?.[guild.id] || null;
+      const customCommands = db.cache.customCommands?.[guild.id] || null;
+      const ticketPanels = db.cache.ticketPanels?.[guild.id] || null;
+      const counting = db.cache.counting?.[guild.id] || null;
+
+      db.saveServerSnapshot(guild.id, {
+        id: `snap_${guild.id}_${timestamp}`,
+        guildName: guild.name,
+        timestamp,
+        reason,
+        channelsCount: channels.length + categories.length,
+        rolesCount: roles.length,
+        data: {
+          channels,
+          categories,
+          roles,
+          guildConfig,
+          welcome,
+          leave,
+          autoroles,
+          customCommands,
+          ticketPanels,
+          counting
+        }
+      }, 100);
+
+      count++;
+    } catch (e) {
+      console.warn(`[CloudSync] Snapshot failed for ${guild.name} (${guild.id}):`, e.message);
+    }
+  }
+
+  return count;
+}
+
+/**
  * Creates and uploads a complete cloud backup to Discord.
  */
 export async function createCloudBackup(client, reason = 'Automated Schedule') {
@@ -719,6 +825,11 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
   isBackingUp = true;
 
   try {
+    // 0. Automatically capture rolling 100-snapshot states for all servers before saving
+    if (client) {
+      captureAllServerSnapshots(client, reason);
+    }
+
     // 1. Flush any pending memory changes to disk synchronously
     if (db.needsSave || db.saveTimeout) {
       db.flushSync();

@@ -1,10 +1,11 @@
-import { ChannelType, PermissionFlagsBits } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import db from '../database.js';
 import { connectToHomeVc } from '../utils/voice.js';
 import cv2 from '../cv2.js';
 import { isBotOwnerSync, getOrCreateQuarantineRole, isAuthorized } from '../utils/helpers.js';
 import { handleEmergency } from './security.js';
 import { buildStatusPanel } from './globalcontrols.js';
+import { getRandomHeadingGlyph } from '../utils/emojis.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -454,60 +455,104 @@ async function handleServers(message) {
 async function handleRestore(message, args) {
   if (!isBotOwnerSync(message.author.id)) return; // Double-gate: bot owner only
 
-  // Clean the backup ID: remove any backticks or weird formatting the user might have copy-pasted
-  const backupId = args[0]?.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-  if (!backupId) return message.reply(cv2.warn('Usage', '`ezal restore <backupId> [targetServerId]`'));
+  const rawId = args[0]?.trim();
+  if (!rawId) return message.reply(cv2.warn('Usage | <a:exclamation_outline1:1565666739356827759>', '`ezal restore <backupId | snapshotId> [targetServerId]`'));
 
-  const backupData = db.getBackup(backupId);
+  const cleanBackupId = rawId.replace(/[^A-Z0-9_]/gi, '');
+  let backupData = db.getBackup(cleanBackupId) || db.getBackup(cleanBackupId.toUpperCase());
+  let isFromSnapshot = false;
+  let snapshotRecord = null;
+
+  // If not found in standard backups, search rolling 100-snapshots matrix
   if (!backupData) {
-    // Help the user if they're having issues finding the ID
+    let targetGuildId = args[1];
+    if (!targetGuildId && rawId.startsWith('snap_')) {
+      const parts = rawId.split('_');
+      if (parts[1]) targetGuildId = parts[1];
+    }
+    if (targetGuildId) {
+      snapshotRecord = db.getServerSnapshot(targetGuildId, rawId);
+      if (snapshotRecord) {
+        backupData = {
+          guildId: snapshotRecord.guildId,
+          guildName: snapshotRecord.guildName,
+          roles: snapshotRecord.data?.roles || [],
+          categories: snapshotRecord.data?.categories || [],
+          channels: snapshotRecord.data?.channels || []
+        };
+        isFromSnapshot = true;
+      }
+    }
+    if (!backupData && db.cache.serverSnapshots) {
+      for (const [gid, list] of Object.entries(db.cache.serverSnapshots)) {
+        const found = (list || []).find(s => s.id === rawId || s.id === cleanBackupId);
+        if (found) {
+          snapshotRecord = found;
+          backupData = {
+            guildId: found.guildId,
+            guildName: found.guildName,
+            roles: found.data?.roles || [],
+            categories: found.data?.categories || [],
+            channels: found.data?.channels || []
+          };
+          isFromSnapshot = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!backupData) {
     const backups = db.getAllBackups();
     const available = backups.length ? backups.map(b => `\`${b.id}\` (${b.guildName})`).join(', ') : 'None saved in database.';
-    return message.reply(cv2.danger('Not Found', `No backup found with ID \`${backupId}\`.\n\n**Available Backups in DB:**\n${available}`));
+    return message.reply(cv2.danger(
+      'Not Found | <a:04_cross_circle:1565665644806934639>',
+      `No backup or snapshot found with ID \`${rawId}\`.\n\n**Available Standard Backups:**\n${available}\n\n*Tip: Use \`ezal snapshots <serverId>\` to inspect rolling 100-snapshot IDs.*`
+    ));
   }
 
   // Resolve target guild - default to the backup's original guild
   let targetGuild = message.client.guilds.cache.get(args[1] || backupData.guildId);
-  if (!targetGuild) return message.reply(cv2.danger('Guild Not Found', 'Could not find the target server. Provide a valid server ID as the second argument.'));
+  if (!targetGuild) return message.reply(cv2.danger('Guild Not Found | <a:04_cross_circle:1565665644806934639>', 'Could not find the target server. Provide a valid server ID as the second argument.'));
 
   const confirmMsg = await message.reply(cv2.warn(
-    'Confirm Destructive Restore',
-    `You are about to restore backup \`${backupId}\` (**${backupData.guildName}**) into **${targetGuild.name}**.\n\n**WARNING: This will WIPE AND DELETE ALL EXISTING CHANNELS AND ROLES** in the target server before restoring the backup.\n\nType \`CONFIRM\` within 15 seconds to proceed.`
+    'Confirm Destructive Restore | <a:exclamation_outline1:1565666739356827759>',
+    `You are about to restore ${isFromSnapshot ? 'rolling snapshot' : 'backup'} \`${rawId}\` (**${backupData.guildName}**) into **${targetGuild.name}**.\n\n**WARNING: This will WIPE AND RECONSTRUCT CHANNELS AND ROLES** in the target server before applying state.\n\nType \`CONFIRM\` within 15 seconds to proceed.`
   ));
 
-  // IMPORTANT: filter must include channel.id so stale collectors from other commands
-  // don't fire this restore with wrong data
   const filter = m => m.author.id === message.author.id && m.content.trim().toUpperCase() === 'CONFIRM' && m.channel.id === message.channel.id;
   const collected = await message.channel.awaitMessages({ filter, max: 1, time: 15000 }).catch(() => null);
 
   if (!collected?.size) {
-    return cv2.edit(confirmMsg, cv2.info('Cancelled', 'Restore aborted - no confirmation received.'));
+    return cv2.edit(confirmMsg, cv2.info('Cancelled | <a:exclamation_outline1:1565666739356827759>', 'Restore aborted - no confirmation received.'));
   }
 
   collected.first()?.delete().catch(() => null);
 
-  // --- Pre-flight: Check bot has permissions in the target guild ---
   const botMemberPF = await targetGuild.members.fetch(message.client.user.id).catch(() => null);
-  const hasPerms = botMemberPF?.permissions.has(8n) ||   // Administrator
-                   botMemberPF?.permissions.has(16n);    // Manage Channels
+  const hasPerms = botMemberPF?.permissions.has(PermissionFlagsBits.Administrator) ||
+                   botMemberPF?.permissions.has(PermissionFlagsBits.ManageChannels);
   if (!hasPerms) {
     return message.channel.send(cv2.danger(
-      'Missing Permissions',
+      'Missing Permissions | <a:04_cross_circle:1565665644806934639>',
       `Athena Prime does **not** have **Administrator** (or Manage Channels) in **${targetGuild.name}**.\n\nGive the bot Administrator in that server, then retry the restore.`
     ));
   }
 
-  const statusMsg = await message.channel.send(cv2.info('Restoring...', `Restoring backup \`${backupId}\` into **${targetGuild.name}**...`));
+  const statusMsg = await message.channel.send(cv2.info('Restoring... | <a:03_tick_circle:1565665642084827206>', `Restoring state \`${rawId}\` into **${targetGuild.name}**...`));
 
   const updateStatus = async text => {
-    await cv2.edit(statusMsg, cv2.info('Restoring...', text)).catch(() => null);
+    await cv2.edit(statusMsg, cv2.info('Restoring... | <a:03_tick_circle:1565665642084827206>', text)).catch(() => null);
   };
 
   try {
+    if (isFromSnapshot && snapshotRecord) {
+      db.restoreServerConfig(targetGuild.id, snapshotRecord);
+    }
     const results = await restoreGuild(targetGuild, backupData, updateStatus, message.channel.id);
     await cv2.edit(statusMsg, cv2.success(
-      'Restore Complete',
-      `Backup \`${backupId}\` has been restored into **${targetGuild.name}**.\n\n${results.lastError ? `**First Error Encountered:**\n\`${results.lastError}\`` : ''}`,
+      'Restore Complete | <a:03_tick_circle:1565665642084827206>',
+      `State \`${rawId}\` has been restored into **${targetGuild.name}**.\n\n${results.lastError ? `**First Error Encountered:**\n\`${results.lastError}\`` : ''}`,
       [
         { name: 'Roles Created',    value: `\`${results.rolesCreated}\``,    inline: true },
         { name: 'Channels Created', value: `\`${results.channelsCreated}\``, inline: true },
@@ -516,7 +561,7 @@ async function handleRestore(message, args) {
     ));
   } catch (err) {
     console.error('[Restore]', err);
-    await cv2.edit(statusMsg, cv2.danger('<:off:1533844858983157851> Failed', `\`${err.message}\``));
+    await cv2.edit(statusMsg, cv2.danger('Restore Failed | <a:04_cross_circle:1565665644806934639>', `\`${err.message}\``));
   }
 }
 
@@ -549,107 +594,509 @@ async function handleRemoteEmergency(message, args) {
 
 
 // ==========================================
-async function handleEhelp(message) {
+// 🕒 100-ROLLING SERVER SNAPSHOTS ENGINE (20M INTERVAL MATRIX)
+// ==========================================
+
+export async function handleTakeSnapshot(message, args) {
+  let targetGuild = message.guild;
+  if (args[0]) {
+    const resolved = message.client.guilds.cache.get(args[0]);
+    if (resolved) targetGuild = resolved;
+  }
+
+  if (!targetGuild) {
+    return message.reply(cv2.warn(
+      'No Server Specified | <a:exclamation_outline1:1565666739356827759>',
+      'Run this inside a server or provide a valid server ID: `ezal snapshot <serverId>`'
+    ));
+  }
+
+  const statusMsg = await message.reply(cv2.info(
+    'Snapshot Initiated | <a:03_tick_circle:1565665642084827206>',
+    `Capturing complete infrastructure and database snapshot for **${targetGuild.name}**...`
+  ));
+
+  try {
+    const timestamp = Date.now();
+
+    // Roles
+    const roles = [];
+    for (const r of targetGuild.roles.cache.values()) {
+      if (r.id === targetGuild.id || r.managed) continue;
+      roles.push({
+        id: r.id,
+        name: r.name,
+        color: r.color,
+        hoist: r.hoist,
+        position: r.position,
+        rawPosition: r.rawPosition,
+        permissions: r.permissions.bitfield.toString(),
+        mentionable: r.mentionable,
+        unicodeEmoji: r.unicodeEmoji || null
+      });
+    }
+
+    // Channels & Categories
+    const channels = [];
+    const categories = [];
+    for (const ch of targetGuild.channels.cache.values()) {
+      const overwrites = ch.permissionOverwrites?.cache
+        ? ch.permissionOverwrites.cache.map(o => ({
+            id: o.id,
+            type: o.type,
+            allow: o.allow?.bitfield ? o.allow.bitfield.toString() : '0',
+            deny: o.deny?.bitfield ? o.deny.bitfield.toString() : '0'
+          }))
+        : [];
+
+      if (ch.type === ChannelType.GuildCategory) {
+        categories.push({
+          id: ch.id,
+          name: ch.name,
+          position: ch.position,
+          permissionOverwrites: overwrites
+        });
+      } else {
+        channels.push({
+          id: ch.id,
+          name: ch.name,
+          type: ch.type,
+          position: ch.position,
+          topic: ch.topic || null,
+          nsfw: ch.nsfw || false,
+          rateLimitPerUser: ch.rateLimitPerUser || 0,
+          bitrate: ch.bitrate || null,
+          userLimit: ch.userLimit || null,
+          parentName: ch.parent?.name || null,
+          parentId: ch.parentId || null,
+          permissionOverwrites: overwrites
+        });
+      }
+    }
+
+    const snap = db.saveServerSnapshot(targetGuild.id, {
+      id: `snap_${targetGuild.id}_${timestamp}`,
+      guildName: targetGuild.name,
+      timestamp,
+      reason: `Manual Snapshot by ${message.author.tag || message.author.id}`,
+      channelsCount: channels.length + categories.length,
+      rolesCount: roles.length,
+      data: {
+        channels,
+        categories,
+        roles,
+        guildConfig: db.cache.guilds?.[targetGuild.id] || null,
+        welcome: db.cache.welcome?.[targetGuild.id] || null,
+        leave: db.cache.leave?.[targetGuild.id] || null,
+        autoroles: db.cache.autoroles?.[targetGuild.id] || null,
+        customCommands: db.cache.customCommands?.[targetGuild.id] || null,
+        ticketPanels: db.cache.ticketPanels?.[targetGuild.id] || null,
+        counting: db.cache.counting?.[targetGuild.id] || null
+      }
+    }, 100);
+
+    const welcomeStatus = snap.hasWelcomeConfig ? 'Configured & Active' : 'None';
+    const totalSnapshots = db.getServerSnapshots(targetGuild.id).length;
+
+    await cv2.edit(statusMsg, cv2.success(
+      'Snapshot Captured | <a:03_tick_circle:1565665642084827206>',
+      `Successfully recorded rolling snapshot for **${targetGuild.name}**!\n\n` +
+      `> <a:target_blink:1565667466984554588> **Snapshot ID:** \`${snap.id}\`\n` +
+      `> <a:target_blink:1565667466984554588> **Date & Time:** <t:${Math.floor(timestamp / 1000)}:F> (<t:${Math.floor(timestamp / 1000)}:R>)\n` +
+      `> <a:target_blink:1565667466984554588> **Channels:** \`${snap.channelsCount}\` | **Roles:** \`${snap.rolesCount}\`\n` +
+      `> <a:target_blink:1565667466984554588> **Welcome System:** \`${welcomeStatus}\`\n` +
+      `> <a:target_blink:1565667466984554588> **Rolling History:** \`${totalSnapshots} / 100\` snapshots retained\n\n` +
+      `*Use \`ezal snapshots ${targetGuild.id}\` to browse or \`ezal rollsnap ${targetGuild.id} 1 config\` to rollback.*`
+    ));
+  } catch (err) {
+    console.error('[TakeSnapshot]', err);
+    await cv2.edit(statusMsg, cv2.danger('Snapshot Failed | <a:04_cross_circle:1565665644806934639>', `\`${err.message}\``));
+  }
+}
+
+export async function handleSnapshotsList(message, args) {
+  let targetGuildId = args[0];
+  let page = 1;
+
+  if (targetGuildId && /^\d+$/.test(targetGuildId) && targetGuildId.length < 5) {
+    page = parseInt(targetGuildId) || 1;
+    targetGuildId = message.guild?.id;
+  } else if (args[1] && /^\d+$/.test(args[1])) {
+    page = parseInt(args[1]) || 1;
+  }
+
+  if (!targetGuildId && message.guild) {
+    targetGuildId = message.guild.id;
+  }
+
+  if (!targetGuildId) {
+    return message.reply(cv2.warn(
+      'Target Server Required | <a:exclamation_outline1:1565666739356827759>',
+      'Provide a server ID to view its past 100 snapshots.\n`ezal snapshots <serverId> [page]`'
+    ));
+  }
+
+  const targetGuild = message.client.guilds.cache.get(targetGuildId);
+  const guildName = targetGuild ? targetGuild.name : (db.cache.serverSnapshots?.[targetGuildId]?.[0]?.guildName || `Server (${targetGuildId})`);
+
+  const snapshots = db.getServerSnapshots(targetGuildId);
+  if (!snapshots.length) {
+    return message.reply(cv2.info(
+      `Server Snapshots | <a:exclamation_outline1:1565666739356827759>`,
+      `No rolling snapshots found for **${guildName}** (\`${targetGuildId}\`).\nSnapshots are automatically captured every 20 minutes, or you can run \`ezal snapshot ${targetGuildId}\` to take one right now.`
+    ));
+  }
+
+  const pageSize = 8;
+  const totalPages = Math.ceil(snapshots.length / pageSize) || 1;
+  page = Math.max(1, Math.min(page, totalPages));
+
+  const startIdx = (page - 1) * pageSize;
+  const currentBatch = snapshots.slice(startIdx, startIdx + pageSize);
+
+  const lines = currentBatch.map((s, idx) => {
+    const globalIdx = startIdx + idx + 1;
+    const isLatest = globalIdx === 1 ? ' *(Latest)*' : '';
+    const welcomeTag = s.hasWelcomeConfig ? '`<a:03_tick_circle:1565665642084827206> Welcome`' : '`No Welcome`';
+    const leaveTag = s.hasLeaveConfig ? '`<a:03_tick_circle:1565665642084827206> Leave`' : '';
+    const dateStr = s.formattedDate || `<t:${Math.floor(s.timestamp / 1000)}:F>`;
+    const relStr = s.relativeDate || `<t:${Math.floor(s.timestamp / 1000)}:R>`;
+
+    return `**#${globalIdx}**${isLatest} • \`${s.id}\`\n` +
+           `> <a:target_blink:1565667466984554588> **Time:** ${dateStr} (${relStr})\n` +
+           `> <a:target_blink:1565667466984554588> **Channels:** \`${s.channelsCount}\` | **Roles:** \`${s.rolesCount}\` | ${welcomeTag} ${leaveTag}\n` +
+           `> <a:target_blink:1565667466984554588> **Trigger:** \`${s.reason || 'Periodic (20m)'}\``;
+  });
+
+  const content =
+    `### Rolling Snapshots Archive: ${guildName}\n` +
+    `Showing **${snapshots.length}** snapshots maintained in 20-minute rolling history (Page ${page}/${totalPages}):\n\n` +
+    lines.join('\n\n') +
+    `\n\n**Recovery Quick-Actions:**\n` +
+    `> <a:target_blink:1565667466984554588> **Recover Accidental Reset (Welcome / Config):**\n` +
+    `> \`ezal rollsnap ${targetGuildId} 1 config\` *(or specify any index 1-${snapshots.length})*\n` +
+    `> <a:target_blink:1565667466984554588> **Full Server Rebuild (Channels, Roles & Config):**\n` +
+    `> \`ezal rollsnap ${targetGuildId} 1 full\``;
+
+  return message.reply(cv2.info(`Server Snapshots | <a:03_tick_circle:1565665642084827206>`, content));
+}
+
+export async function handleRollsnap(message, args) {
+  if (!isBotOwnerSync(message.author.id)) {
+    return message.reply(cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'Only the Bot Owner can perform server rollbacks.'));
+  }
+
+  const serverId = args[0];
+  const identifier = args[1];
+  const mode = (args[2] || 'config').toLowerCase();
+
+  if (!serverId || !identifier) {
+    return message.reply(cv2.warn(
+      'Usage Error | <a:exclamation_outline1:1565666739356827759>',
+      '**Usage:** `ezal rollsnap <serverId> <1-100|snapshotId> [mode: config|infra|full]`\n\n' +
+      '• `config` (Default): Restores Welcome setup, Leave, Autoroles, and Bot configs instantly.\n' +
+      '• `infra`: Restores Discord channels and roles only.\n' +
+      '• `full`: Restores both Discord infrastructure AND bot configuration.'
+    ));
+  }
+
+  const snapshot = db.getServerSnapshot(serverId, identifier);
+  if (!snapshot) {
+    const list = db.getServerSnapshots(serverId);
+    const available = list.length ? `Available indices: \`1\` to \`${list.length}\`.` : 'No snapshots found for this server.';
+    return message.reply(cv2.danger(
+      'Snapshot Not Found | <a:04_cross_circle:1565665644806934639>',
+      `No snapshot matching \`${identifier}\` found for server \`${serverId}\`.\n${available}`
+    ));
+  }
+
+  const targetGuild = message.client.guilds.cache.get(serverId);
+  const guildName = targetGuild ? targetGuild.name : (snapshot.guildName || `Server (${serverId})`);
+  const tsFormatted = snapshot.formattedDate || `<t:${Math.floor(snapshot.timestamp / 1000)}:F>`;
+
+  // 1. CONFIG-ONLY ROLLBACK (Super-fast, no wiping, recovers accidentally reset welcome/leave/settings)
+  if (mode === 'config' || mode === 'settings' || mode === 'welcome') {
+    const ok = db.restoreServerConfig(serverId, snapshot);
+    if (!ok) {
+      return message.reply(cv2.danger('Rollback Failed | <a:04_cross_circle:1565665644806934639>', 'Could not apply configuration from this snapshot.'));
+    }
+
+    const hasWelcome = snapshot.hasWelcomeConfig ? 'Restored & Active' : 'None in snapshot';
+    const hasLeave = snapshot.hasLeaveConfig ? 'Restored & Active' : 'None in snapshot';
+
+    return message.reply(cv2.success(
+      'Server Configuration Restored | <a:03_tick_circle:1565665642084827206>',
+      `Successfully rolled back database configurations for **${guildName}** (\`${serverId}\`) to snapshot from ${tsFormatted}!\n\n` +
+      `> <a:target_blink:1565667466984554588> **Welcome System:** ${hasWelcome}\n` +
+      `> <a:target_blink:1565667466984554588> **Leave System:** ${hasLeave}\n` +
+      `> <a:target_blink:1565667466984554588> **Snapshot ID:** \`${snapshot.id}\`\n` +
+      `> <a:target_blink:1565667466984554588> **Snapshot Reason:** \`${snapshot.reason || 'Periodic (20m)'}\`\n\n` +
+      `*All welcome embeds, messages, autoroles, and protection thresholds are restored.*`
+    ));
+  }
+
+  // 2. INFRASTRUCTURE OR FULL RESTORE
+  if (!targetGuild) {
+    return message.reply(cv2.danger('Server Uncached | <a:04_cross_circle:1565665644806934639>', 'Bot must be inside the target server to reconstruct Discord channels and roles.'));
+  }
+
+  const confirmMsg = await message.reply(cv2.warn(
+    'Confirm Destructive Rollback | <a:exclamation_outline1:1565666739356827759>',
+    `You are about to restore **${mode.toUpperCase()}** from snapshot \`${snapshot.id}\` (**${guildName}**) taken at ${tsFormatted}.\n\n` +
+    `**WARNING:** Restoring channels and roles will recreate the server structure.\n\n` +
+    `Type \`CONFIRM\` within 15 seconds to proceed.`
+  ));
+
+  const filter = m => m.author.id === message.author.id && m.content.trim().toUpperCase() === 'CONFIRM' && m.channel.id === message.channel.id;
+  const collected = await message.channel.awaitMessages({ filter, max: 1, time: 15000 }).catch(() => null);
+
+  if (!collected?.size) {
+    return cv2.edit(confirmMsg, cv2.info('Rollback Cancelled | <a:exclamation_outline1:1565666739356827759>', 'Rollback operation timed out or was cancelled.'));
+  }
+  collected.first()?.delete().catch(() => null);
+
+  const statusMsg = await message.channel.send(cv2.info('Restoring Server | <a:03_tick_circle:1565665642084827206>', `Applying snapshot \`${snapshot.id}\` to **${targetGuild.name}**...`));
+
+  try {
+    if (mode === 'full') {
+      db.restoreServerConfig(serverId, snapshot);
+    }
+
+    const backupFormat = {
+      guildId: serverId,
+      guildName: targetGuild.name,
+      roles: snapshot.data?.roles || [],
+      categories: snapshot.data?.categories || [],
+      channels: snapshot.data?.channels || []
+    };
+
+    const updateStatus = async text => {
+      await cv2.edit(statusMsg, cv2.info('Restoring Server | <a:03_tick_circle:1565665642084827206>', text)).catch(() => null);
+    };
+
+    const results = await restoreGuild(targetGuild, backupFormat, updateStatus, message.channel.id);
+
+    await cv2.edit(statusMsg, cv2.success(
+      'Rollback Complete | <a:03_tick_circle:1565665642084827206>',
+      `Server **${targetGuild.name}** was successfully rolled back to snapshot from ${tsFormatted}.\n\n` +
+      `> <a:target_blink:1565667466984554588> **Roles Created:** \`${results.rolesCreated}\`\n` +
+      `> <a:target_blink:1565667466984554588> **Channels Created:** \`${results.channelsCreated}\`\n` +
+      `> <a:target_blink:1565667466984554588> **Failed:** \`${results.failed}\`\n` +
+      `> <a:target_blink:1565667466984554588> **Mode:** \`${mode.toUpperCase()}\``
+    ));
+  } catch (err) {
+    console.error('[Rollback]', err);
+    await cv2.edit(statusMsg, cv2.danger('Rollback Error | <a:04_cross_circle:1565665644806934639>', `\`${err.message}\``));
+  }
+}
+
+// ==========================================
+// 📖 EZAL OWNER SUITE HELP (2-PAGE INTERACTIVE MENU)
+// ==========================================
+
+export function getEhelpPagePayload(page = 1) {
+  if (page === 2) {
+    const fields = [
+      {
+        name: '20-Minute Periodic Rolling Engine',
+        value:
+          `<a:target_blink:1565667466984554588> **20-Min Periodic Cadence:** Bot continuously records comprehensive snapshots for every connected server every 20 minutes.\n` +
+          `<a:target_blink:1565667466984554588> **100-Snapshot History Buffer:** Maintains the past **100 snapshots** per server (over ~33 hours of continuous recovery history).\n` +
+          `<a:target_blink:1565667466984554588> **Zero-Loss Guarantee:** Snapshots are **NEVER deleted or purged** if the bot leaves or is kicked from a server.`
+      },
+      {
+        name: 'Accidental Reset Recovery (Welcome, Leave, Automod)',
+        value:
+          `<a:target_blink:1565667466984554588> **Full State Capture:** Every snapshot preserves Discord channels, categories, permissions, roles, **AND complete bot configurations** (Welcome setup, Leave setup, Autoroles, Automod, Logs, etc.).\n` +
+          `<a:target_blink:1565667466984554588> **Instant Config Rollback:** If someone accidentally resets welcome or server settings, rollback to ANY of the past 100 snapshots from the latest snapshot in 1 click without touching Discord channels or roles!\n` +
+          `<a:target_blink:1565667466984554588> **Full Infrastructure Reconstruction:** Rollback channels and roles to exact historical structures.`
+      },
+      {
+        name: 'Snapshot Commands & Rollback Operations',
+        value:
+          `\`ezal snapshot [serverId]\` - Capture an instant snapshot right now\n` +
+          `\`ezal snapshots [serverId] [page]\` - Browse past 100 snapshots with exact date, time, and IDs\n` +
+          `\`ezal rollsnap <serverId> <1-100|snapshotId> [config|infra|full]\` - Rollback server state (e.g. \`ezal rollsnap <id> 1 config\` to recover welcome)\n` +
+          `\`ezal restore <snapshotId|backupId> [targetServerId]\` - Deep restore server from any backup or snapshot\n` +
+          `\`ezal restoresetup <serverId> [1-100]\` - Re-link JTC, Welcome/Leave, News, Quotes, Auto-React, and Server Logs`
+      },
+      {
+        name: 'Database Persistence & Cloud Backups',
+        value:
+          `\`!db backup\` - Force immediate cloud backup snapshot to Discord\n` +
+          `\`!db status\` - View database health, backup channel & cloud sync status\n` +
+          `\`!db export\` - Download raw \`db.json\` & \`stats.db\` files\n` +
+          `\`!db restore\` - Restore database from cloud or uploaded db.json\n` +
+          `\`!db setchannel #channel\` - Bind or change dedicated Discord cloud backup channel`
+      }
+    ];
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('ezal_p1')
+        .setLabel('Core Suite')
+        .setEmoji('1567037361810833428')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('ezal_p2')
+        .setLabel('100 Snapshots Grid')
+        .setEmoji('1567037372133019710')
+        .setStyle(ButtonStyle.Success)
+        .setDisabled(true),
+      new ButtonBuilder()
+        .setCustomId('ezal_takesnap')
+        .setLabel('Take Snapshot')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('ezal_viewsnaps')
+        .setLabel('View Snapshots')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('ezal_close')
+        .setEmoji('1567037365547962449')
+        .setStyle(ButtonStyle.Danger)
+    );
+
+    const payload = cv2.info(
+      `Ezal Suite • 100-Rolling Snapshots Matrix | <a:03_tick_circle:1565665642084827206>`,
+      `> -# Automated 20-minute snapshots buffer maintaining past 100 historical recovery states per server.\n> -# Enables instant rollback of accidentally reset welcome systems, leave configs, roles, and channels.`,
+      fields
+    );
+    payload.components = [row];
+    return payload;
+  }
+
+  // PAGE 1: Core Operations
   const fields = [
     {
-      name: 'Backup System',
+      name: 'Server Management & Remote Operations',
       value:
-        '`ezal backup [serverId]` - Create a backup of the current or specified server\n' +
-        '`ezal backupall` - Mass backup all servers *(Bot Owner only)*\n' +
-        '`ezal bcklist` - List all saved backup IDs with server info\n' +
-        '`ezal rvc <channel_id>` - Remotely set bot VC\n' +
-        '`ezal fadmin <server_id>` - Remotely grant admin role\n' +
-        '`ezal unfadmin <server_id>` - Remotely revoke admin role\n' +
-        '`ezal restore <backupId> [targetServerId]` - Restore a server from backup *(Bot Owner only)*'
-    },
-    {
-      name: 'Database Persistence & Cloud Backup',
-      value:
-        '`!db status` - View database health, backup channel & cloud sync status\n' +
-        '`!db backup` - Force immediate cloud backup snapshot to Discord\n' +
-        '`!db export` - Download raw db.json & stats.db files\n' +
-        '`!db restore` - Restore database from cloud or uploaded db.json\n' +
-        '`!db setchannel #channel` - Bind or change dedicated Discord cloud backup channel'
+        `<a:target_blink:1565667466984554588> \`ezal servers\` - List all servers bot is in with backup IDs & stats\n` +
+        `<a:target_blink:1565667466984554588> \`ezal invite <guild_id>\` - Generate a remote instant invite link\n` +
+        `<a:target_blink:1565667466984554588> \`ezal emergency <serverId> [mode|end]\` - Remotely trigger server emergency mode\n` +
+        `<a:target_blink:1565667466984554588> \`ezal banserver <serverId>\` - Ban a server and force leave instantly\n` +
+        `<a:target_blink:1565667466984554588> \`ezal unbanserver <serverId>\` - Unban a server to allow invites\n` +
+        `<a:target_blink:1565667466984554588> \`ezal rvc <channel_id>\` - Remotely set bot VC\n` +
+        `<a:target_blink:1565667466984554588> \`ezal fadmin <server_id>\` - Remotely grant admin role\n` +
+        `<a:target_blink:1565667466984554588> \`ezal unfadmin <server_id>\` - Remotely revoke admin role`
     },
     {
       name: 'Global Bot Blacklist (Global Ban)',
       value:
-        '`!gban <@user|ID> [reason]` - Globally ban a user from all commands\n' +
-        '> **Aliases:** `!globalban`, `!botban`, `!globalblock`, `!gblock`, `!userblacklist`\n' +
-        '`!gunban <@user|ID>` - Unban a user and restore global access\n' +
-        '> **Aliases:** `!globalunban`, `!botunban`, `!globalunblock`, `!gunblock`\n' +
-        '`!gbanlist` - View all currently blacklisted users\n' +
-        '> **Aliases:** `!globalbanlist`, `!botbanlist`, `!gblacklist`'
+        `<a:target_blink:1565667466984554588> \`!gban <@user|ID> [reason]\` - Globally ban a user from all commands\n` +
+        `> **Aliases:** \`!globalban\`, \`!botban\`, \`!globalblock\`, \`!gblock\`, \`!userblacklist\`\n` +
+        `<a:target_blink:1565667466984554588> \`!gunban <@user|ID>\` - Unban a user and restore global access\n` +
+        `> **Aliases:** \`!globalunban\`, \`!botunban\`, \`!globalunblock\`, \`!gunblock\`\n` +
+        `<a:target_blink:1565667466984554588> \`!gbanlist\` - View all currently blacklisted users`
     },
     {
-      name: 'Security & System Health',
+      name: 'Security & System Diagnostics',
       value:
-        '`!health` / `ezal health [serverId]` - Run real-time hierarchy, permissions, snapshot & audit socket diagnostics\n' +
-        '> **Aliases:** `!audit`, `!securityhealth`, `!healthcheck`, `!antinuke audit`\n' +
-        '`!security records [serverId]` / `ezal records [serverId]` - Live threat audit stream & neutralized hostile incident telemetry\n' +
-        '> **Aliases:** `!security live`, `!security incidents`, `!security threats`, `!security logs`\n' +
-        '`!security status [serverId]` - Inspect active protection status across all 28 firewall modules\n' +
-        '`!raidmode` - Server Raid Defense Matrix (Lockdown & Auto-Shield status)\n' +
-        '`!raidmode on|off` - Manual server raid lockdown & verification elevation\n' +
-        '`!raidmode auto on|off` - Toggle automated join-velocity burst detection\n' +
-        '`!raidmode auto threshold <num>` - Configure burst sensitivity threshold\n' +
-        '`!raidmode auto window <sec>` - Configure burst sensitivity time window'
+        `<a:target_blink:1565667466984554588> \`!health\` / \`ezal health [serverId]\` - Hierarchy, permissions & audit socket diagnostics\n` +
+        `<a:target_blink:1565667466984554588> \`!security records [serverId]\` - Live threat audit stream & neutralized hostile incident telemetry\n` +
+        `<a:target_blink:1565667466984554588> \`!security status [serverId]\` - Inspect active protection status across 28 modules\n` +
+        `<a:target_blink:1565667466984554588> \`!raidmode [on|off]\` - Manual server raid lockdown & verification elevation\n` +
+        `<a:target_blink:1565667466984554588> \`!raidmode auto [on|off]\` - Toggle automated join-velocity burst detection`
     },
     {
-      name: 'Server Management',
+      name: 'Global Voice & Broadcast Controls',
       value:
-        '`ezal servers` - List all servers the bot is in with their backup IDs and stats\n' +
-          '`ezal invite <guild_id>` - Generate a remote invite link for a server\n' +
-        '`ezal emergency <serverId> [mode|end]` - Trigger emergency mode remotely\n' +
-        '`ezal banserver <serverId>` - Ban a server and force leave instantly\n' +
-        '`ezal unbanserver <serverId>` - Unban a server to allow invites\n' +
-        '`ezal restoresetup <serverId>` - Restore JTC, Welcome/Leave, News, Quotes, Auto-React, Invites, Media, Server/Delete Logs\n' +
-          '`ezal security enable all` - Forcibly enable and initialize security on all servers\n' +
-          '`ezal security disable all` - Forcibly disable security and strip dashboard on all servers'
+        `<a:target_blink:1565667466984554588> \`!botvoice save\` - Memorizes current voice states across ALL servers globally\n` +
+        `<a:target_blink:1565667466984554588> \`!botvoice restore\` - Reverts all servers globally back to memorized states\n` +
+        `<a:target_blink:1565667466984554588> \`!botvoice mute|unmute|deafen|undeafen [all]\` - Server Mute/Deafen controls\n` +
+        `<a:target_blink:1565667466984554588> \`!setgloballog <channel_id>\` - Post all cross-server ban/kick events to a channel\n` +
+        `<a:target_blink:1565667466984554588> \`!setstatus <channel_id> [gif_url]\` - Deploy a live auto-updating bot status panel`
     },
     {
-        name: 'Spam Access Control',
-        value:
-          '`ezal spampermit <userId>` - Grant a user spam command access\n' +
-          '`ezal spamrevoke <userId>` - Revoke spam command access\n' +
-          '`ezal spamlist` - List all permitted spammers'
-      },
-            {
-        name: 'Global Controls',
-        value:
-          '`!setgloballog <channel_id>` - Post all cross-server ban/kick events to a channel\n' +
-          '`!removegloballog <channel_id>` - Stop posting global events to a server\n' +
-          '`!setstatus <channel_id> [gif_url]` - Deploy a live auto-updating bot status panel\n' +
-          '`!removestatus <channel_id>` - Delete the live status panel'
-      },
-      {
-        name: 'Global Voice Control',
-        value:
-          '`!botvoice save` - Memorizes current voice states across ALL servers globally\n' +
-          '`!botvoice restore` - Reverts all servers globally back to their memorized states\n' +
-          '`!botvoice mute [all]` - **Server Mutes** the bot only\n' +
-          '`!botvoice unmute [all]` - **Server Unmutes** the bot only\n' +
-          '`!botvoice deafen [all]` - **Server Deafens** the bot only\n' +
-          '`!botvoice undeafen [all]` - **Server Undeafens** the bot only\n' +
-          '`!botvoice active [all]` - **Server Unmutes & Undeafens** the bot (Recording Mode)\n' +
-          '`!botvoice idle [all]` - **Server Mutes & Deafens** the bot (Quiet Mode)\n' +
-          '`!botvoice music [all]` - **Unmutes & Deafens** the bot (Music Mode)\n' +
-          '> Add `all` to apply globally, or run `botvoice <ServerID> <action>` in DMs to target one server.'
-        },
-    {
-      name: 'Access',
+      name: 'Time Machine & Snapshots Suite',
       value:
-        '> All `ezal` commands are **prefix-only** and restricted to **Bot Owner** and **Server Owner**.\n' +
-        '> `ezal restore` and `ezal backupall` are **Bot Owner only**.\n' +
-        '> None of these appear in `/help` or slash commands.'
+        `> Click **100 Snapshots Grid** below or use \`ezal snapshots\` to view the 100-snapshot rolling buffer, recover accidentally reset welcome systems, and execute server rollbacks.`
     }
   ];
 
-  const sent = await message.reply(cv2.info('Ezal - Owner Suite Help', 'Private command suite for server management. Not visible to anyone else.', fields));
-  setTimeout(() => {
-    sent.delete().catch(() => null);
-    message.delete().catch(() => null);
-  }, 60000);
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('ezal_p1')
+      .setLabel('Core Suite')
+      .setEmoji('1567037361810833428')
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(true),
+    new ButtonBuilder()
+      .setCustomId('ezal_p2')
+      .setLabel('100 Snapshots Grid')
+      .setEmoji('1567037372133019710')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('ezal_takesnap')
+      .setLabel('Take Snapshot')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('ezal_viewsnaps')
+      .setLabel('View Snapshots')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('ezal_close')
+      .setEmoji('1567037365547962449')
+      .setStyle(ButtonStyle.Danger)
+  );
+
+  const payload = cv2.info(
+    `Ezal Owner Suite • Core Operations | <a:03_tick_circle:1565665642084827206>`,
+    `> -# Private owner command suite for server management and system-wide controls.\n> -# Click the navigation buttons below to toggle between Core Suite and 100-Rolling Snapshots.`,
+    fields
+  );
+  payload.components = [row];
+  return payload;
+}
+
+async function handleEhelp(message) {
+  const payload = getEhelpPagePayload(1);
+  const sent = await message.reply(payload);
+
+  const collector = sent.createMessageComponentCollector({
+    filter: i => isBotOwnerSync(i.user.id),
+    time: 300000 // 5 minutes active
+  });
+
+  collector.on('collect', async i => {
+    try {
+      if (i.customId === 'ezal_p1') {
+        await i.update(getEhelpPagePayload(1));
+      } else if (i.customId === 'ezal_p2') {
+        await i.update(getEhelpPagePayload(2));
+      } else if (i.customId === 'ezal_takesnap') {
+        await i.deferReply({ flags: 64 });
+        const targetGuild = i.guild;
+        if (!targetGuild) {
+          return i.editReply(cv2.warn('Target Required | <a:exclamation_outline1:1565666739356827759>', 'Click this inside a server or run \`ezal snapshot <serverId>\`.'));
+        }
+        await handleTakeSnapshot({ author: i.user, guild: targetGuild, client: i.client, reply: p => i.editReply(p) }, [targetGuild.id]);
+      } else if (i.customId === 'ezal_viewsnaps') {
+        await i.deferReply({ flags: 64 });
+        const targetGuild = i.guild;
+        if (!targetGuild) {
+          return i.editReply(cv2.warn('Target Required | <a:exclamation_outline1:1565666739356827759>', 'Click this inside a server or run \`ezal snapshots <serverId>\`.'));
+        }
+        await handleSnapshotsList({ author: i.user, guild: targetGuild, client: i.client, reply: p => i.editReply(p) }, [targetGuild.id]);
+      } else if (i.customId === 'ezal_close') {
+        collector.stop('closed');
+        await sent.delete().catch(() => null);
+        await message.delete().catch(() => null);
+      }
+    } catch (e) {
+      console.error('[Ezal Collector]', e);
+    }
+  });
+
+  collector.on('end', async (_, reason) => {
+    if (reason !== 'closed') {
+      const disabledRow = new ActionRowBuilder().addComponents(
+        payload.components[0].components.map(b => ButtonBuilder.from(b).setDisabled(true))
+      );
+      await sent.edit({ components: [disabledRow] }).catch(() => null);
+    }
+  });
+
   return sent;
 }
 
@@ -673,6 +1120,16 @@ export async function handleEzal(message) {
     case 'servers': return handleServers(message);
     case 'invite': return handleInvite(message, args);
     case 'restore': return handleRestore(message, args);
+    case 'snapshot':
+    case 'snap':
+      return handleTakeSnapshot(message, args);
+    case 'snapshots':
+    case 'snaps':
+    case 'snaplist':
+      return handleSnapshotsList(message, args);
+    case 'rollsnap':
+    case 'rollback':
+      return handleRollsnap(message, args);
     case 'emergency': return handleRemoteEmergency(message, args);
     case 'banserver': return handleBanServer(message, args);
     case 'unbanserver': return handleUnbanServer(message, args);
@@ -952,8 +1409,8 @@ async function restoreSingleGuildSetup(guild) {
     if (jtcConfig && jtcConfig.lobbyChannelId) {
       let lobby = guild.channels.cache.get(jtcConfig.lobbyChannelId) || await guild.channels.fetch(jtcConfig.lobbyChannelId).catch(() => null);
       if (!lobby) {
-        const cat = (jtcConfig.categoryId ? (guild.channels.cache.get(jtcConfig.categoryId) || await guild.channels.fetch(jtcConfig.categoryId).catch(() => null)) : null) || await guild.channels.create({ name: 'âž• Voice Rooms', type: ChannelType.GuildCategory });
-        lobby = await guild.channels.create({ name: 'âž• Join to Create', type: ChannelType.GuildVoice, parent: cat.id });
+        const cat = (jtcConfig.categoryId ? (guild.channels.cache.get(jtcConfig.categoryId) || await guild.channels.fetch(jtcConfig.categoryId).catch(() => null)) : null) || await guild.channels.create({ name: '➕ Voice Rooms', type: ChannelType.GuildCategory });
+        lobby = await guild.channels.create({ name: '➕ Join to Create', type: ChannelType.GuildVoice, parent: cat.id });
         db.cache.jtc[guildId] = { lobbyChannelId: lobby.id, categoryId: cat.id };
         db.save();
         if (jtcConfig.panelChannelId) {
