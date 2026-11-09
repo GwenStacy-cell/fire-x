@@ -18,3 +18,8 @@
 - NEVER rely on or fall back to matching hardcoded names, strings, or display emojis to detect or identify existing roles, channels, or categories when they can or should be tracked in the database.
 - Whenever a setup command or feature creates or binds a channel, category, role, or resource, ALWAYS store its ID in the database immediately.
 - In all present and future commands, handlers, and event listeners, ALWAYS fetch by ID (`guild.channels.cache.get(id) || await guild.channels.fetch(id)` / `guild.roles.cache.get(id) || await guild.roles.fetch(id)`) using the database configuration.
+
+# Version, Changelog & Bot Status Note Rules
+- ALWAYS maintain the rolling 5-day changelog in `src/utils/changelogData.js` (`CHANGELOG_ENTRIES`) whenever new features, bug fixes, or optimizations are implemented.
+- Whenever code is updated, increment the version (e.g. `v2.9.0`) and prepend a new entry at the top of `CHANGELOG_ENTRIES` with clear date, headline, summary, what's new, improvements, and fixes.
+- ALWAYS ensure the bot's custom activity status note (in `src/events/ready.js`: `CHANGELOG_ENTRIES[0]?.version`) updates to reflect the new version in the rotating presence ("Athena {version} is now rolling out..").

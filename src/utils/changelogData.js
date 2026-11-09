@@ -15,6 +15,60 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '10 November 2026',
+    version: 'v2.9.0',
+    headline: '100-Rolling Snapshot Buffer & Granular Rollback Suite',
+    summary: 'Automated zero-loss infrastructure and bot configuration snapshot engine taking periodic snapshots every 20 minutes with a 100-state rolling historical buffer per server. Enables instant single-click rollbacks for accidentally reset welcome/leave systems, autoroles, automod, or channels without data loss. Re-architected the Ezal owner suite with full Components V2 dashboard pagination and expanded real-time LiveOps telemetry.',
+    whatsNew: [
+      {
+        title: '100-Rolling Snapshots Engine',
+        desc: 'Automated 20-minute periodic snapshots preserving Discord channels, categories, permissions, roles, and all bot configurations (Welcome, Leave, Autoroles, Automod, Logs) across a past 100-snapshot buffer per server.'
+      },
+      {
+        title: 'Zero-Loss Snapshot Retention',
+        desc: 'Snapshots are permanently retained and never purged even if the bot leaves or is kicked from a server.'
+      },
+      {
+        title: 'Granular State Rollback (ezal rollsnap, ezal restore)',
+        desc: 'Restore accidentally reset welcome or server configs in 1 click (e.g. `ezal rollsnap <serverId> 1 config`) without modifying or wiping Discord channels or roles, or execute deep infrastructure reconstruction.'
+      },
+      {
+        title: 'Ezal Owner Suite 2-Page CV2 Dashboard',
+        desc: 'Re-engineered `ezal help` into an interactive 2-page Discord Components V2 container with Core Suite on Page 1 and 100-Rolling Snapshots Matrix on Page 2 with persistent navigation buttons.'
+      },
+      {
+        title: 'Expanded LiveOps Telemetry (!liveops, /liveops)',
+        desc: 'Integrated real-time Gateway WebSocket roundtrip metrics, V8 garbage collection telemetry, command execution telemetry, and cloud sync status into `!liveops`.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Preserved CV2 Container Structure',
+        desc: 'Resolved container component nesting to ensure Discord Containers (type 17) wrap all headers, dividers, fields, and action buttons cleanly without Discord display rejections.'
+      },
+      {
+        title: 'Automod Hot-Path Optimization',
+        desc: 'Safeguarded member permission evaluations in `messageCreate` against null member edge cases during gateway bursts.'
+      },
+      {
+        title: 'Tic-Tac-Toe AI & Grid Hardening',
+        desc: 'Restored full minimax AI decision tree and 3x3 interactive button grid execution.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Guild Removal Snapshot Purge',
+        desc: 'Eliminated destructive snapshot purges on `guildDelete` to guarantee 100% disaster recovery retention.'
+      },
+      {
+        title: 'Command Indexing Integrity',
+        desc: 'Verified and indexed `!exploitscan`, `!anomaly`, `!dualkey`, `!burn`, `!staffpulse`, and `!decapitate` across all help modules.'
+      }
+    ],
+    tip: 'Use `ezal snapshots` or `ezal rollsnap <serverId> 1 config` to rollback accidentally reset welcome systems instantly.',
+    author: '@Dev Porsche </>'
+  },
+  {
     date: '08 November 2026',
     version: 'v2.8.0',
     headline: 'Sub-10ms Antinuke Velocity & Architecture Optimization',
