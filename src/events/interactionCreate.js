@@ -3616,7 +3616,34 @@ async function handleSecurityInteractions(interaction, guild) {
             db.recordArcadeGame(game.guildId, game.playerX.id, 'tictactoe', 'tie');
             db.recordArcadeGame(game.guildId, game.playerO.id, 'tictactoe', 'tie');
           } else {
-            game.currentTurn = game.currentTurn === game.playerX.id ? game.playerO.id : game.playerX.id;
+            // Check if playing against Athena AI and it's AI's turn
+            if (game.isAi && game.currentTurn === game.playerX.id) {
+              const { getBestTicTacToeMove } = await import('../utils/arcadeEngine.js');
+              const aiMove = getBestTicTacToeMove(game.board);
+              if (aiMove) {
+                game.board[aiMove.r][aiMove.c] = 'O';
+                let aiWin = null;
+                for (let i = 0; i < 3; i++) {
+                  if (game.board[i][0] !== ' ' && game.board[i][0] === game.board[i][1] && game.board[i][1] === game.board[i][2]) aiWin = game.board[i][0];
+                  if (game.board[0][i] !== ' ' && game.board[0][i] === game.board[1][i] && game.board[1][i] === game.board[2][i]) aiWin = game.board[0][i];
+                }
+                if (game.board[0][0] !== ' ' && game.board[0][0] === game.board[1][1] && game.board[1][1] === game.board[2][2]) aiWin = game.board[0][0];
+                if (game.board[0][2] !== ' ' && game.board[0][2] === game.board[1][1] && game.board[1][1] === game.board[2][0]) aiWin = game.board[0][2];
+
+                if (aiWin) {
+                  game.status = 'win';
+                  game.winner = 'O';
+                  db.recordArcadeGame(game.guildId, game.playerX.id, 'tictactoe', 'loss');
+                } else if (game.board.every(r => r.every(c => c !== ' '))) {
+                  game.status = 'tie';
+                  db.recordArcadeGame(game.guildId, game.playerX.id, 'tictactoe', 'tie');
+                } else {
+                  game.currentTurn = game.playerX.id;
+                }
+              }
+            } else {
+              game.currentTurn = game.currentTurn === game.playerX.id ? game.playerO.id : game.playerX.id;
+            }
           }
 
           return interaction.update(buildTicTacToePayload(gameId));

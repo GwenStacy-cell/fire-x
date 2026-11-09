@@ -191,6 +191,31 @@ export const commands = [
       // Default: Server Overview
       const overview = buildServerPulseOverview(guild);
       return message.reply(overview).catch(() => null);
+    },
+
+    async executePrefix(message, args) {
+      return this.execute(message, args);
+    },
+
+    async executeSlash(interaction) {
+      const guild = interaction.guild;
+      if (!guild) return;
+
+      if (!isAuthorized(guild, interaction.member, interaction.user.id)) {
+        return interaction.reply({
+          ...cv2.danger(`Access Denied | ${WRONG_EMOJI}`, 'Only Server Owners, Extra Owners, and Staff Supervisors can inspect Staff Pulse metrics.'),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const targetUser = interaction.options.getUser('user');
+      if (targetUser) {
+        const metrics = db.getStaffMetrics(guild.id, targetUser.id);
+        return interaction.reply(buildUserPulseCard(targetUser, metrics));
+      }
+
+      const overview = buildServerPulseOverview(guild);
+      return interaction.reply(overview);
     }
   }
 ];

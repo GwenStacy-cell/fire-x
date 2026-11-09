@@ -24,19 +24,35 @@ export const commands = [
   {
     name: 'tictactoe',
     aliases: ['ttt'],
-    description: 'Challenge a server member to an interactive game of Tic-Tac-Toe',
+    description: 'Challenge a server member or Athena AI to an interactive game of Tic-Tac-Toe',
     category: 'engagement',
     options: [
-      { name: 'opponent', description: 'The member to challenge', type: 6, required: true }
+      { name: 'opponent', description: 'The member to challenge (leave empty to play against Athena AI)', type: 6, required: false }
     ],
 
     async executePrefix(message, args) {
-      const opponent = message.mentions.users.first();
+      let opponent = message.mentions.users.first();
+
+      if (!opponent && args && args[0]) {
+        const firstArg = args[0].toLowerCase().trim();
+        if (firstArg === 'ai' || firstArg === 'bot' || firstArg === 'athena' || firstArg === 'solo') {
+          opponent = message.client.user;
+        } else {
+          const cleanId = args[0].replace(/[<@!>]/g, '');
+          opponent = message.client.users.cache.get(cleanId) || await message.client.users.fetch(cleanId).catch(() => null);
+          if (!opponent && message.guild) {
+            const member = message.guild.members.cache.find(m => 
+              m.user.username.toLowerCase() === firstArg || 
+              m.displayName.toLowerCase() === firstArg
+            );
+            if (member) opponent = member.user;
+          }
+        }
+      }
+
+      // If no opponent was provided, default to Athena AI
       if (!opponent) {
-        return message.reply(cv2.warn(
-          `Opponent Required | ${WARN_EMOJI}`,
-          `Please mention a server member to challenge: \`!tictactoe @user\`.`
-        ));
+        opponent = message.client.user;
       }
 
       if (opponent.id === message.author.id) {
@@ -46,30 +62,17 @@ export const commands = [
         ));
       }
 
-      if (opponent.bot) {
-        return message.reply(cv2.warn(
-          `Invalid Challenge | ${WARN_EMOJI}`,
-          `You cannot play Tic-Tac-Toe against bots.`
-        ));
-      }
-
       const game = createTicTacToeGame(message.guild.id, message.author, opponent);
       const payload = buildTicTacToePayload(game.id);
       return message.reply(payload);
     },
 
     async executeSlash(interaction) {
-      const opponent = interaction.options.getUser('opponent');
+      let opponent = interaction.options.getUser('opponent') || interaction.client.user;
+
       if (opponent.id === interaction.user.id) {
         return interaction.reply({
           ...cv2.warn(`Invalid Challenge | ${WARN_EMOJI}`, `You cannot play Tic-Tac-Toe against yourself!`),
-          flags: MessageFlags.Ephemeral
-        });
-      }
-
-      if (opponent.bot) {
-        return interaction.reply({
-          ...cv2.warn(`Invalid Challenge | ${WARN_EMOJI}`, `You cannot play Tic-Tac-Toe against bots.`),
           flags: MessageFlags.Ephemeral
         });
       }

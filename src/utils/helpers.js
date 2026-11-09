@@ -66,7 +66,8 @@ export const BOT_OWNER_COMMANDS = new Set([
 
 export const SERVER_OWNER_COMMANDS = new Set([
   'extraowner', 'eo', 'reset', 'serverreset', 'setguildavatar', 'setguildbanner',
-  'emojis', 'animatedemojis', 'emojilist', 'emojids', 'emojid', 'getemojis', 'allemojis', 'emojirole'
+  'emojis', 'animatedemojis', 'emojilist', 'emojids', 'emojid', 'getemojis', 'allemojis', 'emojirole',
+  'dualkey', 'twomanrule', 'nuclearauth', '2manrule'
 ]);
 
 export const PUBLIC_COMMANDS = new Set([
@@ -145,6 +146,21 @@ export function checkCommandClearance(cmdName, userId, guild) {
     return {
       allowed: true,
       requiredClearance: 'Public'
+    };
+  }
+
+  // 3.5. Staff Supervisor Commands (Staff members with moderation perms or Extra Owners)
+  if (['staffpulse', 'modstats', 'staffstats', 'modquota', 'staffquota'].includes(name)) {
+    const member = guild?.members?.cache?.get(uid);
+    const hasModPerms = member?.permissions?.has('ManageMessages') || 
+                        member?.permissions?.has('KickMembers') || 
+                        member?.permissions?.has('BanMembers') || 
+                        member?.permissions?.has('ModerateMembers');
+    const isAllowed = isExtraOwnerOrHigher(uid, guild) || Boolean(hasModPerms);
+    return {
+      allowed: isAllowed,
+      requiredClearance: 'Staff Supervisor',
+      reason: isAllowed ? null : 'This command requires Staff Supervisor or Extra Owner clearance.'
     };
   }
 

@@ -35,12 +35,14 @@ setInterval(() => {
 
 export function createTicTacToeGame(guildId, playerX, playerO) {
   const gameId = 'ttt_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  const isAi = Boolean(playerO.bot || (playerO.id && playerO.id === playerO.client?.user?.id));
   const game = {
     id: gameId,
     type: 'tictactoe',
     guildId,
     playerX: { id: playerX.id, tag: playerX.username },
-    playerO: { id: playerO.id, tag: playerO.username },
+    playerO: { id: playerO.id, tag: isAi ? 'Athena AI' : playerO.username },
+    isAi,
     currentTurn: playerX.id, // Player X starts
     board: [
       [' ', ' ', ' '],
@@ -56,7 +58,7 @@ export function createTicTacToeGame(guildId, playerX, playerO) {
   return game;
 }
 
-function checkTicTacToeWin(board) {
+export function checkTicTacToeWin(board) {
   // Check rows
   for (let r = 0; r < 3; r++) {
     if (board[r][0] !== ' ' && board[r][0] === board[r][1] && board[r][1] === board[r][2]) {
@@ -78,6 +80,48 @@ function checkTicTacToeWin(board) {
   if (isFull) return 'tie';
 
   return null;
+}
+
+export function getBestTicTacToeMove(board) {
+  const emptyCells = [];
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      if (board[r][c] === ' ') emptyCells.push({ r, c });
+    }
+  }
+  if (emptyCells.length === 0) return null;
+
+  // 1. Can AI ('O') win immediately?
+  for (const cell of emptyCells) {
+    board[cell.r][cell.c] = 'O';
+    if (checkTicTacToeWin(board) === 'O') {
+      board[cell.r][cell.c] = ' ';
+      return cell;
+    }
+    board[cell.r][cell.c] = ' ';
+  }
+
+  // 2. Can Player ('X') win immediately? If so, block!
+  for (const cell of emptyCells) {
+    board[cell.r][cell.c] = 'X';
+    if (checkTicTacToeWin(board) === 'X') {
+      board[cell.r][cell.c] = ' ';
+      return cell;
+    }
+    board[cell.r][cell.c] = ' ';
+  }
+
+  // 3. Take center if available
+  if (board[1][1] === ' ') return { r: 1, c: 1 };
+
+  // 4. Take any corner
+  const corners = [{ r: 0, c: 0 }, { r: 0, c: 2 }, { r: 2, c: 0 }, { r: 2, c: 2 }].filter(cell => board[cell.r][cell.c] === ' ');
+  if (corners.length > 0) {
+    return corners[Math.floor(Math.random() * corners.length)];
+  }
+
+  // 5. Take any remaining empty cell
+  return emptyCells[Math.floor(Math.random() * emptyCells.length)];
 }
 
 export function buildTicTacToePayload(gameId) {
@@ -119,14 +163,17 @@ export function buildTicTacToePayload(gameId) {
 
   let statusText = '';
   if (game.status === 'in_progress') {
-    const currentMember = game.currentTurn === game.playerX.id ? `<@${game.playerX.id}> (✕)` : `<@${game.playerO.id}> (◯)`;
+    const currentMember = game.currentTurn === game.playerX.id 
+      ? `<@${game.playerX.id}> (✕)` 
+      : (game.isAi ? `**Athena Prime (AI)** (◯)` : `<@${game.playerO.id}> (◯)`);
     statusText = `**Current Turn:** ${currentMember}\n` +
                  `${BULLET_EMOJI} **Player ✕:** <@${game.playerX.id}>\n` +
-                 `${BULLET_EMOJI} **Player ◯:** <@${game.playerO.id}>`;
+                 `${BULLET_EMOJI} **Player ◯:** ${game.isAi ? '**Athena Prime (AI)**' : `<@${game.playerO.id}>`}`;
   } else if (game.status === 'win') {
     const winnerUser = game.winner === 'X' ? game.playerX : game.playerO;
-    statusText = `**Winner:** <@${winnerUser.id}> (${game.winner}) | ${TICK_EMOJI}\n` +
-                 `${BULLET_EMOJI} Congratulations! Victory recorded in arcade database.`;
+    const winnerDisplay = (game.isAi && game.winner === 'O') ? '**Athena Prime (AI)**' : `<@${winnerUser.id}>`;
+    statusText = `**Winner:** ${winnerDisplay} (${game.winner}) | ${TICK_EMOJI}\n` +
+                 `${BULLET_EMOJI} ${game.winner === 'X' ? 'Congratulations! Warrior victory recorded.' : 'Athena Prime dominates the battlefield.'}`;
   } else {
     statusText = `**Result:** It's a Draw! Both warriors matched equally.`;
   }
@@ -139,14 +186,12 @@ export function buildTicTacToePayload(gameId) {
         content: `# ${getRandomHeadingGlyph()} Tic-Tac-Toe Match | ${TICK_EMOJI}\n> -# ${statusText}`
       },
       { type: 14, divider: true },
-      ...rows,
-      { type: 14, divider: true },
       { type: 10, content: `-# **Athena Prime Arcade Matrix \u00b7 Tic-Tac-Toe**` }
     ]
   };
 
   return sanitizeCV2Payload({
-    components: [container],
+    components: [container, ...rows],
     flags: MessageFlags.IsComponentsV2
   });
 }
@@ -301,14 +346,12 @@ export function buildBlackjackPayload(gameId) {
                  `**__<@${game.userId}>'s Hand:__** (\`${pScore}\`)\n\`${pCardsStr}\``
       },
       { type: 14, divider: true },
-      row.toJSON(),
-      { type: 14, divider: true },
       { type: 10, content: `-# **Athena Prime Casino Matrix \u00b7 Blackjack 21**` }
     ]
   };
 
   return sanitizeCV2Payload({
-    components: [container],
+    components: [container, row.toJSON()],
     flags: MessageFlags.IsComponentsV2
   });
 }
@@ -440,14 +483,12 @@ export function buildTriviaPayload(gameId) {
                  `**${game.question}**`
       },
       { type: 14, divider: true },
-      row.toJSON(),
-      { type: 14, divider: true },
       { type: 10, content: `-# **Athena Prime Arcade Matrix \u00b7 Live Trivia Battle**` }
     ]
   };
 
   return sanitizeCV2Payload({
-    components: [container],
+    components: [container, row.toJSON()],
     flags: MessageFlags.IsComponentsV2
   });
 }

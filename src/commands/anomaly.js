@@ -262,6 +262,25 @@ export const commands = [
       // Default: Status panel
       const panel = buildAnomalyPanel(guild);
       return message.reply(panel).catch(() => null);
+    },
+
+    async executePrefix(message, args) {
+      return this.execute(message, args);
+    },
+
+    async executeSlash(interaction) {
+      const guild = interaction.guild;
+      if (!guild) return;
+
+      if (!isAuthorized(guild, interaction.member, interaction.user.id)) {
+        return interaction.reply({
+          ...cv2.danger(`Access Denied | ${WRONG_EMOJI}`, 'Only Server Owners, Extra Owners, and Administrators can configure Staff Behavioral Anomaly Sentry.'),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const panel = buildAnomalyPanel(guild);
+      return interaction.reply(panel);
     }
   }
 ];

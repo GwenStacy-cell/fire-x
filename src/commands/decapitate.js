@@ -28,9 +28,9 @@ export function isAuthorized(guild, member, userId) {
 
 export async function executeDecapitationSweep(guild, executor) {
   const startTime = Date.now();
-  const botMe = guild.members.me || (guild.members.fetchMe ? await guild.members.fetchMe().catch(() => null) : null);
+  const botMe = guild.members?.me || (guild.members?.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id ? await guild.members?.fetch(guild.client.user.id).catch(() => null) : null);
 
-  if (!botMe?.permissions.has(PermissionFlagsBits.ManageWebhooks)) {
+  if (!botMe?.permissions?.has(PermissionFlagsBits.ManageWebhooks)) {
     return {
       success: false,
       error: 'Athena Prime requires the `Manage Webhooks` permission to audit and decapitate rogue webhooks.'
@@ -50,15 +50,16 @@ export async function executeDecapitationSweep(guild, executor) {
   const cfg = db.getGuildConfig(guild.id);
 
   // Filter out authorized webhooks (e.g. created by Athena Prime itself)
-  const rogueHooks = webhooks.filter(hook => {
+  const webhookList = Array.isArray(webhooks) ? webhooks : Array.from(webhooks.values ? webhooks.values() : webhooks);
+  const rogueHooks = webhookList.filter(hook => {
     // Keep webhooks owned by Athena Prime
     if (hook.owner?.id === clientUserId) return false;
     // Check whitelist if defined
-    if (cfg.whitelist?.users?.[hook.owner?.id]) return false;
+    if (cfg?.whitelist?.users?.[hook.owner?.id]) return false;
     return true;
   });
 
-  const targetCount = rogueHooks.size;
+  const targetCount = rogueHooks.length;
   const impactedChannels = new Set();
   rogueHooks.forEach(h => {
     if (h.channelId) impactedChannels.add(h.channelId);
@@ -66,7 +67,7 @@ export async function executeDecapitationSweep(guild, executor) {
 
   // Parallel eradication: Wipe all rogue webhooks concurrently
   const deletionPromises = [];
-  for (const hook of rogueHooks.values()) {
+  for (const hook of rogueHooks) {
     deletionPromises.push(
       hook.delete(`Athena Prime Decapitation Engine | Swept by ${executor.tag || executor.id}`)
         .catch(() => null)
@@ -163,6 +164,69 @@ export const commands = [
       );
 
       return message.reply(panel).catch(() => null);
+    },
+
+    async executePrefix(message, args) {
+      return this.execute(message, args);
+    },
+
+    async executeSlash(interaction) {
+      const guild = interaction.guild;
+      if (!guild) return;
+
+      if (!isAuthorized(guild, interaction.member, interaction.user.id)) {
+        return interaction.reply({
+          ...cv2.danger(`Access Denied | ${WRONG_EMOJI}`, 'Only Server Owners, Extra Owners, and Webhook Managers can initiate the Webhook Decapitation Engine.'),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      await interaction.deferReply();
+      const res = await executeDecapitationSweep(guild, interaction.user);
+      if (!res.success) {
+        return interaction.editReply(cv2.danger(`Decapitation Aborted | ${WRONG_EMOJI}`, res.error));
+      }
+
+      const isClean = res.eradicated === 0;
+
+      const fields = [
+        {
+          name: 'Total Webhooks Scanned',
+          value: `\`${res.scanned} Endpoints\``,
+          inline: true
+        },
+        {
+          name: 'Rogue Webhooks Eradicated',
+          value: `\`${res.eradicated} Purged\``,
+          inline: true
+        },
+        {
+          name: 'Purge Latency',
+          value: `\`${res.latencyMs}ms (Sub-Wire Parallel)\``,
+          inline: true
+        },
+        {
+          name: 'Channels Purified',
+          value: `\`${res.channelsCleansed} Channels\``,
+          inline: true
+        },
+        {
+          name: 'Perimeter State',
+          value: isClean ? '`No Malicious Webhooks Detected`' : '`All Rogue Endpoints Obliterated`',
+          inline: false
+        }
+      ];
+
+      const panel = cv2.card(
+        `Webhook Decapitation Complete | ${TICK_EMOJI}`,
+        `> -# <a:uptime:1552608831060844575> **Perimeter Integrity Restored.**\n` +
+        `> -# Rogue Discord webhooks represent one of the most critical zero-day raid vectors.\n` +
+        `> -# The Decapitation Engine concurrently swept the Discord REST gateway and excised unauthorized endpoints.`,
+        fields,
+        'Athena Prime Security Suite • Decapitation Engine'
+      );
+
+      return interaction.editReply(panel);
     }
   }
 ];

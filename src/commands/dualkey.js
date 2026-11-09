@@ -215,6 +215,25 @@ export const commands = [
       // Default: Dashboard
       const panel = buildDualKeyDashboard(guild);
       return message.reply(panel).catch(() => null);
+    },
+
+    async executePrefix(message, args) {
+      return this.execute(message, args);
+    },
+
+    async executeSlash(interaction) {
+      const guild = interaction.guild;
+      if (!guild) return;
+
+      if (!isAuthorized(guild, interaction.member, interaction.user.id)) {
+        return interaction.reply({
+          ...cv2.danger(`Access Denied | ${WRONG_EMOJI}`, 'Only Server Owners, Extra Owners, and Bot Owners can configure the Dual-Key Protocol.'),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const panel = buildDualKeyDashboard(guild);
+      return interaction.reply(panel);
     }
   }
 ];

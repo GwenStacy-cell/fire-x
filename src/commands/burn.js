@@ -55,8 +55,8 @@ export function ensureBurnTicker(client) {
 }
 
 export async function createBurnRoom(guild, creator, invitedUsers = [], durationMinutes = 10) {
-  const botMe = guild.members.me || (guild.members.fetchMe ? await guild.members.fetchMe().catch(() => null) : null);
-  if (!botMe?.permissions.has(PermissionFlagsBits.ManageChannels)) {
+  const botMe = guild.members?.me || (guild.members?.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id ? await guild.members?.fetch(guild.client.user.id).catch(() => null) : null);
+  if (!botMe?.permissions?.has(PermissionFlagsBits.ManageChannels)) {
     return { success: false, error: 'Athena lacks the `Manage Channels` permission to create Burn Rooms.' };
   }
 
@@ -69,7 +69,7 @@ export async function createBurnRoom(guild, creator, invitedUsers = [], duration
       deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
     },
     {
-      id: botMe.id,
+      id: botMe?.id || guild.client?.user?.id,
       allow: [
         PermissionFlagsBits.ViewChannel,
         PermissionFlagsBits.SendMessages,
@@ -264,6 +264,40 @@ export const commands = [
         `> -# **Destruction Countdown:** <t:${Math.floor(res.expiresAt / 1000)}:R>\n` +
         `> -# The channel will self-destruct automatically when the timer reaches zero.`
       )).catch(() => null);
+    },
+
+    async executePrefix(message, args) {
+      return this.execute(message, args);
+    },
+
+    async executeSlash(interaction) {
+      const guild = interaction.guild;
+      if (!guild) return;
+
+      if (!isAuthorized(guild, interaction.member, interaction.user.id)) {
+        return interaction.reply({
+          ...cv2.danger(`Access Denied | ${WRONG_EMOJI}`, 'Only Server Owners, Extra Owners, and Channel Managers can deploy Ephemeral Burn Rooms.'),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      const durationMinutes = interaction.options.getInteger('duration') || 10;
+      const res = await createBurnRoom(guild, interaction.user, [], durationMinutes);
+
+      if (!res.success) {
+        return interaction.reply({
+          ...cv2.danger(`Burn Room Deployment Failed | ${WRONG_EMOJI}`, res.error),
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      return interaction.reply(cv2.success(
+        `Ephemeral Burn Room Deployed | ${TICK_EMOJI}`,
+        `> -# **Private Room:** <#${res.channelId}>\n` +
+        `> -# **Code:** \`#${res.roomCode}\`\n` +
+        `> -# **Destruction Countdown:** <t:${Math.floor(res.expiresAt / 1000)}:R>\n` +
+        `> -# The channel will self-destruct automatically when the timer reaches zero.`
+      ));
     }
   }
 ];

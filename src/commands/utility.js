@@ -2862,6 +2862,7 @@ export const helpModules = [
     "`!untimeout / !unto / !removetimeout @user` - Remove timeout from a member `[Extra Owner]`",
     "`!warn / !w @user [reason]` - Warn a member `[Extra Owner]`",
     "`!warnings @user` - View user's warnings `[Public]`",
+    "`!staffpulse / !modstats [@user]` - Moderation quota tracker & rankings `[Staff Supervisor]`",
     "`!clearwarns / !cw @user` - Clear user's warnings `[Extra Owner]`",
     "`!purge / !clear [amount]` - Delete recent messages `[Extra Owner]`",
     "`!slowmode <seconds>` - Set channel slowmode `[Extra Owner]`",
@@ -3303,6 +3304,7 @@ export const helpModules = [
     "`!bump` - Bump server (Disboard integration) `[Public]`",
     "`!sticky <message>` - Sticky message at bottom of chat `[Extra Owner]`",
     "`!dm [on|off|status]` - Server mention DM alert toggle `[Extra Owner]`",
+    "`!burn / !whisper [@users] [mins]` - Self-destructing rooms with auto-purge `[Extra Owner]`",
     "`!upload <url>` - Mirror file from direct URL `[Public]`",
     "`!tier / !mytier / !perms` - Current authorization tier `[Public]`",
     "`!profile / !card [@user]` - Canvas God of War profile card `[Public]`"
