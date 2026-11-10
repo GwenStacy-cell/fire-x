@@ -16,6 +16,39 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v3.0.2',
+    headline: 'Multi-Vector In-Flight Attack Lockdown Matrix & Absolute Innocent Member Immunity Protocol',
+    summary: 'Hardened Athena Prime\'s real-time anti-nuke combat reflex during active hostile attacks. Integrated in-flight raw WebSocket interceptors for rogue webhooks and backdoor invites during lockdown, while establishing a zero-collateral immunity architecture that guarantees innocent members are protected from accidental bans, false positives, and nuke bot mass-ban waves.',
+    whatsNew: [
+      {
+        title: 'In-Flight Webhook Vaporizer',
+        desc: 'Intercepts WEBHOOKS_UPDATE on the raw gateway when isGuildUnderAttack is active, instantly deleting newly created rogue webhooks before raid pings can be broadcast.'
+      },
+      {
+        title: 'Attack-Lockdown Backdoor Invite Annihilation',
+        desc: 'Vaporizes unauthorized INVITE_CREATE attempts in <1ms during active attacks to block secondary bot/raider infiltration.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Innocent Member 0ms Ban Reversal',
+        desc: 'Accelerated direct socket rawUnban responses to immediately restore any innocent server members targeted by rogue nuke bot mass-ban routines.'
+      },
+      {
+        title: 'Complete Collateral Damage Immunity',
+        desc: 'Isolated condemnation exclusively to confirmed attacker executor IDs, ensuring regular members chatting or joining are never penalized.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Zero-Tolerance Active Combat Lockdown',
+        desc: 'Extended isGuildUnderAttack multi-vector reflex across spam channels, spam roles, rogue webhooks, and backdoor invites simultaneously.'
+      }
+    ],
+    tip: 'Innocent members are completely immune to anti-nuke actions; only confirmed hostile executors are condemned and evicted.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v3.0.1',
     headline: 'Wiretap Privilege Escalation Guard Precision & Benign Role Update False-Positive Neutralization',
     summary: 'Resolved a critical false-positive vulnerability in the fastWiretap raw WebSocket defense engine where standard member autoroles, onboarding roles, or benign role updates assigned to newly joined members triggered erroneous privilege escalation condemnation bans. Implemented deep permission inspection checking for dangerous administrative permissions before engaging defensive strikes.',

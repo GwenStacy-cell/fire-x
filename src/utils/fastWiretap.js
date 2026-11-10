@@ -44,7 +44,8 @@ const DESTRUCTIVE_EVENTS = new Set([
   'GUILD_BAN_ADD',
   'GUILD_MEMBER_ADD',
   'INVITE_CREATE',
-  'GUILD_UPDATE'
+  'GUILD_UPDATE',
+  'WEBHOOKS_UPDATE'
 ]);
 
 // Action types that indicate aggressive destructive nuking (Mapped to official Discord API AuditLogEvent)
@@ -409,8 +410,8 @@ export function attachWiretap(client) {
       return;
     }
 
-    // ⚡ ZERO-DAY FAST-PATH 5: In-Flight Rogue Channel & Role Annihilation During Active Attack
-    // If server is actively under attack, instantly delete new arriving spam channels & roles at 0ms
+    // ⚡ ZERO-DAY FAST-PATH 5: In-Flight Rogue Channel, Role, Webhook & Invite Annihilation During Active Attack
+    // If server is actively under attack, instantly delete new arriving spam channels, roles, webhooks & invites at 0ms
     if (isGuildUnderAttack(guildId)) {
       if (packet.t === 'CHANNEL_CREATE') {
         const channelId = packet.d?.id;
@@ -422,6 +423,36 @@ export function attachWiretap(client) {
         const roleId = packet.d?.role?.id;
         if (roleId) {
           rawRoleDelete(guildId, roleId, client.token, '[ATHENA WIRETAP] In-Flight Spam Role Annihilated').catch(() => null);
+        }
+      } else if (packet.t === 'WEBHOOKS_UPDATE') {
+        const channelId = packet.d?.channel_id;
+        if (channelId) {
+          fetch(`https://discord.com/api/v10/channels/${channelId}/webhooks`, {
+            headers: { 'Authorization': `Bot ${client.token}` },
+            dispatcher
+          }).then(res => res.json()).then(hooks => {
+            if (Array.isArray(hooks)) {
+              for (const h of hooks) {
+                if (h.user?.id !== client.user.id) {
+                  rawDeleteWebhook(h.id, client.token, '[ATHENA WIRETAP] In-Flight Rogue Webhook Vaporized During Active Attack').catch(() => null);
+                }
+              }
+            }
+          }).catch(() => null);
+        }
+      } else if (packet.t === 'INVITE_CREATE') {
+        const code = packet.d?.code;
+        const inviterId = packet.d?.inviter?.id;
+        const guild = client.guilds.cache.get(guildId);
+        if (code && guild && (!inviterId || !isAuthorized(guild, { id: inviterId }, 'antiInvite'))) {
+          fetch(`https://discord.com/api/v10/invites/${code}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bot ${client.token}`,
+              'X-Audit-Log-Reason': 'Athena Wiretap: In-Flight Rogue Invite Vaporized During Active Attack'
+            },
+            dispatcher
+          }).catch(() => null);
         }
       }
     }
