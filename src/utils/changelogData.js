@@ -16,6 +16,43 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v2.9.8',
+    headline: 'Anti-Nuke CombatOps & LiveOps Registered in Help Menu as Server Owner & Extra Owner',
+    summary: 'Formally integrated Anti-Nuke Combat Operations (!combatops / !strikeops) and the LiveOps Telemetry Matrix (!liveops / !telemetry) into the core Help suite (!help / /help) under the Security and Utilities modules with designated [Server Owner & Extra Owner] clearance. Added dedicated rich help inspection cards for !combatops, !liveops, and !about, complete with single-strike timeline breakdown telemetry, Undici keep-alive pool diagnostics, and zero-day eviction breakdowns.',
+    whatsNew: [
+      {
+        title: 'CombatOps in Help Matrix',
+        desc: 'Registered !combatops / !strikeops in the Security and Utilities modules marked with [Server Owner & Extra Owner] clearance.'
+      },
+      {
+        title: 'Single-Strike Telemetry Help Card',
+        desc: 'Implemented dedicated detailed inspection for !help combatops displaying the complete 0.00ms wiretap -> sub-12ms raw ban -> 403 Forbidden timeline.'
+      },
+      {
+        title: 'Dedicated About Card in Help',
+        desc: 'Added !about / !aboutathena to the Utilities module under [Public] clearance with full architectural breakdown.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Clearance Tier Precision',
+        desc: 'Standardized checkCommandClearance to strictly tag CombatOps and LiveOps as Server Owner & Extra Owner across prefix and slash execution.'
+      },
+      {
+        title: 'LiveOps Navigation Uncoupling',
+        desc: 'Uncoupled liveops from module grouping to allow direct rich command card inspection via !help liveops while preserving liveops views.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Clearance Denial Diagnostics',
+        desc: 'Updated permission failure embeds to accurately state Server Owner & Extra Owner required clearance when unauthorized users run combat or liveops commands.'
+      }
+    ],
+    tip: 'Execute !help combatops for detailed single-strike anti-nuke benchmarks, or !help liveops to inspect real-time matrix subsystems.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v2.9.7',
     headline: 'Dedicated About Command & Military-Grade Security Profile Integration',
     summary: 'Introduced the dedicated !about (/about) command detailing Athena Prime\'s architectural identity, system scale, and military-grade security systems. Revamped !bi (!botstats / !botinfo) with high-fidelity Components V2 containers, custom tick status headers, animated target-blink indicators, and in-depth breakdowns of the 0ms raw TCP multi-hook wiretap, sub-12ms single-strike direct ban engine, 120 pre-warmed Undici TLS connections, and 28 automated antinuke shields.',

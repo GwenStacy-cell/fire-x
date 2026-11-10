@@ -75,6 +75,7 @@ export const PUBLIC_COMMANDS = new Set([
   'help', 'explain', 'docs', 'architecture', 'ping', 'uptime', 'botinfo', 
   'si', 'serverinfo', 'ui', 'userinfo', 'whois', 'avatar', 'av', 'banner', 
   'mc', 'membercount', 'stats', 'botstats', 'hud', 'dashboard', 'date',
+  'about', 'aboutathena', 'botabout', 'whoisathena',
   
   // User Utilities & Fun
   'afk', 'calc', 'poll', 'quote', 'quotemaker', 'weather', 'image', 'pic', 'pinterest', 'pin',
@@ -161,6 +162,16 @@ export function checkCommandClearance(cmdName, userId, guild) {
       allowed: isAllowed,
       requiredClearance: 'Staff Supervisor',
       reason: isAllowed ? null : 'This command requires Staff Supervisor or Extra Owner clearance.'
+    };
+  }
+
+  // 3.6. Server Owner & Extra Owner Commands (Combat Operations, LiveOps, etc.)
+  if (['combatops', 'strikeops', 'strikemonitor', 'combattelemetry', 'combatmon', 'strikemon', 'strikes', 'liveops', 'livemonitor', 'telemetry', 'sysmon', 'matrixmon', 'perfmon', 'mon'].includes(name)) {
+    const isAllowed = isExtraOwnerOrHigher(uid, guild);
+    return {
+      allowed: isAllowed,
+      requiredClearance: 'Server Owner & Extra Owner',
+      reason: isAllowed ? null : 'This command is strictly restricted to the Server Owner and Extra Owners.'
     };
   }
 

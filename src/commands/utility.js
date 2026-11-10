@@ -274,7 +274,10 @@ export const commands = [
         let reply;
         try {
           if (args && args.length > 0) {
-              const cmdName = args[0].toLowerCase();
+              let cmdName = args[0].toLowerCase();
+              if (cmdName === 'serverowner' || cmdName === 'extraownercommands' || cmdName === 'ownercommands') {
+                cmdName = 'extraowner';
+              }
               if (cmdName === 'explain' || cmdName === 'architecture' || cmdName === 'deepdive' || cmdName === 'howitworks' || cmdName === 'docs') {
                 const { buildTopicsDirectoryContainer } = await import('../utils/explainerRegistry.js');
                 const container = buildTopicsDirectoryContainer(db.getGuildConfig(message.guild.id)?.prefix || '!');
@@ -286,7 +289,7 @@ export const commands = [
                 ((cmdName === 'count' || cmdName === 'counting') && m.id === 'counting') ||
                 ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
                 ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
-          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon' || cmdName === 'changelog' || cmdName === 'updates' || cmdName === 'changes' || cmdName === 'cl' || cmdName === 'release' || cmdName === 'notes' || cmdName === 'togif' || cmdName === 'mp4togif' || cmdName === 'convertgif' || cmdName === 'gifconvert' || cmdName === 'vidtogif' || cmdName === 'v2g') && m.id === 'utilities') ||
+                ((cmdName === 'util' || cmdName === 'utility' || cmdName === 'utils') && m.id === 'utilities') ||
                 ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
                 ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
                 ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
@@ -309,6 +312,10 @@ export const commands = [
               let permsText = "Public (Everyone)";
               if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
                   permsText = "Server Owner & Bot Owner ONLY";
+              } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
+                  permsText = "Server Owner & Extra Owner";
+              } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
+                  permsText = "Public (Everyone)";
               } else if (cmdClearance.requiredClearance === 'Extra Owner') {
                   permsText = "Extra Owner (or Server Owner)";
               } else if (cmdClearance.requiredClearance === 'Bot Owner') {
@@ -328,6 +335,10 @@ export const commands = [
               let usageText = `${prefix}${targetCmd.name}`;
               if (targetCmd.name === "unbypassable") {
                   usageText = `${prefix}unbypassable / /unbypassable`;
+              } else if (targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes") {
+                  usageText = `${prefix}combatops / ${prefix}strikeops / /combatops`;
+              } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
+                  usageText = `${prefix}about / ${prefix}aboutathena / /about`;
               } else if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
                   usageText = `${prefix}honeypot [setup [ban|timeout|kick] | punish <ban|timeout|kick> | remove | status] / /honeypot`;
               } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
@@ -437,6 +448,31 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Change Punishment:** \`${prefix}honeypot punish <ban|timeout|kick>\` or \`/honeypot punishment <action>\`\n` +
                     `> ${BULLET_EMOJI} **Interactive Panel:** \`${prefix}honeypot\` (or \`${prefix}honeypot status\` / \`/honeypot panel\`)\n` +
                     `> ${BULLET_EMOJI} **Disarm Trap:** \`${prefix}honeypot remove\` (or \`${prefix}honeypot disarm\` / \`/honeypot disarm\`)`;
+              } else if (targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes") {
+                  descContent = `Anti-Nuke Combat Operations & Single-Strike Telemetry - Real-time combat telemetry, single-strike timeline breakdown, and socket benchmarks.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner & Extra Owner\` (and Bot Owner). Unauthorized users are strictly denied.\n\n` +
+                    `> -# **__Command Activation & Aliases:__**\n` +
+                    `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}combatops\` (Aliases: \`${prefix}strikeops\`, \`${prefix}strikemonitor\`, \`${prefix}combattelemetry\`, \`${prefix}combatmon\`, \`${prefix}strikes\`)\n` +
+                    `> ${BULLET_EMOJI} **Slash Command:** \`/combatops\`\n` +
+                    `> ${BULLET_EMOJI} **LiveOps Suite Shortcut:** \`${prefix}liveops combat\`\n\n` +
+                    `> -# **__Single-Strike Combat Architecture:__**\n` +
+                    `> ${BULLET_EMOJI} **Zero-Day Bot Eviction (<1ms):** Intercepts \`GUILD_MEMBER_ADD\` at the raw TCP WebSocket packet layer. Unauthorized bots are condemned and banned at 0ms before they can dispatch a single command.\n` +
+                    `> ${BULLET_EMOJI} **Sub-12ms Direct Ban:** Eliminates nukers on their first destructive attempt. Fires a single raw HTTPS ban over pre-warmed sockets without wasting milliseconds on redundant role-stripping.\n` +
+                    `> ${BULLET_EMOJI} **Second Strike Annihilation:** Discord acknowledges ban in ~11.8ms; attacker's second channel deletion request is rejected with \`403 Forbidden\`.\n` +
+                    `> ${BULLET_EMOJI} **High-Velocity Socket Pool:** 120 persistent Undici keep-alive sockets, 25s heartbeat, and IPv4-first DNS eliminate SSL/TLS handshake delays.\n` +
+                    `> ${BULLET_EMOJI} **Intelligent Restoration Queue:** Restores deleted channels, roles, and permissions from SQLite snapshots in the background while keeping attack bandwidth 100% focused on neutralization.`;
+              } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
+                  descContent = `Learn about Athena Prime and its military-grade security & anti-nuke architecture.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\`. Available to all server members.\n\n` +
+                    `> -# **__Command Activation & Aliases:__**\n` +
+                    `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}about\` (Aliases: \`${prefix}aboutathena\`, \`${prefix}botabout\`, \`${prefix}whoisathena\`)\n` +
+                    `> ${BULLET_EMOJI} **Slash Command:** \`/about\`\n\n` +
+                    `> -# **__Core Architectural Highlights:__**\n` +
+                    `> ${BULLET_EMOJI} **Military-Grade Anti-Nuke:** Zero-Day bot eviction (<1ms), single-strike sub-12ms direct ban, 28 antinuke shields, and zero Discord native emoji compliance.\n` +
+                    `> ${BULLET_EMOJI} **High-Velocity Infrastructure:** 120 Undici persistent sockets, IPv4-first DNS resolution, and raw TCP WebSocket packet wiretaps.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Navigation:** Direct buttons to inspect Combat Telemetry, LiveOps Matrix, and system health.`;
               } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
                   descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
@@ -444,9 +480,10 @@ export const commands = [
                     `> -# **__Command Activation & Aliases:__**\n` +
                     `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}liveops\` (Aliases: \`${prefix}livemonitor\`, \`${prefix}telemetry\`, \`${prefix}sysmon\`, \`${prefix}matrixmon\`, \`${prefix}perfmon\`, \`${prefix}mon\`)\n` +
                     `> ${BULLET_EMOJI} **Slash Command:** \`/liveops [view: overview | speed | antinuke | voice | daemons]\`\n` +
-                    `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
+                    `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops combat\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
                     `> -# **__Live Telemetry Subsystems:__**\n` +
                     `> ${BULLET_EMOJI} **Master Overview:** Realtime memory heap, RSS, external buffers, CPU user/system clock, Node.js event loop lag, SQLite WAL cache status, WebSocket heartbeat, and live REST HTTPS roundtrip ping.\n` +
+                    `> ${BULLET_EMOJI} **Combat & Strike Telemetry:** Single-strike timeline breakdown, 0ms wiretap, sub-12ms raw ban, 120 Undici socket pool, and RAM condemned actors.\n` +
                     `> ${BULLET_EMOJI} **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, role strip, channel lock, timeout, DB read/write, and audit log polling.\n` +
                     `> ${BULLET_EMOJI} **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
                     `> ${BULLET_EMOJI} **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.\n` +
@@ -1201,7 +1238,10 @@ export const commands = [
     async executeSlash(interaction) {
       const cmdArg = interaction.options?.getString?.('command');
       if (cmdArg) {
-        const cmdName = cmdArg.toLowerCase().trim();
+        let cmdName = cmdArg.toLowerCase().trim();
+        if (cmdName === 'serverowner' || cmdName === 'extraownercommands' || cmdName === 'ownercommands') {
+          cmdName = 'extraowner';
+        }
         if (cmdName === 'explain' || cmdName === 'architecture' || cmdName === 'deepdive' || cmdName === 'howitworks' || cmdName === 'docs') {
           const { buildTopicsDirectoryContainer } = await import('../utils/explainerRegistry.js');
           const container = buildTopicsDirectoryContainer('/');
@@ -1213,7 +1253,7 @@ export const commands = [
           (cmdName === 'count' && m.id === 'counting') ||
           ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
           ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
-          ((cmdName === 'liveops' || cmdName === 'livemonitor' || cmdName === 'telemetry' || cmdName === 'sysmon' || cmdName === 'perfmon' || cmdName === 'matrixmon' || cmdName === 'mon' || cmdName === 'changelog' || cmdName === 'updates' || cmdName === 'changes' || cmdName === 'cl' || cmdName === 'release' || cmdName === 'notes' || cmdName === 'togif' || cmdName === 'mp4togif' || cmdName === 'convertgif' || cmdName === 'gifconvert' || cmdName === 'vidtogif' || cmdName === 'v2g') && m.id === 'utilities') ||
+          ((cmdName === 'util' || cmdName === 'utility' || cmdName === 'utils') && m.id === 'utilities') ||
           ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
           ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
           ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
@@ -1236,6 +1276,10 @@ export const commands = [
         let permsText = "Public (Everyone)";
         if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
           permsText = "Server Owner & Bot Owner ONLY";
+        } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
+          permsText = "Server Owner & Extra Owner";
+        } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
+          permsText = "Public (Everyone)";
         } else if (cmdClearance.requiredClearance === 'Extra Owner') {
           permsText = "Extra Owner (or Server Owner)";
         } else if (cmdClearance.requiredClearance === 'Bot Owner') {
@@ -1251,6 +1295,10 @@ export const commands = [
         let usageText = `${prefix}${targetCmd.name}`;
         if (targetCmd.name === "unbypassable") {
           usageText = `${prefix}unbypassable / /unbypassable`;
+        } else if (targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes") {
+          usageText = `${prefix}combatops / ${prefix}strikeops / /combatops`;
+        } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
+          usageText = `${prefix}about / ${prefix}aboutathena / /about`;
         } else if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
           usageText = `${prefix}honeypot [setup [ban|timeout|kick] | punish <ban|timeout|kick> | remove | status] / /honeypot`;
         } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
@@ -1339,6 +1387,31 @@ export const commands = [
             `> ${BULLET_EMOJI} **Change Punishment:** \`${prefix}honeypot punish <ban|timeout|kick>\` or \`/honeypot punishment <action>\`\n` +
             `> ${BULLET_EMOJI} **Interactive Panel:** \`${prefix}honeypot\` (or \`${prefix}honeypot status\` / \`/honeypot panel\`)\n` +
             `> ${BULLET_EMOJI} **Disarm Trap:** \`${prefix}honeypot remove\` (or \`${prefix}honeypot disarm\` / \`/honeypot disarm\`)`;
+        } else if (targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes") {
+          descContent = `Anti-Nuke Combat Operations & Single-Strike Telemetry - Real-time combat telemetry, single-strike timeline breakdown, and socket benchmarks.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner & Extra Owner\` (and Bot Owner). Unauthorized users are strictly denied.\n\n` +
+            `> -# **__Command Activation & Aliases:__**\n` +
+            `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}combatops\` (Aliases: \`${prefix}strikeops\`, \`${prefix}strikemonitor\`, \`${prefix}combattelemetry\`, \`${prefix}combatmon\`, \`${prefix}strikes\`)\n` +
+            `> ${BULLET_EMOJI} **Slash Command:** \`/combatops\`\n` +
+            `> ${BULLET_EMOJI} **LiveOps Suite Shortcut:** \`${prefix}liveops combat\`\n\n` +
+            `> -# **__Single-Strike Combat Architecture:__**\n` +
+            `> ${BULLET_EMOJI} **Zero-Day Bot Eviction (<1ms):** Intercepts \`GUILD_MEMBER_ADD\` at the raw TCP WebSocket packet layer. Unauthorized bots are condemned and banned at 0ms before they can dispatch a single command.\n` +
+            `> ${BULLET_EMOJI} **Sub-12ms Direct Ban:** Eliminates nukers on their first destructive attempt. Fires a single raw HTTPS ban over pre-warmed sockets without wasting milliseconds on redundant role-stripping.\n` +
+            `> ${BULLET_EMOJI} **Second Strike Annihilation:** Discord acknowledges ban in ~11.8ms; attacker's second channel deletion request is rejected with \`403 Forbidden\`.\n` +
+            `> ${BULLET_EMOJI} **High-Velocity Socket Pool:** 120 persistent Undici keep-alive sockets, 25s heartbeat, and IPv4-first DNS eliminate SSL/TLS handshake delays.\n` +
+            `> ${BULLET_EMOJI} **Intelligent Restoration Queue:** Restores deleted channels, roles, and permissions from SQLite snapshots in the background while keeping attack bandwidth 100% focused on neutralization.`;
+        } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
+          descContent = `Learn about Athena Prime and its military-grade security & anti-nuke architecture.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\`. Available to all server members.\n\n` +
+            `> -# **__Command Activation & Aliases:__**\n` +
+            `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}about\` (Aliases: \`${prefix}aboutathena\`, \`${prefix}botabout\`, \`${prefix}whoisathena\`)\n` +
+            `> ${BULLET_EMOJI} **Slash Command:** \`/about\`\n\n` +
+            `> -# **__Core Architectural Highlights:__**\n` +
+            `> ${BULLET_EMOJI} **Military-Grade Anti-Nuke:** Zero-Day bot eviction (<1ms), single-strike sub-12ms direct ban, 28 antinuke shields, and zero Discord native emoji compliance.\n` +
+            `> ${BULLET_EMOJI} **High-Velocity Infrastructure:** 120 Undici persistent sockets, IPv4-first DNS resolution, and raw TCP WebSocket packet wiretaps.\n` +
+            `> ${BULLET_EMOJI} **Interactive Navigation:** Direct buttons to inspect Combat Telemetry, LiveOps Matrix, and system health.`;
         } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
           descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
@@ -1346,9 +1419,10 @@ export const commands = [
             `> -# **__Command Activation & Aliases:__**\n` +
             `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}liveops\` (Aliases: \`${prefix}livemonitor\`, \`${prefix}telemetry\`, \`${prefix}sysmon\`, \`${prefix}matrixmon\`, \`${prefix}perfmon\`, \`${prefix}mon\`)\n` +
             `> ${BULLET_EMOJI} **Slash Command:** \`/liveops [view: overview | speed | antinuke | voice | daemons]\`\n` +
-            `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
+            `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops combat\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
             `> -# **__Live Telemetry Subsystems:__**\n` +
             `> ${BULLET_EMOJI} **Master Overview:** Realtime memory heap, RSS, external buffers, CPU user/system clock, Node.js event loop lag, SQLite WAL cache status, WebSocket heartbeat, and live REST HTTPS roundtrip ping.\n` +
+            `> ${BULLET_EMOJI} **Combat & Strike Telemetry:** Single-strike timeline breakdown, 0ms wiretap, sub-12ms raw ban, 120 Undici socket pool, and RAM condemned actors.\n` +
             `> ${BULLET_EMOJI} **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, role strip, channel lock, timeout, DB read/write, and audit log polling.\n` +
             `> ${BULLET_EMOJI} **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
             `> ${BULLET_EMOJI} **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.\n` +
@@ -2751,6 +2825,8 @@ async function getStatusEmbed(client, guild) {
 
 export const helpModules = [
   { id: 'security', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Security', label: 'Security Commands', emoji: 'security', commands: [
+    "`!combatops / !strikeops` - Real-time combat telemetry & single-strike timeline `[Server Owner & Extra Owner]`",
+    "`!liveops combat` - Interactive combat operations dashboard & socket pool `[Server Owner & Extra Owner]`",
     "`!auth / !tiers` - Manage authorization tiers (Admin, Mod, Staff) `[Extra Owner]`",
     "`!tier / !mytier / !perms` - Check authorization tier & clearance `[Public]`",
     "`!antinuke <config|status|records|guide>` - Antinuke control panel & tripwires `[Extra Owner]`",
@@ -3275,13 +3351,15 @@ export const helpModules = [
     "`!dashboard / !commandcenter` - War-Room: Telemetry & DEFCON `[Extra Owner]`",
     "`!hud / !matrixhud` - Cyber War-Room HUD with live modes `[Public]`",
     "`!botstats / !botinfo` - Bot performance, metrics & system health `[Public]`",
+    "`!about / !aboutathena` - Learn about Athena Prime & military-grade security `[Public]`",
     "`!athena / !guide [query]` - AI Specialist to instruct setups `[Public]`",
     "`!ask / !gemini <prompt>` - AI knowledge powered by Gemini `[Public]`",
     "`!aimode <status|on|off>` - Conversational AI channel mode `[Extra Owner]`",
     "`!dev / !developer` - Developer info & system credits `[Public]`",
     "`!ping / !p / !latency` - Bot latency & heartbeat graph `[Public]`",
     "`!status` - Bot engine performance & telemetry `[Public]`",
-    "`!liveops / !telemetry` - LiveOps matrix & latency benchmarks `[Extra Owner]`",
+    "`!combatops / !strikeops` - Real-time combat telemetry & single-strike timeline `[Server Owner & Extra Owner]`",
+    "`!liveops / !telemetry` - LiveOps matrix & latency benchmarks `[Server Owner & Extra Owner]`",
     "`!changelog / !cl [page]` - 5-day release history & optimizations `[Extra Owner]`",
     "`!db <status|backup|restore>` - Database cloud backup & reload `[Bot Owner]`",
     "`!modmail <setup|disable>` - DM support ticket bridge `[Extra Owner]`",
