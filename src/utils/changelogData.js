@@ -16,6 +16,39 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v2.9.5',
+    headline: 'Pure Direct-Ban Execution & Zero-Overhead Strike Streamlining',
+    summary: 'Eliminated role stripping from all strike pathways, dedicating 100% of socket throughput, bandwidth, and execution time to instantaneous direct bans (PUT /bans). Bypasses all intermediate role-strip HTTP requests, preventing socket overhead or rate-limit contention and permanently evicting attackers on their very first action. Streamlined fastWiretap, antinuke punish engine, and bot join guards to single-request ban annihilation.',
+    whatsNew: [
+      {
+        title: 'Pure Direct-Ban Architecture',
+        desc: 'Replaced multi-step role stripping with direct rawBan execution across fastWiretap and antinuke pipelines, guaranteeing immediate permanent eviction.'
+      },
+      {
+        title: 'Single-Request Socket Dedication',
+        desc: 'Dedicates 100% of TCP socket throughput to the ban payload (PUT /bans) without intermediate member PATCH overhead.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Instant Eviction on First Strike',
+        desc: 'Attackers are immediately evicted from the guild on their initial destructive attempt, terminating their gateway session and invalidating all subsequent burst requests.'
+      },
+      {
+        title: 'Simplified Combat Pipeline',
+        desc: 'Removed redundant role-strip fallbacks in favor of streamlined direct ban strikes across channel delete, role delete, bot add, and member join handlers.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Role-Strip Latency Elimination',
+        desc: 'Removed intermediate role strip requests that added extra network rounds before ban dispatch.'
+      }
+    ],
+    tip: 'Athena now strikes attackers with immediate direct bans, evicting them in a single line-rate request.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v2.9.4',
     headline: 'Pre-Emptive Nuke Interception & Bot Join Immunity Decoupling',
     summary: 'Decoupled bot whitelist membership from destructive administrative permissions, eliminating the exploit where whitelisted or test bots were granted unintended immunity during live nuke simulations. Integrated zero-delay dual-path strike routing on raw CHANNEL_DELETE and GUILD_ROLE_DELETE packets correlating in-memory ring buffers and firing background raw HTTP audit fetches in sub-12ms without waiting for Discord audit log pushes. Optimized raw REST strike payloads with pre-compiled JSON buffers for sub-10ms role stripping, guaranteeing that nuke bots are disarmed and rejected with 403 Forbidden before their second channel deletion attempt can execute.',

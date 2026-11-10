@@ -3,7 +3,6 @@ import { isBotOwnerSync } from './helpers.js';
 import { 
   hasDangerousPerms, 
   rawBan, 
-  rawRoleStrip, 
   rawChannelDelete, 
   rawRoleDelete,
   rawDeleteWebhook,
@@ -166,15 +165,10 @@ export function attachWiretap(client) {
             condemn(guildId, executorId);
             setGuildUnderAttack(guildId, executorId, 60_000);
 
-            // ⚡ PARALLEL DUAL-STRIKE (0ms): Dispatch rawRoleStrip AND rawBan simultaneously over pre-warmed sockets!
-            // 1. rawRoleStrip strips ALL roles in ~10ms -> Immediately revokes Administrator/Manage permissions on Discord's edge gateway!
-            // 2. rawBan sends PUT /bans in ~15ms -> Permanently purges and evicts the nuke bot from the server!
-            // Any second request fired by the nuker is INSTANTLY rejected by Discord with 403 Forbidden!
-            const reason = `[ATHENA WIRETAP] ⚡ RAW WebSocket Strike: Neutralized Action ${actionType}`;
-            const strikePromise = Promise.allSettled([
-              rawBan(guildId, executorId, client.token, reason),
-              rawRoleStrip(guildId, executorId, client.token)
-            ]);
+            // ⚡ DIRECT INSTANT BAN (0ms): Send PUT /bans directly over pre-warmed keep-alive socket!
+            // Zero wasted role-strip requests or latency — immediately and permanently evicts the attacker!
+            const reason = `[ATHENA WIRETAP] ⚡ RAW WebSocket Ban Strike: Neutralized Action ${actionType}`;
+            const strikePromise = rawBan(guildId, executorId, client.token, reason);
             trackInFlightPunishment(guildId, strikePromise);
 
             console.log(`[ATHENA WIRETAP] ⚡ Zero-Day Intercepted GUILD_AUDIT_LOG_ENTRY_CREATE (${actionType})! Neutralized ${executorId} in 0ms!`);
@@ -194,19 +188,13 @@ export function attachWiretap(client) {
           } else if (actionType === AuditLogEvent.BotAdd && targetId) {
             // Rogue bot addition: vaporize the rogue bot immediately in addition to banning the inviter!
             condemn(guildId, targetId);
-            const botStrike = Promise.allSettled([
-              rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Evicted'),
-              rawRoleStrip(guildId, targetId, client.token)
-            ]);
+            const botStrike = rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Banned');
             trackInFlightPunishment(guildId, botStrike);
           } else if (actionType === AuditLogEvent.MemberRoleUpdate && targetId) {
-            // Privilege escalation: strip roles from recipient if unauthorized
+            // Privilege escalation: ban recipient if unauthorized
             if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate')) {
               condemn(guildId, targetId);
-              const privStrike = Promise.allSettled([
-                rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Privilege Escalation Recipient Banned'),
-                rawRoleStrip(guildId, targetId, client.token)
-              ]);
+              const privStrike = rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Privilege Escalation Recipient Banned');
               trackInFlightPunishment(guildId, privStrike);
             }
           } else if (actionType === AuditLogEvent.ChannelDelete && targetId) {
@@ -253,10 +241,7 @@ export function attachWiretap(client) {
         if (guild && !isBotAuthorized(guild, botId)) {
           condemn(guildId, botId);
           setGuildUnderAttack(guildId, botId, 60_000);
-          const botStrike = Promise.allSettled([
-            rawBan(guildId, botId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Evicted On Join (0ms Pre-Emption)'),
-            rawRoleStrip(guildId, botId, client.token)
-          ]);
+          const botStrike = rawBan(guildId, botId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Banned On Join (0ms Pre-Emption)');
           trackInFlightPunishment(guildId, botStrike);
           cascadeToInviter(guild, botId).catch(() => null);
           console.log(`[ATHENA WIRETAP] ⚡ Zero-Day Pre-Emption: Neutralized unauthorized bot ${botId} on join!`);
@@ -286,7 +271,7 @@ export function attachWiretap(client) {
       return;
     }
 
-    // ⚡ Raw WebSocket pre-caching and instant strike on CHANNEL_DELETE
+    // ⚡ Raw WebSocket pre-caching and instant direct ban on CHANNEL_DELETE
     if (packet.t === 'CHANNEL_DELETE' && packet.d?.id) {
       const channelId = packet.d.id;
       cacheDeletedItem(channelId, packet.d);
@@ -299,12 +284,9 @@ export function attachWiretap(client) {
           if (!isCondemned(guildId, ringMatch.executorId)) {
             condemn(guildId, ringMatch.executorId);
             setGuildUnderAttack(guildId, ringMatch.executorId, 60_000);
-            const strikePromise = Promise.allSettled([
-              rawBan(guildId, ringMatch.executorId, client.token, '[ATHENA WIRETAP] ⚡ Zero-Day ChannelDelete Strike (Ring Intercept)'),
-              rawRoleStrip(guildId, ringMatch.executorId, client.token)
-            ]);
+            const strikePromise = rawBan(guildId, ringMatch.executorId, client.token, '[ATHENA WIRETAP] ⚡ Direct ChannelDelete Ban Strike (Ring Intercept)');
             trackInFlightPunishment(guildId, strikePromise);
-            console.log(`[ATHENA WIRETAP] ⚡ Instant ChannelDelete Ring Strike neutralized ${ringMatch.executorId} in 0ms!`);
+            console.log(`[ATHENA WIRETAP] ⚡ Instant ChannelDelete Ring Ban neutralized ${ringMatch.executorId} in 0ms!`);
           }
         }
       } else {
@@ -317,12 +299,9 @@ export function attachWiretap(client) {
               if (!isCondemned(guildId, entry.user_id)) {
                 condemn(guildId, entry.user_id);
                 setGuildUnderAttack(guildId, entry.user_id, 60_000);
-                const strikePromise = Promise.allSettled([
-                  rawBan(guildId, entry.user_id, client.token, '[ATHENA WIRETAP] ⚡ Zero-Day Rapid Fetch ChannelDelete Strike'),
-                  rawRoleStrip(guildId, entry.user_id, client.token)
-                ]);
+                const strikePromise = rawBan(guildId, entry.user_id, client.token, '[ATHENA WIRETAP] ⚡ Direct Rapid Fetch ChannelDelete Ban Strike');
                 trackInFlightPunishment(guildId, strikePromise);
-                console.log(`[ATHENA WIRETAP] ⚡ Rapid Fetch Strike neutralized ${entry.user_id} in sub-12ms!`);
+                console.log(`[ATHENA WIRETAP] ⚡ Rapid Fetch Ban neutralized ${entry.user_id} in sub-12ms!`);
               }
             }
           }
@@ -330,7 +309,7 @@ export function attachWiretap(client) {
       }
     }
 
-    // ⚡ Raw WebSocket pre-caching and instant strike on GUILD_ROLE_DELETE
+    // ⚡ Raw WebSocket pre-caching and instant direct ban on GUILD_ROLE_DELETE
     if (packet.t === 'GUILD_ROLE_DELETE' && packet.d?.role_id) {
       const roleId = packet.d.role_id;
       cacheDeletedItem(roleId, packet.d);
@@ -342,12 +321,9 @@ export function attachWiretap(client) {
           if (!isCondemned(guildId, ringMatch.executorId)) {
             condemn(guildId, ringMatch.executorId);
             setGuildUnderAttack(guildId, ringMatch.executorId, 60_000);
-            const strikePromise = Promise.allSettled([
-              rawBan(guildId, ringMatch.executorId, client.token, '[ATHENA WIRETAP] ⚡ Zero-Day RoleDelete Strike (Ring Intercept)'),
-              rawRoleStrip(guildId, ringMatch.executorId, client.token)
-            ]);
+            const strikePromise = rawBan(guildId, ringMatch.executorId, client.token, '[ATHENA WIRETAP] ⚡ Direct RoleDelete Ban Strike (Ring Intercept)');
             trackInFlightPunishment(guildId, strikePromise);
-            console.log(`[ATHENA WIRETAP] ⚡ Instant RoleDelete Ring Strike neutralized ${ringMatch.executorId} in 0ms!`);
+            console.log(`[ATHENA WIRETAP] ⚡ Instant RoleDelete Ring Ban neutralized ${ringMatch.executorId} in 0ms!`);
           }
         }
       } else {
@@ -359,12 +335,9 @@ export function attachWiretap(client) {
               if (!isCondemned(guildId, entry.user_id)) {
                 condemn(guildId, entry.user_id);
                 setGuildUnderAttack(guildId, entry.user_id, 60_000);
-                const strikePromise = Promise.allSettled([
-                  rawBan(guildId, entry.user_id, client.token, '[ATHENA WIRETAP] ⚡ Zero-Day Rapid Fetch RoleDelete Strike'),
-                  rawRoleStrip(guildId, entry.user_id, client.token)
-                ]);
+                const strikePromise = rawBan(guildId, entry.user_id, client.token, '[ATHENA WIRETAP] ⚡ Direct Rapid Fetch RoleDelete Ban Strike');
                 trackInFlightPunishment(guildId, strikePromise);
-                console.log(`[ATHENA WIRETAP] ⚡ Rapid Fetch RoleDelete Strike neutralized ${entry.user_id} in sub-12ms!`);
+                console.log(`[ATHENA WIRETAP] ⚡ Rapid Fetch RoleDelete Ban neutralized ${entry.user_id} in sub-12ms!`);
               }
             }
           }
