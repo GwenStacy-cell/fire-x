@@ -79,6 +79,34 @@ const spamCache = new Map(); // key: guildId-userId -> array of timestamps
 const spamCooldown = new Map(); // key: guildId-userId -> cooldown timestamp
 const masterPingCooldowns = new Map(); // key: guildId -> timestamp
 
+// Periodic cleanup for messageCreate ephemeral tracking maps (Prevents memory leaks over long uptime)
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of spamCache.entries()) {
+    if (!v || v.length === 0 || now - v[v.length - 1] > 10000) spamCache.delete(k);
+  }
+  for (const [k, t] of spamCooldown.entries()) {
+    if (now - t > 10000) spamCooldown.delete(k);
+  }
+  for (const [k, d] of massMentionCache.entries()) {
+    if (now - d.timestamp > 15000) massMentionCache.delete(k);
+  }
+  for (const [k, t] of globalBanCooldowns.entries()) {
+    if (now - t > 60000) globalBanCooldowns.delete(k);
+  }
+  for (const [k, t] of masterPingCooldowns.entries()) {
+    if (now - t > 30000) masterPingCooldowns.delete(k);
+  }
+}, 60_000).unref();
+
+let cachedCommandKeys = null;
+function getCommandKeys() {
+  if (!cachedCommandKeys || cachedCommandKeys.length !== commandMap.size) {
+    cachedCommandKeys = Array.from(commandMap.keys());
+  }
+  return cachedCommandKeys;
+}
+
 export default {
   name: 'messageCreate',
   async execute(message) {
@@ -2019,18 +2047,18 @@ export default {
 
     // Intelligent command error correction with fuzzy matching
     if (!cmd) {
-      const closest = findClosestCommand(commandName, [...commandMap.keys()]);
+      const closest = findClosestCommand(commandName, getCommandKeys());
       const triggerUsed = usedPrefix === prefix ? prefix : `@${message.client.user.username} `;
       
       if (closest) {
         const suggestEmbed = cv2.warn(
-          'Unknown Command',
+          'Unknown Command | <a:exclamation_outline1:1565666739356827759>',
           `${message.author}  Command \`${triggerUsed}${commandName}\` not found.\n\n Did you mean: \`${prefix}${closest}\`?\n\nUse \`${prefix}help\` for all commands.`
         );
         return message.reply(suggestEmbed).catch(() => null);
       } else {
         const notFoundEmbed = cv2.warn(
-          'Unknown Command',
+          'Unknown Command | <a:exclamation_outline1:1565666739356827759>',
           `${message.author}  Command \`${triggerUsed}${commandName}\` does not exist.\n\nUse \`${prefix}help\` for all available commands.`
         );
         return message.reply(notFoundEmbed).catch(() => null);

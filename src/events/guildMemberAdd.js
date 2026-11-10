@@ -12,6 +12,16 @@ import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 // Tracks join velocity timestamps per guild for automated anti-raid shield
 const guildJoinTracker = new Map(); // guildId -> Array<number>
 
+// Periodic cleanup for guild join tracker (Prevents memory leaks in inactive guilds)
+setInterval(() => {
+  const now = Date.now();
+  for (const [gid, timestamps] of guildJoinTracker.entries()) {
+    if (!timestamps || timestamps.length === 0 || now - timestamps[timestamps.length - 1] > 30000) {
+      guildJoinTracker.delete(gid);
+    }
+  }
+}, 60_000).unref();
+
 export default {
   name: 'guildMemberAdd',
   async execute(member) {

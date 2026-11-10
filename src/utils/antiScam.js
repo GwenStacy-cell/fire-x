@@ -38,6 +38,14 @@ async function getWorker() {
 }
 
 export const flaggedMessages = new Set();
+const _origFlaggedAdd = flaggedMessages.add.bind(flaggedMessages);
+flaggedMessages.add = function(id) {
+  if (this.size >= 2000) {
+    const oldest = this.values().next().value;
+    if (oldest) this.delete(oldest);
+  }
+  return _origFlaggedAdd(id);
+};
 
 function calculateThreatScore(lowerText) {
   if (lowerText.includes('kasowin') || lowerText.includes('helawin') || lowerText.includes('vyro')) return 10;

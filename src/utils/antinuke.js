@@ -2418,4 +2418,4 @@ setInterval(() => {
   for (const [key, times] of velocityTracker.entries()) {
     if (times.filter(t => now - t < VELOCITY_WINDOW_MS).length === 0) velocityTracker.delete(key);
   }
-}, 60_000);
+}, 60_000).unref();

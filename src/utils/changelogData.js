@@ -16,6 +16,43 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v3.0.0',
+    headline: 'Major Performance Milestone: Heap Memory Leak Eradication & Hot-Path Latency Optimizations',
+    summary: 'Conducted a deep comprehensive architectural audit across Athena Prime\'s runtime, eliminating long-term memory leaks in high-frequency event listeners, bounding ephemeral caches with LRU eviction, and streamlining hot-path voice state event loops with static module bindings.',
+    whatsNew: [
+      {
+        title: 'Unreferenced Background Memory Sweepers',
+        desc: 'Implemented unreferenced 60-second periodic garbage collection across messageCreate tracking maps (spamCache, spamCooldown, massMentionCache, globalBanCooldowns, masterPingCooldowns).'
+      },
+      {
+        title: 'Bounded Anti-Scam LRU Cache',
+        desc: 'Protected flaggedMessages with an automatic 2,000-entry LRU ring buffer, preventing unbounded Set growth during scam waves.'
+      },
+      {
+        title: 'Static Voice Module Dispatching',
+        desc: 'Replaced dynamic await import() calls in voiceStateUpdate with static top-level bindings for musicManager and soundboardEngine, cutting voice event cycle latency.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Command Key Allocation Caching',
+        desc: 'Cached commandMap key arrays to eliminate repetitive multi-hundred-element heap allocations during fuzzy unknown command lookups.'
+      },
+      {
+        title: 'Guild Join Velocity Pruning',
+        desc: 'Added automated sweeper to guildJoinTracker in guildMemberAdd to cleanly evict inactive guild keys from RAM.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Unknown Command Advisory Heading',
+        desc: 'Updated fuzzy fallback embeds to strictly adhere to custom exclamation outline heading formatting.'
+      }
+    ],
+    tip: 'Monitor real-time heap stability and event loop performance using !liveops or !bi.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v2.9.9',
     headline: 'Streamlined Buttonless Presentation for !bi & !about with Public Clearance Cataloging',
     summary: 'Stripped legacy action row buttons from !bi (!botstats / !botinfo) and !about (/about) to deliver an uninhibited, zero-lag Components V2 container presentation. Enforced public command status across authorization gatekeepers for both commands and indexed !bi and !about directly into the Help catalog under Utilities with dedicated inspection cards.',

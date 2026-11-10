@@ -7,6 +7,8 @@ import statsDB from '../statsDB.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
 import { isBotOwnerSync, getSafeUserAvatar, getSafeGuildIcon, sendGuildMemberDM } from '../utils/helpers.js';
 import { handleWarn } from '../commands/moderation.js';
+import { getQueue } from '../utils/musicManager.js';
+import { activeVoiceSessions } from '../utils/soundboardEngine.js';
 
 const theaterStrikes = new Map();
 
@@ -396,15 +398,12 @@ export default {
       if (!homeVcId) return;
 
       // Ensure we don't yank the bot out if it's currently playing music or soundboard!
-      const queues = (await import('../utils/musicManager.js')).default || new Map();
-      const queue = (await import('../utils/musicManager.js')).getQueue(guild.id);
-      
+      const queue = getQueue(guild.id);
       if (queue && (queue.isPlaying || queue.current || queue.songs.length > 0 || queue.isPreparing)) {
          // Bot is playing music in a channel, leave it alone!
          return;
       }
 
-      const { activeVoiceSessions } = await import('../utils/soundboardEngine.js').catch(() => ({ activeVoiceSessions: new Map() }));
       if (activeVoiceSessions && activeVoiceSessions.has(guild.id)) {
          // Bot is playing soundboard SFX or streaming radio, leave it alone!
          return;
