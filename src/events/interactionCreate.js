@@ -3977,6 +3977,36 @@ async function handleSecurityInteractions(interaction, guild) {
       }
     }
 
+    // About & Botstats Interactive Quick Action Buttons
+    if (customId && customId.startsWith('about:')) {
+      try {
+        if (customId === 'about:close') {
+          return await interaction.message.delete().catch(() => null);
+        }
+        if (customId === 'about:combat' || customId === 'about:liveops') {
+          const { isExtraOwnerOrHigher } = await import('../utils/helpers.js');
+          const { WRONG_EMOJI } = await import('../utils/emojis.js');
+          const cv2 = (await import('../cv2.js')).default;
+          if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+            return interaction.reply({
+              ...cv2.danger(
+                `Access Denied | ${WRONG_EMOJI}`,
+                'Only the **Server Owner** and authorized **Extra Owners** can view the LiveOps and Combat Operations dashboard.'
+              ),
+              flags: 64
+            }).catch(() => null);
+          }
+          await interaction.deferUpdate().catch(() => null);
+          const { buildLiveOpsPanel } = await import('../utils/liveOpsMonitor.js');
+          const view = customId === 'about:combat' ? 'combat' : 'overview';
+          const payload = await buildLiveOpsPanel(interaction.guild, interaction.client, view);
+          return interaction.editReply(payload).catch(() => null);
+        }
+      } catch (err) {
+        console.error('[About Interaction Error]:', err);
+      }
+    }
+
     // Changelog Interactive Pagination Buttons
     if (customId && customId.startsWith('changelog_')) {
       try {

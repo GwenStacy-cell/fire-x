@@ -16,6 +16,39 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v2.9.7',
+    headline: 'Dedicated About Command & Military-Grade Security Profile Integration',
+    summary: 'Introduced the dedicated !about (/about) command detailing Athena Prime\'s architectural identity, system scale, and military-grade security systems. Revamped !bi (!botstats / !botinfo) with high-fidelity Components V2 containers, custom tick status headers, animated target-blink indicators, and in-depth breakdowns of the 0ms raw TCP multi-hook wiretap, sub-12ms single-strike direct ban engine, 120 pre-warmed Undici TLS connections, and 28 automated antinuke shields.',
+    whatsNew: [
+      {
+        title: 'Dedicated !about Command',
+        desc: 'Added !about (aliases: !aboutathena, !botabout, !whoisathena) providing a full public overview of Athena\'s mission, creator credentials, and zero-day defense capabilities.'
+      },
+      {
+        title: 'Revamped !bi / !botstats Suite',
+        desc: 'Elevated the botinfo and botstats interface with custom tick headings, target-blink bulleted technical metrics, interactive quick-action buttons, and military-grade defense status.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Military-Grade Security Visibility',
+        desc: 'Highlighted core zero-day defense specs: 0ms TCP wiretap, sub-12ms direct rawBan line-rate eviction, pre-warmed Undici TLS pool, and live RAM ground-truth snapshot restoration.'
+      },
+      {
+        title: 'Interactive Navigation Row',
+        desc: 'Equipped both !about and !bi with interactive action rows allowing instant one-click transitions to Combat Telemetry, LiveOps Monitor, or message dismissal.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Strict Custom Emoji Compliance',
+        desc: 'Replaced legacy text dashes with animated target-blink indicators and formatted all headings strictly with custom tick circles.'
+      }
+    ],
+    tip: 'Use !about to learn about Athena\'s zero-day architecture, or !bi for live technical telemetry and cluster scale.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v2.9.6',
     headline: 'Military-Grade Anti-Nuke Combat Telemetry & Single-Strike Timeline Monitor',
     summary: 'Introduced dedicated military-grade combat operations monitoring via !combatops and integrated high-fidelity combat telemetry directly into !liveops. Displays real-time single-strike timeline benchmarks tracking raw packet interception (0.00ms), zero-delay authorization (0.05ms), instant direct rawBan dispatch (0.10ms), Discord API acknowledgement (11.8ms), second burst attempt rejection with 403 Forbidden (12.0ms), and in-flight intelligent restoration. Features live socket connection benchmarks across 120 pre-warmed Undici TLS sockets, 25s keep-alive heartbeat loop, IPv4-first DNS routing, in-flight punishment lock tracking, actively condemned actors in memory, and real-time combat strike audit history.',

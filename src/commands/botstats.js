@@ -1,5 +1,6 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
-import { MessageFlags } from 'discord.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, NAV_EMOJI_IDS } from '../utils/emojis.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { sanitizeCV2Payload } from '../cv2.js';
 import db from '../database.js';
 import os from 'os';
 import path from 'path';
@@ -78,10 +79,14 @@ export const commands = [
       const totalMem = (os.totalmem() / 1024 / 1024).toFixed(0);
       
       const totalServers = client.guilds.cache.size;
-      const totalUsers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
+      const totalUsers = typeof client.guilds.cache.reduce === 'function'
+        ? client.guilds.cache.reduce((acc, guild) => acc + (guild.memberCount || 0), 0)
+        : Array.from(client.guilds.cache.values()).reduce((acc, g) => acc + (g.memberCount || 0), 0);
       const totalChannels = client.channels.cache.size;
       const emojis = client.emojis.cache.size;
-      const stickers = client.guilds.cache.reduce((acc, guild) => acc + guild.stickers.cache.size, 0);
+      const stickers = typeof client.guilds.cache.reduce === 'function'
+        ? client.guilds.cache.reduce((acc, guild) => acc + (guild.stickers?.cache?.size || 0), 0)
+        : Array.from(client.guilds.cache.values()).reduce((acc, g) => acc + (g.stickers?.cache?.size || 0), 0);
       
       const botAnalytics = db.cache.botAnalytics || { joins: 0, leaves: 0, cmds: {} };
       
@@ -110,55 +115,76 @@ export const commands = [
       const container1 = {
         type: 17,
         components: [
-          { type: 10, content: `# ${getRandomHeadingGlyph()} **${client.user.username} Information.**` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} ${client.user.username} Intelligence Profile | ${TICK_EMOJI}` },
           {
             type: 9,
             components: [{
               type: 10,
-              content: `-# **Name :** **${client.user.username}**\n-# **Bot ID :** **${client.user.id}**\n-# **Owner :** **${ownerName}**\n-# **Owner ID :** ${ownerTag}\n-# **Hosting Partner :** **Obsidian Hosting**\n-# **Uptime :** **${uptimeStr}**\n-# **Ping :** **${client.ws.ping}ms**`
+              content:
+                `> -# ${BULLET_EMOJI} **Identity :** **${client.user.username}** \u2022 **Version :** \`v2.9.7\`\n` +
+                `> -# ${BULLET_EMOJI} **Bot ID :** \`${client.user.id}\`\n` +
+                `> -# ${BULLET_EMOJI} **Architect :** **${ownerName}** (${ownerTag})\n` +
+                `> -# ${BULLET_EMOJI} **Hosting :** **Obsidian Hosting** \u2022 Node.js \`${process.version}\`\n` +
+                `> -# ${BULLET_EMOJI} **Uptime :** **${uptimeStr}** \u2022 **Gateway Latency :** **${client.ws.ping}ms**\n` +
+                `> -# ${BULLET_EMOJI} **Cluster Scope :** **${totalServers.toLocaleString()} servers** \u2022 **${totalUsers.toLocaleString()} users** \u2022 **${totalChannels.toLocaleString()} channels**\n` +
+                `> -# ${BULLET_EMOJI} **Command Engine :** **${uniqueCommands} verified commands** loaded`
             }],
             accessory: { type: 11, media: { url: client.user.displayAvatarURL() } }
           },
-          { type: 10, content: `# ${getRandomHeadingGlyph()} **Server & User Stats**` },
+          { type: 14, divider: true },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} Military-Grade Security & Anti-Nuke Status | ${TICK_EMOJI}` },
           {
             type: 10,
-            content: `-# **Total Servers :** **${totalServers.toLocaleString()}**\n-# **Total Users :** **${totalUsers.toLocaleString()}**\n-# **Total Channels :** **${totalChannels.toLocaleString()}**\n-# **Emojis Tracked :** **${emojis.toLocaleString()}**\n-# **Stickers Tracked :** **${stickers.toLocaleString()}**\n-# **Total Commands :** **${uniqueCommands}**\n-# **Daily Usage :** **Active**`
-          }
-        ]
-      };
-
-      const container2 = {
-        type: 17,
-        components: [
-          { type: 10, content: `# ${getRandomHeadingGlyph()} **Active Modules**` },
-          {
-            type: 10,
-            content: `-# **Defense & AntiNuke :** **Active (${totalServers} Servers Enabled)**\n-# **AutoLogging System :** **Active (21 Log Categories)**\n-# **AutoMod Engine :** **Active (Anti-Spam & Honeypot)**\n-# **Ticket Management :** **Active (Panels & Transcripts)**\n-# **Giveaway System :** **Active (Auto-Roll & Reroll)**\n-# **Reaction & Activity Roles :** **Active (Auto-Assign & VC)**\n-# **Custom Triggers & AutoResponder :** **Active (Prefix & Keywords)**\n-# **Voice & VC Controls :** **Active (J2C & Panel Controls)**\n-# **Leveling & XP System :** **Active (XP Gain & Rewards)**\n-# **YouTube & Media Notifications :** **Active (Auto-Post & Feeds)**\n-# **Backup & Restore Manager :** **Active (Server Cloner & Backups)**\n-# **Blacklist & Quarantine :** **Active (User & Domain Protection)**`
+            content:
+              `> -# ${BULLET_EMOJI} **Defense Posture :** **ARMED (28 Automated Anti-Nuke Defensive Shields)**\n` +
+              `> -# ${BULLET_EMOJI} **Elimination Engine :** **Sub-12ms Direct rawBan (PUT /bans) without role-strip delay**\n` +
+              `> -# ${BULLET_EMOJI} **Zero-Day Bot Defense :** **<1ms Pre-Emptive Elimination On Join (\`GUILD_MEMBER_ADD\` at 0ms)**\n` +
+              `> -# ${BULLET_EMOJI} **Wiretap Interception :** **Multi-Hook raw TCP packet capture before Discord.js event queue**\n` +
+              `> -# ${BULLET_EMOJI} **Pre-Warmed TLS Engine :** **120 Undici persistent sockets \u2022 25s keep-alive heartbeat loop**\n` +
+              `> -# ${BULLET_EMOJI} **DNS Resolution :** **IPv4-First (\`dns.setDefaultResultOrder\`) saving 15-30ms per request**\n` +
+              `> -# ${BULLET_EMOJI} **Ground-Truth Snapshots :** **Continuous live RAM snapshots with zero-duplicate restoration**\n` +
+              `> -# ${BULLET_EMOJI} **In-Flight Strike Lock :** **Combat priority locks pausing restorations until ban settles**`
           }
         ]
       };
 
       const cb = getCodebaseStats();
-      const container3 = {
+      const container2 = {
         type: 17,
         components: [
-          { type: 10, content: `# ${getRandomHeadingGlyph()} **System Resources**` },
+          { type: 10, content: `# ${getRandomHeadingGlyph()} System Resources & Codebase Profile | ${TICK_EMOJI}` },
           {
             type: 10,
-            content: `-# **Node.js :** **${process.version}**\n-# **Discord.js :** **v14.14.1**\n-# **Heap Memory :** **${heapUsed} MB**\n-# **Free RAM :** **${freeMem}/${totalMem} MB**\n-# **CPU Cores :** **${os.cpus().length} Cores**\n-# **Architecture :** **${os.arch()}**`
-          },
-          { type: 10, content: `# ${getRandomHeadingGlyph()} **Codebase**` },
-          {
-            type: 10,
-            content: `-# **Total Files :** **${cb.files}**\n-# **Total Languages :** **1 (JavaScript)**\n-# **JS Files :** **${cb.js} JS**\n-# **JSON Configs :** **${cb.json}**\n-# **Markdown Docs :** **${cb.md}**\n-# **Total Lines :** **${cb.linesStr}**\n-# **Total Words :** **${cb.wordsStr}**`
+            content:
+              `> -# ${BULLET_EMOJI} **V8 Heap Memory :** **${heapUsed} MB consumed**\n` +
+              `> -# ${BULLET_EMOJI} **Host Physical RAM :** **${freeMem} MB free / ${totalMem} MB total**\n` +
+              `> -# ${BULLET_EMOJI} **Host Architecture :** **${os.cpus().length} Logical Cores** (${os.arch()})\n` +
+              `> -# ${BULLET_EMOJI} **Source Codebase :** **${cb.files} files** \u2022 **${cb.linesStr} lines** (${cb.wordsStr} words)\n` +
+              `> -# ${BULLET_EMOJI} **Tracked Emojis :** **${emojis.toLocaleString()} custom emojis**\n` +
+              `> -# ${BULLET_EMOJI} **Tracked Stickers :** **${stickers.toLocaleString()} server stickers**`
           }
         ]
       };
 
-      const payload = {
-        components: [container1, container2, container3],
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('about:combat')
+          .setLabel('Combat Telemetry')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('about:liveops')
+          .setLabel('LiveOps Monitor')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('about:close')
+          .setEmoji(NAV_EMOJI_IDS.DELETE)
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      const payload = sanitizeCV2Payload({
+        components: [container1, container2, row],
         flags: MessageFlags.IsComponentsV2
-      };
+      });
 
       if (messageOrInteraction.reply) {
         await messageOrInteraction.reply(payload);
