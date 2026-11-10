@@ -194,6 +194,7 @@ export function attachWiretap(client) {
       if (!isAuthorizedUser) {
         checkGlobalBurst(guild, actionType, executorId);
         if (DESTRUCTIVE_AUDIT_ACTIONS.has(actionType)) {
+          let banStrikePromise = null;
           if (!isCondemned(guildId, executorId)) {
             condemn(guildId, executorId);
             setGuildUnderAttack(guildId, executorId, 60_000);
@@ -201,8 +202,8 @@ export function attachWiretap(client) {
             // ⚡ DIRECT INSTANT BAN (0ms): Send PUT /bans directly over pre-warmed keep-alive socket!
             // Zero wasted role-strip requests or latency — immediately and permanently evicts the attacker!
             const reason = `[ATHENA WIRETAP] ⚡ RAW WebSocket Ban Strike: Neutralized Action ${actionType}`;
-            const strikePromise = rawBan(guildId, executorId, client.token, reason, { actionType: `GUILD_AUDIT_LOG (${actionType})` });
-            trackInFlightPunishment(guildId, strikePromise);
+            banStrikePromise = rawBan(guildId, executorId, client.token, reason, { actionType: `GUILD_AUDIT_LOG (${actionType})` });
+            trackInFlightPunishment(guildId, banStrikePromise);
 
             console.log(`[ATHENA WIRETAP] ⚡ Zero-Day Intercepted GUILD_AUDIT_LOG_ENTRY_CREATE (${actionType})! Neutralized ${executorId} in 0ms!`);
           }
@@ -234,7 +235,8 @@ export function attachWiretap(client) {
               trackInFlightPunishment(guildId, privStrike);
             }
           } else if (actionType === AuditLogEvent.ChannelDelete && targetId) {
-            // Instant intelligent channel repair trigger at 0ms
+            // ⚡ BAN FIRST, FIX SECOND:
+            // Ensure the ban strike settles over the wire before triggering channel reconstruction REST calls!
             if (!isRestorationHandled(targetId)) {
               markRestorationQueued(targetId);
               const ch = deletedCache.get(targetId) || getChannelSnapshot(guildId, targetId);
@@ -246,10 +248,15 @@ export function attachWiretap(client) {
                 itemType: isCat ? 'category' : 'channel',
                 execute: () => executeIntelligentChannelRepair(guild, targetId, ch)
               });
-              processRestorationQueue();
+              if (banStrikePromise) {
+                banStrikePromise.finally(() => processRestorationQueue());
+              } else {
+                processRestorationQueue();
+              }
             }
           } else if (actionType === AuditLogEvent.RoleDelete && targetId) {
-            // Instant intelligent role repair trigger at 0ms
+            // ⚡ BAN FIRST, FIX SECOND:
+            // Ensure the ban strike settles over the wire before triggering role reconstruction REST calls!
             if (!isRestorationHandled(targetId)) {
               markRestorationQueued(targetId);
               const r = deletedCache.get(targetId) || getRoleSnapshot(guildId, targetId);
@@ -260,7 +267,11 @@ export function attachWiretap(client) {
                 itemType: 'role',
                 execute: () => executeIntelligentRoleRepair(guild, targetId, r)
               });
-              processRestorationQueue();
+              if (banStrikePromise) {
+                banStrikePromise.finally(() => processRestorationQueue());
+              } else {
+                processRestorationQueue();
+              }
             }
           }
         }

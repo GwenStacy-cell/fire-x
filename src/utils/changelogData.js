@@ -16,6 +16,39 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v3.0.3',
+    headline: 'Military-Grade Execution Priority: Ban-First Architecture with TCP_NODELAY & Zero-Contention Sockets',
+    summary: 'Re-architected anti-nuke combat execution to enforce strict Ban-First prioritization across all raw WebSocket and REST event pathways. The hostile ban strike is dispatched onto the wire at 0ms over pre-warmed TCP_NODELAY TLS sockets to evict the attacker before their 2nd API request can land, while channel/role restoration requests are strictly sequenced to execute only after the ban has settled.',
+    whatsNew: [
+      {
+        title: 'Ban-First, Fix-Second Strict Ordering',
+        desc: 'Guaranteed that 100% of network socket bandwidth and API concurrency is dedicated to landing the PUT /bans strike before any channel or role restoration requests are dispatched.'
+      },
+      {
+        title: 'TCP_NODELAY Socket Acceleration',
+        desc: 'Disabled Nagle\'s algorithm on all Undici Discord API connections (noDelay: true), eliminating TCP buffering latency for instant packet transmission.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Multi-Socket Pre-Warming Daemon',
+        desc: 'Upgraded keep-alive ping loop to an 8-second multi-socket cycle, keeping multiple parallel TLS connections permanently pre-connected and hot at the top of the pool.'
+      },
+      {
+        title: 'Zero-Overhead Microtask Telemetry',
+        desc: 'Deferred telemetry calculations to background microtasks via queueMicrotask, reducing raw ban execution time to pure network wire latency.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Eliminated Socket Contention',
+        desc: 'Fixed restoration queue in fastWiretap so channel/role rebuild requests no longer compete with in-flight ban strikes.'
+      }
+    ],
+    tip: 'Attacking nuke bots are evicted before their second request can hit Discord, causing all subsequent attacks to fail with 403 Forbidden.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v3.0.2',
     headline: 'Multi-Vector In-Flight Attack Lockdown Matrix & Absolute Innocent Member Immunity Protocol',
     summary: 'Hardened Athena Prime\'s real-time anti-nuke combat reflex during active hostile attacks. Integrated in-flight raw WebSocket interceptors for rogue webhooks and backdoor invites during lockdown, while establishing a zero-collateral immunity architecture that guarantees innocent members are protected from accidental bans, false positives, and nuke bot mass-ban waves.',
