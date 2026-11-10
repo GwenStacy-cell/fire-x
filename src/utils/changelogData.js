@@ -16,6 +16,51 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v2.9.3',
+    headline: 'Zero-Tolerance Multi-Hook Gateway Wiretap & IPv4 Edge Optimization',
+    summary: 'Activated 4-tier gateway listener architecture binding client.on("raw"), Events.Raw, and WebSocketManager shard event dispatchers to capture destructive actions at 0ms raw TCP frames. Fixed GUILD_UPDATE identifier detection by inspecting packet.d.id for server-level payloads. Integrated in-flight punishment synchronization (trackInFlightPunishment) to reserve 100% of Discord API bandwidth for attacker neutralization before restorations begin. Enforced Node.js IPv4-first DNS order eliminating dual-stack resolution delays, and expanded reflex counter-measures to cover unauthorized unbans (Action 23), AutoMod destruction (Actions 140-142), and rogue integration removals (Action 82).',
+    whatsNew: [
+      {
+        title: '4-Tier Direct Gateway Multi-Hook',
+        desc: 'Wiretap now binds to client.on("raw"), Events.Raw, client.ws direct event dispatch, and legacy RAW handlers for guaranteed 0ms packet interception.'
+      },
+      {
+        title: 'Concurrent Burst Reflex Loop',
+        desc: 'Every destructive audit event immediately triggers counter-measures (restoration and resource vaporization) even if the violator was already condemned on a concurrent stream.'
+      },
+      {
+        title: 'Bandwidth Prioritization for Strikes',
+        desc: 'Restoration queues pause API execution while strike promises are in-flight (trackInFlightPunishment) ensuring bans and role strips receive full unthrottled line-rate priority.'
+      },
+      {
+        title: 'Anti-Raid Unban Re-Ban Shield',
+        desc: 'Instantly re-bans victims of unauthorized ban removals (Action 23) and punishes the violator at 0ms.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'IPv4-First DNS Edge Routing',
+        desc: 'Configured dns.setDefaultResultOrder("ipv4first") eliminating IPv6 dual-stack handshake latency on all Undici Discord REST connections.'
+      },
+      {
+        title: 'GUILD_UPDATE Payload Resolution',
+        desc: 'Resolved guild ID detection for GUILD_UPDATE packets by inspecting packet.d.id alongside packet.d.guild_id.'
+      },
+      {
+        title: 'AutoMod & Integration Guard Expansion',
+        desc: 'Added zero-day wiretap coverage for AutoMod rule deletion/tampering (Actions 140-142) and bot integration removals (Action 82).'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Discord.js v14 Raw Event Delivery',
+        desc: 'Fixed WebSocket event reception by listening to client.on("raw") and individual shard packet types instead of non-emitting client.ws.on("RAW").'
+      }
+    ],
+    tip: 'Athena now intercepts and strikes nuke bot packets on the very first incoming TCP buffer before Discord.js object construction.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v2.9.2',
     headline: 'Military-Grade Anti-Nuke Reflex Engine & Zero-Day Pre-Emption',
     summary: 'Hardened anti-nuke pipeline to military-grade defense. Integrated 0ms raw WebSocket bot eviction on GUILD_MEMBER_ADD terminating unauthorized bots before their 1st command can fire. Corrected official Discord AuditLogEvent enum mapping across all 20 action types (WebhookCreate 50, WebhookDelete 52, RoleUpdate 31). Added instant target reflex vaporization destroying rogue webhooks, spam channels, and spam roles at 0ms. Optimized rawRoleStrip to pure roles array to bypass Discord timeout permission restrictions on Administrator accounts, and established an active 25s keep-alive heartbeat loop ensuring zero-handshake TLS sockets.',

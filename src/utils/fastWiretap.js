@@ -1,4 +1,4 @@
-import { AuditLogEvent, ChannelType } from 'discord.js';
+import { AuditLogEvent, ChannelType, Events } from 'discord.js';
 import { isBotOwnerSync } from './helpers.js';
 import { 
   hasDangerousPerms, 
@@ -7,6 +7,7 @@ import {
   rawChannelDelete, 
   rawRoleDelete,
   rawDeleteWebhook,
+  rawUnban,
   isCondemned, 
   condemn, 
   setGuildUnderAttack, 
@@ -27,6 +28,7 @@ import {
   processRestorationQueue,
   executeIntelligentChannelRepair,
   executeIntelligentRoleRepair,
+  trackInFlightPunishment,
   dispatcher
 } from './antinuke.js';
 import db from '../database.js';
@@ -45,57 +47,68 @@ const DESTRUCTIVE_EVENTS = new Set([
 
 // Action types that indicate aggressive destructive nuking (Mapped to official Discord API AuditLogEvent)
 const DESTRUCTIVE_AUDIT_ACTIONS = new Set([
-  AuditLogEvent.GuildUpdate,                // 1
-  AuditLogEvent.ChannelCreate,              // 10
-  AuditLogEvent.ChannelUpdate,              // 11
-  AuditLogEvent.ChannelDelete,              // 12
-  AuditLogEvent.ChannelOverwriteCreate,     // 13
-  AuditLogEvent.ChannelOverwriteUpdate,     // 14
-  AuditLogEvent.ChannelOverwriteDelete,     // 15
-  AuditLogEvent.MemberKick,                 // 20
-  AuditLogEvent.MemberPrune,                // 21
-  AuditLogEvent.MemberBanAdd,               // 22
-  AuditLogEvent.MemberRoleUpdate,           // 25
-  AuditLogEvent.BotAdd,                     // 28
-  AuditLogEvent.RoleCreate,                 // 30
-  AuditLogEvent.RoleUpdate,                 // 31
-  AuditLogEvent.RoleDelete,                 // 32
-  AuditLogEvent.WebhookCreate,              // 50
-  AuditLogEvent.WebhookUpdate,              // 51
-  AuditLogEvent.WebhookDelete,              // 52
-  AuditLogEvent.EmojiCreate,                // 60
-  AuditLogEvent.EmojiDelete                 // 62
+  AuditLogEvent.GuildUpdate,                        // 1
+  AuditLogEvent.ChannelCreate,                      // 10
+  AuditLogEvent.ChannelUpdate,                      // 11
+  AuditLogEvent.ChannelDelete,                      // 12
+  AuditLogEvent.ChannelOverwriteCreate,             // 13
+  AuditLogEvent.ChannelOverwriteUpdate,             // 14
+  AuditLogEvent.ChannelOverwriteDelete,             // 15
+  AuditLogEvent.MemberKick,                         // 20
+  AuditLogEvent.MemberPrune,                        // 21
+  AuditLogEvent.MemberBanAdd,                       // 22
+  AuditLogEvent.MemberBanRemove,                    // 23
+  AuditLogEvent.MemberRoleUpdate,                   // 25
+  AuditLogEvent.BotAdd,                             // 28
+  AuditLogEvent.RoleCreate,                         // 30
+  AuditLogEvent.RoleUpdate,                         // 31
+  AuditLogEvent.RoleDelete,                         // 32
+  AuditLogEvent.WebhookCreate,                      // 50
+  AuditLogEvent.WebhookUpdate,                      // 51
+  AuditLogEvent.WebhookDelete,                      // 52
+  AuditLogEvent.EmojiCreate,                        // 60
+  AuditLogEvent.EmojiDelete,                        // 62
+  AuditLogEvent.IntegrationDelete,                  // 82
+  AuditLogEvent.AutoModerationRuleCreate,           // 140
+  AuditLogEvent.AutoModerationRuleUpdate,           // 141
+  AuditLogEvent.AutoModerationRuleDelete            // 142
 ]);
 
 // Action to module mapping
 const ACTION_TO_MODULE = {
-  [AuditLogEvent.GuildUpdate]:            'antiServerUpdate',
-  [AuditLogEvent.ChannelCreate]:          'antiChannelCreate',
-  [AuditLogEvent.ChannelUpdate]:          'antiChannelUpdate',
-  [AuditLogEvent.ChannelDelete]:          'antiChannelDelete',
-  [AuditLogEvent.ChannelOverwriteCreate]: 'antiChannelPermUpdate',
-  [AuditLogEvent.ChannelOverwriteUpdate]: 'antiChannelPermUpdate',
-  [AuditLogEvent.ChannelOverwriteDelete]: 'antiChannelPermUpdate',
-  [AuditLogEvent.MemberKick]:             'antiKick',
-  [AuditLogEvent.MemberPrune]:            'antiMemberPurge',
-  [AuditLogEvent.MemberBanAdd]:           'antiBan',
-  [AuditLogEvent.MemberRoleUpdate]:       'antiMemberRoleUpdate',
-  [AuditLogEvent.BotAdd]:                 'antiBotAdd',
-  [AuditLogEvent.RoleCreate]:             'antiRoleCreate',
-  [AuditLogEvent.RoleUpdate]:             'antiRoleUpdate',
-  [AuditLogEvent.RoleDelete]:             'antiRoleDelete',
-  [AuditLogEvent.WebhookCreate]:          'antiWebhooks',
-  [AuditLogEvent.WebhookUpdate]:          'antiWebhooks',
-  [AuditLogEvent.WebhookDelete]:          'antiWebhooks',
-  [AuditLogEvent.EmojiCreate]:            'antiEmojiCreate',
-  [AuditLogEvent.EmojiDelete]:            'antiEmojiDelete'
+  [AuditLogEvent.GuildUpdate]:                      'antiServerUpdate',
+  [AuditLogEvent.ChannelCreate]:                    'antiChannelCreate',
+  [AuditLogEvent.ChannelUpdate]:                    'antiChannelUpdate',
+  [AuditLogEvent.ChannelDelete]:                    'antiChannelDelete',
+  [AuditLogEvent.ChannelOverwriteCreate]:           'antiChannelPermUpdate',
+  [AuditLogEvent.ChannelOverwriteUpdate]:           'antiChannelPermUpdate',
+  [AuditLogEvent.ChannelOverwriteDelete]:           'antiChannelPermUpdate',
+  [AuditLogEvent.MemberKick]:                       'antiKick',
+  [AuditLogEvent.MemberPrune]:                      'antiMemberPurge',
+  [AuditLogEvent.MemberBanAdd]:                     'antiBan',
+  [AuditLogEvent.MemberBanRemove]:                  'antiUnban',
+  [AuditLogEvent.MemberRoleUpdate]:                 'antiMemberRoleUpdate',
+  [AuditLogEvent.BotAdd]:                           'antiBotAdd',
+  [AuditLogEvent.RoleCreate]:                       'antiRoleCreate',
+  [AuditLogEvent.RoleUpdate]:                       'antiRoleUpdate',
+  [AuditLogEvent.RoleDelete]:                       'antiRoleDelete',
+  [AuditLogEvent.WebhookCreate]:                    'antiWebhooks',
+  [AuditLogEvent.WebhookUpdate]:                    'antiWebhooks',
+  [AuditLogEvent.WebhookDelete]:                    'antiWebhooks',
+  [AuditLogEvent.EmojiCreate]:                      'antiEmojiCreate',
+  [AuditLogEvent.EmojiDelete]:                      'antiEmojiDelete',
+  [AuditLogEvent.IntegrationDelete]:                'antiServerUpdate',
+  [AuditLogEvent.AutoModerationRuleCreate]:         'antiAutomodUpdate',
+  [AuditLogEvent.AutoModerationRuleUpdate]:         'antiAutomodUpdate',
+  [AuditLogEvent.AutoModerationRuleDelete]:         'antiAutomodUpdate'
 };
 
 export function attachWiretap(client) {
-  client.ws.on('RAW', async (packet) => {
-    if (!packet.t || !DESTRUCTIVE_EVENTS.has(packet.t)) return;
+  const handleRawPacket = async (packet) => {
+    if (!packet || !packet.t || !DESTRUCTIVE_EVENTS.has(packet.t)) return;
 
-    const guildId = packet.d.guild_id;
+    // Both guild_id and id (for GUILD_UPDATE) supported
+    const guildId = packet.d?.guild_id || packet.d?.id;
     if (!guildId) return;
 
     // 1. Sync cache check (0ms latency)
@@ -156,67 +169,73 @@ export function attachWiretap(client) {
             // 2. rawBan sends PUT /bans in ~15ms -> Permanently purges and evicts the nuke bot from the server!
             // Any second request fired by the nuker is INSTANTLY rejected by Discord with 403 Forbidden!
             const reason = `[ATHENA WIRETAP] ⚡ RAW WebSocket Strike: Neutralized Action ${actionType}`;
-            Promise.allSettled([
+            const strikePromise = Promise.allSettled([
               rawBan(guildId, executorId, client.token, reason),
               rawRoleStrip(guildId, executorId, client.token)
             ]);
-
-            // ⚡ ZERO-DAY INSTANT COUNTER-MEASURES AT 0MS:
-            // Intercept and destroy the attacker's created resources before secondary scripts can use them:
-            if (actionType === AuditLogEvent.WebhookCreate && targetId) {
-              rawDeleteWebhook(targetId, client.token).catch(() => null);
-            } else if (actionType === AuditLogEvent.ChannelCreate && targetId) {
-              rawChannelDelete(targetId, client.token, '[ATHENA WIRETAP] Rogue Spam Channel Vaporized').catch(() => null);
-            } else if (actionType === AuditLogEvent.RoleCreate && targetId) {
-              rawRoleDelete(guildId, targetId, client.token, '[ATHENA WIRETAP] Rogue Spam Role Vaporized').catch(() => null);
-            } else if (actionType === AuditLogEvent.BotAdd && targetId) {
-              // Rogue bot addition: vaporize the rogue bot immediately in addition to banning the inviter!
-              condemn(guildId, targetId);
-              Promise.allSettled([
-                rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Evicted'),
-                rawRoleStrip(guildId, targetId, client.token)
-              ]);
-            } else if (actionType === AuditLogEvent.MemberRoleUpdate && targetId) {
-              // Privilege escalation: strip roles from recipient if unauthorized
-              if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate')) {
-                condemn(guildId, targetId);
-                Promise.allSettled([
-                  rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Privilege Escalation Recipient Banned'),
-                  rawRoleStrip(guildId, targetId, client.token)
-                ]);
-              }
-            } else if (actionType === AuditLogEvent.ChannelDelete && targetId) {
-              // Instant intelligent channel repair trigger at 0ms
-              if (!isRestorationHandled(targetId)) {
-                markRestorationQueued(targetId);
-                const ch = deletedCache.get(targetId) || getChannelSnapshot(guildId, targetId);
-                const isCat = ch?.type === ChannelType.GuildCategory || ch?.type === 4;
-                restorationQueue.push({
-                  guild,
-                  isRole: false,
-                  isCategory: isCat,
-                  itemType: isCat ? 'category' : 'channel',
-                  execute: () => executeIntelligentChannelRepair(guild, targetId, ch)
-                });
-                processRestorationQueue();
-              }
-            } else if (actionType === AuditLogEvent.RoleDelete && targetId) {
-              // Instant intelligent role repair trigger at 0ms
-              if (!isRestorationHandled(targetId)) {
-                markRestorationQueued(targetId);
-                const r = deletedCache.get(targetId) || getRoleSnapshot(guildId, targetId);
-                restorationQueue.push({
-                  guild,
-                  isRole: true,
-                  isCategory: false,
-                  itemType: 'role',
-                  execute: () => executeIntelligentRoleRepair(guild, targetId, r)
-                });
-                processRestorationQueue();
-              }
-            }
+            trackInFlightPunishment(guildId, strikePromise);
 
             console.log(`[ATHENA WIRETAP] ⚡ Zero-Day Intercepted GUILD_AUDIT_LOG_ENTRY_CREATE (${actionType})! Neutralized ${executorId} in 0ms!`);
+          }
+
+          // ⚡ ZERO-TOLERANCE IMMEDIATE COUNTER-MEASURES AT 0MS (Runs for every event, even concurrent bursts):
+          if (actionType === AuditLogEvent.WebhookCreate && targetId) {
+            rawDeleteWebhook(targetId, client.token).catch(() => null);
+          } else if (actionType === AuditLogEvent.ChannelCreate && targetId) {
+            rawChannelDelete(targetId, client.token, '[ATHENA WIRETAP] Rogue Spam Channel Vaporized').catch(() => null);
+          } else if (actionType === AuditLogEvent.RoleCreate && targetId) {
+            rawRoleDelete(guildId, targetId, client.token, '[ATHENA WIRETAP] Rogue Spam Role Vaporized').catch(() => null);
+          } else if (actionType === AuditLogEvent.MemberBanRemove && targetId) {
+            rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Re-banning victim of unauthorized unban').catch(() => null);
+          } else if (actionType === AuditLogEvent.MemberBanAdd && targetId) {
+            rawUnban(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Restoring innocent member banned by nuke bot').catch(() => null);
+          } else if (actionType === AuditLogEvent.BotAdd && targetId) {
+            // Rogue bot addition: vaporize the rogue bot immediately in addition to banning the inviter!
+            condemn(guildId, targetId);
+            const botStrike = Promise.allSettled([
+              rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Evicted'),
+              rawRoleStrip(guildId, targetId, client.token)
+            ]);
+            trackInFlightPunishment(guildId, botStrike);
+          } else if (actionType === AuditLogEvent.MemberRoleUpdate && targetId) {
+            // Privilege escalation: strip roles from recipient if unauthorized
+            if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate')) {
+              condemn(guildId, targetId);
+              const privStrike = Promise.allSettled([
+                rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Privilege Escalation Recipient Banned'),
+                rawRoleStrip(guildId, targetId, client.token)
+              ]);
+              trackInFlightPunishment(guildId, privStrike);
+            }
+          } else if (actionType === AuditLogEvent.ChannelDelete && targetId) {
+            // Instant intelligent channel repair trigger at 0ms
+            if (!isRestorationHandled(targetId)) {
+              markRestorationQueued(targetId);
+              const ch = deletedCache.get(targetId) || getChannelSnapshot(guildId, targetId);
+              const isCat = ch?.type === ChannelType.GuildCategory || ch?.type === 4;
+              restorationQueue.push({
+                guild,
+                isRole: false,
+                isCategory: isCat,
+                itemType: isCat ? 'category' : 'channel',
+                execute: () => executeIntelligentChannelRepair(guild, targetId, ch)
+              });
+              processRestorationQueue();
+            }
+          } else if (actionType === AuditLogEvent.RoleDelete && targetId) {
+            // Instant intelligent role repair trigger at 0ms
+            if (!isRestorationHandled(targetId)) {
+              markRestorationQueued(targetId);
+              const r = deletedCache.get(targetId) || getRoleSnapshot(guildId, targetId);
+              restorationQueue.push({
+                guild,
+                isRole: true,
+                isCategory: false,
+                itemType: 'role',
+                execute: () => executeIntelligentRoleRepair(guild, targetId, r)
+              });
+              processRestorationQueue();
+            }
           }
         }
       }
@@ -232,10 +251,11 @@ export function attachWiretap(client) {
         if (guild && !isBotAuthorized(guild, botId)) {
           condemn(guildId, botId);
           setGuildUnderAttack(guildId, botId, 60_000);
-          Promise.allSettled([
+          const botStrike = Promise.allSettled([
             rawBan(guildId, botId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Evicted On Join (0ms Pre-Emption)'),
             rawRoleStrip(guildId, botId, client.token)
           ]);
+          trackInFlightPunishment(guildId, botStrike);
           cascadeToInviter(guild, botId).catch(() => null);
           console.log(`[ATHENA WIRETAP] ⚡ Zero-Day Pre-Emption: Neutralized unauthorized bot ${botId} on join!`);
         }
@@ -317,5 +337,25 @@ export function attachWiretap(client) {
         }
       }
     }
-  });
+  };
+
+  // ⚡ MULTI-VECTOR DIRECT GATEWAY HOOKS:
+  // Hook 1: client.on('raw') - The native Discord.js v14 dispatch pipeline (0ms first frame before event parsing)
+  client.on('raw', handleRawPacket);
+
+  // Hook 2: client.on(Events.Raw) - Symbolic enum hook
+  if (Events?.Raw) {
+    client.on(Events.Raw, handleRawPacket);
+  }
+
+  // Hook 3: Shard-level direct event listeners on client.ws for each destructive event
+  if (client.ws) {
+    for (const eventName of DESTRUCTIVE_EVENTS) {
+      client.ws.on(eventName, (data) => {
+        handleRawPacket({ t: eventName, d: data });
+      });
+    }
+    // Hook 4: Legacy client.ws RAW compatibility
+    client.ws.on('RAW', handleRawPacket);
+  }
 }

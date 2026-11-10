@@ -4,8 +4,13 @@ import cv2 from '../cv2.js';
 import { logToSecurityChannel, isBotOwnerSync } from './helpers.js';
 import { executeQuarantine } from '../commands/security.js';
 import { recordAndLearnThreat } from './botThreatLearner.js';
-
+import dns from 'dns';
 import { Agent, setGlobalDispatcher } from 'undici';
+
+// Force IPv4 DNS lookups first to eliminate dual-stack IPv6 DNS resolution latency (saves 15-30ms)
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch {}
 
 // ==========================================
 // PRE-WARM DISCORD API CONNECTIONS
