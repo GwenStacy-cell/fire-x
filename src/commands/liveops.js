@@ -19,6 +19,7 @@ export const commands = [
         required: false,
         choices: [
           { name: 'Master Overview', value: 'overview' },
+          { name: 'Combat & Strike Telemetry', value: 'combat' },
           { name: 'V8 Runtime and Kernel', value: 'runtime' },
           { name: 'Speed and Latencies', value: 'speed' },
           { name: 'Antinuke and Heuristics', value: 'antinuke' },
@@ -40,7 +41,8 @@ export const commands = [
 
       const rawArg = (args[0] || 'overview').toLowerCase();
       let activeView = 'overview';
-      if (['runtime', 'v8', 'elu', 'kernel', 'cpu', 'memory', 'mem'].includes(rawArg)) activeView = 'runtime';
+      if (['combat', 'strike', 'strikes', 'timeline', 'combatops', 'strikeops', 'strikemon', 'combatmon'].includes(rawArg)) activeView = 'combat';
+      else if (['runtime', 'v8', 'elu', 'kernel', 'cpu', 'memory', 'mem'].includes(rawArg)) activeView = 'runtime';
       else if (['speed', 'latency', 'perf', 'ping', 'bench'].includes(rawArg)) activeView = 'speed';
       else if (['antinuke', 'security', 'shield', 'defense', 'sec', 'ring', 'heuristic'].includes(rawArg)) activeView = 'antinuke';
       else if (['cmd', 'cmds', 'command', 'commands', 'telemetry'].includes(rawArg)) activeView = 'commands';
