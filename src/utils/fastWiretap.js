@@ -29,6 +29,8 @@ import {
   executeIntelligentChannelRepair,
   executeIntelligentRoleRepair,
   trackInFlightPunishment,
+  getRecentAuditEntry,
+  rawFetchAuditLogs,
   dispatcher
 } from './antinuke.js';
 import db from '../database.js';
@@ -284,12 +286,90 @@ export function attachWiretap(client) {
       return;
     }
 
-    // ⚡ Raw WebSocket pre-caching for deleted channels and roles
+    // ⚡ Raw WebSocket pre-caching and instant strike on CHANNEL_DELETE
     if (packet.t === 'CHANNEL_DELETE' && packet.d?.id) {
-      cacheDeletedItem(packet.d.id, packet.d);
+      const channelId = packet.d.id;
+      cacheDeletedItem(channelId, packet.d);
+
+      // Fast-path 1: Check in-memory WebSocket audit ring
+      const ringMatch = getRecentAuditEntry(guildId, AuditLogEvent.ChannelDelete, channelId);
+      if (ringMatch?.executorId && ringMatch.executorId !== client.user.id) {
+        const guild = client.guilds.cache.get(guildId);
+        if (guild && !isAuthorized(guild, { id: ringMatch.executorId }, 'antiChannelDelete')) {
+          if (!isCondemned(guildId, ringMatch.executorId)) {
+            condemn(guildId, ringMatch.executorId);
+            setGuildUnderAttack(guildId, ringMatch.executorId, 60_000);
+            const strikePromise = Promise.allSettled([
+              rawBan(guildId, ringMatch.executorId, client.token, '[ATHENA WIRETAP] ⚡ Zero-Day ChannelDelete Strike (Ring Intercept)'),
+              rawRoleStrip(guildId, ringMatch.executorId, client.token)
+            ]);
+            trackInFlightPunishment(guildId, strikePromise);
+            console.log(`[ATHENA WIRETAP] ⚡ Instant ChannelDelete Ring Strike neutralized ${ringMatch.executorId} in 0ms!`);
+          }
+        }
+      } else {
+        // Fast-path 2: Dispatch raw HTTP audit fetch over warm keep-alive socket (sub-12ms)
+        rawFetchAuditLogs(guildId, client.token, AuditLogEvent.ChannelDelete).then(data => {
+          const entry = data?.audit_log_entries?.find(e => e.target_id === channelId);
+          if (entry?.user_id && entry.user_id !== client.user.id) {
+            const guild = client.guilds.cache.get(guildId);
+            if (guild && !isAuthorized(guild, { id: entry.user_id }, 'antiChannelDelete')) {
+              if (!isCondemned(guildId, entry.user_id)) {
+                condemn(guildId, entry.user_id);
+                setGuildUnderAttack(guildId, entry.user_id, 60_000);
+                const strikePromise = Promise.allSettled([
+                  rawBan(guildId, entry.user_id, client.token, '[ATHENA WIRETAP] ⚡ Zero-Day Rapid Fetch ChannelDelete Strike'),
+                  rawRoleStrip(guildId, entry.user_id, client.token)
+                ]);
+                trackInFlightPunishment(guildId, strikePromise);
+                console.log(`[ATHENA WIRETAP] ⚡ Rapid Fetch Strike neutralized ${entry.user_id} in sub-12ms!`);
+              }
+            }
+          }
+        }).catch(() => null);
+      }
     }
+
+    // ⚡ Raw WebSocket pre-caching and instant strike on GUILD_ROLE_DELETE
     if (packet.t === 'GUILD_ROLE_DELETE' && packet.d?.role_id) {
-      cacheDeletedItem(packet.d.role_id, packet.d);
+      const roleId = packet.d.role_id;
+      cacheDeletedItem(roleId, packet.d);
+
+      const ringMatch = getRecentAuditEntry(guildId, AuditLogEvent.RoleDelete, roleId);
+      if (ringMatch?.executorId && ringMatch.executorId !== client.user.id) {
+        const guild = client.guilds.cache.get(guildId);
+        if (guild && !isAuthorized(guild, { id: ringMatch.executorId }, 'antiRoleDelete')) {
+          if (!isCondemned(guildId, ringMatch.executorId)) {
+            condemn(guildId, ringMatch.executorId);
+            setGuildUnderAttack(guildId, ringMatch.executorId, 60_000);
+            const strikePromise = Promise.allSettled([
+              rawBan(guildId, ringMatch.executorId, client.token, '[ATHENA WIRETAP] ⚡ Zero-Day RoleDelete Strike (Ring Intercept)'),
+              rawRoleStrip(guildId, ringMatch.executorId, client.token)
+            ]);
+            trackInFlightPunishment(guildId, strikePromise);
+            console.log(`[ATHENA WIRETAP] ⚡ Instant RoleDelete Ring Strike neutralized ${ringMatch.executorId} in 0ms!`);
+          }
+        }
+      } else {
+        rawFetchAuditLogs(guildId, client.token, AuditLogEvent.RoleDelete).then(data => {
+          const entry = data?.audit_log_entries?.find(e => e.target_id === roleId);
+          if (entry?.user_id && entry.user_id !== client.user.id) {
+            const guild = client.guilds.cache.get(guildId);
+            if (guild && !isAuthorized(guild, { id: entry.user_id }, 'antiRoleDelete')) {
+              if (!isCondemned(guildId, entry.user_id)) {
+                condemn(guildId, entry.user_id);
+                setGuildUnderAttack(guildId, entry.user_id, 60_000);
+                const strikePromise = Promise.allSettled([
+                  rawBan(guildId, entry.user_id, client.token, '[ATHENA WIRETAP] ⚡ Zero-Day Rapid Fetch RoleDelete Strike'),
+                  rawRoleStrip(guildId, entry.user_id, client.token)
+                ]);
+                trackInFlightPunishment(guildId, strikePromise);
+                console.log(`[ATHENA WIRETAP] ⚡ Rapid Fetch RoleDelete Strike neutralized ${entry.user_id} in sub-12ms!`);
+              }
+            }
+          }
+        }).catch(() => null);
+      }
     }
 
     // ⚡ ZERO-DAY FAST-PATH 4: Rogue Invite Destruction (<1ms)

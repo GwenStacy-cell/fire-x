@@ -45,7 +45,7 @@ export async function rawBan(guildId, userId, token, reason = '[ATHENA] Anti-Nuk
         'Content-Type': 'application/json',
         'X-Audit-Log-Reason': encodeURIComponent(reason.slice(0, 512))
       },
-      body: JSON.stringify({ delete_message_seconds: 0 }),
+      body: '{"delete_message_seconds":0}',
       dispatcher
     });
     return res.ok || res.status === 204;
@@ -68,9 +68,7 @@ export async function rawRoleStrip(guildId, userId, token) {
         'Content-Type': 'application/json',
         'X-Audit-Log-Reason': encodeURIComponent('[ATHENA FIREWALL] Emergency role strip & isolation — hostile neutralization')
       },
-      body: JSON.stringify({ 
-        roles: []
-      }),
+      body: '{"roles":[]}',
       dispatcher
     });
     return res.ok || res.status === 200;
@@ -1257,8 +1255,21 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
   if (isBotOwnerSync(executor.id)) return true;
   if (executor.id === guild.ownerId) return true;
   if (db.isExtraOwner(guild.id, executor.id)) return true;
-  if (eventType === 'antibot') return false;
-  if (executor.bot) return isBotAuthorized(guild, executor.id);
+  // Bot Join module check
+  if (eventType === 'antibot' || eventType === 'antiBotAdd') {
+    return isBotAuthorized(guild, executor.id);
+  }
+
+  // ⚡ MILITARY GRADE ZERO-TOLERANCE:
+  // 3rd-party bots are STRICTLY FORBIDDEN from performing destructive administrative actions!
+  // Being in the server botWhitelist ONLY authorizes a bot to exist in the server (antiBotAdd).
+  // It NEVER authorizes a bot to delete channels, delete roles, kick, ban, or modify server settings!
+  const isBot = Boolean(executor.bot || guild.members.cache.get(executor.id)?.user?.bot);
+  if (isBot) {
+    // Only authorized if explicitly granted per-module whitelist for this exact destructive event
+    return db.isWhitelisted(guild, executor.id, eventType);
+  }
+
   const member = guild.members.cache.get(executor.id) || executor;
 
   // Check direct eventType whitelist

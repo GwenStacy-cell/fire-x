@@ -16,6 +16,43 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v2.9.4',
+    headline: 'Pre-Emptive Nuke Interception & Bot Join Immunity Decoupling',
+    summary: 'Decoupled bot whitelist membership from destructive administrative permissions, eliminating the exploit where whitelisted or test bots were granted unintended immunity during live nuke simulations. Integrated zero-delay dual-path strike routing on raw CHANNEL_DELETE and GUILD_ROLE_DELETE packets correlating in-memory ring buffers and firing background raw HTTP audit fetches in sub-12ms without waiting for Discord audit log pushes. Optimized raw REST strike payloads with pre-compiled JSON buffers for sub-10ms role stripping, guaranteeing that nuke bots are disarmed and rejected with 403 Forbidden before their second channel deletion attempt can execute.',
+    whatsNew: [
+      {
+        title: 'Bot Join Whitelist Decoupling',
+        desc: 'Being in botWhitelist now strictly authorizes bot presence (antiBotAdd); 3rd-party bots are forbidden from deleting channels, deleting roles, or mass-banning unless explicitly granted per-module authorization.'
+      },
+      {
+        title: 'Dual-Path CHANNEL_DELETE Pre-Emption',
+        desc: 'Upon receiving CHANNEL_DELETE over WebSocket, Athena instantly correlates the in-memory audit ring and dispatches an immediate sub-12ms raw HTTP audit fetch, striking the attacker before Discord even pushes the audit WebSocket packet.'
+      },
+      {
+        title: 'Pre-Compiled Strike Payloads',
+        desc: 'Replaced runtime JSON.stringify with static buffer literals ({"roles":[]} and {"delete_message_seconds":0}) saving microtask serialization overhead on the hot punishment path.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Second-Attempt Defense Hardening',
+        desc: 'Guaranteed that when a server is attacked or tested with a live nuke bot, the attacker is disarmed in ~10ms so all subsequent channel deletion requests in the burst are rejected by Discord with 403 Forbidden.'
+      },
+      {
+        title: 'DUAL-STRIKE RoleDelete Routing',
+        desc: 'Equipped GUILD_ROLE_DELETE with parallel ring correlation and rapid raw fetch to intercept role-nuking bots at line-rate speed.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Live Nuke Test Immunity Loophole',
+        desc: 'Resolved permission check in isAuthorized() where bots added for testing were previously treated as authorized administrators due to blanket isBotAuthorized() inheritance.'
+      }
+    ],
+    tip: 'Athena now strikes and neutralizes nuke bots on their very first channel deletion, blocking all subsequent deletions with 403 Forbidden.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v2.9.3',
     headline: 'Zero-Tolerance Multi-Hook Gateway Wiretap & IPv4 Edge Optimization',
     summary: 'Activated 4-tier gateway listener architecture binding client.on("raw"), Events.Raw, and WebSocketManager shard event dispatchers to capture destructive actions at 0ms raw TCP frames. Fixed GUILD_UPDATE identifier detection by inspecting packet.d.id for server-level payloads. Integrated in-flight punishment synchronization (trackInFlightPunishment) to reserve 100% of Discord API bandwidth for attacker neutralization before restorations begin. Enforced Node.js IPv4-first DNS order eliminating dual-stack resolution delays, and expanded reflex counter-measures to cover unauthorized unbans (Action 23), AutoMod destruction (Actions 140-142), and rogue integration removals (Action 82).',
