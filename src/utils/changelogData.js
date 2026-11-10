@@ -16,6 +16,39 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v3.0.1',
+    headline: 'Wiretap Privilege Escalation Guard Precision & Benign Role Update False-Positive Neutralization',
+    summary: 'Resolved a critical false-positive vulnerability in the fastWiretap raw WebSocket defense engine where standard member autoroles, onboarding roles, or benign role updates assigned to newly joined members triggered erroneous privilege escalation condemnation bans. Implemented deep permission inspection checking for dangerous administrative permissions before engaging defensive strikes.',
+    whatsNew: [
+      {
+        title: 'Granular Role Change Permission Inspector',
+        desc: 'Wiretap engine now parses $add changes during GUILD_AUDIT_LOG_ENTRY_CREATE (MemberRoleUpdate) to inspect whether assigned roles hold dangerous permissions (Administrator, ManageGuild, BanMembers, ManageRoles, etc.) or whether the target is exploit-tainted before classifying as privilege escalation.'
+      },
+      {
+        title: 'Benign Autorole Fast-Exit',
+        desc: 'Normal, non-administrative role grants (autoroles, onboarding tags, cosmetic/color roles, level rewards) immediately bypass anti-nuke condemnation with zero false positives.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Accurate Target Role Stripping',
+        desc: 'When genuine privilege escalation attacks occur, raw REST role-stripping immediately strips the dangerous role from the recipient at 0ms over pre-warmed sockets.'
+      },
+      {
+        title: 'Safe Role Removal Handling',
+        desc: 'Addressed audit log events for role removals ($remove), ensuring role removals never falsely flag as privilege escalation attacks.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Newly Joined Member False Ban Fix',
+        desc: 'Fixed the bug where newly joined server members receiving a default member role from an autorole bot or onboarding mechanism were condemned and banned with [ATHENA WIRETAP] ⚡ Privilege Escalation Recipient Banned.'
+      }
+    ],
+    tip: 'Autoroles and standard onboarding roles can now be safely assigned by third-party bots and integrations without wiretap interference.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v3.0.0',
     headline: 'Major Performance Milestone: Heap Memory Leak Eradication & Hot-Path Latency Optimizations',
     summary: 'Conducted a deep comprehensive architectural audit across Athena Prime\'s runtime, eliminating long-term memory leaks in high-frequency event listeners, bounding ephemeral caches with LRU eviction, and streamlining hot-path voice state event loops with static module bindings.',

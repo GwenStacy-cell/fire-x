@@ -3,6 +3,7 @@ import { isBotOwnerSync } from './helpers.js';
 import { 
   hasDangerousPerms, 
   rawBan, 
+  rawRoleStrip,
   rawChannelDelete, 
   rawRoleDelete,
   rawDeleteWebhook,
@@ -150,6 +151,37 @@ export function attachWiretap(client) {
         return;
       }
 
+      // ⚡ PRECISE PRIVILEGE ESCALATION FILTER:
+      // MemberRoleUpdate (25) is ONLY destructive if an unauthorized user actually GRANTS dangerous
+      // administrative permissions (Administrator, ManageGuild, BanMembers, etc.) or targets an exploit-tainted member.
+      // Harmless role updates (autoroles, cosmetic roles, member roles, ping roles, role removals) MUST NEVER trigger bans!
+      if (actionType === AuditLogEvent.MemberRoleUpdate) {
+        const roleAdds = d.changes?.find(c => c.key === '$add')?.new || [];
+        if (!roleAdds.length) {
+          // Role removal or non-additive change — completely safe
+          return;
+        }
+
+        const authRoles = db.getAuthRoles(guildId);
+        let hasDangerousRoleAdded = false;
+
+        for (const rObj of roleAdds) {
+          const role = guild.roles.cache.get(rObj.id) || await guild.roles.fetch(rObj.id).catch(() => null);
+          if (role && (hasDangerousPerms(role.permissions) || (authRoles?.admin && authRoles.admin.includes(role.id)))) {
+            hasDangerousRoleAdded = true;
+            break;
+          }
+        }
+
+        const isTainted = targetId ? db.isExploitTainted(guildId, targetId) : false;
+
+        if (!hasDangerousRoleAdded && !isTainted) {
+          // Benign role assignment (e.g., standard member autorole, onboarding, level role, vanity role).
+          // Allow immediately without triggering anti-nuke countermeasures!
+          return;
+        }
+      }
+
       const member = guild.members.cache.get(executorId);
       // STRICT Anti-Nuke Authorization: Having Administrator permission does NOT authorize destructive actions!
       // Only Server Owner, Extra Owners, Bot Owner, and explicitly whitelisted entities are exempt.
@@ -191,7 +223,10 @@ export function attachWiretap(client) {
             const botStrike = rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Banned', { actionType: 'BOT_ADD_REVERSAL' });
             trackInFlightPunishment(guildId, botStrike);
           } else if (actionType === AuditLogEvent.MemberRoleUpdate && targetId) {
-            // Privilege escalation: ban recipient if unauthorized
+            // Privilege escalation confirmed: strip dangerous roles immediately at 0ms
+            rawRoleStrip(guildId, targetId, client.token).catch(() => null);
+
+            // Ban recipient if unauthorized accomplice
             if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate')) {
               condemn(guildId, targetId);
               const privStrike = rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Privilege Escalation Recipient Banned', { actionType: 'PRIVILEGE_ESCALATION' });
