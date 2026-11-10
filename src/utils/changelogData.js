@@ -16,6 +16,43 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '10 November 2026',
+    version: 'v2.9.9',
+    headline: 'Streamlined Buttonless Presentation for !bi & !about with Public Clearance Cataloging',
+    summary: 'Stripped legacy action row buttons from !bi (!botstats / !botinfo) and !about (/about) to deliver an uninhibited, zero-lag Components V2 container presentation. Enforced public command status across authorization gatekeepers for both commands and indexed !bi and !about directly into the Help catalog under Utilities with dedicated inspection cards.',
+    whatsNew: [
+      {
+        title: 'Streamlined Buttonless Layout',
+        desc: 'Removed interactive navigation buttons from !bi and !about for a clean, distraction-free visual footprint.'
+      },
+      {
+        title: 'Complete Public Clearance Cataloging',
+        desc: 'Explicitly registered !bi / !botstats / !botinfo and !about / !aboutathena as [Public] across the Help suite and security clearance resolvers.'
+      },
+      {
+        title: 'Dedicated !help bi Inspection Card',
+        desc: 'Added dedicated single-command help inspection for !bi, providing cluster scale, hardware metrics, and military defense status.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Dynamic Version Binding',
+        desc: 'Synchronized version metadata across !bi and !about to dynamically reflect latest releases directly from the release engine.'
+      },
+      {
+        title: 'Public Command Set Whitelisting',
+        desc: 'Updated PUBLIC_COMMANDS in helpers.js to include bi and binfo aliases alongside existing botstats and about registrations.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Help Matrix Consistency',
+        desc: 'Re-indexed Utilities command listing in help to surface !bi alongside !botstats and !about under Public clearance.'
+      }
+    ],
+    tip: 'Execute !bi for live system telemetry or !about for a breakdown of Athena\'s military-grade security architecture.'
+  },
+  {
+    date: '10 November 2026',
     version: 'v2.9.8',
     headline: 'Anti-Nuke CombatOps & LiveOps Registered in Help Menu as Server Owner & Extra Owner',
     summary: 'Formally integrated Anti-Nuke Combat Operations (!combatops / !strikeops) and the LiveOps Telemetry Matrix (!liveops / !telemetry) into the core Help suite (!help / /help) under the Security and Utilities modules with designated [Server Owner & Extra Owner] clearance. Added dedicated rich help inspection cards for !combatops, !liveops, and !about, complete with single-strike timeline breakdown telemetry, Undici keep-alive pool diagnostics, and zero-day eviction breakdowns.',

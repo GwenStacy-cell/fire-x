@@ -314,7 +314,7 @@ export const commands = [
                   permsText = "Server Owner & Bot Owner ONLY";
               } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
                   permsText = "Server Owner & Extra Owner";
-              } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
+              } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
                   permsText = "Public (Everyone)";
               } else if (cmdClearance.requiredClearance === 'Extra Owner') {
                   permsText = "Extra Owner (or Server Owner)";
@@ -339,6 +339,8 @@ export const commands = [
                   usageText = `${prefix}combatops / ${prefix}strikeops / /combatops`;
               } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
                   usageText = `${prefix}about / ${prefix}aboutathena / /about`;
+              } else if (targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
+                  usageText = `${prefix}bi / ${prefix}botstats / ${prefix}botinfo / /botstats`;
               } else if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
                   usageText = `${prefix}honeypot [setup [ban|timeout|kick] | punish <ban|timeout|kick> | remove | status] / /honeypot`;
               } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
@@ -472,7 +474,18 @@ export const commands = [
                     `> -# **__Core Architectural Highlights:__**\n` +
                     `> ${BULLET_EMOJI} **Military-Grade Anti-Nuke:** Zero-Day bot eviction (<1ms), single-strike sub-12ms direct ban, 28 antinuke shields, and zero Discord native emoji compliance.\n` +
                     `> ${BULLET_EMOJI} **High-Velocity Infrastructure:** 120 Undici persistent sockets, IPv4-first DNS resolution, and raw TCP WebSocket packet wiretaps.\n` +
-                    `> ${BULLET_EMOJI} **Interactive Navigation:** Direct buttons to inspect Combat Telemetry, LiveOps Matrix, and system health.`;
+                    `> ${BULLET_EMOJI} **Enterprise Profile:** Real-time cluster scope, node runtime, latency telemetry, and developer credentials.`;
+              } else if (targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
+                  descContent = `Athena Prime System Intelligence, Statistics & Military-Grade Security Profile.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\`. Available to all server members.\n\n` +
+                    `> -# **__Command Activation & Aliases:__**\n` +
+                    `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}bi\` (Aliases: \`${prefix}botstats\`, \`${prefix}botinfo\`, \`${prefix}binfo\`)\n` +
+                    `> ${BULLET_EMOJI} **Slash Command:** \`/botstats\`\n\n` +
+                    `> -# **__Live Telemetry Metrics:__**\n` +
+                    `> ${BULLET_EMOJI} **Identity & Architecture:** Host runtime, gateway ping, active servers, total users, and loaded commands.\n` +
+                    `> ${BULLET_EMOJI} **Military-Grade Security:** 28 antinuke shields, <1ms zero-day bot eviction, sub-12ms raw ban, 120 Undici socket pool, and RAM snapshots.\n` +
+                    `> ${BULLET_EMOJI} **System Footprint:** V8 heap consumption, host RAM, CPU topology, codebase line metrics, and emoji counts.`;
               } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
                   descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
@@ -1278,7 +1291,7 @@ export const commands = [
           permsText = "Server Owner & Bot Owner ONLY";
         } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
           permsText = "Server Owner & Extra Owner";
-        } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
+        } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
           permsText = "Public (Everyone)";
         } else if (cmdClearance.requiredClearance === 'Extra Owner') {
           permsText = "Extra Owner (or Server Owner)";
@@ -1299,6 +1312,8 @@ export const commands = [
           usageText = `${prefix}combatops / ${prefix}strikeops / /combatops`;
         } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
           usageText = `${prefix}about / ${prefix}aboutathena / /about`;
+        } else if (targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
+          usageText = `${prefix}bi / ${prefix}botstats / ${prefix}botinfo / /botstats`;
         } else if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
           usageText = `${prefix}honeypot [setup [ban|timeout|kick] | punish <ban|timeout|kick> | remove | status] / /honeypot`;
         } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
@@ -1411,7 +1426,18 @@ export const commands = [
             `> -# **__Core Architectural Highlights:__**\n` +
             `> ${BULLET_EMOJI} **Military-Grade Anti-Nuke:** Zero-Day bot eviction (<1ms), single-strike sub-12ms direct ban, 28 antinuke shields, and zero Discord native emoji compliance.\n` +
             `> ${BULLET_EMOJI} **High-Velocity Infrastructure:** 120 Undici persistent sockets, IPv4-first DNS resolution, and raw TCP WebSocket packet wiretaps.\n` +
-            `> ${BULLET_EMOJI} **Interactive Navigation:** Direct buttons to inspect Combat Telemetry, LiveOps Matrix, and system health.`;
+            `> ${BULLET_EMOJI} **Enterprise Profile:** Real-time cluster scope, node runtime, latency telemetry, and developer credentials.`;
+        } else if (targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
+          descContent = `Athena Prime System Intelligence, Statistics & Military-Grade Security Profile.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\`. Available to all server members.\n\n` +
+            `> -# **__Command Activation & Aliases:__**\n` +
+            `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}bi\` (Aliases: \`${prefix}botstats\`, \`${prefix}botinfo\`, \`${prefix}binfo\`)\n` +
+            `> ${BULLET_EMOJI} **Slash Command:** \`/botstats\`\n\n` +
+            `> -# **__Live Telemetry Metrics:__**\n` +
+            `> ${BULLET_EMOJI} **Identity & Architecture:** Host runtime, gateway ping, active servers, total users, and loaded commands.\n` +
+            `> ${BULLET_EMOJI} **Military-Grade Security:** 28 antinuke shields, <1ms zero-day bot eviction, sub-12ms raw ban, 120 Undici socket pool, and RAM snapshots.\n` +
+            `> ${BULLET_EMOJI} **System Footprint:** V8 heap consumption, host RAM, CPU topology, codebase line metrics, and emoji counts.`;
         } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
           descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
@@ -3350,7 +3376,7 @@ export const helpModules = [
     "`!pinterest / !pin <link>` - Download uncompressed Pinterest media `[Public]`",
     "`!dashboard / !commandcenter` - War-Room: Telemetry & DEFCON `[Extra Owner]`",
     "`!hud / !matrixhud` - Cyber War-Room HUD with live modes `[Public]`",
-    "`!botstats / !botinfo` - Bot performance, metrics & system health `[Public]`",
+    "`!bi / !botstats / !botinfo` - Bot performance, metrics & system health `[Public]`",
     "`!about / !aboutathena` - Learn about Athena Prime & military-grade security `[Public]`",
     "`!athena / !guide [query]` - AI Specialist to instruct setups `[Public]`",
     "`!ask / !gemini <prompt>` - AI knowledge powered by Gemini `[Public]`",

@@ -1,6 +1,7 @@
-import { MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, NAV_EMOJI_IDS } from '../utils/emojis.js';
+import { MessageFlags } from 'discord.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 import { sanitizeCV2Payload } from '../cv2.js';
+import { CHANGELOG_ENTRIES } from '../utils/changelogData.js';
 import os from 'os';
 
 export const commands = [
@@ -54,6 +55,8 @@ export const commands = [
         }
       } catch {}
 
+      const currentVersion = CHANGELOG_ENTRIES[0]?.version || 'v2.9.9';
+
       // Container 1: Overview & Military-Grade Architecture
       const container1 = {
         type: 17,
@@ -69,7 +72,7 @@ export const commands = [
             components: [{
               type: 10,
               content:
-                `> -# ${BULLET_EMOJI} **Identity :** **Athena Prime** | **Version :** \`v2.9.7\`\n` +
+                `> -# ${BULLET_EMOJI} **Identity :** **Athena Prime** | **Version :** \`${currentVersion}\`\n` +
                 `> -# ${BULLET_EMOJI} **Chief Architect :** **${ownerName}** (${ownerTag})\n` +
                 `> -# ${BULLET_EMOJI} **Engine :** Node.js \`${process.version}\` | Discord.js \`v14.14.1\`\n` +
                 `> -# ${BULLET_EMOJI} **Uptime :** \`${uptimeStr}\` | **Latency :** \`${client.ws.ping}ms\`\n` +
@@ -121,23 +124,8 @@ export const commands = [
         ]
       };
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('about:combat')
-          .setLabel('Combat Telemetry')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('about:liveops')
-          .setLabel('LiveOps Monitor')
-          .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-          .setCustomId('about:close')
-          .setEmoji(NAV_EMOJI_IDS.DELETE)
-          .setStyle(ButtonStyle.Secondary)
-      );
-
       const payload = sanitizeCV2Payload({
-        components: [container1, container2, row],
+        components: [container1, container2],
         flags: MessageFlags.IsComponentsV2
       });
 

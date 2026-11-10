@@ -74,7 +74,7 @@ export const PUBLIC_COMMANDS = new Set([
   // General Info & Help
   'help', 'explain', 'docs', 'architecture', 'ping', 'uptime', 'botinfo', 
   'si', 'serverinfo', 'ui', 'userinfo', 'whois', 'avatar', 'av', 'banner', 
-  'mc', 'membercount', 'stats', 'botstats', 'hud', 'dashboard', 'date',
+  'mc', 'membercount', 'stats', 'botstats', 'botinfo', 'bi', 'binfo', 'hud', 'dashboard', 'date',
   'about', 'aboutathena', 'botabout', 'whoisathena',
   
   // User Utilities & Fun

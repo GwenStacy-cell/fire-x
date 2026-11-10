@@ -1,6 +1,7 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, NAV_EMOJI_IDS } from '../utils/emojis.js';
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
+import { MessageFlags } from 'discord.js';
 import { sanitizeCV2Payload } from '../cv2.js';
+import { CHANGELOG_ENTRIES } from '../utils/changelogData.js';
 import db from '../database.js';
 import os from 'os';
 import path from 'path';
@@ -112,6 +113,8 @@ export const commands = [
         }
       } catch (e) {}
 
+      const currentVersion = CHANGELOG_ENTRIES[0]?.version || 'v2.9.9';
+
       const container1 = {
         type: 17,
         components: [
@@ -121,7 +124,7 @@ export const commands = [
             components: [{
               type: 10,
               content:
-                `> -# ${BULLET_EMOJI} **Identity :** **${client.user.username}** \u2022 **Version :** \`v2.9.7\`\n` +
+                `> -# ${BULLET_EMOJI} **Identity :** **${client.user.username}** \u2022 **Version :** \`${currentVersion}\`\n` +
                 `> -# ${BULLET_EMOJI} **Bot ID :** \`${client.user.id}\`\n` +
                 `> -# ${BULLET_EMOJI} **Architect :** **${ownerName}** (${ownerTag})\n` +
                 `> -# ${BULLET_EMOJI} **Hosting :** **Obsidian Hosting** \u2022 Node.js \`${process.version}\`\n` +
@@ -166,23 +169,8 @@ export const commands = [
         ]
       };
 
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId('about:combat')
-          .setLabel('Combat Telemetry')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId('about:liveops')
-          .setLabel('LiveOps Monitor')
-          .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
-          .setCustomId('about:close')
-          .setEmoji(NAV_EMOJI_IDS.DELETE)
-          .setStyle(ButtonStyle.Secondary)
-      );
-
       const payload = sanitizeCV2Payload({
-        components: [container1, container2, row],
+        components: [container1, container2],
         flags: MessageFlags.IsComponentsV2
       });
 
