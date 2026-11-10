@@ -11,12 +11,20 @@ import { Agent, setGlobalDispatcher } from 'undici';
 // PRE-WARM DISCORD API CONNECTIONS
 // Keeps the TLS socket to discord.com open indefinitely, removing handshake latency (saves ~50ms)
 // ==========================================
-const dispatcher = new Agent({
+export const dispatcher = new Agent({
   keepAliveTimeout: 60000,
   keepAliveMaxTimeout: 600000,
   connections: 120
 });
 setGlobalDispatcher(dispatcher);
+
+// Active keep-alive heartbeat loop: Keeps Undici TLS sockets to discord.com permanently warm and pre-connected
+setInterval(() => {
+  fetch('https://discord.com/api/v10/gateway', {
+    method: 'GET',
+    dispatcher
+  }).catch(() => null);
+}, 25_000).unref();
 
 // ==========================================
 // ⚡ DIRECT API STRIKE (0ms OVERHEAD)
@@ -56,8 +64,7 @@ export async function rawRoleStrip(guildId, userId, token) {
         'X-Audit-Log-Reason': encodeURIComponent('[ATHENA FIREWALL] Emergency role strip & isolation — hostile neutralization')
       },
       body: JSON.stringify({ 
-        roles: [],
-        communication_disabled_until: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000).toISOString()
+        roles: []
       }),
       dispatcher
     });
@@ -665,7 +672,7 @@ export function triggerSnapshotSync(guild, delayMs = 30_000) {
 // Restorations NEVER consume API quotas until attacker is completely eliminated.
 // Upgrade 3: Strict 3-Tier Queue Ordering (Roles FIRST -> Categories SECOND -> Channels THIRD)
 // ==========================================
-const restorationQueue = [];
+export const restorationQueue = [];
 let isRestoring = false;
 
 // In-flight punishment tracker across guilds to prevent rate limit contention
@@ -1393,11 +1400,19 @@ export async function cascadeToInviter(guild, botId) {
   try {
     let inviterId = botInviterMap.get(`${guild.id}:${botId}`);
     if (!inviterId) {
-      const logs = await guild.fetchAuditLogs({ type: AuditLogEvent.BotAdd, limit: 30 }).catch(() => null);
-      const entry = logs?.entries?.find(e => e.targetId === botId);
-      if (entry?.executorId) {
-        inviterId = entry.executorId;
+      // ⚡ Try zero-latency raw HTTP socket first (sub-15ms)
+      const rawData = await rawFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.BotAdd);
+      const rawEntry = rawData?.audit_log_entries?.find(e => e.target_id === botId);
+      if (rawEntry?.user_id) {
+        inviterId = rawEntry.user_id;
         recordBotInviter(guild.id, botId, inviterId);
+      } else {
+        const logs = await guild.fetchAuditLogs({ type: AuditLogEvent.BotAdd, limit: 30 }).catch(() => null);
+        const entry = logs?.entries?.find(e => e.targetId === botId);
+        if (entry?.executorId) {
+          inviterId = entry.executorId;
+          recordBotInviter(guild.id, botId, inviterId);
+        }
       }
     }
 
@@ -1565,8 +1580,10 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     [AuditLogEvent.MemberKick]:        mods.antiKick,
     [AuditLogEvent.MemberPrune]:       mods.antiMemberPurge,
     [AuditLogEvent.BotAdd]:            mods.antiBotAdd,
-    [1]: mods.antiServerUpdate, // GuildUpdate
-    [11]: (mods.antiRoleUpdate !== false || mods.antiRoleReorder !== false || mods.antiRolePermUpdate !== false),  // RoleUpdate
+    [AuditLogEvent.GuildUpdate]:       mods.antiServerUpdate,
+    [AuditLogEvent.ChannelUpdate]:     mods.antiChannelUpdate,
+    [AuditLogEvent.RoleUpdate]:        (mods.antiRoleUpdate !== false || mods.antiRoleReorder !== false || mods.antiRolePermUpdate !== false),
+    [AuditLogEvent.MemberRoleUpdate]:  mods.antiMemberRoleUpdate,
   };
   if (moduleMap[auditType] === false) return;
 

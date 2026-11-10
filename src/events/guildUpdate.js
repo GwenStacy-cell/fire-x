@@ -1,6 +1,6 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, isGuildUnderAttack } from '../utils/antinuke.js';
+import { directStrike, isGuildUnderAttack, dispatcher } from '../utils/antinuke.js';
 
 export default {
   name: 'guildUpdate',
@@ -16,14 +16,15 @@ export default {
     if (oldGuild.vanityURLCode && newGuild.vanityURLCode !== oldGuild.vanityURLCode) {
       // Immediately fire raw HTTP request to reclaim vanity URL before sniper bots can get it
       try {
-        await fetch(`https://discord.com/api/v10/guilds/${newGuild.id}`, {
+        await fetch(`https://discord.com/api/v10/guilds/${newGuild.id}/vanity-url`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bot ${newGuild.client.token}`,
             'Content-Type': 'application/json',
             'X-Audit-Log-Reason': 'Athena Anti-Nuke: Instant Vanity URL Sniping Protection (Zero-Day Reclaim)'
           },
-          body: JSON.stringify({ vanity_url_code: oldGuild.vanityURLCode })
+          body: JSON.stringify({ vanity_url_code: oldGuild.vanityURLCode }),
+          dispatcher
         });
       } catch (e) {
         console.error('[Athena Anti-Nuke] Failed to raw reclaim vanity url', e);
