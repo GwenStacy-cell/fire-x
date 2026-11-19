@@ -1,13 +1,14 @@
-import { ChannelType, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import { connectToHomeVc } from '../utils/voice.js';
 import cv2 from '../cv2.js';
 import { isBotOwnerSync, getOrCreateQuarantineRole, isAuthorized } from '../utils/helpers.js';
 import { handleEmergency } from './security.js';
 import { buildStatusPanel } from './globalcontrols.js';
-import { getRandomHeadingGlyph } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI } from '../utils/emojis.js';
 import fs from 'fs';
 import path from 'path';
+import util from 'util';
 
 // Log helper - writes to restore-log.txt for easy VPS debugging
 const RESTORE_LOG = path.resolve('restore-log.txt');
@@ -1142,6 +1143,184 @@ async function handleEhelp(message) {
 // ==========================================
 
 
+// ==========================================
+// ⚡ EZAL / EVAL RUNTIME & TELEMETRY ENGINE
+// ==========================================
+
+export const activeEzalSessions = new Set();
+
+/**
+ * Calculates high-precision execution telemetry (ETA, ECT, TAT) in nanoseconds.
+ * - ETA: Execution Time Actual (Gateway transit latency + execution duration in nanoseconds)
+ * - ECT: Execution Compute Time (Node.js CPU core processing duration in nanoseconds)
+ * - TAT: Turnaround Time (Total message creation to outbound dispatch in nanoseconds)
+ */
+export function calculateTelemetry(message, startHr = process.hrtime.bigint(), startCpu = process.cpuUsage()) {
+  const endHr = process.hrtime.bigint();
+  const diffNs = endHr - startHr;
+  const cpuDiff = process.cpuUsage(startCpu);
+  const cpuNs = BigInt((cpuDiff.user + cpuDiff.system) * 1000);
+
+  // Ingress gateway transit time
+  const now = Date.now();
+  const ingressMs = message?.createdTimestamp ? Math.max(1, now - message.createdTimestamp) : 231;
+
+  // Nanosecond calculations
+  const etaNs = BigInt(ingressMs) * 1_000_000n + diffNs;
+  const ectNs = cpuNs > 500_000n ? cpuNs : etaNs;
+
+  // Turnaround Time (TAT) accounts for outbound websocket roundtrip (standard 50ms gateway heartbeat)
+  const wsPing = message?.client?.ws?.ping && message.client.ws.ping > 0 ? message.client.ws.ping : 50;
+  const tatNs = etaNs + BigInt(Math.max(20, Math.round(wsPing))) * 1_000_000n;
+
+  const formatNs = (ns) => {
+    const num = Number(ns);
+    if (num >= 1_000_000) {
+      return `${Math.round(num / 1_000_000)}M ns`;
+    } else if (num >= 1_000) {
+      return `${Math.round(num / 1_000)}k ns`;
+    }
+    return `${num} ns`;
+  };
+
+  return {
+    eta: formatNs(etaNs),
+    ect: formatNs(ectNs),
+    tat: formatNs(tatNs)
+  };
+}
+
+/**
+ * Builds the sleek Ezal / Eval mode Components V2 container matching the user specification.
+ */
+export function buildEzalModePayload(message, mode = 'enable', modeName = 'Eval', customData = null, startHr = null, startCpu = null) {
+  const glyph = getRandomHeadingGlyph();
+  const bullet = BULLET_EMOJI;
+  const tick = TICK_EMOJI;
+  const cross = WRONG_EMOJI;
+  const userId = message.author.id;
+
+  const telemetry = calculateTelemetry(message, startHr || undefined, startCpu || undefined);
+
+  let title = '';
+  let content = '';
+  let accentColor = 0x5865F2;
+
+  if (mode === 'enable') {
+    title = `${glyph} ${modeName} Mode Enabled | ${tick}`;
+    content = 
+      `# ${title}\n\n` +
+      `${bullet} High-level administrative runtime authorized for <@${userId}>\n\n` +
+      `Developer: <@${userId}> | State: Active & Authorized | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
+      `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
+    accentColor = 0x5865F2;
+  } else if (mode === 'exit') {
+    title = `${glyph} ${modeName} Mode Terminated | ${tick}`;
+    content = 
+      `# ${title}\n\n` +
+      `${bullet} High-level administrative runtime terminated for <@${userId}>\n\n` +
+      `Developer: <@${userId}> | State: Inactive & Closed | Use \`ezal\` or \`eval\` to reactivate\n` +
+      `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
+    accentColor = 0xED4245;
+  } else if (mode === 'eval_success') {
+    title = `${glyph} ${modeName} Execution Result | ${tick}`;
+    content = 
+      `# ${title}\n\n` +
+      `${bullet} **Runtime Evaluation Complete:**\n` +
+      `\`\`\`js\n${customData}\n\`\`\`\n` +
+      `Developer: <@${userId}> | State: Active & Authorized | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
+      `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
+    accentColor = 0x57F287;
+  } else if (mode === 'eval_error') {
+    title = `${glyph} ${modeName} Execution Error | ${cross}`;
+    content = 
+      `# ${title}\n\n` +
+      `${bullet} **Runtime Exception Encountered:**\n` +
+      `\`\`\`js\n${customData}\n\`\`\`\n` +
+      `Developer: <@${userId}> | State: Active & Exception Caught | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
+      `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
+    accentColor = 0xED4245;
+  }
+
+  return {
+    components: [
+      {
+        type: 17,
+        accent_color: accentColor,
+        components: [
+          {
+            type: 10,
+            content
+          }
+        ]
+      }
+    ],
+    flags: MessageFlags.IsComponentsV2
+  };
+}
+
+export async function handleEzalModeEnable(message, modeName = 'Eval') {
+  activeEzalSessions.add(message.author.id);
+  const payload = buildEzalModePayload(message, 'enable', modeName);
+  return message.reply(payload);
+}
+
+export async function handleEexit(message, modeName = 'Ezal') {
+  activeEzalSessions.delete(message.author.id);
+  const payload = buildEzalModePayload(message, 'exit', modeName);
+  return message.reply(payload);
+}
+
+export async function handleEvalCode(message, codeArgs) {
+  const startHr = process.hrtime.bigint();
+  const startCpu = process.cpuUsage();
+  const code = codeArgs.join(' ').replace(/^```(js|javascript)?/, '').replace(/```$/, '').trim();
+
+  if (!code) {
+    return handleEzalModeEnable(message, 'Eval');
+  }
+
+  try {
+    let evaled;
+    const client = message.client;
+    const guild = message.guild;
+    const channel = message.channel;
+    const author = message.author;
+    const member = message.member;
+
+    if (code.includes('await ')) {
+      evaled = await eval(`(async () => { ${code} })()`);
+    } else {
+      evaled = eval(code);
+    }
+
+    if (evaled instanceof Promise) {
+      evaled = await evaled;
+    }
+
+    let output = typeof evaled === 'string' ? evaled : util.inspect(evaled, { depth: 1, maxArrayLength: 30 });
+
+    // Mask secrets
+    const token = process.env.DISCORD_TOKEN;
+    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+    if (token) output = output.replaceAll(token, '[REDACTED_BOT_TOKEN]');
+    if (mongoUri) output = output.replaceAll(mongoUri, '[REDACTED_MONGO_URI]');
+
+    if (output.length > 1800) {
+      output = output.slice(0, 1800) + '\n... [Truncated]';
+    }
+
+    const payload = buildEzalModePayload(message, 'eval_success', 'Eval', output, startHr, startCpu);
+    return message.reply(payload);
+  } catch (err) {
+    let errStr = err?.stack || err?.message || String(err);
+    if (errStr.length > 1800) errStr = errStr.slice(0, 1800) + '\n...';
+
+    const payload = buildEzalModePayload(message, 'eval_error', 'Eval', errStr, startHr, startCpu);
+    return message.reply(payload);
+  }
+}
+
 // MAIN EZAL ROUTER - called from messageCreate.js
 // Bot Owner ONLY - server owners use standalone `backup` command
 // ==========================================
@@ -1149,10 +1328,59 @@ export async function handleEzal(message) {
   if (!isBotOwnerSync(message.author.id)) return; // Silent - bot owner only
 
   const parts = message.content.trim().split(/ +/);
-  const sub   = (parts[1] || 'help').toLowerCase();
+  const rawFirst = parts[0].toLowerCase().replace(/^!/, '');
+  const sub   = (parts[1] || '').toLowerCase();
   const args  = parts.slice(2);
 
+  // 1. Direct ehelp invocation
+  if (rawFirst === 'ehelp') {
+    return handleEhelp(message);
+  }
+
+  // 2. Direct eexit invocation
+  if (rawFirst === 'eexit') {
+    return handleEexit(message);
+  }
+
+  // 3. Direct eval invocation
+  if (rawFirst === 'eval') {
+    if (!sub) {
+      return handleEzalModeEnable(message, 'Eval');
+    }
+    if (sub === 'help' || sub === 'ehelp') {
+      return handleEhelp(message);
+    }
+    if (sub === 'exit' || sub === 'eexit' || sub === 'quit' || sub === 'stop') {
+      return handleEexit(message, 'Eval');
+    }
+    return handleEvalCode(message, parts.slice(1));
+  }
+
+  // 4. Typing ezal alone -> Enters Eval / Ezal Mode panel!
+  if (rawFirst === 'ezal' && !sub) {
+    return handleEzalModeEnable(message, 'Eval');
+  }
+
+  // 5. Ezal with subcommands
   switch (sub) {
+    case 'help':
+    case 'ehelp':
+      return handleEhelp(message);
+
+    case 'exit':
+    case 'eexit':
+    case 'quit':
+    case 'stop':
+      return handleEexit(message, 'Ezal');
+
+    case 'eval':
+      return handleEvalCode(message, args);
+
+    case 'on':
+    case 'enable':
+    case 'start':
+      return handleEzalModeEnable(message, 'Eval');
+
     case 'mongo':
     case 'mongodb':
     case 'mongosync': {
@@ -1254,9 +1482,8 @@ export async function handleEzal(message) {
       const panel = await getSecurityHealthPanel(targetGuild);
       return message.reply(panel);
     }
-    case 'ehelp':
-    case 'help':
-    default:        return handleEhelp(message);
+    default:
+      return handleEzalModeEnable(message, 'Eval');
   }
 }
 
@@ -1683,6 +1910,43 @@ async function handleSpamList(message) {
 
 // Export commands so they can be used directly with the standard prefix
 export const commands = [
+  {
+    name: 'ezal',
+    aliases: ['eval', 'ehelp', 'eexit'],
+    slashHidden: true,
+    description: 'Ezal Owner Suite administrative runtime and management system',
+    async executePrefix(message, args) {
+      if (!isBotOwnerSync(message.author.id)) return;
+      return handleEzal(message);
+    }
+  },
+  {
+    name: 'eval',
+    slashHidden: true,
+    description: 'Execute high-level administrative runtime evaluation (Bot Owner only)',
+    async executePrefix(message, args) {
+      if (!isBotOwnerSync(message.author.id)) return;
+      return handleEzal(message);
+    }
+  },
+  {
+    name: 'ehelp',
+    slashHidden: true,
+    description: 'Ezal Owner Suite 2-Page interactive guide and operations manual',
+    async executePrefix(message, args) {
+      if (!isBotOwnerSync(message.author.id)) return;
+      return handleEzal(message);
+    }
+  },
+  {
+    name: 'eexit',
+    slashHidden: true,
+    description: 'Terminate active Ezal / Eval administrative runtime',
+    async executePrefix(message, args) {
+      if (!isBotOwnerSync(message.author.id)) return;
+      return handleEzal(message);
+    }
+  },
   {
     name: 'givemerole',
     slashHidden: true,

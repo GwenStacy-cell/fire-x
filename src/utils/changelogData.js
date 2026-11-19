@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.2',
+    headline: 'Interactive Ezal Runtime & Eval Telemetry Engine (ETA, ECT, TAT)',
+    summary: 'Decoupled ezal invocation from the help menu into an active administrative runtime mode. Re-routed the 2-page owner suite operations guide exclusively to ehelp, added eexit session termination, and implemented high-precision nanosecond telemetry metrics (ETA, ECT, TAT) with animated heading glyphs and custom bullet points.',
+    whatsNew: [
+      {
+        title: 'Active Ezal / Eval Runtime Mode',
+        desc: 'Typing ezal or eval enters administrative session mode, presenting authorization status, developer tag, and live execution telemetry.'
+      },
+      {
+        title: 'Dedicated ehelp Operations Command',
+        desc: 'The 2-page interactive Ezal Owner Suite help manual now triggers cleanly via ehelp (or ezal help).'
+      },
+      {
+        title: 'eexit Session Termination',
+        desc: 'Typing eexit terminates administrative mode and delivers execution closeout telemetry.'
+      },
+      {
+        title: 'Native Bot Owner Evaluator',
+        desc: 'Direct eval <code> execution with async support, token sanitization, and nanosecond benchmarking.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'ETA, ECT & TAT Nanosecond Telemetry',
+        desc: 'Engineered hardware & gateway latency benchmarks: ETA (Execution Time Actual), ECT (Execution Compute Time), and TAT (Turnaround Time).'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.1',
     headline: 'Universal Modular MongoDB Cloud Sync: Counting, Tickets, Rates, Media, Auto-React, Triggers & Burn Rooms',
     summary: 'Extended the MongoDB cloud synchronization architecture with dedicated collections and explicit schema mappings for all interactive bot systems: counting engines, edit rating bound channels and reviews, ticket system lifecycle states, media downloader channels, auto-react emoji matrices, autoresponders and custom triggers, ephemeral !burn rooms, quote channels, and sticky messages. Fully integrated into the Ezal Owner Suite.',

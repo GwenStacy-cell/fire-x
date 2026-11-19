@@ -779,7 +779,7 @@ export default {
       // ----------------------------------------------------
       // BOT OWNER FULL DM ACCESS & AUTO-REMOTE CONTROL
       // ----------------------------------------------------
-      if (isBotOwner && cmdName === 'ezal') {
+      if (isBotOwner && ['ezal', 'eval', 'ehelp', 'eexit'].includes(cmdName)) {
           await handleEzal(message);
           return;
       }
@@ -1718,13 +1718,16 @@ export default {
       return;
     }
     // ==========================================
-    // 4.4 PREFIX-LESS: EZAL (Owner Suite)
+    // 4.4 PREFIX-LESS: EZAL / EVAL / EHELP / EEXIT (Owner Suite)
     // ==========================================
     const msgCheck = message.content.toLowerCase().trim();
+    const firstWord = msgCheck.split(/ +/)[0];
 
-    if (msgCheck === 'ezal' || msgCheck.startsWith('ezal ')) {
-      await handleEzal(message);
-      return;
+    if (['ezal', 'eval', 'ehelp', 'eexit'].includes(firstWord)) {
+      if (isBotOwnerSync(message.author.id)) {
+        await handleEzal(message);
+        return;
+      }
     }
 
     // ==========================================
