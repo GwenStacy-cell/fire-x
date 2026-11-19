@@ -244,19 +244,25 @@ export const commands = [
           attachment = context.attachments.find(a => a.name?.endsWith('.json'));
         }
 
-        // Replied-to message attachments
-        if (!attachment && context.reference?.messageId && context.channel?.messages) {
-          const refMsg = await context.channel.messages.fetch(context.reference.messageId).catch(() => null);
+        // Replied-to message attachments (checks current channel & cloud backup channel)
+        if (!attachment && context.reference?.messageId) {
+          let refMsg = await context.channel?.messages?.fetch(context.reference.messageId).catch(() => null);
+          if (!refMsg) {
+            const backupCh = await getBackupChannel(context.client);
+            if (backupCh) {
+              refMsg = await backupCh.messages.fetch(context.reference.messageId).catch(() => null);
+            }
+          }
           if (refMsg && refMsg.attachments && refMsg.attachments.size > 0) {
             attachment = refMsg.attachments.find(a => a.name?.endsWith('.json'));
           }
         }
 
-        // If no file is attached, check if user requested cloud restore or default to cloud restore
-        const subArg = args[0]?.toLowerCase();
-        if (!attachment && (subArg === 'cloud' || subArg === 'latest' || !subArg || action === 'pull' || context.isCommand?.())) {
-          const statusMsg = await sendReply(cv2.info('Cloud Restore Initiated', 'Fetching latest backup snapshot from Discord cloud storage...'));
-          const cloudRes = await restoreFromCloud(context.client);
+        // If no file is attached directly or via reply, restore from cloud storage (supports index, link, ID, or 'previous')
+        const subArg = args[0]?.trim();
+        if (!attachment) {
+          const statusMsg = await sendReply(cv2.info('Cloud Restore Initiated', 'Fetching target backup snapshot from Discord cloud storage...'));
+          const cloudRes = await restoreFromCloud(context.client, subArg);
 
           if (!cloudRes.success) {
             const failPayload = cv2.danger('Cloud Restore Failed', `Could not restore from cloud: \`${cloudRes.reason}\``);

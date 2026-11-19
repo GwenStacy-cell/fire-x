@@ -910,8 +910,10 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
 
 /**
  * Downloads and restores the latest snapshot directly from the Discord cloud backup channel.
+ * Accepts optional target: messageId, messageLink, 1-based index (e.g. 2 for previous), or 'previous' keyword.
+ * If unspecified, automatically prefers backups with actual guild data over empty fresh snapshots.
  */
-export async function restoreFromCloud(client) {
+export async function restoreFromCloud(client, target = null) {
   const channel = await getBackupChannel(client);
   if (!channel) {
     return { success: false, reason: 'No cloud backup channel found or configured.' };
@@ -922,20 +924,49 @@ export async function restoreFromCloud(client) {
     return { success: false, reason: 'Backup channel has no messages.' };
   }
 
-  // Find latest message with json attachment sorted by timestamp
-  const backupMessages = messages.filter(m => 
-    m.attachments.some(a => a.name?.endsWith('.json'))
-  );
+  // Find all messages with json attachment sorted by timestamp (newest first)
+  const backupMessages = [...messages.values()]
+    .filter(m => m.attachments.some(a => a.name?.endsWith('.json')))
+    .sort((a, b) => b.createdTimestamp - a.createdTimestamp);
 
-  if (!backupMessages || backupMessages.size === 0) {
+  if (!backupMessages || backupMessages.length === 0) {
     return { success: false, reason: 'No database backup attachment found in recent channel messages.' };
   }
 
-  const backupMsg = backupMessages.sort((a, b) => b.createdTimestamp - a.createdTimestamp).first();
+  let backupMsg = null;
+  if (target) {
+    const rawTarget = String(target).trim();
+    const linkMatch = rawTarget.match(/\/(\d{17,20})$/);
+    const targetId = linkMatch ? linkMatch[1] : (rawTarget.match(/^\d{17,20}$/) ? rawTarget : null);
 
-  const attachment = backupMsg.attachments.find(a => a.name?.endsWith('.json'));
+    if (targetId) {
+      backupMsg = backupMessages.find(m => m.id === targetId) || await channel.messages.fetch(targetId).catch(() => null);
+    } else if (/^\d+$/.test(rawTarget)) {
+      const idx = parseInt(rawTarget, 10) - 1;
+      if (idx >= 0 && idx < backupMessages.length) {
+        backupMsg = backupMessages[idx];
+      }
+    } else if (rawTarget === 'previous' || rawTarget === 'prev' || rawTarget === 'older' || rawTarget === 'last') {
+      backupMsg = backupMessages[1] || backupMessages[0];
+    }
+  }
+
+  if (!backupMsg) {
+    // Smart auto-detection: If latest snapshot has very small size (< 5KB) or was created just now without data,
+    // look for a previous backup message that has substantial size or mentions Guilds > 0
+    const richBackup = backupMessages.find(m => {
+      const att = m.attachments.find(a => a.name?.endsWith('.json'));
+      const text = (m.content || '') + ' ' + (m.embeds?.[0]?.description || '');
+      const hasGuilds = text.includes('Guilds: ') && !text.includes('Guilds: 0');
+      return (att && att.size > 15000) || hasGuilds;
+    });
+
+    backupMsg = richBackup || backupMessages[0];
+  }
+
+  const attachment = backupMsg?.attachments?.find(a => a.name?.endsWith('.json'));
   if (!attachment) {
-    return { success: false, reason: 'Database attachment missing from message.' };
+    return { success: false, reason: 'Database attachment missing from target backup message.' };
   }
 
   console.log(chalk.cyan(`[CloudSync] Downloading latest cloud backup from ${attachment.name} (${(attachment.size / 1024).toFixed(1)} KB)...`));
