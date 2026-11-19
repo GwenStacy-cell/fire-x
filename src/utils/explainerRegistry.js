@@ -2315,11 +2315,11 @@ export const DETAILED_COMMANDS = {
     category: 'Utility & Automation',
     clearance: 'Extra Owner',
     syntax: '!news setup <#channel> [@pingRole] | !news add <preset|url> | !news list | !news remove <url> | !news disable (Also supports /news)',
-    purpose: 'Automated RSS news feed syndication engine that monitors global news outlets (BBC, Tech, Al Jazeera, CNN) or custom RSS feeds and broadcasts updates with image embeds.',
+    purpose: 'Automated RSS news feed syndication engine that monitors global and regional news outlets (Sun News, Polimer News, BBC, Tech, Al Jazeera, CNN) or custom RSS feeds and broadcasts updates with image embeds.',
     architecture: 
 `• **Dual Prefix & Slash Execution:** Fully supported via BOTH prefix commands (\`!news setup\`, \`!news add\`, \`!news list\`, \`!news remove\`, \`!news disable\`) and slash commands (\`/news\`).
 • **Channel & Role Binding:** Administrators bind the destination channel and optional alert ping role using \`!news setup <#channel> [@role]\`. State is permanently saved in SQLite via \`db.setNewsSetup(guildId, channelId, roleId)\`.
-• **Preset & Custom RSS Parsing:** Built-in fast XML parser monitors pre-configured reputable sources (\`BBC World News\`, \`BBC Tech\`, \`Al Jazeera\`, \`CNN\`) or any custom valid RSS XML URL. Feeds are saved via \`db.addNewsFeed(guildId, name, url)\` (up to 5 feeds per server).
+• **Preset & Custom RSS Parsing:** Built-in fast XML parser monitors pre-configured reputable sources (\`Sun News\`, \`Polimer News\`, \`BBC World News\`, \`BBC Tech\`, \`Al Jazeera\`, \`CNN\`) or any custom valid RSS XML URL. Feeds are saved via \`db.addNewsFeed(guildId, name, url)\` (up to 5 feeds per server).
 • **Autonomous Background Cron Job (\`newsJob.js\`):** Runs every 3 minutes, tracking processed articles via GUID hash memory (\`db.updateNewsGuids\`, capped at 200 GUIDs) to guarantee zero duplicate announcements.
 • **Clean Deactivation:** \`!news disable\` or \`/news disable\` safely purges feed subscriptions and resets channel bindings via \`db.setNewsSetup(guildId, null, null)\`.`,
     example: '!news setup #news-feed @NewsAlerts'

@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.2.0',
+    headline: 'Sun News & Polimer News Presets Integration',
+    summary: 'Integrated official Sun News and Polimer News regional broadcasting presets into the automated news engine (/news add and !news add). Enhanced news embeds with high-definition YouTube thumbnail resolution.',
+    whatsNew: [
+      {
+        title: 'Sun News & Polimer News Presets',
+        desc: 'Added instant presets for Sun News (sun, sunnews) and Polimer News (polimer, polimernews) across both prefix and slash command menus.'
+      },
+      {
+        title: 'HD Video News Embeds',
+        desc: 'Automated news broadcaster (newsJob.js) now ingests high-resolution thumbnails for video news feeds, rendering full-size cover images in alerts.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Multi-Alias Preset Mapping',
+        desc: 'Users can quickly subscribe using !news add sun, !news add polimer, !news add sunnews, or !news add polimernews.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.9',
     headline: 'Ezal Mode Minimalist Typography & Grey Font Standardization',
     summary: 'Stripped all glyphs, ticks, crosses, and bullet emojis from Ezal session banners and execution containers. Converted all authorization and telemetry metadata exclusively to Discord muted grey subtext (-#).',

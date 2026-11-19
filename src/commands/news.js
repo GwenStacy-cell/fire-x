@@ -49,6 +49,8 @@ export const commands = [
             type: 3, 
             required: false,
             choices: [
+              { name: 'Sun News (Tamil)', value: 'Sun News|https://www.youtube.com/feeds/videos.xml?channel_id=UCYlh4lH762HvHt6mmiecyWQ' },
+              { name: 'Polimer News (Tamil)', value: 'Polimer News|https://www.youtube.com/feeds/videos.xml?channel_id=UC8Z-VjXBtDJTvq6aqkIskPg' },
               { name: 'BBC World News', value: 'BBC|http://feeds.bbci.co.uk/news/world/rss.xml' },
               { name: 'BBC Technology', value: 'BBC Tech|http://feeds.bbci.co.uk/news/technology/rss.xml' },
               { name: 'Al Jazeera English', value: 'Al Jazeera|https://www.aljazeera.com/xml/rss/all.xml' },
@@ -124,7 +126,7 @@ export const commands = [
 
         let desc = `Successfully configured the automated news feed system!\n**Channel:** <#${channel.id}>\n`;
         desc += `**Ping Role:** ${role ? `<@&${role.id}>` : 'None'}\n\n`;
-        desc += `-# To add news feeds, run: \`${prefix}news add <bbc|tech|aljazeera|cnn|url>\``;
+        desc += `-# To add news feeds, run: \`${prefix}news add <sun|polimer|bbc|tech|aljazeera|cnn|url>\``;
 
         return message.reply(cv2.success(`News Feed Configured | <a:03_tick_circle:1565665642084827206>`, desc));
       }
@@ -163,10 +165,14 @@ export const commands = [
 
         const target = args[1];
         if (!target) {
-          return message.reply(cv2.warn('Missing Input', `Please provide a preset or RSS feed URL:\nPresets: \`bbc\`, \`tech\`, \`aljazeera\`, \`cnn\`\nUsage: \`${prefix}news add bbc\` or \`${prefix}news add <rss_url>\``));
+          return message.reply(cv2.warn('Missing Input', `Please provide a preset or RSS feed URL:\nPresets: \`sun\`, \`polimer\`, \`bbc\`, \`tech\`, \`aljazeera\`, \`cnn\`\nUsage: \`${prefix}news add sun\` or \`${prefix}news add polimer\` or \`${prefix}news add <rss_url>\``));
         }
 
         const presets = {
+          'sun': { name: 'Sun News', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCYlh4lH762HvHt6mmiecyWQ' },
+          'sunnews': { name: 'Sun News', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCYlh4lH762HvHt6mmiecyWQ' },
+          'polimer': { name: 'Polimer News', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC8Z-VjXBtDJTvq6aqkIskPg' },
+          'polimernews': { name: 'Polimer News', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC8Z-VjXBtDJTvq6aqkIskPg' },
           'bbc': { name: 'BBC World News', url: 'http://feeds.bbci.co.uk/news/world/rss.xml' },
           'tech': { name: 'BBC Technology', url: 'http://feeds.bbci.co.uk/news/technology/rss.xml' },
           'aljazeera': { name: 'Al Jazeera English', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
@@ -236,7 +242,7 @@ export const commands = [
         ``,
         `**Command Usage:**`,
         `• \`${prefix}news setup <#channel> [@role]\` \u2014 Bind posting channel & alert ping role`,
-        `• \`${prefix}news add <bbc|tech|aljazeera|cnn|rss_url>\` \u2014 Subscribe to a news feed`,
+        `• \`${prefix}news add <sun|polimer|bbc|tech|aljazeera|cnn|rss_url>\` \u2014 Subscribe to a news feed`,
         `• \`${prefix}news list\` \u2014 View all active feed subscriptions`,
         `• \`${prefix}news remove <url>\` \u2014 Remove a subscribed feed`,
         `• \`${prefix}news disable\` \u2014 Turn off automated news feed and clear subscriptions`

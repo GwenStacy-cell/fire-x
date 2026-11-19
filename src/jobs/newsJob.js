@@ -78,6 +78,11 @@ async function checkNews(client) {
                   url = url.replace('/240/', '/976/');
                 }
                 newsEmbed.setImage(url);
+              } else if (item.link && (item.link.includes('youtube.com/watch') || item.link.includes('youtu.be/'))) {
+                const ytMatch = item.link.match(/(?:v=|\/)([0-9A-Za-z_-]{11})/);
+                if (ytMatch && ytMatch[1]) {
+                  newsEmbed.setImage(`https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`);
+                }
               } else if (item.content && item.content.match(/<img[^>]+src="([^">]+)"/)) {
                 const imgMatch = item.content.match(/<img[^>]+src="([^">]+)"/);
                 if (imgMatch && imgMatch[1]) {
