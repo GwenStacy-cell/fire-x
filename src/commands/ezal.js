@@ -921,8 +921,11 @@ export function getEhelpPagePayload(page = 1) {
           '`ezal restoresetup <serverId> [1-100]` - Re-link JTC, Welcome/Leave, News, Quotes, Auto-React, and Server Logs'
       },
       {
-        name: 'Database Persistence & Cloud Backups',
+        name: 'Database Persistence & MongoDB Cloud',
         value:
+          '`!db mongo` - Check MongoDB connection status & live sync statistics\n' +
+          '`!db mongo sync` - Force live sync of all 73 guilds, counting & stats to MongoDB\n' +
+          '`!db mongo pull` - Pull and hydrate all data directly from MongoDB Cloud\n' +
           '`!db backup` - Force immediate cloud backup snapshot to Discord\n' +
           '`!db status` - View database health, backup channel & cloud sync status\n' +
           '`!db export` - Download raw `db.json` & `stats.db` files\n' +
@@ -981,8 +984,11 @@ export function getEhelpPagePayload(page = 1) {
         '`ezal fadmin <serverId>` / `unfadmin <serverId>` - Remotely grant/revoke admin'
     },
     {
-      name: 'Database Persistence & Cloud Backup',
+      name: 'Database Persistence & MongoDB Cloud',
       value:
+        '`!db mongo` / `ezal mongo` - Check MongoDB connection & live sync stats\n' +
+        '`!db mongo sync` - Force-sync 73 guilds, counting & stats to MongoDB\n' +
+        '`!db mongo pull` - Pull & restore all server data from MongoDB Cloud\n' +
         '`!db status` - Database health, backup channel & cloud sync\n' +
         '`!db backup` - Force immediate cloud backup snapshot to Discord\n' +
         '`!db export` - Download raw db.json & stats.db\n' +
@@ -1147,6 +1153,14 @@ export async function handleEzal(message) {
   const args  = parts.slice(2);
 
   switch (sub) {
+    case 'mongo':
+    case 'mongodb':
+    case 'mongosync': {
+      const { commands } = await import('./databaseadmin.js');
+      const dbCmd = commands.find(c => c.name === 'db');
+      if (dbCmd) return dbCmd.executePrefix(message, ['mongo', ...args]);
+      break;
+    }
     case 'backup':  return handleBackup(message, args);
     case 'backupall': return handleBackupAll(message);
     case 'bcklist': return handleBcklist(message);
