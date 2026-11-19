@@ -1534,7 +1534,25 @@ export async function handleEzal(message) {
         return message.reply(cv2.success('Hierarchy Already Synced', `Sentinel roles are already aligned directly beneath Athena's primary role in **${targetGuild.name}**.`));
       }
     }
+    case 'ss':
+    case 'status':
+    case 'secstatus':
+    case 'botstatus': {
+      const { getSecurityStatusPanel } = await import('./security.js');
+      let targetGuild = message.guild;
+      if (targetArgs[0] && /^\d{17,20}$/.test(targetArgs[0])) {
+        targetGuild = message.client.guilds.cache.get(targetArgs[0]) || message.guild;
+      }
+      if (!targetGuild) return message.reply(cv2.warn('No Guild', 'Run this inside a server or provide a valid server ID.'));
+      const panel = await getSecurityStatusPanel(targetGuild);
+      return message.reply(panel);
+    }
     default: {
+      const { default: commandMap } = await import('./loader.js');
+      const knownCmd = commandMap.get(targetAction);
+      if (knownCmd && knownCmd.executePrefix) {
+        return knownCmd.executePrefix(message, targetArgs);
+      }
       if (activeEzalSessions.has(message.author.id) && !isEzalCmd) {
         return handleEvalCode(message, parts, startHr, startCpu);
       }

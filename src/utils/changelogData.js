@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.2.5',
+    headline: 'Ezal Active Session Command Passthrough & SS Security Routing',
+    summary: 'Resolved command collision in active Ezal sessions where typing bot commands (e.g. ss, status) without a prefix would be erroneously evaluated as raw JavaScript. Added direct commandMap routing and explicit security status routing in Ezal mode.',
+    whatsNew: [
+      {
+        title: 'Ezal Bot Command Passthrough',
+        desc: 'Typing any registered bot command or alias (such as ss, status, secstatus, ping, etc.) while inside an active Ezal session now resolves and executes the command instead of throwing a ReferenceError.'
+      },
+      {
+        title: 'Native SS & Security Status Handler',
+        desc: 'Added dedicated case for ss and status in the Ezal command router to instantly return the real-time security overview panel.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Safe Code Evaluation Fallback',
+        desc: 'Unrecognized inputs in Ezal mode now check commandMap before evaluating arbitrary JavaScript strings.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.2.4',
     headline: 'Supporting Secondary & Hidden Roles Sentinel Hierarchy Drag Watchdog',
     summary: 'Implemented atomic syncSupportingRolePositions and a continuous 90-second periodic watchdog to auto-drag supporting secondary (Athena Firewall) and hidden (Athena Unbypassable) roles directly underneath the bot\'s primary role from any distant position in the server hierarchy.',
