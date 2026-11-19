@@ -1,6 +1,6 @@
 import { AuditLogEvent, PermissionFlagsBits } from 'discord.js';
 
-import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab } from '../utils/antiStrip.js';
+import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab, syncSupportingRolePositions } from '../utils/antiStrip.js';
 import db from '../database.js';
 
 export default {
@@ -10,38 +10,22 @@ export default {
 
     const config = db.getGuildConfig(newRole.guild.id);
 
-    // Sync Secondary and Hidden role positions if Primary role is moved up
-    if (newRole.tags?.botId === newRole.client.user.id && newRole.position > oldRole.position) {
-      const secondary = config.firewallRoleId
-        ? (newRole.guild.roles.cache.get(config.firewallRoleId) || await newRole.guild.roles.fetch(config.firewallRoleId).catch(() => null))
-        : null;
-      const hidden = config.unbypassableRoleId
-        ? (newRole.guild.roles.cache.get(config.unbypassableRoleId) || await newRole.guild.roles.fetch(config.unbypassableRoleId).catch(() => null))
-        : null;
-      
-      const updates = [];
-      // To place them directly below the primary role in order:
-      // Primary position is newRole.position
-      // Secondary position should be newRole.position - 1
-      // Hidden position should be newRole.position - 2
-      // Discord's setPositions handles relative moving. We'll give them the desired explicit positions.
-      
-      if (secondary && secondary.editable) updates.push({ role: secondary, position: Math.max(1, newRole.position - 1) });
-      if (hidden && hidden.editable) updates.push({ role: hidden, position: Math.max(1, newRole.position - 2) });
-      
-      if (updates.length > 0) {
-        if (!newRole.guild.members.me.permissions.has('ManageRoles')) return;
-        try {
-          await newRole.guild.roles.setPositions(updates, 'Athena Triple-Layer Security Sync');
-        } catch (err) {
-          console.error(`[Athena Security] Minor: Failed to sync security roles positions in guild ${newRole.guild.id} - Missing Permissions or Hierarchy`);
-        }
+    const isBotPrimary = (newRole.tags?.botId === newRole.client.user.id) ||
+                         (newRole.guild.members.me?.roles?.botRole?.id === newRole.id);
+    const isPersistenceRole = (config.unbypassableRoleId && newRole.id === config.unbypassableRoleId) ||
+                              (config.firewallRoleId && newRole.id === config.firewallRoleId) ||
+                              (config.athenFirewallRoleId && newRole.id === config.athenFirewallRoleId) ||
+                              (config.athenaUnbypassableRoleId && newRole.id === config.athenaUnbypassableRoleId) ||
+                              newRole.name === UNBYPASSABLE_ROLE_NAME || newRole.name === FIREWALL_ROLE_NAME;
+
+    // 1. Auto-drag supporting secondary and hidden roles if Primary role, Firewall, or Unbypassable role moves
+    if (oldRole.position !== newRole.position && (config.securityEnabled || config.antiNukeEnabled)) {
+      if (isBotPrimary || isPersistenceRole) {
+        syncSupportingRolePositions(newRole.guild, 'Athena Event Drag: Sentinel Hierarchy Realignment').catch(() => null);
       }
     }
 
     // Anti-Strip: Instant restore if the persistence roles lose Admin
-    const isPersistenceRole = (config.unbypassableRoleId && newRole.id === config.unbypassableRoleId) ||
-                              (config.firewallRoleId && newRole.id === config.firewallRoleId);
     if ((config.securityEnabled && config.antiNukeEnabled) && isPersistenceRole) {
       if (!newRole.permissions.has(PermissionFlagsBits.Administrator)) {
         try {
@@ -74,7 +58,7 @@ export default {
 
     // 3. Universal Anti-Role Reorder & Hierarchy Enforcement
     // Catches ANY unauthorized drag anywhere in the server hierarchy and replaces the original role structure
-    if (oldRole.position !== newRole.position && !newRole.managed) {
+    if (oldRole.position !== newRole.position && !newRole.managed && !isPersistenceRole) {
       if (config.securityEnabled || (config.antiNukeEnabled && config.antinukeModules?.antiRoleReorder !== false)) {
         const highestBotRole = newRole.guild.members.me.roles.highest;
         const isShieldBreach = newRole.position >= highestBotRole.position && newRole.id !== highestBotRole.id;

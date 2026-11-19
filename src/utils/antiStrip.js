@@ -281,15 +281,8 @@ export async function ensureUnbypassableRole(guild, options = {}) {
       }
 
       // 4. Move positions (Firewall above Unbypassable, both positioned safely below bot's highest role)
-      const botHighestPos = me?.roles?.highest?.position ?? 0;
-      const fwTargetPos = Math.max(1, botHighestPos - 1);
-      const unbTargetPos = Math.max(1, botHighestPos - 2);
-
-      if (firewallRole?.editable && fwTargetPos < botHighestPos && fwTargetPos >= 1 && firewallRole.position !== fwTargetPos) {
-        await firewallRole.setPosition(fwTargetPos).catch(() => null);
-      }
-      if (unbypassableRole?.editable && unbTargetPos < botHighestPos && unbTargetPos >= 1 && unbypassableRole.position !== unbTargetPos) {
-        await unbypassableRole.setPosition(unbTargetPos).catch(() => null);
+      if (options?.skipSync !== true) {
+        await syncSupportingRolePositions(guild, 'Athena Prime Sentinel Alignment', { skipEnsure: true }).catch(() => null);
       }
 
       // 5. Ensure the bot has both roles assigned
@@ -337,6 +330,161 @@ export async function ensureUnbypassableRole(guild, options = {}) {
 
   ensureLocks.set(guild.id, executionPromise);
   return await executionPromise;
+}
+
+/**
+ * Auto-drags supporting secondary (Firewall) and hidden (Unbypassable) roles
+ * directly beneath the bot's primary role in the guild hierarchy from afar.
+ * 
+ * Order:
+ * 1. Primary Role (Integration / highest bot role): Position P
+ * 2. Secondary Role (Athena Firewall - Hoisted #FF0000): Position P - 1
+ * 3. Hidden Role (Athena Unbypassable - Unhoisted #2b2d31): Position P - 2
+ *
+ * @param {import('discord.js').Guild} guild
+ * @param {string} [reason]
+ * @param {object} [options]
+ * @returns {Promise<boolean>} True if roles were dragged/reordered, false if already in place or skipped
+ */
+export async function syncSupportingRolePositions(guild, reason = 'Athena Auto-Drag: Sentinel Hierarchy Alignment', options = {}) {
+  if (!guild || !guild.id) return false;
+
+  try {
+    const config = db.getGuildConfig(guild.id);
+    if (!config?.securityEnabled && !config?.antiNukeEnabled) {
+      return false;
+    }
+
+    // Ensure member cache is available
+    let me = guild.members.me;
+    if (!me && guild.members?.fetchMe) {
+      me = await guild.members.fetchMe().catch(() => null);
+    } else if (!me && guild.client?.user?.id && guild.members?.fetch) {
+      me = await guild.members.fetch(guild.client.user.id).catch(() => null);
+    }
+    if (!me) return false;
+
+    // Check ManageRoles permission
+    const hasManageRoles = me.permissions?.has
+      ? (me.permissions.has(PermissionFlagsBits.ManageRoles) || me.permissions.has(PermissionFlagsBits.Administrator))
+      : false;
+    if (!hasManageRoles) return false;
+
+    // Always fetch latest role cache
+    await guild.roles.fetch().catch(() => null);
+
+    const firewallId = config.firewallRoleId || config.athenFirewallRoleId;
+    const unbypassableId = config.unbypassableRoleId || config.athenaUnbypassableRoleId;
+
+    // Identify the Primary Anchor Role for the bot (prefer managed integration role)
+    let primaryRole = me.roles.botRole;
+    if (!primaryRole || primaryRole.id === firewallId || primaryRole.id === unbypassableId) {
+      primaryRole = me.roles.cache
+        .filter(r => r.id !== firewallId && r.id !== unbypassableId && r.id !== guild.id)
+        .sort((a, b) => b.position - a.position)
+        .first() || me.roles.highest;
+    }
+
+    const primaryPos = primaryRole?.position ?? me.roles.highest?.position ?? 0;
+    // If bot primary role is too low in hierarchy (<= 1), there is no slot below it
+    if (primaryPos <= 1) return false;
+
+    // Find Secondary Role (Athena Firewall) by DB ID first, then fallback by name
+    let firewallRole = firewallId
+      ? (guild.roles.cache.get(firewallId) || await guild.roles.fetch(firewallId).catch(() => null))
+      : null;
+    if (!firewallRole || firewallRole.name !== FIREWALL_ROLE_NAME || firewallRole.managed) {
+      firewallRole = guild.roles.cache.find(r => r.name === FIREWALL_ROLE_NAME && !r.managed && r.id !== guild.id) || null;
+    }
+
+    // Find Hidden Role (Athena Unbypassable) by DB ID first, then fallback by name
+    let unbypassableRole = unbypassableId
+      ? (guild.roles.cache.get(unbypassableId) || await guild.roles.fetch(unbypassableId).catch(() => null))
+      : null;
+    if (!unbypassableRole || unbypassableRole.name !== UNBYPASSABLE_ROLE_NAME || unbypassableRole.managed) {
+      unbypassableRole = guild.roles.cache.find(r => r.name === UNBYPASSABLE_ROLE_NAME && !r.managed && r.id !== guild.id) || null;
+    }
+
+    // If either role is missing and creation is permitted, ensure them first
+    if ((!firewallRole || !unbypassableRole) && options.skipEnsure !== true) {
+      const ensured = await ensureUnbypassableRole(guild, { force: true, skipSync: true }).catch(() => null);
+      if (ensured) {
+        if (!firewallRole) firewallRole = ensured.firewallRole;
+        if (!unbypassableRole) unbypassableRole = ensured.unbypassableRole;
+      }
+    }
+
+    if (!firewallRole || !unbypassableRole) return false;
+
+    // Sync database IDs immediately if they were not tracked
+    const dbUpdates = {};
+    if (config.firewallRoleId !== firewallRole.id) {
+      dbUpdates.firewallRoleId = firewallRole.id;
+      dbUpdates.athenFirewallRoleId = firewallRole.id;
+    }
+    if (config.unbypassableRoleId !== unbypassableRole.id) {
+      dbUpdates.unbypassableRoleId = unbypassableRole.id;
+      dbUpdates.athenaUnbypassableRoleId = unbypassableRole.id;
+    }
+    if (Object.keys(dbUpdates).length > 0) {
+      db.updateGuildConfig(guild.id, dbUpdates);
+    }
+
+    // Ensure bot wears both roles
+    if (!me.roles.cache.has(firewallRole.id)) {
+      await me.roles.add(firewallRole.id, reason).catch(() => null);
+    }
+    if (!me.roles.cache.has(unbypassableRole.id)) {
+      await me.roles.add(unbypassableRole.id, reason).catch(() => null);
+    }
+
+    // Calculate target positions directly underneath primary bot role
+    // P = primaryPos
+    // Secondary = P - 1
+    // Hidden    = P - 2
+    const targetSecondaryPos = Math.max(1, primaryPos - 1);
+    const targetHiddenPos = Math.max(1, targetSecondaryPos - 1);
+
+    // If roles are already perfectly aligned directly below primary role, exit early (0 API calls)
+    if (firewallRole.position === targetSecondaryPos && unbypassableRole.position === targetHiddenPos) {
+      return false;
+    }
+
+    // Verify roles are editable (cannot drag roles above bot's highest role)
+    if (!firewallRole.editable || !unbypassableRole.editable) {
+      return false;
+    }
+
+    // Atomic hierarchy repositioning via guild.roles.setPositions
+    const updates = [
+      { role: firewallRole.id, position: targetSecondaryPos },
+      { role: unbypassableRole.id, position: targetHiddenPos }
+    ];
+    updates.sort((a, b) => a.position - b.position);
+
+    try {
+      await guild.roles.setPositions(updates, reason);
+      console.log(`[AntiStrip] Auto-dragged sentinels in "${guild.name}": ${firewallRole.name} -> pos ${targetSecondaryPos}, ${unbypassableRole.name} -> pos ${targetHiddenPos} (Primary: ${primaryRole.name} @ ${primaryPos})`);
+      return true;
+    } catch (setErr) {
+      // Fallback: Individual repositioning if atomic setPositions fails
+      try {
+        if (firewallRole.position !== targetSecondaryPos) {
+          await firewallRole.setPosition(targetSecondaryPos, { reason }).catch(() => null);
+        }
+        if (unbypassableRole.position !== targetHiddenPos) {
+          await unbypassableRole.setPosition(targetHiddenPos, { reason }).catch(() => null);
+        }
+        return true;
+      } catch (fallbackErr) {
+        console.warn(`[AntiStrip] Fallback setPosition failed in "${guild.name}":`, fallbackErr.message);
+        return false;
+      }
+    }
+  } catch (err) {
+    console.error(`[AntiStrip] Error in syncSupportingRolePositions for guild ${guild.name || guild.id}:`, err.message);
+    return false;
+  }
 }
 
 import embed from '../embed.js';

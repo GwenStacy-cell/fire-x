@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { allCommands } from '../commands/loader.js';
 import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
-import { ensureUnbypassableRole, removePersistenceRoles } from '../utils/antiStrip.js';
+import { ensureUnbypassableRole, removePersistenceRoles, syncSupportingRolePositions } from '../utils/antiStrip.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 import { updatePlayerUI } from '../utils/musicManager.js';
 import { CronJob } from 'cron';
@@ -188,6 +188,18 @@ export default {
       }
     }, 60000);
 
+    // Periodic Sentinel Hierarchy Watchdog (Runs every 90 seconds)
+    // Continuously ensures supporting secondary (Firewall) and hidden (Unbypassable) roles
+    // are dragged directly underneath the bot's primary role from any distant position in the server hierarchy.
+    setInterval(async () => {
+      for (const guild of client.guilds.cache.values()) {
+        const cfg = db.getGuildConfig(guild.id);
+        if (cfg && (cfg.securityEnabled || cfg.antiNukeEnabled)) {
+          syncSupportingRolePositions(guild, 'Athena Periodic Sentinel Hierarchy Watchdog').catch(() => null);
+        }
+      }
+    }, 90000);
+
     // Store boot timestamp for uptime tracking
     client.bootTimestamp = Date.now();
 
@@ -204,8 +216,9 @@ export default {
 
       // Unbypassable Role & Idle Mode Cleanup
       const cfg = db.getGuildConfig(guild.id);
-      if (cfg && cfg.securityEnabled && cfg.antiNukeEnabled) {
+      if (cfg && (cfg.securityEnabled || cfg.antiNukeEnabled)) {
         ensureUnbypassableRole(guild, { force: true }).catch(() => null);
+        syncSupportingRolePositions(guild, 'Athena Startup Sentinel Hierarchy Drag').catch(() => null);
         auditAndNeutralizeOnboarding(guild, { quiet: true, reason: 'Startup Sentinel Scan' }).catch(() => null);
       } else {
         // IDLE MODE: When security / antinuke is not enabled, bot must NOT keep persistence roles

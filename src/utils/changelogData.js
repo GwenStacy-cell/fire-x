@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.2.4',
+    headline: 'Supporting Secondary & Hidden Roles Sentinel Hierarchy Drag Watchdog',
+    summary: 'Implemented atomic syncSupportingRolePositions and a continuous 90-second periodic watchdog to auto-drag supporting secondary (Athena Firewall) and hidden (Athena Unbypassable) roles directly underneath the bot\'s primary role from any distant position in the server hierarchy.',
+    whatsNew: [
+      {
+        title: 'Auto-Drag Sentinel Repositioning',
+        desc: 'Integrates syncSupportingRolePositions(guild) utilizing atomic guild.roles.setPositions to drag secondary (P - 1) and hidden (P - 2) roles straight underneath the bot\'s primary role (P).'
+      },
+      {
+        title: '90-Second Periodic Watchdog',
+        desc: 'Continuously scans all active servers with security enabled and auto-aligns drifted sentinel roles from afar with zero overhead when already aligned.'
+      },
+      {
+        title: 'Reorder Shield Protection',
+        desc: 'Exempts persistence sentinel roles from anti-reorder strikes, eliminating internal race conditions during dynamic role elevation.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Manual Hierarchy Calibration',
+        desc: 'Added ezal dragsentinels command to verify and force instant sentinel role alignment on demand.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.2.3',
     headline: 'Ezal Telemetry Decoupling & Heading Glyph Restoration',
     summary: 'Restored randomized heading glyphs and target blink bullet points in Ezal Mode session banners and execution containers without tick emojis. Decoupled ETA (Transit Arrival) from ECT (Execution Compute Time) to accurately reflect true high-resolution CPU runtime.',
