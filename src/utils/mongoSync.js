@@ -196,6 +196,13 @@ async function createIndexes() {
 export async function hydrateFromMongo(db, statsDB = null) {
   if (!isConnected && !(await connectMongo())) return { success: false, reason: 'Disconnected' };
 
+  if (!statsDB) {
+    try {
+      const statsMod = await import('../statsDB.js');
+      statsDB = statsMod.default || statsMod;
+    } catch {}
+  }
+
   try {
     const guildsCol = mongoDb.collection('guilds');
     const countingCol = mongoDb.collection('counting');
@@ -360,8 +367,11 @@ export async function hydrateFromMongo(db, statsDB = null) {
       }
 
       // 12. Hydrate SQLite stats.db if available
+      let statsResult = { userStats: 0, channelStats: 0, invites: 0, joins: 0 };
       if (statsDB && typeof statsDB.getDatabaseInstance === 'function') {
-        await hydrateStatsFromMongo(statsDB).catch(() => null);
+        try {
+          statsResult = await hydrateStatsFromMongo(statsDB);
+        } catch {}
       }
 
       // Write hydrated cache to local disk immediately for zero-delay offline resilience
@@ -387,6 +397,10 @@ export async function hydrateFromMongo(db, statsDB = null) {
       syncStats.quoteChannels = Object.values(db.cache.guilds || {}).filter(g => g.quoteChannelId).length;
       syncStats.autoReacts = Object.values(db.cache.guilds || {}).filter(g => g.autoReacts && Object.keys(g.autoReacts).length > 0).length;
       syncStats.stickyMessages = Object.keys(db.cache.stickyMessages || {}).length;
+      syncStats.userStats = statsResult?.userStats || syncStats.userStats || 0;
+      syncStats.channelStats = statsResult?.channelStats || syncStats.channelStats || 0;
+      syncStats.invites = statsResult?.invites || syncStats.invites || 0;
+      syncStats.joins = statsResult?.joins || syncStats.joins || 0;
 
       lastSyncTimestamp = Date.now();
       lastSyncStatus = `Hydrated (${allGuildDocs.length} guilds from MongoDB)`;
@@ -397,6 +411,10 @@ export async function hydrateFromMongo(db, statsDB = null) {
         guildCount: allGuildDocs.length, 
         countingCount: allCountingDocs.length,
         ticketCount: allTicketDocs.length,
+        userStats: statsResult?.userStats || 0,
+        channelStats: statsResult?.channelStats || 0,
+        invites: statsResult?.invites || 0,
+        joins: statsResult?.joins || 0,
         source: 'mongodb' 
       };
     }
@@ -423,6 +441,13 @@ export async function hydrateFromMongo(db, statsDB = null) {
 export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
   if (!isConnected && !(await connectMongo())) return { success: false, reason: 'Disconnected' };
   if (isSyncing) return { success: false, reason: 'Sync in progress' };
+
+  if (!statsDB) {
+    try {
+      const statsMod = await import('../statsDB.js');
+      statsDB = statsMod.default || statsMod;
+    } catch {}
+  }
 
   isSyncing = true;
   try {
@@ -622,9 +647,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     }
 
     // 11. Sync SQLite stats.db to MongoDB collections
-    if (statsDB) {
-      await pushStatsToMongo(statsDB).catch(() => null);
-    }
+    await pushStatsToMongo(statsDB).catch(() => null);
 
     // 12. Push Full Snapshot Document to cloud_backups (Rolling master recovery history - retain latest 30)
     try {
@@ -635,7 +658,13 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
         guildCount: guildEntries.length,
         countingCount: countingEntries.length,
         ticketCount: ticketEntries.length,
-        schemaVersion: 'v3.1.1',
+        schemaVersion: 'v3.1.8',
+        stats: {
+          userStats: syncStats.userStats || 0,
+          channelStats: syncStats.channelStats || 0,
+          invites: syncStats.invites || 0,
+          joins: syncStats.joins || 0
+        },
         data: cache
       };
       await backupsCol.insertOne(snapshotDoc);
@@ -677,7 +706,11 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       quoteChannels: syncStats.quoteChannels,
       autoReacts: syncStats.autoReacts,
       triggers: syncStats.triggers,
-      burnRooms: syncStats.burnRooms
+      burnRooms: syncStats.burnRooms,
+      userStats: syncStats.userStats || 0,
+      channelStats: syncStats.channelStats || 0,
+      invites: syncStats.invites || 0,
+      joins: syncStats.joins || 0
     };
   } catch (err) {
     console.error(chalk.red('[MongoSync] Push error:'), err);
@@ -713,12 +746,28 @@ export function startMongoSyncScheduler(db, statsDB = null, intervalMinutes = 5)
 }
 
 /**
+ * Executes MongoDB bulk operations in chunks to prevent packet sizing and timeout issues.
+ */
+async function chunkedBulkWrite(collection, ops, chunkSize = 500) {
+  for (let i = 0; i < ops.length; i += chunkSize) {
+    const chunk = ops.slice(i, i + chunkSize);
+    await collection.bulkWrite(chunk, { ordered: false }).catch(() => {});
+  }
+}
+
+/**
  * Pushes SQLite stats rows to MongoDB
  */
 async function pushStatsToMongo(statsDB) {
   if (!mongoDb) return;
   try {
-    const rawDb = statsDB.getDatabaseInstance?.() || (statsDB._rawDb);
+    if (!statsDB) {
+      try {
+        const statsMod = await import('../statsDB.js');
+        statsDB = statsMod.default || statsMod;
+      } catch {}
+    }
+    const rawDb = statsDB?.getDatabaseInstance?.() || (statsDB?._rawDb);
     if (!rawDb) return;
 
     // 1. User activity
@@ -731,7 +780,7 @@ async function pushStatsToMongo(statsDB) {
           upsert: true
         }
       }));
-      await mongoDb.collection('stats_user_activity').bulkWrite(userOps, { ordered: false }).catch(() => {});
+      await chunkedBulkWrite(mongoDb.collection('stats_user_activity'), userOps, 500);
       syncStats.userStats = userRows.length;
     }
 
@@ -745,7 +794,7 @@ async function pushStatsToMongo(statsDB) {
           upsert: true
         }
       }));
-      await mongoDb.collection('stats_channel_activity').bulkWrite(chanOps, { ordered: false }).catch(() => {});
+      await chunkedBulkWrite(mongoDb.collection('stats_channel_activity'), chanOps, 500);
       syncStats.channelStats = chanRows.length;
     }
 
@@ -759,7 +808,7 @@ async function pushStatsToMongo(statsDB) {
           upsert: true
         }
       }));
-      await mongoDb.collection('stats_user_invites').bulkWrite(inviteOps, { ordered: false }).catch(() => {});
+      await chunkedBulkWrite(mongoDb.collection('stats_user_invites'), inviteOps, 500);
       syncStats.invites = inviteRows.length;
     }
 
@@ -773,7 +822,7 @@ async function pushStatsToMongo(statsDB) {
           upsert: true
         }
       }));
-      await mongoDb.collection('stats_join_history').bulkWrite(joinOps, { ordered: false }).catch(() => {});
+      await chunkedBulkWrite(mongoDb.collection('stats_join_history'), joinOps, 500);
       syncStats.joins = joinRows.length;
     }
   } catch {}
@@ -783,10 +832,21 @@ async function pushStatsToMongo(statsDB) {
  * Hydrates local SQLite tables from MongoDB
  */
 async function hydrateStatsFromMongo(statsDB) {
-  if (!mongoDb) return;
+  if (!mongoDb) return { userStats: 0, channelStats: 0, invites: 0, joins: 0 };
   try {
-    const rawDb = statsDB.getDatabaseInstance?.() || (statsDB._rawDb);
-    if (!rawDb) return;
+    if (!statsDB) {
+      try {
+        const statsMod = await import('../statsDB.js');
+        statsDB = statsMod.default || statsMod;
+      } catch {}
+    }
+    const rawDb = statsDB?.getDatabaseInstance?.() || (statsDB?._rawDb);
+    if (!rawDb) return { userStats: 0, channelStats: 0, invites: 0, joins: 0 };
+
+    let userCount = 0;
+    let chanCount = 0;
+    let invCount = 0;
+    let joinCount = 0;
 
     // Hydrate user activity
     const userDocs = await mongoDb.collection('stats_user_activity').find({}).toArray();
@@ -799,6 +859,7 @@ async function hydrateStatsFromMongo(statsDB) {
         for (const row of rows) insertUser.run(row);
       });
       insertMany(userDocs);
+      userCount = userDocs.length;
       console.log(chalk.cyan(`[MongoSync] Restored ${userDocs.length} user activity rows into SQLite stats.db`));
     }
 
@@ -813,6 +874,7 @@ async function hydrateStatsFromMongo(statsDB) {
         for (const row of rows) insertChan.run(row);
       });
       insertMany(chanDocs);
+      chanCount = chanDocs.length;
       console.log(chalk.cyan(`[MongoSync] Restored ${chanDocs.length} channel activity rows into SQLite stats.db`));
     }
 
@@ -827,6 +889,7 @@ async function hydrateStatsFromMongo(statsDB) {
         for (const row of rows) insertInv.run(row);
       });
       insertMany(inviteDocs);
+      invCount = inviteDocs.length;
     }
 
     // Hydrate join history
@@ -840,8 +903,17 @@ async function hydrateStatsFromMongo(statsDB) {
         for (const row of rows) insertJoin.run(row);
       });
       insertMany(joinDocs);
+      joinCount = joinDocs.length;
     }
+
+    return {
+      userStats: userCount,
+      channelStats: chanCount,
+      invites: invCount,
+      joins: joinCount
+    };
   } catch (err) {
     console.warn('[MongoSync] Stats hydration warning:', err.message);
+    return { userStats: 0, channelStats: 0, invites: 0, joins: 0 };
   }
 }

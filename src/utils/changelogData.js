@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.8',
+    headline: 'Complete SQLite Stats Cloud Persistence & Chunked BulkWrite Engine',
+    summary: 'Fully integrated SQLite stats.db (user activity, channel velocity, invite tracking, and join history) into all MongoDB synchronization pipelines. Added lazy statsDB resolution, chunked bulk writes (500 ops/batch), master snapshot stats summaries, and verified live cloud backup telemetry.',
+    whatsNew: [
+      {
+        title: 'SQLite Stats Full Cloud Persistence',
+        desc: 'All 4,672+ user activity rows, 8,253+ channel velocity records, user invites, and join logs in stats.db are mirrored directly to dedicated MongoDB collections with full bidirectional hydration.'
+      },
+      {
+        title: 'High-Velocity Chunked BulkWrite Engine',
+        desc: 'Implemented 500-operation chunking for MongoDB bulk writes to eliminate network timeouts and ensure seamless high-volume stats flushing.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Master Snapshot Stats Metadata',
+        desc: 'Rolling master backups in cloud_backups now include comprehensive stats telemetry summaries alongside in-memory database snapshots.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.7',
     headline: 'Git Commit Count Presence Telemetry Synchronization',
     summary: 'Synchronized bot status presence note ("No of Git Commits Done so far") with live repository commit telemetry. Enhanced safe.directory resolution, auto-unshallowing for shallow container clones, and accurate fallback calibration.',

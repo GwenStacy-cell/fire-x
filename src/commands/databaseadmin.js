@@ -387,6 +387,8 @@ export const commands = [
             `MongoDB Cloud Synced | <a:03_tick_circle:1565665642084827206>`,
             `Successfully synced all data to your MongoDB Cloud Database!\n\n` +
             `> -# **Guilds Synced:** \`${pushRes.guilds} servers\`\n` +
+            `> -# **Member Activity Stats:** \`${(pushRes.userStats || 0).toLocaleString()} user rows, ${(pushRes.channelStats || 0).toLocaleString()} channel rows\`\n` +
+            `> -# **Server Invites & Joins:** \`${pushRes.invites || 0} tracked invites, ${pushRes.joins || 0} join history\`\n` +
             `> -# **Counting Engines:** \`${pushRes.counting} channels\`\n` +
             `> -# **Rate Channels & Ratings:** \`${pushRes.rateChannels} channels (${pushRes.editRatings} ratings)\`\n` +
             `> -# **Ticket Systems:** \`${pushRes.tickets} setups\`\n` +
@@ -411,6 +413,8 @@ export const commands = [
             `MongoDB Restored | <a:03_tick_circle:1565665642084827206>`,
             `Successfully restored all data directly from MongoDB Cloud!\n\n` +
             `> -# **Restored Servers:** \`${hydRes.guildCount || 0} guilds\`\n` +
+            `> -# **Member Activity Stats:** \`${(hydRes.userStats || 0).toLocaleString()} user rows, ${(hydRes.channelStats || 0).toLocaleString()} channel rows\`\n` +
+            `> -# **Invite & Join Records:** \`${hydRes.invites || 0} invites, ${hydRes.joins || 0} join history\`\n` +
             `> -# **Counting Channels:** \`${hydRes.countingCount || 0} channels\`\n` +
             `> -# **Ticket Setups:** \`${hydRes.ticketCount || 0} systems\`\n` +
             `> -# **Source:** \`MongoDB Cloud Cluster (AthenaFirewall)\`\n\n` +
