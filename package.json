@@ -15,7 +15,6 @@
     "@discordjs/voice": "^0.19.2",
     "@fontsource/inter": "^5.2.8",
     "@gradio/client": "^2.7.1",
-    "@mrnima/instagram-downloader": "^1.0.0",
     "anime-actions": "^2.1.2",
     "audio-mixer": "^2.1.4",
     "better-sqlite3": "^12.11.1",

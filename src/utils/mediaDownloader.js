@@ -349,30 +349,7 @@ async function handleInstagramMedia(client, message, url, tempFilesToClean) {
     console.warn('[Media] snapsave IG failed:', errSnap.message);
   }
 
-  // Strategy 4: @mrnima/instagram-downloader
-  try {
-    const igdl = await import('@mrnima/instagram-downloader');
-    const fn = igdl.default?.instagramDownload || igdl.instagramDownload;
-    if (typeof fn === 'function') {
-      const igRes = await fn(cleanUrl);
-      if (igRes && igRes.status && igRes.data && igRes.data.length > 0) {
-        const item = igRes.data.find(i => i.url && (i.type === 'video' || i.url.includes('.mp4'))) || igRes.data[0];
-        if (item && item.url) {
-          const mRes = await fetch(item.url);
-          if (mRes.ok) {
-            const buf = Buffer.from(await mRes.arrayBuffer());
-            const ext = (item.type === 'video' || item.url.includes('.mp4')) ? 'mp4' : 'jpg';
-            const attachment = new AttachmentBuilder(buf, { name: `Athena_Instagram.${ext}` });
-            return await sendInstagramMediaWithMp3Option(message, [attachment], 'Instagram Media', cleanUrl);
-          }
-        }
-      }
-    }
-  } catch (errIg) {
-    console.warn('[Media] @mrnima IG failed:', errIg.message);
-  }
-
-  // Strategy 5: btch-downloader igdl
+  // Strategy 4: btch-downloader igdl
   try {
     const btch = (await import('btch-downloader')).default;
     if (typeof btch?.igdl === 'function') {

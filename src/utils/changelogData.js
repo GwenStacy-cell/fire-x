@@ -15,6 +15,31 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '19 November 2026',
+    version: 'v3.0.4',
+    headline: 'Dependency Tree Sanitization & Deprecated Package Pruning for Hosting Environments',
+    summary: 'Purged defunct and unpublished NPM dependencies (@mrnima/instagram-downloader) from package.json and package-lock.json that were triggering E404 install aborts in automated Pterodactyl container deployments. Streamlined media download fallbacks with native multi-strategy pipeline.',
+    whatsNew: [
+      {
+        title: 'E404 Dependency Pruning',
+        desc: 'Completely removed deleted @mrnima/instagram-downloader package from manifests to restore 100% clean automated npm install execution.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Clean Headless Deployment',
+        desc: 'Ensures npm install and Pterodactyl Docker entrypoints install all core packages (discord.js, @discordjs/voice, undici) without registry 404 blocks.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'ERR_MODULE_NOT_FOUND on Discord.js',
+        desc: 'Resolved the issue where aborted npm install execution left node_modules incomplete, causing startup failure.'
+      }
+    ],
+    tip: 'All dependencies are fully vetted and verified against the public npm registry.'
+  },
+  {
     date: '10 November 2026',
     version: 'v3.0.3',
     headline: 'Military-Grade Execution Priority: Ban-First Architecture with TCP_NODELAY & Zero-Contention Sockets',
