@@ -1194,12 +1194,7 @@ export function calculateTelemetry(message, startHr = process.hrtime.bigint(), s
  * Builds the sleek Ezal mode Components V2 container matching the user specification.
  */
 export function buildEzalModePayload(message, mode = 'enable', modeName = 'Ezal', customData = null, startHr = null, startCpu = null) {
-  const glyph = getRandomHeadingGlyph();
-  const bullet = BULLET_EMOJI;
-  const tick = TICK_EMOJI;
-  const cross = WRONG_EMOJI;
   const userId = message.author.id;
-
   const telemetry = calculateTelemetry(message, startHr || undefined, startCpu || undefined);
 
   let title = '';
@@ -1207,37 +1202,37 @@ export function buildEzalModePayload(message, mode = 'enable', modeName = 'Ezal'
   let accentColor = 0x5865F2;
 
   if (mode === 'enable') {
-    title = `${glyph} Ezal Mode Enabled | ${tick}`;
+    title = 'Ezal Mode Enabled';
     content = 
       `# ${title}\n\n` +
-      `${bullet} High-level administrative runtime authorized for <@${userId}>\n\n` +
-      `Developer: <@${userId}> | State: Active & Authorized | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
+      `-# High-level administrative runtime authorized for <@${userId}>\n\n` +
+      `-# Developer: <@${userId}> | State: Active & Authorized | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
       `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
     accentColor = 0x5865F2;
   } else if (mode === 'exit') {
-    title = `${glyph} Ezal Mode Terminated | ${tick}`;
+    title = 'Ezal Mode Terminated';
     content = 
       `# ${title}\n\n` +
-      `${bullet} High-level administrative runtime terminated for <@${userId}>\n\n` +
-      `Developer: <@${userId}> | State: Inactive & Closed | Use \`ezal\` to reactivate\n` +
+      `-# High-level administrative runtime terminated for <@${userId}>\n\n` +
+      `-# Developer: <@${userId}> | State: Inactive & Closed | Use \`ezal\` to reactivate\n` +
       `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
     accentColor = 0xED4245;
   } else if (mode === 'eval_success') {
-    title = `${glyph} Ezal Execution Result | ${tick}`;
+    title = 'Ezal Execution Result';
     content = 
       `# ${title}\n\n` +
-      `${bullet} **Runtime Execution Complete:**\n` +
+      `-# Runtime Execution Complete:\n` +
       `\`\`\`js\n${customData}\n\`\`\`\n` +
-      `Developer: <@${userId}> | State: Active & Authorized | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
+      `-# Developer: <@${userId}> | State: Active & Authorized | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
       `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
     accentColor = 0x57F287;
   } else if (mode === 'eval_error') {
-    title = `${glyph} Ezal Execution Error | ${cross}`;
+    title = 'Ezal Execution Error';
     content = 
       `# ${title}\n\n` +
-      `${bullet} **Runtime Exception Encountered:**\n` +
+      `-# Runtime Exception Encountered:\n` +
       `\`\`\`js\n${customData}\n\`\`\`\n` +
-      `Developer: <@${userId}> | State: Active & Exception Caught | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
+      `-# Developer: <@${userId}> | State: Active & Exception Caught | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
       `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
     accentColor = 0xED4245;
   }

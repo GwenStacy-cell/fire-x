@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.9',
+    headline: 'Ezal Mode Minimalist Typography & Grey Font Standardization',
+    summary: 'Stripped all glyphs, ticks, crosses, and bullet emojis from Ezal session banners and execution containers. Converted all authorization and telemetry metadata exclusively to Discord muted grey subtext (-#).',
+    whatsNew: [
+      {
+        title: 'Minimalist Clean Ezal Mode Branding',
+        desc: 'Removed all leading glyphs, trailing tick circles, crosses, and bullet emojis from Ezal session banners.'
+      },
+      {
+        title: 'Grey Subtext Typography',
+        desc: 'All description lines, developer mentions, session states, and telemetry lines are now styled in Discord muted grey fonts (-#).'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Reduced Visual Clutter',
+        desc: 'Streamlined container appearance for high-contrast, distraction-free administrative runtime execution.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.8',
     headline: 'Complete SQLite Stats Cloud Persistence & Chunked BulkWrite Engine',
     summary: 'Fully integrated SQLite stats.db (user activity, channel velocity, invite tracking, and join history) into all MongoDB synchronization pipelines. Added lazy statsDB resolution, chunked bulk writes (500 ops/batch), master snapshot stats summaries, and verified live cloud backup telemetry.',
