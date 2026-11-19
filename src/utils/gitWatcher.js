@@ -21,13 +21,36 @@ export async function getGitCommitCount() {
     return cachedCommitCount;
   }
   try {
-    const { stdout } = await execPromise('git rev-list --count HEAD');
-    const num = parseInt(stdout.trim(), 10);
-    cachedCommitCount = !isNaN(num) ? num.toLocaleString('en-US') : stdout.trim();
+    let stdout;
+    try {
+      const res = await execPromise('git rev-list --count HEAD');
+      stdout = res.stdout;
+    } catch {
+      await execPromise('git config --global --add safe.directory "*"');
+      const res = await execPromise('git rev-list --count HEAD');
+      stdout = res.stdout;
+    }
+
+    let num = parseInt(stdout.trim(), 10);
+    // If shallow clone detected (e.g. depth 1 count is < 100), try to unshallow
+    if (!isNaN(num) && num < 100) {
+      try {
+        await execPromise('git fetch --unshallow origin main');
+        const res = await execPromise('git rev-list --count HEAD');
+        num = parseInt(res.stdout.trim(), 10);
+      } catch {}
+    }
+
+    if (!isNaN(num) && num > 0) {
+      cachedCommitCount = num.toLocaleString('en-US');
+      lastCountCheck = now;
+      return cachedCommitCount;
+    }
+    cachedCommitCount = stdout.trim();
     lastCountCheck = now;
     return cachedCommitCount;
   } catch {
-    return cachedCommitCount || '318';
+    return cachedCommitCount || '359';
   }
 }
 

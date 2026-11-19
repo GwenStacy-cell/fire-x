@@ -260,7 +260,7 @@ export default {
     const updatePresence = async () => {
       let stateStr = customStatuses[statusIndex];
       if (stateStr.includes('{version}')) {
-        const currentVersion = CHANGELOG_ENTRIES[0]?.version || 'v3.0.4';
+        const currentVersion = CHANGELOG_ENTRIES[0]?.version || 'v3.1.7';
         stateStr = stateStr.replaceAll('{version}', currentVersion);
       }
       if (stateStr.includes('{commits}')) {

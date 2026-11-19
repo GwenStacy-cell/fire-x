@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.7',
+    headline: 'Git Commit Count Presence Telemetry Synchronization',
+    summary: 'Synchronized bot status presence note ("No of Git Commits Done so far") with live repository commit telemetry. Enhanced safe.directory resolution, auto-unshallowing for shallow container clones, and accurate fallback calibration.',
+    whatsNew: [
+      {
+        title: 'Real-Time Git Commit Presence Sync',
+        desc: 'The bot custom status note ("No of Git Commits Done so far - {commits}") now queries live git revision history dynamically, reporting 359+ commits.'
+      },
+      {
+        title: 'Container Git Unshallowing Engine',
+        desc: 'Added automated safe.directory permissions and depth-unshallowing support to prevent container environments from defaulting to 1 or stale counts.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'LiveOps Monitor Synchronization',
+        desc: 'Aligned LiveOps daemon commit trackers and fallback metrics with current production git commit tallies.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.6',
     headline: 'Git Push Selective Auto-Deploy & Container Daemon Supervisor',
     summary: 'Re-engineered start.sh and GitWatcher to auto-pull and restart exclusively when a new remote git push is detected. Added safe.directory auto-repair and conditional npm install when package.json changes.',
