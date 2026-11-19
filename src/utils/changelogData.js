@@ -15,6 +15,31 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '20 November 2026',
+    version: 'v3.0.5',
+    headline: 'Zero-Touch Cloud Database Restore Streamlining & Fallback Optimization',
+    summary: 'Enhanced the database admin suite (!db restore / /db restore) to automatically default to pulling the latest persistent Discord cloud backup snapshot when invoked without arguments or attachments, eliminating parameter friction during server and host recoveries.',
+    whatsNew: [
+      {
+        title: 'Zero-Arg Cloud Restore Default',
+        desc: 'Executing !db restore now directly resolves and hot-reloads the latest persistent database snapshot across all 73 guilds with zero restart required.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Streamlined Disaster Recovery',
+        desc: 'Removed extra argument hurdles, ensuring instant recovery from Discord cloud storage whether typing !db restore, !db restore latest, or using slash commands.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Restore Options Ambiguity',
+        desc: 'Addressed the condition where bare !db restore returned an options warning embed instead of immediately restoring from cloud storage.'
+      }
+    ],
+    tip: 'Run !db restore or !db restore latest at any time to hot-reload all server settings from your secure cloud backups.'
+  },
+  {
     date: '19 November 2026',
     version: 'v3.0.4',
     headline: 'Dependency Tree Sanitization & Deprecated Package Pruning for Hosting Environments',

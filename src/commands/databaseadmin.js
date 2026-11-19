@@ -254,7 +254,7 @@ export const commands = [
 
         // If no file is attached, check if user requested cloud restore or default to cloud restore
         const subArg = args[0]?.toLowerCase();
-        if (!attachment && (subArg === 'cloud' || subArg === 'latest' || action === 'pull' || (!subArg && context.isCommand?.()))) {
+        if (!attachment && (subArg === 'cloud' || subArg === 'latest' || !subArg || action === 'pull' || context.isCommand?.())) {
           const statusMsg = await sendReply(cv2.info('Cloud Restore Initiated', 'Fetching latest backup snapshot from Discord cloud storage...'));
           const cloudRes = await restoreFromCloud(context.client);
 
