@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.2.1',
+    headline: 'Dedicated News Feed Cloud Persistence & MongoDB Sync Matrix',
+    summary: 'Integrated dedicated news_feeds MongoDB collection mirroring all active channel bindings, ping roles, subscribed RSS feeds, and processed GUID histories. Added full bidirectional cloud synchronization, automatic hydration, and live inventory auditing.',
+    whatsNew: [
+      {
+        title: 'Dedicated news_feeds Cloud Collection',
+        desc: 'All server news channels, mention ping roles, subscribed RSS sources, and deduplication lastGuids arrays are now backed up directly to MongoDB Atlas.'
+      },
+      {
+        title: 'Live Inventory & Telemetry Tracking',
+        desc: 'Added news feed metrics to !db mongo audit view, !db mongo sync push reports, and !db mongo pull hydration summaries.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Zero-Duplicate Cross-Host Hydration',
+        desc: 'Preserving lastGuids in MongoDB prevents automated news broadcasters from re-posting recent articles when migrating hosts.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.2.0',
     headline: 'Sun News & Polimer News Presets Integration',
     summary: 'Integrated official Sun News and Polimer News regional broadcasting presets into the automated news engine (/news add and !news add). Enhanced news embeds with high-definition YouTube thumbnail resolution.',

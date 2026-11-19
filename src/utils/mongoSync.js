@@ -80,6 +80,7 @@ export async function getMongoDetailedAudit() {
     const collections = [
       'guilds', 'channel_setups', 'counting', 'rate_edits', 'tickets', 
       'triggers', 'burn_rooms', 'sticky_messages', 'auto_reacts', 'core_cache',
+      'news_feeds',
       'cloud_backups', 'stats_user_activity', 'stats_channel_activity', 
       'stats_user_invites', 'stats_join_history'
     ];
@@ -183,6 +184,8 @@ async function createIndexes() {
     await mongoDb.collection('burn_rooms').createIndex({ updatedAt: -1 }).catch(() => {});
     await mongoDb.collection('auto_reacts').createIndex({ updatedAt: -1 }).catch(() => {});
     await mongoDb.collection('sticky_messages').createIndex({ updatedAt: -1 }).catch(() => {});
+    await mongoDb.collection('news_feeds').createIndex({ updatedAt: -1 }).catch(() => {});
+    await mongoDb.collection('news_feeds').createIndex({ channelId: 1 }).catch(() => {});
     await mongoDb.collection('stats_user_activity').createIndex({ guild_id: 1, user_id: 1, date: 1 }).catch(() => {});
     await mongoDb.collection('stats_channel_activity').createIndex({ guild_id: 1, channel_id: 1, date: 1 }).catch(() => {});
     await mongoDb.collection('cloud_backups').createIndex({ timestamp: -1 }).catch(() => {});
@@ -213,6 +216,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
     const burnRoomsCol = mongoDb.collection('burn_rooms');
     const autoReactsCol = mongoDb.collection('auto_reacts');
     const stickyCol = mongoDb.collection('sticky_messages');
+    const newsCol = mongoDb.collection('news_feeds');
     const coreCol = mongoDb.collection('core_cache');
     const backupsCol = mongoDb.collection('cloud_backups');
 
@@ -355,7 +359,20 @@ export async function hydrateFromMongo(db, statsDB = null) {
         db.cache.stickyMessages[doc._id] = doc.channels || {};
       }
 
-      // 11. Fail-Safe Recovery from Latest Cloud Backup Snapshot if any essential cache is missing
+      // 11. Hydrate Dedicated News Feeds (!news)
+      const allNewsDocs = await newsCol.find({}).toArray();
+      db.cache.newsFeeds = db.cache.newsFeeds || {};
+      for (const doc of allNewsDocs) {
+        const gid = doc._id;
+        db.cache.newsFeeds[gid] = {
+          channelId: doc.channelId || null,
+          roleId: doc.roleId || null,
+          feeds: Array.isArray(doc.feeds) ? doc.feeds : [],
+          lastGuids: Array.isArray(doc.lastGuids) ? doc.lastGuids : []
+        };
+      }
+
+      // 12. Fail-Safe Recovery from Latest Cloud Backup Snapshot if any essential cache is missing
       const latestBackup = await backupsCol.find().sort({ timestamp: -1 }).limit(1).toArray();
       if (latestBackup.length > 0 && latestBackup[0].data) {
         const bData = latestBackup[0].data;
@@ -366,7 +383,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
         }
       }
 
-      // 12. Hydrate SQLite stats.db if available
+      // 13. Hydrate SQLite stats.db if available
       let statsResult = { userStats: 0, channelStats: 0, invites: 0, joins: 0 };
       if (statsDB && typeof statsDB.getDatabaseInstance === 'function') {
         try {
@@ -397,6 +414,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
       syncStats.quoteChannels = Object.values(db.cache.guilds || {}).filter(g => g.quoteChannelId).length;
       syncStats.autoReacts = Object.values(db.cache.guilds || {}).filter(g => g.autoReacts && Object.keys(g.autoReacts).length > 0).length;
       syncStats.stickyMessages = Object.keys(db.cache.stickyMessages || {}).length;
+      syncStats.newsFeeds = allNewsDocs.length;
       syncStats.userStats = statsResult?.userStats || syncStats.userStats || 0;
       syncStats.channelStats = statsResult?.channelStats || syncStats.channelStats || 0;
       syncStats.invites = statsResult?.invites || syncStats.invites || 0;
@@ -411,6 +429,8 @@ export async function hydrateFromMongo(db, statsDB = null) {
         guildCount: allGuildDocs.length, 
         countingCount: allCountingDocs.length,
         ticketCount: allTicketDocs.length,
+        newsFeeds: allNewsDocs.length,
+        newsFeedsCount: allNewsDocs.length,
         userStats: statsResult?.userStats || 0,
         channelStats: statsResult?.channelStats || 0,
         invites: statsResult?.invites || 0,
@@ -461,6 +481,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     const burnRoomsCol = mongoDb.collection('burn_rooms');
     const autoReactsCol = mongoDb.collection('auto_reacts');
     const stickyCol = mongoDb.collection('sticky_messages');
+    const newsCol = mongoDb.collection('news_feeds');
     const coreCol = mongoDb.collection('core_cache');
     const backupsCol = mongoDb.collection('cloud_backups');
 
@@ -469,7 +490,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     // 1. Sync Core / Global Configs
     const globalPayload = { _id: 'global_state', updatedAt: timestamp };
     for (const [key, val] of Object.entries(cache)) {
-      if (['guilds', 'counting', 'welcome', 'leave', 'jtc', 'serverStats', 'tickets', 'verification', 'birthdays', 'triggers', 'globalTriggers', 'rateChannels', 'editRatings', 'burnRooms', 'stickyMessages'].includes(key)) continue;
+      if (['guilds', 'counting', 'welcome', 'leave', 'jtc', 'serverStats', 'tickets', 'verification', 'birthdays', 'triggers', 'globalTriggers', 'rateChannels', 'editRatings', 'burnRooms', 'stickyMessages', 'newsFeeds'].includes(key)) continue;
       // Skip heavy historical rolling snapshots to keep core state agile
       if (key === 'serverSnapshots' || key === 'timeMachineSnapshots') continue;
       globalPayload[key] = val;
@@ -514,6 +535,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       ...Object.keys(cache.birthdays || {}),
       ...Object.keys(cache.rateChannels || {}),
       ...Object.keys(cache.stickyMessages || {}),
+      ...Object.keys(cache.newsFeeds || {}),
       ...Object.keys(cache.triggers || {}),
       ...Object.keys(cache.apps || {})
     ]);
@@ -533,6 +555,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
                 tickets: cache.tickets?.[gid] || null,
                 verification: cache.verification?.[gid] || null,
                 birthdays: cache.birthdays?.[gid] || null,
+                news: cache.newsFeeds?.[gid] || null,
                 rateChannelId: cache.rateChannels?.[gid] || gCfg.rateChannelId || null,
                 mediaChannelId: gCfg.mediaChannelId || null,
                 quoteChannelId: gCfg.quoteChannelId || null,
@@ -646,10 +669,31 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       await stickyCol.bulkWrite(stickyOps, { ordered: false });
     }
 
-    // 11. Sync SQLite stats.db to MongoDB collections
+    // 11. Bulk Sync Dedicated News Feeds (!news)
+    const newsEntries = Object.entries(cache.newsFeeds || {}).filter(([_, cfg]) => cfg && (cfg.channelId || (Array.isArray(cfg.feeds) && cfg.feeds.length > 0)));
+    if (newsEntries.length > 0) {
+      const newsOps = newsEntries.map(([gid, cfg]) => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              channelId: cfg.channelId || null,
+              roleId: cfg.roleId || null,
+              feeds: Array.isArray(cfg.feeds) ? cfg.feeds : [],
+              lastGuids: Array.isArray(cfg.lastGuids) ? cfg.lastGuids : [],
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await newsCol.bulkWrite(newsOps, { ordered: false });
+    }
+
+    // 12. Sync SQLite stats.db to MongoDB collections
     await pushStatsToMongo(statsDB).catch(() => null);
 
-    // 12. Push Full Snapshot Document to cloud_backups (Rolling master recovery history - retain latest 30)
+    // 13. Push Full Snapshot Document to cloud_backups (Rolling master recovery history - retain latest 30)
     try {
       const snapshotDoc = {
         timestamp: Date.now(),
@@ -658,7 +702,8 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
         guildCount: guildEntries.length,
         countingCount: countingEntries.length,
         ticketCount: ticketEntries.length,
-        schemaVersion: 'v3.1.8',
+        newsCount: newsEntries.length,
+        schemaVersion: 'v3.2.1',
         stats: {
           userStats: syncStats.userStats || 0,
           channelStats: syncStats.channelStats || 0,
@@ -690,6 +735,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     syncStats.quoteChannels = guildEntries.filter(([_, g]) => g.quoteChannelId).length;
     syncStats.autoReacts = autoReactGuilds.length;
     syncStats.stickyMessages = stickyEntries.length;
+    syncStats.newsFeeds = newsEntries.length;
 
     lastSyncTimestamp = Date.now();
     lastSyncStatus = `Synced (${reason}) @ ${new Date().toLocaleTimeString()}`;
@@ -700,6 +746,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       counting: countingEntries.length,
       setups: allSetupGuildIds.size,
       tickets: ticketEntries.length,
+      newsFeeds: newsEntries.length,
       rateChannels: syncStats.rateChannels,
       editRatings: syncStats.editRatings,
       mediaChannels: syncStats.mediaChannels,
