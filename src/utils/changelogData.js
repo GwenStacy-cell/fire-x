@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.3',
+    headline: 'Home Voice Connection Staggering & Gateway Handshake Optimization',
+    summary: 'Eliminated Discord Voice Gateway AbortErrors during startup by staggering Home VC connections across servers with a 2.5-second pacing interval, expanding connection handshake timeouts to 20 seconds, and suppressing noisy internal Node.js abort stack traces with intelligent auto-reconnection telemetry.',
+    whatsNew: [
+      {
+        title: 'Staggered Voice Startup Sequencing',
+        desc: 'Home VC connections are now paced across servers at 2.5-second intervals, preventing simultaneous UDP socket saturation and gateway rate-limiting.'
+      },
+      {
+        title: 'Resilient Handshake Timeout',
+        desc: 'EntersState timeout expanded from 10s to 20s to accommodate high-latency voice regions without aborting.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Clean Handshake Logging',
+        desc: 'Replaced multi-line internal Node AbortError traces with concise gateway status advisories and automatic watchdog recovery.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.2',
     headline: 'Interactive Ezal Runtime & Eval Telemetry Engine (ETA, ECT, TAT)',
     summary: 'Decoupled ezal invocation from the help menu into an active administrative runtime mode. Re-routed the 2-page owner suite operations guide exclusively to ehelp, added eexit session termination, and implemented high-precision nanosecond telemetry metrics (ETA, ECT, TAT) with animated heading glyphs and custom bullet points.',

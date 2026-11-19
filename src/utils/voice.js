@@ -143,8 +143,8 @@ export async function connectToHomeVc(guild, channelId, force = false) {
       }
     });
 
-    // Wait for the connection to be fully ready (up to 10 seconds)
-    await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+    // Wait for the connection to be fully ready (up to 20 seconds for busy gateway handshakes)
+    await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
     console.log(`[Athena Prime] Joined Home VC "${channel.name}" in guild "${guild.name}" via native voice`);
 
     // Synchronize voice channel status
@@ -152,7 +152,11 @@ export async function connectToHomeVc(guild, channelId, force = false) {
 
     return { success: true, connection };
   } catch (error) {
-    console.error(`[Athena Prime] Failed to join Home VC in guild ${guild.name}:`, error);
+    if (error?.code === 'ABORT_ERR' || error?.name === 'AbortError') {
+      console.warn(`[Athena Prime] Voice handshake timed out in "${guild.name}" (Discord voice gateway congested). Auto-reconnect watchdog will retry.`);
+    } else {
+      console.error(`[Athena Prime] Failed to join Home VC in guild ${guild.name}: ${error.message || error}`);
+    }
     try {
       if (connection) connection.destroy();
     } catch (_) {}

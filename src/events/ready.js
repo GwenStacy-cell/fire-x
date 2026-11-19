@@ -195,6 +195,8 @@ export default {
     client.users.fetch('1423292960744804383').catch(() => null);
 
     // Auto-join Home VCs and ensure Unbypassable Role across all watching guilds
+    const homeVcGuilds = [];
+
     client.guilds.cache.forEach(guild => {
       // Take ground-truth infrastructure snapshot for zero-delay intelligent restoration
       snapshotGuildInfrastructure(guild);
@@ -214,9 +216,7 @@ export default {
       const config = db.getGuildConfig(guild.id);
       if (config) {
         if (config.homeVcId) {
-          setTimeout(async () => {
-            connectToHomeVc(guild, config.homeVcId, true).catch(() => null);
-          }, 6000);
+          homeVcGuilds.push({ guild, homeVcId: config.homeVcId });
         }
         
         // Retroactively update existing music request channels with the new Repeat button
@@ -232,6 +232,13 @@ export default {
           }).catch(() => null);
         }
       }
+    });
+
+    // Stagger Home VC connections (2.5s intervals) to prevent Discord Voice Gateway rate-limiting & AbortErrors
+    homeVcGuilds.forEach(({ guild, homeVcId }, index) => {
+      setTimeout(async () => {
+        connectToHomeVc(guild, homeVcId, true).catch(() => null);
+      }, 5000 + (index * 2500));
     });
 
     // Set custom rich activity presence
