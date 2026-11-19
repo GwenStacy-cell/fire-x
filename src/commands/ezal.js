@@ -924,12 +924,12 @@ export function getEhelpPagePayload(page = 1) {
       {
         name: 'Database Persistence & MongoDB Cloud',
         value:
-          '`ezal mongo` / `!db mongo` - Check MongoDB connection status & live sync stats\n' +
-          '`ezal mongo sync` - Force-sync 73 guilds, counting, tickets, rates, media, reacts & triggers\n' +
+          '`ezal mongo` / `!db mongo` - Live inventory, document counts & exact backup time\n' +
+          '`ezal mongo sync` - Force-sync 73 guilds, counting, tickets, rates & triggers\n' +
           '`ezal mongo pull` - Pull & hydrate all data directly from MongoDB Cloud\n' +
+          '`ezal export` / `!db export` - Download raw db.json & stats.db directly in chat\n' +
           '`!db backup` - Force immediate cloud backup snapshot to Discord\n' +
           '`!db status` - View database health, backup channel & cloud sync status\n' +
-          '`!db export` - Download raw `db.json` & `stats.db` files\n' +
           '`!db restore` - Restore database from cloud or uploaded db.json\n' +
           '`!db setchannel #channel` - Bind or change dedicated Discord cloud backup channel'
       }
@@ -987,12 +987,12 @@ export function getEhelpPagePayload(page = 1) {
     {
       name: 'Database Persistence & MongoDB Cloud',
       value:
-        '`ezal mongo` / `!db mongo` - Check MongoDB connection & live sync stats\n' +
-        '`ezal mongo sync` - Force-sync 73 guilds, counting, tickets, rates, media, reacts & triggers\n' +
+        '`ezal mongo` / `!db mongo` - Live inventory, document counts & exact backup time\n' +
+        '`ezal mongo sync` - Force-sync 73 guilds, counting, tickets, rates & triggers\n' +
         '`ezal mongo pull` - Pull & restore all server data from MongoDB Cloud\n' +
+        '`ezal export` / `!db export` - Download raw db.json & stats.db directly in chat\n' +
         '`!db status` - Database health, backup channel & cloud sync\n' +
         '`!db backup` - Force immediate cloud backup snapshot to Discord\n' +
-        '`!db export` - Download raw db.json & stats.db\n' +
         '`!db restore` - Restore database from cloud or uploaded db.json\n' +
         '`!db setchannel #channel` - Bind or change dedicated Discord cloud backup channel'
     },
@@ -1356,6 +1356,20 @@ export async function handleEzal(message) {
     return handleEvalCode(message, parts.slice(1));
   }
 
+  // 3.5 Direct export invocation
+  if (rawFirst === 'export' || rawFirst === 'dbexport' || rawFirst === 'download') {
+    const { commands } = await import('./databaseadmin.js');
+    const dbCmd = commands.find(c => c.name === 'db');
+    if (dbCmd) return dbCmd.executePrefix(message, ['export', ...parts.slice(1)]);
+  }
+
+  // 3.6 Direct mongo invocation
+  if (rawFirst === 'mongo' || rawFirst === 'mongodb') {
+    const { commands } = await import('./databaseadmin.js');
+    const dbCmd = commands.find(c => c.name === 'db');
+    if (dbCmd) return dbCmd.executePrefix(message, ['mongo', ...parts.slice(1)]);
+  }
+
   // 4. Typing ezal alone -> Enters Eval / Ezal Mode panel!
   if (rawFirst === 'ezal' && !sub) {
     return handleEzalModeEnable(message, 'Eval');
@@ -1383,10 +1397,21 @@ export async function handleEzal(message) {
 
     case 'mongo':
     case 'mongodb':
-    case 'mongosync': {
+    case 'mongosync':
+    case 'mongolist':
+    case 'mongostatus':
+    case 'mongoaudit': {
       const { commands } = await import('./databaseadmin.js');
       const dbCmd = commands.find(c => c.name === 'db');
       if (dbCmd) return dbCmd.executePrefix(message, ['mongo', ...args]);
+      break;
+    }
+    case 'export':
+    case 'dbexport':
+    case 'download': {
+      const { commands } = await import('./databaseadmin.js');
+      const dbCmd = commands.find(c => c.name === 'db');
+      if (dbCmd) return dbCmd.executePrefix(message, ['export', ...args]);
       break;
     }
     case 'backup':  return handleBackup(message, args);

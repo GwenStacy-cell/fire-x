@@ -63,6 +63,64 @@ export function getMongoHealth() {
 }
 
 /**
+ * Detailed real-time cloud inventory query for MongoDB Atlas.
+ * Retrieves live document counts across all 15 collections and reads the latest backup snapshot.
+ */
+export async function getMongoDetailedAudit() {
+  const uri = getMongoUri();
+  if (!isConnected && !(await connectMongo())) {
+    return {
+      connected: false,
+      configured: Boolean(uri),
+      reason: uri ? 'Cannot connect to MongoDB Cloud cluster' : 'MONGODB_URI not set in .env'
+    };
+  }
+
+  try {
+    const collections = [
+      'guilds', 'channel_setups', 'counting', 'rate_edits', 'tickets', 
+      'triggers', 'burn_rooms', 'sticky_messages', 'auto_reacts', 'core_cache',
+      'cloud_backups', 'stats_user_activity', 'stats_channel_activity', 
+      'stats_user_invites', 'stats_join_history'
+    ];
+
+    const counts = {};
+    for (const c of collections) {
+      counts[c] = await mongoDb.collection(c).countDocuments().catch(() => 0);
+    }
+
+    const latestSnap = await mongoDb.collection('cloud_backups')
+      .find()
+      .sort({ timestamp: -1 })
+      .limit(1)
+      .toArray()
+      .catch(() => []);
+
+    const snap = latestSnap[0] || null;
+
+    return {
+      connected: true,
+      configured: true,
+      databaseName: mongoDb.databaseName,
+      lastSyncTimestamp: snap?.timestamp || lastSyncTimestamp,
+      lastSyncDateStr: snap?.dateStr || (lastSyncTimestamp ? new Date(lastSyncTimestamp).toISOString() : null),
+      lastSyncReason: snap?.reason || 'Routine Sync',
+      schemaVersion: snap?.schemaVersion || 'v3.1.3',
+      counts,
+      nextSyncTimestamp: (snap?.timestamp || Date.now()) + (5 * 60 * 1000)
+    };
+  } catch (err) {
+    return {
+      connected: true,
+      configured: true,
+      databaseName: mongoDb?.databaseName || 'athena_prime',
+      error: err.message,
+      counts: { ...syncStats }
+    };
+  }
+}
+
+/**
  * Connects to MongoDB Atlas / remote cloud instance.
  */
 export async function connectMongo() {

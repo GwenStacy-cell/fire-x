@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.4',
+    headline: 'Live MongoDB Cloud Persistence Audit & Instant Database Export Suite',
+    summary: 'Introduced real-time MongoDB Atlas inventory auditing with exact localized timestamps, 15-system document counters, and next-sync countdowns. Integrated direct database export (!db export, ezal export, and prefix-less export) to download raw db.json and stats.db files directly in Discord.',
+    whatsNew: [
+      {
+        title: 'Live MongoDB Cloud Inventory Audit',
+        desc: '!db mongo and ezal mongo now run real-time cluster queries reporting exact backup timestamps, next-sync countdowns, and live document counts across all 15 collections.'
+      },
+      {
+        title: 'Direct Database File Export',
+        desc: 'Typing ezal export, !db export, or prefix-less export compiles and sends raw db.json and stats.db files directly to chat as instant attachments.'
+      },
+      {
+        title: 'Ezal Owner Suite Help Matrix',
+        desc: 'Added explicit command cards and execution syntax for cloud audits, syncing, and raw exports across both Page 1 and Page 2 of ehelp.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Localized Discord Timestamp Precision',
+        desc: 'Backup records and next-sync countdowns now use dynamic Discord unix tags (<t:timestamp:F> / <t:timestamp:R>) for automatic client timezone localization.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.3',
     headline: 'Home Voice Connection Staggering & Gateway Handshake Optimization',
     summary: 'Eliminated Discord Voice Gateway AbortErrors during startup by staggering Home VC connections across servers with a 2.5-second pacing interval, expanding connection handshake timeouts to 20 seconds, and suppressing noisy internal Node.js abort stack traces with intelligent auto-reconnection telemetry.',

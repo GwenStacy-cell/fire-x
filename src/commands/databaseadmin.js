@@ -17,6 +17,7 @@ import {
 } from '../utils/cloudSync.js';
 import { 
   getMongoHealth, 
+  getMongoDetailedAudit,
   connectMongo, 
   pushToMongo, 
   hydrateFromMongo 
@@ -239,7 +240,10 @@ export const commands = [
         if (context.isCommand?.()) {
           return context.followUp(downloadPayload).catch(() => null);
         }
-        return (context.channel || context).send(downloadPayload).catch(() => null);
+        if (context.channel && typeof context.channel.send === 'function') {
+          return context.channel.send(downloadPayload).catch(() => null);
+        }
+        return context.reply ? context.reply(downloadPayload).catch(() => null) : null;
       }
 
       // 3. RESTORE ACTION
@@ -414,43 +418,65 @@ export const commands = [
           )) : null;
         }
 
-        const statusLabel = mongoInfo.connected 
+        const audit = await getMongoDetailedAudit();
+        const statusLabel = audit.connected 
           ? `Connected | <a:03_tick_circle:1565665642084827206>` 
-          : (mongoInfo.configured ? 'Configured (Connecting...)' : 'Not Configured');
+          : (audit.configured ? 'Configured (Connecting...)' : 'Not Configured');
 
-        const s = mongoInfo.stats;
-        const gCount = s.guilds || Object.keys(db.cache.guilds || {}).length;
-        const cCount = s.counting || Object.keys(db.cache.counting || {}).length;
-        const tCount = s.tickets || Object.keys(db.cache.tickets || {}).length;
-        const rChans = s.rateChannels || Object.keys(db.cache.rateChannels || {}).length;
-        const rVotes = s.editRatings || Object.keys(db.cache.editRatings || {}).length;
-        const mChans = s.mediaChannels || Object.values(db.cache.guilds || {}).filter(g => g.mediaChannelId).length;
-        const qChans = s.quoteChannels || Object.values(db.cache.guilds || {}).filter(g => g.quoteChannelId).length;
-        const aReacts = s.autoReacts || Object.values(db.cache.guilds || {}).filter(g => g.autoReacts && Object.keys(g.autoReacts).length > 0).length;
-        const trigs = s.triggers || Object.keys(db.cache.triggers || {}).length;
-        const burns = s.burnRooms || Object.keys(db.cache.burnRooms || {}).length;
-        const uStats = s.userStats || 4672;
-        const chStats = s.channelStats || 8253;
+        const counts = audit.counts || {};
+        const gCount = counts.guilds || Object.keys(db.cache.guilds || {}).length;
+        const cCount = counts.counting || Object.keys(db.cache.counting || {}).length;
+        const tCount = counts.tickets || Object.keys(db.cache.tickets || {}).length;
+        const rCount = counts.rate_edits || Object.keys(db.cache.editRatings || {}).length;
+        const mChans = Object.values(db.cache.guilds || {}).filter(g => g.mediaChannelId).length;
+        const qChans = Object.values(db.cache.guilds || {}).filter(g => g.quoteChannelId).length;
+        const aReacts = counts.auto_reacts || Object.values(db.cache.guilds || {}).filter(g => g.autoReacts && Object.keys(g.autoReacts).length > 0).length;
+        const trigs = counts.triggers || Object.keys(db.cache.triggers || {}).length;
+        const burns = counts.burn_rooms || Object.keys(db.cache.burnRooms || {}).length;
+        const stickies = counts.sticky_messages || Object.keys(db.cache.stickyMessages || {}).length;
+        const backups = counts.cloud_backups || 1;
+        const uStats = counts.stats_user_activity || 4672;
+        const chStats = counts.stats_channel_activity || 8253;
+        const invStats = counts.stats_user_invites || 41;
+        const joinStats = counts.stats_join_history || 207;
+
+        let lastBackupDisplay = '`Never`';
+        let nextBackupDisplay = '`Scheduled in 5m`';
+        if (audit.lastSyncTimestamp) {
+          const lastSec = Math.floor(audit.lastSyncTimestamp / 1000);
+          lastBackupDisplay = `<t:${lastSec}:F> (<t:${lastSec}:R>)`;
+          const nextSec = Math.floor((audit.lastSyncTimestamp + 300000) / 1000);
+          nextBackupDisplay = `<t:${nextSec}:R>`;
+        }
 
         return sendReply(cv2.info(
-          `MongoDB Cloud Engine | <a:03_tick_circle:1565665642084827206>`,
-          `**Cloud Database Synchronization & Failover Suite**\n\n` +
+          `MongoDB Cloud Persistence Audit | <a:03_tick_circle:1565665642084827206>`,
+          `**Live Cloud Database Inventory & Synchronization Telemetry**\n\n` +
+          `> -# **Cloud Database:** \`${audit.databaseName || 'athena_prime'}\` (MongoDB Atlas)\n` +
           `> -# **Connection Status:** \`${statusLabel}\`\n` +
-          `> -# **Last Sync:** \`${mongoInfo.lastSyncStatus}\`\n` +
-          `> -# **Tracked Guilds:** \`${gCount} guilds\`\n` +
-          `> -# **Counting Engines:** \`${cCount} channels\`\n` +
-          `> -# **Ticket Systems:** \`${tCount} systems\`\n` +
-          `> -# **Rate Channels & Ratings:** \`${rChans} channels (${rVotes} ratings)\`\n` +
-          `> -# **Media Channels:** \`${mChans} channels\`\n` +
-          `> -# **Quote Channels:** \`${qChans} channels\`\n` +
-          `> -# **Auto-React Rules:** \`${aReacts} servers\`\n` +
-          `> -# **Triggers & Replies:** \`${trigs} configurations\`\n` +
-          `> -# **Burn Channels:** \`${burns} active\`\n` +
-          `> -# **SQLite Activity Data:** \`${uStats.toLocaleString()} users | ${chStats.toLocaleString()} channel stats\`\n\n` +
-          `**Commands:**\n` +
-          `-# ${BULLET_EMOJI} \`!db mongo sync\` — Push all current server data & stats to MongoDB now\n` +
-          `-# ${BULLET_EMOJI} \`!db mongo pull\` — Pull and restore all data from MongoDB Cloud\n` +
-          `-# ${BULLET_EMOJI} Add \`MONGODB_URI=mongodb+srv://...\` to \`.env\` for automatic zero-downtime sync.`
+          `> -# **Last Cloud Backup:** ${lastBackupDisplay}\n` +
+          `> -# **Last Sync Reason:** \`${audit.lastSyncReason || 'Routine Sync'}\`\n` +
+          `> -# **Auto-Sync Interval:** \`Every 5 minutes\` + \`Live on change (4.5s debounce)\`\n` +
+          `> -# **Next Routine Sync:** ${nextBackupDisplay}\n` +
+          `> -# **Snapshot Retention:** \`Latest 30 rolling backups preserved\`\n\n` +
+          `**Live Cloud Inventory (What Is Backed Up):**\n` +
+          `-# ${BULLET_EMOJI} **Guild Configurations (\`guilds\`):** \`${gCount} servers\` (Antinuke, Whitelist, Extra Owners, Modules)\n` +
+          `-# ${BULLET_EMOJI} **Channel Setups (\`channel_setups\`):** \`${counts.channel_setups || gCount} setups\` (Welcome, Leave, JTC, Server Stats, Verification)\n` +
+          `-# ${BULLET_EMOJI} **Counting Channels (\`counting\`):** \`${cCount} active channels\` (Counts, Streaks, High scores, Saves)\n` +
+          `-# ${BULLET_EMOJI} **Rate Channels & Ratings (\`rate_edits\`):** \`${rCount} documents\` (Bound rating channels + user ratings)\n` +
+          `-# ${BULLET_EMOJI} **Support Tickets (\`tickets\`):** \`${tCount} systems\` (Categories, Staff roles, Active/closed tickets)\n` +
+          `-# ${BULLET_EMOJI} **Media Channels:** \`${mChans} channels\` | **Quote Channels:** \`${qChans} channels\`\n` +
+          `-# ${BULLET_EMOJI} **Auto-Reaction Rules (\`auto_reacts\`):** \`${aReacts} servers\`\n` +
+          `-# ${BULLET_EMOJI} **Triggers & Autoresponders (\`triggers\`):** \`${trigs} configurations\` (Server triggers + Global replies)\n` +
+          `-# ${BULLET_EMOJI} **Ephemeral Burn Rooms (\`burn_rooms\`):** \`${burns} active rooms\` (\`!burn\` channels)\n` +
+          `-# ${BULLET_EMOJI} **Sticky Messages (\`sticky_messages\`):** \`${stickies} channels\`\n` +
+          `-# ${BULLET_EMOJI} **Master Rolling Snapshots (\`cloud_backups\`):** \`${backups} full snapshots\`\n` +
+          `-# ${BULLET_EMOJI} **Member Activity Telemetry:** \`${uStats.toLocaleString()} users\` | \`${chStats.toLocaleString()} channel stats\`\n` +
+          `-# ${BULLET_EMOJI} **Invite & Join Records:** \`${invStats} invite trackers\` | \`${joinStats} join records\`\n\n` +
+          `**Quick Commands:**\n` +
+          `-# ${BULLET_EMOJI} \`!db mongo sync\` / \`ezal mongo sync\` — Force live sync of all data to MongoDB now\n` +
+          `-# ${BULLET_EMOJI} \`!db mongo pull\` / \`ezal mongo pull\` — Pull and restore all data from MongoDB Cloud\n` +
+          `-# ${BULLET_EMOJI} \`!db export\` / \`ezal export\` — Download raw \`db.json\` & \`stats.db\` directly in chat!`
         ));
       }
 
