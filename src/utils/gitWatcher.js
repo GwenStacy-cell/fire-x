@@ -39,7 +39,13 @@ async function getLocalCommit() {
     const { stdout } = await execPromise('git rev-parse HEAD');
     return stdout.trim();
   } catch {
-    return null;
+    try {
+      await execPromise('git config --global --add safe.directory "*"');
+      const { stdout } = await execPromise('git rev-parse HEAD');
+      return stdout.trim();
+    } catch {
+      return null;
+    }
   }
 }
 
@@ -62,7 +68,24 @@ async function getRemoteCommit() {
  * so start.sh loops, pulls updates, and boots the new version immediately.
  */
 export async function startGitWatcher(intervalMs = 30000) {
+  try {
+    await execPromise('git config --global --add safe.directory "*"');
+  } catch {}
+
   currentCommit = await getLocalCommit();
+  if (!currentCommit) {
+    try {
+      console.log(chalk.yellow('[AutoDeploy] Linking local repository to remote origin...'));
+      await execPromise('git init');
+      await execPromise('git config --global --add safe.directory "*"');
+      await execPromise('git remote remove origin').catch(() => {});
+      await execPromise('git remote add origin https://github.com/GwenStacy-cell/Athena-prime.git');
+      await execPromise('git fetch origin main --quiet');
+      await execPromise('git checkout -B main -f origin/main --quiet');
+      currentCommit = await getLocalCommit();
+    } catch {}
+  }
+
   if (!currentCommit) {
     console.log(chalk.gray('[AutoDeploy] Git repository not detected locally. Auto-watcher standby.'));
     return;

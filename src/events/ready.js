@@ -542,8 +542,8 @@ export default {
     startYtStatsEngine(client);
     startMorningBroadcaster(client);
 
-    // Background auto-deploy watcher (checks every 60s)
-    startGitWatcher(60000);
+    // Background auto-deploy watcher (checks every 30s)
+    startGitWatcher(30000);
 
     // Restore active unended VC drag sessions from database
     restoreActiveVcDrags(client).catch(() => {});

@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.6',
+    headline: 'Git Push Selective Auto-Deploy & Container Daemon Supervisor',
+    summary: 'Re-engineered start.sh and GitWatcher to auto-pull and restart exclusively when a new remote git push is detected. Added safe.directory auto-repair and conditional npm install when package.json changes.',
+    whatsNew: [
+      {
+        title: 'Selective Git Push Auto-Pull & Restart',
+        desc: 'Startup supervisor compares local and remote commit SHAs and only executes git pull and restart when a new remote commit exists.'
+      },
+      {
+        title: 'Dubious Ownership Container Auto-Repair',
+        desc: 'Configured automated safe.directory "*" repair on Linux and container environments (Pterodactyl/VPS) to ensure git watcher never drops to standby.'
+      }
+    ],
+    improvements: [
+      {
+        title: '30-Second Fast Push Detection',
+        desc: 'Reduced background git polling interval from 60s to 30s for rapid zero-downtime hot reloading.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.5',
     headline: 'Ezal Runtime Mode Rebranding & Owner Execution Calibration',
     summary: 'Standardized all administrative session containers, banners, termination dialogs, and evaluation results strictly to Ezal Mode. Added active Ezal session auto-routing and code execution in prefix-less chat.',
