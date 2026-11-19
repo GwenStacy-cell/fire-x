@@ -553,7 +553,12 @@ export function getUserInvites(guildId, userId) {
 }
 
 
+export function getDatabaseInstance() {
+  return db;
+}
+
 export default {
+  getDatabaseInstance,
   logMessage,
   logVoice,
   pruneOldStats,

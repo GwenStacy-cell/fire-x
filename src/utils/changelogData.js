@@ -16,6 +16,43 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.0',
+    headline: 'Real-Time MongoDB Cloud Database Persistence & Cross-Host Auto-Synchronization Engine',
+    summary: 'Engineered high-velocity MongoDB Atlas cloud persistence pipeline that mirrors all 73 guilds, counting engines, channel setups (welcome, leave, JTC, server stats, tickets, verification), and member statistics into cloud collections. Delivers automated zero-downtime cross-host migration: setting MONGODB_URI instantly hydrates and keeps all server data synchronized across any hosting server.',
+    whatsNew: [
+      {
+        title: 'Full MongoDB Cloud Synchronization',
+        desc: 'All guild configurations, counting channels, server setups, and SQLite stats tables automatically stream to MongoDB in real time.'
+      },
+      {
+        title: 'Zero-Effort Host Migrations',
+        desc: 'Deploying Athena Prime on any new VPS or panel automatically hydrates all data from MongoDB on startup with zero file transfers needed.'
+      },
+      {
+        title: 'Dedicated Mongo Admin Command',
+        desc: 'Introduced !db mongo sync and !db mongo pull to inspect cloud health, document counts, and trigger manual two-way synchronization.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Counting & Setup Preservation',
+        desc: 'Guaranteed 100% cloud persistence for active counting channels, streaks, high scores, and modular channel bindings.'
+      },
+      {
+        title: 'Debounced Microsecond Write Batching',
+        desc: 'Non-blocking bulkWrite operations ensure zero latency on Discord message and antinuke event loops while maintaining real-time cloud sync.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Cross-Host Data Desynchronization',
+        desc: 'Eliminated the risk of losing configurations or stats during hosting server migrations by anchoring all persistence to MongoDB cloud.'
+      }
+    ],
+    tip: 'Add MONGODB_URI=mongodb+srv://... to your .env to link your bot to a free MongoDB Atlas cluster for permanent cloud persistence.'
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.0.5',
     headline: 'Zero-Touch Cloud Database Restore Streamlining & Fallback Optimization',
     summary: 'Enhanced the database admin suite (!db restore / /db restore) to automatically default to pulling the latest persistent Discord cloud backup snapshot when invoked without arguments or attachments, eliminating parameter friction during server and host recoveries.',

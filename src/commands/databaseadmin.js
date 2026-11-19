@@ -15,6 +15,12 @@ import {
   getDatabaseMetrics,
   formatDatabaseMetrics 
 } from '../utils/cloudSync.js';
+import { 
+  getMongoHealth, 
+  connectMongo, 
+  pushToMongo, 
+  hydrateFromMongo 
+} from '../utils/mongoSync.js';
 
 const DATA_DIR = path.resolve('data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
@@ -23,7 +29,7 @@ const STATS_FILE = path.join(DATA_DIR, 'stats.db');
 export const commands = [
   {
     name: 'db',
-    aliases: ['botdb', 'dbbackup', 'dbrestore', 'dbexport', 'database', 'cloudbackup', 'cloudsync', 'dblist'],
+    aliases: ['botdb', 'dbbackup', 'dbrestore', 'dbexport', 'database', 'cloudbackup', 'cloudsync', 'dblist', 'mongo', 'mongodb', 'mongosync'],
     description: 'Manage bot database cloud backups, exports, and instant recovery.',
     category: 'utility',
     options: [
@@ -67,6 +73,7 @@ export const commands = [
       if (invoked === 'dbbackup') action = 'backup';
       else if (invoked === 'dbrestore') action = 'restore';
       else if (invoked === 'dbexport') action = 'export';
+      else if (invoked === 'mongo' || invoked === 'mongodb' || invoked === 'mongosync') action = 'mongo';
       else if (!action) action = 'status';
 
       return this._handleAction(message, action, args.slice(1), message.author);
@@ -361,22 +368,83 @@ export const commands = [
         ));
       }
 
+      // 4.5 MONGO ACTION (!db mongo, !db mongosync)
+      if (action === 'mongo' || action === 'mongodb' || action === 'mongosync') {
+        const sub = args[0]?.toLowerCase();
+        const mongoInfo = getMongoHealth();
+
+        if (sub === 'sync' || sub === 'push') {
+          const loadingMsg = await sendReply(cv2.info('MongoDB Sync Initiated', 'Pushing all guilds, counting channels, server setups, and member statistics to MongoDB Cloud...'));
+          const pushRes = await pushToMongo(db, statsDB, `Manual Sync by ${user.tag || user.username}`);
+          if (!pushRes.success) {
+            return loadingMsg?.edit ? loadingMsg.edit(cv2.danger('MongoDB Sync Failed', `Error pushing to MongoDB: \`${pushRes.error || pushRes.reason}\``)) : sendReply(cv2.danger('MongoDB Sync Failed', `Error: \`${pushRes.error}\``));
+          }
+          return loadingMsg?.edit ? loadingMsg.edit(cv2.success(
+            `MongoDB Cloud Synced | <a:03_tick_circle:1565665642084827206>`,
+            `Successfully synced all data to your MongoDB Cloud Database!\n\n` +
+            `> -# **Guilds Synced:** \`${pushRes.guilds} servers\`\n` +
+            `> -# **Counting Engines:** \`${pushRes.counting} channels\`\n` +
+            `> -# **Channel Setups:** \`${pushRes.setups} server configurations\`\n` +
+            `> -# **Auto-Sync Interval:** \`Every 5 minutes + Live on change\`\n\n` +
+            `Even if you migrate or delete your hosting server, putting \`MONGODB_URI\` in \`.env\` on your new host will instantly restore everything automatically!`
+          )) : null;
+        }
+
+        if (sub === 'pull' || sub === 'hydrate' || sub === 'restore') {
+          const loadingMsg = await sendReply(cv2.info('MongoDB Restore Initiated', 'Hydrating all guilds and configurations from MongoDB Cloud...'));
+          const hydRes = await hydrateFromMongo(db, statsDB);
+          if (!hydRes.success) {
+            return loadingMsg?.edit ? loadingMsg.edit(cv2.danger('MongoDB Restore Failed', `Error: \`${hydRes.error || hydRes.reason}\``)) : sendReply(cv2.danger('MongoDB Restore Failed', `Error: \`${hydRes.error}\``));
+          }
+          return loadingMsg?.edit ? loadingMsg.edit(cv2.success(
+            `MongoDB Restored | <a:03_tick_circle:1565665642084827206>`,
+            `Successfully restored all data directly from MongoDB Cloud!\n\n` +
+            `> -# **Restored Servers:** \`${hydRes.guildCount || 0} guilds\`\n` +
+            `> -# **Source:** \`MongoDB Cloud Cluster\`\n\n` +
+            `All bot systems and guild configurations are now fully active without needing a bot restart.`
+          )) : null;
+        }
+
+        const statusLabel = mongoInfo.connected 
+          ? `Connected | <a:03_tick_circle:1565665642084827206>` 
+          : (mongoInfo.configured ? 'Configured (Connecting...)' : 'Not Configured');
+
+        return sendReply(cv2.info(
+          `MongoDB Cloud Engine | <a:03_tick_circle:1565665642084827206>`,
+          `**Cloud Database Synchronization & Failover Suite**\n\n` +
+          `> -# **Connection Status:** \`${statusLabel}\`\n` +
+          `> -# **Last Sync:** \`${mongoInfo.lastSyncStatus}\`\n` +
+          `> -# **Tracked Guilds:** \`${mongoInfo.stats.guilds || Object.keys(db.cache.guilds || {}).length} guilds\`\n` +
+          `> -# **Counting Engines:** \`${mongoInfo.stats.counting || Object.keys(db.cache.counting || {}).length} channels\`\n` +
+          `> -# **Channel Setups:** \`${mongoInfo.stats.setups || Object.keys(db.cache.welcome || {}).length} configurations\`\n\n` +
+          `**Commands:**\n` +
+          `-# ${BULLET_EMOJI} \`!db mongo sync\` — Push all current server data & stats to MongoDB now\n` +
+          `-# ${BULLET_EMOJI} \`!db mongo pull\` — Pull and restore all data from MongoDB Cloud\n` +
+          `-# ${BULLET_EMOJI} Add \`MONGODB_URI=mongodb+srv://...\` to \`.env\` for automatic zero-downtime sync.`
+        ));
+      }
+
       // 5. STATUS ACTION (DEFAULT)
       const currentChannel = await getBackupChannel(context.client);
       const m = getDatabaseMetrics(context.client);
       const sizeKb = fs.existsSync(DB_FILE) ? (fs.statSync(DB_FILE).size / 1024).toFixed(1) : '0';
       const lastBackupStr = db.cache.lastCloudBackup ? `<t:${Math.floor(db.cache.lastCloudBackup / 1000)}:R>` : '`Never`';
+      const mongoStatus = getMongoHealth();
+      const mongoDisplay = mongoStatus.connected ? 'Active (Connected)' : (mongoStatus.configured ? 'Connecting...' : 'Disabled (Set MONGODB_URI in .env)');
 
       return sendReply(cv2.info(
         `Database Cloud Status | <a:03_tick_circle:1565665642084827206>`,
         `**Persistence & Cloud Migration System**\n\n` +
+        `> -# **MongoDB Cloud Sync:** \`${mongoDisplay}\`\n` +
         `> -# **Backup Channel:** ${currentChannel ? `<#${currentChannel.id}> (\`${currentChannel.id}\`)` : '`Not Set (Auto-detecting)`'}\n` +
         `> -# **Auto-Sync Scheduler:** \`Active (Every 20m)\`\n` +
         `> -# **Last Cloud Backup:** ${lastBackupStr}\n` +
         `> -# **Local Database Size:** \`${sizeKb} KB\`\n\n` +
         formatDatabaseMetrics(m, { sizeKb }) +
         `\n\n**Management Commands:**\n` +
-        `-# ${BULLET_EMOJI} \`!db backup\` — Force immediate cloud backup\n` +
+        `-# ${BULLET_EMOJI} \`!db mongo sync\` — Push all server data & counting to MongoDB\n` +
+        `-# ${BULLET_EMOJI} \`!db mongo pull\` — Pull and restore from MongoDB\n` +
+        `-# ${BULLET_EMOJI} \`!db backup\` — Force immediate cloud backup to Discord\n` +
         `-# ${BULLET_EMOJI} \`!db restore latest\` — Pull & restore latest cloud backup from Discord\n` +
         `-# ${BULLET_EMOJI} \`!db export\` — Download raw \`db.json\` & \`stats.db\`\n` +
         `-# ${BULLET_EMOJI} \`!db restore\` — Restore from uploaded file\n` +

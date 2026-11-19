@@ -26,6 +26,7 @@ import { restoreActiveVcDrags } from '../commands/vcdrag.js';
 import { startYtStatsEngine } from '../utils/ytStatsEngine.js';
 import { startYouTubeNotifier } from '../utils/youtubeNotifier.js';
 import { checkAndAutoRestore, startCloudBackupScheduler } from '../utils/cloudSync.js';
+import { connectMongo, hydrateFromMongo, startMongoSyncScheduler } from '../utils/mongoSync.js';
 import { snapshotGuildInfrastructure } from '../utils/antinuke.js';
 import { pruneDuplicateSecurityLogChannels } from '../utils/helpers.js';
 
@@ -38,7 +39,27 @@ export default {
     console.log(chalk.cyan(` Logged in as: ${chalk.bold(client.user.tag)} (ID: ${client.user.id})`));
     console.log(chalk.yellow(` Watching ${client.guilds.cache.size} server(s)...`));
 
-    // 0. Cloud Migration & Auto-Restore Check:
+    // 0. MongoDB Cloud Persistence & Real-Time Sync Engine:
+    try {
+      if (process.env.MONGODB_URI || process.env.MONGO_URI) {
+        console.log(chalk.cyan(' Connecting to MongoDB Cloud cluster...'));
+        const mongoConnected = await connectMongo();
+        if (mongoConnected) {
+          const hydrateResult = await hydrateFromMongo(db, statsDB);
+          if (hydrateResult.success && hydrateResult.source === 'mongodb') {
+            console.log(chalk.green.bold(`[MongoSync] Boot hydration complete! Restored ${hydrateResult.guildCount} guilds from MongoDB Cloud.`));
+          } else if (hydrateResult.seeded) {
+            console.log(chalk.green.bold(`[MongoSync] Initial cloud seed complete: Synced ${hydrateResult.guildCount} guilds to MongoDB!`));
+          }
+          // Start 5-minute periodic continuous background sync
+          startMongoSyncScheduler(db, statsDB, 5);
+        }
+      }
+    } catch (mongoErr) {
+      console.error(chalk.red('[MongoSync] Boot initialization error:'), mongoErr);
+    }
+
+    // 0.1 Cloud Migration & Auto-Restore Check:
     // If running on a new hosting server (empty/fresh db.json), automatically pull and restore latest backup from Discord!
     try {
       console.log(chalk.cyan(' Checking database cloud sync state...'));

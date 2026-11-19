@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { triggerMongoSave } from './utils/mongoSync.js';
 
 const DB_DIR = path.resolve('data');
 const DB_FILE = path.join(DB_DIR, 'db.json');
@@ -286,6 +287,8 @@ class Database {
         // Ultra-fast compact JSON stringification (50% smaller string, 3x faster, 0 event loop lag)
         const dataStr = JSON.stringify(this.cache, replacer);
         await fs.promises.writeFile(DB_FILE, dataStr, 'utf8');
+        // Continuously stream updates to MongoDB Cloud
+        triggerMongoSave(this);
       } catch (error) {
         console.error('Error saving database:', error);
       } finally {
@@ -313,6 +316,7 @@ class Database {
       };
       const dataStr = JSON.stringify(this.cache, replacer);
       fs.writeFileSync(DB_FILE, dataStr, 'utf8');
+      triggerMongoSave(this);
       return true;
     } catch (error) {
       console.error('[Database] flushSync error:', error);
