@@ -398,6 +398,7 @@ export const commands = [
             `> -# **Triggers & Replies:** \`${pushRes.triggers} rules\`\n` +
             `> -# **Burn Rooms:** \`${pushRes.burnRooms} active\`\n` +
             `> -# **News Feeds:** \`${pushRes.newsFeeds || 0} setups\`\n` +
+            `> -# **In-Voice Roles:** \`${pushRes.voiceRoles || 0} active roles\`\n` +
             `> -# **Channel Setups:** \`${pushRes.setups} total configurations\`\n` +
             `> -# **Auto-Sync Interval:** \`Every 5 minutes + Live on change (4.5s debounce)\`\n\n` +
             `Even if you migrate or delete your hosting server, putting \`MONGODB_URI\` in \`.env\` on your new host will instantly restore everything automatically!`
@@ -419,6 +420,7 @@ export const commands = [
             `> -# **Counting Channels:** \`${hydRes.countingCount || 0} channels\`\n` +
             `> -# **Ticket Setups:** \`${hydRes.ticketCount || 0} systems\`\n` +
             `> -# **News Feed Systems:** \`${hydRes.newsFeeds || hydRes.newsFeedsCount || 0} setups\`\n` +
+            `> -# **In-Voice Roles:** \`${hydRes.voiceRoles || 0} active roles\`\n` +
             `> -# **Source:** \`MongoDB Cloud Cluster (AthenaFirewall)\`\n\n` +
             `All server configurations, counting streaks, tickets, rating channels, auto-reacts, triggers, and stats are now fully active without needing a bot restart.`
           )) : null;
@@ -441,6 +443,7 @@ export const commands = [
         const burns = counts.burn_rooms || Object.keys(db.cache.burnRooms || {}).length;
         const stickies = counts.sticky_messages || Object.keys(db.cache.stickyMessages || {}).length;
         const newsCount = counts.news_feeds || Object.keys(db.cache.newsFeeds || {}).filter(gid => db.cache.newsFeeds[gid]?.channelId).length;
+        const vrCount = counts.voice_roles || Object.values(db.cache.guilds || {}).filter(g => g.voiceRoleId).length;
         const backups = counts.cloud_backups || 1;
         const uStats = counts.stats_user_activity || 4672;
         const chStats = counts.stats_channel_activity || 8253;
@@ -478,6 +481,7 @@ export const commands = [
           `-# ${BULLET_EMOJI} **Ephemeral Burn Rooms (\`burn_rooms\`):** \`${burns} active rooms\` (\`!burn\` channels)\n` +
           `-# ${BULLET_EMOJI} **Sticky Messages (\`sticky_messages\`):** \`${stickies} channels\`\n` +
           `-# ${BULLET_EMOJI} **News Feed Setups (\`news_feeds\`):** \`${newsCount} channels\` (RSS feeds, presets, ping roles, lastGuids)\n` +
+          `-# ${BULLET_EMOJI} **In-Voice Roles (\`voice_roles\`):** \`${vrCount} configured roles\` (Auto-assign on VC connect)\n` +
           `-# ${BULLET_EMOJI} **Master Rolling Snapshots (\`cloud_backups\`):** \`${backups} full snapshots\`\n` +
           `-# ${BULLET_EMOJI} **Member Activity Telemetry:** \`${uStats.toLocaleString()} users\` | \`${chStats.toLocaleString()} channel stats\`\n` +
           `-# ${BULLET_EMOJI} **Invite & Join Records:** \`${invStats} invite trackers\` | \`${joinStats} join records\`\n\n` +

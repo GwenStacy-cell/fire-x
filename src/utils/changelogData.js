@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.2.2',
+    headline: 'In-Voice Role Cloud Persistence & MongoDB Sync Integration',
+    summary: 'Integrated dedicated voice_roles collection and channel_setups schema mirroring into the MongoDB Atlas cloud synchronization matrix. Automatically preserves and restores auto-assigned in-voice roles (!voicerole) across host migrations.',
+    whatsNew: [
+      {
+        title: 'Dedicated voice_roles Cloud Collection',
+        desc: 'All configured in-voice role snowflakes are now bulk synchronized to a dedicated MongoDB Atlas collection with auto-indexing.'
+      },
+      {
+        title: 'Live Inventory & Restoration Telemetry',
+        desc: 'Added in-voice role metrics to !db mongo audit view, !db mongo sync push summaries, and !db mongo pull hydration results.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Multi-Layer Redundancy',
+        desc: 'In-voice roles are preserved across three tiers: dedicated voice_roles collection, channel_setups bindings, and full master cloud snapshots.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.2.1',
     headline: 'Dedicated News Feed Cloud Persistence & MongoDB Sync Matrix',
     summary: 'Integrated dedicated news_feeds MongoDB collection mirroring all active channel bindings, ping roles, subscribed RSS feeds, and processed GUID histories. Added full bidirectional cloud synchronization, automatic hydration, and live inventory auditing.',

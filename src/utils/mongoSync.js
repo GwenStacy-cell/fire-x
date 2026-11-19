@@ -80,7 +80,7 @@ export async function getMongoDetailedAudit() {
     const collections = [
       'guilds', 'channel_setups', 'counting', 'rate_edits', 'tickets', 
       'triggers', 'burn_rooms', 'sticky_messages', 'auto_reacts', 'core_cache',
-      'news_feeds',
+      'news_feeds', 'voice_roles',
       'cloud_backups', 'stats_user_activity', 'stats_channel_activity', 
       'stats_user_invites', 'stats_join_history'
     ];
@@ -186,6 +186,7 @@ async function createIndexes() {
     await mongoDb.collection('sticky_messages').createIndex({ updatedAt: -1 }).catch(() => {});
     await mongoDb.collection('news_feeds').createIndex({ updatedAt: -1 }).catch(() => {});
     await mongoDb.collection('news_feeds').createIndex({ channelId: 1 }).catch(() => {});
+    await mongoDb.collection('voice_roles').createIndex({ updatedAt: -1 }).catch(() => {});
     await mongoDb.collection('stats_user_activity').createIndex({ guild_id: 1, user_id: 1, date: 1 }).catch(() => {});
     await mongoDb.collection('stats_channel_activity').createIndex({ guild_id: 1, channel_id: 1, date: 1 }).catch(() => {});
     await mongoDb.collection('cloud_backups').createIndex({ timestamp: -1 }).catch(() => {});
@@ -217,6 +218,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
     const autoReactsCol = mongoDb.collection('auto_reacts');
     const stickyCol = mongoDb.collection('sticky_messages');
     const newsCol = mongoDb.collection('news_feeds');
+    const voiceRolesCol = mongoDb.collection('voice_roles');
     const coreCol = mongoDb.collection('core_cache');
     const backupsCol = mongoDb.collection('cloud_backups');
 
@@ -283,6 +285,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
           }
           if (doc.mediaChannelId) db.cache.guilds[gid].mediaChannelId = doc.mediaChannelId;
           if (doc.quoteChannelId) db.cache.guilds[gid].quoteChannelId = doc.quoteChannelId;
+          if (doc.voiceRoleId) db.cache.guilds[gid].voiceRoleId = doc.voiceRoleId;
           if (doc.autoReacts) db.cache.guilds[gid].autoReacts = doc.autoReacts;
           if (typeof doc.autoMediaAll === 'boolean') db.cache.guilds[gid].autoMediaAll = doc.autoMediaAll;
         }
@@ -372,7 +375,16 @@ export async function hydrateFromMongo(db, statsDB = null) {
         };
       }
 
-      // 12. Fail-Safe Recovery from Latest Cloud Backup Snapshot if any essential cache is missing
+      // 12. Hydrate Dedicated In-Voice Roles (!voicerole)
+      const allVoiceRoleDocs = await voiceRolesCol.find({}).toArray();
+      for (const doc of allVoiceRoleDocs) {
+        const gid = doc._id;
+        if (db.cache.guilds?.[gid] && doc.roleId) {
+          db.cache.guilds[gid].voiceRoleId = doc.roleId;
+        }
+      }
+
+      // 13. Fail-Safe Recovery from Latest Cloud Backup Snapshot if any essential cache is missing
       const latestBackup = await backupsCol.find().sort({ timestamp: -1 }).limit(1).toArray();
       if (latestBackup.length > 0 && latestBackup[0].data) {
         const bData = latestBackup[0].data;
@@ -415,6 +427,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
       syncStats.autoReacts = Object.values(db.cache.guilds || {}).filter(g => g.autoReacts && Object.keys(g.autoReacts).length > 0).length;
       syncStats.stickyMessages = Object.keys(db.cache.stickyMessages || {}).length;
       syncStats.newsFeeds = allNewsDocs.length;
+      syncStats.voiceRoles = Object.values(db.cache.guilds || {}).filter(g => g.voiceRoleId).length;
       syncStats.userStats = statsResult?.userStats || syncStats.userStats || 0;
       syncStats.channelStats = statsResult?.channelStats || syncStats.channelStats || 0;
       syncStats.invites = statsResult?.invites || syncStats.invites || 0;
@@ -431,6 +444,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
         ticketCount: allTicketDocs.length,
         newsFeeds: allNewsDocs.length,
         newsFeedsCount: allNewsDocs.length,
+        voiceRoles: syncStats.voiceRoles,
         userStats: statsResult?.userStats || 0,
         channelStats: statsResult?.channelStats || 0,
         invites: statsResult?.invites || 0,
@@ -482,6 +496,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     const autoReactsCol = mongoDb.collection('auto_reacts');
     const stickyCol = mongoDb.collection('sticky_messages');
     const newsCol = mongoDb.collection('news_feeds');
+    const voiceRolesCol = mongoDb.collection('voice_roles');
     const coreCol = mongoDb.collection('core_cache');
     const backupsCol = mongoDb.collection('cloud_backups');
 
@@ -556,6 +571,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
                 verification: cache.verification?.[gid] || null,
                 birthdays: cache.birthdays?.[gid] || null,
                 news: cache.newsFeeds?.[gid] || null,
+                voiceRoleId: gCfg.voiceRoleId || null,
                 rateChannelId: cache.rateChannels?.[gid] || gCfg.rateChannelId || null,
                 mediaChannelId: gCfg.mediaChannelId || null,
                 quoteChannelId: gCfg.quoteChannelId || null,
@@ -690,10 +706,28 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       await newsCol.bulkWrite(newsOps, { ordered: false });
     }
 
-    // 12. Sync SQLite stats.db to MongoDB collections
+    // 12. Bulk Sync Dedicated In-Voice Roles (!voicerole)
+    const voiceRoleGuilds = guildEntries.filter(([_, g]) => g && g.voiceRoleId);
+    if (voiceRoleGuilds.length > 0) {
+      const vrOps = voiceRoleGuilds.map(([gid, g]) => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              roleId: g.voiceRoleId,
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await voiceRolesCol.bulkWrite(vrOps, { ordered: false });
+    }
+
+    // 13. Sync SQLite stats.db to MongoDB collections
     await pushStatsToMongo(statsDB).catch(() => null);
 
-    // 13. Push Full Snapshot Document to cloud_backups (Rolling master recovery history - retain latest 30)
+    // 14. Push Full Snapshot Document to cloud_backups (Rolling master recovery history - retain latest 30)
     try {
       const snapshotDoc = {
         timestamp: Date.now(),
@@ -703,7 +737,8 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
         countingCount: countingEntries.length,
         ticketCount: ticketEntries.length,
         newsCount: newsEntries.length,
-        schemaVersion: 'v3.2.1',
+        voiceRolesCount: voiceRoleGuilds.length,
+        schemaVersion: 'v3.2.2',
         stats: {
           userStats: syncStats.userStats || 0,
           channelStats: syncStats.channelStats || 0,
@@ -736,6 +771,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     syncStats.autoReacts = autoReactGuilds.length;
     syncStats.stickyMessages = stickyEntries.length;
     syncStats.newsFeeds = newsEntries.length;
+    syncStats.voiceRoles = voiceRoleGuilds.length;
 
     lastSyncTimestamp = Date.now();
     lastSyncStatus = `Synced (${reason}) @ ${new Date().toLocaleTimeString()}`;
@@ -747,6 +783,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       setups: allSetupGuildIds.size,
       tickets: ticketEntries.length,
       newsFeeds: newsEntries.length,
+      voiceRoles: voiceRoleGuilds.length,
       rateChannels: syncStats.rateChannels,
       editRatings: syncStats.editRatings,
       mediaChannels: syncStats.mediaChannels,
