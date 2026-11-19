@@ -6,7 +6,7 @@ import embed, { setGuildContext } from '../embed.js';
 import cv2 from '../cv2.js';
 import commandMap from '../commands/loader.js';
 import { executeQuarantine } from '../commands/security.js';
-import { handleEzal, handleBackup } from '../commands/ezal.js';
+import { handleEzal, handleBackup, activeEzalSessions } from '../commands/ezal.js';
 import statsDB from '../statsDB.js';
 import { canModerate, logToSecurityChannel, isAuthorized, isBotOwnerSync, getPresenceStatus, findClosestCommand, getUserTierName, cleanDisplayName, checkCommandClearance } from '../utils/helpers.js';
 import { logServerEvent } from '../utils/serverLogger.js';
@@ -1718,13 +1718,17 @@ export default {
       return;
     }
     // ==========================================
-    // 4.4 PREFIX-LESS: EZAL / EVAL / EHELP / EEXIT / EXPORT (Owner Suite)
+    // 4.4 PREFIX-LESS: EZAL / EVAL / EHELP / EEXIT / EXPORT / MONGO (Owner Suite)
     // ==========================================
     const msgCheck = message.content.toLowerCase().trim();
     const firstWord = msgCheck.split(/ +/)[0];
 
-    if (['ezal', 'eval', 'ehelp', 'eexit', 'export', 'dbexport'].includes(firstWord)) {
-      if (isBotOwnerSync(message.author.id)) {
+    const isEzalTrigger = ['ezal', 'eval', 'ehelp', 'eexit', 'export', 'dbexport', 'mongo', 'mongodb'].includes(firstWord);
+    const isOwner = isBotOwnerSync(message.author.id);
+    const hasActiveEzal = isOwner && activeEzalSessions.has(message.author.id);
+
+    if (isEzalTrigger || (hasActiveEzal && !message.content.startsWith('!') && !message.content.startsWith('/'))) {
+      if (isOwner) {
         await handleEzal(message);
         return;
       }

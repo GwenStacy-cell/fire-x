@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.5',
+    headline: 'Ezal Runtime Mode Rebranding & Owner Execution Calibration',
+    summary: 'Standardized all administrative session containers, banners, termination dialogs, and evaluation results strictly to Ezal Mode. Added active Ezal session auto-routing and code execution in prefix-less chat.',
+    whatsNew: [
+      {
+        title: 'Ezal Mode Strict Branding',
+        desc: 'Updated session activation banner to "# <glyph> Ezal Mode Enabled | <tick>", termination to "# <glyph> Ezal Mode Terminated | <tick>", and code outputs to "# <glyph> Ezal Execution Result | <tick>".'
+      },
+      {
+        title: 'Active Ezal Session Subcommand Routing',
+        desc: 'While Ezal Mode is active, typing any Ezal subcommands (mongo, export, backup, snapshots, etc.) or raw JavaScript executes directly with telemetry container responses.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Prefix-Less Command Registry Expansion',
+        desc: 'Added direct prefix-less mongo and mongodb recognition for the bot owner, automatically bridging into real-time MongoDB cluster telemetry.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.4',
     headline: 'Live MongoDB Cloud Persistence Audit & Instant Database Export Suite',
     summary: 'Introduced real-time MongoDB Atlas inventory auditing with exact localized timestamps, 15-system document counters, and next-sync countdowns. Integrated direct database export (!db export, ezal export, and prefix-less export) to download raw db.json and stats.db files directly in Discord.',

@@ -1191,9 +1191,9 @@ export function calculateTelemetry(message, startHr = process.hrtime.bigint(), s
 }
 
 /**
- * Builds the sleek Ezal / Eval mode Components V2 container matching the user specification.
+ * Builds the sleek Ezal mode Components V2 container matching the user specification.
  */
-export function buildEzalModePayload(message, mode = 'enable', modeName = 'Eval', customData = null, startHr = null, startCpu = null) {
+export function buildEzalModePayload(message, mode = 'enable', modeName = 'Ezal', customData = null, startHr = null, startCpu = null) {
   const glyph = getRandomHeadingGlyph();
   const bullet = BULLET_EMOJI;
   const tick = TICK_EMOJI;
@@ -1207,7 +1207,7 @@ export function buildEzalModePayload(message, mode = 'enable', modeName = 'Eval'
   let accentColor = 0x5865F2;
 
   if (mode === 'enable') {
-    title = `${glyph} ${modeName} Mode Enabled | ${tick}`;
+    title = `${glyph} Ezal Mode Enabled | ${tick}`;
     content = 
       `# ${title}\n\n` +
       `${bullet} High-level administrative runtime authorized for <@${userId}>\n\n` +
@@ -1215,24 +1215,24 @@ export function buildEzalModePayload(message, mode = 'enable', modeName = 'Eval'
       `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
     accentColor = 0x5865F2;
   } else if (mode === 'exit') {
-    title = `${glyph} ${modeName} Mode Terminated | ${tick}`;
+    title = `${glyph} Ezal Mode Terminated | ${tick}`;
     content = 
       `# ${title}\n\n` +
       `${bullet} High-level administrative runtime terminated for <@${userId}>\n\n` +
-      `Developer: <@${userId}> | State: Inactive & Closed | Use \`ezal\` or \`eval\` to reactivate\n` +
+      `Developer: <@${userId}> | State: Inactive & Closed | Use \`ezal\` to reactivate\n` +
       `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
     accentColor = 0xED4245;
   } else if (mode === 'eval_success') {
-    title = `${glyph} ${modeName} Execution Result | ${tick}`;
+    title = `${glyph} Ezal Execution Result | ${tick}`;
     content = 
       `# ${title}\n\n` +
-      `${bullet} **Runtime Evaluation Complete:**\n` +
+      `${bullet} **Runtime Execution Complete:**\n` +
       `\`\`\`js\n${customData}\n\`\`\`\n` +
       `Developer: <@${userId}> | State: Active & Authorized | Use \`ehelp\` for guide or \`eexit\` to terminate\n` +
       `-# Eta : ${telemetry.eta}    Ect : ${telemetry.ect}    Tat : ${telemetry.tat}`;
     accentColor = 0x57F287;
   } else if (mode === 'eval_error') {
-    title = `${glyph} ${modeName} Execution Error | ${cross}`;
+    title = `${glyph} Ezal Execution Error | ${cross}`;
     content = 
       `# ${title}\n\n` +
       `${bullet} **Runtime Exception Encountered:**\n` +
@@ -1259,7 +1259,7 @@ export function buildEzalModePayload(message, mode = 'enable', modeName = 'Eval'
   };
 }
 
-export async function handleEzalModeEnable(message, modeName = 'Eval') {
+export async function handleEzalModeEnable(message, modeName = 'Ezal') {
   activeEzalSessions.add(message.author.id);
   const payload = buildEzalModePayload(message, 'enable', modeName);
   return message.reply(payload);
@@ -1277,7 +1277,7 @@ export async function handleEvalCode(message, codeArgs) {
   const code = codeArgs.join(' ').replace(/^```(js|javascript)?/, '').replace(/```$/, '').trim();
 
   if (!code) {
-    return handleEzalModeEnable(message, 'Eval');
+    return handleEzalModeEnable(message, 'Ezal');
   }
 
   try {
@@ -1310,13 +1310,13 @@ export async function handleEvalCode(message, codeArgs) {
       output = output.slice(0, 1800) + '\n... [Truncated]';
     }
 
-    const payload = buildEzalModePayload(message, 'eval_success', 'Eval', output, startHr, startCpu);
+    const payload = buildEzalModePayload(message, 'eval_success', 'Ezal', output, startHr, startCpu);
     return message.reply(payload);
   } catch (err) {
     let errStr = err?.stack || err?.message || String(err);
     if (errStr.length > 1800) errStr = errStr.slice(0, 1800) + '\n...';
 
-    const payload = buildEzalModePayload(message, 'eval_error', 'Eval', errStr, startHr, startCpu);
+    const payload = buildEzalModePayload(message, 'eval_error', 'Ezal', errStr, startHr, startCpu);
     return message.reply(payload);
   }
 }
@@ -1345,13 +1345,13 @@ export async function handleEzal(message) {
   // 3. Direct eval invocation
   if (rawFirst === 'eval') {
     if (!sub) {
-      return handleEzalModeEnable(message, 'Eval');
+      return handleEzalModeEnable(message, 'Ezal');
     }
     if (sub === 'help' || sub === 'ehelp') {
       return handleEhelp(message);
     }
     if (sub === 'exit' || sub === 'eexit' || sub === 'quit' || sub === 'stop') {
-      return handleEexit(message, 'Eval');
+      return handleEexit(message, 'Ezal');
     }
     return handleEvalCode(message, parts.slice(1));
   }
@@ -1370,13 +1370,17 @@ export async function handleEzal(message) {
     if (dbCmd) return dbCmd.executePrefix(message, ['mongo', ...parts.slice(1)]);
   }
 
-  // 4. Typing ezal alone -> Enters Eval / Ezal Mode panel!
+  // 4. Typing ezal alone -> Enters Ezal Mode panel!
   if (rawFirst === 'ezal' && !sub) {
-    return handleEzalModeEnable(message, 'Eval');
+    return handleEzalModeEnable(message, 'Ezal');
   }
 
-  // 5. Ezal with subcommands
-  switch (sub) {
+  // 5. Ezal with subcommands or active Ezal session execution
+  const isEzalCmd = rawFirst === 'ezal';
+  const targetAction = isEzalCmd ? sub : rawFirst;
+  const targetArgs = isEzalCmd ? args : parts.slice(1);
+
+  switch (targetAction) {
     case 'help':
     case 'ehelp':
       return handleEhelp(message);
@@ -1388,12 +1392,12 @@ export async function handleEzal(message) {
       return handleEexit(message, 'Ezal');
 
     case 'eval':
-      return handleEvalCode(message, args);
+      return handleEvalCode(message, targetArgs);
 
     case 'on':
     case 'enable':
     case 'start':
-      return handleEzalModeEnable(message, 'Eval');
+      return handleEzalModeEnable(message, 'Ezal');
 
     case 'mongo':
     case 'mongodb':
@@ -1403,7 +1407,7 @@ export async function handleEzal(message) {
     case 'mongoaudit': {
       const { commands } = await import('./databaseadmin.js');
       const dbCmd = commands.find(c => c.name === 'db');
-      if (dbCmd) return dbCmd.executePrefix(message, ['mongo', ...args]);
+      if (dbCmd) return dbCmd.executePrefix(message, ['mongo', ...targetArgs]);
       break;
     }
     case 'export':
@@ -1411,35 +1415,35 @@ export async function handleEzal(message) {
     case 'download': {
       const { commands } = await import('./databaseadmin.js');
       const dbCmd = commands.find(c => c.name === 'db');
-      if (dbCmd) return dbCmd.executePrefix(message, ['export', ...args]);
+      if (dbCmd) return dbCmd.executePrefix(message, ['export', ...targetArgs]);
       break;
     }
-    case 'backup':  return handleBackup(message, args);
+    case 'backup':  return handleBackup(message, targetArgs);
     case 'backupall': return handleBackupAll(message);
     case 'bcklist': return handleBcklist(message);
     case 'servers': return handleServers(message);
-    case 'invite': return handleInvite(message, args);
-    case 'restore': return handleRestore(message, args);
+    case 'invite': return handleInvite(message, targetArgs);
+    case 'restore': return handleRestore(message, targetArgs);
     case 'snapshot':
     case 'snap':
-      return handleTakeSnapshot(message, args);
+      return handleTakeSnapshot(message, targetArgs);
     case 'snapshots':
     case 'snaps':
     case 'snaplist':
-      return handleSnapshotsList(message, args);
+      return handleSnapshotsList(message, targetArgs);
     case 'rollsnap':
     case 'rollback':
-      return handleRollsnap(message, args);
-    case 'emergency': return handleRemoteEmergency(message, args);
-    case 'banserver': return handleBanServer(message, args);
-    case 'unbanserver': return handleUnbanServer(message, args);
-    case 'restoresetup': return handleRestoreSetup(message, args);
-    case 'security': return handleSecurityGlobal(message, args);
+      return handleRollsnap(message, targetArgs);
+    case 'emergency': return handleRemoteEmergency(message, targetArgs);
+    case 'banserver': return handleBanServer(message, targetArgs);
+    case 'unbanserver': return handleUnbanServer(message, targetArgs);
+    case 'restoresetup': return handleRestoreSetup(message, targetArgs);
+    case 'security': return handleSecurityGlobal(message, targetArgs);
     case 'fixjtc':  return handleFixJtc(message);
-    case 'givemerole': return handleGiveMeRole(message, args);
-    case 'takemyrole': return handleTakeMyRole(message, args);
-    case 'spampermit': return handleSpamPermit(message, args);
-    case 'spamrevoke': return handleSpamRevoke(message, args);
+    case 'givemerole': return handleGiveMeRole(message, targetArgs);
+    case 'takemyrole': return handleTakeMyRole(message, targetArgs);
+    case 'spampermit': return handleSpamPermit(message, targetArgs);
+    case 'spamrevoke': return handleSpamRevoke(message, targetArgs);
     case 'spamlist': return handleSpamList(message);
     case 'gban':
     case 'globalban':
@@ -1450,7 +1454,7 @@ export async function handleEzal(message) {
     case 'botblacklist': {
       const { commands } = await import('./security.js');
       const gbanCmd = commands.find(c => c.name === 'gban');
-      if (gbanCmd) return gbanCmd.executePrefix(message, args);
+      if (gbanCmd) return gbanCmd.executePrefix(message, targetArgs);
       break;
     }
     case 'gunban':
@@ -1460,7 +1464,7 @@ export async function handleEzal(message) {
     case 'gunblock': {
       const { commands } = await import('./security.js');
       const gunbanCmd = commands.find(c => c.name === 'gunban');
-      if (gunbanCmd) return gunbanCmd.executePrefix(message, args);
+      if (gunbanCmd) return gunbanCmd.executePrefix(message, targetArgs);
       break;
     }
     case 'gbanlist':
@@ -1469,7 +1473,7 @@ export async function handleEzal(message) {
     case 'gblacklist': {
       const { commands } = await import('./security.js');
       const gbanlistCmd = commands.find(c => c.name === 'gbanlist');
-      if (gbanlistCmd) return gbanlistCmd.executePrefix(message, args);
+      if (gbanlistCmd) return gbanlistCmd.executePrefix(message, targetArgs);
       break;
     }
     case 'db':
@@ -1477,7 +1481,7 @@ export async function handleEzal(message) {
       const { commands } = await import('./databaseadmin.js');
       const dbCmd = commands.find(c => c.name === 'db');
       if (dbCmd) {
-        return dbCmd.executePrefix(message, args);
+        return dbCmd.executePrefix(message, targetArgs);
       }
       break;
     }
@@ -1487,8 +1491,8 @@ export async function handleEzal(message) {
     case 'threats': {
       const { getSecurityLiveRecordsPanel } = await import('./security.js');
       let targetGuild = message.guild;
-      if (args[0] && /^\d{17,20}$/.test(args[0])) {
-        targetGuild = message.client.guilds.cache.get(args[0]) || message.guild;
+      if (targetArgs[0] && /^\d{17,20}$/.test(targetArgs[0])) {
+        targetGuild = message.client.guilds.cache.get(targetArgs[0]) || message.guild;
       }
       if (!targetGuild) return message.reply(cv2.warn('No Guild', 'Run this inside a server or provide a valid server ID.'));
       const panel = await getSecurityLiveRecordsPanel(targetGuild, 0);
@@ -1500,15 +1504,19 @@ export async function handleEzal(message) {
     case 'securityhealth': {
       const { getSecurityHealthPanel } = await import('./security.js');
       let targetGuild = message.guild;
-      if (args[0] && /^\d{17,20}$/.test(args[0])) {
-        targetGuild = message.client.guilds.cache.get(args[0]) || message.guild;
+      if (targetArgs[0] && /^\d{17,20}$/.test(targetArgs[0])) {
+        targetGuild = message.client.guilds.cache.get(targetArgs[0]) || message.guild;
       }
       if (!targetGuild) return message.reply(cv2.warn('No Guild', 'Run this inside a server or provide a valid server ID.'));
       const panel = await getSecurityHealthPanel(targetGuild);
       return message.reply(panel);
     }
-    default:
-      return handleEzalModeEnable(message, 'Eval');
+    default: {
+      if (activeEzalSessions.has(message.author.id) && !isEzalCmd) {
+        return handleEvalCode(message, parts);
+      }
+      return handleEzalModeEnable(message, 'Ezal');
+    }
   }
 }
 
@@ -1966,7 +1974,7 @@ export const commands = [
   {
     name: 'eexit',
     slashHidden: true,
-    description: 'Terminate active Ezal / Eval administrative runtime',
+    description: 'Terminate active Ezal administrative runtime',
     async executePrefix(message, args) {
       if (!isBotOwnerSync(message.author.id)) return;
       return handleEzal(message);
