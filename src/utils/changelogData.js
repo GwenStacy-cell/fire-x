@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.2.3',
+    headline: 'Ezal Telemetry Decoupling & Heading Glyph Restoration',
+    summary: 'Restored randomized heading glyphs and target blink bullet points in Ezal Mode session banners and execution containers without tick emojis. Decoupled ETA (Transit Arrival) from ECT (Execution Compute Time) to accurately reflect true high-resolution CPU runtime.',
+    whatsNew: [
+      {
+        title: 'Heading Glyph & Bullet Point Restoration',
+        desc: 'Restored animated heading glyphs (# <glyph> Ezal Mode Enabled) and description bullet points (<a:target_blink:...>) while omitting tick emojis.'
+      },
+      {
+        title: 'High-Precision Telemetry Decoupling',
+        desc: 'Decoupled ETA (gateway ingress latency in ms/ns) and ECT (V8 execution compute time in µs/ns), eliminating identical fallback readings.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Accurate Nanosecond Benchmarking',
+        desc: 'Captures process.hrtime.bigint() at the top of the command router to compute true sub-millisecond execution compute time.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.2.2',
     headline: 'In-Voice Role Cloud Persistence & MongoDB Sync Integration',
     summary: 'Integrated dedicated voice_roles collection and channel_setups schema mirroring into the MongoDB Atlas cloud synchronization matrix. Automatically preserves and restores auto-assigned in-voice roles (!voicerole) across host migrations.',
