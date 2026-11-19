@@ -16,6 +16,42 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.1.1',
+    headline: 'Universal Modular MongoDB Cloud Sync: Counting, Tickets, Rates, Media, Auto-React, Triggers & Burn Rooms',
+    summary: 'Extended the MongoDB cloud synchronization architecture with dedicated collections and explicit schema mappings for all interactive bot systems: counting engines, edit rating bound channels and reviews, ticket system lifecycle states, media downloader channels, auto-react emoji matrices, autoresponders and custom triggers, ephemeral !burn rooms, quote channels, and sticky messages. Fully integrated into the Ezal Owner Suite.',
+    whatsNew: [
+      {
+        title: 'Universal Interactive Systems Cloud Coverage',
+        desc: 'Dedicated MongoDB collections for counting channels, tickets, triggers, rate edits, burn rooms, auto-reacts, and sticky messages.'
+      },
+      {
+        title: 'Ezal Owner Suite MongoDB Integration',
+        desc: 'Direct ezal mongo, ezal mongo sync, and ezal mongo pull commands documented in interactive 2-page Ezal Owner Suite help menus.'
+      },
+      {
+        title: 'Cross-Host Zero-Loss Hydration',
+        desc: 'Complete bidirectional restoration restores all 73 guilds, active tickets, counting streaks, and channel bindings on bot startup.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Automated DNS SRV Fallback',
+        desc: 'Built-in resilient DNS resolver ensures error-free connection to MongoDB Atlas clusters across all VPS and cloud environments.'
+      },
+      {
+        title: 'Detailed Cloud Telemetry Panel',
+        desc: '!db mongo and ezal mongo now display live granular document counts across all 12 tracked sub-systems.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Channel Setup Binding Synchronization',
+        desc: 'Guaranteed seamless restoration of rateChannelId, mediaChannelId, quoteChannelId, and autoReacts into guild configurations.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.1.0',
     headline: 'Real-Time MongoDB Cloud Database Persistence & Cross-Host Auto-Synchronization Engine',
     summary: 'Engineered high-velocity MongoDB Atlas cloud persistence pipeline that mirrors all 73 guilds, counting engines, channel setups (welcome, leave, JTC, server stats, tickets, verification), and member statistics into cloud collections. Delivers automated zero-downtime cross-host migration: setting MONGODB_URI instantly hydrates and keeps all server data synchronized across any hosting server.',

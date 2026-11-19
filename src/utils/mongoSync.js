@@ -2,6 +2,12 @@ import { MongoClient } from 'mongodb';
 import chalk from 'chalk';
 import fs from 'fs';
 import path from 'path';
+import dns from 'dns';
+
+// Safe DNS server fallback for robust SRV lookup across varied VPS and local environments
+try {
+  dns.setServers(['8.8.8.8', '1.1.1.1']);
+} catch {}
 
 let mongoClient = null;
 let mongoDb = null;
@@ -12,10 +18,20 @@ let saveDebounceTimer = null;
 let periodicSyncTimer = null;
 let lastSyncTimestamp = null;
 let lastSyncStatus = 'Not initialized';
+
 let syncStats = {
   guilds: 0,
   counting: 0,
   setups: 0,
+  tickets: 0,
+  triggers: 0,
+  rateChannels: 0,
+  editRatings: 0,
+  burnRooms: 0,
+  mediaChannels: 0,
+  quoteChannels: 0,
+  autoReacts: 0,
+  stickyMessages: 0,
   userStats: 0,
   channelStats: 0,
   invites: 0,
@@ -102,6 +118,13 @@ async function createIndexes() {
   try {
     await mongoDb.collection('guilds').createIndex({ updatedAt: -1 }).catch(() => {});
     await mongoDb.collection('counting').createIndex({ updatedAt: -1 }).catch(() => {});
+    await mongoDb.collection('channel_setups').createIndex({ updatedAt: -1 }).catch(() => {});
+    await mongoDb.collection('tickets').createIndex({ updatedAt: -1 }).catch(() => {});
+    await mongoDb.collection('triggers').createIndex({ updatedAt: -1 }).catch(() => {});
+    await mongoDb.collection('rate_edits').createIndex({ updatedAt: -1 }).catch(() => {});
+    await mongoDb.collection('burn_rooms').createIndex({ updatedAt: -1 }).catch(() => {});
+    await mongoDb.collection('auto_reacts').createIndex({ updatedAt: -1 }).catch(() => {});
+    await mongoDb.collection('sticky_messages').createIndex({ updatedAt: -1 }).catch(() => {});
     await mongoDb.collection('stats_user_activity').createIndex({ guild_id: 1, user_id: 1, date: 1 }).catch(() => {});
     await mongoDb.collection('stats_channel_activity').createIndex({ guild_id: 1, channel_id: 1, date: 1 }).catch(() => {});
     await mongoDb.collection('cloud_backups').createIndex({ timestamp: -1 }).catch(() => {});
@@ -109,7 +132,7 @@ async function createIndexes() {
 }
 
 /**
- * Hydrates local in-memory database and statsDB from MongoDB on startup.
+ * Hydrates local in-memory database and statsDB from MongoDB on startup or manual command.
  * If MongoDB is empty, seeds MongoDB from local files!
  */
 export async function hydrateFromMongo(db, statsDB = null) {
@@ -119,7 +142,14 @@ export async function hydrateFromMongo(db, statsDB = null) {
     const guildsCol = mongoDb.collection('guilds');
     const countingCol = mongoDb.collection('counting');
     const setupsCol = mongoDb.collection('channel_setups');
+    const ticketsCol = mongoDb.collection('tickets');
+    const triggersCol = mongoDb.collection('triggers');
+    const rateEditsCol = mongoDb.collection('rate_edits');
+    const burnRoomsCol = mongoDb.collection('burn_rooms');
+    const autoReactsCol = mongoDb.collection('auto_reacts');
+    const stickyCol = mongoDb.collection('sticky_messages');
     const coreCol = mongoDb.collection('core_cache');
+    const backupsCol = mongoDb.collection('cloud_backups');
 
     const mongoGuildCount = await guildsCol.countDocuments();
     const localGuildCount = Object.keys(db.cache.guilds || {}).length;
@@ -128,7 +158,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
 
     // Case 1: MongoDB has data -> Hydrate local in-memory cache from cloud!
     if (mongoGuildCount > 0) {
-      console.log(chalk.yellow(`[MongoSync] Hydrating all guilds, channel setups, and counting engines from MongoDB...`));
+      console.log(chalk.yellow(`[MongoSync] Hydrating all guilds, counting, setups, tickets, rates, and triggers from MongoDB Cloud...`));
 
       // 1. Hydrate Core / Global configs
       const coreDoc = await coreCol.findOne({ _id: 'global_state' });
@@ -139,7 +169,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
         }
       }
 
-      // 2. Hydrate Guilds
+      // 2. Hydrate Guilds (including mediaChannelId, quoteChannelId, rateChannelId, autoReacts)
       const allGuildDocs = await guildsCol.find({}).toArray();
       db.cache.guilds = db.cache.guilds || {};
       for (const doc of allGuildDocs) {
@@ -161,7 +191,7 @@ export async function hydrateFromMongo(db, statsDB = null) {
         db.cache.counting[gid] = cleanDoc;
       }
 
-      // 4. Hydrate Channel Setups (welcome, leave, jtc, serverStats, tickets, etc.)
+      // 4. Hydrate Channel Setups (welcome, leave, jtc, serverStats, tickets, verification, etc.)
       const allSetupDocs = await setupsCol.find({}).toArray();
       for (const doc of allSetupDocs) {
         const gid = doc._id;
@@ -172,9 +202,106 @@ export async function hydrateFromMongo(db, statsDB = null) {
         if (doc.tickets) db.cache.tickets[gid] = doc.tickets;
         if (doc.verification) db.cache.verification[gid] = doc.verification;
         if (doc.birthdays) db.cache.birthdays[gid] = doc.birthdays;
+        if (doc.apps) db.cache.apps[gid] = doc.apps;
+        if (doc.stickyMessages) db.cache.stickyMessages[gid] = doc.stickyMessages;
+        if (doc.triggers) db.cache.triggers[gid] = doc.triggers;
+
+        // Ensure guildConfig bindings are also synced
+        if (db.cache.guilds?.[gid]) {
+          if (doc.rateChannelId) {
+            db.cache.guilds[gid].rateChannelId = doc.rateChannelId;
+            db.cache.rateChannels[gid] = doc.rateChannelId;
+          }
+          if (doc.mediaChannelId) db.cache.guilds[gid].mediaChannelId = doc.mediaChannelId;
+          if (doc.quoteChannelId) db.cache.guilds[gid].quoteChannelId = doc.quoteChannelId;
+          if (doc.autoReacts) db.cache.guilds[gid].autoReacts = doc.autoReacts;
+          if (typeof doc.autoMediaAll === 'boolean') db.cache.guilds[gid].autoMediaAll = doc.autoMediaAll;
+        }
       }
 
-      // 5. Hydrate SQLite stats.db if available
+      // 5. Hydrate Dedicated Tickets collection
+      const allTicketDocs = await ticketsCol.find({}).toArray();
+      db.cache.tickets = db.cache.tickets || {};
+      for (const doc of allTicketDocs) {
+        const gid = doc._id;
+        const cleanDoc = { ...doc };
+        delete cleanDoc._id;
+        delete cleanDoc.updatedAt;
+        db.cache.tickets[gid] = cleanDoc;
+      }
+
+      // 6. Hydrate Dedicated Triggers & Autoresponders
+      const allTriggerDocs = await triggersCol.find({}).toArray();
+      db.cache.triggers = db.cache.triggers || {};
+      for (const doc of allTriggerDocs) {
+        if (doc._id === 'global_triggers') {
+          db.cache.globalTriggers = doc.triggers || [];
+        } else {
+          db.cache.triggers[doc._id] = doc.triggers || [];
+        }
+      }
+
+      // 7. Hydrate Dedicated Rate Channels & Edit Ratings
+      const allRateDocs = await rateEditsCol.find({}).toArray();
+      db.cache.rateChannels = db.cache.rateChannels || {};
+      db.cache.editRatings = db.cache.editRatings || {};
+      for (const doc of allRateDocs) {
+        if (doc._id === 'rate_channels') {
+          db.cache.rateChannels = { ...db.cache.rateChannels, ...(doc.channels || {}) };
+        } else {
+          const msgId = doc._id;
+          const cleanDoc = { ...doc };
+          delete cleanDoc._id;
+          delete cleanDoc.updatedAt;
+          db.cache.editRatings[msgId] = cleanDoc;
+        }
+      }
+
+      // 8. Hydrate Dedicated Burn Rooms (!burn)
+      const allBurnDocs = await burnRoomsCol.find({}).toArray();
+      db.cache.burnRooms = db.cache.burnRooms || {};
+      for (const doc of allBurnDocs) {
+        if (doc._id === 'active_burn_rooms') {
+          db.cache.burnRooms = { ...db.cache.burnRooms, ...(doc.rooms || {}) };
+        } else {
+          const cid = doc._id;
+          const cleanDoc = { ...doc };
+          delete cleanDoc._id;
+          delete cleanDoc.updatedAt;
+          if (!cleanDoc.expiresAt || cleanDoc.expiresAt > Date.now()) {
+            db.cache.burnRooms[cid] = cleanDoc;
+          }
+        }
+      }
+
+      // 9. Hydrate Dedicated Auto-Reacts
+      const allAutoReactDocs = await autoReactsCol.find({}).toArray();
+      for (const doc of allAutoReactDocs) {
+        const gid = doc._id;
+        if (db.cache.guilds?.[gid] && doc.reacts) {
+          db.cache.guilds[gid].autoReacts = doc.reacts;
+        }
+      }
+
+      // 10. Hydrate Dedicated Sticky Messages
+      const allStickyDocs = await stickyCol.find({}).toArray();
+      db.cache.stickyMessages = db.cache.stickyMessages || {};
+      for (const doc of allStickyDocs) {
+        db.cache.stickyMessages[doc._id] = doc.channels || {};
+      }
+
+      // 11. Fail-Safe Recovery from Latest Cloud Backup Snapshot if any essential cache is missing
+      const latestBackup = await backupsCol.find().sort({ timestamp: -1 }).limit(1).toArray();
+      if (latestBackup.length > 0 && latestBackup[0].data) {
+        const bData = latestBackup[0].data;
+        for (const [k, v] of Object.entries(bData)) {
+          if (!db.cache[k] || (typeof db.cache[k] === 'object' && Object.keys(db.cache[k]).length === 0 && Object.keys(v || {}).length > 0)) {
+            db.cache[k] = v;
+          }
+        }
+      }
+
+      // 12. Hydrate SQLite stats.db if available
       if (statsDB && typeof statsDB.getDatabaseInstance === 'function') {
         await hydrateStatsFromMongo(statsDB).catch(() => null);
       }
@@ -189,14 +316,31 @@ export async function hydrateFromMongo(db, statsDB = null) {
         db.load();
       }
 
+      // Update sync statistics
       syncStats.guilds = allGuildDocs.length;
       syncStats.counting = allCountingDocs.length;
       syncStats.setups = allSetupDocs.length;
+      syncStats.tickets = allTicketDocs.length;
+      syncStats.triggers = allTriggerDocs.length;
+      syncStats.rateChannels = Object.keys(db.cache.rateChannels || {}).length;
+      syncStats.editRatings = Object.keys(db.cache.editRatings || {}).length;
+      syncStats.burnRooms = Object.keys(db.cache.burnRooms || {}).length;
+      syncStats.mediaChannels = Object.values(db.cache.guilds || {}).filter(g => g.mediaChannelId).length;
+      syncStats.quoteChannels = Object.values(db.cache.guilds || {}).filter(g => g.quoteChannelId).length;
+      syncStats.autoReacts = Object.values(db.cache.guilds || {}).filter(g => g.autoReacts && Object.keys(g.autoReacts).length > 0).length;
+      syncStats.stickyMessages = Object.keys(db.cache.stickyMessages || {}).length;
+
       lastSyncTimestamp = Date.now();
       lastSyncStatus = `Hydrated (${allGuildDocs.length} guilds from MongoDB)`;
 
-      console.log(chalk.green.bold(`[MongoSync] HYDRATION COMPLETE: Loaded ${allGuildDocs.length} guilds, ${allCountingDocs.length} counting channels, and all server setups from MongoDB Cloud!`));
-      return { success: true, guildCount: allGuildDocs.length, source: 'mongodb' };
+      console.log(chalk.green.bold(`[MongoSync] HYDRATION COMPLETE: Loaded ${allGuildDocs.length} guilds, ${allCountingDocs.length} counting channels, tickets, rates, and all server setups from MongoDB Cloud!`));
+      return { 
+        success: true, 
+        guildCount: allGuildDocs.length, 
+        countingCount: allCountingDocs.length,
+        ticketCount: allTicketDocs.length,
+        source: 'mongodb' 
+      };
     }
 
     // Case 2: MongoDB is empty, but Local has live data -> Perform Initial Cloud Seed!
@@ -215,6 +359,8 @@ export async function hydrateFromMongo(db, statsDB = null) {
 
 /**
  * Pushes entire in-memory database and SQLite stats up to MongoDB.
+ * Explicitly mirrors: counting, rate edit bound channels, tickets, media downloader,
+ * auto-react, autoresponders/triggers, !burn rooms, quotes, and full backups.
  */
 export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
   if (!isConnected && !(await connectMongo())) return { success: false, reason: 'Disconnected' };
@@ -226,6 +372,12 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     const guildsCol = mongoDb.collection('guilds');
     const countingCol = mongoDb.collection('counting');
     const setupsCol = mongoDb.collection('channel_setups');
+    const ticketsCol = mongoDb.collection('tickets');
+    const triggersCol = mongoDb.collection('triggers');
+    const rateEditsCol = mongoDb.collection('rate_edits');
+    const burnRoomsCol = mongoDb.collection('burn_rooms');
+    const autoReactsCol = mongoDb.collection('auto_reacts');
+    const stickyCol = mongoDb.collection('sticky_messages');
     const coreCol = mongoDb.collection('core_cache');
     const backupsCol = mongoDb.collection('cloud_backups');
 
@@ -234,14 +386,14 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     // 1. Sync Core / Global Configs
     const globalPayload = { _id: 'global_state', updatedAt: timestamp };
     for (const [key, val] of Object.entries(cache)) {
-      if (['guilds', 'counting', 'welcome', 'leave', 'jtc', 'serverStats', 'tickets', 'verification', 'birthdays'].includes(key)) continue;
-      // Skip large historical arrays to keep core doc lean
+      if (['guilds', 'counting', 'welcome', 'leave', 'jtc', 'serverStats', 'tickets', 'verification', 'birthdays', 'triggers', 'globalTriggers', 'rateChannels', 'editRatings', 'burnRooms', 'stickyMessages'].includes(key)) continue;
+      // Skip heavy historical rolling snapshots to keep core state agile
       if (key === 'serverSnapshots' || key === 'timeMachineSnapshots') continue;
       globalPayload[key] = val;
     }
     await coreCol.updateOne({ _id: 'global_state' }, { $set: globalPayload }, { upsert: true });
 
-    // 2. Bulk Sync Guilds
+    // 2. Bulk Sync Guilds (Preserves antinuke, whitelist, extraOwners, mediaChannelId, quoteChannelId, rateChannelId, autoReacts, etc.)
     const guildEntries = Object.entries(cache.guilds || {});
     if (guildEntries.length > 0) {
       const guildOps = guildEntries.map(([gid, config]) => ({
@@ -267,7 +419,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       await countingCol.bulkWrite(countingOps, { ordered: false });
     }
 
-    // 4. Bulk Sync Channel Setups (Welcome, Leave, JTC, Stats, Tickets, etc.)
+    // 4. Bulk Sync Channel Setups (Welcome, Leave, JTC, Stats, Tickets, Verification, Media, Quote, Rate, AutoReact)
     const allSetupGuildIds = new Set([
       ...Object.keys(cache.guilds || {}),
       ...Object.keys(cache.welcome || {}),
@@ -276,37 +428,147 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       ...Object.keys(cache.jtc || {}),
       ...Object.keys(cache.tickets || {}),
       ...Object.keys(cache.verification || {}),
-      ...Object.keys(cache.birthdays || {})
+      ...Object.keys(cache.birthdays || {}),
+      ...Object.keys(cache.rateChannels || {}),
+      ...Object.keys(cache.stickyMessages || {}),
+      ...Object.keys(cache.triggers || {}),
+      ...Object.keys(cache.apps || {})
     ]);
 
     if (allSetupGuildIds.size > 0) {
-      const setupOps = Array.from(allSetupGuildIds).map(gid => ({
-        updateOne: {
-          filter: { _id: String(gid) },
-          update: {
-            $set: {
-              welcome: cache.welcome?.[gid] || null,
-              leave: cache.leave?.[gid] || null,
-              serverStats: cache.serverStats?.[gid] || null,
-              jtc: cache.jtc?.[gid] || null,
-              tickets: cache.tickets?.[gid] || null,
-              verification: cache.verification?.[gid] || null,
-              birthdays: cache.birthdays?.[gid] || null,
-              updatedAt: timestamp
-            }
-          },
-          upsert: true
-        }
-      }));
+      const setupOps = Array.from(allSetupGuildIds).map(gid => {
+        const gCfg = cache.guilds?.[gid] || {};
+        return {
+          updateOne: {
+            filter: { _id: String(gid) },
+            update: {
+              $set: {
+                welcome: cache.welcome?.[gid] || null,
+                leave: cache.leave?.[gid] || null,
+                serverStats: cache.serverStats?.[gid] || null,
+                jtc: cache.jtc?.[gid] || null,
+                tickets: cache.tickets?.[gid] || null,
+                verification: cache.verification?.[gid] || null,
+                birthdays: cache.birthdays?.[gid] || null,
+                rateChannelId: cache.rateChannels?.[gid] || gCfg.rateChannelId || null,
+                mediaChannelId: gCfg.mediaChannelId || null,
+                quoteChannelId: gCfg.quoteChannelId || null,
+                autoReacts: gCfg.autoReacts || null,
+                autoMediaAll: Boolean(gCfg.autoMediaAll),
+                stickyMessages: cache.stickyMessages?.[gid] || null,
+                apps: cache.apps?.[gid] || null,
+                triggers: cache.triggers?.[gid] || null,
+                updatedAt: timestamp
+              }
+            },
+            upsert: true
+          }
+        };
+      });
       await setupsCol.bulkWrite(setupOps, { ordered: false });
     }
 
-    // 5. Sync SQLite stats.db to MongoDB collections
+    // 5. Bulk Sync Dedicated Tickets Collection
+    const ticketEntries = Object.entries(cache.tickets || {});
+    if (ticketEntries.length > 0) {
+      const ticketOps = ticketEntries.map(([gid, config]) => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: { $set: { ...config, updatedAt: timestamp } },
+          upsert: true
+        }
+      }));
+      await ticketsCol.bulkWrite(ticketOps, { ordered: false });
+    }
+
+    // 6. Bulk Sync Dedicated Triggers & Autoresponders Collection
+    const triggerEntries = Object.entries(cache.triggers || {});
+    if (triggerEntries.length > 0) {
+      const triggerOps = triggerEntries.map(([gid, list]) => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: { $set: { triggers: list, updatedAt: timestamp } },
+          upsert: true
+        }
+      }));
+      await triggersCol.bulkWrite(triggerOps, { ordered: false });
+    }
+    if (Array.isArray(cache.globalTriggers)) {
+      await triggersCol.updateOne(
+        { _id: 'global_triggers' },
+        { $set: { triggers: cache.globalTriggers, updatedAt: timestamp } },
+        { upsert: true }
+      );
+    }
+
+    // 7. Bulk Sync Dedicated Rate Edits & Bound Channel Collection
+    await rateEditsCol.updateOne(
+      { _id: 'rate_channels' },
+      { $set: { channels: cache.rateChannels || {}, updatedAt: timestamp } },
+      { upsert: true }
+    );
+    const editRatingEntries = Object.entries(cache.editRatings || {});
+    if (editRatingEntries.length > 0) {
+      const ratingOps = editRatingEntries.map(([msgId, data]) => ({
+        updateOne: {
+          filter: { _id: String(msgId) },
+          update: { $set: { ...data, updatedAt: timestamp } },
+          upsert: true
+        }
+      }));
+      await rateEditsCol.bulkWrite(ratingOps, { ordered: false });
+    }
+
+    // 8. Bulk Sync Dedicated Burn Rooms (!burn)
+    await burnRoomsCol.updateOne(
+      { _id: 'active_burn_rooms' },
+      { $set: { rooms: cache.burnRooms || {}, updatedAt: timestamp } },
+      { upsert: true }
+    );
+    const burnEntries = Object.entries(cache.burnRooms || {});
+    if (burnEntries.length > 0) {
+      const burnOps = burnEntries.map(([cid, room]) => ({
+        updateOne: {
+          filter: { _id: String(cid) },
+          update: { $set: { ...room, updatedAt: timestamp } },
+          upsert: true
+        }
+      }));
+      await burnRoomsCol.bulkWrite(burnOps, { ordered: false });
+    }
+
+    // 9. Bulk Sync Dedicated Auto-Reacts Collection
+    const autoReactGuilds = guildEntries.filter(([_, g]) => g.autoReacts && Object.keys(g.autoReacts).length > 0);
+    if (autoReactGuilds.length > 0) {
+      const reactOps = autoReactGuilds.map(([gid, g]) => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: { $set: { reacts: g.autoReacts, updatedAt: timestamp } },
+          upsert: true
+        }
+      }));
+      await autoReactsCol.bulkWrite(reactOps, { ordered: false });
+    }
+
+    // 10. Bulk Sync Dedicated Sticky Messages Collection
+    const stickyEntries = Object.entries(cache.stickyMessages || {});
+    if (stickyEntries.length > 0) {
+      const stickyOps = stickyEntries.map(([gid, map]) => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: { $set: { channels: map, updatedAt: timestamp } },
+          upsert: true
+        }
+      }));
+      await stickyCol.bulkWrite(stickyOps, { ordered: false });
+    }
+
+    // 11. Sync SQLite stats.db to MongoDB collections
     if (statsDB) {
       await pushStatsToMongo(statsDB).catch(() => null);
     }
 
-    // 6. Push Full Snapshot Document to cloud_backups (Rolling history - retain latest 30)
+    // 12. Push Full Snapshot Document to cloud_backups (Rolling master recovery history - retain latest 30)
     try {
       const snapshotDoc = {
         timestamp: Date.now(),
@@ -314,11 +576,12 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
         reason,
         guildCount: guildEntries.length,
         countingCount: countingEntries.length,
-        schemaVersion: 'v3.0.5',
+        ticketCount: ticketEntries.length,
+        schemaVersion: 'v3.1.1',
         data: cache
       };
       await backupsCol.insertOne(snapshotDoc);
-      // Prune old snapshots
+      // Prune old snapshots beyond 30
       const count = await backupsCol.countDocuments();
       if (count > 30) {
         const oldest = await backupsCol.find().sort({ timestamp: 1 }).limit(count - 30).toArray();
@@ -327,9 +590,20 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       }
     } catch {}
 
+    // Update real-time sync statistics
     syncStats.guilds = guildEntries.length;
     syncStats.counting = countingEntries.length;
     syncStats.setups = allSetupGuildIds.size;
+    syncStats.tickets = ticketEntries.length;
+    syncStats.triggers = triggerEntries.length + (cache.globalTriggers?.length ? 1 : 0);
+    syncStats.rateChannels = Object.keys(cache.rateChannels || {}).length;
+    syncStats.editRatings = editRatingEntries.length;
+    syncStats.burnRooms = burnEntries.length;
+    syncStats.mediaChannels = guildEntries.filter(([_, g]) => g.mediaChannelId).length;
+    syncStats.quoteChannels = guildEntries.filter(([_, g]) => g.quoteChannelId).length;
+    syncStats.autoReacts = autoReactGuilds.length;
+    syncStats.stickyMessages = stickyEntries.length;
+
     lastSyncTimestamp = Date.now();
     lastSyncStatus = `Synced (${reason}) @ ${new Date().toLocaleTimeString()}`;
 
@@ -337,7 +611,15 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       success: true,
       guilds: guildEntries.length,
       counting: countingEntries.length,
-      setups: allSetupGuildIds.size
+      setups: allSetupGuildIds.size,
+      tickets: ticketEntries.length,
+      rateChannels: syncStats.rateChannels,
+      editRatings: syncStats.editRatings,
+      mediaChannels: syncStats.mediaChannels,
+      quoteChannels: syncStats.quoteChannels,
+      autoReacts: syncStats.autoReacts,
+      triggers: syncStats.triggers,
+      burnRooms: syncStats.burnRooms
     };
   } catch (err) {
     console.error(chalk.red('[MongoSync] Push error:'), err);

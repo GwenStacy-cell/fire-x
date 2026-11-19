@@ -923,9 +923,9 @@ export function getEhelpPagePayload(page = 1) {
       {
         name: 'Database Persistence & MongoDB Cloud',
         value:
-          '`!db mongo` - Check MongoDB connection status & live sync statistics\n' +
-          '`!db mongo sync` - Force live sync of all 73 guilds, counting & stats to MongoDB\n' +
-          '`!db mongo pull` - Pull and hydrate all data directly from MongoDB Cloud\n' +
+          '`ezal mongo` / `!db mongo` - Check MongoDB connection status & live sync stats\n' +
+          '`ezal mongo sync` - Force-sync 73 guilds, counting, tickets, rates, media, reacts & triggers\n' +
+          '`ezal mongo pull` - Pull & hydrate all data directly from MongoDB Cloud\n' +
           '`!db backup` - Force immediate cloud backup snapshot to Discord\n' +
           '`!db status` - View database health, backup channel & cloud sync status\n' +
           '`!db export` - Download raw `db.json` & `stats.db` files\n' +
@@ -986,9 +986,9 @@ export function getEhelpPagePayload(page = 1) {
     {
       name: 'Database Persistence & MongoDB Cloud',
       value:
-        '`!db mongo` / `ezal mongo` - Check MongoDB connection & live sync stats\n' +
-        '`!db mongo sync` - Force-sync 73 guilds, counting & stats to MongoDB\n' +
-        '`!db mongo pull` - Pull & restore all server data from MongoDB Cloud\n' +
+        '`ezal mongo` / `!db mongo` - Check MongoDB connection & live sync stats\n' +
+        '`ezal mongo sync` - Force-sync 73 guilds, counting, tickets, rates, media, reacts & triggers\n' +
+        '`ezal mongo pull` - Pull & restore all server data from MongoDB Cloud\n' +
         '`!db status` - Database health, backup channel & cloud sync\n' +
         '`!db backup` - Force immediate cloud backup snapshot to Discord\n' +
         '`!db export` - Download raw db.json & stats.db\n' +
