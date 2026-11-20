@@ -16,6 +16,24 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.3.1',
+    headline: 'Boot-Time Repository Alignment & Untracked Tree Self-Healing',
+    summary: 'Added proactive boot-time git fetch and reset --hard into start.sh to instantly heal untracked working tree merge collisions on existing containers without requiring manual console or startup command intervention.',
+    whatsNew: [
+      {
+        title: 'Boot-Time Git Auto-Alignment',
+        desc: 'start.sh now automatically resets the working tree to origin/main on every container initialization, preventing merge locks from previously untracked files.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Zero Host Admin Dependency',
+        desc: 'Allows servers to self-heal and stay in continuous deployment mode without requiring host provider or startup command modifications.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.3.0',
     headline: 'Atomic Fetch & Hard Reset Synchronization Engine',
     summary: 'Upgraded daemon auto-deploy mechanism to use atomic git fetch and reset --hard FETCH_HEAD. Eliminates untracked working tree file overwrite merge aborts, preserving runtime configuration while enforcing clean synchronization with remote releases.',

@@ -23,6 +23,9 @@ if [ ! -d ".git" ] || ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; the
 else
   # Ensure origin remote is accurate and points to the zero-auth public mirror
   git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL" 2>/dev/null
+  echo "[Athena Prime] Aligning repository with remote mirror..."
+  git fetch origin main --quiet 2>/dev/null
+  git reset --hard origin/main 2>/dev/null
 fi
 
 # Ensure dependencies exist on cold container start
