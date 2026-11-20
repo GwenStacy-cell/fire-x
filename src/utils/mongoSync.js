@@ -32,6 +32,17 @@ let syncStats = {
   quoteChannels: 0,
   autoReacts: 0,
   stickyMessages: 0,
+  newsFeeds: 0,
+  voiceRoles: 0,
+  economy: 0,
+  xp: 0,
+  giveaways: 0,
+  reactionRoles: 0,
+  moderation: 0,
+  entryGates: 0,
+  roleplay: 0,
+  snapshots: 0,
+  incidents: 0,
   userStats: 0,
   channelStats: 0,
   invites: 0,
@@ -81,6 +92,9 @@ export async function getMongoDetailedAudit() {
       'guilds', 'channel_setups', 'counting', 'rate_edits', 'tickets', 
       'triggers', 'burn_rooms', 'sticky_messages', 'auto_reacts', 'core_cache',
       'news_feeds', 'voice_roles',
+      'economy', 'users_xp', 'giveaways', 'reaction_roles',
+      'moderation_security', 'entry_gates', 'roleplay_data',
+      'server_snapshots', 'security_incidents', 'minigames_stats',
       'cloud_backups', 'stats_user_activity', 'stats_channel_activity', 
       'stats_user_invites', 'stats_join_history'
     ];
@@ -241,6 +255,16 @@ export async function hydrateFromMongo(db, statsDB = null) {
     const stickyCol = mongoDb.collection('sticky_messages');
     const newsCol = mongoDb.collection('news_feeds');
     const voiceRolesCol = mongoDb.collection('voice_roles');
+    const economyCol = mongoDb.collection('economy');
+    const xpCol = mongoDb.collection('users_xp');
+    const giveawaysCol = mongoDb.collection('giveaways');
+    const reactionRolesCol = mongoDb.collection('reaction_roles');
+    const moderationCol = mongoDb.collection('moderation_security');
+    const entryGatesCol = mongoDb.collection('entry_gates');
+    const roleplayCol = mongoDb.collection('roleplay_data');
+    const serverSnapshotsCol = mongoDb.collection('server_snapshots');
+    const incidentsCol = mongoDb.collection('security_incidents');
+    const minigamesCol = mongoDb.collection('minigames_stats');
     const coreCol = mongoDb.collection('core_cache');
     const backupsCol = mongoDb.collection('cloud_backups');
 
@@ -406,7 +430,127 @@ export async function hydrateFromMongo(db, statsDB = null) {
         }
       }
 
-      // 13. Fail-Safe Recovery from Latest Cloud Backup Snapshot if any essential cache is missing
+      // 13. Hydrate Dedicated Economy & Shop Items
+      const allEconomyDocs = await economyCol.find({}).toArray();
+      db.cache.economy = db.cache.economy || {};
+      db.cache.shopItems = db.cache.shopItems || {};
+      for (const doc of allEconomyDocs) {
+        const gid = doc._id;
+        if (doc.users) db.cache.economy[gid] = doc.users;
+        if (Array.isArray(doc.shopItems)) db.cache.shopItems[gid] = doc.shopItems;
+      }
+
+      // 14. Hydrate Dedicated Users XP & Systems
+      const allXpDocs = await xpCol.find({}).toArray();
+      db.cache.usersXp = db.cache.usersXp || {};
+      db.cache.xpSystems = db.cache.xpSystems || {};
+      for (const doc of allXpDocs) {
+        const gid = doc._id;
+        if (doc.system) db.cache.xpSystems[gid] = doc.system;
+        if (doc.users) db.cache.usersXp[gid] = doc.users;
+      }
+
+      // 15. Hydrate Dedicated Giveaways
+      const allGiveawayDocs = await giveawaysCol.find({}).toArray();
+      db.cache.giveaways = db.cache.giveaways || {};
+      for (const doc of allGiveawayDocs) {
+        const mid = doc._id;
+        const cleanDoc = { ...doc };
+        delete cleanDoc._id;
+        delete cleanDoc.updatedAt;
+        db.cache.giveaways[mid] = cleanDoc;
+      }
+
+      // 16. Hydrate Dedicated Reaction Roles
+      const allReactionRoleDocs = await reactionRolesCol.find({}).toArray();
+      db.cache.reactionRoles = db.cache.reactionRoles || {};
+      for (const doc of allReactionRoleDocs) {
+        const mid = doc._id;
+        const cleanDoc = { ...doc };
+        delete cleanDoc._id;
+        delete cleanDoc.updatedAt;
+        db.cache.reactionRoles[mid] = cleanDoc;
+      }
+
+      // 17. Hydrate Dedicated Moderation & Security State
+      const allModDocs = await moderationCol.find({}).toArray();
+      db.cache.warnings = db.cache.warnings || {};
+      db.cache.quarantines = db.cache.quarantines || {};
+      db.cache.tempBans = db.cache.tempBans || {};
+      db.cache.exploitTaints = db.cache.exploitTaints || {};
+      db.cache.extraOwners = db.cache.extraOwners || {};
+      db.cache.botWhitelist = db.cache.botWhitelist || {};
+      db.cache.moveProtection = db.cache.moveProtection || {};
+      db.cache.vcProtection = db.cache.vcProtection || {};
+      for (const doc of allModDocs) {
+        const gid = doc._id;
+        if (doc.warnings) db.cache.warnings[gid] = doc.warnings;
+        if (doc.quarantines) db.cache.quarantines[gid] = doc.quarantines;
+        if (doc.tempBans) db.cache.tempBans[gid] = doc.tempBans;
+        if (doc.exploitTaints) db.cache.exploitTaints[gid] = doc.exploitTaints;
+        if (doc.extraOwners) db.cache.extraOwners[gid] = doc.extraOwners;
+        if (doc.botWhitelist) db.cache.botWhitelist[gid] = doc.botWhitelist;
+        if (doc.moveProtection) db.cache.moveProtection[gid] = doc.moveProtection;
+        if (doc.vcProtection) db.cache.vcProtection[gid] = doc.vcProtection;
+      }
+
+      // 18. Hydrate Dedicated Server Entry Application Gates
+      const allEntryDocs = await entryGatesCol.find({}).toArray();
+      db.cache.entryConfigs = db.cache.entryConfigs || {};
+      db.cache.entryPending = db.cache.entryPending || {};
+      for (const doc of allEntryDocs) {
+        const gid = doc._id;
+        if (doc.config) db.cache.entryConfigs[gid] = doc.config;
+        if (doc.pending) db.cache.entryPending[gid] = doc.pending;
+      }
+
+      // 19. Hydrate Dedicated Roleplay & Marriages
+      const allRpDocs = await roleplayCol.find({}).toArray();
+      db.cache.roleplay = db.cache.roleplay || {};
+      db.cache.roleplayUsers = db.cache.roleplayUsers || {};
+      db.cache.roleplayMarriages = db.cache.roleplayMarriages || {};
+      for (const doc of allRpDocs) {
+        if (doc._id === 'global_family') {
+          db.cache.family = doc.family || {};
+        } else {
+          const gid = doc._id;
+          if (doc.roleplay) db.cache.roleplay[gid] = doc.roleplay;
+          if (doc.users) db.cache.roleplayUsers[gid] = doc.users;
+          if (doc.marriages) db.cache.roleplayMarriages[gid] = doc.marriages;
+        }
+      }
+
+      // 20. Hydrate Dedicated Server Snapshots & Time Machine
+      const allSnapshotDocs = await serverSnapshotsCol.find({}).toArray();
+      db.cache.serverSnapshots = db.cache.serverSnapshots || {};
+      db.cache.timeMachineSnapshots = db.cache.timeMachineSnapshots || {};
+      for (const doc of allSnapshotDocs) {
+        const gid = doc._id;
+        if (Array.isArray(doc.snapshots)) db.cache.serverSnapshots[gid] = doc.snapshots;
+        if (Array.isArray(doc.timeMachine)) db.cache.timeMachineSnapshots[gid] = doc.timeMachine;
+      }
+
+      // 21. Hydrate Dedicated Anti-Nuke Incident Reports & Telemetry
+      const allIncidentDocs = await incidentsCol.find({}).toArray();
+      db.cache.incidentReports = db.cache.incidentReports || {};
+      db.cache.securityLiveRecords = db.cache.securityLiveRecords || {};
+      db.cache.nukeSignatures = db.cache.nukeSignatures || {};
+      for (const doc of allIncidentDocs) {
+        const gid = doc._id;
+        if (Array.isArray(doc.reports)) db.cache.incidentReports[gid] = doc.reports;
+        if (Array.isArray(doc.liveRecords)) db.cache.securityLiveRecords[gid] = doc.liveRecords;
+        if (Array.isArray(doc.nukeSignatures)) db.cache.nukeSignatures[gid] = doc.nukeSignatures;
+      }
+
+      // 22. Hydrate Dedicated Minigames & Arcade Stats
+      const minigameDoc = await minigamesCol.findOne({ _id: 'global_minigames' });
+      if (minigameDoc) {
+        if (minigameDoc.minigames) db.cache.minigamesStats = minigameDoc.minigames;
+        if (minigameDoc.arcade) db.cache.arcadeStats = minigameDoc.arcade;
+        if (minigameDoc.chess) db.cache.chessStats = minigameDoc.chess;
+      }
+
+      // 23. Fail-Safe Recovery from Latest Cloud Backup Snapshot if any essential cache is missing
       const latestBackup = await backupsCol.find().sort({ timestamp: -1 }).limit(1).toArray();
       if (latestBackup.length > 0 && latestBackup[0].data) {
         const bData = latestBackup[0].data;
@@ -450,6 +594,15 @@ export async function hydrateFromMongo(db, statsDB = null) {
       syncStats.stickyMessages = Object.keys(db.cache.stickyMessages || {}).length;
       syncStats.newsFeeds = allNewsDocs.length;
       syncStats.voiceRoles = Object.values(db.cache.guilds || {}).filter(g => g.voiceRoleId).length;
+      syncStats.economy = allEconomyDocs.length;
+      syncStats.xp = allXpDocs.length;
+      syncStats.giveaways = allGiveawayDocs.length;
+      syncStats.reactionRoles = allReactionRoleDocs.length;
+      syncStats.moderation = allModDocs.length;
+      syncStats.entryGates = allEntryDocs.length;
+      syncStats.roleplay = allRpDocs.length;
+      syncStats.snapshots = allSnapshotDocs.length;
+      syncStats.incidents = allIncidentDocs.length;
       syncStats.userStats = statsResult?.userStats || syncStats.userStats || 0;
       syncStats.channelStats = statsResult?.channelStats || syncStats.channelStats || 0;
       syncStats.invites = statsResult?.invites || syncStats.invites || 0;
@@ -519,17 +672,36 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     const stickyCol = mongoDb.collection('sticky_messages');
     const newsCol = mongoDb.collection('news_feeds');
     const voiceRolesCol = mongoDb.collection('voice_roles');
+    const economyCol = mongoDb.collection('economy');
+    const xpCol = mongoDb.collection('users_xp');
+    const giveawaysCol = mongoDb.collection('giveaways');
+    const reactionRolesCol = mongoDb.collection('reaction_roles');
+    const moderationCol = mongoDb.collection('moderation_security');
+    const entryGatesCol = mongoDb.collection('entry_gates');
+    const roleplayCol = mongoDb.collection('roleplay_data');
+    const serverSnapshotsCol = mongoDb.collection('server_snapshots');
+    const incidentsCol = mongoDb.collection('security_incidents');
+    const minigamesCol = mongoDb.collection('minigames_stats');
     const coreCol = mongoDb.collection('core_cache');
     const backupsCol = mongoDb.collection('cloud_backups');
 
     const cache = db.cache || {};
 
     // 1. Sync Core / Global Configs
+    const EXCLUDED_CORE_KEYS = new Set([
+      'guilds', 'counting', 'welcome', 'leave', 'jtc', 'serverStats', 'tickets', 
+      'verification', 'birthdays', 'triggers', 'globalTriggers', 'rateChannels', 
+      'editRatings', 'burnRooms', 'stickyMessages', 'newsFeeds', 'economy', 'shopItems',
+      'usersXp', 'xpSystems', 'giveaways', 'reactionRoles', 'warnings', 'quarantines',
+      'tempBans', 'exploitTaints', 'extraOwners', 'botWhitelist', 'moveProtection',
+      'vcProtection', 'entryConfigs', 'entryPending', 'roleplay', 'roleplayUsers',
+      'roleplayMarriages', 'family', 'serverSnapshots', 'timeMachineSnapshots',
+      'incidentReports', 'securityLiveRecords', 'nukeSignatures', 'minigamesStats',
+      'arcadeStats', 'chessStats'
+    ]);
     const globalPayload = { _id: 'global_state', updatedAt: timestamp };
     for (const [key, val] of Object.entries(cache)) {
-      if (['guilds', 'counting', 'welcome', 'leave', 'jtc', 'serverStats', 'tickets', 'verification', 'birthdays', 'triggers', 'globalTriggers', 'rateChannels', 'editRatings', 'burnRooms', 'stickyMessages', 'newsFeeds'].includes(key)) continue;
-      // Skip heavy historical rolling snapshots to keep core state agile
-      if (key === 'serverSnapshots' || key === 'timeMachineSnapshots') continue;
+      if (EXCLUDED_CORE_KEYS.has(key)) continue;
       globalPayload[key] = val;
     }
     await coreCol.updateOne({ _id: 'global_state' }, { $set: globalPayload }, { upsert: true });
@@ -746,10 +918,230 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       await voiceRolesCol.bulkWrite(vrOps, { ordered: false });
     }
 
-    // 13. Sync SQLite stats.db to MongoDB collections
+    // 13. Bulk Sync Dedicated Economy & Shop Items
+    const allEconGuilds = new Set([...Object.keys(cache.economy || {}), ...Object.keys(cache.shopItems || {})]);
+    if (allEconGuilds.size > 0) {
+      const econOps = Array.from(allEconGuilds).map(gid => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              users: cache.economy?.[gid] || {},
+              shopItems: cache.shopItems?.[gid] || [],
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(economyCol, econOps, 500);
+      syncStats.economy = allEconGuilds.size;
+    }
+
+    // 14. Bulk Sync Dedicated Users XP & Systems
+    const allXpGuilds = new Set([...Object.keys(cache.usersXp || {}), ...Object.keys(cache.xpSystems || {})]);
+    if (allXpGuilds.size > 0) {
+      const xpOps = Array.from(allXpGuilds).map(gid => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              system: cache.xpSystems?.[gid] || null,
+              users: cache.usersXp?.[gid] || {},
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(xpCol, xpOps, 500);
+      syncStats.xp = allXpGuilds.size;
+    }
+
+    // 15. Bulk Sync Dedicated Giveaways
+    const giveawayEntries = Object.entries(cache.giveaways || {});
+    if (giveawayEntries.length > 0) {
+      const gwOps = giveawayEntries.map(([mid, data]) => ({
+        updateOne: {
+          filter: { _id: String(mid) },
+          update: { $set: { ...data, updatedAt: timestamp } },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(giveawaysCol, gwOps, 500);
+      syncStats.giveaways = giveawayEntries.length;
+    }
+
+    // 16. Bulk Sync Dedicated Reaction Roles
+    const rrEntries = Object.entries(cache.reactionRoles || {});
+    if (rrEntries.length > 0) {
+      const rrOps = rrEntries.map(([mid, data]) => ({
+        updateOne: {
+          filter: { _id: String(mid) },
+          update: { $set: { ...data, updatedAt: timestamp } },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(reactionRolesCol, rrOps, 500);
+      syncStats.reactionRoles = rrEntries.length;
+    }
+
+    // 17. Bulk Sync Dedicated Moderation & Security State
+    const allModGuilds = new Set([
+      ...Object.keys(cache.warnings || {}),
+      ...Object.keys(cache.quarantines || {}),
+      ...Object.keys(cache.tempBans || {}),
+      ...Object.keys(cache.exploitTaints || {}),
+      ...Object.keys(cache.extraOwners || {}),
+      ...Object.keys(cache.botWhitelist || {}),
+      ...Object.keys(cache.moveProtection || {}),
+      ...Object.keys(cache.vcProtection || {})
+    ]);
+    if (allModGuilds.size > 0) {
+      const modOps = Array.from(allModGuilds).map(gid => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              warnings: cache.warnings?.[gid] || null,
+              quarantines: cache.quarantines?.[gid] || null,
+              tempBans: cache.tempBans?.[gid] || null,
+              exploitTaints: cache.exploitTaints?.[gid] || null,
+              extraOwners: cache.extraOwners?.[gid] || null,
+              botWhitelist: cache.botWhitelist?.[gid] || null,
+              moveProtection: cache.moveProtection?.[gid] || null,
+              vcProtection: cache.vcProtection?.[gid] || null,
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(moderationCol, modOps, 500);
+      syncStats.moderation = allModGuilds.size;
+    }
+
+    // 18. Bulk Sync Dedicated Server Entry Application Gates
+    const allEntryGuilds = new Set([
+      ...Object.keys(cache.entryConfigs || {}),
+      ...Object.keys(cache.entryPending || {})
+    ]);
+    if (allEntryGuilds.size > 0) {
+      const entryOps = Array.from(allEntryGuilds).map(gid => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              config: cache.entryConfigs?.[gid] || null,
+              pending: cache.entryPending?.[gid] || null,
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(entryGatesCol, entryOps, 500);
+      syncStats.entryGates = allEntryGuilds.size;
+    }
+
+    // 19. Bulk Sync Dedicated Roleplay Data & Marriages
+    const allRpGuilds = new Set([
+      ...Object.keys(cache.roleplay || {}),
+      ...Object.keys(cache.roleplayUsers || {}),
+      ...Object.keys(cache.roleplayMarriages || {})
+    ]);
+    if (allRpGuilds.size > 0) {
+      const rpOps = Array.from(allRpGuilds).map(gid => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              roleplay: cache.roleplay?.[gid] || null,
+              users: cache.roleplayUsers?.[gid] || null,
+              marriages: cache.roleplayMarriages?.[gid] || null,
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(roleplayCol, rpOps, 500);
+      syncStats.roleplay = allRpGuilds.size;
+    }
+    if (cache.family && Object.keys(cache.family).length > 0) {
+      await roleplayCol.updateOne(
+        { _id: 'global_family' },
+        { $set: { family: cache.family, updatedAt: timestamp } },
+        { upsert: true }
+      );
+    }
+
+    // 20. Bulk Sync Dedicated Server Snapshots & Time Machine
+    const allSnapGuilds = new Set([
+      ...Object.keys(cache.serverSnapshots || {}),
+      ...Object.keys(cache.timeMachineSnapshots || {})
+    ]);
+    if (allSnapGuilds.size > 0) {
+      const snapOps = Array.from(allSnapGuilds).map(gid => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              snapshots: (cache.serverSnapshots?.[gid] || []).slice(-10),
+              timeMachine: (cache.timeMachineSnapshots?.[gid] || []).slice(-10),
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(serverSnapshotsCol, snapOps, 500);
+      syncStats.snapshots = allSnapGuilds.size;
+    }
+
+    // 21. Bulk Sync Dedicated Anti-Nuke Incidents & Telemetry
+    const allSecGuilds = new Set([
+      ...Object.keys(cache.incidentReports || {}),
+      ...Object.keys(cache.securityLiveRecords || {}),
+      ...Object.keys(cache.nukeSignatures || {})
+    ]);
+    if (allSecGuilds.size > 0) {
+      const secOps = Array.from(allSecGuilds).map(gid => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              reports: (cache.incidentReports?.[gid] || []).slice(-20),
+              liveRecords: (cache.securityLiveRecords?.[gid] || []).slice(-30),
+              nukeSignatures: (cache.nukeSignatures?.[gid] || []).slice(-20),
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(incidentsCol, secOps, 500);
+      syncStats.incidents = allSecGuilds.size;
+    }
+
+    // 22. Sync Dedicated Minigames & Arcade Stats
+    await minigamesCol.updateOne(
+      { _id: 'global_minigames' },
+      {
+        $set: {
+          minigames: cache.minigamesStats || {},
+          arcade: cache.arcadeStats || {},
+          chess: cache.chessStats || {},
+          updatedAt: timestamp
+        }
+      },
+      { upsert: true }
+    );
+
+    // 23. Sync SQLite stats.db to MongoDB collections
     await pushStatsToMongo(statsDB).catch(() => null);
 
-    // 14. Push Snapshot Metadata to cloud_backups (Lightweight master recovery audit - keep latest 3)
+    // 24. Push Snapshot Metadata to cloud_backups (Lightweight master recovery audit - keep latest 3)
     try {
       const snapshotDoc = {
         _id: `backup_${timestamp.getTime()}`,
@@ -761,7 +1153,13 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
         ticketCount: ticketEntries.length,
         newsCount: newsEntries.length,
         voiceRolesCount: voiceRoleGuilds.length,
-        schemaVersion: 'v3.2.6',
+        economyCount: syncStats.economy || 0,
+        xpCount: syncStats.xp || 0,
+        giveawaysCount: syncStats.giveaways || 0,
+        reactionRolesCount: syncStats.reactionRoles || 0,
+        moderationCount: syncStats.moderation || 0,
+        snapshotsCount: syncStats.snapshots || 0,
+        schemaVersion: 'v3.4.0',
         stats: {
           userStats: syncStats.userStats || 0,
           channelStats: syncStats.channelStats || 0,

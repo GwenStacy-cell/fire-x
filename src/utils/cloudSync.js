@@ -1025,6 +1025,14 @@ export async function restoreFromCloud(client, target = null) {
           statsBuffer = zlib.gunzipSync(statsBuffer);
         }
         statsDB.close();
+        const walFile = path.join(DATA_DIR, 'stats.db-wal');
+        const shmFile = path.join(DATA_DIR, 'stats.db-shm');
+        if (fs.existsSync(walFile)) {
+          try { fs.unlinkSync(walFile); } catch {}
+        }
+        if (fs.existsSync(shmFile)) {
+          try { fs.unlinkSync(shmFile); } catch {}
+        }
         fs.writeFileSync(STATS_FILE, statsBuffer);
         statsDB.reopen();
         console.log(chalk.cyan('[CloudSync] Restored stats.db from cloud backup.'));

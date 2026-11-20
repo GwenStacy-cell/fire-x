@@ -444,6 +444,13 @@ export const commands = [
         const stickies = counts.sticky_messages || Object.keys(db.cache.stickyMessages || {}).length;
         const newsCount = counts.news_feeds || Object.keys(db.cache.newsFeeds || {}).filter(gid => db.cache.newsFeeds[gid]?.channelId).length;
         const vrCount = counts.voice_roles || Object.values(db.cache.guilds || {}).filter(g => g.voiceRoleId).length;
+        const econCount = counts.economy || Object.keys(db.cache.economy || {}).length;
+        const xpCount = counts.users_xp || Object.keys(db.cache.usersXp || {}).length;
+        const gwCount = counts.giveaways || Object.keys(db.cache.giveaways || {}).length;
+        const rrCount = counts.reaction_roles || Object.keys(db.cache.reactionRoles || {}).length;
+        const modCount = counts.moderation_security || Object.keys(db.cache.warnings || {}).length;
+        const snapCount = counts.server_snapshots || Object.keys(db.cache.serverSnapshots || {}).length;
+        const secCount = counts.security_incidents || Object.keys(db.cache.incidentReports || {}).length;
         const backups = counts.cloud_backups || 1;
         const uStats = counts.stats_user_activity || 4672;
         const chStats = counts.stats_channel_activity || 8253;
@@ -472,6 +479,12 @@ export const commands = [
           `**Live Cloud Inventory (What Is Backed Up):**\n` +
           `-# ${BULLET_EMOJI} **Guild Configurations (\`guilds\`):** \`${gCount} servers\` (Antinuke, Whitelist, Extra Owners, Modules)\n` +
           `-# ${BULLET_EMOJI} **Channel Setups (\`channel_setups\`):** \`${counts.channel_setups || gCount} setups\` (Welcome, Leave, JTC, Server Stats, Verification)\n` +
+          `-# ${BULLET_EMOJI} **Economy & Role Shop (\`economy\`):** \`${econCount} ledgers\` (Wallets, Bank, Daily streaks, Shop items)\n` +
+          `-# ${BULLET_EMOJI} **Leveling & XP (\`users_xp\`):** \`${xpCount} guilds\` (XP, Levels, Role rewards, Multipliers)\n` +
+          `-# ${BULLET_EMOJI} **Giveaways (\`giveaways\`):** \`${gwCount} giveaways\` | **Reaction Roles (\`reaction_roles\`):** \`${rrCount} menus\`\n` +
+          `-# ${BULLET_EMOJI} **Moderation & Security (\`moderation_security\`):** \`${modCount} guilds\` (Quarantines, Temp-bans, Warnings)\n` +
+          `-# ${BULLET_EMOJI} **Server Snapshots & Time Machine (\`server_snapshots\`):** \`${snapCount} guilds\` (Rolling 10 backups per guild)\n` +
+          `-# ${BULLET_EMOJI} **Anti-Nuke Telemetry (\`security_incidents\`):** \`${secCount} incident logs\`\n` +
           `-# ${BULLET_EMOJI} **Counting Channels (\`counting\`):** \`${cCount} active channels\` (Counts, Streaks, High scores, Saves)\n` +
           `-# ${BULLET_EMOJI} **Rate Channels & Ratings (\`rate_edits\`):** \`${rCount} documents\` (Bound rating channels + user ratings)\n` +
           `-# ${BULLET_EMOJI} **Support Tickets (\`tickets\`):** \`${tCount} systems\` (Categories, Staff roles, Active/closed tickets)\n` +

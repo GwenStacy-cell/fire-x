@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.0',
+    headline: 'Full-Spectrum Cloud Architecture & 27-Collection MongoDB Persistence',
+    summary: 'Conducted a deep-dive backup audit across local and cloud databases. Added 10 dedicated collections to MongoDB Cloud sync (economy, users_xp, giveaways, reaction_roles, moderation_security, entry_gates, roleplay_data, server_snapshots, security_incidents, minigames_stats) eliminating the 16MB single-document bottleneck, and implemented a clean WAL/SHM file purge during SQLite cloud recovery.',
+    whatsNew: [
+      {
+        title: '27 Dedicated MongoDB Cloud Collections',
+        desc: 'Split all heavy structured datasets (economy ledgers, XP leveling, active giveaways, reaction roles, quarantines/temp-bans, entry gates, roleplay marriages, server snapshots, anti-nuke telemetry) into dedicated per-guild MongoDB collections, guaranteeing 100% cloud backup coverage.'
+      },
+      {
+        title: 'Server Snapshots & Time Machine Cloud Persistence',
+        desc: 'Server infrastructure snapshots and Time Machine restore points are now continuously backed up to the server_snapshots MongoDB collection per guild.'
+      },
+      {
+        title: 'SQLite WAL Replay Protection in CloudSync',
+        desc: 'During cloud database restoration, stale stats.db-wal and stats.db-shm files are proactively purged before mounting the restored stats.db, permanently preventing SQLite transaction replay corruption.'
+      }
+    ],
+    improvements: [
+      {
+        title: '16MB Document Size Immunity',
+        desc: 'By decomposing per-guild datasets out of core_cache global_state, the master configuration document remains under 50KB, permanently immune to MongoDB BSONObjectTooLarge errors.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.3.9',
     headline: 'Direct Single-Strike Raw Ban Streamlining',
     summary: 'Streamlined Anti-Nuke hostile punishment to a single, zero-overhead raw ban request over pre-warmed Undici sockets. Removed redundant role-strip calls to conserve API rate limits and eliminate unnecessary multi-endpoint requests.',
