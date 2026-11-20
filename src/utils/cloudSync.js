@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import zlib from 'zlib';
 import { AttachmentBuilder, ChannelType, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import fetch from 'node-fetch';
 import chalk from 'chalk';
@@ -806,7 +807,7 @@ export function captureAllServerSnapshots(client, reason = 'Periodic (20m)') {
           ticketPanels,
           counting
         }
-      }, 100);
+      }, 10);
 
       count++;
     } catch (e) {
@@ -825,10 +826,15 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
   isBackingUp = true;
 
   try {
-    // 0. Automatically capture rolling 100-snapshot states for all servers before saving
+    // 0. Automatically capture rolling 10-snapshot states for all servers before saving
     if (client) {
       captureAllServerSnapshots(client, reason);
     }
+
+    // Prune excessive snapshots to keep database lean and prevent Discord 40005 and MongoDB quota errors
+    try {
+      db.pruneSnapshots(10);
+    } catch {}
 
     // 1. Flush any pending memory changes to disk synchronously
     if (db.needsSave || db.saveTimeout) {
@@ -848,20 +854,28 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
     }
 
     const timestamp = Date.now();
-    const dbAttachment = new AttachmentBuilder(DB_FILE, { name: `athena_db_${timestamp}.json` });
+    const rawDbBuffer = fs.readFileSync(DB_FILE);
+    const compressedDbBuffer = zlib.gzipSync(rawDbBuffer);
+    const dbAttachment = new AttachmentBuilder(compressedDbBuffer, { name: `athena_db_${timestamp}.json.gz` });
     const files = [dbAttachment];
 
     if (fs.existsSync(STATS_FILE)) {
-      files.push(new AttachmentBuilder(STATS_FILE, { name: `stats_${timestamp}.db` }));
+      try {
+        const rawStats = fs.readFileSync(STATS_FILE);
+        if (rawStats.length > 0) {
+          const compressedStats = zlib.gzipSync(rawStats);
+          files.push(new AttachmentBuilder(compressedStats, { name: `stats_${timestamp}.db.gz` }));
+        }
+      } catch {}
     }
 
-    const stats = fs.statSync(DB_FILE);
-    const sizeKb = (stats.size / 1024).toFixed(1);
+    const rawSizeKb = (rawDbBuffer.length / 1024).toFixed(1);
+    const compressedSizeKb = (compressedDbBuffer.length / 1024).toFixed(1);
     const m = getDatabaseMetrics(client);
 
     let formattedText = formatDatabaseMetrics(m, {
-      prefixText: 'Automated persistent cloud snapshot stored.',
-      sizeKb,
+      prefixText: `Automated persistent cloud snapshot stored (${compressedSizeKb} KB compressed / ${rawSizeKb} KB raw).`,
+      sizeKb: compressedSizeKb,
       timestamp,
       reason
     });
@@ -924,9 +938,9 @@ export async function restoreFromCloud(client, target = null) {
     return { success: false, reason: 'Backup channel has no messages.' };
   }
 
-  // Find all messages with json attachment sorted by timestamp (newest first)
+  // Find all messages with json or json.gz attachment sorted by timestamp (newest first)
   const backupMessages = [...messages.values()]
-    .filter(m => m.attachments.some(a => a.name?.endsWith('.json')))
+    .filter(m => m.attachments.some(a => a.name?.endsWith('.json') || a.name?.endsWith('.json.gz') || a.name?.endsWith('.gz')))
     .sort((a, b) => b.createdTimestamp - a.createdTimestamp);
 
   if (!backupMessages || backupMessages.length === 0) {
@@ -955,7 +969,7 @@ export async function restoreFromCloud(client, target = null) {
     // Smart auto-detection: If latest snapshot has very small size (< 5KB) or was created just now without data,
     // look for a previous backup message that has substantial size or mentions Guilds > 0
     const richBackup = backupMessages.find(m => {
-      const att = m.attachments.find(a => a.name?.endsWith('.json'));
+      const att = m.attachments.find(a => a.name?.endsWith('.json') || a.name?.endsWith('.json.gz') || a.name?.endsWith('.gz'));
       const text = (m.content || '') + ' ' + (m.embeds?.[0]?.description || '');
       const hasGuilds = text.includes('Guilds: ') && !text.includes('Guilds: 0');
       return (att && att.size > 15000) || hasGuilds;
@@ -964,7 +978,7 @@ export async function restoreFromCloud(client, target = null) {
     backupMsg = richBackup || backupMessages[0];
   }
 
-  const attachment = backupMsg?.attachments?.find(a => a.name?.endsWith('.json'));
+  const attachment = backupMsg?.attachments?.find(a => a.name?.endsWith('.json') || a.name?.endsWith('.json.gz') || a.name?.endsWith('.gz'));
   if (!attachment) {
     return { success: false, reason: 'Database attachment missing from target backup message.' };
   }
@@ -976,7 +990,13 @@ export async function restoreFromCloud(client, target = null) {
     throw new Error(`Download failed HTTP ${response.status}`);
   }
 
-  const text = await response.text();
+  const arrayBuffer = await response.arrayBuffer();
+  let text;
+  if (attachment.name.endsWith('.gz')) {
+    text = zlib.gunzipSync(Buffer.from(arrayBuffer)).toString('utf8');
+  } else {
+    text = Buffer.from(arrayBuffer).toString('utf8');
+  }
   const parsed = JSON.parse(text);
 
   if (!parsed || typeof parsed !== 'object' || !parsed.guilds) {
@@ -994,12 +1014,15 @@ export async function restoreFromCloud(client, target = null) {
   fs.writeFileSync(DB_FILE, JSON.stringify(parsed, null, 2), 'utf8');
 
   // Also restore stats.db if attached
-  const statsAtt = backupMsg.attachments.find(a => a.name?.endsWith('.db'));
+  const statsAtt = backupMsg.attachments.find(a => a.name?.endsWith('.db') || a.name?.endsWith('.db.gz'));
   if (statsAtt) {
     try {
       const statsRes = await fetch(statsAtt.url);
       if (statsRes.ok) {
-        const statsBuffer = Buffer.from(await statsRes.arrayBuffer());
+        let statsBuffer = Buffer.from(await statsRes.arrayBuffer());
+        if (statsAtt.name.endsWith('.gz')) {
+          statsBuffer = zlib.gunzipSync(statsBuffer);
+        }
         statsDB.close();
         fs.writeFileSync(STATS_FILE, statsBuffer);
         statsDB.reopen();

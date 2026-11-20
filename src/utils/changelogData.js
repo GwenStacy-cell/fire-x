@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.3.4',
+    headline: 'Gzip Compression & Snapshot Pruning for Discord Cloud Backups',
+    summary: 'Implemented Gzip compression for Discord database backups, reducing payload sizes by ~89%. Enforced a rolling limit of 10 infrastructure snapshots per guild to permanently prevent DiscordAPIError[40005] Request entity too large and MongoDB quota exhaustion.',
+    whatsNew: [
+      {
+        title: 'Gzip Cloud Backup Engine',
+        desc: 'Cloud backups are now automatically compressed with gzip (.json.gz / .db.gz) before uploading to Discord, shrinking multi-megabyte payloads to a few hundred kilobytes.'
+      },
+      {
+        title: 'Rolling Snapshot Pruning',
+        desc: 'Limited server infrastructure snapshot history to 10 per guild with boot-time pruning, reclaiming 15+ MB of storage and preventing attachment size overruns.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Backwards-Compatible Restore',
+        desc: 'cloudSync auto-restoration seamlessly decompresses .gz archives while preserving full compatibility with legacy raw JSON backups.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.3.3',
     headline: 'Sentinel Role Hierarchy Pre-Check & Permission Guard',
     summary: 'Added strict hierarchy positioning checks and ManageRoles permission validation before binding persistence roles to the bot. Prevents Discord API 50013 Missing Permissions warnings when sentinel roles are situated above bot primary roles.',

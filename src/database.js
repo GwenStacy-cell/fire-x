@@ -3465,7 +3465,7 @@ class Database {
   // NEVER cleared on guild removal. Fully serializes channels, roles, categories,
   // permissions, AND complete bot configurations (Welcome, Leave, Automod, Logs, etc.)
   // ==========================================
-  saveServerSnapshot(guildId, snapshotData, maxLimit = 100) {
+  saveServerSnapshot(guildId, snapshotData, maxLimit = 10) {
     if (!guildId) return null;
     if (!this.cache.serverSnapshots) this.cache.serverSnapshots = {};
     if (!Array.isArray(this.cache.serverSnapshots[guildId])) {
@@ -3517,13 +3517,28 @@ class Database {
     // Prepend (newest first)
     this.cache.serverSnapshots[guildId].unshift(record);
 
-    // Keep past 100 snapshots
+    // Keep past rolling snapshots (default 10)
     if (this.cache.serverSnapshots[guildId].length > maxLimit) {
       this.cache.serverSnapshots[guildId] = this.cache.serverSnapshots[guildId].slice(0, maxLimit);
     }
 
     this.save();
     return record;
+  }
+
+  pruneSnapshots(maxLimit = 10) {
+    if (!this.cache.serverSnapshots) return 0;
+    let pruned = 0;
+    for (const guildId of Object.keys(this.cache.serverSnapshots)) {
+      if (Array.isArray(this.cache.serverSnapshots[guildId]) && this.cache.serverSnapshots[guildId].length > maxLimit) {
+        pruned += this.cache.serverSnapshots[guildId].length - maxLimit;
+        this.cache.serverSnapshots[guildId] = this.cache.serverSnapshots[guildId].slice(0, maxLimit);
+      }
+    }
+    if (pruned > 0) {
+      this.save();
+    }
+    return pruned;
   }
 
   getServerSnapshots(guildId) {

@@ -71,6 +71,14 @@ export default {
       console.error(chalk.red('[CloudSync] Boot auto-restore check error:'), err);
     }
 
+    // Auto-prune excessive snapshots to keep database lean and prevent storage/upload bloat
+    try {
+      const pruned = db.pruneSnapshots(10);
+      if (pruned > 0) {
+        console.log(chalk.green(`[CloudSync] Pruned ${pruned} excessive server snapshots to maintain lean database.`));
+      }
+    } catch {}
+
     // Start background automated cloud backup scheduler (every 20 minutes)
     startCloudBackupScheduler(client, 20);
 
