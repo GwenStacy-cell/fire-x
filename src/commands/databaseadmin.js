@@ -451,6 +451,8 @@ export const commands = [
         const modCount = counts.moderation_security || Object.keys(db.cache.warnings || {}).length;
         const snapCount = counts.server_snapshots || Object.keys(db.cache.serverSnapshots || {}).length;
         const secCount = counts.security_incidents || Object.keys(db.cache.incidentReports || {}).length;
+        const gbanCount = counts.global_bans || (db.cache.botBlacklist || []).length;
+        const bannedServersCount = counts.banned_servers || (db.cache.bannedServers || []).length;
         const backups = counts.cloud_backups || 1;
         const uStats = counts.stats_user_activity || 4672;
         const chStats = counts.stats_channel_activity || 8253;
@@ -485,6 +487,7 @@ export const commands = [
           `-# ${BULLET_EMOJI} **Moderation & Security (\`moderation_security\`):** \`${modCount} guilds\` (Quarantines, Temp-bans, Warnings)\n` +
           `-# ${BULLET_EMOJI} **Server Snapshots & Time Machine (\`server_snapshots\`):** \`${snapCount} guilds\` (Rolling 10 backups per guild)\n` +
           `-# ${BULLET_EMOJI} **Anti-Nuke Telemetry (\`security_incidents\`):** \`${secCount} incident logs\`\n` +
+          `-# ${BULLET_EMOJI} **Global Sanctions & Blacklists:** \`${gbanCount} globally banned users\` (\`global_bans\`) | \`${bannedServersCount} blacklisted servers\` (\`banned_servers\`)\n` +
           `-# ${BULLET_EMOJI} **Counting Channels (\`counting\`):** \`${cCount} active channels\` (Counts, Streaks, High scores, Saves)\n` +
           `-# ${BULLET_EMOJI} **Rate Channels & Ratings (\`rate_edits\`):** \`${rCount} documents\` (Bound rating channels + user ratings)\n` +
           `-# ${BULLET_EMOJI} **Support Tickets (\`tickets\`):** \`${tCount} systems\` (Categories, Staff roles, Active/closed tickets)\n` +

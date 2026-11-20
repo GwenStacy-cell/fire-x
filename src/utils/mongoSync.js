@@ -43,6 +43,8 @@ let syncStats = {
   roleplay: 0,
   snapshots: 0,
   incidents: 0,
+  globalBans: 0,
+  bannedServers: 0,
   userStats: 0,
   channelStats: 0,
   invites: 0,
@@ -95,6 +97,7 @@ export async function getMongoDetailedAudit() {
       'economy', 'users_xp', 'giveaways', 'reaction_roles',
       'moderation_security', 'entry_gates', 'roleplay_data',
       'server_snapshots', 'security_incidents', 'minigames_stats',
+      'global_bans', 'banned_servers', 'noprefix_access',
       'cloud_backups', 'stats_user_activity', 'stats_channel_activity', 
       'stats_user_invites', 'stats_join_history'
     ];
@@ -265,6 +268,9 @@ export async function hydrateFromMongo(db, statsDB = null) {
     const serverSnapshotsCol = mongoDb.collection('server_snapshots');
     const incidentsCol = mongoDb.collection('security_incidents');
     const minigamesCol = mongoDb.collection('minigames_stats');
+    const gbanCol = mongoDb.collection('global_bans');
+    const bannedServersCol = mongoDb.collection('banned_servers');
+    const npCol = mongoDb.collection('noprefix_access');
     const coreCol = mongoDb.collection('core_cache');
     const backupsCol = mongoDb.collection('cloud_backups');
 
@@ -550,7 +556,44 @@ export async function hydrateFromMongo(db, statsDB = null) {
         if (minigameDoc.chess) db.cache.chessStats = minigameDoc.chess;
       }
 
-      // 23. Fail-Safe Recovery from Latest Cloud Backup Snapshot if any essential cache is missing
+      // 23. Hydrate Dedicated Global Bans (GBan / Bot Blacklist)
+      const allGbanDocs = await gbanCol.find({}).toArray();
+      db.cache.botBlacklist = db.cache.botBlacklist || [];
+      db.cache.botBlacklistData = db.cache.botBlacklistData || {};
+      for (const doc of allGbanDocs) {
+        const uid = doc._id;
+        if (!db.cache.botBlacklist.includes(uid)) {
+          db.cache.botBlacklist.push(uid);
+        }
+        db.cache.botBlacklistData[uid] = {
+          userId: uid,
+          reason: doc.reason || 'Violation of Athena Bot Rules & Security Protocols',
+          timestamp: doc.timestamp || new Date().toISOString()
+        };
+      }
+
+      // 24. Hydrate Dedicated Banned Servers (banserver)
+      const allBannedServerDocs = await bannedServersCol.find({}).toArray();
+      db.cache.bannedServers = db.cache.bannedServers || [];
+      for (const doc of allBannedServerDocs) {
+        const gid = doc._id;
+        if (!db.cache.bannedServers.includes(gid)) {
+          db.cache.bannedServers.push(gid);
+        }
+      }
+
+      // 25. Hydrate Dedicated No-Prefix Access & Permissions
+      const npDoc = await npCol.findOne({ _id: 'global_noprefix' });
+      if (npDoc) {
+        if (npDoc.users) db.cache.npUsers = npDoc.users;
+        if (npDoc.servers) db.cache.npServers = npDoc.servers;
+        if (Array.isArray(npDoc.managers)) db.cache.npManagers = npDoc.managers;
+        if (Array.isArray(npDoc.bannedUsers)) db.cache.npBannedUsers = npDoc.bannedUsers;
+        if (Array.isArray(npDoc.bannedCommands)) db.cache.npBannedCommands = npDoc.bannedCommands;
+        if (typeof npDoc.paused === 'boolean') db.cache.npPaused = npDoc.paused;
+      }
+
+      // 26. Fail-Safe Recovery from Latest Cloud Backup Snapshot if any essential cache is missing
       const latestBackup = await backupsCol.find().sort({ timestamp: -1 }).limit(1).toArray();
       if (latestBackup.length > 0 && latestBackup[0].data) {
         const bData = latestBackup[0].data;
@@ -603,6 +646,8 @@ export async function hydrateFromMongo(db, statsDB = null) {
       syncStats.roleplay = allRpDocs.length;
       syncStats.snapshots = allSnapshotDocs.length;
       syncStats.incidents = allIncidentDocs.length;
+      syncStats.globalBans = allGbanDocs.length;
+      syncStats.bannedServers = allBannedServerDocs.length;
       syncStats.userStats = statsResult?.userStats || syncStats.userStats || 0;
       syncStats.channelStats = statsResult?.channelStats || syncStats.channelStats || 0;
       syncStats.invites = statsResult?.invites || syncStats.invites || 0;
@@ -682,6 +727,9 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     const serverSnapshotsCol = mongoDb.collection('server_snapshots');
     const incidentsCol = mongoDb.collection('security_incidents');
     const minigamesCol = mongoDb.collection('minigames_stats');
+    const gbanCol = mongoDb.collection('global_bans');
+    const bannedServersCol = mongoDb.collection('banned_servers');
+    const npCol = mongoDb.collection('noprefix_access');
     const coreCol = mongoDb.collection('core_cache');
     const backupsCol = mongoDb.collection('cloud_backups');
 
@@ -697,7 +745,8 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       'vcProtection', 'entryConfigs', 'entryPending', 'roleplay', 'roleplayUsers',
       'roleplayMarriages', 'family', 'serverSnapshots', 'timeMachineSnapshots',
       'incidentReports', 'securityLiveRecords', 'nukeSignatures', 'minigamesStats',
-      'arcadeStats', 'chessStats'
+      'arcadeStats', 'chessStats', 'botBlacklist', 'botBlacklistData', 'bannedServers',
+      'npUsers', 'npServers', 'npManagers', 'npBannedUsers', 'npBannedCommands', 'npPaused'
     ]);
     const globalPayload = { _id: 'global_state', updatedAt: timestamp };
     for (const [key, val] of Object.entries(cache)) {
@@ -1138,10 +1187,68 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       { upsert: true }
     );
 
-    // 23. Sync SQLite stats.db to MongoDB collections
+    // 23. Bulk Sync Dedicated Global Bans (GBan / Bot Blacklist)
+    const blacklistIds = cache.botBlacklist || [];
+    const blacklistData = cache.botBlacklistData || {};
+    if (blacklistIds.length > 0) {
+      const banOps = blacklistIds.map(uid => ({
+        updateOne: {
+          filter: { _id: String(uid) },
+          update: {
+            $set: {
+              userId: String(uid),
+              reason: blacklistData[uid]?.reason || 'Violation of Athena Bot Rules & Security Protocols',
+              timestamp: blacklistData[uid]?.timestamp || timestamp.toISOString(),
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(gbanCol, banOps, 500);
+      syncStats.globalBans = blacklistIds.length;
+    }
+
+    // 24. Bulk Sync Dedicated Banned Servers (banserver)
+    const bannedServersList = cache.bannedServers || [];
+    if (bannedServersList.length > 0) {
+      const serverOps = bannedServersList.map(gid => ({
+        updateOne: {
+          filter: { _id: String(gid) },
+          update: {
+            $set: {
+              guildId: String(gid),
+              updatedAt: timestamp
+            }
+          },
+          upsert: true
+        }
+      }));
+      await chunkedBulkWrite(bannedServersCol, serverOps, 500);
+      syncStats.bannedServers = bannedServersList.length;
+    }
+
+    // 25. Sync Dedicated No-Prefix Access & Permissions
+    await npCol.updateOne(
+      { _id: 'global_noprefix' },
+      {
+        $set: {
+          users: cache.npUsers || {},
+          servers: cache.npServers || {},
+          managers: cache.npManagers || [],
+          bannedUsers: cache.npBannedUsers || [],
+          bannedCommands: cache.npBannedCommands || [],
+          paused: Boolean(cache.npPaused),
+          updatedAt: timestamp
+        }
+      },
+      { upsert: true }
+    );
+
+    // 26. Sync SQLite stats.db to MongoDB collections
     await pushStatsToMongo(statsDB).catch(() => null);
 
-    // 24. Push Snapshot Metadata to cloud_backups (Lightweight master recovery audit - keep latest 3)
+    // 27. Push Snapshot Metadata to cloud_backups (Lightweight master recovery audit - keep latest 3)
     try {
       const snapshotDoc = {
         _id: `backup_${timestamp.getTime()}`,

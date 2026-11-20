@@ -372,6 +372,8 @@ export function getDatabaseMetrics(client = null) {
     botBlacklistUsers: Array.isArray(cache.botBlacklist) ? cache.botBlacklist.length : Object.keys(cache.botBlacklist || {}).length,
     botBlacklistList: Array.isArray(cache.botBlacklist) ? cache.botBlacklist : Object.keys(cache.botBlacklist || {}),
     botBlacklistData: cache.botBlacklistData || {},
+    bannedServersCount: Array.isArray(cache.bannedServers) ? cache.bannedServers.length : 0,
+    bannedServersList: Array.isArray(cache.bannedServers) ? cache.bannedServers : [],
 
     welcomeActive,
     welcomeMessages,
@@ -592,10 +594,13 @@ export function formatDatabaseMetrics(m, options = {}) {
 
     `-# **__Moderation, Enforcement, Sanctions & Clearances:__**\n` +
     `> -# Sanctions: \`${m.warnings} warnings, ${m.tempBans} tempbans, ${m.maxWarningsSet} strike limits | Quarantined: ${m.quarantines} users (${m.quarantineRolesCount} roles, ${m.quarantineChannelsCount} chs, ${m.quarantineVcsCount || 0} VCs)\`\n` +
-    `> -# Whitelists: \`Extra Owners: ${m.extraOwners} (${m.extraOwnersTotal} users) | Roles: ${m.whitelistedRoles}, Users: ${m.whitelistedUsers} | Bot WL: ${m.botWhitelist} | Spam Permits: ${m.spamPermittedUsers || 0} | Blacklisted: ${m.botBlacklistUsers}\`\n` +
+    `> -# Whitelists: \`Extra Owners: ${m.extraOwners} (${m.extraOwnersTotal} users) | Roles: ${m.whitelistedRoles}, Users: ${m.whitelistedUsers} | Bot WL: ${m.botWhitelist} | Spam Permits: ${m.spamPermittedUsers || 0} | Blacklisted: ${m.botBlacklistUsers} | Banned Servers: ${m.bannedServersCount || 0}\`\n` +
     (m.botBlacklistUsers > 0 && Array.isArray(m.botBlacklistList) && m.botBlacklistList.length > 0
-      ? `> -# Globally Banned: ${m.botBlacklistList.slice(0, 3).map(id => `<@${id}>`).join(', ')}${m.botBlacklistList.length > 3 ? ` +${m.botBlacklistList.length - 3} more` : ''}\n\n`
-      : `\n`) +
+      ? `> -# Globally Banned: ${m.botBlacklistList.slice(0, 3).map(id => `<@${id}>`).join(', ')}${m.botBlacklistList.length > 3 ? ` +${m.botBlacklistList.length - 3} more` : ''}`
+      : '') +
+    (m.bannedServersCount > 0 && Array.isArray(m.bannedServersList) && m.bannedServersList.length > 0
+      ? ` | Banned Servers: ${m.bannedServersList.slice(0, 3).map(id => `\`${id}\``).join(', ')}${m.bannedServersList.length > 3 ? ` +${m.bannedServersList.length - 3} more` : ''}\n\n`
+      : `\n\n`) +
 
     `-# **__Community Engagement, Social & Gaming:__**\n` +
     `> -# Engagement: \`Auto-React: ${m.autoReactChannels} chs (${m.autoReactEmojisCount || 0} emojis) | Tickets: ${m.ticketSetups || 0} (${m.ticketsActive || 0} active, ${m.ticketsTotalCreated || 0} total) | Giveaways: ${m.giveaways} | Sticky: ${m.stickyChannels || 0} chs | Bump Reminders: ${m.bumpReminderGuilds || 0} guilds\`\n` +

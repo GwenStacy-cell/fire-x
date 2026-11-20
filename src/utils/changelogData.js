@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.1',
+    headline: 'Global Sanctions & Server Blacklist Cloud Collections',
+    summary: 'Added dedicated MongoDB Cloud collections for globally banned users (global_bans), blacklisted servers (banned_servers), and NoPrefix permissions (noprefix_access). Integrated banned server metrics into Athena Cloud Backup manifests and the !db mongo persistence audit.',
+    whatsNew: [
+      {
+        title: 'Dedicated Global Sanctions Collections',
+        desc: 'Globally banned accounts (!gban) and blacklisted servers (ezal banserver) now sync into dedicated global_bans and banned_servers collections in MongoDB Atlas with automated boot-time hydration into O(1) in-memory lookup sets.'
+      },
+      {
+        title: 'CloudSync Banned Server Metrics',
+        desc: 'Athena Cloud Backup manifests now track and display blacklisted servers alongside global bans in the enforcement section.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Persistent Sanctions Auditing',
+        desc: 'Enhanced !db mongo cloud audit to report real-time counts for globally blacklisted users and banned server IDs across 30 cloud collections.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.0',
     headline: 'Full-Spectrum Cloud Architecture & 27-Collection MongoDB Persistence',
     summary: 'Conducted a deep-dive backup audit across local and cloud databases. Added 10 dedicated collections to MongoDB Cloud sync (economy, users_xp, giveaways, reaction_roles, moderation_security, entry_gates, roleplay_data, server_snapshots, security_incidents, minigames_stats) eliminating the 16MB single-document bottleneck, and implemented a clean WAL/SHM file purge during SQLite cloud recovery.',
