@@ -285,29 +285,33 @@ export async function ensureUnbypassableRole(guild, options = {}) {
         await syncSupportingRolePositions(guild, 'Athena Prime Sentinel Alignment', { skipEnsure: true }).catch(() => null);
       }
 
-      // 5. Ensure the bot has both roles assigned
+      // 5. Ensure the bot has both roles assigned safely below its hierarchy
       await me.fetch(true).catch(() => null);
-      if (unbypassableRole && !me.roles.cache.has(unbypassableRole.id)) {
+      const canManageRoles = me.permissions?.has(PermissionFlagsBits.ManageRoles) || me.permissions?.has(PermissionFlagsBits.Administrator);
+      const myHighestPos = me.roles.highest?.position ?? 0;
+
+      if (unbypassableRole && !me.roles.cache.has(unbypassableRole.id) && canManageRoles) {
         try {
-          await me.roles.add(unbypassableRole.id, 'Athena Prime Persistence Sentinel Binding');
-        } catch (err) {
-          console.warn('[AntiStrip] Could not add unbypassable role to bot:', err.message);
-          if (unbypassableRole.editable) {
-            await unbypassableRole.setPosition(1).catch(() => null);
+          if (unbypassableRole.position >= myHighestPos && unbypassableRole.editable) {
+            await unbypassableRole.setPosition(Math.max(1, myHighestPos - 1)).catch(() => null);
+            await me.fetch(true).catch(() => null);
+          }
+          if (unbypassableRole.position < me.roles.highest.position) {
             await me.roles.add(unbypassableRole.id, 'Athena Prime Persistence Sentinel Binding').catch(() => null);
           }
-        }
+        } catch {}
       }
-      if (firewallRole && !me.roles.cache.has(firewallRole.id)) {
+
+      if (firewallRole && !me.roles.cache.has(firewallRole.id) && canManageRoles) {
         try {
-          await me.roles.add(firewallRole.id, 'Athena Prime Persistence Sentinel Binding');
-        } catch (err) {
-          console.warn('[AntiStrip] Could not add firewall role to bot:', err.message);
-          if (firewallRole.editable) {
-            await firewallRole.setPosition(1).catch(() => null);
+          if (firewallRole.position >= myHighestPos && firewallRole.editable) {
+            await firewallRole.setPosition(Math.max(1, myHighestPos - 1)).catch(() => null);
+            await me.fetch(true).catch(() => null);
+          }
+          if (firewallRole.position < me.roles.highest.position) {
             await me.roles.add(firewallRole.id, 'Athena Prime Persistence Sentinel Binding').catch(() => null);
           }
-        }
+        } catch {}
       }
       await me.fetch(true).catch(() => null);
 

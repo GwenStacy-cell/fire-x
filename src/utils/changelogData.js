@@ -16,6 +16,24 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.3.3',
+    headline: 'Sentinel Role Hierarchy Pre-Check & Permission Guard',
+    summary: 'Added strict hierarchy positioning checks and ManageRoles permission validation before binding persistence roles to the bot. Prevents Discord API 50013 Missing Permissions warnings when sentinel roles are situated above bot primary roles.',
+    whatsNew: [
+      {
+        title: 'Hierarchy-Aware Sentinel Assignment',
+        desc: 'Bot now validates that sentinel roles are strictly below its highest role before binding, dynamically positioning them downward if editable to avoid API permission errors.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Clean Log Telemetry',
+        desc: 'Eliminated raw unhandled permission warning noise in server startup logs.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.3.2',
     headline: 'Zero-Downtime Continuous Deployment Pipeline Verification',
     summary: 'Deployed live push verification payload v3.3.2. Synchronized Git supervisor watchdog across public mirrors, enabling instantaneous hot reloads and zero-downtime server restarts.',
