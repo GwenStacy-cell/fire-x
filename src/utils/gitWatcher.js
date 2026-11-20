@@ -7,6 +7,9 @@ import db from '../database.js';
 
 const execPromise = util.promisify(exec);
 
+// Public mirror repository requiring zero authentication credentials
+const PUBLIC_REPO_URL = 'https://github.com/GwenStacy-cell/fire-x.git';
+
 // Non-interactive git environment: completely disables terminal prompts for username/password
 const GIT_ENV = {
   ...process.env,
@@ -84,11 +87,11 @@ async function getLocalCommit() {
 }
 
 /**
- * Get the latest commit SHA of origin/main without fetching objects.
+ * Get the latest commit SHA of the public repository main branch without fetching objects.
  */
 async function getRemoteCommit() {
   try {
-    const { stdout } = await runGit('git ls-remote origin refs/heads/main');
+    const { stdout } = await runGit(`git ls-remote ${PUBLIC_REPO_URL} refs/heads/main`);
     const parts = stdout.trim().split(/\s+/);
     return parts[0] || null;
   } catch {
@@ -104,6 +107,9 @@ async function getRemoteCommit() {
 export async function startGitWatcher(intervalMs = 30000) {
   try {
     await runGit('git config --global --add safe.directory "*"').catch(() => {});
+    await runGit(`git remote set-url origin ${PUBLIC_REPO_URL}`).catch(async () => {
+      await runGit(`git remote add origin ${PUBLIC_REPO_URL}`).catch(() => {});
+    });
   } catch {}
 
   currentCommit = await getLocalCommit();
@@ -113,7 +119,7 @@ export async function startGitWatcher(intervalMs = 30000) {
       await runGit('git init').catch(() => {});
       await runGit('git config --global --add safe.directory "*"').catch(() => {});
       await runGit('git remote remove origin').catch(() => {});
-      await runGit('git remote add origin https://github.com/GwenStacy-cell/Athena-prime.git').catch(() => {});
+      await runGit(`git remote add origin ${PUBLIC_REPO_URL}`).catch(() => {});
       await runGit('git fetch origin main --quiet').catch(() => {});
       await runGit('git checkout -B main -f origin/main --quiet').catch(() => {});
       currentCommit = await getLocalCommit();
@@ -146,14 +152,23 @@ export async function startGitWatcher(intervalMs = 30000) {
           }
         } catch {}
 
-        // Pull latest updates immediately
+        // Check if package.json changed
+        try {
+          const { stdout: diffOutput } = await runGit(`git diff --name-only ${currentCommit} ${remoteCommit}`).catch(() => ({ stdout: '' }));
+          if (diffOutput && diffOutput.includes('package.json')) {
+            console.log(chalk.yellow('[AutoDeploy] Detected changes in package.json. Updating node modules...'));
+            await runGit('npm install --no-audit --no-fund --loglevel=error').catch(() => {});
+          }
+        } catch {}
+
+        // Pull latest updates immediately from the zero-auth public mirror
         try {
           console.log(chalk.cyan('[AutoDeploy] Synchronizing local repository via git pull...'));
-          await runGit('git pull origin main');
+          await runGit(`git pull ${PUBLIC_REPO_URL} main`);
           console.log(chalk.green('[AutoDeploy] Successfully updated local repository.'));
         } catch (pullErr) {
           try {
-            await runGit('git pull');
+            await runGit('git pull origin main');
           } catch {}
         }
 

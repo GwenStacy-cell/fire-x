@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.2.8',
+    headline: 'Public Mirror Auto-Deploy Integration & Zero-Credential Pulls',
+    summary: 'Bound auto-deploy daemon and background git watcher to the public repository mirror (fire-x.git), eliminating credential prompt stalls and enabling seamless automatic zero-downtime hot reloads and git pulls on headless Pterodactyl containers.',
+    whatsNew: [
+      {
+        title: 'Zero-Credential Public Remote Sync',
+        desc: 'Routed git ls-remote and git pull operations through the zero-auth public GitHub mirror, resolving fatal username prompt timeouts on headless container restarts.'
+      },
+      {
+        title: 'Dual-Layer Auto-Deploy Pipeline',
+        desc: 'Equipped both start.sh daemon loop and internal gitWatcher.js with public mirror polling, pre-restart package.json delta checks, and automated zero-downtime process recycling.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Self-Healing Remote URL Migration',
+        desc: 'start.sh and gitWatcher.js automatically detect and rebind container origin to the public mirror on initialization without manual shell intervention.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.2.7',
     headline: 'Pterodactyl Daemon Supervisor & Git Auto-Deploy Calibration',
     summary: 'Configured non-interactive shell environment (GIT_TERMINAL_PROMPT=0) in production start.sh daemon loop. Verified automated GitHub continuous deployment pipeline and remote synchronization triggers across cloud containers.',

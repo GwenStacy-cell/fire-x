@@ -9,18 +9,20 @@ export GIT_TERMINAL_PROMPT=0
 export GIT_ASKPASS=""
 git config --global --add safe.directory "*" 2>/dev/null
 
+REPO_URL="https://github.com/GwenStacy-cell/fire-x.git"
+
 # 1. Initialize or repair git repo if missing or disconnected
 if [ ! -d ".git" ] || ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  echo "[Athena Prime] Git repository not found locally. Initializing from GitHub..."
+  echo "[Athena Prime] Git repository not found locally. Initializing from GitHub mirror..."
   git init
   git config --global --add safe.directory "*" 2>/dev/null
   git remote remove origin 2>/dev/null
-  git remote add origin https://github.com/GwenStacy-cell/Athena-prime.git 2>/dev/null
+  git remote add origin "$REPO_URL" 2>/dev/null
   git fetch origin main --quiet 2>/dev/null
   git checkout -B main -f origin/main --quiet 2>/dev/null
 else
-  # Ensure origin remote is accurate
-  git remote set-url origin https://github.com/GwenStacy-cell/Athena-prime.git 2>/dev/null
+  # Ensure origin remote is accurate and points to the zero-auth public mirror
+  git remote set-url origin "$REPO_URL" 2>/dev/null || git remote add origin "$REPO_URL" 2>/dev/null
 fi
 
 # Ensure dependencies exist on cold container start
@@ -32,12 +34,12 @@ fi
 # 2. Main execution loop (Checks & pulls ONLY when git push is found)
 while true; do
   LOCAL_COMMIT=$(git rev-parse HEAD 2>/dev/null || echo "none")
-  REMOTE_COMMIT=$(git ls-remote origin refs/heads/main 2>/dev/null | awk '{print $1}')
+  REMOTE_COMMIT=$(git ls-remote "$REPO_URL" refs/heads/main 2>/dev/null | awk '{print $1}')
 
   if [ -n "$REMOTE_COMMIT" ] && [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
     echo "[Athena Prime] New git push detected ($LOCAL_COMMIT -> $REMOTE_COMMIT)!"
-    echo "[Athena Prime] Pulling updates from GitHub..."
-    git pull origin main --quiet 2>/dev/null
+    echo "[Athena Prime] Pulling updates from GitHub mirror..."
+    git pull "$REPO_URL" main --quiet 2>/dev/null
     
     # Only run npm install if package.json was modified between commits
     if git diff --name-only "$LOCAL_COMMIT" "$REMOTE_COMMIT" 2>/dev/null | grep -q "package.json"; then

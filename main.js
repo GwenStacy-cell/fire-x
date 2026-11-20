@@ -41,12 +41,12 @@ function runBot() {
     // Pull updates before restarting
     try {
       console.log('🔄 [Supervisor] Synchronizing repository via git pull...');
-      execSync('git pull origin main', { stdio: 'inherit' });
+      execSync('git pull https://github.com/GwenStacy-cell/fire-x.git main', { stdio: 'inherit' });
       console.log('[Supervisor] Repository synchronized with latest commit.');
     } catch (err) {
       console.warn('[Supervisor] Git pull note:', err.message);
       try {
-        execSync('git pull', { stdio: 'inherit' });
+        execSync('git pull origin main', { stdio: 'inherit' });
       } catch {}
     }
 
