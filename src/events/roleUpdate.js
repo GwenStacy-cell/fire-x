@@ -61,7 +61,9 @@ export default {
 
     // 3. Universal Anti-Role Reorder & Hierarchy Enforcement
     // Catches ANY unauthorized drag anywhere in the server hierarchy and replaces the original role structure
+    // Never trigger if Athena is currently aligning its supporting sentinels in this guild
     if (oldRole.position !== newRole.position && !newRole.managed && !isPersistenceRole) {
+      if (isSyncingSupportingRoles(newRole.guild.id)) return;
       if (config.securityEnabled || (config.antiNukeEnabled && config.antinukeModules?.antiRoleReorder !== false)) {
         const highestBotRole = newRole.guild.members.me.roles.highest;
         const isShieldBreach = newRole.position >= highestBotRole.position && newRole.id !== highestBotRole.id;

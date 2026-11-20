@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.3.5',
+    headline: 'Sentinel Reorder Suppression & Anti-Nuke Collateral Drag Guard',
+    summary: 'Guarded anti-nuke universal role reorder enforcement against collateral role position shifts caused by sentinel auto-dragging. Eliminates mutual recursion ping-pong between anti-strip sentinel positioning and anti-reorder rollback.',
+    whatsNew: [
+      {
+        title: 'Anti-Nuke Sentinel Sync Guard',
+        desc: 'roleUpdate now inspects isSyncingSupportingRoles before checking role position shifts, preventing automatic rollback of roles shifted during sentinel alignment.'
+      },
+      {
+        title: 'Immediate Cache & Baseline Sync',
+        desc: 'Dynamically updates in-memory role positions and triggers baseline infrastructure snapshot synchronization immediately upon sentinel repositioning.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Eliminated Role Reorder Oscillations',
+        desc: 'Resolved infinite repositioning cascades across active guilds while preserving strict anti-nuke hierarchy tampering defense against unauthorized users.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.3.4',
     headline: 'Gzip Compression & Snapshot Pruning for Discord Cloud Backups',
     summary: 'Implemented Gzip compression for Discord database backups, reducing payload sizes by ~89%. Enforced a rolling limit of 10 infrastructure snapshots per guild to permanently prevent DiscordAPIError[40005] Request entity too large and MongoDB quota exhaustion.',

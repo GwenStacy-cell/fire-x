@@ -488,7 +488,15 @@ export async function syncSupportingRolePositions(guild, reason = 'Athena Auto-D
 
     try {
       await guild.roles.setPositions(updates, reason);
+      firewallRole.position = targetSecondaryPos;
+      unbypassableRole.position = targetHiddenPos;
       console.log(`[AntiStrip] Auto-dragged sentinels in "${guild.name}": ${firewallRole.name} -> pos ${targetSecondaryPos}, ${unbypassableRole.name} -> pos ${targetHiddenPos} (Primary: ${primaryRole.name} @ ${primaryPos})`);
+
+      // Update baseline role snapshot so anti-nuke recognizes the new sentinel positions
+      import('./antinuke.js').then(({ triggerSnapshotSync }) => {
+        triggerSnapshotSync(guild);
+      }).catch(() => null);
+
       return true;
     } catch (setErr) {
       // Fallback: Individual repositioning if atomic setPositions fails
