@@ -16,6 +16,24 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.3.9',
+    headline: 'Direct Single-Strike Raw Ban Streamlining',
+    summary: 'Streamlined Anti-Nuke hostile punishment to a single, zero-overhead raw ban request over pre-warmed Undici sockets. Removed redundant role-strip calls to conserve API rate limits and eliminate unnecessary multi-endpoint requests.',
+    whatsNew: [
+      {
+        title: 'Single-Strike Direct Raw Ban',
+        desc: 'punish() now directly and exclusively dispatches rawBan (PUT /guilds/:id/bans/:user_id) without prior or concurrent role-stripping, instantly and permanently removing the attacker in a single API call.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'API Rate-Limit & Resource Conservation',
+        desc: 'Eliminating the secondary member PATCH request preserves server REST quotas and accelerates punishment execution down to a single socket dispatch.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.3.8',
     headline: 'Dual-Strike Concurrent Pre-Emption & Full 28-Module Defense Matrix',
     summary: 'Implemented concurrent Dual-Strike pre-emption in anti-nuke punishment, dispatching rawRoleStrip and rawBan simultaneously over pre-warmed Undici sockets for sub-10ms permission revocation. Expanded directStrike module resolution to cover all 28 security modules with zero-overhead socket dispatch.',
