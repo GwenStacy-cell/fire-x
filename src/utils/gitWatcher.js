@@ -163,12 +163,13 @@ export async function startGitWatcher(intervalMs = 30000) {
 
         // Pull latest updates immediately from the zero-auth public mirror
         try {
-          console.log(chalk.cyan('[AutoDeploy] Synchronizing local repository via git pull...'));
-          await runGit(`git pull ${PUBLIC_REPO_URL} main`);
-          console.log(chalk.green('[AutoDeploy] Successfully updated local repository.'));
+          console.log(chalk.cyan('[AutoDeploy] Synchronizing local repository via git fetch & reset...'));
+          await runGit(`git fetch ${PUBLIC_REPO_URL} main --quiet`);
+          await runGit('git reset --hard FETCH_HEAD');
+          console.log(chalk.green('[AutoDeploy] Successfully synchronized local repository.'));
         } catch (pullErr) {
           try {
-            await runGit('git pull origin main');
+            await runGit(`git pull ${PUBLIC_REPO_URL} main`);
           } catch {}
         }
 

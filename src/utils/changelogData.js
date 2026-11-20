@@ -16,6 +16,24 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.3.0',
+    headline: 'Atomic Fetch & Hard Reset Synchronization Engine',
+    summary: 'Upgraded daemon auto-deploy mechanism to use atomic git fetch and reset --hard FETCH_HEAD. Eliminates untracked working tree file overwrite merge aborts, preserving runtime configuration while enforcing clean synchronization with remote releases.',
+    whatsNew: [
+      {
+        title: 'Atomic Fetch & Reset Sync',
+        desc: 'Replaced git pull merge strategy with git fetch and git reset --hard in both start.sh and gitWatcher.js, preventing merge aborts from untracked working tree files.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Protected Configuration Integrity',
+        desc: 'Ensures untracked runtime state such as .env and data/ databases remain untouched during synchronization.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.2.9',
     headline: 'Continuous Auto-Deploy Verification & Live Watchdog Sync',
     summary: 'Deployed live push verification payload. Calibrated 30-second Git daemon watcher to continuously synchronize Pterodactyl container state with public fire-x mirror.',

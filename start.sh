@@ -38,8 +38,9 @@ while true; do
 
   if [ -n "$REMOTE_COMMIT" ] && [ "$LOCAL_COMMIT" != "$REMOTE_COMMIT" ]; then
     echo "[Athena Prime] New git push detected ($LOCAL_COMMIT -> $REMOTE_COMMIT)!"
-    echo "[Athena Prime] Pulling updates from GitHub mirror..."
-    git pull "$REPO_URL" main --quiet 2>/dev/null
+    echo "[Athena Prime] Synchronizing updates from GitHub mirror..."
+    git fetch "$REPO_URL" main --quiet 2>/dev/null
+    git reset --hard FETCH_HEAD 2>/dev/null
     
     # Only run npm install if package.json was modified between commits
     if git diff --name-only "$LOCAL_COMMIT" "$REMOTE_COMMIT" 2>/dev/null | grep -q "package.json"; then
