@@ -5,6 +5,8 @@
 # ========================================================
 
 echo "[Athena Prime] Initializing environment..."
+export GIT_TERMINAL_PROMPT=0
+export GIT_ASKPASS=""
 git config --global --add safe.directory "*" 2>/dev/null
 
 # 1. Initialize or repair git repo if missing or disconnected

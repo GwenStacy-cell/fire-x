@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.2.7',
+    headline: 'Pterodactyl Daemon Supervisor & Git Auto-Deploy Calibration',
+    summary: 'Configured non-interactive shell environment (GIT_TERMINAL_PROMPT=0) in production start.sh daemon loop. Verified automated GitHub continuous deployment pipeline and remote synchronization triggers across cloud containers.',
+    whatsNew: [
+      {
+        title: 'Non-Interactive Daemon Shell',
+        desc: 'Added export GIT_TERMINAL_PROMPT=0 and GIT_ASKPASS="" into start.sh to permanently suppress terminal credential prompts in container environments.'
+      },
+      {
+        title: 'Remote Synchronization Verification',
+        desc: 'Pushed v3.2.7 update to trigger and confirm real-time git pull and zero-downtime bot reload on Pterodactyl.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Self-Healing Environment Checks',
+        desc: 'Hardened git safe directory and remote origin self-repair checks on container initialization.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.2.6',
     headline: 'Memory Leak Elimination, Role Drag Cooldown & MongoDB Quota Reclamation',
     summary: 'Eliminated out-of-memory crashes by implementing role dragging concurrency locks and cooldown guards to prevent recursive event feedback loops. Staggered periodic sentinel sweeps, configured non-interactive Git daemons, and automated MongoDB storage reclamation purging legacy backup blobs to unblock cluster writes.',
