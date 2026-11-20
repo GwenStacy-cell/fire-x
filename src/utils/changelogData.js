@@ -16,6 +16,24 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.3.6',
+    headline: 'CloudSync Telemetry Logging Fix',
+    summary: 'Fixed undefined sizeKb reference in cloud backup success logging, reporting dual compressed and raw byte metrics accurately.',
+    whatsNew: [
+      {
+        title: 'Dual Size Telemetry',
+        desc: 'CloudSync completion logs now accurately display both compressed and raw sizes without reference errors.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Robust Variable Alias',
+        desc: 'Added sizeKb alias mapping to compressed size to preserve backwards compatibility across internal logging.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.3.5',
     headline: 'Sentinel Reorder Suppression & Anti-Nuke Collateral Drag Guard',
     summary: 'Guarded anti-nuke universal role reorder enforcement against collateral role position shifts caused by sentinel auto-dragging. Eliminates mutual recursion ping-pong between anti-strip sentinel positioning and anti-reorder rollback.',

@@ -871,6 +871,7 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
 
     const rawSizeKb = (rawDbBuffer.length / 1024).toFixed(1);
     const compressedSizeKb = (compressedDbBuffer.length / 1024).toFixed(1);
+    const sizeKb = compressedSizeKb;
     const m = getDatabaseMetrics(client);
 
     let formattedText = formatDatabaseMetrics(m, {
@@ -912,7 +913,7 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
       }
     } catch {}
 
-    console.log(chalk.cyan(`[CloudSync] Cloud backup saved to Discord channel #${channel.name} (${sizeKb} KB, ${m.guilds} guilds)`));
+    console.log(chalk.cyan(`[CloudSync] Cloud backup saved to Discord channel #${channel.name} (${compressedSizeKb} KB compressed / ${rawSizeKb} KB raw, ${m.guilds} guilds)`));
     return { success: true, timestamp, messageId: sentMsg?.id, channelId: channel.id };
   } catch (err) {
     console.error(chalk.red('[CloudSync] Failed to create cloud backup:'), err);
