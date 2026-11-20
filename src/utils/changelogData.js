@@ -16,6 +16,24 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.3.2',
+    headline: 'Zero-Downtime Continuous Deployment Pipeline Verification',
+    summary: 'Deployed live push verification payload v3.3.2. Synchronized Git supervisor watchdog across public mirrors, enabling instantaneous hot reloads and zero-downtime server restarts.',
+    whatsNew: [
+      {
+        title: 'Live Push Auto-Reload Verification',
+        desc: 'Dispatched v3.3.2 to verify automated 30s background Git polling, atomic hard reset synchronization, and zero-downtime container reboot on Pterodactyl.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Continuous Pipeline Diagnostics',
+        desc: 'Validated end-to-end webhook-free continuous deployment workflow directly from GitHub to production container.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.3.1',
     headline: 'Boot-Time Repository Alignment & Untracked Tree Self-Healing',
     summary: 'Added proactive boot-time git fetch and reset --hard into start.sh to instantly heal untracked working tree merge collisions on existing containers without requiring manual console or startup command intervention.',
