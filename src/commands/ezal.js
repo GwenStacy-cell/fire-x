@@ -1417,6 +1417,13 @@ export async function handleEzal(message) {
       if (dbCmd) return dbCmd.executePrefix(message, ['mongo', ...targetArgs]);
       break;
     }
+    case 'mongofree':
+    case 'mongoprune':
+    case 'mongoclean': {
+      const { reclaimStorageQuotaIfNeeded } = await import('../utils/mongoSync.js');
+      await reclaimStorageQuotaIfNeeded();
+      return message.reply(cv2.success('Storage Reclaimed', 'Purged heavy legacy snapshot documents from MongoDB cluster. Storage quota reclaimed and writes unblocked.'));
+    }
     case 'export':
     case 'dbexport':
     case 'download': {

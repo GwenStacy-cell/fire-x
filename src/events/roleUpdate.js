@@ -1,6 +1,6 @@
 import { AuditLogEvent, PermissionFlagsBits } from 'discord.js';
 
-import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab, syncSupportingRolePositions } from '../utils/antiStrip.js';
+import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab, syncSupportingRolePositions, isSyncingSupportingRoles } from '../utils/antiStrip.js';
 import db from '../database.js';
 
 export default {
@@ -19,9 +19,12 @@ export default {
                               newRole.name === UNBYPASSABLE_ROLE_NAME || newRole.name === FIREWALL_ROLE_NAME;
 
     // 1. Auto-drag supporting secondary and hidden roles if Primary role, Firewall, or Unbypassable role moves
+    // Guard against feedback recursion if Athena is currently actively reordering roles in this guild
     if (oldRole.position !== newRole.position && (config.securityEnabled || config.antiNukeEnabled)) {
       if (isBotPrimary || isPersistenceRole) {
-        syncSupportingRolePositions(newRole.guild, 'Athena Event Drag: Sentinel Hierarchy Realignment').catch(() => null);
+        if (!isSyncingSupportingRoles(newRole.guild.id)) {
+          syncSupportingRolePositions(newRole.guild, 'Athena Event Drag: Sentinel Hierarchy Realignment').catch(() => null);
+        }
       }
     }
 

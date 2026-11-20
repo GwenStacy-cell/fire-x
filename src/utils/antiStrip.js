@@ -332,6 +332,16 @@ export async function ensureUnbypassableRole(guild, options = {}) {
   return await executionPromise;
 }
 
+// Concurrency lock & cooldown tracking to prevent event feedback loops and memory leaks
+const syncingGuilds = new Set();
+const lastSyncTime = new Map(); // guild.id => timestamp
+
+export function isSyncingSupportingRoles(guildId) {
+  if (syncingGuilds.has(guildId)) return true;
+  const last = lastSyncTime.get(guildId) || 0;
+  return Date.now() - last < 15000;
+}
+
 /**
  * Auto-drags supporting secondary (Firewall) and hidden (Unbypassable) roles
  * directly beneath the bot's primary role in the guild hierarchy from afar.
@@ -348,6 +358,16 @@ export async function ensureUnbypassableRole(guild, options = {}) {
  */
 export async function syncSupportingRolePositions(guild, reason = 'Athena Auto-Drag: Sentinel Hierarchy Alignment', options = {}) {
   if (!guild || !guild.id) return false;
+
+  // 1. Concurrency & Cooldown Guard: Never run concurrent or rapid back-to-back syncs on the same guild
+  if (syncingGuilds.has(guild.id)) return false;
+  const now = Date.now();
+  const lastSync = lastSyncTime.get(guild.id) || 0;
+  if (!options?.force && now - lastSync < 15000) {
+    return false;
+  }
+
+  syncingGuilds.add(guild.id);
 
   try {
     const config = db.getGuildConfig(guild.id);
@@ -484,6 +504,9 @@ export async function syncSupportingRolePositions(guild, reason = 'Athena Auto-D
   } catch (err) {
     console.error(`[AntiStrip] Error in syncSupportingRolePositions for guild ${guild.name || guild.id}:`, err.message);
     return false;
+  } finally {
+    lastSyncTime.set(guild.id, Date.now());
+    syncingGuilds.delete(guild.id);
   }
 }
 

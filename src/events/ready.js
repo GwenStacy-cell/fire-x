@@ -188,16 +188,19 @@ export default {
       }
     }, 60000);
 
-    // Periodic Sentinel Hierarchy Watchdog (Runs every 90 seconds)
+    // Periodic Sentinel Hierarchy Watchdog (Runs every 90 seconds, staggered per guild)
     // Continuously ensures supporting secondary (Firewall) and hidden (Unbypassable) roles
-    // are dragged directly underneath the bot's primary role from any distant position in the server hierarchy.
-    setInterval(async () => {
-      for (const guild of client.guilds.cache.values()) {
+    // are dragged directly underneath the bot's primary role without heap spikes or API limits.
+    setInterval(() => {
+      const guilds = [...client.guilds.cache.values()];
+      guilds.forEach((guild, idx) => {
         const cfg = db.getGuildConfig(guild.id);
         if (cfg && (cfg.securityEnabled || cfg.antiNukeEnabled)) {
-          syncSupportingRolePositions(guild, 'Athena Periodic Sentinel Hierarchy Watchdog').catch(() => null);
+          setTimeout(() => {
+            syncSupportingRolePositions(guild, 'Athena Periodic Sentinel Hierarchy Watchdog').catch(() => null);
+          }, idx * 250);
         }
-      }
+      });
     }, 90000);
 
     // Store boot timestamp for uptime tracking
@@ -218,7 +221,6 @@ export default {
       const cfg = db.getGuildConfig(guild.id);
       if (cfg && (cfg.securityEnabled || cfg.antiNukeEnabled)) {
         ensureUnbypassableRole(guild, { force: true }).catch(() => null);
-        syncSupportingRolePositions(guild, 'Athena Startup Sentinel Hierarchy Drag').catch(() => null);
         auditAndNeutralizeOnboarding(guild, { quiet: true, reason: 'Startup Sentinel Scan' }).catch(() => null);
       } else {
         // IDLE MODE: When security / antinuke is not enabled, bot must NOT keep persistence roles

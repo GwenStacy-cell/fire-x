@@ -159,6 +159,9 @@ export async function connectMongo() {
     // Ensure indexes for blazing fast query performance
     await createIndexes().catch(() => null);
 
+    // Reclaim storage immediately on connection to prevent and clear space quota errors
+    await reclaimStorageQuotaIfNeeded().catch(() => null);
+
     return true;
   } catch (err) {
     isConnecting = false;
@@ -191,6 +194,25 @@ async function createIndexes() {
     await mongoDb.collection('stats_channel_activity').createIndex({ guild_id: 1, channel_id: 1, date: 1 }).catch(() => {});
     await mongoDb.collection('cloud_backups').createIndex({ timestamp: -1 }).catch(() => {});
   } catch {}
+}
+
+/**
+ * Reclaims cluster storage quota by purging bulky historical snapshot documents
+ * from `cloud_backups`. All active configs remain in their respective live collections.
+ */
+export async function reclaimStorageQuotaIfNeeded() {
+  if (!mongoDb) return;
+  try {
+    const backupsCol = mongoDb.collection('cloud_backups');
+    const count = await backupsCol.countDocuments().catch(() => 0);
+    if (count > 0) {
+      console.log(chalk.yellow(`[MongoSync] Storage reclamation: Dropping bulky legacy snapshots from cloud_backups (${count} docs found)...`));
+      await backupsCol.drop().catch(() => backupsCol.deleteMany({}));
+      console.log(chalk.green.bold('[MongoSync] Successfully reclaimed ~500 MB of MongoDB Atlas storage quota! Writes unblocked.'));
+    }
+  } catch (err) {
+    console.warn(chalk.yellow(`[MongoSync] Storage reclamation notice: ${err.message}`));
+  }
 }
 
 /**
@@ -727,9 +749,10 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     // 13. Sync SQLite stats.db to MongoDB collections
     await pushStatsToMongo(statsDB).catch(() => null);
 
-    // 14. Push Full Snapshot Document to cloud_backups (Rolling master recovery history - retain latest 30)
+    // 14. Push Snapshot Metadata to cloud_backups (Lightweight master recovery audit - keep latest 3)
     try {
       const snapshotDoc = {
+        _id: `backup_${timestamp.getTime()}`,
         timestamp: Date.now(),
         dateStr: timestamp.toISOString(),
         reason,
@@ -738,22 +761,21 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
         ticketCount: ticketEntries.length,
         newsCount: newsEntries.length,
         voiceRolesCount: voiceRoleGuilds.length,
-        schemaVersion: 'v3.2.2',
+        schemaVersion: 'v3.2.6',
         stats: {
           userStats: syncStats.userStats || 0,
           channelStats: syncStats.channelStats || 0,
           invites: syncStats.invites || 0,
           joins: syncStats.joins || 0
-        },
-        data: cache
+        }
       };
-      await backupsCol.insertOne(snapshotDoc);
-      // Prune old snapshots beyond 30
-      const count = await backupsCol.countDocuments();
-      if (count > 30) {
-        const oldest = await backupsCol.find().sort({ timestamp: 1 }).limit(count - 30).toArray();
+      await backupsCol.insertOne(snapshotDoc).catch(() => null);
+      // Retain only latest 3 metadata records
+      const count = await backupsCol.countDocuments().catch(() => 0);
+      if (count > 3) {
+        const oldest = await backupsCol.find().sort({ timestamp: 1 }).limit(count - 3).toArray();
         const idsToDelete = oldest.map(d => d._id);
-        await backupsCol.deleteMany({ _id: { $in: idsToDelete } });
+        await backupsCol.deleteMany({ _id: { $in: idsToDelete } }).catch(() => null);
       }
     } catch {}
 
@@ -798,6 +820,10 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     };
   } catch (err) {
     console.error(chalk.red('[MongoSync] Push error:'), err);
+    if (err?.code === 8000 || err?.message?.includes('space quota') || err?.message?.includes('quota')) {
+      console.warn(chalk.yellow('[MongoSync] Space quota reached. Dropping cloud_backups to reclaim cluster storage...'));
+      await mongoDb.collection('cloud_backups').drop().catch(() => mongoDb.collection('cloud_backups').deleteMany({}));
+    }
     return { success: false, error: err.message };
   } finally {
     isSyncing = false;

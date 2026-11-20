@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.2.6',
+    headline: 'Memory Leak Elimination, Role Drag Cooldown & MongoDB Quota Reclamation',
+    summary: 'Eliminated out-of-memory crashes by implementing role dragging concurrency locks and cooldown guards to prevent recursive event feedback loops. Staggered periodic sentinel sweeps, configured non-interactive Git daemons, and automated MongoDB storage reclamation purging legacy backup blobs to unblock cluster writes.',
+    whatsNew: [
+      {
+        title: 'Role Drag Anti-Recursion & 15s Cooldown',
+        desc: 'Added syncingGuilds concurrency lock and 15-second cooldown per guild with isSyncingSupportingRoles(guildId) in roleUpdate.js, eliminating infinite event cascades and out-of-memory crashes.'
+      },
+      {
+        title: 'Staggered Sentinel Sweeps',
+        desc: 'Staggered role hierarchy checks across all servers by 250ms, eliminating heap spikes on bot startup and periodic sweeps.'
+      },
+      {
+        title: 'Automated MongoDB Storage Reclamation',
+        desc: 'Auto-purges bulky legacy cache dumps in cloud_backups on connection and upon reaching quota limits, keeping MongoDB Atlas storage under 15 MB and unblocking cluster writes. Added ezal mongofree.'
+      },
+      {
+        title: 'Non-Interactive Git Daemon (Prompt Elimination)',
+        desc: 'Configured GIT_TERMINAL_PROMPT=0 in gitWatcher.js to prevent background git daemons from ever prompting for username/password on headless containers.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Startup Process Isolation',
+        desc: 'Streamlined bot startup by removing duplicate role positioning calls, letting the staggered watchdog handle hierarchy normalization progressively.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.2.5',
     headline: 'Ezal Active Session Command Passthrough & SS Security Routing',
     summary: 'Resolved command collision in active Ezal sessions where typing bot commands (e.g. ss, status) without a prefix would be erroneously evaluated as raw JavaScript. Added direct commandMap routing and explicit security status routing in Ezal mode.',

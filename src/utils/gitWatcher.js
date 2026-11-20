@@ -7,6 +7,17 @@ import db from '../database.js';
 
 const execPromise = util.promisify(exec);
 
+// Non-interactive git environment: completely disables terminal prompts for username/password
+const GIT_ENV = {
+  ...process.env,
+  GIT_TERMINAL_PROMPT: '0',
+  GIT_ASKPASS: ''
+};
+
+function runGit(cmd) {
+  return execPromise(cmd, { env: GIT_ENV, timeout: 15000 });
+}
+
 let isChecking = false;
 let currentCommit = null;
 let cachedCommitCount = null;
@@ -23,11 +34,11 @@ export async function getGitCommitCount() {
   try {
     let stdout;
     try {
-      const res = await execPromise('git rev-list --count HEAD');
+      const res = await runGit('git rev-list --count HEAD');
       stdout = res.stdout;
     } catch {
-      await execPromise('git config --global --add safe.directory "*"');
-      const res = await execPromise('git rev-list --count HEAD');
+      await runGit('git config --global --add safe.directory "*"').catch(() => {});
+      const res = await runGit('git rev-list --count HEAD');
       stdout = res.stdout;
     }
 
@@ -35,8 +46,8 @@ export async function getGitCommitCount() {
     // If shallow clone detected (e.g. depth 1 count is < 100), try to unshallow
     if (!isNaN(num) && num < 100) {
       try {
-        await execPromise('git fetch --unshallow origin main');
-        const res = await execPromise('git rev-list --count HEAD');
+        await runGit('git fetch --unshallow origin main');
+        const res = await runGit('git rev-list --count HEAD');
         num = parseInt(res.stdout.trim(), 10);
       } catch {}
     }
@@ -59,12 +70,12 @@ export async function getGitCommitCount() {
  */
 async function getLocalCommit() {
   try {
-    const { stdout } = await execPromise('git rev-parse HEAD');
+    const { stdout } = await runGit('git rev-parse HEAD');
     return stdout.trim();
   } catch {
     try {
-      await execPromise('git config --global --add safe.directory "*"');
-      const { stdout } = await execPromise('git rev-parse HEAD');
+      await runGit('git config --global --add safe.directory "*"').catch(() => {});
+      const { stdout } = await runGit('git rev-parse HEAD');
       return stdout.trim();
     } catch {
       return null;
@@ -77,7 +88,7 @@ async function getLocalCommit() {
  */
 async function getRemoteCommit() {
   try {
-    const { stdout } = await execPromise('git ls-remote origin refs/heads/main');
+    const { stdout } = await runGit('git ls-remote origin refs/heads/main');
     const parts = stdout.trim().split(/\s+/);
     return parts[0] || null;
   } catch {
@@ -92,19 +103,19 @@ async function getRemoteCommit() {
  */
 export async function startGitWatcher(intervalMs = 30000) {
   try {
-    await execPromise('git config --global --add safe.directory "*"');
+    await runGit('git config --global --add safe.directory "*"').catch(() => {});
   } catch {}
 
   currentCommit = await getLocalCommit();
   if (!currentCommit) {
     try {
       console.log(chalk.yellow('[AutoDeploy] Linking local repository to remote origin...'));
-      await execPromise('git init');
-      await execPromise('git config --global --add safe.directory "*"');
-      await execPromise('git remote remove origin').catch(() => {});
-      await execPromise('git remote add origin https://github.com/GwenStacy-cell/Athena-prime.git');
-      await execPromise('git fetch origin main --quiet');
-      await execPromise('git checkout -B main -f origin/main --quiet');
+      await runGit('git init').catch(() => {});
+      await runGit('git config --global --add safe.directory "*"').catch(() => {});
+      await runGit('git remote remove origin').catch(() => {});
+      await runGit('git remote add origin https://github.com/GwenStacy-cell/Athena-prime.git').catch(() => {});
+      await runGit('git fetch origin main --quiet').catch(() => {});
+      await runGit('git checkout -B main -f origin/main --quiet').catch(() => {});
       currentCommit = await getLocalCommit();
     } catch {}
   }
@@ -138,11 +149,11 @@ export async function startGitWatcher(intervalMs = 30000) {
         // Pull latest updates immediately
         try {
           console.log(chalk.cyan('[AutoDeploy] Synchronizing local repository via git pull...'));
-          await execPromise('git pull origin main');
+          await runGit('git pull origin main');
           console.log(chalk.green('[AutoDeploy] Successfully updated local repository.'));
         } catch (pullErr) {
           try {
-            await execPromise('git pull');
+            await runGit('git pull');
           } catch {}
         }
 
