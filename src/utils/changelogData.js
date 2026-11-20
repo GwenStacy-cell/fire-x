@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '20 November 2026',
+    version: 'v3.3.7',
+    headline: 'Unknown Channel Self-Healing & Security Toggle Reference Fix',
+    summary: 'Resolved ReferenceError in handleSecurityToggleAll, added null-safe channel checks in messageCreate command logging, and implemented automatic self-cleaning for stale dashboard and quarantine channel IDs in the database.',
+    whatsNew: [
+      {
+        title: 'Security Toggle All Scope Fix',
+        desc: 'Declared cfg configuration scope in handleSecurityToggleAll, allowing seamless disengagement and re-engagement of all 28 security modules via buttons or slash commands.'
+      },
+      {
+        title: 'Stale Channel Self-Healing',
+        desc: 'Automatically clears dead channel IDs (DiscordAPIError 10003) from database cache for both athenas-dashboard and quarantine channels.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Null-Safe Channel Logging',
+        desc: 'messageCreate execution telemetry now handles DM, deleted, and partial channels safely without property-of-null exceptions.'
+      }
+    ]
+  },
+  {
+    date: '20 November 2026',
     version: 'v3.3.6',
     headline: 'CloudSync Telemetry Logging Fix',
     summary: 'Fixed undefined sizeKb reference in cloud backup success logging, reporting dual compressed and raw byte metrics accurately.',

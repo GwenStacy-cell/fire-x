@@ -2624,7 +2624,13 @@ export async function executeQuarantine(guild, targetMember, moderator, reason, 
       }],
       flags: MessageFlags.IsComponentsV2
     };
-    await quarantineChannel.send(welcomeEmbed).catch((e) => console.error('QUARANTINE_SEND_ERROR:', e));
+    await quarantineChannel.send(welcomeEmbed).catch((e) => {
+      if (e.code === 10003) {
+        db.updateGuildConfig(guild.id, { quarantineChannelId: null });
+      } else {
+        console.warn('[Quarantine] Could not post welcome alert to quarantine channel:', e.message);
+      }
+    });
 
     // 8. Log the event to logs channel
     const enforcerTier = (moderator.id === guild.members.me.id || !moderator.user) ? 'Athena Prime' : getUserTierName(guild, moderator);
@@ -5127,6 +5133,7 @@ export function buildSecurityRequirementsWarning(guild, req) {
 // Enables/disables ALL security features except autonick
 // ==========================================
 export async function handleSecurityToggleAll(guild, moderator, enable) {
+  const cfg = db.getGuildConfig(guild.id);
   // We only handle enable=false here now, because enable=true is handled by runSecurityEnableSequence
   if (!enable) {
     db.updateGuildConfig(guild.id, {

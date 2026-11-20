@@ -536,6 +536,9 @@ export async function getOrCreateQuarantineChannel(guild, quarantineRole, parent
   // ALWAYS fetch ID from our database first to detect
   if (config.quarantineChannelId) {
     channel = guild.channels.cache.get(config.quarantineChannelId) || await guild.channels.fetch(config.quarantineChannelId).catch(() => null);
+    if (!channel) {
+      db.updateGuildConfig(guild.id, { quarantineChannelId: null });
+    }
   }
 
   if (!channel) {

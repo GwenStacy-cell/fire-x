@@ -286,7 +286,11 @@ export async function updateDashboardMessage(guild, client) {
     db.setDashboardInfo(guild.id, channel.id, [m1.id, m2.id, m3.id]);
 
   } catch (err) {
-    console.error(`Failed to update dashboard for ${guild.id}:`, err);
+    if (err.code === 10003 || err.message?.includes('Unknown Channel')) {
+      db.setDashboardInfo(guild.id, null, []);
+    } else {
+      console.error(`Failed to update dashboard for ${guild.id}:`, err);
+    }
   } finally {
     _dashboardLocks.delete(guild.id);
   }
@@ -299,6 +303,10 @@ export async function setupDashboardChannel(guild, client) {
   let targetChannel = cfg.dashboardChannelId
     ? (guild.channels.cache.get(cfg.dashboardChannelId) || await guild.channels.fetch(cfg.dashboardChannelId).catch(() => null))
     : null;
+
+  if (cfg.dashboardChannelId && !targetChannel) {
+    db.setDashboardInfo(guild.id, null, []);
+  }
 
   const allDashChannels = guild.channels.cache.filter(c => c.name === 'athenas-dashboard');
   if (allDashChannels.size > 1) {

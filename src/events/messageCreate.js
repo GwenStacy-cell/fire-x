@@ -2167,19 +2167,22 @@ export default {
       const excludedCmds = ['explain', 'help', 'status', 'ping', 'docs', 'architecture'];
       if (!excludedCmds.includes(cmd.name) && (loggedCategories.includes(cmd.category) || isModUser)) {
         const logContent = message.content.length > 1000 ? message.content.substring(0, 1000) + '...' : message.content;
-        const tierName = getUserTierName(message.guild, message.member);
+        const tierName = message.guild && message.member ? getUserTierName(message.guild, message.member) : 'User';
+        const channelLabel = message.channel?.id ? `<#${message.channel.id}>` : (message.channel?.name || 'Direct Message');
         const embed = cv2.info(
           `Command Execution Log | ${cv2.TICK_EMOJI}`,
           `User <@${message.author.id}> (\`${message.author.id}\`) executed a command.`,
           [
             { name: 'Command', value: `\`\`\`\n${logContent}\n\`\`\``, inline: false },
-            { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
+            { name: 'Channel', value: channelLabel, inline: true },
             { name: 'Category', value: cmd.category || 'utility', inline: true },
             { name: 'Clearance', value: `\`${tierName}\``, inline: true }
           ],
           cmd.category || 'moderation'
         );
-        logToSecurityChannel(message.guild, embed).catch(() => {});
+        if (message.guild) {
+          logToSecurityChannel(message.guild, embed).catch(() => {});
+        }
       }
 
     } catch (error) {
