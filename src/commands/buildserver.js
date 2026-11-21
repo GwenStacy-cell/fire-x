@@ -1,10 +1,11 @@
-﻿import { PermissionFlagsBits, ChannelType } from 'discord.js';
+import { PermissionFlagsBits, ChannelType } from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
 
 export const commands = [
   {
     name: 'buildserver',
+    aliases: ['bserver', 'serversetup'],
     description: 'Auto-builds an aesthetic support server layout for the bot.',
     type: 1,
     async executePrefix(message, args) {

@@ -110,6 +110,7 @@ async function handleServerLogs(guild, subcommand, args) {
 export const commands = [
   {
     name: 'serverlogs',
+    aliases: ['slogs', 'logchannel', 'auditlogs'],
     description: 'Configure the modular Server Logging system.',
     category: 'utility',
     permissions: [PermissionFlagsBits.Administrator],

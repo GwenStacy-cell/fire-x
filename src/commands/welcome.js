@@ -735,6 +735,7 @@ export const commands = [
   },
   {
     name: 'leave',
+    aliases: ['goodbye', 'setleave', 'leaveconfig'],
     description: 'Open the Leave Message Manager [Extra Owner].',
     category: 'utility',
     permissions: [],

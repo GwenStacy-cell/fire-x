@@ -9,6 +9,7 @@ import { manageWebSubSubscription } from '../utils/websub.js';
 export const commands = [
   {
     name: 'youtube',
+    aliases: ['yt', 'ytnotifier', 'youtubenotifier'],
     description: 'Manage YouTube upload notifiers for the server.',
     category: 'engagement',
     permissions: [], // Restricted via isAuthorized manually

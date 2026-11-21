@@ -6,6 +6,7 @@ import cv2 from '../cv2.js';
 export const commands = [
   {
     name: 'verify',
+    aliases: ['v', 'verification', 'verifygate'],
     description: 'Configure server verification gate with Button, Graphic CAPTCHA, or Math challenges',
     type: 1, // CHAT_INPUT
     default_member_permissions: String(PermissionFlagsBits.Administrator),

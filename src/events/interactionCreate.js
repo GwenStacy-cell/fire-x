@@ -296,6 +296,14 @@ export default {
     }
 
     // ==========================================
+    // ROLE MANAGER (EDITROLE / ER) INTERACTIVE CONTROLS
+    // ==========================================
+    if (interaction.customId && interaction.customId.startsWith('rm_')) {
+      const { handleRoleManagerInteraction } = await import('../commands/rolemanager.js');
+      return handleRoleManagerInteraction(interaction);
+    }
+
+    // ==========================================
     // EZAL OWNER SUITE & 100-ROLLING SNAPSHOT INTERACTION BUTTONS
     // ==========================================
     if (interaction.isButton() && interaction.customId.startsWith('ezal_')) {

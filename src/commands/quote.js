@@ -124,6 +124,7 @@ export const commands = [
   },
   {
     name: 'quotemaker',
+    aliases: ['qm', 'makequote'],
     description: 'Launch the interactive Canvas Quote Generator dashboard.',
     category: 'community',
     async executePrefix(message) {
@@ -181,6 +182,7 @@ export const commands = [
   },
   {
     name: 'setquote',
+    aliases: ['sq'],
     description: 'Bind Auto-Quote channel to turn typed messages into quotes.',
     category: 'community',
     async executePrefix(message, args) {

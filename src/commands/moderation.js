@@ -1012,6 +1012,7 @@ export const commands = [
   // --- CREATE ROLE COMMAND ---
   {
     name: 'createrole',
+    aliases: ['cr', 'newrole', 'rolecreate', 'makerole'],
     slashHidden: true,
     description: 'Creates a new server role with a specified name and hex color.',
     category: 'moderation',
@@ -1050,6 +1051,7 @@ export const commands = [
   // --- DELETE ROLE COMMAND ---
   {
     name: 'deleterole',
+    aliases: ['dr', 'delrole', 'roledel', 'roledelete'],
     slashHidden: true,
     description: 'Deletes a server role safely.',
     category: 'moderation',
@@ -1198,6 +1200,7 @@ export const commands = [
   // --- UNBANALL COMMAND ---
   {
     name: 'unbanall',
+    aliases: ['massunban'],
     description: 'Removes ALL active bans from the server. (Bot Owner, Server Owner, Extra Owners only)',
     category: 'moderation',
     permissions: [PermissionFlagsBits.BanMembers],
@@ -1421,6 +1424,7 @@ export const commands = [
   // --- MASSTIMEOUT COMMAND ---
   {
     name: 'masstimeout',
+    aliases: ['mto', 'massmute'],
     description: 'Timeout all members with a specific role.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.ModerateMembers],

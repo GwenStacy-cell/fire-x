@@ -6,6 +6,7 @@ import { isAuthorized } from '../utils/helpers.js';
 export const commands = [
   {
     name: 'theatermode',
+    aliases: ['theater', 'tm'],
     description: 'Toggles Theater Mode in the current VC (Auto-mutes/deafens all members).',
     category: 'moderation',
     permissions: [PermissionFlagsBits.MuteMembers, PermissionFlagsBits.DeafenMembers],

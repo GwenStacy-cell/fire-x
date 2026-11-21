@@ -260,6 +260,7 @@ export const commands = [
   // --- HELP COMMAND ---
   {
     name: 'help',
+    aliases: ['h', 'commands', 'cmds'],
     description: 'Show Athena Prime command menu or inspect command details and aliases',
     type: 1,
     options: [
@@ -2754,6 +2755,7 @@ export const commands = [
   },
   {
     name: 'prefix',
+    aliases: ['setprefix'],
     description: 'Set a custom prefix for the server',
     type: 1,
     options: [
@@ -3774,6 +3776,7 @@ async function handleSetup(guild, channel, role, voiceChannel) {
 
 commands.push({
   name: 'autorole-config',
+  aliases: ['autorole', 'arc'],
   description: 'Add or remove an autorole for new members',
   category: 'utility',
   permissions: [PermissionFlagsBits.ManageRoles],
@@ -3833,6 +3836,7 @@ commands.push({
 
 commands.push({
   name: 'createthread',
+  aliases: ['ct', 'newthread', 'threadcreate'],
   description: 'Create a new thread in this channel',
   category: 'utility',
   permissions: [PermissionFlagsBits.ManageThreads],
@@ -3859,6 +3863,7 @@ commands.push({
 // --- SET STATS CHANNEL COMMAND ---
 commands.push({
   name: 'setstatschannel',
+  aliases: ['statschannel', 'ssc'],
   description: 'Set a dedicated channel for /stats commands (prevents spam elsewhere)',
   category: 'utility',
   permissions: [PermissionFlagsBits.ManageGuild],
@@ -3906,6 +3911,7 @@ commands.push({
 
 commands.push({
   name: 'archivethread',
+  aliases: ['archive', 'threadarchive', 'ta'],
   description: 'Archive the current thread',
   category: 'utility',
   permissions: [PermissionFlagsBits.ManageThreads],
@@ -3922,6 +3928,7 @@ commands.push({
 
 commands.push({
   name: 'deletethread',
+  aliases: ['delthread', 'threaddelete', 'td'],
   description: 'Delete the current thread',
   category: 'utility',
   permissions: [PermissionFlagsBits.ManageThreads],
@@ -3937,6 +3944,7 @@ commands.push({
 
 commands.push({
   name: 'vcstatus',
+  aliases: ['setvcstatus', 'vcstat', 'vcs'],
   description: 'Toggle the Voice Channel live status text (Extra Owners only)',
   type: 1, // CHAT_INPUT
   default_member_permissions: String(PermissionFlagsBits.Administrator),
@@ -3998,6 +4006,7 @@ commands.push({
 
 commands.push({
   name: 'dev',
+  aliases: ['developer', 'devmode', 'botdev'],
   description: 'Shows the Lead Architect and Developer of Athena Prime',
   category: 'utility',
   options: [],

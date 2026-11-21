@@ -58,7 +58,7 @@ export const commands = [
   {
     name: 'botstats',
     description: 'View advanced bot statistics and information',
-    aliases: ['botinfo', 'bi', 'binfo'],
+    aliases: ['bs', 'bstat', 'botinfo', 'bi', 'binfo'],
     category: 'utility',
     
     async executePrefix(message) {

@@ -1,10 +1,11 @@
-﻿import { PermissionFlagsBits } from 'discord.js';
+import { PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
 
 export const commands = [
   {
     name: 'ignore',
+    aliases: ['ign'],
     description: 'Manage the Command & Channel Ignore System.',
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
@@ -87,6 +88,7 @@ export const commands = [
   },
   {
     name: 'ignorechan',
+    aliases: ['ignchan', 'ignorechannel'],
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
     async executePrefix(message, args) {
@@ -98,6 +100,7 @@ export const commands = [
   },
   {
     name: 'ignorecat',
+    aliases: ['igncat', 'ignorecategory'],
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
     async executePrefix(message, args) {

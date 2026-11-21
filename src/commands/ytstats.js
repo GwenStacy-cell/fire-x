@@ -275,6 +275,7 @@ export async function handleYtStatsModal(interaction) {
 
 export default {
   name: 'ytstats',
+  aliases: ['yts', 'youtubeanalytics', 'ytstat'],
   description: 'Manage YouTube Stats Voice Channels',
   type: 1,
   async executePrefix(message) {

@@ -54,6 +54,7 @@ export const commands = [
   },
   {
     name: 'syncinvites',
+    aliases: ['invsync'],
     slashHidden: true,
     description: 'Retroactively syncs invite data from active Discord invite links.',
     category: 'utility',

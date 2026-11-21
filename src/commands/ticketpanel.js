@@ -211,6 +211,7 @@ export async function updateManagerMessage(message, view = 'core') {
 export const commands = [
   {
     name: 'ticketpanel',
+    aliases: ['tp', 'ticketsetup', 'ticketspanel'],
     description: 'Launch the interactive ticket panel manager',
     type: 1,
     default_member_permissions: String(PermissionFlagsBits.Administrator),

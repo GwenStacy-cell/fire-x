@@ -17,6 +17,7 @@ import { isBotOwnerSync, isExtraOwner } from '../utils/helpers.js';
 export const commands = [
   {
     name: 'vcpanel',
+    aliases: ['vcp', 'voicepanel'],
     description: 'Server Owner Voice Control Panel',
     category: 'moderation',
     async executePrefix(message, args) {

@@ -550,6 +550,7 @@ export const commands = [
   // â”€â”€â”€ JTCSETUP â”€â”€â”€
   {
     name: 'jtcsetup',
+    aliases: ['jtc', 'join2create'],
     description: 'Set up the Join to Create system. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
@@ -784,6 +785,7 @@ export const commands = [
   // â”€â”€â”€ JTCDISABLE â”€â”€â”€
   {
     name: 'jtcdisable',
+    aliases: ['jtcoff'],
     description: ' Disable the Join to Create system. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],

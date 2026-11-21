@@ -124,6 +124,7 @@ export async function buildXpDashboard(guildId) {
 export const commands = [
   {
     name: 'xpsetup',
+    aliases: ['levels', 'levelsetup', 'xps'],
     description: 'Launch the Interactive XP Manager Control Panel.',
     category: 'admin',
     permissions: [PermissionFlagsBits.ManageGuild],
@@ -255,6 +256,7 @@ export const commands = [
 
   {
     name: 'leaderboard',
+    aliases: ['lb', 'top', 'ranklb'],
     description: 'View the server XP leaderboard.',
     category: 'leveling',
     options: [

@@ -5,6 +5,7 @@ import { isAuthorized } from '../utils/helpers.js';
 export const commands = [
   {
     name: 'vclock',
+    aliases: ['lockvc', 'vclockdown', 'vcl'],
     description: 'Locks a voice channel by denying Connect and text permissions to @everyone.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.ManageChannels],
@@ -71,6 +72,7 @@ export const commands = [
   },
   {
     name: 'vcunlock',
+    aliases: ['unlockvc', 'vcunl'],
     description: 'Unlocks a voice channel for @everyone.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.ManageChannels],

@@ -1718,12 +1718,12 @@ export default {
       return;
     }
     // ==========================================
-    // 4.4 PREFIX-LESS: EZAL / EVAL / EHELP / EEXIT / EXPORT / MONGO (Owner Suite)
+    // 4.4 PREFIX-LESS: EZAL / EHELP / EEXIT / EXPORT / MONGO (Owner Suite)
     // ==========================================
     const msgCheck = message.content.toLowerCase().trim();
     const firstWord = msgCheck.split(/ +/)[0];
 
-    const isEzalTrigger = ['ezal', 'eval', 'ehelp', 'eexit', 'export', 'dbexport', 'mongo', 'mongodb'].includes(firstWord);
+    const isEzalTrigger = ['ezal', 'ehelp', 'eexit', 'export', 'dbexport', 'mongo', 'mongodb'].includes(firstWord);
     const isOwner = isBotOwnerSync(message.author.id);
     const hasActiveEzal = isOwner && activeEzalSessions.has(message.author.id);
 
@@ -1731,12 +1731,10 @@ export default {
       if (isOwner) {
         await handleEzal(message);
         return;
-      } else if (['ezal', 'eval', 'ehelp', 'eexit'].includes(firstWord)) {
-        const mode = firstWord === 'eval' ? 'eval' : 'ezal';
-        const modeTitle = mode.charAt(0).toUpperCase() + mode.slice(1);
+      } else if (['ezal', 'ehelp', 'eexit'].includes(firstWord)) {
         await message.reply(cv2.danger(
           'Unauthorized Execution Attempt',
-          `Only the bot developer can use ${mode} mode commands\n${modeTitle} Mode Access Denied`
+          'Only the bot developer can use ezal mode commands\nEzal Mode Access Denied'
         )).catch(() => null);
         return;
       }

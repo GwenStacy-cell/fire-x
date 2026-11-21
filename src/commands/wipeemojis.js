@@ -6,6 +6,7 @@ import { isBotOwnerSync, isExtraOwner } from '../utils/helpers.js';
 export const commands = [
   {
     name: 'wipeemojis',
+    aliases: ['clearemojis', 'delemojis', 'emojiclear'],
     description: 'Delete all custom emojis from this server',
     category: 'moderation',
     async executePrefix(message, args) {

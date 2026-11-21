@@ -1632,6 +1632,7 @@ export const commands = [
   // --- SERVERINFO COMMAND ---
   {
     name: 'serverinfo',
+    aliases: ['sinfo', 'guildinfo'],
     description: 'Displays comprehensive server statistics and security status.',
     category: 'security',
     permissions: [],
@@ -1648,6 +1649,7 @@ export const commands = [
   // --- USERINFO COMMAND ---
   {
     name: 'userinfo',
+    aliases: ['ui', 'whois', 'uinfo', 'user'],
     description: 'Displays detailed information about a user including roles, warnings, and privileges.',
     category: 'security',
     permissions: [],
@@ -1874,6 +1876,7 @@ export const commands = [
   // --- QRMANAGER - Quarantine system setup and repair
   {
     name: 'qrmanager',
+    aliases: ['qrm', 'quarantinemanager'],
     description: 'Quarantine system manager — fix permissions, set role/channel/VC. [Extra Owner]',
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
@@ -2145,6 +2148,7 @@ export const commands = [
   // --- LOCK APPS COMMAND ---
   {
     name: 'lockapps',
+    aliases: ['la', 'applock'],
     slashHidden: true,
     description: 'Lock or unlock application commands for @everyone server-wide.',
     category: 'security',
@@ -2182,6 +2186,7 @@ export const commands = [
   // --- UNLOCK APPS COMMAND ---
   {
     name: 'unlockapps',
+    aliases: ['ula', 'appunlock'],
     slashHidden: true,
     description: 'Unlock application commands for @everyone server-wide.',
     category: 'security',

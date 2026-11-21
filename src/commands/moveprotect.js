@@ -7,6 +7,7 @@ import { isUserInDragSession } from './vcdrag.js';
 export const commands = [
   {
     name: 'moveprotect',
+    aliases: ['antimove', 'vclockdownprotection', 'mp'],
     description: 'Manage move protection for users (Server Owner & Bot Owner only).',
     category: 'admin',
     permissions: [PermissionFlagsBits.Administrator],

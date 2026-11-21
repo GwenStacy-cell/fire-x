@@ -110,6 +110,7 @@ export async function checkBirthdays(client, targetGuildId = null) {
 export const commands = [
   {
     name: 'birthday',
+    aliases: ['bday', 'birthdays'],
     description: 'Manage birthday wishing settings',
     options: [
       {

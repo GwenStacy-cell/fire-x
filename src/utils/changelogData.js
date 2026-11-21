@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.3',
+    headline: 'Interactive Role Manager Dashboard, Global Command Aliases & Ezal Isolation',
+    summary: 'Deployed an interactive, real-time GUI Role Manager for !editrole and !er featuring role picker, modals for rename/hex/position, instant hoist/mentionable toggles, 13-color preset palette dropdown, core permissions toggler dropdown, role cloning, and member inspection. Added short aliases (er, cr, dr, ui, bs, yt, yts, etc.) across the codebase, fixed statsDB container initialization, and strictly purged eval in favor of ezal.',
+    whatsNew: [
+      {
+        title: 'Interactive Role Manager Dashboard & Role Picker',
+        desc: 'Invoking !editrole, !er, or /editrole opens an interactive RoleSelectMenu or direct role dashboard with 4 ActionRows: Rename/Hex/Position modals, Hoist/Mention instant toggles, 13-preset color dropdown, core permissions toggler dropdown, role cloning, member roster, refresh, and delete.'
+      },
+      {
+        title: 'Comprehensive 2-3 Letter Global Command Aliases',
+        desc: 'Added intuitive shortcuts across all primary bot features: !er (editrole), !cr (createrole), !dr (deleterole), !ui (userinfo), !bs (botstats), !yt (youtube), !yts (ytstats), !v (verify), !vcp (vcpanel), !vcl (vclock), !vcunl (vcunlock), !tp (ticketpanel), !sinfo (serverinfo), !qrm (qrmanager), !la (lockapps), !ula (unlockapps).'
+      },
+      {
+        title: 'Ezal Isolation & Eval Command Purge',
+        desc: 'Completely purged the eval command and alias across the bot in accordance with strict owner suite security. Retained exclusively ezal, with prefix-less security enforcement returning the formal denial card for non-owners.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Container Crash Fix in statsDB.js',
+        desc: 'Resolved ReferenceError on _logDailyReaction and _logDailyLink variable declaration mismatch, ensuring clean container startup and automated restart resilience.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.2',
     headline: 'Statbot-Style Interactive Server Overview & Ezal Access Security Guard',
     summary: 'Rolled out an ultra-high-fidelity 8-panel Statbot-style graphical Server Overview dashboard with dynamic 4-row Discord controls (tabs, refresh, close, and timeframe dropdown for 24h, 7d, 30d, all). Added unauthorized execution denial intercept for non-owners attempting to run or enter eval/ezal mode.',
