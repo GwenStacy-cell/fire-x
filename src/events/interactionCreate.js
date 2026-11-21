@@ -3144,6 +3144,14 @@ async function handleSecurityInteractions(interaction, guild) {
       } catch(e) { console.error(e); }
     }
 
+    if (customId === 'sec_open_dashboard') {
+      try {
+        const sec = await import('../commands/security.js');
+        const panel = await sec.getSecureDashboardPanel(guild);
+        return cv2.respond(interaction, panel, 7);
+      } catch(e) { console.error(e); }
+    }
+
     // ⚡ Real-Time Live Security Records Panel & Pagination
     if (customId === 'sec_live_records' || customId.startsWith('sec_records_refresh') || customId.startsWith('sec_records_page_')) {
       try {
@@ -4097,7 +4105,8 @@ async function handleSecurityInteractions(interaction, guild) {
             updateData.antiLinkEnabled = true;
             updateData.botOwnerBypass = isBotOwner ? true : Boolean(config.botOwnerBypass);
             updateData.antinukeModules = config.antinukeModules || {};
-            const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
+            const sec = await import('../commands/security.js');
+            const allKeys = sec.ANTINUKE_ALL_KEYS;
             for (const k of allKeys) {
               updateData.antinukeModules[k] = true;
             }
@@ -4123,7 +4132,8 @@ async function handleSecurityInteractions(interaction, guild) {
             updateData.antiLinkEnabled = false;
             updateData.botOwnerBypass = false;
             updateData.antinukeModules = config.antinukeModules || {};
-            const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
+            const sec = await import('../commands/security.js');
+            const allKeys = sec.ANTINUKE_ALL_KEYS;
             for (const k of allKeys) {
               updateData.antinukeModules[k] = false;
             }
@@ -4542,25 +4552,49 @@ async function handleSecurityInteractions(interaction, guild) {
 
   let wData = db.getWhitelist(guild.id, targetId, type) || { modules: [], triggerLimit: 0, currentUsage: 0 };
 
-  if (action === 'selectnuke') {
-    const { ANTI_NUKE_MODULES, AUTOMOD_MODULES, ALL_WHITELIST_MODULES } = await import('../commands/security.js');
-    const automodKeys = Object.keys(AUTOMOD_MODULES);
-    const existingAutomod = wData.modules.includes('all')
-      ? automodKeys
-      : wData.modules.filter(m => automodKeys.includes(m));
-    const newModules = Array.from(new Set([...interaction.values, ...existingAutomod]));
+  if (action === 'selectnuke1') {
+    const { ANTI_NUKE_SERVER_MODULES, ALL_WHITELIST_MODULES } = await import('../commands/security.js');
+    const serverKeys = Object.keys(ANTI_NUKE_SERVER_MODULES);
+    const existingOther = wData.modules.includes('all')
+      ? Object.keys(ALL_WHITELIST_MODULES).filter(m => !serverKeys.includes(m))
+      : wData.modules.filter(m => !serverKeys.includes(m));
+    const newModules = Array.from(new Set([...interaction.values, ...existingOther]));
+    if (newModules.length === Object.keys(ALL_WHITELIST_MODULES).length) {
+      wData.modules = ['all'];
+    } else {
+      wData.modules = newModules;
+    }
+  } else if (action === 'selectnuke2') {
+    const { ANTI_NUKE_MEMBER_MODULES, ALL_WHITELIST_MODULES } = await import('../commands/security.js');
+    const memberKeys = Object.keys(ANTI_NUKE_MEMBER_MODULES);
+    const existingOther = wData.modules.includes('all')
+      ? Object.keys(ALL_WHITELIST_MODULES).filter(m => !memberKeys.includes(m))
+      : wData.modules.filter(m => !memberKeys.includes(m));
+    const newModules = Array.from(new Set([...existingOther, ...interaction.values]));
     if (newModules.length === Object.keys(ALL_WHITELIST_MODULES).length) {
       wData.modules = ['all'];
     } else {
       wData.modules = newModules;
     }
   } else if (action === 'selectautomod') {
+    const { AUTOMOD_MODULES, ALL_WHITELIST_MODULES } = await import('../commands/security.js');
+    const automodKeys = Object.keys(AUTOMOD_MODULES);
+    const existingOther = wData.modules.includes('all')
+      ? Object.keys(ALL_WHITELIST_MODULES).filter(m => !automodKeys.includes(m))
+      : wData.modules.filter(m => !automodKeys.includes(m));
+    const newModules = Array.from(new Set([...existingOther, ...interaction.values]));
+    if (newModules.length === Object.keys(ALL_WHITELIST_MODULES).length) {
+      wData.modules = ['all'];
+    } else {
+      wData.modules = newModules;
+    }
+  } else if (action === 'selectnuke') {
     const { ANTI_NUKE_MODULES, AUTOMOD_MODULES, ALL_WHITELIST_MODULES } = await import('../commands/security.js');
-    const nukeKeys = Object.keys(ANTI_NUKE_MODULES);
-    const existingNuke = wData.modules.includes('all')
-      ? nukeKeys
-      : wData.modules.filter(m => nukeKeys.includes(m));
-    const newModules = Array.from(new Set([...existingNuke, ...interaction.values]));
+    const automodKeys = Object.keys(AUTOMOD_MODULES);
+    const existingAutomod = wData.modules.includes('all')
+      ? automodKeys
+      : wData.modules.filter(m => automodKeys.includes(m));
+    const newModules = Array.from(new Set([...interaction.values, ...existingAutomod]));
     if (newModules.length === Object.keys(ALL_WHITELIST_MODULES).length) {
       wData.modules = ['all'];
     } else {

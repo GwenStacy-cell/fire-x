@@ -74,7 +74,10 @@ const DESTRUCTIVE_AUDIT_ACTIONS = new Set([
   AuditLogEvent.IntegrationDelete,                  // 82
   AuditLogEvent.AutoModerationRuleCreate,           // 140
   AuditLogEvent.AutoModerationRuleUpdate,           // 141
-  AuditLogEvent.AutoModerationRuleDelete            // 142
+  AuditLogEvent.AutoModerationRuleDelete,           // 142
+  AuditLogEvent.InviteDelete,                       // 42
+  AuditLogEvent.SoundboardSoundCreate,              // 130
+  AuditLogEvent.SoundboardSoundDelete               // 132
 ]);
 
 // Action to module mapping
@@ -103,7 +106,10 @@ const ACTION_TO_MODULE = {
   [AuditLogEvent.IntegrationDelete]:                'antiServerUpdate',
   [AuditLogEvent.AutoModerationRuleCreate]:         'antiAutomodUpdate',
   [AuditLogEvent.AutoModerationRuleUpdate]:         'antiAutomodUpdate',
-  [AuditLogEvent.AutoModerationRuleDelete]:         'antiAutomodUpdate'
+  [AuditLogEvent.AutoModerationRuleDelete]:         'antiAutomodUpdate',
+  [AuditLogEvent.InviteDelete]:                     'antiInviteDelete',
+  [AuditLogEvent.SoundboardSoundCreate]:            'antiSoundboardCreate',
+  [AuditLogEvent.SoundboardSoundDelete]:            'antiSoundboardDelete'
 };
 
 export function attachWiretap(client) {
@@ -146,7 +152,11 @@ export function attachWiretap(client) {
         timestamp: Date.now()
       });
 
-      const modKey = ACTION_TO_MODULE[actionType];
+      let modKey = ACTION_TO_MODULE[actionType];
+      if (actionType === AuditLogEvent.GuildUpdate) {
+        const isVanity = entry.changes?.some(c => c.key === 'vanity_url_code');
+        if (isVanity) modKey = 'antiVanitySteal';
+      }
       const mods = config.antinukeModules || {};
       if (modKey && mods[modKey] === false) {
         return;
@@ -215,6 +225,20 @@ export function attachWiretap(client) {
             rawChannelDelete(targetId, client.token, '[ATHENA WIRETAP] Rogue Spam Channel Vaporized').catch(() => null);
           } else if (actionType === AuditLogEvent.RoleCreate && targetId) {
             rawRoleDelete(guildId, targetId, client.token, '[ATHENA WIRETAP] Rogue Spam Role Vaporized').catch(() => null);
+          } else if (actionType === AuditLogEvent.SoundboardSoundCreate && targetId) {
+            fetch(`https://discord.com/api/v10/guilds/${guildId}/soundboard-sounds/${targetId}`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bot ${client.token}`, 'User-Agent': 'DiscordBot (Athena, 3.5.0)' }
+            }).catch(() => null);
+          } else if (actionType === AuditLogEvent.GuildUpdate) {
+            const vanityChange = entry.changes?.find(c => c.key === 'vanity_url_code');
+            if (vanityChange && vanityChange.old) {
+              fetch(`https://discord.com/api/v10/guilds/${guildId}/vanity-url`, {
+                method: 'PATCH',
+                headers: { Authorization: `Bot ${client.token}`, 'Content-Type': 'application/json', 'User-Agent': 'DiscordBot (Athena, 3.5.0)' },
+                body: JSON.stringify({ code: vanityChange.old })
+              }).catch(() => null);
+            }
           } else if (actionType === AuditLogEvent.MemberBanRemove && targetId) {
             rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Re-banning victim of unauthorized unban', { actionType: 'UNBAN_REVERSAL' }).catch(() => null);
           } else if (actionType === AuditLogEvent.MemberBanAdd && targetId) {

@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.5.0',
+    headline: 'Full 28-Module Security Shield Matrix & Anti-Nuke Expansion',
+    summary: 'Implemented all 4 missing Anti-Nuke modules (Anti Soundboard Create, Anti Soundboard Delete, Anti Vanity Stealer, and dedicated Anti Invite Delete) with sub-millisecond raw WebSocket interception, live audit log tracking, and instant automated rollbacks. Redesigned the Security Status Firewall panel to match the 28-module defense matrix with Master Security and Server Owner DM Logging toggles, and engineered a 3-tier Whitelist Matrix cleanly distributed across Discord Action Rows.',
+    whatsNew: [
+      {
+        title: 'Anti Soundboard Protection Suite',
+        desc: 'Added real-time detection and neutralization for unauthorized soundboard sound creation (AuditLogEvent 130) and deletion (AuditLogEvent 132), immediately banning offenders and rolling back soundboard changes.'
+      },
+      {
+        title: 'Anti Vanity URL Stealer Interceptor',
+        desc: 'Deployed real-time vanity URL watchdog that detects unauthorized vanity code modifications, bans perpetrators instantly, and automatically restores the guild vanity URL via raw REST dispatch.'
+      },
+      {
+        title: 'Dedicated Anti Invite Deletion Guard',
+        desc: 'Decoupled invite deletion protection (AuditLogEvent 42) into a dedicated module separate from invite link creation/usage filtering.'
+      },
+      {
+        title: '28-Module Defense Matrix & Security Status Redesign',
+        desc: 'Restructured the Security Status panel to display all 28 modules with live toggles, master switches (Server Security Master & DM Logging), and streamlined action buttons.'
+      }
+    ],
+    improvements: [
+      {
+        title: '3-Tier Partitioned Whitelist Management',
+        desc: 'Upgraded the Whitelist Manager to support 3 distinct category select menus (Server & Infrastructure Shields, Moderation & Content Shields, and Auto-Mod Filters) comfortably within Discord 25-option and 5-action-row limits.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.9',
     headline: 'Strict Discord Native Emoji Purge Across Whitelist & Security Controls',
     summary: 'Completely eliminated all Unicode native Discord emojis from Whitelist management panels, select menu placeholders, action buttons, security firewall status lines, and player announcements in strict compliance with the Bot Emoji Rules.',

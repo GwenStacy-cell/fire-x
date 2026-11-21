@@ -4075,31 +4075,44 @@ export async function getSecurityHealthPanel(guild) {
   };
 }
 
-export const ANTI_NUKE_MODULES = {
+export const ANTI_NUKE_SERVER_MODULES = {
   antiRoleCreate: 'Anti Role Create',
   antiRoleDelete: 'Anti Role Delete',
   antiRoleUpdate: 'Anti Role Update',
   antiRolePermUpdate: 'Anti Role Perm Update',
-  antiMemberRoleUpdate: 'Anti Member Role Update',
   antiRoleReorder: 'Anti Role Position',
+  antiLinkedRole: 'Anti Linked Role',
   antiChannelCreate: 'Anti Channel Create',
   antiChannelDelete: 'Anti Channel Delete',
   antiChannelUpdate: 'Anti Channel Update',
-  antiChannelPermUpdate: 'Anti Channel Perm Update',
+  antiChannelPermUpdate: 'Anti Channel Perms',
   antiChannelReorder: 'Anti Channel Position',
-  antiChannelNameMod: 'Anti Channel Name Mod',
-  antiEmojiCreate: 'Anti Emoji Create',
-  antiEmojiDelete: 'Anti Emoji Delete',
-  antiEmojiUpdate: 'Anti Emoji Update',
-  antiWebhooks: 'Anti Webhooks',
+  antiWebhooks: 'Anti Webhook',
   antiBotAdd: 'Anti Bot Add',
-  antiServerUpdate: 'Anti Server Update',
+  antiServerUpdate: 'Anti Guild Update',
+  antiVanitySteal: 'Anti Vanity Stealer'
+};
+
+export const ANTI_NUKE_MEMBER_MODULES = {
   antiBan: 'Anti Ban',
   antiKick: 'Anti Kick',
   antiUnban: 'Anti Unban',
-  antiLinkedRole: 'Anti Linked Role Exploit',
+  antiMemberPurge: 'Anti Member Prune',
+  antiMassBan: 'Anti Mass Ban',
+  antiMemberRoleUpdate: 'Anti Member Update',
+  antiEmojiCreate: 'Anti Emoji Create',
+  antiEmojiDelete: 'Anti Emoji Delete',
+  antiEmojiUpdate: 'Anti Emoji Update',
+  antiSoundboardCreate: 'Anti Soundboard Create',
+  antiSoundboardDelete: 'Anti Soundboard Delete',
+  antiInvite: 'Anti Dangerous Invite',
   antiInviteDelete: 'Anti Invite Delete',
-  antiMemberPurge: 'Anti Member Prune'
+  antiAutomodUpdate: 'Anti AutoMod Update'
+};
+
+export const ANTI_NUKE_MODULES = {
+  ...ANTI_NUKE_SERVER_MODULES,
+  ...ANTI_NUKE_MEMBER_MODULES
 };
 
 export const AUTOMOD_MODULES = {
@@ -4119,6 +4132,8 @@ export const ALL_WHITELIST_MODULES = {
   ...ANTI_NUKE_MODULES,
   ...AUTOMOD_MODULES
 };
+
+export const ANTINUKE_ALL_KEYS = Object.keys(ANTI_NUKE_MODULES);
 
 export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
   const config = db.getGuildConfig(guild.id);
@@ -4197,12 +4212,26 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
       }
     );
   } else {
-    const nukeOptions = nukeKeys.map(k => {
+    const nuke1Keys = Object.keys(ANTI_NUKE_SERVER_MODULES);
+    const nuke2Keys = Object.keys(ANTI_NUKE_MEMBER_MODULES);
+
+    const nuke1Options = nuke1Keys.map(k => {
       const isEnabled = wData.modules.includes('all') || wData.modules.includes(k);
       return {
-        label: ANTI_NUKE_MODULES[k],
+        label: ANTI_NUKE_SERVER_MODULES[k],
         value: k,
-        description: `Anti-Nuke Protection: ${ANTI_NUKE_MODULES[k]}`,
+        description: `Server Shield: ${ANTI_NUKE_SERVER_MODULES[k]}`,
+        emoji: isEnabled ? { id: '1533844867191406672' } : { id: '1533844858983157851' },
+        default: isEnabled
+      };
+    }).slice(0, 25);
+
+    const nuke2Options = nuke2Keys.map(k => {
+      const isEnabled = wData.modules.includes('all') || wData.modules.includes(k);
+      return {
+        label: ANTI_NUKE_MEMBER_MODULES[k],
+        value: k,
+        description: `Content Shield: ${ANTI_NUKE_MEMBER_MODULES[k]}`,
         emoji: isEnabled ? { id: '1533844867191406672' } : { id: '1533844858983157851' },
         default: isEnabled
       };
@@ -4213,7 +4242,7 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
       return {
         label: AUTOMOD_MODULES[k],
         value: k,
-        description: `Chat & Auto-Mod Bypass: ${AUTOMOD_MODULES[k]}`,
+        description: `Chat Filter Bypass: ${AUTOMOD_MODULES[k]}`,
         emoji: isEnabled ? { id: '1533844867191406672' } : { id: '1533844858983157851' },
         default: isEnabled
       };
@@ -4225,7 +4254,9 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
         type: 1,
         components: [
           { type: 2, custom_id: `wl_all_${type}_${targetId}`, label: 'Whitelist All', style: 2 },
-          { type: 2, custom_id: `wl_reset_${type}_${targetId}`, label: 'Reset All', style: 2 }
+          { type: 2, custom_id: `wl_reset_${type}_${targetId}`, label: 'Reset All', style: 2 },
+          { type: 2, custom_id: `wl_save_${type}_${targetId}`, label: 'Save Changes', style: 2 },
+          { type: 2, custom_id: `wlo_back`, label: 'Close', style: 2 }
         ]
       },
       {
@@ -4242,11 +4273,24 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
         components: [
           {
             type: 3,
-            custom_id: `wl_selectnuke_${type}_${targetId}`,
-            placeholder: 'Whitelist Anti-Nuke Shields (Select multiple)...',
+            custom_id: `wl_selectnuke1_${type}_${targetId}`,
+            placeholder: 'Whitelist Server & Infrastructure Shields...',
             min_values: 0,
-            max_values: nukeOptions.length,
-            options: nukeOptions
+            max_values: nuke1Options.length,
+            options: nuke1Options
+          }
+        ]
+      },
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: `wl_selectnuke2_${type}_${targetId}`,
+            placeholder: 'Whitelist Moderation & Content Shields...',
+            min_values: 0,
+            max_values: nuke2Options.length,
+            options: nuke2Options
           }
         ]
       },
@@ -4256,18 +4300,11 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
           {
             type: 3,
             custom_id: `wl_selectautomod_${type}_${targetId}`,
-            placeholder: 'Whitelist Auto-Mod & Chat Filters (Select multiple)...',
+            placeholder: 'Whitelist Auto-Mod & Chat Filters...',
             min_values: 0,
             max_values: automodOptions.length,
             options: automodOptions
           }
-        ]
-      },
-      {
-        type: 1,
-        components: [
-          { type: 2, custom_id: `wl_save_${type}_${targetId}`, label: 'Save Changes', style: 2 },
-          { type: 2, custom_id: `wlo_back`, label: 'Close', style: 2 }
         ]
       }
     );
@@ -4582,7 +4619,7 @@ async function handleConfig(guild, moderator, setting, value) {
       updates.securityEnabled = true;
       updates.antiNukeEnabled = true;
       updates.botOwnerBypass = isBotOwner ? true : Boolean(config.botOwnerBypass);
-      const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
+      const allKeys = ANTINUKE_ALL_KEYS;
       updates.antinukeModules = config.antinukeModules || {};
       for (const k of allKeys) {
         updates.antinukeModules[k] = true;
@@ -4603,7 +4640,7 @@ async function handleConfig(guild, moderator, setting, value) {
       updates.securityEnabled = false;
       updates.antiNukeEnabled = false;
       updates.botOwnerBypass = false;
-      const allKeys = ['antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod', 'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'];
+      const allKeys = ANTINUKE_ALL_KEYS;
       updates.antinukeModules = config.antinukeModules || {};
       for (const k of allKeys) {
         updates.antinukeModules[k] = false;
@@ -5227,7 +5264,7 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
       allowInvitesGlobally:     false,
       botOwnerBypass:           false,
       blacklistWords:           [],
-      antinukeModules:          Object.fromEntries(['antiRoleCreate','antiRoleDelete','antiRoleUpdate','antiRolePermUpdate','antiMemberRoleUpdate','antiRoleReorder','antiChannelCreate','antiChannelDelete','antiChannelUpdate','antiChannelPermUpdate','antiChannelReorder','antiChannelNameMod','antiEmojiCreate','antiEmojiDelete','antiEmojiUpdate','antiWebhooks','antiBotAdd','antiServerUpdate','antiBan','antiKick','antiUnban','antiInvite','antiScheduledEvents','antiMemberPurge','antiMassBan','antiAutomodUpdate','antiAppCommands','antiLinkedRole'].map(k => [k, false])),
+      antinukeModules:          Object.fromEntries(ANTINUKE_ALL_KEYS.map(k => [k, false])),
       firewallRoleId:           null,
       unbypassableRoleId:       null,
       athenFirewallRoleId:      null,
@@ -5332,36 +5369,47 @@ export async function getSecurityStatusPanel(guild) {
     antiRoleDelete: 'Anti Role Delete',
     antiRoleUpdate: 'Anti Role Update',
     antiRolePermUpdate: 'Anti Role Perm Update',
-    antiMemberRoleUpdate: 'Anti Member Role Update',
-    antiRoleReorder: 'Anti Role Reorder',
+    antiRoleReorder: 'Anti Role Position',
+    antiMemberRoleUpdate: 'Anti Member Update',
+    antiLinkedRole: 'Anti Linked Role',
     antiChannelCreate: 'Anti Channel Create',
     antiChannelDelete: 'Anti Channel Delete',
     antiChannelUpdate: 'Anti Channel Update',
-    antiChannelPermUpdate: 'Anti Channel Perm Update',
-    antiChannelReorder: 'Anti Channel Reorder',
-    antiChannelNameMod: 'Anti Channel Name Mod',
+    antiChannelPermUpdate: 'Anti Channel Perms',
+    antiChannelReorder: 'Anti Channel Position',
     antiEmojiCreate: 'Anti Emoji Create',
     antiEmojiDelete: 'Anti Emoji Delete',
     antiEmojiUpdate: 'Anti Emoji Update',
-    antiWebhooks: 'Anti Webhooks',
+    antiWebhooks: 'Anti Webhook',
     antiBotAdd: 'Anti Bot Add',
-    antiServerUpdate: 'Anti Server Update',
+    antiServerUpdate: 'Anti Guild Update',
     antiBan: 'Anti Ban',
     antiKick: 'Anti Kick',
-    antiUnban: 'Anti Unban',
-    antiInvite: 'Anti Invite',
-    antiScheduledEvents: 'Anti Scheduled Events',
-    antiMemberPurge: 'Anti Member Purge',
+    antiInvite: 'Anti Dangerous Invite',
+    antiInviteDelete: 'Anti Invite Delete',
+    antiSoundboardCreate: 'Anti Soundboard Create',
+    antiSoundboardDelete: 'Anti Soundboard Delete',
+    antiMemberPurge: 'Anti Member Prune',
     antiMassBan: 'Anti Mass Ban',
-    antiAutomodUpdate: 'Anti Automod Update',
-    antiAppCommands: 'Anti App Commands',
-    antiLinkedRole: 'Anti Linked Role Exploit'
+    antiVanitySteal: 'Anti Vanity Stealer',
+    antiAutomodUpdate: 'Anti AutoMod Update'
   };
 
   const emojiOn  = '<:on:1533844867191406672>';
   const emojiOff = '<:off:1533844858983157851>';
 
-  let listText = '';
+  const totalModules = Object.keys(modLabels).length;
+  const activeModulesCount = isSecured 
+    ? Object.keys(modLabels).filter(k => config.antinukeModules?.[k] !== false).length 
+    : 0;
+  const defensePercent = isSecured ? Math.round((activeModulesCount / totalModules) * 100) : 0;
+
+  const masterEnabled = isSecured;
+  const dmLoggingEnabled = Boolean(config.securityDmNotify ?? true);
+
+  let listText = `> ${masterEnabled ? emojiOn : emojiOff} **Server Security Master**\n` +
+                 `> ${dmLoggingEnabled ? emojiOn : emojiOff} **Server Owner DM Logging**\n`;
+
   for (const k of Object.keys(modLabels)) {
     const isEnabled = isSecured && (config.antinukeModules?.[k] !== false);
     listText += `> ${isEnabled ? emojiOn : emojiOff} ${modLabels[k]}\n`;
@@ -5372,85 +5420,47 @@ export async function getSecurityStatusPanel(guild) {
       listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **Hierarchy Requirements Not Met for Anti-Nuke:**\n` +
                   `> -# ${BULLET_EMOJI} Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
                   `> -# ${BULLET_EMOJI} Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3 in Server Settings > Roles)'}\n` +
-                  `> -# **Execute \`!security enable all\` or \`!antinuke enable\` or click \`Engage All Shields\` once requirements are met. (Bot Owner bypasses all requirements).**`;
+                  `> -# **Execute \`!security enable all\` or \`!antinuke enable\` or click \`Open Modules Manager\` once requirements are met. (Bot Owner bypasses all requirements).**`;
     } else {
-      listText += "\n> -# <a:exclamation_outline1:1565666739356827759> **Security is currently DISABLED on this server.**\n> -# **Execute `!security enable all` or `!antinuke enable` or click `Engage All Shields` below to arm all 28 modules.**";
+      listText += "\n> -# <a:exclamation_outline1:1565666739356827759> **Security is currently DISABLED on this server.**\n> -# **Execute `!security enable all` or `!antinuke enable` or click `Open Modules Manager` below to arm all 28 modules.**";
     }
   } else if (!hasManageRoles) {
     listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **PERMISSION ADVISORY:** Athena Prime lacks the **Manage Roles** permission. Persistence sentinels cannot be bound. Grant Administrator or Manage Roles in Server Settings > Roles.`;
   }
 
-  const liveRecords = db.getSecurityLiveRecords(guild.id);
-  const totalModules = Object.keys(modLabels).length;
-  const activeModulesCount = isSecured 
-    ? Object.keys(modLabels).filter(k => config.antinukeModules?.[k] !== false).length 
-    : 0;
+  const headerSection = {
+    type: 10,
+    content: `# ${getRandomHeadingGlyph()} Security | <a:03_tick_circle:1565665642084827206>\n` +
+             `-# **${guild.name.toUpperCase()}**\n\n` +
+             `**Active modules: ${activeModulesCount} / ${totalModules} | Defense: ${defensePercent}%**`
+  };
 
-  const shieldProgress = renderSleekProgressBar(activeModulesCount, totalModules, 14);
-  const memberProgress = renderSleekProgressBar(guild.memberCount || 0, 200, 12);
-  const rolePosProgress = renderSleekProgressBar(botPos, Math.max(botPos, maxPos), 12);
+  const row1 = {
+    type: 1,
+    components: [
+      { type: 2, custom_id: 'sec_module_manage', label: 'Open Modules Manager', style: 1 },
+      { type: 2, custom_id: 'sec_open_dashboard', label: 'Dashboard', style: 2 }
+    ]
+  };
 
-  const headerSection = { type: 10, content: `# ${getRandomHeadingGlyph()} Security Firewall Status | <a:03_tick_circle:1565665642084827206>\n` +
-      "-# Global Status: " + (isSecured ? "**God-Tier Firewall ACTIVE**" : "Offline \u2014 Unprotected") + "\n" +
-      "-# " + BULLET_EMOJI + " **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
-      "-# " + BULLET_EMOJI + " **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")") + "\n" +
-      "-# " + BULLET_EMOJI + " **Role Position:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : rolePosProgress + " (Pos " + botPos + " / " + maxPos + ")") + "\n" +
-      "-# " + BULLET_EMOJI + " **Strike Velocity:** " + (isSecured ? "Ludicrously fast \u2014 **1-3ms execution**" : "Disabled") + "\n" +
-      "-# " + BULLET_EMOJI + " **Live Audit Records:** **`" + liveRecords.length + "` threat events neutralized** in real-time\n" +
-      "-# " + BULLET_EMOJI + " **Architecture Rule:** The 28 modules represent the Anti-Nuke Firewall. Disabling disarms all 28 modules and deletes persistence roles."
-    };
+  const row2 = {
+    type: 1,
+    components: [
+      { type: 2, custom_id: 'sec_close', label: 'Close', style: 4 }
+    ]
+  };
 
-    const detailsSection = { type: 10, content:
-      "-# **Advanced Architecture & Exploit Defense:**\n" +
-      "-# **1. Real-Time Role Interceptor (`guildMemberUpdate.js`):** Intercepts unauthorized gaining of Administrator / dangerous roles. Cross-examines 60s audit logs for authorized executors. Automatically strips roles, disarms dangerous permissions, and isolates the account in Quarantine.\n" +
-      "-# **2. Join-Time Dangerous Role Guard (`guildMemberAdd.js`):** Neutralizes Discord Onboarding & pre-linked role exploits by stripping join-time dangerous roles and isolating the user.\n" +
-      "-# **Raw Websocket Wiretap:** Intercepts raw network streams to execute zero-day bans in <1ms, bypassing library latency.\n" +
-      "-# **Lightspeed Detection:** Direct API polling every 10ms catches destructive events instantly.\n" +
-      "-# **Flawless Restoration:** Re-engineers exact channel/category raw positions and permissions post-nuke."
-    };
-
-    const offModulesCount = totalModules - activeModulesCount;
-    const resultText = (activeModulesCount === totalModules && isSecured) 
-      ? '100% Armed & Active' 
-      : (isSecured ? `${Math.round((activeModulesCount/totalModules)*100)}% Armed & Active` : '0% Armed — Security Disarmed');
-    const auditTick = (activeModulesCount === totalModules && isSecured) ? '<a:03_tick_circle:1565665642084827206>' : '<a:exclamation_outline1:1565666739356827759>';
-
-    const auditTelemetrySection = {
-      type: 10,
-      content: `# ${getRandomHeadingGlyph()} Anti-Nuke Shield Matrix Audit | ${auditTick}\n` +
-        "```yaml\n" +
-        `Total modules rendered: ${totalModules}\n` +
-        `ON modules: ${activeModulesCount}  (<:on:1533844867191406672>)\n` +
-        `OFF modules: ${offModulesCount}\n` +
-        `Result: ${resultText}\n` +
-        "```"
-    };
-
-    const actionButtons = [];
-    if (!isSecured) {
-      actionButtons.push({ type: 2, custom_id: 'sec_enable_all', label: 'Engage All Shields', style: 3 });
-    } else {
-      actionButtons.push({ type: 2, custom_id: 'sec_disable_all_btn', label: 'Disengage Shields', style: 4 });
-    }
-    actionButtons.push({ type: 2, custom_id: 'sec_live_records', label: `Live Records (${liveRecords.length})`, style: 2 });
-    actionButtons.push({ type: 2, custom_id: 'sec_module_manage', label: 'Manage Modules', style: 2 });
-    actionButtons.push({ type: 2, custom_id: 'sec_architecture_guide', label: 'Exploit Guide', style: 2 });
-    actionButtons.push({ type: 2, custom_id: 'sec_close', label: 'Close', style: 2 });
-
-    const container = {
+  const container = {
     type: 17,
     components: [
       headerSection,
       { type: 14, divider: true },
-      detailsSection,
-      { type: 14, divider: true },
-      auditTelemetrySection,
-      { type: 14, divider: true },
       { type: 10, content: listText.trimEnd() },
       { type: 14, divider: true },
-      { type: 1, components: actionButtons.slice(0, 5) },
+      row1,
+      row2,
       { type: 14, divider: true },
-      { type: 10, content: '-# **Athena Bulletproof Security !!!**' }
+      { type: 10, content: '-# **Secure Unbypassable Security**' }
     ]
   };
 
@@ -6052,15 +6062,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
           }
 
           const dbMod = (await import("../database.js")).default;
-          const allKeys = [
-            'antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate',
-            'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete',
-            'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod',
-            'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks',
-            'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban',
-            'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan',
-            'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'
-          ];
+          const allKeys = ANTINUKE_ALL_KEYS;
           const activeModules = {};
           for (const k of allKeys) activeModules[k] = true;
 
@@ -6166,15 +6168,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
       const dbMod = (await import("../database.js")).default;
       const config = dbMod.getGuildConfig(guild.id);
       const modules = config.antinukeModules || {};
-      const allKeys = [
-        'antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate',
-        'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete',
-        'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod',
-        'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks',
-        'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban',
-        'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan',
-        'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'
-      ];
+      const allKeys = ANTINUKE_ALL_KEYS;
       for (const k of allKeys) {
         modules[k] = true;
       }

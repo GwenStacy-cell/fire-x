@@ -1408,7 +1408,21 @@ const EVENT_TO_MODULE_MAP = {
   'antibotadd': 'antiBotAdd',
   'antibot': 'antiBotAdd',
   'server settings tampering': 'antiServerUpdate',
-  'server vanity url tampering': 'antiServerUpdate',
+  'server vanity url tampering': 'antiVanitySteal',
+  'vanity url hijacking / sniping': 'antiVanitySteal',
+  'vanity steal': 'antiVanitySteal',
+  'vanity stealer': 'antiVanitySteal',
+  'antivanitysteal': 'antiVanitySteal',
+  'antivanitystealer': 'antiVanitySteal',
+  'unauthorized soundboard sound created': 'antiSoundboardCreate',
+  'soundboard sound creation': 'antiSoundboardCreate',
+  'antisoundboardcreate': 'antiSoundboardCreate',
+  'unauthorized soundboard sound deleted': 'antiSoundboardDelete',
+  'soundboard sound deletion': 'antiSoundboardDelete',
+  'antisoundboarddelete': 'antiSoundboardDelete',
+  'unauthorized invite deletion': 'antiInviteDelete',
+  'invite deletion': 'antiInviteDelete',
+  'antiinvitedelete': 'antiInviteDelete',
   'antiserverupdate': 'antiServerUpdate',
   'member ban (mass ban attack)': 'antiBan',
   'antiban': 'antiBan',
@@ -1778,13 +1792,15 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     [AuditLogEvent.MemberKick]:        mods.antiKick,
     [AuditLogEvent.MemberPrune]:       mods.antiMemberPurge,
     [AuditLogEvent.BotAdd]:            mods.antiBotAdd,
-    [AuditLogEvent.GuildUpdate]:       mods.antiServerUpdate,
+    [AuditLogEvent.GuildUpdate]:       (mods.antiServerUpdate !== false || mods.antiVanitySteal !== false),
     [AuditLogEvent.ChannelUpdate]:     mods.antiChannelUpdate,
     [AuditLogEvent.RoleUpdate]:        (mods.antiRoleUpdate !== false || mods.antiRoleReorder !== false || mods.antiRolePermUpdate !== false),
     [AuditLogEvent.MemberRoleUpdate]:  mods.antiMemberRoleUpdate,
     [AuditLogEvent.MemberBanRemove]:   mods.antiUnban,
     [AuditLogEvent.InviteCreate]:      mods.antiInvite,
-    [AuditLogEvent.InviteDelete]:      mods.antiInvite,
+    [AuditLogEvent.InviteDelete]:      (mods.antiInviteDelete !== false || mods.antiInvite !== false),
+    [AuditLogEvent.SoundboardSoundCreate]: mods.antiSoundboardCreate,
+    [AuditLogEvent.SoundboardSoundDelete]: mods.antiSoundboardDelete,
     [AuditLogEvent.GuildScheduledEventCreate]: mods.antiScheduledEvents,
     [AuditLogEvent.GuildScheduledEventDelete]: mods.antiScheduledEvents,
     [AuditLogEvent.GuildScheduledEventUpdate]: mods.antiScheduledEvents,
@@ -2205,7 +2221,7 @@ export async function handleAuditLogEntry(guild, entry) {
     case AuditLogEvent.GuildUpdate:
       const vanityChange = entry.changes?.find(c => c.key === 'vanity_url_code');
       if (vanityChange) {
-        // Upgrade 5: Vanity URL Tampering Guard
+        if (!mods.antiVanitySteal && !mods.antiServerUpdate) return;
         eventType = 'Vanity URL Hijacking / Sniping';
         forceBan = true;
       } else {
@@ -2213,6 +2229,24 @@ export async function handleAuditLogEntry(guild, entry) {
         eventType = 'Server Settings Tampering';
         forceBan = true;
       }
+      break;
+
+    case AuditLogEvent.InviteDelete:
+      if (!mods.antiInviteDelete && !mods.antiInvite) return;
+      eventType = 'Unauthorized Invite Deletion';
+      forceBan = true;
+      break;
+
+    case AuditLogEvent.SoundboardSoundCreate:
+      if (!mods.antiSoundboardCreate) return;
+      eventType = 'Unauthorized Soundboard Sound Created';
+      forceBan = true;
+      break;
+
+    case AuditLogEvent.SoundboardSoundDelete:
+      if (!mods.antiSoundboardDelete) return;
+      eventType = 'Unauthorized Soundboard Sound Deleted';
+      forceBan = true;
       break;
 
     case AuditLogEvent.ChannelUpdate:
@@ -2364,6 +2398,15 @@ export async function handleAuditLogEntry(guild, entry) {
     if (action === AuditLogEvent.WebhookCreate) {
       if (targetId) await rawDeleteWebhook(targetId, guild.client.token).catch(() => null);
       rollbackResult = 'Unauthorized webhook annihilated';
+    }
+
+    if (action === AuditLogEvent.SoundboardSoundCreate && targetId) {
+      const { fetch } = await import('undici');
+      await fetch(`https://discord.com/api/v10/guilds/${guild.id}/soundboard-sounds/${targetId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bot ${guild.client.token}`, 'User-Agent': 'DiscordBot (Athena, 3.5.0)' }
+      }).catch(() => null);
+      rollbackResult = 'Unauthorized soundboard sound annihilated';
     }
 
     if (action === AuditLogEvent.BotAdd) {
