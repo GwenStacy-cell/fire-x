@@ -1,6 +1,5 @@
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import commandMap from './loader.js';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
 import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 import { NAV_EMOJI_IDS } from '../utils/emojis.js';
@@ -37,6 +36,7 @@ export const commands = [
         const alias = args[1].toLowerCase();
         const actual = args.slice(2).join(' ').toLowerCase();
         
+        const { default: commandMap } = await import('./loader.js');
         if (!commandMap.has(actual.split(' ')[0])) {
           return message.reply(cv2.danger('Command Not Found', `The command \`${actual.split(' ')[0]}\` does not exist in Athena.`));
         }

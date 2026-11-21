@@ -5,6 +5,7 @@ import db from '../database.js';
 export const commands = [
   {
     name: 'setdeletelog',
+    aliases: ['deletelog', 'msgdeletelog'],
     description: 'Set a channel to log deleted messages.',
     category: 'utility',
     permissions: [PermissionFlagsBits.Administrator],

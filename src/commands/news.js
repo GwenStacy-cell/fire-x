@@ -8,6 +8,7 @@ const parser = new Parser();
 export const commands = [
   {
     name: 'news',
+    aliases: ['headlines', 'worldnews'],
     description: 'Configure automated RSS News Feeds for your server.',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],

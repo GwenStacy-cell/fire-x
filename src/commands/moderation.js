@@ -78,6 +78,7 @@ export const commands = [
   // --- UNMUTE COMMAND ---
   {
     name: 'unmute',
+    aliases: ['unmutemember', 'unshutup'],
     description: 'Server-unmutes one or more members in voice channels.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.MuteMembers],
@@ -109,6 +110,7 @@ export const commands = [
   // --- DEAFEN COMMAND ---
   {
     name: 'deafen',
+    aliases: ['deaf'],
     description: 'Server-deafens one or more members in voice channels.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.DeafenMembers],
@@ -140,6 +142,7 @@ export const commands = [
   // --- UNDEAFEN COMMAND ---
   {
     name: 'undeafen',
+    aliases: ['undeaf'],
     description: 'Server-undeafens one or more members in voice channels.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.DeafenMembers],
@@ -896,6 +899,7 @@ export const commands = [
   // --- SAY COMMAND ---
   {
     name: 'say',
+    aliases: ['echo', 'repeat'],
     description: 'Sends a raw text message to the designated channel.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.ManageMessages],
@@ -1233,6 +1237,7 @@ export const commands = [
   // --- SYNC COMMAND ---
   {
     name: 'sync',
+    aliases: ['syncperms', 'permsync'],
     description: 'Sync a channel\'s permissions with its category',
     category: 'moderation',
     permissions: [PermissionFlagsBits.ManageChannels],
@@ -1271,6 +1276,7 @@ export const commands = [
   // --- SYNCALL COMMAND ---
   {
     name: 'syncall',
+    aliases: ['syncallperms'],
     description: 'Sync all channels in the server with their respective categories',
     category: 'moderation',
     permissions: [PermissionFlagsBits.Administrator],

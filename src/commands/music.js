@@ -6,6 +6,7 @@ import { enqueue, buildAddedToQueueMsg } from '../utils/musicManager.js';
 export const commands = [
   {
     name: 'setupmusic',
+    aliases: ['musicsetup', 'ms'],
     description: 'Set up the Compact Music Player channel',
     category: 'music',
     permissions: [PermissionFlagsBits.ManageGuild],
@@ -36,6 +37,7 @@ export const commands = [
   
   {
     name: 'play',
+    aliases: ['p'],
     description: 'Play a song in your voice channel',
     category: 'music',
     permissions: [],

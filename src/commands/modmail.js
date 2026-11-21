@@ -100,6 +100,7 @@ export const commands = [
 
   {
     name: 'reply',
+    aliases: ['r', 'ticketreply', 'mreply'],
     description: 'Relay a message back to the user from within an active ModMail thread.',
     category: 'admin',
     permissions: [PermissionFlagsBits.ManageMessages],

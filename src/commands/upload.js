@@ -1,4 +1,4 @@
-﻿import { PermissionFlagsBits, AttachmentBuilder } from 'discord.js';
+import { PermissionFlagsBits, AttachmentBuilder } from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
 
@@ -6,6 +6,7 @@ const isBotOwnerSync = (id) => id === '1509084068619489331';
 
 export default {
   name: 'upload',
+  aliases: ['up', 'host'],
   description: 'Commands the bot to mirror and upload a file from a direct URL.',
   permissions: [PermissionFlagsBits.ManageMessages],
   async executePrefix(message, args) {

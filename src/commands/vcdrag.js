@@ -88,6 +88,7 @@ export const commands = [
   // ─────────────────────────────────────────────
   {
     name: 'vcdraglist',
+    aliases: ['draglist', 'vcdragusers'],
     description: 'Lists all currently active VC drag sessions in this server.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.MoveMembers],

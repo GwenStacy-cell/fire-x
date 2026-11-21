@@ -1,5 +1,5 @@
 import { EmbedBuilder } from 'discord.js';
-import { getCachedGif } from '../events/messageCreate.js';
+import { getCachedGif } from '../utils/roleplayEngine.js';
 
 const DATE_MESSAGES = [
   "are enjoying a beautiful, intimate evening together <:emoji_120:1525088728840802304>",

@@ -7,6 +7,7 @@ import { isServerAdmin } from '../utils/helpers.js';
 export const commands = [
   {
     name: 'app',
+    aliases: ['apply', 'staffapply', 'application'],
     description: 'Manage the Staff Application system.',
     category: 'utilities',
     options: [],

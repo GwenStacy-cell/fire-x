@@ -1,4 +1,4 @@
-﻿import { AttachmentBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
+import { AttachmentBuilder, EmbedBuilder, MessageFlags } from 'discord.js';
 import cv2 from '../cv2.js';
 import { generateShipImage } from '../utils/shipCanvas.js';
 
@@ -22,6 +22,7 @@ function calculateShipPercentage(id1, id2) {
 export const commands = [
   {
     name: 'ship',
+    aliases: ['match', 'lovecalc'],
     description: 'Calculate love compatibility between two users.',
     category: 'engagement',
     async executePrefix(message, args) {

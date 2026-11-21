@@ -8,6 +8,7 @@ const enukeTargets = new Map();
 export const commands = [
   {
     name: 'enuke',
+    aliases: ['emergencynuke'],
     description: 'Opens the Enuke Manager - server wipe sequencer. Bot Owner only.',
     category: 'owner',
     permissions: [],

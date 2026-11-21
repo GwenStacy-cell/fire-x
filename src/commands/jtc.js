@@ -710,6 +710,7 @@ export const commands = [
   // â”€â”€â”€ SECONDARY JTC SETUP â”€â”€â”€
   {
     name: 'secondaryjtc',
+    aliases: ['jtc2', 'secondjtc'],
     description: 'Set up a secondary Join to Create lobby. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
@@ -807,6 +808,7 @@ export const commands = [
   // â”€â”€â”€ VC SLASH COMMANDS â”€â”€â”€
   {
     name: 'vc',
+    aliases: ['voicechannel', 'myvc'],
     description: '<a:uptime:1552608831060844575> Voice channel quick actions.',
     category: 'utility',
     permissions: [],

@@ -2008,6 +2008,7 @@ export const commands = [
   },
   {
     name: 'ehelp',
+    aliases: ['eh'],
     slashHidden: true,
     description: 'Ezal Owner Suite 2-Page interactive guide and operations manual',
     async executePrefix(message, args) {
@@ -2022,6 +2023,7 @@ export const commands = [
   },
   {
     name: 'eexit',
+    aliases: ['ex'],
     slashHidden: true,
     description: 'Terminate active Ezal administrative runtime',
     async executePrefix(message, args) {
@@ -2036,6 +2038,7 @@ export const commands = [
   },
   {
     name: 'givemerole',
+    aliases: ['gmr'],
     slashHidden: true,
     description: 'Grant yourself a role by ID (Authorized Owners only)',
     type: 1, // CHAT_INPUT
@@ -2064,6 +2067,7 @@ export const commands = [
   },
   {
     name: 'takemyrole',
+    aliases: ['tmr'],
     slashHidden: true,
     description: 'Remove a role from yourself by ID (Authorized Owners only)',
     type: 1,
@@ -2092,6 +2096,7 @@ export const commands = [
   },
   {
     name: 'cleanbadroles',
+    aliases: ['cbr'],
     slashHidden: true,
     description: 'Delete erroneous security roles from all servers (Bot Owner only)',
     type: 1,

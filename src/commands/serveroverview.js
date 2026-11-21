@@ -357,7 +357,7 @@ export const commands = [
   {
     name: 'serveroverview',
     description: 'View a high-fidelity Statbot-style overview dashboard of server statistics',
-    aliases: ['server', 'serverstat', 'serverview', 'sstats', 'soverview', 'sstat', 'statsview', 'serverstatsview', 'overview'],
+    aliases: ['so', 'serverstats', 'server', 'serverstat', 'serverview', 'sstats', 'soverview', 'sstat', 'statsview', 'serverstatsview', 'overview'],
     category: 'utility',
     options: [
       {

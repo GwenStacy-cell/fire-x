@@ -191,6 +191,7 @@ export const commands = [
   },
   {
     name: 'unsetquote',
+    aliases: ['unquote', 'disablequote'],
     description: 'Disable Auto-Quote channel.',
     category: 'community',
     async executePrefix(message) {

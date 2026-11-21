@@ -5,6 +5,7 @@ import cv2 from '../cv2.js';
 export const commands = [
 {
   name: 'bump',
+  aliases: ['disboard', 'bumpreminder'],
     slashHidden: true,
     description: 'Configure bump reminder roles.',
   permissions: [PermissionFlagsBits.ManageGuild],

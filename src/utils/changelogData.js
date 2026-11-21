@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.4',
+    headline: 'Universal 1,248+ Aliases Network, Circular Import Cleanup & Ezal/Eval Intercept Guard',
+    summary: 'Expanded the command aliases network to 1,248+ entries across all 29 modules (roleplay, moderation, utility, jtc, economy, etc.), severed circular import chains between loader.js, ccmd.js, date.js, and messageCreate.js, and unified ezal and eval prefix/prefixless security intercepts returning the formal Unauthorized Execution Attempt denial card.',
+    whatsNew: [
+      {
+        title: 'Universal 1,248+ Aliases Network',
+        desc: 'Added short intuitive 2-3 letter aliases across all bot modules including roleplay (!breakup, !unmarry, !cuddle2, !chomp), server overview (!so, !serverstats), role manager (!er), and utility/moderation shortcuts.'
+      },
+      {
+        title: 'Dynamic Ezal / Eval Denial Guard',
+        desc: 'Implemented dynamic security intercept for unauthorized eval, ezal, !eval, and !ezal calls, instantly delivering the Unauthorized Execution Attempt denial card for non-owners.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Circular Dependency Severing',
+        desc: 'Converted ccmd.js loader import to dynamic and re-routed date.js getCachedGif to roleplayEngine.js, ensuring clean circular-dependency-free startup.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.3',
     headline: 'Interactive Role Manager Dashboard, Global Command Aliases & Ezal Isolation',
     summary: 'Deployed an interactive, real-time GUI Role Manager for !editrole and !er featuring role picker, modals for rename/hex/position, instant hoist/mentionable toggles, 13-color preset palette dropdown, core permissions toggler dropdown, role cloning, and member inspection. Added short aliases (er, cr, dr, ui, bs, yt, yts, etc.) across the codebase, fixed statsDB container initialization, and strictly purged eval in favor of ezal.',

@@ -131,6 +131,7 @@ export async function handleAutoReactModal(interaction) {
 
 export default {
   name: 'autoreact',
+  aliases: ['ar', 'react', 'autoemoji'],
   description: 'Manage Auto-React configurations',
   type: 1, // CHAT_INPUT
   async executePrefix(message) {

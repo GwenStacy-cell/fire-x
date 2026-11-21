@@ -224,6 +224,7 @@ export const commands = [
   // --- AIMODE COMMAND ---
   {
     name: 'aimode',
+    aliases: ['ai', 'athenaai', 'askai'],
     description: 'Configure server AI assistant mode and dedicated AI interaction channels.',
     category: 'utility',
     permissions: [PermissionFlagsBits.Administrator],

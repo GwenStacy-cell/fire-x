@@ -235,6 +235,7 @@ export async function handleAccentModal(interaction) {
 export const commands = [
   {
     name: 'accent',
+    aliases: ['setaccent', 'theme', 'coloraccent'],
     description: "Customize Athena Prime's accent color for this server's embeds.",
     category: 'utility',
     permissions: [PermissionFlagsBits.Administrator],

@@ -29,6 +29,7 @@ export const commands = [
   },
   {
     name: 'banner',
+    aliases: ['ubanner', 'userbanner'],
     slashHidden: true,
     description: 'Displays the banner of a user.',
     category: 'utility',

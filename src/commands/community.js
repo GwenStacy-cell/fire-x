@@ -234,6 +234,7 @@ export const commands = [
   },
   {
     name: 'starboard',
+    aliases: ['sb', 'star'],
     description: 'Configure the starboard system.',
     category: 'admin',
     permissions: [PermissionFlagsBits.ManageGuild],

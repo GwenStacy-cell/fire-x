@@ -112,6 +112,7 @@ export const commands = [
   },
   {
     name: 'ignoreall',
+    aliases: ['ignall'],
     description: 'Ignore all text channels server-wide.',
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
@@ -126,6 +127,7 @@ export const commands = [
   },
   {
     name: 'unignoreall',
+    aliases: ['unignall'],
     description: 'Unignore all text channels server-wide.',
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],

@@ -626,6 +626,7 @@ export const commands = [
   // --- LINKSALLOW COMMAND ---
   {
     name: 'linksallow',
+    aliases: ['allowlinks', 'allowdomain', 'la-links'],
     description: 'Manage allowed domains that bypass the anti-link filter.',
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
@@ -789,6 +790,7 @@ export const commands = [
   // --- MAXWARNINGS COMMAND ---
   {
     name: 'maxwarnings',
+    aliases: ['setmaxwarns', 'warnlimit', 'mw'],
     description: 'Configure the maximum number of warnings before a member is auto-quarantined.',
     category: 'security',
     permissions: [PermissionFlagsBits.Administrator],
@@ -964,6 +966,7 @@ export const commands = [
   // --- SETHOMEVC COMMAND ---
   {
     name: 'sethomevc',
+    aliases: ['homevc', 'shvc'],
     description: 'Sets the Home Voice Channel for the bot to join and stay connected to.',
     category: 'security',
     permissions: [],
@@ -1065,6 +1068,7 @@ export const commands = [
   // --- UNSETHOMEVC COMMAND ---
   {
     name: 'unsethomevc',
+    aliases: ['unhomevc', 'delhomevc'],
     description: 'Removes the Home Voice Channel setting and makes the bot leave the VC.',
     category: 'security',
     permissions: [],
@@ -1108,6 +1112,7 @@ export const commands = [
   // --- SETGUILDAVATAR COMMAND ---
   {
     name: 'setguildavatar',
+    aliases: ['setservericon', 'setserveravatar'],
     description: "Sets the bot's custom server-specific guild member avatar.",
     category: 'security',
     permissions: [],
@@ -1184,6 +1189,7 @@ export const commands = [
   // --- SETGUILDBANNER COMMAND ---
   {
     name: 'setguildbanner',
+    aliases: ['setserverbanner'],
     description: "Sets the bot's custom server-specific guild member banner.",
     category: 'security',
     permissions: [],
@@ -1257,6 +1263,7 @@ export const commands = [
   // --- EXTRAOWNER COMMAND ---
   {
     name: 'extraowner',
+    aliases: ['eo', 'addextraowner'],
     description: 'Manages extra owners who are immune to all moderation and can use all bot commands.',
     category: 'security',
     permissions: [],

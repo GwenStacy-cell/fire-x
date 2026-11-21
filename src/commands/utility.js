@@ -103,6 +103,7 @@ export const commands = [
     // --- MP3 EXTRACTOR COMMAND ---
     {
       name: 'mp3',
+      aliases: ['audio', 'getmp3'],
       description: 'Extract audio from any video link (YouTube, TikTok, Twitter, etc)',
       type: 1,
       options: [
@@ -174,6 +175,7 @@ export const commands = [
     // --- SET MEDIA CHANNEL COMMAND ---
     {
       name: 'setmedia',
+      aliases: ['mediaonly', 'medialock'],
       description: 'Bind the Auto Media Downloader to a specific channel',
       type: 1,
       options: [
@@ -216,6 +218,7 @@ export const commands = [
     // --- UNSET MEDIA CHANNEL COMMAND ---
     {
       name: 'unsetmedia',
+      aliases: ['unmedia', 'unlockmedia'],
       description: 'Unbind and disable the Auto Media Downloader',
       type: 1,
       options: [],
@@ -2214,6 +2217,7 @@ export const commands = [
     // --- TIME COMMAND ---
   {
     name: 'time',
+    aliases: ['clock', 'worldtime', 'ist'],
     description: 'Check the current Indian Standard Time (IST)',
     category: 'utility',
     permissions: [],

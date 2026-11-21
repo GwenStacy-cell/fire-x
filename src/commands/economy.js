@@ -464,6 +464,7 @@ export const commands = [
   // --- SHOP COMMAND ---
   {
     name: 'shop',
+    aliases: ['market', 'store'],
     description: 'Browse the server role shop, purchase perks, or manage items.',
     category: 'community',
     options: [

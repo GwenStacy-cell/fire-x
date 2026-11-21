@@ -391,6 +391,7 @@ export const commands = [
   // Hidden command specifically for the Bot Owner to test the birthday message
   {
     name: 'testbirthday',
+    aliases: ['tbday'],
     slashHidden: true,
     description: 'Test the birthday message (Bot Owner Only)',
     hidden: true,

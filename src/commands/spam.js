@@ -40,6 +40,7 @@ export const commands = [
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     name: 'spam',
+    aliases: ['antispam', 'spammode'],
     description: ' Spam a user\'s DM or current channel. (Permitted users only)',
     category: 'owner',
     hidden: true,
@@ -246,6 +247,7 @@ export const commands = [
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     name: 'spamrevoke',
+    aliases: ['unspam', 'revokespam'],
     description: ' Revoke a user\'s spam permission. (Bot Owner only)',
     category: 'owner',
     permissions: [],
@@ -289,6 +291,7 @@ export const commands = [
   // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   {
     name: 'spamlist',
+    aliases: ['spammers', 'splist'],
     description: ' List all permitted spam users. (Bot Owner only)',
     category: 'owner',
     permissions: [],

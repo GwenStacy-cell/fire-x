@@ -5,6 +5,7 @@ import { cleanDisplayName } from '../utils/helpers.js';
 export const commands = [
   {
     name: 'si',
+    aliases: ['s-info', 'ginfo'],
     description: 'Displays advanced CV2 Server Information.',
     async executePrefix(message, args) {
         const guild = message.guild;

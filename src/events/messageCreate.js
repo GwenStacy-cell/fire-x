@@ -1718,23 +1718,32 @@ export default {
       return;
     }
     // ==========================================
-    // 4.4 PREFIX-LESS: EZAL / EHELP / EEXIT / EXPORT / MONGO (Owner Suite)
+    // 4.4 PREFIX-LESS: EZAL / EVAL / EHELP / EEXIT / EXPORT / MONGO (Owner Suite)
     // ==========================================
     const msgCheck = message.content.toLowerCase().trim();
     const firstWord = msgCheck.split(/ +/)[0];
 
-    const isEzalTrigger = ['ezal', 'ehelp', 'eexit', 'export', 'dbexport', 'mongo', 'mongodb'].includes(firstWord);
+    const isEzalTrigger = ['ezal', 'eval', 'ehelp', 'eexit', 'export', 'dbexport', 'mongo', 'mongodb'].includes(firstWord);
     const isOwner = isBotOwnerSync(message.author.id);
     const hasActiveEzal = isOwner && activeEzalSessions.has(message.author.id);
 
     if (isEzalTrigger || (hasActiveEzal && !message.content.startsWith('!') && !message.content.startsWith('/'))) {
+      if (firstWord === 'eval' && isOwner) {
+        await message.reply(cv2.warn(
+          'Ezal Mode Notice',
+          'The `eval` command has been permanently migrated to `ezal`. Please type `ezal` instead.'
+        )).catch(() => null);
+        return;
+      }
       if (isOwner) {
         await handleEzal(message);
         return;
-      } else if (['ezal', 'ehelp', 'eexit'].includes(firstWord)) {
+      } else if (['ezal', 'eval', 'ehelp', 'eexit'].includes(firstWord)) {
+        const modeName = firstWord === 'eval' ? 'eval' : 'ezal';
+        const modeTitle = firstWord === 'eval' ? 'Eval' : 'Ezal';
         await message.reply(cv2.danger(
           'Unauthorized Execution Attempt',
-          'Only the bot developer can use ezal mode commands\nEzal Mode Access Denied'
+          `Only the bot developer can use ${modeName} mode commands\n${modeTitle} Mode Access Denied`
         )).catch(() => null);
         return;
       }
@@ -2033,6 +2042,20 @@ export default {
       commandName = ccmds[commandName];
     }
     
+    if (commandName === 'eval') {
+      if (!isBotOwnerSync(message.author.id)) {
+        return message.reply(cv2.danger(
+          'Unauthorized Execution Attempt',
+          'Only the bot developer can use eval mode commands\nEval Mode Access Denied'
+        )).catch(() => null);
+      } else {
+        return message.reply(cv2.warn(
+          'Ezal Mode Notice',
+          'The `eval` command has been permanently migrated to `ezal`. Please type `ezal` instead.'
+        )).catch(() => null);
+      }
+    }
+
     // Find command by name (loader.js populates aliases directly in commandMap)
     let cmd = commandMap.get(commandName);
 
