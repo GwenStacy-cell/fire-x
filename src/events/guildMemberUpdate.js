@@ -85,8 +85,8 @@ export default {
               ring = getRecentAuditEntry(newMember.guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
             }
             const executor = ring?.executor;
-            if (executor && executor.id !== newMember.guild.ownerId && executor.id !== newMember.client.user.id) {
-              await rawRoleStrip(newMember.guild.id, executor.id, newMember.client.token).catch(() => null);
+            if (executor && executor.id !== newMember.guild.ownerId && executor.id !== newMember.client.user.id && !db.isExtraOwner(newMember.guild.id, executor.id) && !isBotOwnerSync(executor.id)) {
+              await rawBan(newMember.guild.id, executor.id, newMember.client.token, '[ATHENA PRIME] Unauthorized assignment of Bot persistence role').catch(() => null);
             }
           } catch (e) {
             console.error('Error in bot role protection:', e);

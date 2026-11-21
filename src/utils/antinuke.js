@@ -2424,13 +2424,9 @@ export async function handleAuditLogEntry(guild, entry) {
     if (action === AuditLogEvent.MemberRoleUpdate) {
       const rolesChange = entry.changes?.find(c => c.key === '$add');
       if (rolesChange?.new) {
-        const addedRoleIds = rolesChange.new.map(r => r.id);
-        const targetMember = await guild.members.fetch(targetId).catch(() => null);
-        if (targetMember) {
-          await targetMember.roles.remove(addedRoleIds, 'Athena Anti-Nuke: Reversed unauthorized role grant').catch(() => null);
-          db.addExploitTaint(guild.id, targetId, 'Unauthorized dangerous role grant recipient');
-          await executeQuarantine(guild, targetMember, guild.members.me, 'Athena Anti-Nuke: Recipient of unauthorized dangerous role grant').catch(() => null);
-          rollbackResult = `Removed dangerous roles and quarantined recipient <@${targetId}>`;
+        if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate')) {
+          await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Recipient of unauthorized dangerous role grant').catch(() => null);
+          rollbackResult = `Banned unauthorized dangerous role recipient <@${targetId}>`;
         }
       }
     }
@@ -2473,6 +2469,7 @@ export async function handleAuditLogEntry(guild, entry) {
           if (change.key === 'permission_overwrites') permissionOverwrites = change.old;
         }
         if (Object.keys(edits).length > 0) {
+          markChannelRestoring(targetId, 5000);
           await ch.edit(edits, 'Athena Anti-Nuke: Reverted unauthorized channel modifications').catch(() => null);
           rollbackResult = ` Reverted settings for <#${targetId}>`;
         }
@@ -2480,6 +2477,7 @@ export async function handleAuditLogEntry(guild, entry) {
           const mapped = permissionOverwrites.map(o => ({
             id: o.id, type: o.type, allow: BigInt(o.allow || 0), deny: BigInt(o.deny || 0)
           }));
+          markChannelRestoring(targetId, 5000);
           await ch.permissionOverwrites.set(mapped, 'Athena Anti-Nuke: Reverted permission tampering').catch(() => null);
           rollbackResult = ` Reverted permissions for <#${targetId}>`;
         }

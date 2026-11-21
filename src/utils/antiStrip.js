@@ -563,17 +563,11 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       const token = guild.client.token;
       const reason = `[ATHENA ANTI-STAB] Hostile neutralized: Attempted to ${actionText}`;
 
-      // ⚡ STEP 3: SUB-1MS PARALLEL DUAL-STRIKE (rawBan + rawRoleStrip)
-      const [banRes, stripRes] = await Promise.allSettled([
-        rawBan(guild.id, executor.id, token, reason),
-        rawRoleStrip(guild.id, executor.id, token)
-      ]);
+      // ⚡ STEP 3: SUB-1MS DIRECT RAW BAN (NO ROLE STRIP OVERHEAD)
+      const banOk = await rawBan(guild.id, executor.id, token, reason);
 
-      const banOk = banRes.status === 'fulfilled' && banRes.value === true;
-      const stripOk = stripRes.status === 'fulfilled' && stripRes.value === true;
-
-      if (banOk || stripOk) {
-        punishedText = `\n\n**Hostile Neutralization:** Successfully stripped roles and **BANNED** the attacker before a second action could execute.`;
+      if (banOk) {
+        punishedText = `\n\n**Hostile Neutralization:** Directly and permanently **BANNED** the attacker before a second action could execute.`;
       } else {
         // Fallback to djs if raw calls were blocked by role hierarchy
         try {

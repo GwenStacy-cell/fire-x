@@ -112,6 +112,9 @@ const ACTION_TO_MODULE = {
   [AuditLogEvent.SoundboardSoundDelete]:            'antiSoundboardDelete'
 };
 
+const processedAuditIds = new Set();
+const processedPacketKeys = new Set();
+
 export function attachWiretap(client) {
   const handleRawPacket = async (packet) => {
     if (!packet || !packet.t || !DESTRUCTIVE_EVENTS.has(packet.t)) return;
@@ -119,6 +122,18 @@ export function attachWiretap(client) {
     // Both guild_id and id (for GUILD_UPDATE) supported
     const guildId = packet.d?.guild_id || packet.d?.id;
     if (!guildId) return;
+
+    // ⚡ High-Speed Deduplication: Ignore identical gateway raw packets within burst window
+    const rawUniqueId = packet.d?.id || packet.d?.role_id || packet.d?.channel_id || packet.d?.code;
+    if (rawUniqueId) {
+      const pKey = `${packet.t}:${rawUniqueId}`;
+      if (processedPacketKeys.has(pKey)) return;
+      processedPacketKeys.add(pKey);
+      if (processedPacketKeys.size > 2000) {
+        const oldest = processedPacketKeys.values().next().value;
+        processedPacketKeys.delete(oldest);
+      }
+    }
 
     // 1. Sync cache check (0ms latency)
     const config = db.getGuildConfig(guildId);
@@ -128,6 +143,14 @@ export function attachWiretap(client) {
     // When Discord Gateway pushes an audit log entry, the executor ID is already inside packet.d!
     if (packet.t === 'GUILD_AUDIT_LOG_ENTRY_CREATE') {
       const d = packet.d;
+      if (d.id) {
+        if (processedAuditIds.has(d.id)) return;
+        processedAuditIds.add(d.id);
+        if (processedAuditIds.size > 3000) {
+          const oldest = processedAuditIds.values().next().value;
+          processedAuditIds.delete(oldest);
+        }
+      }
       const executorId = d.user_id;
       const actionType = d.action_type;
       const targetId = d.target_id;
@@ -249,10 +272,7 @@ export function attachWiretap(client) {
             const botStrike = rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Banned', { actionType: 'BOT_ADD_REVERSAL' });
             trackInFlightPunishment(guildId, botStrike);
           } else if (actionType === AuditLogEvent.MemberRoleUpdate && targetId) {
-            // Privilege escalation confirmed: strip dangerous roles immediately at 0ms
-            rawRoleStrip(guildId, targetId, client.token).catch(() => null);
-
-            // Ban recipient if unauthorized accomplice
+            // Privilege escalation: directly ban unauthorized recipient without role-strip delay
             if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate')) {
               condemn(guildId, targetId);
               const privStrike = rawBan(guildId, targetId, client.token, '[ATHENA WIRETAP] ⚡ Privilege Escalation Recipient Banned', { actionType: 'PRIVILEGE_ESCALATION' });
@@ -504,23 +524,8 @@ export function attachWiretap(client) {
     }
   };
 
-  // ⚡ MULTI-VECTOR DIRECT GATEWAY HOOKS:
-  // Hook 1: client.on('raw') - The native Discord.js v14 dispatch pipeline (0ms first frame before event parsing)
+  // ⚡ DEDICATED SINGLE-PIPELINE GATEWAY HOOK:
+  // Hook client.on('raw') strictly once for 0ms direct packet interception
+  // without duplicate listener registrations, thread contention, or racing.
   client.on('raw', handleRawPacket);
-
-  // Hook 2: client.on(Events.Raw) - Symbolic enum hook
-  if (Events?.Raw) {
-    client.on(Events.Raw, handleRawPacket);
-  }
-
-  // Hook 3: Shard-level direct event listeners on client.ws for each destructive event
-  if (client.ws) {
-    for (const eventName of DESTRUCTIVE_EVENTS) {
-      client.ws.on(eventName, (data) => {
-        handleRawPacket({ t: eventName, d: data });
-      });
-    }
-    // Hook 4: Legacy client.ws RAW compatibility
-    client.ws.on('RAW', handleRawPacket);
-  }
 }
