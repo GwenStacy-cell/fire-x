@@ -288,6 +288,14 @@ export default {
     }
 
     // ==========================================
+    // STATBOT SERVER OVERVIEW INTERACTION BUTTONS & DROPDOWN
+    // ==========================================
+    if (interaction.customId && interaction.customId.startsWith('so_')) {
+      const { handleServerOverviewInteraction } = await import('../commands/serveroverview.js');
+      return handleServerOverviewInteraction(interaction);
+    }
+
+    // ==========================================
     // EZAL OWNER SUITE & 100-ROLLING SNAPSHOT INTERACTION BUTTONS
     // ==========================================
     if (interaction.isButton() && interaction.customId.startsWith('ezal_')) {

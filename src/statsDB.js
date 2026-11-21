@@ -19,10 +19,22 @@ let _recordJoin = null;
 let _getInviter = null;
 let _logLeave = null;
 let _syncInvites = null;
+let _logReactionUser = null;
+let _logReactionChannel = null;
+let _logReactionDaily = null;
+let _logLinkUser = null;
+let _logLinkChannel = null;
+let _logLinkDaily = null;
+let _logDailyMsg = null;
+let _logDailyVc = null;
+let _logDailyJoin = null;
+let _logDailyLeave = null;
 
 // Pre-compiled prepared transactions for sub-microsecond zero-allocation activity logging
 let _logMessageTx = null;
 let _logVoiceTx = null;
+let _logReactionTx = null;
+let _logLinkTx = null;
 
 // Pre-compiled query statements
 let _getUserStatsStmt = null;
@@ -95,6 +107,33 @@ function initDatabase() {
     );
   `);
 
+  try { db.exec(`ALTER TABLE user_activity ADD COLUMN reactions INTEGER DEFAULT 0;`); } catch {}
+  try { db.exec(`ALTER TABLE user_activity ADD COLUMN links INTEGER DEFAULT 0;`); } catch {}
+  try { db.exec(`ALTER TABLE channel_activity ADD COLUMN reactions INTEGER DEFAULT 0;`); } catch {}
+  try { db.exec(`ALTER TABLE channel_activity ADD COLUMN links INTEGER DEFAULT 0;`); } catch {}
+  try { db.exec(`ALTER TABLE join_history ADD COLUMN timestamp TEXT DEFAULT (datetime('now'));`); } catch {}
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS server_activity_daily (
+      guild_id TEXT,
+      date TEXT,
+      messages INTEGER DEFAULT 0,
+      voice_seconds INTEGER DEFAULT 0,
+      reactions INTEGER DEFAULT 0,
+      links INTEGER DEFAULT 0,
+      joins INTEGER DEFAULT 0,
+      leaves INTEGER DEFAULT 0,
+      PRIMARY KEY (guild_id, date)
+    );
+    CREATE INDEX IF NOT EXISTS idx_server_activity_daily_date ON server_activity_daily(date);
+
+    -- Backfill messages and voice_seconds from user_activity if missing
+    INSERT OR IGNORE INTO server_activity_daily (guild_id, date, messages, voice_seconds)
+    SELECT guild_id, date, SUM(messages), SUM(voice_seconds)
+    FROM user_activity
+    GROUP BY guild_id, date;
+  `);
+
   _logMessageUser = db.prepare(`
     INSERT INTO user_activity (guild_id, user_id, date, messages)
     VALUES (?, ?, date('now'), 1)
@@ -106,6 +145,13 @@ function initDatabase() {
     INSERT INTO channel_activity (guild_id, user_id, channel_id, date, messages)
     VALUES (?, ?, ?, date('now'), 1)
     ON CONFLICT(guild_id, user_id, channel_id, date)
+    DO UPDATE SET messages = messages + 1;
+  `);
+
+  _logDailyMsg = db.prepare(`
+    INSERT INTO server_activity_daily (guild_id, date, messages)
+    VALUES (?, date('now'), 1)
+    ON CONFLICT(guild_id, date)
     DO UPDATE SET messages = messages + 1;
   `);
 
@@ -121,6 +167,69 @@ function initDatabase() {
     VALUES (?, ?, ?, date('now'), ?)
     ON CONFLICT(guild_id, user_id, channel_id, date)
     DO UPDATE SET voice_seconds = voice_seconds + ?;
+  `);
+
+  _logDailyVc = db.prepare(`
+    INSERT INTO server_activity_daily (guild_id, date, voice_seconds)
+    VALUES (?, date('now'), ?)
+    ON CONFLICT(guild_id, date)
+    DO UPDATE SET voice_seconds = voice_seconds + ?;
+  `);
+
+  _logDailyReaction = db.prepare(`
+    INSERT INTO server_activity_daily (guild_id, date, reactions)
+    VALUES (?, date('now'), 1)
+    ON CONFLICT(guild_id, date)
+    DO UPDATE SET reactions = reactions + 1;
+  `);
+
+  _logReactionUser = db.prepare(`
+    INSERT INTO user_activity (guild_id, user_id, date, reactions)
+    VALUES (?, ?, date('now'), 1)
+    ON CONFLICT(guild_id, user_id, date)
+    DO UPDATE SET reactions = reactions + 1;
+  `);
+
+  _logReactionChannel = db.prepare(`
+    INSERT INTO channel_activity (guild_id, user_id, channel_id, date, reactions)
+    VALUES (?, ?, ?, date('now'), 1)
+    ON CONFLICT(guild_id, user_id, channel_id, date)
+    DO UPDATE SET reactions = reactions + 1;
+  `);
+
+  _logDailyLink = db.prepare(`
+    INSERT INTO server_activity_daily (guild_id, date, links)
+    VALUES (?, date('now'), 1)
+    ON CONFLICT(guild_id, date)
+    DO UPDATE SET links = links + 1;
+  `);
+
+  _logLinkUser = db.prepare(`
+    INSERT INTO user_activity (guild_id, user_id, date, links)
+    VALUES (?, ?, date('now'), 1)
+    ON CONFLICT(guild_id, user_id, date)
+    DO UPDATE SET links = links + 1;
+  `);
+
+  _logLinkChannel = db.prepare(`
+    INSERT INTO channel_activity (guild_id, user_id, channel_id, date, links)
+    VALUES (?, ?, ?, date('now'), 1)
+    ON CONFLICT(guild_id, user_id, channel_id, date)
+    DO UPDATE SET links = links + 1;
+  `);
+
+  _logDailyJoin = db.prepare(`
+    INSERT INTO server_activity_daily (guild_id, date, joins)
+    VALUES (?, date('now'), 1)
+    ON CONFLICT(guild_id, date)
+    DO UPDATE SET joins = joins + 1;
+  `);
+
+  _logDailyLeave = db.prepare(`
+    INSERT INTO server_activity_daily (guild_id, date, leaves)
+    VALUES (?, date('now'), 1)
+    ON CONFLICT(guild_id, date)
+    DO UPDATE SET leaves = leaves + 1;
   `);
 
   _pruneData = db.prepare(`DELETE FROM user_activity WHERE date < date('now', '-31 days');`);
@@ -157,11 +266,25 @@ function initDatabase() {
   _logMessageTx = db.transaction((guildId, userId, channelId) => {
     _logMessageUser.run(guildId, userId);
     _logMessageChannel.run(guildId, userId, channelId);
+    _logDailyMsg.run(guildId);
   });
 
   _logVoiceTx = db.transaction((guildId, userId, channelId, seconds) => {
     _logVoiceUser.run(guildId, userId, seconds, seconds);
     _logVoiceChannel.run(guildId, userId, channelId, seconds, seconds);
+    _logDailyVc.run(guildId, seconds, seconds);
+  });
+
+  _logReactionTx = db.transaction((guildId, userId, channelId) => {
+    _logReactionUser.run(guildId, userId);
+    _logDailyReaction.run(guildId);
+    if (channelId) _logReactionChannel.run(guildId, userId, channelId);
+  });
+
+  _logLinkTx = db.transaction((guildId, userId, channelId) => {
+    _logLinkUser.run(guildId, userId);
+    _logDailyLink.run(guildId);
+    if (channelId) _logLinkChannel.run(guildId, userId, channelId);
   });
 
   // Pre-compile frequently accessed query statements
@@ -363,6 +486,26 @@ export function logVoice(guildId, userId, channelId, seconds) {
   }
 }
 
+export function logReaction(guildId, userId, channelId) {
+  try {
+    if (_logReactionTx) {
+      _logReactionTx(guildId, userId, channelId);
+    }
+  } catch (e) {
+    console.error('Error logging reaction stat:', e);
+  }
+}
+
+export function logLink(guildId, userId, channelId) {
+  try {
+    if (_logLinkTx) {
+      _logLinkTx(guildId, userId, channelId);
+    }
+  } catch (e) {
+    console.error('Error logging link stat:', e);
+  }
+}
+
 export function pruneOldStats() {
   try {
     _pruneData.run();
@@ -528,6 +671,7 @@ export function logInvite(guildId, inviterId, joinedUserId) {
   try {
     _logInvite.run(guildId, inviterId);
     _recordJoin.run(guildId, joinedUserId, inviterId);
+    if (_logDailyJoin) _logDailyJoin.run(guildId);
   } catch (err) {
     console.error('Database Error [logInvite]:', err);
   }
@@ -539,9 +683,194 @@ export function logLeave(guildId, leavingUserId) {
     if (row && row.inviter_id) {
       _logLeave.run(guildId, row.inviter_id);
     }
+    if (_logDailyLeave) _logDailyLeave.run(guildId);
   } catch (err) {
     console.error('Database Error [logLeave]:', err);
   }
+}
+
+export function getServerStatbotStats(guildId, timeframe = '7d') {
+  let dateClause = "date >= date('now', '-6 days')";
+  let daysCount = 7;
+  let tfKey = '7D';
+
+  if (timeframe === '24h') {
+    dateClause = "date >= date('now', '-1 day')";
+    daysCount = 1;
+    tfKey = '24H';
+  } else if (timeframe === '30d') {
+    dateClause = "date >= date('now', '-29 days')";
+    daysCount = 30;
+    tfKey = '30D';
+  } else if (timeframe === 'all') {
+    dateClause = "1=1";
+    tfKey = 'ALL';
+    const firstRow = db ? db.prepare("SELECT MIN(date) as first_date FROM server_activity_daily WHERE guild_id = ?").get(guildId) : null;
+    if (firstRow && firstRow.first_date) {
+      const diffMs = Date.now() - new Date(firstRow.first_date).getTime();
+      daysCount = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+    } else {
+      daysCount = 1;
+    }
+  }
+
+  // 1. Messages
+  const msgRow = db ? (db.prepare(`
+    SELECT 
+      COALESCE(SUM(messages), 0) as timeframe_msg,
+      COALESCE(SUM(CASE WHEN date = date('now') THEN messages ELSE 0 END), 0) as today_msg
+    FROM user_activity
+    WHERE guild_id = ? AND ${dateClause}
+  `).get(guildId) || { timeframe_msg: 0, today_msg: 0 }) : { timeframe_msg: 0, today_msg: 0 };
+
+  const totalMsg = msgRow.timeframe_msg || 0;
+  const todayMsg = msgRow.today_msg || 0;
+  const avgMsg = Math.round(totalMsg / daysCount);
+
+  // 2. Voice
+  const vcRow = db ? (db.prepare(`
+    SELECT 
+      COALESCE(SUM(voice_seconds), 0) as timeframe_vc,
+      COALESCE(SUM(CASE WHEN date = date('now') THEN voice_seconds ELSE 0 END), 0) as today_vc
+    FROM user_activity
+    WHERE guild_id = ? AND ${dateClause}
+  `).get(guildId) || { timeframe_vc: 0, today_vc: 0 }) : { timeframe_vc: 0, today_vc: 0 };
+
+  const totalVc = vcRow.timeframe_vc || 0;
+  const todayVc = vcRow.today_vc || 0;
+  const avgVc = Math.round(totalVc / daysCount);
+
+  // 3. Active Users
+  const activeUserRow = db ? (db.prepare(`
+    SELECT COUNT(DISTINCT user_id) as active_count
+    FROM user_activity
+    WHERE guild_id = ? AND ${dateClause} AND (messages > 0 OR voice_seconds > 0)
+  `).get(guildId) || { active_count: 0 }) : { active_count: 0 };
+
+  const dailyActiveRows = db ? (db.prepare(`
+    SELECT date, COUNT(DISTINCT user_id) as day_active
+    FROM user_activity
+    WHERE guild_id = ? AND ${dateClause} AND (messages > 0 OR voice_seconds > 0)
+    GROUP BY date
+  `).all(guildId) || []) : [];
+
+  const peakActive = dailyActiveRows.length > 0 ? Math.max(...dailyActiveRows.map(r => r.day_active)) : 0;
+  const sumDailyActive = dailyActiveRows.reduce((acc, r) => acc + r.day_active, 0);
+  const avgActive = (sumDailyActive / daysCount).toFixed(3);
+
+  // 4. Top Message Members (Top 3)
+  const topMsgMembers = db ? (db.prepare(`
+    SELECT user_id, SUM(messages) as total
+    FROM user_activity
+    WHERE guild_id = ? AND ${dateClause} AND messages > 0
+    GROUP BY user_id
+    ORDER BY total DESC
+    LIMIT 3
+  `).all(guildId) || []) : [];
+
+  // 5. Top Voice Members (Top 3)
+  const topVcMembers = db ? (db.prepare(`
+    SELECT user_id, SUM(voice_seconds) as total
+    FROM user_activity
+    WHERE guild_id = ? AND ${dateClause} AND voice_seconds > 0
+    GROUP BY user_id
+    ORDER BY total DESC
+    LIMIT 3
+  `).all(guildId) || []) : [];
+
+  // 6. Reactions
+  const rxRow = db ? (db.prepare(`
+    SELECT 
+      COALESCE(SUM(reactions), 0) as timeframe_rx,
+      (SELECT COALESCE(SUM(reactions), 0) FROM server_activity_daily WHERE guild_id = ?) as all_rx
+    FROM server_activity_daily
+    WHERE guild_id = ? AND ${dateClause}
+  `).get(guildId, guildId) || { timeframe_rx: 0, all_rx: 0 }) : { timeframe_rx: 0, all_rx: 0 };
+
+  const totalRx = rxRow.timeframe_rx || 0;
+  const allRx = rxRow.all_rx || 0;
+  const avgRx = (totalRx / daysCount).toFixed(3);
+
+  // 7. Links
+  const linkRow = db ? (db.prepare(`
+    SELECT 
+      COALESCE(SUM(links), 0) as timeframe_links,
+      (SELECT COALESCE(SUM(links), 0) FROM server_activity_daily WHERE guild_id = ?) as all_links
+    FROM server_activity_daily
+    WHERE guild_id = ? AND ${dateClause}
+  `).get(guildId, guildId) || { timeframe_links: 0, all_links: 0 }) : { timeframe_links: 0, all_links: 0 };
+
+  const totalLinks = linkRow.timeframe_links || 0;
+  const allLinks = linkRow.all_links || 0;
+  const avgLinks = (totalLinks / daysCount).toFixed(3);
+
+  // 8. Joins & Leaves
+  const memberRow = db ? (db.prepare(`
+    SELECT 
+      COALESCE(SUM(joins), 0) as joined,
+      COALESCE(SUM(leaves), 0) as left
+    FROM server_activity_daily
+    WHERE guild_id = ? AND ${dateClause}
+  `).get(guildId) || { joined: 0, left: 0 }) : { joined: 0, left: 0 };
+
+  let joined = memberRow.joined || 0;
+  let left = memberRow.left || 0;
+
+  if (joined === 0 && left === 0 && db) {
+    const invRow = db.prepare(`
+      SELECT COALESCE(SUM(regular), 0) as total_joined, COALESCE(SUM(leaves), 0) as total_left
+      FROM user_invites
+      WHERE guild_id = ?
+    `).get(guildId);
+    if (invRow) {
+      joined = invRow.total_joined || 0;
+      left = invRow.total_left || 0;
+    }
+  }
+
+  // 9. Tracking Since Date
+  const firstDateRow = db ? db.prepare(`
+    SELECT MIN(date) as first_date FROM user_activity WHERE guild_id = ?
+  `).get(guildId) : null;
+  const trackingSince = firstDateRow?.first_date || new Date().toISOString().split('T')[0];
+
+  return {
+    timeframe,
+    tfKey,
+    daysCount,
+    messages: {
+      total: totalMsg,
+      avg: avgMsg,
+      today: todayMsg
+    },
+    voice: {
+      totalSeconds: totalVc,
+      avgSeconds: avgVc,
+      todaySeconds: todayVc
+    },
+    activeUsers: {
+      active: activeUserRow.active_count || 0,
+      avg: avgActive,
+      peak: peakActive
+    },
+    topMsgMembers,
+    topVcMembers,
+    reactions: {
+      total: totalRx,
+      all: allRx,
+      avg: avgRx
+    },
+    links: {
+      total: totalLinks,
+      all: allLinks,
+      avg: avgLinks
+    },
+    members: {
+      joined,
+      left
+    },
+    trackingSince
+  };
 }
 
 export function getTopInvites(guildId, limit = 10) {
@@ -561,12 +890,15 @@ export default {
   getDatabaseInstance,
   logMessage,
   logVoice,
+  logReaction,
+  logLink,
   pruneOldStats,
   getUserStats,
   getServerRanks,
   getTopChannels,
   getChartData,
   getServerOverviewStats,
+  getServerStatbotStats,
   getTopMembers,
   getTopVoiceMembers,
   logInvite,

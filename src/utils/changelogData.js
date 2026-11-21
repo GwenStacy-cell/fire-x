@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.2',
+    headline: 'Statbot-Style Interactive Server Overview & Ezal Access Security Guard',
+    summary: 'Rolled out an ultra-high-fidelity 8-panel Statbot-style graphical Server Overview dashboard with dynamic 4-row Discord controls (tabs, refresh, close, and timeframe dropdown for 24h, 7d, 30d, all). Added unauthorized execution denial intercept for non-owners attempting to run or enter eval/ezal mode.',
+    whatsNew: [
+      {
+        title: 'Statbot-Style Graphical Server Overview',
+        desc: 'Pixel-perfect 8-panel canvas HUD displaying Messages, Voice, Active Users, Top Message Members with avatars, Top Voice Members with avatars, Reactions, Links, and Member growth/churn metrics.'
+      },
+      {
+        title: 'Dynamic 4-Row Discord Controls',
+        desc: 'Interactive Discord interface featuring 9 feature tabs (Overview, Text, Voice, Engagement, Active, Graphs, Growth, Leaderboards, Compare), Refresh and Close actions, and a StringSelectMenu for timeframe toggling (24h, 7d, 30d, all).'
+      },
+      {
+        title: 'Ezal / Eval Mode Access Denied Guard',
+        desc: 'Unauthorized execution security intercept that blocks non-developers typing eval, ezal, !eval, or !ezal with a formal denial card (Unauthorized Execution Attempt).'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Automated Reactions & Links Telemetry',
+        desc: 'Enhanced statsDB with server_activity_daily table, automatic retroactive backfills, and real-time logging in messageCreate and messageReactionAdd.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.1',
     headline: 'Global Sanctions & Server Blacklist Cloud Collections',
     summary: 'Added dedicated MongoDB Cloud collections for globally banned users (global_bans), blacklisted servers (banned_servers), and NoPrefix permissions (noprefix_access). Integrated banned server metrics into Athena Cloud Backup manifests and the !db mongo persistence audit.',

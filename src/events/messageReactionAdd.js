@@ -1,5 +1,6 @@
 import { Routes } from 'discord.js';
 import db from '../database.js';
+import statsDB from '../statsDB.js';
 import embed from '../embed.js';
 import { getSafeUserAvatar, logToSecurityChannel, isBotOwnerSync } from '../utils/helpers.js';
 import { TICK_EMOJI, BULLET_EMOJI, UPTIME_EMOJI, getRandomHeadingGlyph } from '../utils/emojis.js';
@@ -23,6 +24,7 @@ export default {
     // ==========================================
     const guild = reaction.message.guild;
     if (guild) {
+      statsDB.logReaction?.(guild.id, user.id, reaction.message.channelId);
       const config = db.getGuildConfig(guild.id);
       if (config && config.honeypotChannelId && reaction.message.channelId === config.honeypotChannelId) {
         reaction.users.remove(user.id).catch(() => null);

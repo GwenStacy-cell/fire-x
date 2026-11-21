@@ -1,6 +1,7 @@
 import { createCanvas, loadImage, registerFont } from './canvas.js';
 import path from 'path';
 import fs from 'fs';
+import statsDB from '../statsDB.js';
 
 // ============================================================
 // FONT REGISTRATION — Noto Sans covers Latin, CJK, Arabic,
@@ -498,232 +499,289 @@ export async function generateStatCard(user, member, stats, ranks, topChannels, 
 // ============================================================
 // SERVER OVERVIEW CARD — matches Statbot's serveroverview output
 // ============================================================
-export async function generateServerOverviewImage(guild, stats) {
-  const W = 820, H = 590;
+// ============================================================
+// STATBOT SERVER OVERVIEW CARD — Pixel-perfect 8-panel HUD
+// ============================================================
+function formatStatbotVoice(seconds) {
+  if (!seconds || seconds <= 0) return '0m';
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+  if (hours > 0) return `${hours}h 0m`;
+  return `${mins}m`;
+}
+
+export async function generateStatbotOverviewImage(guild, inputStats = null, timeframe = '7d') {
+  const W = 980, H = 740;
   const canvas = createCanvas(W, H);
   const ctx = canvas.getContext('2d');
-  const PAD = 18;
 
-  ctx.fillStyle = C.bg;
+  // Background
+  ctx.fillStyle = '#111215';
   ctx.fillRect(0, 0, W, H);
 
-  // ---- HEADER ----
-  const ICON_R = 44;
-  const ICON_CX = PAD + ICON_R;
-  const ICON_CY = PAD + ICON_R + 4;
-
-  if (guild.iconURL()) {
-    await drawCircularImage(ctx, guild.iconURL({ extension: 'png', size: 256 }), ICON_CX, ICON_CY, ICON_R);
+  // If inputStats not provided or missing messages, query statsDB directly
+  let stats = inputStats;
+  if (!stats || !stats.messages) {
+    stats = statsDB.getServerStatbotStats(guild.id, timeframe);
   }
 
-  const guildName = safeText(guild.name) || 'Server Overview';
-  ctx.font = `bold 30px ${FONT_BOLD}`;
-  ctx.fillStyle = C.white;
-  ctx.fillText(guildName.toUpperCase(), ICON_CX + ICON_R + 14, ICON_CY - 10);
+  const tf = (timeframe || '7d').toLowerCase();
+  const tfKey = tf === '24h' ? '24H' : (tf === '30d' ? '30D' : (tf === 'all' ? 'ALL' : '7D'));
+  const tfBadge = tf === '24h' ? '24 H' : (tf === '30d' ? '30 D' : (tf === 'all' ? 'ALL' : '7 D'));
 
-  ctx.font = `16px ${FONT_NORMAL}`;
-  ctx.fillStyle = C.gray;
-  ctx.fillText('Server Overview', ICON_CX + ICON_R + 14, ICON_CY + 18);
+  // Ensure guild members cache has members
+  await guild.members.fetch().catch(() => null);
 
-  // Dates
-  const createdDate = new Date(guild.createdTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  const botJoinedDate = guild.joinedTimestamp ? new Date(guild.joinedTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
+  // Helper: Card Panel with subtle border
+  const drawCard = (x, y, w, h, title, iconStr, isFa = false) => {
+    drawPanel(ctx, x, y, w, h, 12, '#18191c', true);
 
-  const drawBadge2 = (label, value, bx) => {
-    drawPanel(ctx, bx, PAD, 140, 54, 8, C.badge, true);
-    ctx.font = `bold 11px ${FONT_BOLD}`;
-    ctx.fillStyle = C.white;
-    ctx.fillText(label, bx + 12, PAD + 20);
-    ctx.font = `14px ${FONT_NORMAL}`;
-    ctx.fillStyle = C.gray;
-    ctx.fillText(value, bx + 12, PAD + 40);
-  };
-
-  drawBadge2('Created On', createdDate, W - PAD - 140 - 10 - 140);
-  drawBadge2('Invited Bot On', botJoinedDate, W - PAD - 140);
-
-  ctx.fillStyle = '#33363C';
-  ctx.fillRect(PAD, ICON_CY + ICON_R + 14, W - PAD * 2, 1);
-
-  // ---- ROW 1: Messages | Voice Activity | Contributors ----
-  const ROW1_Y = ICON_CY + ICON_R + 26;
-  const ROW1_H = 150;
-  const COL_GAP = 14;
-  const COL_W = Math.floor((W - PAD * 2 - COL_GAP * 2) / 3);
-
-  const drawPanelTitle = (x, y, w, title, iconStr, isFa = false) => {
-    drawPanel(ctx, x, y, w, ROW1_H);
-    ctx.font = `bold 17px ${FONT_BOLD}`;
-    ctx.fillStyle = C.white;
-    ctx.fillText(title, x + 14, y + 28);
-    ctx.font = isFa ? '16px "FontAwesome"' : `18px ${FONT_NORMAL}`;
-    ctx.fillStyle = C.gray;
-    ctx.textAlign = 'right';
-    ctx.fillText(iconStr, x + w - 14, y + 28);
-    ctx.textAlign = 'left';
-  };
-
-  const drawOverviewRow = (px, y, colW, label, numStr, suffix) => {
-    drawInnerBox(ctx, px + 12, y, 40, 30, 5);
-    ctx.font = `bold 14px ${FONT_BOLD}`;
-    ctx.fillStyle = C.white;
-    ctx.textAlign = 'center';
-    ctx.fillText(label, px + 12 + 20, y + 20);
-    ctx.textAlign = 'left';
-    ctx.font = `bold 15px ${FONT_BOLD}`;
-    ctx.fillStyle = C.white;
-    const nw = ctx.measureText(numStr).width;
-    ctx.fillText(numStr, px + 60, y + 20);
-    ctx.font = `italic 13px ${FONT_NORMAL}`;
-    ctx.fillStyle = C.gray;
-    ctx.fillText(suffix, px + 60 + nw + 4, y + 20);
-  };
-
-  // Messages column
-  const M_X = PAD;
-  drawPanelTitle(M_X, ROW1_Y, COL_W, 'Messages', '#');
-  drawOverviewRow(M_X, ROW1_Y + 42,  COL_W, '1d',  formatNumber(stats.overview.d1_msg),  'messages');
-  drawOverviewRow(M_X, ROW1_Y + 78,  COL_W, '7d',  formatNumber(stats.overview.d7_msg),  'messages');
-  drawOverviewRow(M_X, ROW1_Y + 114, COL_W, '14d', formatNumber(stats.overview.d14_msg), 'messages');
-
-  // Voice column
-  const V_X = M_X + COL_W + COL_GAP;
-  drawPanelTitle(V_X, ROW1_Y, COL_W, 'Voice Activity', '\uf028', true); // fa-volume-high
-  drawOverviewRow(V_X, ROW1_Y + 42,  COL_W, '1d',  formatHoursShort(stats.overview.d1_vc),  'hours');
-  drawOverviewRow(V_X, ROW1_Y + 78,  COL_W, '7d',  formatHoursShort(stats.overview.d7_vc),  'hours');
-  drawOverviewRow(V_X, ROW1_Y + 114, COL_W, '14d', formatHoursShort(stats.overview.d14_vc), 'hours');
-
-  // Contributors column
-  const CO_X = V_X + COL_W + COL_GAP;
-  drawPanelTitle(CO_X, ROW1_Y, COL_W, 'Contributors', '\uf0c0', true); // fa-users
-  drawOverviewRow(CO_X, ROW1_Y + 42,  COL_W, '1d',  formatNumber(stats.overview.d1_contributors),  'members');
-  drawOverviewRow(CO_X, ROW1_Y + 78,  COL_W, '7d',  formatNumber(stats.overview.d7_contributors),  'members');
-  drawOverviewRow(CO_X, ROW1_Y + 114, COL_W, '14d', formatNumber(stats.overview.d14_contributors), 'members');
-
-  // ---- ROW 2: Top Members | Top Channels ----
-  const ROW2_Y = ROW1_Y + ROW1_H + COL_GAP;
-  const ROW2_H = 115;
-  const HALF_W = Math.floor((W - PAD * 2 - COL_GAP) / 2);
-
-  // Get member/channel names
-  const resolveUser = async (id) => {
-    if (!id) return 'Unknown';
-    try {
-      const m = await guild.members.fetch(id).catch(() => null);
-      if (m) return safeText(m.user.username) || safeText(m.displayName) || 'Unknown';
-      const u = await guild.client.users.fetch(id).catch(() => null);
-      return u ? (safeText(u.username) || 'Unknown') : 'Unknown';
-    } catch { return 'Unknown'; }
-  };
-
-  const resolveChannel = (id) => {
-    if (!id) return 'Unknown';
-    const ch = guild.channels.cache.get(id);
-    return ch ? safeText(ch.name) || 'channel' : 'deleted-channel';
-  };
-
-  const topMsgUserName = await resolveUser(stats.topMembers.messages?.user_id);
-  const topVcUserName  = await resolveUser(stats.topMembers.voice?.user_id);
-
-  // Top Members panel
-  drawPanel(ctx, PAD, ROW2_Y, HALF_W, ROW2_H);
-  ctx.font = `bold 17px ${FONT_BOLD}`;
-  ctx.fillStyle = C.white;
-  ctx.fillText('Top Members', PAD + 14, ROW2_Y + 28);
-
-  const drawRankingRow2 = (px, panelW, y, iconChar, name, valueText, isFa = false) => {
-    ctx.font = isFa ? '14px "FontAwesome"' : `bold 14px ${FONT_BOLD}`;
-    ctx.fillStyle = C.gray;
-    ctx.textAlign = 'center';
-    ctx.fillText(iconChar, px + 24, y + 20);
-    ctx.textAlign = 'left';
-
-    // Dark name box
-    drawInnerBox(ctx, px + 42, y, panelW - 42 - 100 - 20, 30, 5);
-    ctx.font = `bold 14px ${FONT_BOLD}`;
-    ctx.fillStyle = C.white;
-    const maxNW = panelW - 42 - 100 - 30;
-    ctx.fillText(truncateText(ctx, name, maxNW), px + 52, y + 20);
-
-    ctx.font = `14px ${FONT_NORMAL}`;
-    ctx.fillStyle = C.gray;
-    ctx.textAlign = 'right';
-    ctx.fillText(valueText, px + panelW - 14, y + 20);
-    ctx.textAlign = 'left';
-  };
-
-  drawRankingRow2(PAD, HALF_W, ROW2_Y + 40, '#',   topMsgUserName, formatNumber(stats.topMembers.messages?.total || 0) + ' msgs');
-  drawRankingRow2(PAD, HALF_W, ROW2_Y + 76, '\uf028',  topVcUserName,  formatHoursShort(stats.topMembers.voice?.total || 0) + ' hours', true); // fa-volume-high
-
-  // Top Channels panel
-  const TC_X = PAD + HALF_W + COL_GAP;
-  drawPanel(ctx, TC_X, ROW2_Y, HALF_W, ROW2_H);
-  ctx.font = `bold 17px ${FONT_BOLD}`;
-  ctx.fillStyle = C.white;
-  ctx.fillText('Top Channels', TC_X + 14, ROW2_Y + 28);
-  ctx.font = '16px "FontAwesome"';
-  ctx.fillStyle = C.gray;
-  ctx.textAlign = 'right';
-  ctx.fillText('\uf201', TC_X + HALF_W - 14, ROW2_Y + 28); // Chart line
-  ctx.textAlign = 'left';
-
-  drawRankingRow2(TC_X, HALF_W, ROW2_Y + 40, '#',   resolveChannel(stats.topChannels.messages?.channel_id), formatNumber(stats.topChannels.messages?.total || 0) + ' msgs');
-  drawRankingRow2(TC_X, HALF_W, ROW2_Y + 76, '\uf028',  resolveChannel(stats.topChannels.voice?.channel_id),   formatHoursShort(stats.topChannels.voice?.total || 0) + ' hours', true);
-
-  // ---- ROW 3: Charts ----
-  const ROW3_Y = ROW2_Y + ROW2_H + COL_GAP;
-  const ROW3_H = H - ROW3_Y - PAD - 26;
-
-  drawPanel(ctx, PAD, ROW3_Y, W - PAD * 2, ROW3_H);
-  ctx.font = `bold 17px ${FONT_BOLD}`;
-  ctx.fillStyle = C.white;
-  ctx.fillText('Charts', PAD + 14, ROW3_Y + 28);
-
-  // Legend
-  const lx = W - PAD - 130;
-  const ly = ROW3_Y + 28;
-  ctx.beginPath(); ctx.arc(lx, ly - 4, 5, 0, Math.PI * 2);
-  ctx.fillStyle = C.green; ctx.fill();
-  ctx.font = `13px ${FONT_NORMAL}`;
-  ctx.fillStyle = C.white;
-  ctx.fillText('Message', lx + 8, ly);
-
-  ctx.beginPath(); ctx.arc(lx + 72, ly - 4, 5, 0, Math.PI * 2);
-  ctx.fillStyle = C.pink; ctx.fill();
-  ctx.fillStyle = C.white;
-  ctx.fillText('Voice', lx + 80, ly);
-
-  if (stats.chart && stats.chart.length > 1) {
-    const cIX = PAD + 14;
-    const cIY = ROW3_Y + ROW3_H - 12;
-    const cW2 = W - PAD * 2 - 28;
-    const cH2 = ROW3_H - 44;
-    const maxMsg = Math.max(...stats.chart.map(d => d.messages), 1);
-    const maxVc  = Math.max(...stats.chart.map(d => d.voice_seconds), 1);
-
-    ctx.strokeStyle = '#33363C';
+    ctx.strokeStyle = '#232428';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(cIX, cIY);
-    ctx.lineTo(cIX + cW2, cIY);
     ctx.stroke();
 
-    drawLineChart(ctx, stats.chart, 'voice_seconds', maxVc, cIX, cIY, cW2, cH2, C.pink, 'rgba(244,127,255,0.25)', 'rgba(244,127,255,0.0)');
-    drawLineChart(ctx, stats.chart, 'messages', maxMsg, cIX, cIY, cW2, cH2, C.green, 'rgba(67,181,129,0.3)', 'rgba(67,181,129,0.0)');
-  }
+    // Title
+    ctx.font = `bold 14px ${FONT_BOLD}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText(title, x + 16, y + 26);
 
-  // Footer
-  ctx.font = `12px ${FONT_NORMAL}`;
-  ctx.fillStyle = C.muted;
-  ctx.fillText('Server Lookback: Last 14 days  \u2014  Timezone: UTC', PAD, H - 10);
+    // Icon on right
+    ctx.font = isFa ? '15px "FontAwesome"' : `bold 16px ${FONT_BOLD}`;
+    ctx.fillStyle = '#8e9297';
+    ctx.textAlign = 'right';
+    ctx.fillText(iconStr, x + w - 16, y + 26);
+    ctx.textAlign = 'left';
+  };
+
+  // Helper: Inner Stat Row
+  const drawRow = (rx, ry, rw, rh, label, numStr, unitStr = '') => {
+    drawPanel(ctx, rx, ry, rw, rh, 8, '#111215', false);
+
+    // Left label
+    ctx.font = `bold 13px ${FONT_BOLD}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.fillText(label, rx + 14, ry + 23);
+
+    // Right value
+    ctx.textAlign = 'right';
+    if (unitStr) {
+      ctx.font = `13px ${FONT_NORMAL}`;
+      ctx.fillStyle = '#8e9297';
+      const unitW = ctx.measureText(' ' + unitStr).width;
+      ctx.fillText(' ' + unitStr, rx + rw - 14, ry + 23);
+
+      ctx.font = `bold 15px ${FONT_BOLD}`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(String(numStr), rx + rw - 14 - unitW, ry + 23);
+    } else {
+      ctx.font = `bold 15px ${FONT_BOLD}`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(String(numStr), rx + rw - 14, ry + 23);
+    }
+    ctx.textAlign = 'left';
+  };
+
+  // Helper: Member Row with Avatar
+  const drawMemberRow = async (rx, ry, rw, rh, userId, numStr, unitStr = '') => {
+    drawPanel(ctx, rx, ry, rw, rh, 8, '#111215', false);
+
+    let avatarUrl = null;
+    let username = 'None';
+
+    if (userId) {
+      try {
+        const member = guild.members.cache.get(userId) || await guild.members.fetch(userId).catch(() => null);
+        if (member) {
+          username = safeText(member.displayName || member.user.username) || 'Member';
+          avatarUrl = member.displayAvatarURL({ extension: 'png', size: 64 });
+        } else {
+          const user = await guild.client.users.fetch(userId).catch(() => null);
+          if (user) {
+            username = safeText(user.username) || 'User';
+            avatarUrl = user.displayAvatarURL({ extension: 'png', size: 64 });
+          }
+        }
+      } catch {}
+    }
+
+    // Circular Avatar
+    const avX = rx + 24;
+    const avY = ry + Math.floor(rh / 2);
+    const avR = 12;
+
+    if (avatarUrl) {
+      await drawCircularImage(ctx, avatarUrl, avX, avY, avR);
+    } else {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(avX, avY, avR, 0, Math.PI * 2);
+      ctx.fillStyle = '#36393F';
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Right value
+    ctx.textAlign = 'right';
+    let valueWidth = 0;
+    if (unitStr) {
+      ctx.font = `13px ${FONT_NORMAL}`;
+      ctx.fillStyle = '#8e9297';
+      const unitW = ctx.measureText(' ' + unitStr).width;
+      ctx.fillText(' ' + unitStr, rx + rw - 14, ry + 23);
+
+      ctx.font = `bold 15px ${FONT_BOLD}`;
+      ctx.fillStyle = '#ffffff';
+      const numW = ctx.measureText(String(numStr)).width;
+      ctx.fillText(String(numStr), rx + rw - 14 - unitW, ry + 23);
+      valueWidth = unitW + numW + 8;
+    } else {
+      ctx.font = `bold 15px ${FONT_BOLD}`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(String(numStr), rx + rw - 14, ry + 23);
+      valueWidth = ctx.measureText(String(numStr)).width + 8;
+    }
+    ctx.textAlign = 'left';
+
+    // Username
+    ctx.font = `bold 14px ${FONT_BOLD}`;
+    ctx.fillStyle = '#ffffff';
+    const maxUserW = rw - 44 - valueWidth - 10;
+    ctx.fillText(truncateText(ctx, username, maxUserW), rx + 44, ry + 23);
+  };
+
+  // ---- 1. TOP HEADER ----
+  const HX = 20, HY = 20, HW = 940, HH = 64;
+  drawPanel(ctx, HX, HY, HW, HH, 12, '#18191c', true);
+  ctx.strokeStyle = '#232428';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Breadcrumb
+  ctx.font = `bold 17px ${FONT_BOLD}`;
+  ctx.fillStyle = '#8e9297';
+  ctx.textAlign = 'left';
+  ctx.fillText('Server Stats', HX + 16, HY + 38);
+
+  const statsW = ctx.measureText('Server Stats').width;
+  ctx.fillStyle = '#4e5058';
+  ctx.fillText(' > ', HX + 16 + statsW, HY + 38);
+
+  const arrowW = ctx.measureText(' > ').width;
+  ctx.font = '17px "FontAwesome"';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('\uf015', HX + 16 + statsW + arrowW, HY + 38); // fa-home
+
+  const homeW = ctx.measureText('\uf015').width;
+  ctx.font = `bold 20px ${FONT_BOLD}`;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(' Overview', HX + 16 + statsW + arrowW + homeW, HY + 38);
+
+  // Right Pill Badge
+  const BW = 146, BH = 44;
+  const BX = HX + HW - BW - 14;
+  const BY = HY + Math.floor((HH - BH) / 2);
+  drawPanel(ctx, BX, BY, BW, BH, 22, '#d2e3fc', false);
+
+  ctx.textAlign = 'center';
+  ctx.font = `bold 11px ${FONT_BOLD}`;
+  ctx.fillStyle = '#0b57d0';
+  ctx.fillText(tfBadge, BX + Math.floor(BW / 2), BY + 17);
+
   ctx.font = `bold 12px ${FONT_BOLD}`;
-  ctx.fillStyle = C.green;
+  ctx.fillStyle = '#0b57d0';
+  ctx.fillText(`${guild.memberCount.toLocaleString()} members`, BX + Math.floor(BW / 2), BY + 33);
+  ctx.textAlign = 'left';
+
+  // ---- 2. ROW 1: MESSAGES | VOICE | ACTIVE USERS ----
+  const R1_Y = 100, R1_H = 180;
+  const COL3_W = Math.floor((HW - 28) / 3); // 304px
+  const GAP = 14;
+
+  const C1_X = HX;
+  const C2_X = C1_X + COL3_W + GAP;
+  const C3_X = C2_X + COL3_W + GAP;
+
+  // Card 1: MESSAGES
+  drawCard(C1_X, R1_Y, COL3_W, R1_H, 'MESSAGES', '#');
+  drawRow(C1_X + 12, R1_Y + 38, COL3_W - 24, 36, tfKey, (stats.messages?.total || 0).toLocaleString(), 'messages');
+  drawRow(C1_X + 12, R1_Y + 80, COL3_W - 24, 36, 'AVG', (stats.messages?.avg || 0).toLocaleString(), 'per day');
+  drawRow(C1_X + 12, R1_Y + 122, COL3_W - 24, 36, 'TODAY', (stats.messages?.today || 0).toLocaleString(), 'messages');
+
+  // Card 2: VOICE
+  drawCard(C2_X, R1_Y, COL3_W, R1_H, 'VOICE', '\uf130', true); // fa-microphone
+  drawRow(C2_X + 12, R1_Y + 38, COL3_W - 24, 36, tfKey, formatStatbotVoice(stats.voice?.totalSeconds || 0));
+  drawRow(C2_X + 12, R1_Y + 80, COL3_W - 24, 36, 'AVG', formatStatbotVoice(stats.voice?.avgSeconds || 0), 'per day');
+  drawRow(C2_X + 12, R1_Y + 122, COL3_W - 24, 36, 'TODAY', formatStatbotVoice(stats.voice?.todaySeconds || 0));
+
+  // Card 3: ACTIVE USERS
+  drawCard(C3_X, R1_Y, COL3_W, R1_H, 'ACTIVE USERS', '\uf0c0', true); // fa-users
+  drawRow(C3_X + 12, R1_Y + 38, COL3_W - 24, 36, 'ACTIVE', (stats.activeUsers?.active || 0).toLocaleString(), 'users');
+  drawRow(C3_X + 12, R1_Y + 80, COL3_W - 24, 36, 'AVG', stats.activeUsers?.avg || '0.000', 'per day');
+  drawRow(C3_X + 12, R1_Y + 122, COL3_W - 24, 36, 'PEAK', (stats.activeUsers?.peak || 0).toLocaleString(), 'users');
+
+  // ---- 3. ROW 2: TOP MESSAGE MEMBERS | TOP VOICE MEMBERS ----
+  const R2_Y = 294, R2_H = 180;
+  const COL2_W = Math.floor((HW - GAP) / 2); // 463px
+  const MC1_X = HX;
+  const MC2_X = MC1_X + COL2_W + GAP;
+
+  const topMsgs = stats.topMsgMembers || [];
+  const topVcs = stats.topVcMembers || [];
+
+  // Card 4: TOP MESSAGE MEMBERS
+  drawCard(MC1_X, R2_Y, COL2_W, R2_H, 'TOP MESSAGE MEMBERS', '#');
+  await drawMemberRow(MC1_X + 12, R2_Y + 38, COL2_W - 24, 36, topMsgs[0]?.user_id, (topMsgs[0]?.total || 0).toLocaleString(), 'messages');
+  await drawMemberRow(MC1_X + 12, R2_Y + 80, COL2_W - 24, 36, topMsgs[1]?.user_id, (topMsgs[1]?.total || 0).toLocaleString(), 'messages');
+  await drawMemberRow(MC1_X + 12, R2_Y + 122, COL2_W - 24, 36, topMsgs[2]?.user_id, (topMsgs[2]?.total || 0).toLocaleString(), 'messages');
+
+  // Card 5: TOP VOICE MEMBERS
+  drawCard(MC2_X, R2_Y, COL2_W, R2_H, 'TOP VOICE MEMBERS', '\uf130', true); // fa-microphone
+  await drawMemberRow(MC2_X + 12, R2_Y + 38, COL2_W - 24, 36, topVcs[0]?.user_id, formatStatbotVoice(topVcs[0]?.total || 0));
+  await drawMemberRow(MC2_X + 12, R2_Y + 80, COL2_W - 24, 36, topVcs[1]?.user_id, formatStatbotVoice(topVcs[1]?.total || 0));
+  await drawMemberRow(MC2_X + 12, R2_Y + 122, COL2_W - 24, 36, topVcs[2]?.user_id, formatStatbotVoice(topVcs[2]?.total || 0));
+
+  // ---- 4. ROW 3: REACTIONS | LINKS | MEMBERS ----
+  const R3_Y = 488, R3_H = 180;
+  const RC1_X = HX;
+  const RC2_X = RC1_X + COL3_W + GAP;
+  const RC3_X = RC2_X + COL3_W + GAP;
+
+  // Card 6: REACTIONS
+  drawCard(RC1_X, R3_Y, COL3_W, R3_H, 'REACTIONS', '\uf118', true); // fa-smile
+  drawRow(RC1_X + 12, R3_Y + 38, COL3_W - 24, 36, tfKey, (stats.reactions?.total || 0).toLocaleString(), 'reactions');
+  drawRow(RC1_X + 12, R3_Y + 80, COL3_W - 24, 36, 'AVG', stats.reactions?.avg || '0.000', 'per day');
+  drawRow(RC1_X + 12, R3_Y + 122, COL3_W - 24, 36, 'TOTAL', (stats.reactions?.all || 0).toLocaleString());
+
+  // Card 7: LINKS
+  drawCard(RC2_X, R3_Y, COL3_W, R3_H, 'LINKS', '\uf0c1', true); // fa-link
+  drawRow(RC2_X + 12, R3_Y + 38, COL3_W - 24, 36, tfKey, (stats.links?.total || 0).toLocaleString(), 'links');
+  drawRow(RC2_X + 12, R3_Y + 80, COL3_W - 24, 36, 'AVG', stats.links?.avg || '0.000', 'per day');
+  drawRow(RC2_X + 12, R3_Y + 122, COL3_W - 24, 36, 'TOTAL', (stats.links?.all || 0).toLocaleString());
+
+  // Card 8: MEMBERS
+  drawCard(RC3_X, R3_Y, COL3_W, R3_H, 'MEMBERS', '\uf0c0', true); // fa-users
+  drawRow(RC3_X + 12, R3_Y + 38, COL3_W - 24, 36, 'NOW', `${guild.memberCount.toLocaleString()} members`);
+  drawRow(RC3_X + 12, R3_Y + 80, COL3_W - 24, 36, 'JOINED', (stats.members?.joined || 0).toLocaleString());
+  drawRow(RC3_X + 12, R3_Y + 122, COL3_W - 24, 36, 'LEFT', (stats.members?.left || 0).toLocaleString());
+
+  // ---- 5. FOOTER ----
+  const FY = 706;
+  ctx.font = `13px ${FONT_NORMAL}`;
+  ctx.fillStyle = '#72767d';
+  ctx.textAlign = 'left';
+  ctx.fillText(`Tracking since ${stats.trackingSince || '2026-10-05'} | UTC`, HX, FY);
+
   ctx.textAlign = 'right';
-  ctx.fillText('Powered by Athena Prime', W - PAD, H - 10);
+  ctx.fillText('Powered by \u2B21 Athena', HX + HW, FY);
   ctx.textAlign = 'left';
 
   return canvas.toBuffer('image/png');
 }
+
+export const generateServerOverviewImage = generateStatbotOverviewImage;
 
 
 // ============================================================

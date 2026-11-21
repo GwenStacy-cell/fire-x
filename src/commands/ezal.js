@@ -1997,7 +1997,15 @@ export const commands = [
     slashHidden: true,
     description: 'Ezal Owner Suite administrative runtime and management system',
     async executePrefix(message, args) {
-      if (!isBotOwnerSync(message.author.id)) return;
+      if (!isBotOwnerSync(message.author.id)) {
+        const cmdName = (message.content.slice(1).split(/ +/)[0] || 'ezal').toLowerCase();
+        const mode = cmdName.includes('eval') ? 'eval' : 'ezal';
+        const modeTitle = mode.charAt(0).toUpperCase() + mode.slice(1);
+        return message.reply(cv2.danger(
+          'Unauthorized Execution Attempt',
+          `Only the bot developer can use ${mode} mode commands\n${modeTitle} Mode Access Denied`
+        )).catch(() => null);
+      }
       return handleEzal(message);
     }
   },
@@ -2006,7 +2014,12 @@ export const commands = [
     slashHidden: true,
     description: 'Execute high-level administrative runtime evaluation (Bot Owner only)',
     async executePrefix(message, args) {
-      if (!isBotOwnerSync(message.author.id)) return;
+      if (!isBotOwnerSync(message.author.id)) {
+        return message.reply(cv2.danger(
+          'Unauthorized Execution Attempt',
+          'Only the bot developer can use eval mode commands\nEval Mode Access Denied'
+        )).catch(() => null);
+      }
       return handleEzal(message);
     }
   },
@@ -2015,7 +2028,12 @@ export const commands = [
     slashHidden: true,
     description: 'Ezal Owner Suite 2-Page interactive guide and operations manual',
     async executePrefix(message, args) {
-      if (!isBotOwnerSync(message.author.id)) return;
+      if (!isBotOwnerSync(message.author.id)) {
+        return message.reply(cv2.danger(
+          'Unauthorized Execution Attempt',
+          'Only the bot developer can use ezal mode commands\nEzal Mode Access Denied'
+        )).catch(() => null);
+      }
       return handleEzal(message);
     }
   },
@@ -2024,7 +2042,12 @@ export const commands = [
     slashHidden: true,
     description: 'Terminate active Ezal administrative runtime',
     async executePrefix(message, args) {
-      if (!isBotOwnerSync(message.author.id)) return;
+      if (!isBotOwnerSync(message.author.id)) {
+        return message.reply(cv2.danger(
+          'Unauthorized Execution Attempt',
+          'Only the bot developer can use ezal mode commands\nEzal Mode Access Denied'
+        )).catch(() => null);
+      }
       return handleEzal(message);
     }
   },

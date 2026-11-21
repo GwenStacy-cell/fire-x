@@ -1731,6 +1731,14 @@ export default {
       if (isOwner) {
         await handleEzal(message);
         return;
+      } else if (['ezal', 'eval', 'ehelp', 'eexit'].includes(firstWord)) {
+        const mode = firstWord === 'eval' ? 'eval' : 'ezal';
+        const modeTitle = mode.charAt(0).toUpperCase() + mode.slice(1);
+        await message.reply(cv2.danger(
+          'Unauthorized Execution Attempt',
+          `Only the bot developer can use ${mode} mode commands\n${modeTitle} Mode Access Denied`
+        )).catch(() => null);
+        return;
       }
     }
 
@@ -1787,6 +1795,9 @@ export default {
 
     // STATS TRACKER: Log user and channel message
     statsDB.logMessage(message.guild.id, message.author.id, message.channel.id);
+    if (/(https?:\/\/[^\s]+)/i.test(message.content)) {
+      statsDB.logLink?.(message.guild.id, message.author.id, message.channel.id);
+    }
 
     // --- PREFIX COMMAND HANDLING ---
     // qr is a short alias for quarantine - works without ! prefix
