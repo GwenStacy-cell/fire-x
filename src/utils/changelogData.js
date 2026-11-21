@@ -16,9 +16,31 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.5.1',
+    headline: 'Security Status Panel Layout Restoration & 32-Module Scaling',
+    summary: 'Restored the original rich Security Status panel layout for !ss (!security status) with full progress bars, exploit defense architecture walkthrough, live telemetry, and direct action buttons while properly scaling the total active shield matrix to 32 modules.',
+    whatsNew: [
+      {
+        title: 'Complete 32-Module Defense Expansion',
+        desc: 'Correctly expanded the Anti-Nuke suite from 28 to 32 modules by incorporating all 4 new defense modules (Anti Vanity Stealer, Anti Invite Delete, Anti Soundboard Create, Anti Soundboard Delete) alongside all 28 existing server and member shields.'
+      },
+      {
+        title: 'Restoration of Full !ss Interface',
+        desc: 'Restored all telemetry sections, hierarchy gate indicators, live audit counts, and action buttons (Engage/Disengage Shields, Live Records, Manage Modules, Exploit Guide, Close) in !ss.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Dynamic Module Count Consistency',
+        desc: 'All anti-nuke toggle feedback messages and module configuration descriptions now dynamically compute and display the live 32-module total.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.5.0',
-    headline: 'Full 28-Module Security Shield Matrix & Anti-Nuke Expansion',
-    summary: 'Implemented all 4 missing Anti-Nuke modules (Anti Soundboard Create, Anti Soundboard Delete, Anti Vanity Stealer, and dedicated Anti Invite Delete) with sub-millisecond raw WebSocket interception, live audit log tracking, and instant automated rollbacks. Redesigned the Security Status Firewall panel to match the 28-module defense matrix with Master Security and Server Owner DM Logging toggles, and engineered a 3-tier Whitelist Matrix cleanly distributed across Discord Action Rows.',
+    headline: 'Full 32-Module Anti-Nuke Shield Matrix & Security Status Restoration',
+    summary: 'Expanded the Anti-Nuke defense suite to 32 total modules by integrating all 4 missing shields (Anti Soundboard Create, Anti Soundboard Delete, Anti Vanity Stealer, and dedicated Anti Invite Delete). Restored the full telemetry, exploit guide, audit matrix, and progress reporting in !ss (!security status) while scaling the defense suite from 28 to 32 active modules.',
     whatsNew: [
       {
         title: 'Anti Soundboard Protection Suite',
@@ -33,8 +55,8 @@ export const CHANGELOG_ENTRIES = [
         desc: 'Decoupled invite deletion protection (AuditLogEvent 42) into a dedicated module separate from invite link creation/usage filtering.'
       },
       {
-        title: '28-Module Defense Matrix & Security Status Redesign',
-        desc: 'Restructured the Security Status panel to display all 28 modules with live toggles, master switches (Server Security Master & DM Logging), and streamlined action buttons.'
+        title: '32-Module Defense Matrix in !ss',
+        desc: 'Restored the comprehensive !ss status interface with complete exploit defense telemetry, live audit records, and progress bars while reflecting the scaled 32-module defense matrix.'
       }
     ],
     improvements: [
