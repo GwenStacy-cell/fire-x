@@ -1030,14 +1030,51 @@ export default {
       const isServerOwner = message.author.id === message.guild.ownerId;
       const isAdmin = Boolean(message.member?.permissions?.has(PermissionFlagsBits.ManageMessages));
       
+      const filterToModuleMap = {
+        'Swear Words': 'blacklistedWords',
+        'Word Filter': 'blacklistedWords',
+        'blacklistedWords': 'blacklistedWords',
+        'antiWordFilter': 'blacklistedWords',
+        'URL Filter': 'antiLink',
+        'antiLink': 'antiLink',
+        'Anti Invite': 'antiInvite',
+        'antiInvite': 'antiInvite',
+        'Spam Filter': 'antiSpam',
+        'Anti Flood': 'antiSpam',
+        'antiSpam': 'antiSpam',
+        'Mass Mentions': 'antiMassMention',
+        'antiMassMention': 'antiMassMention',
+        'Big Fonts': 'antiBigFonts',
+        'antiBigFonts': 'antiBigFonts',
+        'Selfbot Detection': 'selfbotDetection',
+        'selfbotDetection': 'selfbotDetection',
+        'Hidden URL Filter': 'antiHiddenUrl',
+        'antiHiddenUrl': 'antiHiddenUrl',
+        'File Check': 'antiFileCheck',
+        'antiFileCheck': 'antiFileCheck',
+        'AI Toxicity': 'antiToxicity',
+        'antiToxicity': 'antiToxicity',
+        'Anti Phishing': 'antiPhishing',
+        'Quarantine': 'quarantine',
+        'quarantine': 'quarantine'
+      };
+
       const checkBypass = (filterName, hasImmunity = false) => {
         if (message.author.id === message.client.user.id || isBotOwner || isExtraOwner || isServerOwner || isAdmin || hasImmunity) return true;
+        
+        // 1. Direct Whitelist Database Lookup (User or Roles)
+        const mappedModule = filterToModuleMap[filterName] || filterName;
+        if (db.isWhitelisted(message.guild, message.member || message.author, mappedModule)) return true;
+        if (db.isWhitelisted(message.guild, message.member || message.author, filterName)) return true;
+        if (db.isWhitelisted(message.guild, message.member || message.author, 'all')) return true;
+
+        // 2. Automod Bypasses in guild config
         const bypasses = dbConfig.automodBypasses || {};
         const memberRoles = message.member?.roles?.cache;
         if (!memberRoles) return false;
         
         for (const [roleId, allowedFilters] of Object.entries(bypasses)) {
-          if (memberRoles.has(roleId) && allowedFilters.includes(filterName)) {
+          if (memberRoles.has(roleId) && (allowedFilters.includes(filterName) || allowedFilters.includes(mappedModule))) {
             return true;
           }
         }
@@ -1417,7 +1454,7 @@ export default {
       }
 
       // 2. WORD BLACKLIST FILTER
-      if (!checkBypass('Swear Words', hasAntiSpamImmunity)) {
+      if (!checkBypass('Swear Words')) {
         if (dbConfig.wordFilterEnabled !== false && dbConfig.blacklistWords && dbConfig.blacklistWords.length > 0) {
           const msgLower = message.content.toLowerCase();
           const matchedWords = dbConfig.blacklistWords.filter(word => {

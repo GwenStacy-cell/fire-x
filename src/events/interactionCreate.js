@@ -4542,7 +4542,31 @@ async function handleSecurityInteractions(interaction, guild) {
 
   let wData = db.getWhitelist(guild.id, targetId, type) || { modules: [], triggerLimit: 0, currentUsage: 0 };
 
-  if (action === 'select') {
+  if (action === 'selectnuke') {
+    const { ANTI_NUKE_MODULES, AUTOMOD_MODULES, ALL_WHITELIST_MODULES } = await import('../commands/security.js');
+    const automodKeys = Object.keys(AUTOMOD_MODULES);
+    const existingAutomod = wData.modules.includes('all')
+      ? automodKeys
+      : wData.modules.filter(m => automodKeys.includes(m));
+    const newModules = Array.from(new Set([...interaction.values, ...existingAutomod]));
+    if (newModules.length === Object.keys(ALL_WHITELIST_MODULES).length) {
+      wData.modules = ['all'];
+    } else {
+      wData.modules = newModules;
+    }
+  } else if (action === 'selectautomod') {
+    const { ANTI_NUKE_MODULES, AUTOMOD_MODULES, ALL_WHITELIST_MODULES } = await import('../commands/security.js');
+    const nukeKeys = Object.keys(ANTI_NUKE_MODULES);
+    const existingNuke = wData.modules.includes('all')
+      ? nukeKeys
+      : wData.modules.filter(m => nukeKeys.includes(m));
+    const newModules = Array.from(new Set([...existingNuke, ...interaction.values]));
+    if (newModules.length === Object.keys(ALL_WHITELIST_MODULES).length) {
+      wData.modules = ['all'];
+    } else {
+      wData.modules = newModules;
+    }
+  } else if (action === 'select') {
     wData.modules = interaction.values;
   } else if (action === 'all') {
     wData.modules = ['all'];
@@ -4555,7 +4579,7 @@ async function handleSecurityInteractions(interaction, guild) {
     wData.currentUsage = 0;
   }
 
-  if (wData.modules.length === 0) {
+  if (wData.modules.length === 0 && wData.triggerLimit === 0) {
     db.updateWhitelist(guild.id, targetId, type, null); 
   } else {
     db.updateWhitelist(guild.id, targetId, type, wData);

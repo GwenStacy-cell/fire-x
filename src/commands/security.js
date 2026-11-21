@@ -2517,10 +2517,21 @@ export async function executeQuarantine(guild, targetMember, moderator, reason, 
     };
   }
 
-  // 2. Extraowner Immunity (Bypass if moderator is Bot Owner/Server Owner)
+  // 2. Extraowner Immunity (Extra Owners can NEVER be quarantined by automated systems or normal moderators)
   if (isExtraOwner(guild.id, targetMember.id)) {
     if (!isBotOwnerSync(moderator.id) && guild.ownerId !== moderator.id) {
-       return { success: false, message: ' This user is an Extra Owner and cannot be quarantined by regular moderators.' };
+       return { success: false, message: ' This user is an Extra Owner and is immune to quarantine.' };
+    }
+  }
+
+  // 3. Whitelist Quarantine Immunity Check
+  if (db.isWhitelisted(guild, targetMember.id, 'quarantine')) {
+    if (!isBotOwnerSync(moderator.id) && guild.ownerId !== moderator.id) {
+      return { 
+        success: false, 
+        embed: cv2.danger('Immune Member', `Command overridden. **${targetMember.user?.tag || targetMember.id}** is whitelisted with Quarantine Immunity.`),
+        message: 'This user is whitelisted for Quarantine Immunity and cannot be quarantined.' 
+      };
     }
   }
 
@@ -4064,6 +4075,51 @@ export async function getSecurityHealthPanel(guild) {
   };
 }
 
+export const ANTI_NUKE_MODULES = {
+  antiRoleCreate: 'Anti Role Create',
+  antiRoleDelete: 'Anti Role Delete',
+  antiRoleUpdate: 'Anti Role Update',
+  antiRolePermUpdate: 'Anti Role Perm Update',
+  antiMemberRoleUpdate: 'Anti Member Role Update',
+  antiRoleReorder: 'Anti Role Position',
+  antiChannelCreate: 'Anti Channel Create',
+  antiChannelDelete: 'Anti Channel Delete',
+  antiChannelUpdate: 'Anti Channel Update',
+  antiChannelPermUpdate: 'Anti Channel Perm Update',
+  antiChannelReorder: 'Anti Channel Position',
+  antiChannelNameMod: 'Anti Channel Name Mod',
+  antiEmojiCreate: 'Anti Emoji Create',
+  antiEmojiDelete: 'Anti Emoji Delete',
+  antiEmojiUpdate: 'Anti Emoji Update',
+  antiWebhooks: 'Anti Webhooks',
+  antiBotAdd: 'Anti Bot Add',
+  antiServerUpdate: 'Anti Server Update',
+  antiBan: 'Anti Ban',
+  antiKick: 'Anti Kick',
+  antiUnban: 'Anti Unban',
+  antiLinkedRole: 'Anti Linked Role Exploit',
+  antiInviteDelete: 'Anti Invite Delete',
+  antiMemberPurge: 'Anti Member Prune'
+};
+
+export const AUTOMOD_MODULES = {
+  blacklistedWords: 'Blacklisted Words Filter',
+  antiLink: 'Anti-Link / URL Filter',
+  antiInvite: 'Anti-Invite Link Filter',
+  antiSpam: 'Anti-Spam & Flood Filter',
+  antiMassMention: 'Anti-Mass Mention Filter',
+  antiBigFonts: 'Anti-Caps / Big Fonts',
+  antiHiddenUrl: 'Anti-Hidden / Deceptive Links',
+  antiFileCheck: 'Anti-File Extension Filter',
+  antiToxicity: 'AI Toxicity & Doxxing Shield',
+  quarantine: 'Quarantine Immunity'
+};
+
+export const ALL_WHITELIST_MODULES = {
+  ...ANTI_NUKE_MODULES,
+  ...AUTOMOD_MODULES
+};
+
 export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
   const config = db.getGuildConfig(guild.id);
   const wData = db.getWhitelist(guild.id, targetId, type) || { modules: [], triggerLimit: 0, currentUsage: 0 };
@@ -4080,46 +4136,27 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
     else targetName = `<@&${targetId}>`;
   }
 
-  const modLabels = {
-    antiRoleCreate: 'Anti Role Create',
-    antiRoleDelete: 'Anti Role Delete',
-    antiRoleUpdate: 'Anti Role Update',
-    antiRolePermUpdate: 'Anti Role Perm Update',
-    antiMemberRoleUpdate: 'Anti Member Role Update',
-    antiRoleReorder: 'Anti Role Reorder',
-    antiChannelCreate: 'Anti Channel Create',
-    antiChannelDelete: 'Anti Channel Delete',
-    antiChannelUpdate: 'Anti Channel Update',
-    antiChannelPermUpdate: 'Anti Channel Perm Update',
-    antiChannelReorder: 'Anti Channel Reorder',
-    antiChannelNameMod: 'Anti Channel Name Mod',
-    antiEmojiCreate: 'Anti Emoji Create',
-    antiEmojiDelete: 'Anti Emoji Delete',
-    antiEmojiUpdate: 'Anti Emoji Update',
-    antiWebhooks: 'Anti Webhooks',
-    antiBotAdd: 'Anti Bot Add',
-    antiServerUpdate: 'Anti Server Update',
-    antiBan: 'Anti Ban',
-    antiKick: 'Anti Kick',
-    antiUnban: 'Anti Unban',
-    antiInvite: 'Anti Invite',
-    antiLinkedRole: 'Anti Linked Role Exploit'
-  };
-
   const emojiOn = '<:on:1533844867191406672>'; 
   const emojiOff = '<:off:1533844858983157851>'; 
   
-  const modulesKeys = Object.keys(modLabels);
+  const nukeKeys = Object.keys(ANTI_NUKE_MODULES);
+  const automodKeys = Object.keys(AUTOMOD_MODULES);
+  const allKeys = Object.keys(ALL_WHITELIST_MODULES);
   
-  let moduleListText = '';
-  
-  for (const k of modulesKeys) {
+  let nukeListText = '';
+  for (const k of nukeKeys) {
     const isEnabled = wData.modules.includes('all') || wData.modules.includes(k);
-    moduleListText += `> ${isEnabled ? emojiOn : emojiOff} ${modLabels[k]}\n`;
+    nukeListText += `> ${isEnabled ? emojiOn : emojiOff} **${ANTI_NUKE_MODULES[k]}**\n`;
   }
 
-  const enabledCount = wData.modules.includes('all') ? modulesKeys.length : modulesKeys.filter(k => wData.modules.includes(k)).length;
-  const accessProgress = renderSleekProgressBar(enabledCount, modulesKeys.length, 14);
+  let automodListText = '';
+  for (const k of automodKeys) {
+    const isEnabled = wData.modules.includes('all') || wData.modules.includes(k);
+    automodListText += `> ${isEnabled ? emojiOn : emojiOff} **${AUTOMOD_MODULES[k]}**\n`;
+  }
+
+  const enabledCount = wData.modules.includes('all') ? allKeys.length : allKeys.filter(k => wData.modules.includes(k)).length;
+  const accessProgress = renderSleekProgressBar(enabledCount, allKeys.length, 14);
 
   let targetAvatarUrl = null;
   if (type === 'users') {
@@ -4129,14 +4166,17 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
     targetAvatarUrl = guild.iconURL({ extension: 'png', size: 256, forceStatic: true });
   }
 
-  const limitText = wData.triggerLimit === 0 ? '0' : wData.triggerLimit;
+  const limitText = wData.triggerLimit === 0 ? 'Unlimited (0)' : `${wData.triggerLimit} Actions`;
   
   const description = 
     `# WHITELIST ACCESS\n` +
     `-# **${targetName}** (${targetId})\n\n` +
-    `-# ${BULLET_EMOJI} **Authorized Categories:** ${accessProgress} (${enabledCount}/${modulesKeys.length} Whitelisted)\n` +
+    `-# ${BULLET_EMOJI} **Authorized Categories:** ${accessProgress} (${enabledCount}/${allKeys.length} Whitelisted)\n` +
     `-# ${BULLET_EMOJI} **Custom Action Limits:** \`${limitText}\`\n\n` +
-    moduleListText;
+    `### 🛡️ Anti-Nuke Shields\n` +
+    nukeListText +
+    `\n### 💬 Auto-Mod & Chat Protections\n` +
+    automodListText;
 
   const panelContainer = {
     type: 17,
@@ -4157,12 +4197,25 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
       }
     );
   } else {
-    const options = modulesKeys.map(k => {
+    const nukeOptions = nukeKeys.map(k => {
       const isEnabled = wData.modules.includes('all') || wData.modules.includes(k);
       return {
-        label: modLabels[k],
+        label: ANTI_NUKE_MODULES[k],
         value: k,
-        emoji: isEnabled ? { id: '1533844867191406672' } : { id: '1533844858983157851' }
+        description: `Anti-Nuke Protection: ${ANTI_NUKE_MODULES[k]}`,
+        emoji: isEnabled ? { id: '1533844867191406672' } : { id: '1533844858983157851' },
+        default: isEnabled
+      };
+    }).slice(0, 25);
+
+    const automodOptions = automodKeys.map(k => {
+      const isEnabled = wData.modules.includes('all') || wData.modules.includes(k);
+      return {
+        label: AUTOMOD_MODULES[k],
+        value: k,
+        description: `Chat & Auto-Mod Bypass: ${AUTOMOD_MODULES[k]}`,
+        emoji: isEnabled ? { id: '1533844867191406672' } : { id: '1533844858983157851' },
+        default: isEnabled
       };
     }).slice(0, 25);
 
@@ -4189,11 +4242,24 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
         components: [
           {
             type: 3,
-            custom_id: `wl_select_${type}_${targetId}`,
-            placeholder: 'Select a permissions category...',
-            min_values: 1,
-            max_values: options.length,
-            options
+            custom_id: `wl_selectnuke_${type}_${targetId}`,
+            placeholder: '🛡️ Whitelist Anti-Nuke Shields (Select multiple)...',
+            min_values: 0,
+            max_values: nukeOptions.length,
+            options: nukeOptions
+          }
+        ]
+      },
+      {
+        type: 1,
+        components: [
+          {
+            type: 3,
+            custom_id: `wl_selectautomod_${type}_${targetId}`,
+            placeholder: '💬 Whitelist Auto-Mod & Chat Filters (Select multiple)...',
+            min_values: 0,
+            max_values: automodOptions.length,
+            options: automodOptions
           }
         ]
       },

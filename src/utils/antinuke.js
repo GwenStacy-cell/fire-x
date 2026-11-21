@@ -1300,6 +1300,11 @@ export function isCondemned(guildId, userId) {
 }
 
 export function condemn(guildId, userId) {
+  if (!guildId || !userId) return;
+  // Extra owners and Bot Owner can NEVER be condemned
+  if (db.isExtraOwner(guildId, userId)) return;
+  const ownerIdEnv = process.env.OWNER_ID;
+  if (ownerIdEnv && userId === ownerIdEnv) return;
   if (!condemnedNukers.has(guildId)) condemnedNukers.set(guildId, new Set());
   condemnedNukers.get(guildId).add(userId);
   setTimeout(() => condemnedNukers.get(guildId)?.delete(userId), 180_000);
@@ -1637,6 +1642,13 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
   const punishment = forceBan ? 'ban' : (config.antiNukePunishment || 'ban');
   const reason = `[ATHENA ANTI-NUKE] Hostile neutralized: ${eventType}`;
   let result = 'None applied';
+
+  if (!executor || !executor.id) return result;
+  if (executor.id === guild.ownerId) return result;
+  if (executor.id === guild.client.user.id) return result;
+  if (isBotOwnerSync(executor.id)) return result;
+  if (db.isExtraOwner(guild.id, executor.id)) return result;
+  if (db.isWhitelisted(guild, executor.id, eventType)) return result;
 
   if (isPunishmentActive(guild.id, executor.id)) return result;
   lockPunishment(guild.id, executor.id);

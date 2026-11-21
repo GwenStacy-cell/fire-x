@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.8',
+    headline: 'Whitelist Defense Matrix Expansion & Universal Extra Owner Immunity',
+    summary: 'Expanded the Whitelist System (!whitelist / !wl) to support full granular whitelisting for both Anti-Nuke Shields (24 modules) and Auto-Mod / Chat Protections (10 modules, including Blacklisted Words, Anti-Link, Anti-Invite, Anti-Spam, Mass Mentions, Big Fonts, Hidden URLs, File Checks, AI Toxicity, and Quarantine). Partitioned whitelist management into two sleek action rows with multi-select menus to remain strictly within Discord limits. Established universal, unconditional immunity for Extra Owners across all auto-mod filters, anti-nuke punishers, quarantine triggers, and theater mode routines.',
+    whatsNew: [
+      {
+        title: 'Auto-Mod & Chat Protections Whitelisting',
+        desc: 'Added 10 new Auto-Mod & Chat Protection modules to the Whitelist Manager: Blacklisted Words Filter, Anti-Link, Anti-Invite, Anti-Spam & Flood, Anti-Mass Mention, Anti-Caps / Big Fonts, Anti-Hidden / Deceptive Links, Anti-File Extension Block, AI Toxicity & Doxxing Shield, and Quarantine Immunity.'
+      },
+      {
+        title: 'Dual-Select Whitelist Management Menu',
+        desc: 'Redesigned the Whitelist Manager panel into two dedicated select menus across Action Rows: one for Anti-Nuke Shields and one for Auto-Mod & Chat Filters, completely avoiding Discord 25-option limits while providing live pre-selected default states.'
+      },
+      {
+        title: 'Universal Extra Owner Immunity Matrix',
+        desc: 'Hardened all auto-mod bypass routines, anti-nuke punishers, condemnation locks, quarantine executors, and voice theater mode sentinels with instant in-memory Extra Owner ID verification, guaranteeing Extra Owners can never be restricted, banned, kicked, warned, or stripped of rank.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Resolved Database isWhitelisted Security Gate',
+        desc: 'Fixed an architectural quirk in db.isWhitelisted where disabled security was returning true for unrelated chat filters, ensuring precise module-specific whitelist authorization across all event listeners.'
+      },
+      {
+        title: 'Quarantine Whitelist Immunity & Theater Shield',
+        desc: 'Added explicit Quarantine Immunity to the whitelist matrix and purged accidental extra owner stripping logic from Theater Mode voice sentinels.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.7',
     headline: 'Anti-Nuke Permission Overwrite Self-Loop Elimination & Extra Owner Privilege Immunity',
     summary: 'Fixed a critical recursive feedback loop where premature channel permission overwrite rollbacks triggered ping-pong channelUpdate events back and forth. Eliminated premature pre-reverts across channelUpdate, roleUpdate, and guildUpdate so rollbacks strictly execute via directStrike only when an executor is confirmed unauthorized, guaranteeing Extra Owners and Server Owners are 100% immune from false tampering rollbacks.',

@@ -804,7 +804,6 @@ class Database {
 
     const config = this.getGuildConfig(guild.id);
     if (!config.whitelist) return false;
-    if (!config.securityEnabled && !config.antiNukeEnabled) return true; // If security is globally disabled, everyone is effectively whitelisted/allowed
 
     let wData = null;
     let isUserWhitelist = false;
@@ -823,7 +822,7 @@ class Database {
 
     if (!wData && typeof memberOrId === 'object' && memberOrId.roles && config.whitelist.roles) {
       for (const [roleId, rData] of Object.entries(config.whitelist.roles)) {
-        if (memberOrId.roles.cache.has(roleId)) {
+        if (memberOrId.roles.cache?.has?.(roleId) || (Array.isArray(memberOrId.roles) && memberOrId.roles.includes(roleId))) {
           if (rData.modules.includes('all') || rData.modules.includes(eventType)) {
             wData = rData;
             targetId = roleId;

@@ -151,8 +151,10 @@ export default {
                   culpritUser = executor;
                 }
                 
-                // Do not quarantine bot owner or server owner
+                // Do not quarantine bot owner, server owner, extra owner, or whitelisted members
                 if (culpritId === guild.ownerId) return;
+                if (db.isExtraOwner(guild.id, culpritId)) return;
+                if (db.isWhitelisted(guild, culpritId, 'all')) return;
                 const { isBotOwnerSync } = await import('../utils/helpers.js');
                 if (isBotOwnerSync(culpritId)) return;
                 
@@ -181,16 +183,11 @@ export default {
                   // QUARANTINE
                   theaterStrikes.delete(strikeKey);
                   const { executeQuarantine } = await import('../commands/security.js');
-                  
-                  // Strip extra owner
-                  if (db.isExtraOwner(guild.id, culpritId)) {
-                    db.removeExtraOwner(guild.id, culpritId);
-                  }
 
                   const dmEmbed = new EmbedBuilder()
                     .setColor(accentInt)
                     .setTitle('Quarantined')
-                    .setDescription(`${warnEmoji}\n-# You have been quarantined in **${guild.name}** and stripped of any extra permissions for repeatedly interrupting Theater Mode.`);
+                    .setDescription(`${warnEmoji}\n-# You have been quarantined in **${guild.name}** for repeatedly interrupting Theater Mode.`);
                   await sendGuildMemberDM(guild.id, culpritUser, { embeds: [dmEmbed] });
                   
                   const qRole = guildCfg.quarantineRoleId;
