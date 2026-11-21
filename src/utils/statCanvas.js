@@ -783,6 +783,188 @@ export async function generateStatbotOverviewImage(guild, inputStats = null, tim
 
 export const generateServerOverviewImage = generateStatbotOverviewImage;
 
+/**
+ * Generate a dedicated high-fidelity Dual-Chart Server Trend Canvas
+ */
+export async function generateServerTrendImage(guild, chartData = null, timeframe = '7d') {
+  const W = 980, H = 580;
+  const canvas = createCanvas(W, H);
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#111215';
+  ctx.fillRect(0, 0, W, H);
+
+  const tf = (timeframe || '7d').toLowerCase();
+  const tfBadge = tf === '24h' ? '24 H' : (tf === '30d' ? '30 D' : (tf === 'all' ? 'ALL' : '7 D'));
+
+  // If chartData not provided or empty, query statsDB
+  let data = chartData;
+  if (!data || data.length === 0) {
+    const overview = statsDB.getServerOverviewStats(guild.id);
+    data = overview?.chart || [];
+  }
+
+  // Ensure we have at least 7 points for a nice visual curve
+  if (!data || data.length < 2) {
+    const today = new Date();
+    data = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      data.push({
+        date: d.toISOString().split('T')[0],
+        messages: 0,
+        voice_seconds: 0
+      });
+    }
+  }
+
+  // Ensure guild members cache has members
+  await guild.members.fetch().catch(() => null);
+
+  // ---- 1. TOP HEADER ----
+  const HX = 20, HY = 20, HW = 940, HH = 64;
+  drawPanel(ctx, HX, HY, HW, HH, 12, '#18191c', true);
+  ctx.strokeStyle = '#232428';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Breadcrumb
+  ctx.font = `bold 17px ${FONT_BOLD}`;
+  ctx.fillStyle = '#8e9297';
+  ctx.textAlign = 'left';
+  ctx.fillText('Server Stats', HX + 16, HY + 38);
+
+  const statsW = ctx.measureText('Server Stats').width;
+  ctx.fillStyle = '#4e5058';
+  ctx.fillText(' > ', HX + 16 + statsW, HY + 38);
+
+  const arrowW = ctx.measureText(' > ').width;
+  ctx.font = '17px "FontAwesome"';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('\uf201', HX + 16 + statsW + arrowW, HY + 38); // fa-chart-line
+
+  const iconW = ctx.measureText('\uf201').width;
+  ctx.font = `bold 20px ${FONT_BOLD}`;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(' Activity Trends & Graphs', HX + 16 + statsW + arrowW + iconW, HY + 38);
+
+  // Right Pill Badge
+  const BW = 146, BH = 44;
+  const BX = HX + HW - BW - 14;
+  const BY = HY + Math.floor((HH - BH) / 2);
+  drawPanel(ctx, BX, BY, BW, BH, 22, '#d2e3fc', false);
+
+  ctx.textAlign = 'center';
+  ctx.font = `bold 11px ${FONT_BOLD}`;
+  ctx.fillStyle = '#0b57d0';
+  ctx.fillText(tfBadge, BX + Math.floor(BW / 2), BY + 17);
+
+  ctx.font = `bold 12px ${FONT_BOLD}`;
+  ctx.fillStyle = '#0b57d0';
+  ctx.fillText(`${guild.memberCount.toLocaleString()} members`, BX + Math.floor(BW / 2), BY + 33);
+  ctx.textAlign = 'left';
+
+  // ---- 2. PANEL 1: MESSAGES VOLUME GRAPH ----
+  const P1_Y = 100, P1_H = 205;
+  drawPanel(ctx, HX, P1_Y, HW, P1_H, 12, '#18191c', true);
+  ctx.strokeStyle = '#232428';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Title
+  ctx.font = `bold 14px ${FONT_BOLD}`;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('MESSAGES ACTIVITY TREND', HX + 16, P1_Y + 28);
+
+  // Sub metrics
+  const totalMsgs = data.reduce((sum, d) => sum + (d.messages || 0), 0);
+  const maxMsg = Math.max(...data.map(d => d.messages || 0), 1);
+  const avgMsg = Math.round(totalMsgs / data.length);
+
+  ctx.textAlign = 'right';
+  ctx.font = `13px ${FONT_NORMAL}`;
+  ctx.fillStyle = '#8e9297';
+  ctx.fillText(`Total: ${totalMsgs.toLocaleString()} msgs  |  Peak: ${maxMsg.toLocaleString()} msgs  |  Avg: ${avgMsg.toLocaleString()} / day`, HX + HW - 16, P1_Y + 28);
+  ctx.textAlign = 'left';
+
+  // Draw Line Chart for Messages
+  const chartX = HX + 24;
+  const chartW = HW - 48;
+  const chartY = P1_Y + P1_H - 28;
+  const chartH = 120;
+
+  drawLineChart(ctx, data, 'messages', maxMsg, chartX, chartY, chartW, chartH, '#5865F2', 'rgba(88, 101, 242, 0.45)', 'rgba(88, 101, 242, 0.0)');
+
+  // Date labels along X-axis
+  ctx.font = `11px ${FONT_NORMAL}`;
+  ctx.fillStyle = '#72767d';
+  const stepX = chartW / (data.length - 1);
+  data.forEach((d, i) => {
+    if (data.length > 10 && i % 2 !== 0 && i !== data.length - 1) return;
+    const x = chartX + i * stepX;
+    const shortDate = d.date ? d.date.slice(5) : '';
+    ctx.textAlign = 'center';
+    ctx.fillText(shortDate, x, chartY + 18);
+  });
+  ctx.textAlign = 'left';
+
+  // ---- 3. PANEL 2: VOICE ACTIVITY GRAPH ----
+  const P2_Y = 320, P2_H = 205;
+  drawPanel(ctx, HX, P2_Y, HW, P2_H, 12, '#18191c', true);
+  ctx.strokeStyle = '#232428';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Title
+  ctx.font = `bold 14px ${FONT_BOLD}`;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText('VOICE ACTIVITY TREND', HX + 16, P2_Y + 28);
+
+  // Sub metrics
+  const totalVcSecs = data.reduce((sum, d) => sum + (d.voice_seconds || 0), 0);
+  const maxVc = Math.max(...data.map(d => d.voice_seconds || 0), 1);
+  const avgVcSecs = Math.round(totalVcSecs / data.length);
+
+  const formatHours = (s) => (s / 3600).toFixed(1) + 'h';
+
+  ctx.textAlign = 'right';
+  ctx.font = `13px ${FONT_NORMAL}`;
+  ctx.fillStyle = '#8e9297';
+  ctx.fillText(`Total: ${formatHours(totalVcSecs)}  |  Peak: ${formatHours(maxVc)}  |  Avg: ${formatHours(avgVcSecs)} / day`, HX + HW - 16, P2_Y + 28);
+  ctx.textAlign = 'left';
+
+  // Draw Line Chart for Voice
+  const vChartY = P2_Y + P2_H - 28;
+  drawLineChart(ctx, data, 'voice_seconds', maxVc, chartX, vChartY, chartW, chartH, '#2ECC71', 'rgba(46, 204, 113, 0.45)', 'rgba(46, 204, 113, 0.0)');
+
+  // Date labels along X-axis
+  ctx.font = `11px ${FONT_NORMAL}`;
+  ctx.fillStyle = '#72767d';
+  data.forEach((d, i) => {
+    if (data.length > 10 && i % 2 !== 0 && i !== data.length - 1) return;
+    const x = chartX + i * stepX;
+    const shortDate = d.date ? d.date.slice(5) : '';
+    ctx.textAlign = 'center';
+    ctx.fillText(shortDate, x, vChartY + 18);
+  });
+  ctx.textAlign = 'left';
+
+  // ---- 4. FOOTER ----
+  const FY = 554;
+  ctx.font = `13px ${FONT_NORMAL}`;
+  ctx.fillStyle = '#72767d';
+  ctx.textAlign = 'left';
+  ctx.fillText(`Server Telemetry \u2022 ${data.length} Data Points Plotted | UTC`, HX, FY);
+
+  ctx.textAlign = 'right';
+  ctx.fillText('Powered by \u2B21 Athena', HX + HW, FY);
+  ctx.textAlign = 'left';
+
+  return canvas.toBuffer('image/png');
+}
+
 
 // ============================================================
 // TOP LEADERBOARD IMAGE — Ultra-HD God of War / Dark Fire Theme

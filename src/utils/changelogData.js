@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.5',
+    headline: 'Server Overview Component Race Condition Fix & Dual-Chart Trends Engine',
+    summary: 'Resolved DiscordAPIError[40060] (Interaction already acknowledged) by eliminating duplicate collector listeners, added explicit attachments flushing across all 9 overview tabs for seamless transitions between canvas and embeds, and implemented a dedicated Dual-Chart Activity Trend Canvas for the Graphs tab.',
+    whatsNew: [
+      {
+        title: 'Dual-Chart Server Trend Canvas Engine',
+        desc: 'Implemented generateServerTrendImage rendering dual line charts with gradient fills for message distribution and voice durations across dates for the [Graphs] tab.'
+      },
+      {
+        title: 'Seamless Tab & Attachment Transitions',
+        desc: 'Ensured all 9 server overview tabs (Overview, Text, Voice, Engagement, Active, Graphs, Growth, Leaderboards, Compare) flush old attachments and render cleanly without state conflicts.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Interaction Acknowledgment Race Condition Elimination',
+        desc: 'Removed duplicate collector.on(collect) from executePrefix and executeSlash, leaving interaction handling exclusively to interactionCreate.js and eliminating DiscordAPIError 40060.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.4',
     headline: 'Universal 1,248+ Aliases Network, Circular Import Cleanup & Ezal/Eval Intercept Guard',
     summary: 'Expanded the command aliases network to 1,248+ entries across all 29 modules (roleplay, moderation, utility, jtc, economy, etc.), severed circular import chains between loader.js, ccmd.js, date.js, and messageCreate.js, and unified ezal and eval prefix/prefixless security intercepts returning the formal Unauthorized Execution Attempt denial card.',

@@ -8,7 +8,7 @@ import {
   MessageFlags 
 } from 'discord.js';
 import statsDB from '../statsDB.js';
-import { generateStatbotOverviewImage, generateTopImage } from '../utils/statCanvas.js';
+import { generateStatbotOverviewImage, generateTopImage, generateServerTrendImage } from '../utils/statCanvas.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
 import { getRandomHeadingGlyph, BULLET_EMOJI } from '../utils/emojis.js';
@@ -103,6 +103,7 @@ export async function buildOverviewPayload(guild, activeTab = 'overview', timefr
       content: null,
       embeds: [],
       files: [attachment],
+      attachments: [],
       components
     };
   }
@@ -116,6 +117,7 @@ export async function buildOverviewPayload(guild, activeTab = 'overview', timefr
       content: null,
       embeds: [],
       files: [attachment],
+      attachments: [],
       components
     };
   }
@@ -139,12 +141,13 @@ export async function buildOverviewPayload(guild, activeTab = 'overview', timefr
           ? stats.topMsgMembers.map((m, i) => `> -# **#${i + 1}** <@${m.user_id}>: \`${m.total.toLocaleString()} msgs\``).join('\n')
           : `> -# No message telemetry recorded for this timeframe.`)
       )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC \u2022 Powered by Athena` });
+      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
 
     return {
       content: null,
       embeds: [embed],
       files: [],
+      attachments: [],
       components
     };
   }
@@ -173,12 +176,13 @@ export async function buildOverviewPayload(guild, activeTab = 'overview', timefr
           ? stats.topVcMembers.map((m, i) => `> -# **#${i + 1}** <@${m.user_id}>: \`${formatVoice(m.total)}\``).join('\n')
           : `> -# No voice telemetry recorded for this timeframe.`)
       )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC \u2022 Powered by Athena` });
+      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
 
     return {
       content: null,
       embeds: [embed],
       files: [],
+      attachments: [],
       components
     };
   }
@@ -202,12 +206,13 @@ export async function buildOverviewPayload(guild, activeTab = 'overview', timefr
         `> -# ${BULLET_EMOJI} **Reactivity Ratio:** \`${ratio} reactions / msg\`\n` +
         `> -# ${BULLET_EMOJI} **Active Participants:** \`${stats.activeUsers.active.toLocaleString()} members\`\n`
       )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC \u2022 Powered by Athena` });
+      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
 
     return {
       content: null,
       embeds: [embed],
       files: [],
+      attachments: [],
       components
     };
   }
@@ -230,12 +235,13 @@ export async function buildOverviewPayload(guild, activeTab = 'overview', timefr
         `> -# ${BULLET_EMOJI} **Peak Daily Active:** \`${stats.activeUsers.peak.toLocaleString()} users\`\n` +
         `> -# ${BULLET_EMOJI} **Server Population:** \`${totalMembers.toLocaleString()} total members\`\n`
       )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC \u2022 Powered by Athena` });
+      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
 
     return {
       content: null,
       embeds: [embed],
       files: [],
+      attachments: [],
       components
     };
   }
@@ -258,25 +264,27 @@ export async function buildOverviewPayload(guild, activeTab = 'overview', timefr
         `> -# ${BULLET_EMOJI} **Members Departed:** \`-${stats.members.left.toLocaleString()}\`\n` +
         `> -# ${BULLET_EMOJI} **Net Population Shift:** \`${netPrefix}${netGrowth.toLocaleString()}\`\n`
       )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC \u2022 Powered by Athena` });
+      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
 
     return {
       content: null,
       embeds: [embed],
       files: [],
+      attachments: [],
       components
     };
   }
 
-  // Graphs Tab (14-day Activity Trend)
+  // Graphs Tab (Activity Trend Dual Chart)
   if (activeTab === 'graphs') {
     const oldOverview = statsDB.getServerOverviewStats(guild.id);
-    const buffer = await generateStatbotOverviewImage(guild, stats, timeframe);
-    const attachment = new AttachmentBuilder(buffer, { name: 'trend.png' });
+    const buffer = await generateServerTrendImage(guild, oldOverview?.chart || [], timeframe);
+    const attachment = new AttachmentBuilder(buffer, { name: 'server-trends.png' });
     return {
       content: null,
       embeds: [],
       files: [attachment],
+      attachments: [],
       components
     };
   }
@@ -297,12 +305,13 @@ export async function buildOverviewPayload(guild, activeTab = 'overview', timefr
         `> -# ${BULLET_EMOJI} **Daily Active Users:** \`${stats.activeUsers.avg} avg / day\`\n` +
         `> -# ${BULLET_EMOJI} **Growth Ratio:** \`${stats.members.joined} joins / ${stats.members.left} leaves\`\n`
       )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC \u2022 Powered by Athena` });
+      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
 
     return {
       content: null,
       embeds: [embed],
       files: [],
+      attachments: [],
       components
     };
   }
@@ -314,19 +323,27 @@ export async function buildOverviewPayload(guild, activeTab = 'overview', timefr
     content: null,
     embeds: [],
     files: [attachment],
+    attachments: [],
     components
   };
 }
 
 export async function handleServerOverviewInteraction(interaction) {
   const customId = interaction.customId;
-  if (!customId.startsWith('so_')) return;
+  if (!customId || !customId.startsWith('so_')) return;
 
   if (customId === 'so_close') {
-    return interaction.message.delete().catch(() => interaction.update({ components: [] }));
+    try {
+      await interaction.message.delete();
+    } catch {
+      await interaction.update({ components: [] }).catch(() => null);
+    }
+    return;
   }
 
-  await interaction.deferUpdate().catch(() => null);
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferUpdate().catch(() => null);
+  }
 
   let activeTab = 'overview';
   let timeframe = '7d';
@@ -387,18 +404,16 @@ export const commands = [
         const replyMsg = await message.channel.send(payload);
         if (waitMsg) await waitMsg.delete().catch(() => null);
 
-        // Attach collector for smooth 5-minute interaction
-        const collector = replyMsg.createMessageComponentCollector({
-          time: 300_000
-        });
+        // Auto-disable components after 5 minutes of inactivity
+        if (replyMsg && typeof replyMsg.createMessageComponentCollector === 'function') {
+          const collector = replyMsg.createMessageComponentCollector({
+            time: 300_000
+          });
 
-        collector.on('collect', async (i) => {
-          await handleServerOverviewInteraction(i);
-        });
-
-        collector.on('end', () => {
-          replyMsg.edit({ components: [] }).catch(() => null);
-        });
+          collector.on('end', () => {
+            replyMsg.edit({ components: [] }).catch(() => null);
+          });
+        }
       } catch (e) {
         console.error('Server overview execution error:', e);
         if (waitMsg) await waitMsg.edit(cv2.error('Error', 'Failed to render server overview dashboard.')).catch(() => null);
@@ -412,14 +427,10 @@ export const commands = [
         const payload = await buildOverviewPayload(interaction.guild, 'overview', timeframe);
         const replyMsg = await interaction.editReply(payload);
 
-        // Attach collector
+        // Auto-disable components after 5 minutes of inactivity
         if (replyMsg && typeof replyMsg.createMessageComponentCollector === 'function') {
           const collector = replyMsg.createMessageComponentCollector({
             time: 300_000
-          });
-
-          collector.on('collect', async (i) => {
-            await handleServerOverviewInteraction(i);
           });
 
           collector.on('end', () => {
