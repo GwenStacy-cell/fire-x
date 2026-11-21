@@ -2,11 +2,15 @@ import { AuditLogEvent, PermissionFlagsBits } from 'discord.js';
 
 import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab, syncSupportingRolePositions, isSyncingSupportingRoles } from '../utils/antiStrip.js';
 import db from '../database.js';
+import { isRoleRestoring, markRoleRestoring, directStrike, triggerRoleStructureRestore, DANGEROUS_PERMS, triggerSnapshotSync } from '../utils/antinuke.js';
 
 export default {
   name: 'roleUpdate',
   async execute(oldRole, newRole) {
     if (!newRole.guild) return;
+
+    // ⚡ Ignore update events fired by Athena's own restoration or modifications
+    if (isRoleRestoring(newRole.id)) return;
 
     const config = db.getGuildConfig(newRole.guild.id);
 
@@ -57,8 +61,6 @@ export default {
       }
     }
 
-
-
     // 3. Universal Anti-Role Reorder & Hierarchy Enforcement
     // Catches ANY unauthorized drag anywhere in the server hierarchy and replaces the original role structure
     // Never trigger if Athena is currently aligning its supporting sentinels in this guild
@@ -69,20 +71,15 @@ export default {
         const isShieldBreach = newRole.position >= highestBotRole.position && newRole.id !== highestBotRole.id;
         const eventLabel = isShieldBreach ? 'Hierarchy Shield Wall Breach' : 'Role Reorder / Hierarchy Tampering';
 
-        // ⚡ Immediate Sub-1ms Revert: Freeze the moved role back immediately
-        try {
-          await newRole.setPosition(oldRole.position, { reason: `Athena Anti-Nuke: ${eventLabel} Intercepted` });
-        } catch (e) {}
-
-        // ⚡ Direct Strike: Verify authorization, ban unauthorized violator, and restore full original role structure
-        const { directStrike, triggerRoleStructureRestore } = await import('../utils/antinuke.js');
+        // ⚡ Direct Strike: Verify authorization FIRST. Server Owners and Extra Owners are protected.
+        // If unauthorized, eliminate violator and restore baseline role structure.
         directStrike(
           newRole.guild,
           11 /* AuditLogEvent.RoleUpdate */,
           eventLabel,
           newRole.id,
           async () => {
-            // Replaces the complete original role structure across all roles from the baseline snapshot
+            markRoleRestoring(newRole.id, 5000);
             const restored = await triggerRoleStructureRestore(newRole.guild, `Athena Anti-Nuke: Reverted unauthorized ${eventLabel}`);
             if (restored) {
               return `Neutralized unauthorized role drag: Entire server role structure restored to baseline snapshot.`;
@@ -97,15 +94,9 @@ export default {
 
     // 4. Dangerous Permission Escalation Guard (Sub-10ms Bitfield Revert & Strike)
     if (config.securityEnabled || (config.antiNukeEnabled && config.antinukeModules?.antiRolePermUpdate !== false)) {
-      const { directStrike, DANGEROUS_PERMS, isGuildUnderAttack, triggerSnapshotSync } = await import('../utils/antinuke.js');
       const gainedDangerousPerm = DANGEROUS_PERMS.some(p => !oldRole.permissions.has(p) && newRole.permissions.has(p));
 
       if (gainedDangerousPerm && !newRole.managed) {
-        // If server is actively under attack, revert bitfield immediately
-        if (isGuildUnderAttack(newRole.guild.id)) {
-          await newRole.setPermissions(oldRole.permissions, 'Athena Anti-Nuke: Rogue Permission Escalation Intercepted').catch(() => null);
-        }
-
         // Direct Strike verifies executor authorization, eliminates violator, and rolls back
         directStrike(
           newRole.guild,
@@ -113,6 +104,7 @@ export default {
           'Role Permission Escalation',
           newRole.id,
           async () => {
+            markRoleRestoring(newRole.id, 5000);
             await newRole.setPermissions(oldRole.permissions, 'Athena Anti-Nuke: Unauthorized Permission Escalation Reverted').catch(() => null);
             return `Stripped unauthorized dangerous permissions from role **${newRole.name}**.`;
           }
@@ -121,16 +113,13 @@ export default {
 
       // 5. Role Name Modification Guard
       if (config.antinukeModules?.antiRoleUpdate !== false && oldRole.name !== newRole.name && !newRole.managed) {
-        if (isGuildUnderAttack(newRole.guild.id)) {
-          await newRole.setName(oldRole.name, 'Athena Anti-Nuke: Rogue Role Rename Intercepted').catch(() => null);
-        }
-
         directStrike(
           newRole.guild,
           AuditLogEvent.RoleUpdate,
           'Role Name Modification',
           newRole.id,
           async () => {
+            markRoleRestoring(newRole.id, 5000);
             await newRole.setName(oldRole.name, 'Athena Anti-Nuke: Role Name Restored').catch(() => null);
             return `Restored role name **${oldRole.name}** from unauthorized modification.`;
           }

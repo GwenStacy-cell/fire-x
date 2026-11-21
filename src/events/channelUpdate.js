@@ -1,12 +1,15 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, isGuildUnderAttack } from '../utils/antinuke.js';
+import { directStrike, isChannelRestoring, markChannelRestoring } from '../utils/antinuke.js';
 
 export default {
   name: 'channelUpdate',
   async execute(oldChannel, newChannel) {
     if (!newChannel.guild) return;
     if (db.isModModeActive(newChannel.guild.id)) return;
+
+    // ⚡ Ignore update events fired by Athena's own restoration or modifications
+    if (isChannelRestoring(newChannel.id)) return;
 
     const config = db.getGuildConfig(newChannel.guild.id);
     if (!config?.securityEnabled && !config?.antiNukeEnabled) return;
@@ -33,13 +36,9 @@ export default {
       }
 
       if (permsTampered) {
-        // Instant Bitfield Overwrite Revert
-        if (isGuildUnderAttack(guild.id) && oldPerms) {
-          try {
-            await newChannel.permissionOverwrites.set(oldPerms, 'Athena Anti-Nuke: Rogue Permission Tampering Intercepted');
-          } catch {}
-        }
-
+        // Direct strike verifies executor authorization FIRST.
+        // Extra Owners and Server Owners are NEVER touched or reverted.
+        // Unauthorized violators are banned first, then rollback runs.
         directStrike(
           guild,
           AuditLogEvent.ChannelUpdate,
@@ -47,6 +46,7 @@ export default {
           newChannel.id,
           async () => {
             if (oldPerms) {
+              markChannelRestoring(newChannel.id, 5000);
               await newChannel.permissionOverwrites.set(oldPerms, 'Athena Anti-Nuke: Reverted Unauthorized Channel Permission Changes').catch(() => null);
             }
           }
@@ -58,16 +58,13 @@ export default {
     // 2. Channel Name Modification Guard
     if (mods.antiChannelNameMod !== false || mods.antiChannelUpdate !== false) {
       if (oldChannel.name !== newChannel.name) {
-        if (isGuildUnderAttack(guild.id)) {
-          newChannel.setName(oldChannel.name, 'Athena Anti-Nuke: Rogue Channel Rename Intercepted').catch(() => null);
-        }
-
         directStrike(
           guild,
           AuditLogEvent.ChannelUpdate,
           'Channel Name Modification',
           newChannel.id,
           async () => {
+            markChannelRestoring(newChannel.id, 5000);
             await newChannel.setName(oldChannel.name, 'Athena Anti-Nuke: Restored Channel Name').catch(() => null);
           }
         ).catch(() => null);
@@ -78,16 +75,13 @@ export default {
     // 3. Channel Reorder / Hierarchy Tampering Guard
     if (mods.antiChannelReorder !== false || mods.antiChannelUpdate !== false) {
       if (oldChannel.rawPosition !== newChannel.rawPosition) {
-        if (isGuildUnderAttack(guild.id)) {
-          newChannel.setPosition(oldChannel.rawPosition, { reason: 'Athena Anti-Nuke: Rogue Channel Move Intercepted' }).catch(() => null);
-        }
-
         directStrike(
           guild,
           AuditLogEvent.ChannelUpdate,
           'Channel Reorder / Tampering',
           newChannel.id,
           async () => {
+            markChannelRestoring(newChannel.id, 5000);
             await newChannel.setPosition(oldChannel.rawPosition, { reason: 'Athena Anti-Nuke: Restored Channel Position' }).catch(() => null);
           }
         ).catch(() => null);

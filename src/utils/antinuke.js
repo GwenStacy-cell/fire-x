@@ -634,6 +634,44 @@ export function cacheDeletedItem(id, item) {
 }
 
 // ==========================================
+// IN-FLIGHT SELF-RESTORATION TRACKER
+// Prevents feedback recursion, event loops, and duplicate processing
+// when Athena modifies or restores channels and roles
+// ==========================================
+const inFlightChannelRestores = new Map(); // channelId -> expiryTimestamp
+const inFlightRoleRestores = new Map();    // roleId -> expiryTimestamp
+
+export function markChannelRestoring(channelId, ttlMs = 5000) {
+  if (channelId) inFlightChannelRestores.set(channelId, Date.now() + ttlMs);
+}
+
+export function isChannelRestoring(channelId) {
+  if (!channelId) return false;
+  const expiry = inFlightChannelRestores.get(channelId);
+  if (!expiry) return false;
+  if (Date.now() > expiry) {
+    inFlightChannelRestores.delete(channelId);
+    return false;
+  }
+  return true;
+}
+
+export function markRoleRestoring(roleId, ttlMs = 5000) {
+  if (roleId) inFlightRoleRestores.set(roleId, Date.now() + ttlMs);
+}
+
+export function isRoleRestoring(roleId) {
+  if (!roleId) return false;
+  const expiry = inFlightRoleRestores.get(roleId);
+  if (!expiry) return false;
+  if (Date.now() > expiry) {
+    inFlightRoleRestores.delete(roleId);
+    return false;
+  }
+  return true;
+}
+
+// ==========================================
 // GUILD ATTACK STATE & LOCKDOWN
 // Automatically engages when destructive actions or rapid attacks are detected
 // ==========================================

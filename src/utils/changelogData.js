@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.7',
+    headline: 'Anti-Nuke Permission Overwrite Self-Loop Elimination & Extra Owner Privilege Immunity',
+    summary: 'Fixed a critical recursive feedback loop where premature channel permission overwrite rollbacks triggered ping-pong channelUpdate events back and forth. Eliminated premature pre-reverts across channelUpdate, roleUpdate, and guildUpdate so rollbacks strictly execute via directStrike only when an executor is confirmed unauthorized, guaranteeing Extra Owners and Server Owners are 100% immune from false tampering rollbacks.',
+    whatsNew: [
+      {
+        title: 'Channel & Role Self-Restoration In-Flight Tracking',
+        desc: 'Added in-memory isChannelRestoring and isRoleRestoring debounce registries that tag entities modified by Athena Prime, completely ignoring Gateway echo events and permanently preventing recursive ping-pong loops.'
+      },
+      {
+        title: 'Extra Owner & Server Owner Privilege Immunity',
+        desc: 'Eliminated blind isGuildUnderAttack pre-reverts in channelUpdate.js, roleUpdate.js, and guildUpdate.js, ensuring all rollback and punishment routines are strictly governed by directStrike pre-checks where Extra Owners and Server Owners are verified by ID in memory.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Zero False-Positive Channel & Role Gateway Filtering',
+        desc: 'Updated WebSocket wiretap and event listeners to verify actor authorization before engaging countermeasures, preventing legitimate admin channel permissions and role drags from being wiped.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.6',
     headline: 'Help Catalog Expansion & Native Discord Emojis Purge',
     summary: 'Expanded the interactive help menu and shortcuts system with !editrole / !er, !serveroverview / !so, and global 2-3 letter aliases. Completely purged all native Unicode Discord emojis from Role Manager buttons, placeholders, suggestion controls, and command interfaces in strict accordance with Athena Bot Emoji Rules.',

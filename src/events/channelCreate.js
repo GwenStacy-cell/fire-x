@@ -4,8 +4,7 @@ import {
   directStrike, 
   getRecentAuditEntry, 
   triggerSnapshotSync,
-  isGuildUnderAttack,
-  isProtectedSystemChannel,
+  isRestorationHandled,
   rawChannelDelete
 } from '../utils/antinuke.js';
 import embed from '../embed.js';
@@ -16,14 +15,8 @@ export default {
   async execute(channel) {
     if (!channel.guild) return;
 
-    // ⚡ INTERCEPT IN-FLIGHT ROGUE SPAM CHANNELS (Sub-5ms Raw API Intercept)
-    // If the server is actively under attack, eliminate any newly arriving spam channel immediately
-    if (isGuildUnderAttack(channel.guild.id)) {
-      if (!isProtectedSystemChannel(channel.guild, channel.id)) {
-        await rawChannelDelete(channel.id, channel.guild.client.token, '[ATHENA ANTI-NUKE] In-Flight Rogue Channel Intercepted').catch(() => null);
-        return;
-      }
-    }
+    // ⚡ Ignore channels created by Athena's restoration engine
+    if (isRestorationHandled(channel.id)) return;
 
     // ⚡ DIRECT STRIKE FIRST — fire the moment channel hits gateway
     directStrike(

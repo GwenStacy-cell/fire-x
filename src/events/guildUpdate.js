@@ -73,11 +73,6 @@ export default {
         return 'Server name, icon, banner, and security verification level restored to baseline.';
       };
 
-      // If server is actively under attack, revert immediately
-      if (isGuildUnderAttack(newGuild.id)) {
-        rollbackIdentity().catch(() => null);
-      }
-
       // Direct Strike verifies audit log executor: authorized admins are untouched, hostiles neutralized
       directStrike(
         newGuild,

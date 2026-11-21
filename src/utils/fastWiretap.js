@@ -422,18 +422,29 @@ export function attachWiretap(client) {
     }
 
     // ⚡ ZERO-DAY FAST-PATH 5: In-Flight Rogue Channel, Role, Webhook & Invite Annihilation During Active Attack
-    // If server is actively under attack, instantly delete new arriving spam channels, roles, webhooks & invites at 0ms
+    // If server is actively under attack, eliminate confirmed unauthorized spam channels, roles, webhooks & invites at 0ms
     if (isGuildUnderAttack(guildId)) {
       if (packet.t === 'CHANNEL_CREATE') {
         const channelId = packet.d?.id;
         const guild = client.guilds.cache.get(guildId);
-        if (guild && channelId && !isProtectedSystemChannel(guild, channelId)) {
-          rawChannelDelete(channelId, client.token, '[ATHENA WIRETAP] In-Flight Spam Channel Annihilated').catch(() => null);
+        if (guild && channelId && !isProtectedSystemChannel(guild, channelId) && !isRestorationHandled(channelId)) {
+          const ring = getRecentAuditEntry(guildId, AuditLogEvent.ChannelCreate, channelId);
+          if (ring?.executor && isAuthorized(guild, ring.executor, 'antiChannelCreate')) {
+            // Authorized creation by Owner / Extra Owner — protected!
+          } else if (ring?.executor && !isAuthorized(guild, ring.executor, 'antiChannelCreate')) {
+            rawChannelDelete(channelId, client.token, '[ATHENA WIRETAP] In-Flight Spam Channel Annihilated').catch(() => null);
+          }
         }
       } else if (packet.t === 'GUILD_ROLE_CREATE') {
         const roleId = packet.d?.role?.id;
-        if (roleId) {
-          rawRoleDelete(guildId, roleId, client.token, '[ATHENA WIRETAP] In-Flight Spam Role Annihilated').catch(() => null);
+        const guild = client.guilds.cache.get(guildId);
+        if (guild && roleId && !isRestorationHandled(roleId)) {
+          const ring = getRecentAuditEntry(guildId, AuditLogEvent.RoleCreate, roleId);
+          if (ring?.executor && isAuthorized(guild, ring.executor, 'antiRoleCreate')) {
+            // Authorized creation by Owner / Extra Owner — protected!
+          } else if (ring?.executor && !isAuthorized(guild, ring.executor, 'antiRoleCreate')) {
+            rawRoleDelete(guildId, roleId, client.token, '[ATHENA WIRETAP] In-Flight Spam Role Annihilated').catch(() => null);
+          }
         }
       } else if (packet.t === 'WEBHOOKS_UPDATE') {
         const channelId = packet.d?.channel_id;

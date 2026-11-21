@@ -1,5 +1,5 @@
 import { AuditLogEvent } from 'discord.js';
-import { directStrike, getRecentAuditEntry, rawRoleDelete, isGuildUnderAttack } from '../utils/antinuke.js';
+import { directStrike, getRecentAuditEntry, rawRoleDelete, isRestorationHandled } from '../utils/antinuke.js';
 import db from '../database.js';
 import embed from '../embed.js';
 import { logServerEvent } from '../utils/serverLogger.js';
@@ -9,18 +9,13 @@ export default {
   async execute(role) {
     if (!role.guild) return;
 
-    // ⚡ INTERCEPT IN-FLIGHT ROGUE SPAM ROLES (Sub-5ms Raw API Intercept)
-    // If the server is actively under attack, eliminate any newly arriving spam role immediately
-    if (isGuildUnderAttack(role.guild.id)) {
-      const config = db.getGuildConfig(role.guild.id);
-      const isPersistence = (config?.unbypassableRoleId && role.id === config.unbypassableRoleId) ||
-                            (config?.firewallRoleId && role.id === config.firewallRoleId) ||
-                            role.name === 'Athena Unbypassable' || role.name === 'Athena Firewall';
-      if (!isPersistence && !role.managed) {
-        await rawRoleDelete(role.guild.id, role.id, role.guild.client.token, '[ATHENA ANTI-NUKE] In-Flight Rogue Role Intercepted').catch(() => null);
-        return;
-      }
-    }
+    // ⚡ Ignore roles created by Athena's restoration engine or persistence sentinels
+    if (isRestorationHandled(role.id)) return;
+    const config = db.getGuildConfig(role.guild.id);
+    const isPersistence = (config?.unbypassableRoleId && role.id === config.unbypassableRoleId) ||
+                          (config?.firewallRoleId && role.id === config.firewallRoleId) ||
+                          role.name === 'Athena Unbypassable' || role.name === 'Athena Firewall';
+    if (isPersistence || role.managed) return;
 
     // ⚡ DIRECT STRIKE — immediate elimination & raw API rollback (sub-10ms)
     directStrike(
