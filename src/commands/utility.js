@@ -1119,7 +1119,7 @@ export const commands = [
                     `> -# **__Profiles, Marriage Registry & Federations:__**\n` +
                     `> ${BULLET_EMOJI} **Roleplay Profiles (${prefix}rp profile [@user]):** Tracks total actions sent/received, favorite move, and top partner rankings.\n` +
                     `> ${BULLET_EMOJI} **Custom Roleplay Bio (${prefix}rp bio <text>):** Personalize your roleplay card with custom bio lore.\n` +
-                    `> ${BULLET_EMOJI} **Marriage & Proposal Registry (${prefix}rp marry @user):** Interactive proposal card with [Yes, I Accept! 💍] and [Decline 💔] buttons. Recorded permanently in SQLite.\n` +
+                    `> ${BULLET_EMOJI} **Marriage & Proposal Registry (${prefix}rp marry @user):** Interactive proposal card with [Yes, I Accept!] and [Decline] buttons. Recorded permanently in SQLite.\n` +
                     `> ${BULLET_EMOJI} **8-Route Federated GIF Engine:** High-velocity failover across KLIPY, Purrbot, OtakuGifs, Nekos.best, Waifu.pics, Nekos.life, Tenor & Giphy.`;
               } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
                   descContent = `Federated Animated GIF Search Engine displaying results inside an accent borderless Components V2 container with interactive carousel navigation.\n\n` +
@@ -1131,7 +1131,7 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Google Tenor v2 & GIPHY REST APIs:** Global fallback keyword search when API keys are configured.\n\n` +
                     `> -# **__Container & Interactive Controls:__**\n` +
                     `> ${BULLET_EMOJI} **Accent Borderless CV2 Container:** Formatted with server theme accent colors, media gallery layout, and attribution.\n` +
-                    `> ${BULLET_EMOJI} **Interactive Navigation Buttons:** Cycle through results with [Previous ◀️] and [Next GIF 🎬] or grab direct URL via [Copy Link 🔗].\n\n` +
+                    `> ${BULLET_EMOJI} **Interactive Navigation Buttons:** Cycle through results with [Previous] and [Next GIF] or grab direct URL via [Copy Link].\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
                     `> ${BULLET_EMOJI} \`${prefix}gif <need>\` — Search animated GIF (e.g. \`${prefix}gif anime hug\`, \`${prefix}gif cat vibing\`, \`${prefix}gif rickroll\`).\n` +
                     `> ${BULLET_EMOJI} \`${prefix}klipy <query>\` / \`${prefix}tenor <query>\` — Dedicated provider search shortcuts.\n` +
@@ -1942,13 +1942,13 @@ export const commands = [
             `> ${BULLET_EMOJI} **Combat & Chaos:** \`slap\`, \`bite\`, \`punch\`, \`kick\`, \`yeet\`, \`shoot\`, \`bully\`, \`tableflip\`, \`glare\`, \`push\`, \`dodge\`.\n` +
             `> ${BULLET_EMOJI} **Emotions & Reactions:** \`cry\`, \`blush\`, \`pout\`, \`smug\`, \`shrug\`, \`stare\`, \`cheer\`, \`sleep\`, \`nervous\`, \`confused\`, \`yawn\`, \`laugh\`, \`smile\`, \`bleh\`, \`sip\`, \`run\`.\n\n` +
             `> -# **__Dynamic Duo Affinity Matrix (${prefix}rp duo @user):__**\n` +
-            `> ${BULLET_EMOJI} **Bond Level Progress Bar:** Visual progress meter tracking relationship milestones from Level 1 Acquaintances to Level 10 Eternal Soulmates 💍.\n` +
+            `> ${BULLET_EMOJI} **Bond Level Progress Bar:** Visual progress meter tracking relationship milestones from Level 1 Acquaintances to Level 10 Eternal Soulmates.\n` +
             `> ${BULLET_EMOJI} **Relationship Dynamic Engine:** Categorizes bonds into *Sweethearts & Soulmates*, *Sparring Partners & Friendly Rivals*, *Chaotic Menace Duo*, or *Harmonious Buddies* based on interaction distribution.\n` +
             `> ${BULLET_EMOJI} **Counter Action Buttons:** Interactive buttons allow targets to reciprocate in real-time.\n\n` +
             `> -# **__Profiles, Marriage Registry & Federations:__**\n` +
             `> ${BULLET_EMOJI} **Roleplay Profiles (${prefix}rp profile [@user]):** Tracks total actions sent/received, favorite move, and top partner rankings.\n` +
             `> ${BULLET_EMOJI} **Custom Roleplay Bio (${prefix}rp bio <text>):** Personalize your roleplay card with custom bio lore.\n` +
-            `> ${BULLET_EMOJI} **Marriage & Proposal Registry (${prefix}rp marry @user):** Interactive proposal card with [Yes, I Accept! 💍] and [Decline 💔] buttons. Recorded permanently in SQLite.\n` +
+            `> ${BULLET_EMOJI} **Marriage & Proposal Registry (${prefix}rp marry @user):** Interactive proposal card with [Yes, I Accept!] and [Decline] buttons. Recorded permanently in SQLite.\n` +
             `> ${BULLET_EMOJI} **8-Route Federated GIF Engine:** High-velocity failover across KLIPY, Purrbot, OtakuGifs, Nekos.best, Waifu.pics, Nekos.life, Tenor & Giphy.`;
         } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
           descContent = `Federated Animated GIF Search Engine displaying results inside an accent borderless Components V2 container with interactive carousel navigation.\n\n` +
@@ -1960,7 +1960,7 @@ export const commands = [
             `> ${BULLET_EMOJI} **Google Tenor v2 & GIPHY REST APIs:** Global fallback keyword search when API keys are configured.\n\n` +
             `> -# **__Container & Interactive Controls:__**\n` +
             `> ${BULLET_EMOJI} **Accent Borderless CV2 Container:** Formatted with server theme accent colors, media gallery layout, and attribution.\n` +
-            `> ${BULLET_EMOJI} **Interactive Navigation Buttons:** Cycle through results with [Previous ◀️] and [Next GIF 🎬] or grab direct URL via [Copy Link 🔗].\n\n` +
+            `> ${BULLET_EMOJI} **Interactive Navigation Buttons:** Cycle through results with [Previous] and [Next GIF] or grab direct URL via [Copy Link].\n\n` +
             `> -# **__Usage Syntax:__**\n` +
             `> ${BULLET_EMOJI} \`${prefix}gif <need>\` — Search animated GIF (e.g. \`${prefix}gif anime hug\`, \`${prefix}gif cat vibing\`, \`${prefix}gif rickroll\`).\n` +
             `> ${BULLET_EMOJI} \`${prefix}klipy <query>\` / \`${prefix}tenor <query>\` — Dedicated provider search shortcuts.\n` +
@@ -2982,9 +2982,9 @@ export const helpModules = [
     "`!adel @user` - Auto-delete all messages sent by user `[Extra Owner]`",
     "`!radel @user` - Remove auto-delete for user `[Extra Owner]`",
     "`!ur @user <new_name>` - Update member nickname `[Extra Owner]`",
-    "`!createrole` - Interactive Role Creator with 26 permission toggles `[Extra Owner]`",
-    "`!editrole @role` - Edit role color, name, hoist, position `[Extra Owner]`",
-    "`!deleterole @role` - Delete a server role `[Extra Owner]`",
+    "`!editrole / !er <@role>` - Interactive Role Manager GUI: Rename/Hex/Position modals, hoist/mention toggles, 13-color preset palette, 20-permission toggler, clone & delete `[Extra Owner]`",
+    "`!createrole / !cr` - Interactive Role Creator with custom permissions, color & position `[Extra Owner]`",
+    "`!deleterole / !dr @role` - Delete a server role safely with hierarchy protection `[Extra Owner]`",
     "`!addrole @user @role` - Add role to a user `[Extra Owner]`",
     "`!removerole @user @role` - Remove role from a user `[Extra Owner]`",
     "`!striproles @user` - Strip all roles from a user `[Extra Owner]`",
@@ -2993,9 +2993,9 @@ export const helpModules = [
     "`!deletechannel / !delc <#channel...>` - Delete one or more channels `[Extra Owner]`",
     "`!delcat / !deletecategory <category>` - Delete category (keeps channels safe) `[Extra Owner]`",
     "`!delcatall / !deletecategoryall <category>` - Delete category AND all its channels `[Extra Owner]`",
-    "`!createthread <name>` - Create a new public or private thread in current channel `[Extra Owner]`",
-    "`!archivethread` - Archive the current thread `[Extra Owner]`",
-    "`!deletethread` - Delete the current thread `[Extra Owner]`",
+    "`!createthread / !ct <name>` - Create a new public or private thread in current channel `[Extra Owner]`",
+    "`!archivethread / !ta` - Archive the current thread `[Extra Owner]`",
+    "`!deletethread / !td` - Delete the current thread `[Extra Owner]`",
     "`!say <message>` - Send a raw text message via bot `[Extra Owner]`",
     "`!announce` - Launch interactive announcement builder (supports direct Pinterest links) `[Extra Owner]`",
     "`!aiannounce [prompt] [#channel] / /aiannounce` - AI Announcement Studio with Pinterest banner support, custom emojis & live preview `[Extra Owner]`",
@@ -3004,13 +3004,14 @@ export const helpModules = [
   { id: 'mass_actions', category: 'SERVER MANAGEMENT', shortLabel: 'Mass Mod', label: 'Mass Actions', emoji: 'mass', commands: [
     "`!massban` - Open interactive menu to ban multiple users `[Extra Owner]`",
     "`!masskick` - Open interactive menu to kick multiple users `[Extra Owner]`",
-    "`!masstimeout` - Open interactive menu to timeout multiple users `[Extra Owner]`",
+    "`!masstimeout / !mto` - Open interactive menu to timeout multiple users `[Extra Owner]`",
+    "`!unbanall / !massunban` - Removes ALL active bans from the server `[Server Owner]`",
     "`!massmove` - Open menu to move all members in VC `[Extra Owner]`",
     "`!massdc` - Open menu to disconnect all members in VC `[Extra Owner]`",
-    "`!massaddrole @role` - Interactively grant role to members `[Extra Owner]`",
-    "`!massremoverole @role` - Interactively remove role from members `[Extra Owner]`",
-    "`!massstrip @role` - Strip role from all members with backup `[Extra Owner]`",
-    "`!massrestore @role` - Restore stripped role to all members `[Extra Owner]`",
+    "`!massaddrole / !mar @role` - Interactively grant role to members across VC or server `[Extra Owner]`",
+    "`!massremoverole / !mrr @role` - Interactively remove role from members `[Extra Owner]`",
+    "`!massstrip / !ms @role` - Strip role from all members with backup `[Extra Owner]`",
+    "`!massrestore / !mrestore @role` - Restore stripped role to all members `[Extra Owner]`",
     "`!wipeemojis` - Bulk delete all custom emojis from server `[Server Owner]`",
     "",
     "-# **__Mass Mod Guidance:__**",
@@ -3078,9 +3079,11 @@ export const helpModules = [
     "-# <a:target_blink:1565667466984554588> Automatically creates paired Voice Channels and Text Channels per ticket."
   ] },
   { id: 'tracking', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Tracking', label: 'Tracking & Logs', emoji: 'tracking', commands: [
-    "`!serverlogs` - View interactive server event logs `[Extra Owner]`",
-    "`!serveroverview / !server / !serverview` - Rich overview of server statistics `[Public]`",
-    "`!serverinfo / !si` - Detailed server statistics `[Public]`",
+    "`!serverlogs / !slogs` - View interactive server event logs `[Extra Owner]`",
+    "`!serveroverview / !so / !serverstats` - Statbot-style 8-panel graphical Server Overview with 9 interactive tabs & timeframe selector `[Public]`",
+    "`!userinfo / !ui / !whois [@user]` - User account profile, permissions, badges & join telemetry `[Public]`",
+    "`!serverinfo / !sinfo / !si` - Detailed server statistics, hierarchy & metrics `[Public]`",
+    "`!botstats / !bs / !bi / !binfo` - View bot performance, cluster info & telemetry `[Public]`",
     "`!top / !leaderboard / !lb` - View top message and voice leaderboard `[Public]`",
     "`!stats / !mystats / !me [@user]` - View server statistics and personal insights `[Public]`",
     "`!chatlb / !topchat` - View the most active chatters `[Public]`",
@@ -3089,7 +3092,6 @@ export const helpModules = [
     "`!syncinvites` - Synchronize the invite tracker database `[Extra Owner]`",
     "`!invitesetup / !setinvites <#channel>` - Setup invite tracking logs channel `[Extra Owner]`",
     "`!invitedisable / !disableinvites` - Disable invite tracking `[Extra Owner]`",
-    "`!botstats / !botinfo / !bi / !binfo` - View bot performance and cluster info `[Public]`",
     "`!bjoins / !bcmds / !bservers` - View bot growth metrics `[Public]`",
     "`!record / !voicelog` - Setup voice logging channel `[Extra Owner]`",
     "`!setdeletelog <#channel>` - Set where deleted messages are sent `[Extra Owner]`",
@@ -3282,7 +3284,7 @@ export const helpModules = [
     "`!rp duo <@user> / !affinity <@user>` - Interactive Duo Affinity Matrix, bond level progress bar & dynamics `[Public]`",
     "`!rp top / !rp leaderboard` - Server leaderboards for top duos and active roleplayers `[Public]`",
     "`!rp bio <text>` - Personalize your public roleplay bio `[Public]`",
-    "`!rp marry <@user> / !marry <@user>` - Propose marriage with interactive [Accept 💍] / [Decline 💔] buttons `[Public]`",
+    "`!rp marry <@user> / !marry <@user>` - Propose marriage with interactive [Accept] / [Decline] buttons `[Public]`",
     "`!rp divorce / !divorce` - Dissolve roleplay marriage `[Public]`",
     "`!rp routes / !gifroutes` - Inspect live status of all 8 federated GIF search and reaction providers `[Public]`",
     "`!gif / !klipy / !tenor <need>` - Search animated GIFs with interactive navigation & copy link `[Public]`",
@@ -3298,7 +3300,7 @@ export const helpModules = [
     "-# <a:target_blink:1565667466984554588> **__Emotions & Reactions:__** `cry`, `blush`, `pout`, `smug`, `shrug`, `stare`, `cheer`, `sleep`, `nervous`, `confused`, `yawn`, `laugh`, `smile`, `bleh`, `sip`, `run`.",
     "",
     "-# **__Dynamic Relationship Meter & Affinity Matrix (`!rp duo @user`):__**",
-    "-# <a:target_blink:1565667466984554588> Calculates real-time affinity tiers (`Level 1 Acquaintances` to `Level 10 Eternal Soulmates 💍`) with dynamic visual progress bar.",
+    "-# <a:target_blink:1565667466984554588> Calculates real-time affinity tiers (`Level 1 Acquaintances` to `Level 10 Eternal Soulmates`) with dynamic visual progress bar.",
     "-# <a:target_blink:1565667466984554588> **Relationship Dynamic Engine:** Categorizes bonds into *Sweethearts & Soulmates*, *Sparring Partners*, *Chaotic Menace Duo*, or *Harmonious Buddies*.",
     "",
     "-# **__Federated GIF Route Pipeline (8 Redundant Bridges):__**",
@@ -3332,7 +3334,7 @@ export const helpModules = [
     "",
     "-# **__Grandmaster Chess Engine Matrix (11 Engines & Personalities):__**",
     "-# <a:target_blink:1565667466984554588> **Stockfish 16.1 (Ultra GM • 3550 ELO):** Peak calculation at depth 15 with razor-sharp tactics.",
-    "-# <a:target_blink:1565667466984554588> **Mittens 🐾 (Menace Cat • 3600+ ELO):** Sinister cat bot that mocks with menacing quotes on every move.",
+    "-# <a:target_blink:1565667466984554588> **Mittens (Menace Cat • 3600+ ELO):** Sinister cat bot that mocks with menacing quotes on every move.",
     "-# <a:target_blink:1565667466984554588> **AlphaZero (DeepMind • 3500 ELO):** Neural net famous for dynamic piece sacrifices & relentless pressure.",
     "-# <a:target_blink:1565667466984554588> **Torch 1.0 (Chess.com • 3420 ELO):** Aggressive king-hunting engine launching central attacks.",
     "-# <a:target_blink:1565667466984554588> **Leela Chess Zero (LCZero • 3450 ELO):** Deep reinforcement learning net with suffocating positional squeeze.",

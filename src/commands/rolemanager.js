@@ -68,7 +68,7 @@ export function buildRolePickerPanel(guild) {
 
   const roleSelect = new RoleSelectMenuBuilder()
     .setCustomId('rm_picker')
-    .setPlaceholder('🔍 Select a role to configure...')
+    .setPlaceholder('Select a role to configure...')
     .setMinValues(1)
     .setMaxValues(1);
 
@@ -128,19 +128,16 @@ export function buildRoleManagerPanel(role, guild) {
       .setCustomId(`rm_btn_name:${role.id}`)
       .setLabel('Rename')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji('✏️')
       .setDisabled(!canBotManage),
     new ButtonBuilder()
       .setCustomId(`rm_btn_color:${role.id}`)
       .setLabel('Set Hex')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji('🎨')
       .setDisabled(!canBotManage),
     new ButtonBuilder()
       .setCustomId(`rm_btn_pos:${role.id}`)
       .setLabel('Position')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji('🔢')
       .setDisabled(!canBotManage),
     new ButtonBuilder()
       .setCustomId(`rm_toggle_hoist:${role.id}`)
@@ -157,7 +154,7 @@ export function buildRoleManagerPanel(role, guild) {
   // Row 2: Preset Color Dropdown
   const colorSelect = new StringSelectMenuBuilder()
     .setCustomId(`rm_sel_color:${role.id}`)
-    .setPlaceholder('🎨 Quick Palette: Select Color Preset...')
+    .setPlaceholder('Quick Palette: Select Color Preset...')
     .setDisabled(!canBotManage)
     .addOptions(
       ROLE_COLOR_PRESETS.map(c => ({
@@ -171,7 +168,7 @@ export function buildRoleManagerPanel(role, guild) {
   // Row 3: Key Permissions Toggler Dropdown
   const permSelect = new StringSelectMenuBuilder()
     .setCustomId(`rm_sel_perm:${role.id}`)
-    .setPlaceholder('🛡️ Core Permissions: Toggle Permission...')
+    .setPlaceholder('Core Permissions: Toggle Permission...')
     .setDisabled(!canBotManage)
     .addOptions(
       CORE_ROLE_PERMISSIONS.slice(0, 25).map(p => {
@@ -190,29 +187,25 @@ export function buildRoleManagerPanel(role, guild) {
     new ButtonBuilder()
       .setCustomId(`rm_btn_clone:${role.id}`)
       .setLabel('Clone Role')
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji('📋'),
+      .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId(`rm_btn_members:${role.id}`)
       .setLabel(`Members (${role.members.size})`)
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji('👥'),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`rm_btn_refresh:${role.id}`)
       .setLabel('Refresh')
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji('🔄'),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`rm_btn_delete:${role.id}`)
       .setLabel('Delete Role')
       .setStyle(ButtonStyle.Danger)
-      .setEmoji('🗑️')
       .setDisabled(!canBotManage),
     new ButtonBuilder()
       .setCustomId('rm_btn_close')
       .setLabel('Close')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji('✖️')
+      .setEmoji('1567037365547962449')
   );
 
   return { embeds: [embed], components: [row1, row2, row3, row4] };

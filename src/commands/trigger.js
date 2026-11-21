@@ -1304,12 +1304,12 @@ export async function handleTriggerInteractions(interaction) {
         const res = db.rateTrigger(interaction.guild.id, match, isUp, interaction.user.id);
         if (res.alreadyVoted) {
           return interaction.reply({
-            content: `-# **Feedback Recorded:** You have already rated this trigger response! (Current: 👍 ${res.helpful} • ❓ ${res.unhelpful})`,
+            content: `-# **Feedback Recorded:** You have already rated this trigger response! (Current: Helpful: ${res.helpful} • Needs Help: ${res.unhelpful})`,
             flags: 64
           });
         }
         return interaction.reply({
-          content: `-# **Thank you!** Your feedback has been recorded: **${isUp ? 'Helpful 👍' : 'Needs Help ❓'}** (Total: 👍 ${res.helpful} • ❓ ${res.unhelpful})`,
+          content: `-# **Thank you!** Your feedback has been recorded: **${isUp ? 'Helpful' : 'Needs Help'}** (Total: Helpful: ${res.helpful} • Needs Help: ${res.unhelpful})`,
           flags: 64
         });
       }

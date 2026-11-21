@@ -1,4 +1,4 @@
-﻿import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, InteractionType } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, InteractionType } from 'discord.js';
 import db from '../database.js';
 
 export const commands = [
@@ -25,7 +25,7 @@ export const commands = [
             const servers = [...client.guilds.cache.values()].sort((a,b) => b.memberCount - a.memberCount).slice(0, 15);
             let desc = '<:emoji_16:1533860111704002665> **Top 15 Live Servers (by Member Count):**\n\n';
             servers.forEach((g, i) => {
-                desc += `**${i+1}.** ${g.name} (\`${g.id}\`) - 👤 ${g.memberCount}\n`;
+                desc += `**${i+1}.** ${g.name} (\`${g.id}\`) - ${g.memberCount} members\n`;
             });
             desc += `\n**Total Servers:** ${client.guilds.cache.size} | **Total Users:** ${client.guilds.cache.reduce((acc, g) => acc + g.memberCount, 0)}`;
             e.setDescription(desc);
@@ -34,7 +34,7 @@ export const commands = [
             let desc = '<a:AnyaYay:1537513785718476850> **Recent Joins (Last 20):**\n\n';
             if (stats.recentJoins.length === 0) desc += '**No recent joins recorded.**\n';
             stats.recentJoins.forEach((g, i) => {
-                desc += `**${i+1}.** ${g.name} (\`${g.id}\`) - 👤 ${g.memberCount || '?'} | By: ${g.addedBy || 'Unknown'}\n`;
+                desc += `**${i+1}.** ${g.name} (\`${g.id}\`) - ${g.memberCount || '?'} members | By: ${g.addedBy || 'Unknown'}\n`;
             });
             e.setDescription(desc);
         }
@@ -53,16 +53,15 @@ export const commands = [
         .setCustomId('growth_select')
         .setPlaceholder('Select a list to view...')
         .addOptions(
-          { label: 'Current Live Servers', value: 'current', emoji: '🌐' },
-          { label: 'Recent Joins', value: 'joins', emoji: '📥' },
-          { label: 'Recent Leaves', value: 'leaves', emoji: '📤' }
+          { label: 'Current Live Servers', value: 'current' },
+          { label: 'Recent Joins', value: 'joins' },
+          { label: 'Recent Leaves', value: 'leaves' }
         );
 
       const banBtn = new ButtonBuilder()
         .setCustomId('ban_server_btn')
         .setLabel('Ban a Server')
-        .setStyle(ButtonStyle.Danger)
-        .setEmoji('🔨');
+        .setStyle(ButtonStyle.Danger);
 
       const row1 = new ActionRowBuilder().addComponents(selectMenu);
       const row2 = new ActionRowBuilder().addComponents(banBtn);

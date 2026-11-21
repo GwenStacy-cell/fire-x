@@ -206,8 +206,8 @@ export const commands = [
         .setTimestamp();
         
       const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId('sug_up').setEmoji('👍').setStyle(ButtonStyle.Secondary).setLabel('0'),
-        new ButtonBuilder().setCustomId('sug_down').setEmoji('👎').setStyle(ButtonStyle.Secondary).setLabel('0')
+        new ButtonBuilder().setCustomId('sug_up').setStyle(ButtonStyle.Secondary).setLabel('Upvote (0)'),
+        new ButtonBuilder().setCustomId('sug_down').setStyle(ButtonStyle.Secondary).setLabel('Downvote (0)')
       );
       
       try {
@@ -431,8 +431,8 @@ export async function handleSuggestionButtons(interaction) {
   }
   
   const newRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('sug_up').setEmoji('👍').setStyle(ButtonStyle.Secondary).setLabel(String(upCount)),
-    new ButtonBuilder().setCustomId('sug_down').setEmoji('👎').setStyle(ButtonStyle.Secondary).setLabel(String(downCount))
+    new ButtonBuilder().setCustomId('sug_up').setStyle(ButtonStyle.Secondary).setLabel(`Upvote (${upCount})`),
+    new ButtonBuilder().setCustomId('sug_down').setStyle(ButtonStyle.Secondary).setLabel(`Downvote (${downCount})`)
   );
   
   await msg.edit({ components: [newRow] }).catch(()=>null);

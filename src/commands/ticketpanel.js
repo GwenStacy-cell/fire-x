@@ -169,7 +169,7 @@ export function buildTicketManagerPayload(guildId, view = 'core') {
         .setStyle(config.aiTriage ? ButtonStyle.Success : ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId('tp_view_adv')
-        .setLabel('Advanced Logs ⚙️')
+        .setLabel('Advanced Logs')
         .setStyle(ButtonStyle.Secondary)
     );
 

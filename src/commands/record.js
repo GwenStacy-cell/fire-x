@@ -50,7 +50,7 @@ export const commands = [
           const container = {
             type: 17,
             components: [
-              { type: 10, content: `# ${getRandomHeadingGlyph()} Voice Recording Started | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: 🔊 **${vc.name}** | Initiated By: ${message.author}\n\n-# Live multi-user audio capture is active.\n-# When finished, run \`!record stop\` or click **Stop & Export** below.\n-# Audio recording will be delivered directly via DM (with channel fallback).` },
+              { type: 10, content: `# ${getRandomHeadingGlyph()} Voice Recording Started | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: **${vc.name}** | Initiated By: ${message.author}\n\n-# Live multi-user audio capture is active.\n-# When finished, run \`!record stop\` or click **Stop & Export** below.\n-# Audio recording will be delivered directly via DM (with channel fallback).` },
               {
                 type: 1,
                 components: [
@@ -75,7 +75,7 @@ export const commands = [
         const container = {
           type: 17,
           components: [
-            { type: 10, content: `# ${getRandomHeadingGlyph()} Voice Recording Stopped | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: 🔊 **${vcName}**\n\n-# Processing and exporting the audio file, please wait...` },
+            { type: 10, content: `# ${getRandomHeadingGlyph()} Voice Recording Stopped | <a:03_tick_circle:1565665642084827206>\n\n-# Channel: **${vcName}**\n\n-# Processing and exporting the audio file, please wait...` },
             { type: 14, divider: true },
             { type: 10, content: '-# Athena Bulletproof Security' }
           ]
@@ -133,7 +133,7 @@ export const commands = [
           let dmDelivered = false;
           try {
             await message.author.send({ components: [dmContainer], flags: MessageFlags.IsComponentsV2 });
-            await message.author.send({ content: `-# 🔊 **Playable Voice Recording** (${durationStr})`, files: [audioAttachment] });
+            await message.author.send({ content: `-# **Playable Voice Recording** (${durationStr})`, files: [audioAttachment] });
             dmDelivered = true;
           } catch (e) {
             dmDelivered = false;

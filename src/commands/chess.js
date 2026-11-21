@@ -21,8 +21,8 @@ export const CHESS_ENGINES = {
   },
   mittens: {
     id: 'mittens',
-    name: 'Mittens 🐾',
-    label: 'Mittens 🐾 (Menace Cat • 3600+ ELO)',
+    name: 'Mittens',
+    label: 'Mittens (Menace Cat • 3600+ ELO)',
     description: "Chess.com's sinister cat bot that consumes all human hope.",
     elo: 3600,
     depth: 15,
@@ -226,7 +226,7 @@ export const commands = [
           `-# \`${prefix}chess @user\` - Challenge a friend to a PVP match\n` +
           `-# \`${prefix}chess theme\` - Customize board aesthetic\n` +
           `-# \`${prefix}chess stop\` - Resign / terminate active match\n\n` +
-          `> -# <a:uptime:1552608831060844575> **Roster:** Stockfish 16.1, Mittens 🐾, AlphaZero, Torch 1.0, Leela (LCZero), Stockfish 15, Komodo Dragon, Magnus Carlsen, Hikaru Nakamura, Stockfish 11, Martin`
+          `> -# <a:uptime:1552608831060844575> **Roster:** Stockfish 16.1, Mittens, AlphaZero, Torch 1.0, Leela (LCZero), Stockfish 15, Komodo Dragon, Magnus Carlsen, Hikaru Nakamura, Stockfish 11, Martin`
         ));
       }
 

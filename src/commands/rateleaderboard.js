@@ -68,21 +68,19 @@ async function sendRateLeaderboard(context, page) {
   const startIndex = (page - 1) * ITEMS_PER_PAGE;
   const pageItems = leaderboard.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   
-  const medals = ['🥇', '🥈', '🥉'];
-  
   const description = pageItems.map((user, index) => {
     const rank = startIndex + index;
-    const rankDisplay = rank < 3 ? medals[rank] : `**#${rank + 1}**`;
+    const rankDisplay = `**#${rank + 1}**`;
     
     return `${rankDisplay} **${user.authorName}**\n` +
            `> <a:1z:1517089474369032253> **Avg Rating:** ${user.averageRating.toFixed(1)}/5\n` +
-           `> 📊 **Total Score:** ${user.score} ★\n` +
-           `> 🎬 **Edits:** ${user.totalVideos} | 👥 **Votes:** ${user.totalVotes}`;
+           `> <a:target_blink:1565667466984554588> **Total Score:** ${user.score} points\n` +
+           `> <a:target_blink:1565667466984554588> **Edits:** ${user.totalVideos} | **Votes:** ${user.totalVotes}`;
   }).join('\n\n');
   
   const guildConfig = context.guild ? db.getGuildConfig(context.guild.id) : null;
   const lbEmbed = new EmbedBuilder({
-    title: '🏆 Edit Rating Leaderboard',
+    title: 'Edit Rating Leaderboard',
     description: description,
     color: guildConfig?.accentColor || '#FFD700',
     footer: { text: `Page ${page} of ${totalPages} • Ranked by Highest Avg Rating` }

@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.6',
+    headline: 'Help Catalog Expansion & Native Discord Emojis Purge',
+    summary: 'Expanded the interactive help menu and shortcuts system with !editrole / !er, !serveroverview / !so, and global 2-3 letter aliases. Completely purged all native Unicode Discord emojis from Role Manager buttons, placeholders, suggestion controls, and command interfaces in strict accordance with Athena Bot Emoji Rules.',
+    whatsNew: [
+      {
+        title: 'Help Menu & Shortcuts Directory Expansion',
+        desc: 'Updated Moderation, Tracking, and Utilities categories in !help and overhauled !shortcuts with 1,248+ active routes (!er, !cr, !dr, !so, !bs, !ui, !sinfo, !vcp, !vcl, !tp, !la, !ula, etc.).'
+      },
+      {
+        title: 'Complete Native Emojis Purge',
+        desc: 'Stripped all native Unicode emojis from Role Manager buttons and placeholders (Rename, Set Hex, Position, Clone, Members, Refresh, Delete), suggestion voting buttons, and component menus, binding custom animated delete beat for Close.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Strict Bot Emoji Compliance',
+        desc: 'All interactive component labels and descriptions now strictly adhere to custom animated glyphs and clean typography without native Discord emojis.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.5',
     headline: 'Server Overview Component Race Condition Fix & Dual-Chart Trends Engine',
     summary: 'Resolved DiscordAPIError[40060] (Interaction already acknowledged) by eliminating duplicate collector listeners, added explicit attachments flushing across all 9 overview tabs for seamless transitions between canvas and embeds, and implemented a dedicated Dual-Chart Activity Trend Canvas for the Graphs tab.',

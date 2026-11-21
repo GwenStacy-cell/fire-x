@@ -129,7 +129,7 @@ export async function buildEmojiPanel(guild, options = {}) {
       .setDisabled(currentPage >= totalPages - 1),
     new ButtonBuilder()
       .setCustomId(`emoj_mode:${type}:${mode === 'raw' ? 'formatted' : 'raw'}:${scope}:${currentPage}:${search || 'none'}`)
-      .setLabel(mode === 'raw' ? '📱 Formatted View' : '📋 Raw IDs (Copy)')
+      .setLabel(mode === 'raw' ? 'Formatted View' : 'Raw IDs (Copy)')
       .setStyle(mode === 'raw' ? ButtonStyle.Success : ButtonStyle.Primary)
   );
 
@@ -149,7 +149,7 @@ export async function buildEmojiPanel(guild, options = {}) {
       .setStyle(type === 'all' ? ButtonStyle.Success : ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`emoj_export:${type}:${scope}`)
-      .setLabel('📥 Export (.txt)')
+      .setLabel('Export (.txt)')
       .setStyle(ButtonStyle.Secondary)
   );
 
