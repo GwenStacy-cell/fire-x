@@ -4,14 +4,13 @@ import {
   ButtonStyle, 
   StringSelectMenuBuilder, 
   AttachmentBuilder, 
-  EmbedBuilder,
   MessageFlags 
 } from 'discord.js';
 import statsDB from '../statsDB.js';
 import { generateStatbotOverviewImage, generateTopImage, generateServerTrendImage } from '../utils/statCanvas.js';
-import cv2 from '../cv2.js';
+import cv2, { sanitizeCV2Payload } from '../cv2.js';
 import db from '../database.js';
-import { getRandomHeadingGlyph, BULLET_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 
 export function getTimeframeLabel(timeframe) {
   switch (timeframe) {
@@ -28,6 +27,7 @@ export function buildServerOverviewComponents(activeTab = 'overview', timeframe 
     new ButtonBuilder()
       .setCustomId(`so_tab:overview:${timeframe}`)
       .setLabel('Overview')
+      .setEmoji('<a:01_home_beat:1567037361810833428>')
       .setStyle(activeTab === 'overview' ? ButtonStyle.Primary : ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId(`so_tab:text:${timeframe}`)
@@ -74,6 +74,7 @@ export function buildServerOverviewComponents(activeTab = 'overview', timeframe 
     new ButtonBuilder()
       .setCustomId('so_close')
       .setLabel('Close')
+      .setEmoji('<a:02_delete_beat:1567037365547962449>')
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -89,243 +90,176 @@ export function buildServerOverviewComponents(activeTab = 'overview', timeframe 
       ])
   );
 
-  return [row1, row2, row3, row4];
+  return [row1.toJSON(), row2.toJSON(), row3.toJSON(), row4.toJSON()];
 }
 
 export async function buildOverviewPayload(guild, activeTab = 'overview', timeframe = '7d') {
+  const tfLabel = getTimeframeLabel(timeframe);
+  const dbConfig = db.getGuildConfig(guild.id);
+  const embedColor = dbConfig.accentColor ? parseInt(dbConfig.accentColor.replace('#', ''), 16) : 0x5865F2;
   const components = buildServerOverviewComponents(activeTab, timeframe);
   const stats = statsDB.getServerStatbotStats(guild.id, timeframe);
 
-  if (activeTab === 'overview') {
-    const buffer = await generateStatbotOverviewImage(guild, stats, timeframe);
-    const attachment = new AttachmentBuilder(buffer, { name: 'server-overview.png' });
-    return {
-      content: null,
-      embeds: [],
-      files: [attachment],
-      attachments: [],
-      components
-    };
-  }
+  let attachment = null;
+  let bodyComp = null;
+  let tabTitle = 'Overview';
 
-  if (activeTab === 'leaderboards') {
+  if (activeTab === 'overview') {
+    tabTitle = 'Overview';
+    const buffer = await generateStatbotOverviewImage(guild, stats, timeframe);
+    attachment = new AttachmentBuilder(buffer, { name: 'server-overview.png' });
+    bodyComp = {
+      type: 12,
+      items: [{ media: { url: 'attachment://server-overview.png' } }]
+    };
+  } else if (activeTab === 'leaderboards') {
+    tabTitle = 'Top Leaderboards';
     const topMsgs = stats.topMsgMembers || [];
     const topVcs = stats.topVcMembers || [];
     const buffer = await generateTopImage(guild, topMsgs, topVcs);
-    const attachment = new AttachmentBuilder(buffer, { name: 'server-leaderboard.png' });
-    return {
-      content: null,
-      embeds: [],
-      files: [attachment],
-      attachments: [],
-      components
+    attachment = new AttachmentBuilder(buffer, { name: 'server-leaderboard.png' });
+    bodyComp = {
+      type: 12,
+      items: [{ media: { url: 'attachment://server-leaderboard.png' } }]
     };
-  }
-
-  // Text Breakdown
-  if (activeTab === 'text') {
-    const tfLabel = getTimeframeLabel(timeframe);
-    const dbConfig = db.getGuildConfig(guild.id);
-    const embedColor = dbConfig.accentColor ? parseInt(dbConfig.accentColor.replace('#', ''), 16) : 0x2b2d31;
-
-    const embed = new EmbedBuilder()
-      .setColor(embedColor)
-      .setTitle(`${getRandomHeadingGlyph()} Server Stats > Text Telemetry (${tfLabel})`)
-      .setDescription(
-        `> -# ${BULLET_EMOJI} **Total Messages:** \`${stats.messages.total.toLocaleString()}\`\n` +
-        `> -# ${BULLET_EMOJI} **Daily Average:** \`${stats.messages.avg.toLocaleString()} msgs/day\`\n` +
+  } else if (activeTab === 'graphs') {
+    tabTitle = 'Activity Trends';
+    const oldOverview = statsDB.getServerOverviewStats(guild.id);
+    const buffer = await generateServerTrendImage(guild, oldOverview?.chart || [], timeframe);
+    attachment = new AttachmentBuilder(buffer, { name: 'server-trends.png' });
+    bodyComp = {
+      type: 12,
+      items: [{ media: { url: 'attachment://server-trends.png' } }]
+    };
+  } else if (activeTab === 'text') {
+    tabTitle = 'Text Telemetry';
+    bodyComp = {
+      type: 10,
+      content:
+        `> -# <a:uptime:1552608831060844575> **${guild.name}** \u2022 **Text Communication Diagnostics**\n` +
+        `> -# ${BULLET_EMOJI} **Total Messages:** \`${stats.messages.total.toLocaleString()} msgs\`\n` +
+        `> -# ${BULLET_EMOJI} **Daily Velocity:** \`${stats.messages.avg.toLocaleString()} msgs/day\`\n` +
         `> -# ${BULLET_EMOJI} **Today's Activity:** \`${stats.messages.today.toLocaleString()} msgs\`\n` +
-        `> -# ${BULLET_EMOJI} **Links Distributed:** \`${stats.links.total.toLocaleString()}\` (\`${stats.links.avg} / day\`)\n\n` +
+        `> -# ${BULLET_EMOJI} **Hyperlinks Distributed:** \`${stats.links.total.toLocaleString()}\` (\`${stats.links.avg} / day\`)\n\n` +
         `### Top Message Contributors\n` +
         (stats.topMsgMembers.length > 0
           ? stats.topMsgMembers.map((m, i) => `> -# **#${i + 1}** <@${m.user_id}>: \`${m.total.toLocaleString()} msgs\``).join('\n')
           : `> -# No message telemetry recorded for this timeframe.`)
-      )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
-
-    return {
-      content: null,
-      embeds: [embed],
-      files: [],
-      attachments: [],
-      components
     };
-  }
-
-  // Voice Breakdown
-  if (activeTab === 'voice') {
-    const tfLabel = getTimeframeLabel(timeframe);
-    const dbConfig = db.getGuildConfig(guild.id);
-    const embedColor = dbConfig.accentColor ? parseInt(dbConfig.accentColor.replace('#', ''), 16) : 0x2b2d31;
-
+  } else if (activeTab === 'voice') {
+    tabTitle = 'Voice Telemetry';
     const formatVoice = (s) => {
+      if (!s || isNaN(s)) return '0m';
       const h = Math.floor(s / 3600);
       const m = Math.floor((s % 3600) / 60);
       return h > 0 ? `${h}h ${m}m` : `${m}m`;
     };
-
-    const embed = new EmbedBuilder()
-      .setColor(embedColor)
-      .setTitle(`${getRandomHeadingGlyph()} Server Stats > Voice Telemetry (${tfLabel})`)
-      .setDescription(
+    bodyComp = {
+      type: 10,
+      content:
+        `> -# <a:uptime:1552608831060844575> **${guild.name}** \u2022 **Voice Channel Diagnostics**\n` +
         `> -# ${BULLET_EMOJI} **Total Voice Time:** \`${formatVoice(stats.voice.totalSeconds)}\`\n` +
-        `> -# ${BULLET_EMOJI} **Daily Average:** \`${formatVoice(stats.voice.avgSeconds)} / day\`\n` +
+        `> -# ${BULLET_EMOJI} **Daily Voice Velocity:** \`${formatVoice(stats.voice.avgSeconds)} / day\`\n` +
         `> -# ${BULLET_EMOJI} **Today's Voice Time:** \`${formatVoice(stats.voice.todaySeconds)}\`\n\n` +
         `### Top Voice Talkers\n` +
         (stats.topVcMembers.length > 0
           ? stats.topVcMembers.map((m, i) => `> -# **#${i + 1}** <@${m.user_id}>: \`${formatVoice(m.total)}\``).join('\n')
           : `> -# No voice telemetry recorded for this timeframe.`)
-      )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
-
-    return {
-      content: null,
-      embeds: [embed],
-      files: [],
-      attachments: [],
-      components
     };
-  }
-
-  // Engagement Breakdown
-  if (activeTab === 'engagement') {
-    const tfLabel = getTimeframeLabel(timeframe);
-    const dbConfig = db.getGuildConfig(guild.id);
-    const embedColor = dbConfig.accentColor ? parseInt(dbConfig.accentColor.replace('#', ''), 16) : 0x2b2d31;
-
+  } else if (activeTab === 'engagement') {
+    tabTitle = 'Engagement Matrix';
     const ratio = stats.messages.total > 0 ? (stats.reactions.total / stats.messages.total).toFixed(3) : '0.000';
-
-    const embed = new EmbedBuilder()
-      .setColor(embedColor)
-      .setTitle(`${getRandomHeadingGlyph()} Server Stats > Engagement Matrix (${tfLabel})`)
-      .setDescription(
+    bodyComp = {
+      type: 10,
+      content:
+        `> -# <a:uptime:1552608831060844575> **${guild.name}** \u2022 **Reactivity & Participation Analysis**\n` +
         `> -# ${BULLET_EMOJI} **Total Reactions:** \`${stats.reactions.total.toLocaleString()}\` (All-Time: \`${stats.reactions.all.toLocaleString()}\`)\n` +
-        `> -# ${BULLET_EMOJI} **Reaction Velocity:** \`${stats.reactions.avg} / day\`\n` +
+        `> -# ${BULLET_EMOJI} **Reaction Velocity:** \`${stats.reactions.avg} reactions/day\`\n` +
         `> -# ${BULLET_EMOJI} **Total Hyperlinks:** \`${stats.links.total.toLocaleString()}\` (All-Time: \`${stats.links.all.toLocaleString()}\`)\n` +
-        `> -# ${BULLET_EMOJI} **Link Velocity:** \`${stats.links.avg} / day\`\n` +
-        `> -# ${BULLET_EMOJI} **Reactivity Ratio:** \`${ratio} reactions / msg\`\n` +
-        `> -# ${BULLET_EMOJI} **Active Participants:** \`${stats.activeUsers.active.toLocaleString()} members\`\n`
-      )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
-
-    return {
-      content: null,
-      embeds: [embed],
-      files: [],
-      attachments: [],
-      components
+        `> -# ${BULLET_EMOJI} **Link Sharing Velocity:** \`${stats.links.avg} links/day\`\n` +
+        `> -# ${BULLET_EMOJI} **Reactivity Ratio:** \`${ratio} reactions/msg\`\n` +
+        `> -# ${BULLET_EMOJI} **Active Participants:** \`${stats.activeUsers.active.toLocaleString()} members\``
     };
-  }
-
-  // Active Users Breakdown
-  if (activeTab === 'active') {
-    const tfLabel = getTimeframeLabel(timeframe);
-    const dbConfig = db.getGuildConfig(guild.id);
-    const embedColor = dbConfig.accentColor ? parseInt(dbConfig.accentColor.replace('#', ''), 16) : 0x2b2d31;
-
+  } else if (activeTab === 'active') {
+    tabTitle = 'Active User Telemetry';
     const totalMembers = guild.memberCount || 1;
     const activePercent = ((stats.activeUsers.active / totalMembers) * 100).toFixed(1);
-
-    const embed = new EmbedBuilder()
-      .setColor(embedColor)
-      .setTitle(`${getRandomHeadingGlyph()} Server Stats > Active User Telemetry (${tfLabel})`)
-      .setDescription(
+    bodyComp = {
+      type: 10,
+      content:
+        `> -# <a:uptime:1552608831060844575> **${guild.name}** \u2022 **Population Dynamics & Retention**\n` +
         `> -# ${BULLET_EMOJI} **Unique Active Members:** \`${stats.activeUsers.active.toLocaleString()} users\` (\`${activePercent}%\` of server)\n` +
         `> -# ${BULLET_EMOJI} **Daily Active Average:** \`${stats.activeUsers.avg} users/day\`\n` +
         `> -# ${BULLET_EMOJI} **Peak Daily Active:** \`${stats.activeUsers.peak.toLocaleString()} users\`\n` +
-        `> -# ${BULLET_EMOJI} **Server Population:** \`${totalMembers.toLocaleString()} total members\`\n`
-      )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
-
-    return {
-      content: null,
-      embeds: [embed],
-      files: [],
-      attachments: [],
-      components
+        `> -# ${BULLET_EMOJI} **Server Population:** \`${totalMembers.toLocaleString()} total members\``
     };
-  }
-
-  // Growth Breakdown
-  if (activeTab === 'growth') {
-    const tfLabel = getTimeframeLabel(timeframe);
-    const dbConfig = db.getGuildConfig(guild.id);
-    const embedColor = dbConfig.accentColor ? parseInt(dbConfig.accentColor.replace('#', ''), 16) : 0x2b2d31;
-
+  } else if (activeTab === 'growth') {
+    tabTitle = 'Growth Dynamics';
     const netGrowth = stats.members.joined - stats.members.left;
     const netPrefix = netGrowth > 0 ? '+' : '';
-
-    const embed = new EmbedBuilder()
-      .setColor(embedColor)
-      .setTitle(`${getRandomHeadingGlyph()} Server Stats > Growth & Population Dynamics (${tfLabel})`)
-      .setDescription(
+    bodyComp = {
+      type: 10,
+      content:
+        `> -# <a:uptime:1552608831060844575> **${guild.name}** \u2022 **Member Influx & Churn Rate**\n` +
         `> -# ${BULLET_EMOJI} **Current Population:** \`${guild.memberCount.toLocaleString()} members\`\n` +
         `> -# ${BULLET_EMOJI} **Members Joined:** \`+${stats.members.joined.toLocaleString()}\`\n` +
         `> -# ${BULLET_EMOJI} **Members Departed:** \`-${stats.members.left.toLocaleString()}\`\n` +
-        `> -# ${BULLET_EMOJI} **Net Population Shift:** \`${netPrefix}${netGrowth.toLocaleString()}\`\n`
-      )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
-
-    return {
-      content: null,
-      embeds: [embed],
-      files: [],
-      attachments: [],
-      components
+        `> -# ${BULLET_EMOJI} **Net Population Shift:** \`${netPrefix}${netGrowth.toLocaleString()} members\``
     };
-  }
-
-  // Graphs Tab (Activity Trend Dual Chart)
-  if (activeTab === 'graphs') {
-    const oldOverview = statsDB.getServerOverviewStats(guild.id);
-    const buffer = await generateServerTrendImage(guild, oldOverview?.chart || [], timeframe);
-    const attachment = new AttachmentBuilder(buffer, { name: 'server-trends.png' });
-    return {
-      content: null,
-      embeds: [],
-      files: [attachment],
-      attachments: [],
-      components
-    };
-  }
-
-  // Compare Tab
-  if (activeTab === 'compare') {
-    const tfLabel = getTimeframeLabel(timeframe);
-    const dbConfig = db.getGuildConfig(guild.id);
-    const embedColor = dbConfig.accentColor ? parseInt(dbConfig.accentColor.replace('#', ''), 16) : 0x2b2d31;
-
-    const embed = new EmbedBuilder()
-      .setColor(embedColor)
-      .setTitle(`${getRandomHeadingGlyph()} Server Stats > Comparative Telemetry (${tfLabel})`)
-      .setDescription(
-        `> -# ${BULLET_EMOJI} **Active Timeframe:** \`${tfLabel}\`\n` +
+  } else if (activeTab === 'compare') {
+    tabTitle = 'Comparative Matrix';
+    bodyComp = {
+      type: 10,
+      content:
+        `> -# <a:uptime:1552608831060844575> **${guild.name}** \u2022 **Cross-Vector Performance Metrics**\n` +
+        `> -# ${BULLET_EMOJI} **Active Window:** \`${tfLabel}\`\n` +
         `> -# ${BULLET_EMOJI} **Messages Analyzed:** \`${stats.messages.total.toLocaleString()} msgs\`\n` +
         `> -# ${BULLET_EMOJI} **Voice Tracked:** \`${Math.round(stats.voice.totalSeconds / 3600)} hours\`\n` +
         `> -# ${BULLET_EMOJI} **Daily Active Users:** \`${stats.activeUsers.avg} avg / day\`\n` +
-        `> -# ${BULLET_EMOJI} **Growth Ratio:** \`${stats.members.joined} joins / ${stats.members.left} leaves\`\n`
-      )
-      .setFooter({ text: `Tracking since ${stats.trackingSince} | UTC • Powered by Athena` });
-
-    return {
-      content: null,
-      embeds: [embed],
-      files: [],
-      attachments: [],
-      components
+        `> -# ${BULLET_EMOJI} **Growth Ratio:** \`${stats.members.joined} joins / ${stats.members.left} leaves\``
+    };
+  } else {
+    tabTitle = 'Overview';
+    const buffer = await generateStatbotOverviewImage(guild, stats, timeframe);
+    attachment = new AttachmentBuilder(buffer, { name: 'server-overview.png' });
+    bodyComp = {
+      type: 12,
+      items: [{ media: { url: 'attachment://server-overview.png' } }]
     };
   }
 
-  // Fallback to overview
-  const buffer = await generateStatbotOverviewImage(guild, stats, timeframe);
-  const attachment = new AttachmentBuilder(buffer, { name: 'server-overview.png' });
-  return {
-    content: null,
-    embeds: [],
-    files: [attachment],
-    attachments: [],
-    components
+  const containerComps = [
+    {
+      type: 10,
+      content: `# ${getRandomHeadingGlyph()} Server Stats > ${tabTitle} (${tfLabel}) | ${TICK_EMOJI}`
+    },
+    { type: 14, divider: true }
+  ];
+
+  if (bodyComp) {
+    containerComps.push(bodyComp);
+    containerComps.push({ type: 14, divider: true });
+  }
+
+  containerComps.push(...components);
+  containerComps.push({ type: 14, divider: true });
+  containerComps.push({
+    type: 10,
+    content: `-# **Tracking since ${stats.trackingSince || '2026-09-11'} | UTC \u2022 Athena Bulletproof Defense Matrix**`
+  });
+
+  const container = {
+    type: 17,
+    accent_color: embedColor,
+    components: containerComps
   };
+
+  return sanitizeCV2Payload({
+    components: [container],
+    files: attachment ? [attachment] : [],
+    ...(attachment ? {} : { attachments: [] }),
+    flags: MessageFlags.IsComponentsV2
+  });
 }
 
 export async function handleServerOverviewInteraction(interaction) {
@@ -333,10 +267,15 @@ export async function handleServerOverviewInteraction(interaction) {
   if (!customId || !customId.startsWith('so_')) return;
 
   if (customId === 'so_close') {
+    await interaction.deferUpdate().catch(() => null);
     try {
-      await interaction.message.delete();
+      if (interaction.message?.deletable) {
+        await interaction.message.delete().catch(() => null);
+      } else {
+        await interaction.editReply({ components: [] }).catch(() => null);
+      }
     } catch {
-      await interaction.update({ components: [] }).catch(() => null);
+      await interaction.editReply({ components: [] }).catch(() => null);
     }
     return;
   }
@@ -364,7 +303,9 @@ export async function handleServerOverviewInteraction(interaction) {
 
   try {
     const payload = await buildOverviewPayload(interaction.guild, activeTab, timeframe);
-    await interaction.editReply(payload).catch(console.error);
+    await interaction.editReply(payload).catch((err) => {
+      console.error('[ServerOverview] editReply error:', err);
+    });
   } catch (err) {
     console.error('Error updating server overview interaction:', err);
   }
@@ -401,19 +342,8 @@ export const commands = [
 
       try {
         const payload = await buildOverviewPayload(message.guild, 'overview', timeframe);
-        const replyMsg = await message.channel.send(payload);
+        await message.channel.send(payload);
         if (waitMsg) await waitMsg.delete().catch(() => null);
-
-        // Auto-disable components after 5 minutes of inactivity
-        if (replyMsg && typeof replyMsg.createMessageComponentCollector === 'function') {
-          const collector = replyMsg.createMessageComponentCollector({
-            time: 300_000
-          });
-
-          collector.on('end', () => {
-            replyMsg.edit({ components: [] }).catch(() => null);
-          });
-        }
       } catch (e) {
         console.error('Server overview execution error:', e);
         if (waitMsg) await waitMsg.edit(cv2.error('Error', 'Failed to render server overview dashboard.')).catch(() => null);
@@ -425,18 +355,7 @@ export const commands = [
 
       try {
         const payload = await buildOverviewPayload(interaction.guild, 'overview', timeframe);
-        const replyMsg = await interaction.editReply(payload);
-
-        // Auto-disable components after 5 minutes of inactivity
-        if (replyMsg && typeof replyMsg.createMessageComponentCollector === 'function') {
-          const collector = replyMsg.createMessageComponentCollector({
-            time: 300_000
-          });
-
-          collector.on('end', () => {
-            interaction.editReply({ components: [] }).catch(() => null);
-          });
-        }
+        await interaction.editReply(payload);
       } catch (e) {
         console.error('Server overview slash execution error:', e);
         await interaction.editReply(cv2.error('Error', 'Failed to render server overview dashboard.')).catch(() => null);

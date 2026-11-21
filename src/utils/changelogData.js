@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.5.3',
+    headline: 'Server Overview Full CV2 Containerization & Interaction Engine Architecture',
+    summary: 'Encapsulated the entire Statbot-style Server Overview telemetry dashboard (canvas graphics, media galleries, text telemetry breakdowns, action buttons, and timeframe selection dropdown) inside a native Discord Components V2 (type: 17) container. Fixed interaction double-acknowledgement race conditions and resolved attachment-clearing conflicts across tab transitions.',
+    whatsNew: [
+      {
+        title: 'Native Discord Components V2 (CV2) Containerization',
+        desc: 'Wrapped all 9 Server Overview tabs (Overview, Text, Voice, Engagement, Active, Graphs, Growth, Leaderboards, Compare) into unified type: 17 CV2 containers with clean headers, dividers, media galleries, embedded action rows, and defense status footers.'
+      },
+      {
+        title: 'Zero-Fail Interaction & Attachment Reconciliation',
+        desc: 'Eliminated DiscordAPIError[40060] interaction acknowledgement race conditions, added safe deferral guards, and intelligently differentiated between canvas attachment uploads and text-tab attachment clearing.'
+      },
+      {
+        title: 'Tactical Navigation Button Emojis',
+        desc: 'Integrated custom animated navigation beat glyphs for the Overview (<a:01_home_beat:1567037361810833428>) and Close (<a:02_delete_beat:1567037365547962449>) controls.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Purged Redundant Collector Lifecycles',
+        desc: 'Removed conflicting message component collectors in favor of global interaction routing, guaranteeing instant responsiveness without expired webhook token crashes.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.5.2',
     headline: 'Military-Grade Strike Optimization & Pure Direct Ban Architecture',
     summary: 'Eliminated intermediate role-stripping before bans across all defense vectors, dedicating 100% of socket throughput to sub-10ms instantaneous rawBan execution. Purged duplicate raw Gateway listeners and implemented fast-ring packet deduplication, preventing redundant execution and eliminating recursive channel overwrite feedback loops.',
