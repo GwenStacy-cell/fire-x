@@ -16,6 +16,28 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '21 November 2026',
+    version: 'v3.4.9',
+    headline: 'Strict Discord Native Emoji Purge Across Whitelist & Security Controls',
+    summary: 'Completely eliminated all Unicode native Discord emojis from Whitelist management panels, select menu placeholders, action buttons, security firewall status lines, and player announcements in strict compliance with the Bot Emoji Rules.',
+    whatsNew: [
+      {
+        title: 'Native Emoji Purge from Whitelist Interface',
+        desc: 'Removed native Unicode emojis from Whitelist category headers and dropdown placeholders, ensuring all UI elements strictly use Athena custom animated and static assets.'
+      },
+      {
+        title: 'Security Control Buttons & Status Sanitization',
+        desc: 'Stripped legacy Unicode emojis from security action buttons, audit pagination controls, and status telemetry.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Audio Sentinel & Announcement Standardization',
+        desc: 'Standardized music player fallback notifications and alert messages to use custom animated glyphs and ticks instead of native emojis.'
+      }
+    ]
+  },
+  {
+    date: '21 November 2026',
     version: 'v3.4.8',
     headline: 'Whitelist Defense Matrix Expansion & Universal Extra Owner Immunity',
     summary: 'Expanded the Whitelist System (!whitelist / !wl) to support full granular whitelisting for both Anti-Nuke Shields (24 modules) and Auto-Mod / Chat Protections (10 modules, including Blacklisted Words, Anti-Link, Anti-Invite, Anti-Spam, Mass Mentions, Big Fonts, Hidden URLs, File Checks, AI Toxicity, and Quarantine). Partitioned whitelist management into two sleek action rows with multi-select menus to remain strictly within Discord limits. Established universal, unconditional immunity for Extra Owners across all auto-mod filters, anti-nuke punishers, quarantine triggers, and theater mode routines.',

@@ -4173,9 +4173,9 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
     `-# **${targetName}** (${targetId})\n\n` +
     `-# ${BULLET_EMOJI} **Authorized Categories:** ${accessProgress} (${enabledCount}/${allKeys.length} Whitelisted)\n` +
     `-# ${BULLET_EMOJI} **Custom Action Limits:** \`${limitText}\`\n\n` +
-    `### 🛡️ Anti-Nuke Shields\n` +
+    `### Anti-Nuke Shields\n` +
     nukeListText +
-    `\n### 💬 Auto-Mod & Chat Protections\n` +
+    `\n### Auto-Mod & Chat Protections\n` +
     automodListText;
 
   const panelContainer = {
@@ -4243,7 +4243,7 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
           {
             type: 3,
             custom_id: `wl_selectnuke_${type}_${targetId}`,
-            placeholder: '🛡️ Whitelist Anti-Nuke Shields (Select multiple)...',
+            placeholder: 'Whitelist Anti-Nuke Shields (Select multiple)...',
             min_values: 0,
             max_values: nukeOptions.length,
             options: nukeOptions
@@ -4256,7 +4256,7 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
           {
             type: 3,
             custom_id: `wl_selectautomod_${type}_${targetId}`,
-            placeholder: '💬 Whitelist Auto-Mod & Chat Filters (Select multiple)...',
+            placeholder: 'Whitelist Auto-Mod & Chat Filters (Select multiple)...',
             min_values: 0,
             max_values: automodOptions.length,
             options: automodOptions
@@ -5191,7 +5191,7 @@ export function buildSecurityRequirementsWarning(guild, req) {
     `> -# 2. Drag **Athena Prime** to the top of your server role list (Top 3).\n` +
     `> -# 3. Ensure the server has at least **200 members**.\n` +
     `> -# 4. Ensure Athena Prime has the **Administrator** permission granted.\n` +
-    `> -# 5. Run \`!security enable all\` or \`!antinuke enable\` again or click **⚡ Engage All Shields**.\n\n` +
+    `> -# 5. Run \`!security enable all\` or \`!antinuke enable\` again or click **Engage All Shields**.\n\n` +
     `> -# <a:uptime:1552608831060844575> **Notice:** The 200-member and Top 3 role hierarchy criteria can strictly only be bypassed by the **Bot Owner**.`;
 
   const container = {
@@ -5372,9 +5372,9 @@ export async function getSecurityStatusPanel(guild) {
       listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **Hierarchy Requirements Not Met for Anti-Nuke:**\n` +
                   `> -# ${BULLET_EMOJI} Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
                   `> -# ${BULLET_EMOJI} Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3 in Server Settings > Roles)'}\n` +
-                  `> -# **Execute \`!security enable all\` or \`!antinuke enable\` or click \`⚡ Engage All Shields\` once requirements are met. (Bot Owner bypasses all requirements).**`;
+                  `> -# **Execute \`!security enable all\` or \`!antinuke enable\` or click \`Engage All Shields\` once requirements are met. (Bot Owner bypasses all requirements).**`;
     } else {
-      listText += "\n> -# <a:exclamation_outline1:1565666739356827759> **Security is currently DISABLED on this server.**\n> -# **Execute `!security enable all` or `!antinuke enable` or click `⚡ Engage All Shields` below to arm all 28 modules.**";
+      listText += "\n> -# <a:exclamation_outline1:1565666739356827759> **Security is currently DISABLED on this server.**\n> -# **Execute `!security enable all` or `!antinuke enable` or click `Engage All Shields` below to arm all 28 modules.**";
     }
   } else if (!hasManageRoles) {
     listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **PERMISSION ADVISORY:** Athena Prime lacks the **Manage Roles** permission. Persistence sentinels cannot be bound. Grant Administrator or Manage Roles in Server Settings > Roles.`;
@@ -5428,11 +5428,11 @@ export async function getSecurityStatusPanel(guild) {
 
     const actionButtons = [];
     if (!isSecured) {
-      actionButtons.push({ type: 2, custom_id: 'sec_enable_all', label: '⚡ Engage All Shields', style: 3 });
+      actionButtons.push({ type: 2, custom_id: 'sec_enable_all', label: 'Engage All Shields', style: 3 });
     } else {
       actionButtons.push({ type: 2, custom_id: 'sec_disable_all_btn', label: 'Disengage Shields', style: 4 });
     }
-    actionButtons.push({ type: 2, custom_id: 'sec_live_records', label: `🔴 Live Records (${liveRecords.length})`, style: 2 });
+    actionButtons.push({ type: 2, custom_id: 'sec_live_records', label: `Live Records (${liveRecords.length})`, style: 2 });
     actionButtons.push({ type: 2, custom_id: 'sec_module_manage', label: 'Manage Modules', style: 2 });
     actionButtons.push({ type: 2, custom_id: 'sec_architecture_guide', label: 'Exploit Guide', style: 2 });
     actionButtons.push({ type: 2, custom_id: 'sec_close', label: 'Close', style: 2 });
@@ -5498,29 +5498,29 @@ export async function getSecurityLiveRecordsPanel(guild, page = 0) {
     : `\n\n-# **Live Buffer:** \`${allRecords.length}\` / 100 recorded incidents retained in DB`;
 
   const buttons = [
-    { type: 2, custom_id: `sec_records_refresh_${currentPage}`, label: '🔄 Refresh', style: 2 }
+    { type: 2, custom_id: `sec_records_refresh_${currentPage}`, label: 'Refresh', style: 2 }
   ];
 
   if (maxPages > 1) {
     buttons.push({ 
       type: 2, 
       custom_id: `sec_records_page_${Math.max(0, currentPage - 1)}`, 
-      label: '◀ Prev', 
+      label: 'Previous', 
       style: 2, 
       disabled: currentPage === 0 
     });
     buttons.push({ 
       type: 2, 
       custom_id: `sec_records_page_${Math.min(maxPages - 1, currentPage + 1)}`, 
-      label: 'Next ▶', 
+      label: 'Next', 
       style: 2, 
       disabled: currentPage >= maxPages - 1 
     });
   }
 
-  buttons.push({ type: 2, custom_id: 'sec_status_view', label: '🛡️ Firewall Status', style: 2 });
+  buttons.push({ type: 2, custom_id: 'sec_status_view', label: 'Firewall Status', style: 2 });
   if (allRecords.length > 0) {
-    buttons.push({ type: 2, custom_id: 'sec_records_clear', label: '🗑️ Clear History', style: 4 });
+    buttons.push({ type: 2, custom_id: 'sec_records_clear', label: 'Clear History', style: 4 });
   }
 
   const container = {

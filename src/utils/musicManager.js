@@ -394,7 +394,7 @@ ${candidatesLog.trim()}
                         updatePlayerUI(guild.id);
                         if (queue.textChannel) {
                            const tc = global.client.channels.cache.get(queue.textChannel);
-                           if (tc) tc.send(`⚠️ **LavaSrc Mirror Failed**. Falling back to YouTube Music for \`${failedTrack.title}\`...`).catch(()=>{});
+                           if (tc) tc.send(`<a:exclamation_outline1:1565666739356827759> **LavaSrc Mirror Failed**. Falling back to YouTube Music for \`${failedTrack.title}\`...`).catch(()=>{});
                         }
                      } catch(e) { console.error('Fallback playTrack failed', e); }
                   }
@@ -500,7 +500,7 @@ ${candidatesLog.trim()}
                    }
                    if (count > 0 && queue.textChannel) {
                        const tc = global.client.channels.cache.get(queue.textChannel);
-                       if (tc) tc.send(`✅ Finished loading **${count}** remaining tracks from **${spotifyData.title}**!`);
+                       if (tc) tc.send(`<a:03_tick_circle:1565665642084827206> Finished loading **${count}** remaining tracks from **${spotifyData.title}**!`);
                    }
                 }, 1000);
              }
@@ -800,15 +800,15 @@ export async function updatePlayerUI(guildId) {
     );
     
     const row3 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('music_like').setLabel('Like').setStyle(ButtonStyle.Secondary).setEmoji('🤍'),
+      new ButtonBuilder().setCustomId('music_like').setLabel('Like').setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId('music_autoplay').setLabel(queue.autoplay ? 'Autoplay (ON)' : 'Autoplay').setStyle(ButtonStyle.Secondary).setEmoji('<:autoplay:1524695881339764767>'),
-      new ButtonBuilder().setCustomId('music_repeat').setLabel(queue.repeatTrack ? 'Replay (ON)' : 'Replay').setStyle(ButtonStyle.Secondary).setEmoji('🔁')
+      new ButtonBuilder().setCustomId('music_repeat').setLabel(queue.repeatTrack ? 'Replay (ON)' : 'Replay').setStyle(ButtonStyle.Secondary)
     );
 
     const row4 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('music_voldown').setLabel('Vol-').setStyle(ButtonStyle.Secondary).setEmoji('🔉'),
+      new ButtonBuilder().setCustomId('music_voldown').setLabel('Vol-').setStyle(ButtonStyle.Secondary).setEmoji('<:volumedown:1528156479075516526>'),
       new ButtonBuilder().setCustomId('music_volreset').setLabel(`${queue.volume}%`).setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('music_volup').setLabel('Vol+').setStyle(ButtonStyle.Secondary).setEmoji('🔊')
+      new ButtonBuilder().setCustomId('music_volup').setLabel('Vol+').setStyle(ButtonStyle.Secondary)
     );
     
     await message.edit({ embeds: [embed], components: [row1, row2, row3, row4], files: [] });
@@ -858,7 +858,7 @@ export async function handleInteraction(interaction) {
     queue.songs.unshift(queue.history.pop());
     if (queue.player) await queue.player.stopTrack();
     await interaction.reply({ content: `Playing previous track.` });
-    announceToVC(`⏮️ **${interaction.user.displayName}** returned to the previous track.`);
+    announceToVC(`**${interaction.user.displayName}** returned to the previous track.`);
   } else if (action === 'stop') {
     queue.songs = [];
     queue.history = [];
@@ -870,7 +870,7 @@ export async function handleInteraction(interaction) {
     queue.repeatTrack = !queue.repeatTrack;
     updatePlayerUI(interaction.guildId);
     await interaction.reply({ content: `Repeat is now **${queue.repeatTrack ? 'ON' : 'OFF'}**.` });
-    announceToVC(`🔁 **${interaction.user.displayName}** turned repeat **${queue.repeatTrack ? 'ON' : 'OFF'}**.`);
+    announceToVC(`**${interaction.user.displayName}** turned repeat **${queue.repeatTrack ? 'ON' : 'OFF'}**.`);
   } else if (action === 'autoplay') {
     queue.autoplay = !queue.autoplay;
     updatePlayerUI(interaction.guildId);
@@ -879,8 +879,8 @@ export async function handleInteraction(interaction) {
   } else if (action === 'like') {
     if (!queue.current) return interaction.reply({ content: `Nothing is playing to like!` });
     const added = db.toggleLikedSong(interaction.user.id, queue.current);
-    await interaction.reply({ content: added ? `🤍 Added **${queue.current.title}** to your Liked Songs! (Autoplay will prioritize these)` : `Removed from Liked Songs.` });
-    if (added) announceToVC(`🤍 **${interaction.user.displayName}** liked the current song!`);
+    await interaction.reply({ content: added ? `<a:03_tick_circle:1565665642084827206> Added **${queue.current.title}** to your Liked Songs! (Autoplay will prioritize these)` : `Removed from Liked Songs.` });
+    if (added) announceToVC(`<a:03_tick_circle:1565665642084827206> **${interaction.user.displayName}** liked the current song!`);
   } else if (action === 'voldown') {
     queue.volume = Math.max(0, queue.volume - 10);
     if (queue.player) queue.player.setGlobalVolume(queue.volume);
@@ -892,13 +892,13 @@ export async function handleInteraction(interaction) {
     if (queue.player) queue.player.setGlobalVolume(queue.volume);
     updatePlayerUI(interaction.guildId);
     await interaction.reply({ content: `Volume increased to ${queue.volume}%` });
-    announceToVC(`🔊 **${interaction.user.displayName}** increased the volume to **${queue.volume}%**.`);
+    announceToVC(`**${interaction.user.displayName}** increased the volume to **${queue.volume}%**.`);
   } else if (action === 'volreset') {
     queue.volume = 100;
     if (queue.player) queue.player.setGlobalVolume(queue.volume);
     updatePlayerUI(interaction.guildId);
     await interaction.reply({ content: `Volume reset to 100%` });
-    announceToVC(`🔊 **${interaction.user.displayName}** reset the volume to **100%**.`);
+    announceToVC(`**${interaction.user.displayName}** reset the volume to **100%**.`);
   } else if (action === 'lyrics') {
      // Lyrics modal code
   }
