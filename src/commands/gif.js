@@ -11,28 +11,36 @@ import {
 import { 
   searchFederatedGifs, 
   createGifSession, 
-  buildGifResultPayload 
+  buildGifResultPayload,
+  parseGifRequest,
+  VERB_CONJUGATIONS 
 } from '../utils/gifSearch.js';
 
 export const commands = [
   {
     name: 'gif',
-    aliases: ['findgif', 'searchgif', 'gifs', 'tenor', 'klipy', 'g'],
-    description: 'Search animated GIFs across KLIPY, Tenor, Giphy, and OtakuGifs inside an accent borderless CV2 container',
+    aliases: ['findgif', 'searchgif', 'gifs', 'tenor', 'klipy', 'g', 'gifsearch', 'tenorgif', 'klipygif', 'giphy', 'gifme', 'reactiongif', 'reactgif', 'actiongif', 'anigif'],
+    description: 'Search animated GIFs and express actions mentioning users inside an accent borderless CV2 container',
     category: 'utility',
     permissions: [],
     options: [
       {
         name: 'query',
-        description: 'What GIF to find (e.g. cat vibing, anime hug, popcorn, excited, rickroll)',
+        description: 'What GIF to find or action request (e.g. punches @user, hugs @user, cat vibing, eating popcorn)',
         type: 3, // STRING
         required: true
+      },
+      {
+        name: 'target',
+        description: 'Optional member to mention in the action GIF container',
+        type: 6, // USER
+        required: false
       }
     ],
 
     async executePrefix(message, args) {
-      const query = args.join(' ').trim();
-      if (!query) {
+      const rawContent = args.join(' ').trim();
+      if (!rawContent) {
         return message.reply({
           components: [
             {
@@ -40,21 +48,25 @@ export const commands = [
               components: [
                 {
                   type: 10,
-                  content: `# ${getRandomHeadingGlyph()} GIF Search Matrix | ${TICK_EMOJI}\n` +
-                           `> -# <a:uptime:1552608831060844575> **Usage:** \`!gif <need / query>\`\n` +
-                           `> -# ${BULLET_EMOJI} **Aliases:** \`!findgif\`, \`!searchgif\`, \`!gifs\`, \`!tenor\`, \`!klipy\`, \`/gif\`\n` +
-                           `> -# ${BULLET_EMOJI} **Examples:** \`!gif anime hug\`, \`!gif cat vibing\`, \`!gif popcorn\`, \`!gif celebrating\`\n` +
-                           `> -# ${BULLET_EMOJI} **Federated Routes:** Powered by KLIPY, Tenor, Giphy, OtakuGifs & Nekos Best.\n` +
-                           `> -# ${BULLET_EMOJI} **Controls:** Use \`Prev\`, \`Next\`, \`Random\`, and \`Fresh Batch\` buttons to explore.`
+                  content: `# ${getRandomHeadingGlyph()} GIF Expression Matrix | ${TICK_EMOJI}\n` +
+                           `> -# <a:uptime:1552608831060844575> **Usage:** \`!gif <request> [@user]\`\n` +
+                           `> -# <a:target_blink:1565667466984554588> **Expressive Action:** \`!gif punches @user\`, \`!gif hugs @user\`, \`!gif dances with @user\`\n` +
+                           `> -# <a:target_blink:1565667466984554588> **Personal Action:** \`!gif is eating popcorn\`, \`!gif dances\`, \`!gif dies of laughter\`\n` +
+                           `> -# <a:target_blink:1565667466984554588> **General Search:** \`!gif cat vibing\`, \`!gif popcorn\`, \`!gif anime celebration\`\n` +
+                           `> -# <a:target_blink:1565667466984554588> **Aliases:** \`!findgif\`, \`!searchgif\`, \`!gifs\`, \`!tenor\`, \`!klipy\`, \`!g\`, \`!giphy\`, \`!actiongif\`\n` +
+                           `> -# <a:target_blink:1565667466984554588> **Federated Routes:** Powered by KLIPY, Tenor, Giphy, OtakuGifs & Nekos Best.\n` +
+                           `> -# <a:target_blink:1565667466984554588> **Controls:** Use \`Prev\`, \`Next\`, \`Random\`, and \`Fresh Batch\` buttons to explore.`
                 },
                 { type: 14, divider: true },
-                { type: 10, content: `-# **Athena Federated GIF Matrix \u00b7 KLIPY \u00b7 Tenor \u00b7 GIPHY \u00b7 OtakuGifs**` }
+                { type: 10, content: `-# **Athena Federated GIF Matrix · KLIPY · Tenor · GIPHY · OtakuGifs**` }
               ]
             }
           ],
           flags: MessageFlags.IsComponentsV2
         });
       }
+
+      const parsed = parseGifRequest(rawContent, message.author, message.mentions.users);
 
       const loadingMsg = await message.reply({
         components: [
@@ -63,7 +75,7 @@ export const commands = [
             components: [
               {
                 type: 10,
-                content: `-# <a:uptime:1552608831060844575> **Searching federated GIF routes for \`${query}\`...**`
+                content: `-# <a:uptime:1552608831060844575> **Federating GIF routes for \`${parsed.cleanQuery}\`...**`
               }
             ]
           }
@@ -72,17 +84,26 @@ export const commands = [
       }).catch(() => null);
 
       try {
-        const results = await searchFederatedGifs(query, { offset: 0 });
+        let results = await searchFederatedGifs(parsed.searchQuery, { offset: 0 });
+        if ((!results || results.length === 0) && parsed.cleanQuery !== parsed.searchQuery) {
+          results = await searchFederatedGifs(parsed.cleanQuery, { offset: 0 });
+        }
+
         if (!results || results.length === 0) {
           const warnPayload = cv2.warn(
             `No GIFs Found | ${WARN_EMOJI}`,
-            `No animated GIFs were located for \`${query}\`. Try a broader keyword or common phrase.`
+            `No animated GIFs were located for \`${parsed.cleanQuery}\`. Try a broader keyword or common action.`
           );
           if (loadingMsg) return loadingMsg.edit(warnPayload);
           return message.reply(warnPayload);
         }
 
-        const sessionId = createGifSession(query, results, 0);
+        const sessionId = createGifSession(parsed.searchQuery, results, 0, {
+          actionHeadline: parsed.actionHeadline,
+          cleanQuery: parsed.cleanQuery,
+          authorId: message.author.id,
+          targetId: parsed.targetUser?.id || null
+        });
         const payload = buildGifResultPayload(sessionId, 0);
 
         if (loadingMsg) {
@@ -99,24 +120,42 @@ export const commands = [
 
     async executeSlash(interaction) {
       const query = interaction.options.getString('query');
+      const targetUser = interaction.options.getUser('target');
       if (!query) {
         return interaction.reply({
-          content: `-# ${WARN_EMOJI} Please provide a GIF query: \`/gif query:<need>\``,
+          content: `-# ${WARN_EMOJI} Please provide a GIF query or action request: \`/gif query:<need>\``,
           flags: MessageFlags.Ephemeral
         });
       }
 
       await interaction.deferReply();
 
+      const mentionsList = targetUser ? [targetUser] : [];
+      const parsed = parseGifRequest(query, interaction.user, mentionsList);
+      if (targetUser && !parsed.targetUser) {
+        parsed.targetUser = targetUser;
+        const conjugated = VERB_CONJUGATIONS[parsed.cleanQuery.toLowerCase()] || parsed.cleanQuery;
+        parsed.actionHeadline = `<@${interaction.user.id}> ${conjugated} <@${targetUser.id}>!`;
+      }
+
       try {
-        const results = await searchFederatedGifs(query, { offset: 0 });
+        let results = await searchFederatedGifs(parsed.searchQuery, { offset: 0 });
+        if ((!results || results.length === 0) && parsed.cleanQuery !== parsed.searchQuery) {
+          results = await searchFederatedGifs(parsed.cleanQuery, { offset: 0 });
+        }
+
         if (!results || results.length === 0) {
           return interaction.editReply(
-            cv2.warn(`No GIFs Found | ${WARN_EMOJI}`, `No animated GIFs were located for \`${query}\`. Try a broader keyword.`)
+            cv2.warn(`No GIFs Found | ${WARN_EMOJI}`, `No animated GIFs were located for \`${parsed.cleanQuery}\`. Try a broader keyword.`)
           );
         }
 
-        const sessionId = createGifSession(query, results, 0);
+        const sessionId = createGifSession(parsed.searchQuery, results, 0, {
+          actionHeadline: parsed.actionHeadline,
+          cleanQuery: parsed.cleanQuery,
+          authorId: interaction.user.id,
+          targetId: parsed.targetUser?.id || null
+        });
         const payload = buildGifResultPayload(sessionId, 0);
         return interaction.editReply(payload);
       } catch (err) {

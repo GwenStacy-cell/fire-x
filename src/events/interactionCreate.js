@@ -3575,7 +3575,8 @@ async function handleSecurityInteractions(interaction, guild) {
           gifSessions,
           getOrRecoverGifSession,
           fetchFreshBatchForGifSession,
-          extractQueryFromGifMessage
+          extractQueryFromGifMessage,
+          extractMetadataFromGifMessage
         } = await import('../utils/gifSearch.js');
 
         const parts = customId.split(':');
@@ -3583,12 +3584,13 @@ async function handleSecurityInteractions(interaction, guild) {
         const sessionId = parts[2] || '';
         const targetIndex = parseInt(parts[3]) || 0;
 
-        const fallbackQuery = extractQueryFromGifMessage(interaction.message);
+        const meta = extractMetadataFromGifMessage(interaction.message);
+        const fallbackQuery = meta.query || extractQueryFromGifMessage(interaction.message);
 
         // Fresh Batch requested: fetch brand new GIFs with next offset
         if (action === 'fresh') {
           await interaction.deferUpdate().catch(() => null);
-          const session = await fetchFreshBatchForGifSession(sessionId, fallbackQuery);
+          const session = await fetchFreshBatchForGifSession(sessionId, fallbackQuery, meta);
           if (session && session.results.length > 0) {
             const payload = buildGifResultPayload(session.id || sessionId, 0);
             return interaction.editReply(payload);
@@ -3606,7 +3608,7 @@ async function handleSecurityInteractions(interaction, guild) {
         if (!session || !session.results || session.results.length === 0) {
           if (fallbackQuery) {
             await interaction.deferUpdate().catch(() => null);
-            session = await getOrRecoverGifSession(sessionId, fallbackQuery);
+            session = await getOrRecoverGifSession(sessionId, fallbackQuery, meta);
             if (session && session.results.length > 0) {
               const reqIdx = action === 'rand'
                 ? Math.floor(Math.random() * session.results.length)

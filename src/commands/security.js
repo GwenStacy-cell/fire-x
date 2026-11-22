@@ -115,7 +115,7 @@ export const commands = [
   // --- QUARANTINE COMMAND ---
   {
     name: 'quarantine',
-    aliases: ['qr', 'q', 'isolate', 'jail', 'freeze', 'quarantined', 'qzone', 'isolation', 'iso', 'lock', 'timeoutq', 'quar', 'quarant', 'quaran', 'quarantineuser', 'setquarantine', 'addquarantine'],
+    aliases: ['qr', 'q', 'isolate', 'jail', 'freeze', 'quarantined', 'qzone', 'isolation', 'iso', 'lock', 'timeoutq', 'quar', 'quarant', 'quaran', 'quarantineuser', 'setquarantine', 'addquarantine', 'quarzone', 'quarantinezone', 'jailuser', 'isolateuser', 'freezeuser', 'detain', 'contain', 'detention', 'quaruser'],
     description: 'Isolates a user - strips roles, moves to quarantine VC, DMs them. Default duration: 5m.',
     category: 'security',
     permissions: [PermissionFlagsBits.ModerateMembers],
@@ -240,7 +240,7 @@ export const commands = [
   // --- UNQUARANTINE COMMAND ---
   {
     name: 'unquarantine',
-    aliases: ['unq', 'lift', 'unqr', 'unjail', 'unfreeze', 'release', 'free', 'dequarantine', 'unquarantined', 'delquarantine', 'rmquarantine', 'uniso', 'unquar', 'unquarant', 'unquaran', 'quarantineoff', 'unquarantineuser', 'pardon', 'disclose'],
+    aliases: ['unq', 'lift', 'unqr', 'unjail', 'unfreeze', 'release', 'free', 'dequarantine', 'unquarantined', 'delquarantine', 'rmquarantine', 'uniso', 'unquar', 'unquarant', 'unquaran', 'quarantineoff', 'unquarantineuser', 'pardon', 'disclose', 'unquarzone', 'liftquarantine', 'removequarantine', 'remquarantine', 'freeuser', 'releaseuser', 'unjailuser', 'unfreezeuser', 'pardonuser', 'uncontain', 'undetain'],
     description: 'Restores a quarantined user to their original roles and lifts isolation.',
     category: 'security',
     permissions: [PermissionFlagsBits.ModerateMembers],

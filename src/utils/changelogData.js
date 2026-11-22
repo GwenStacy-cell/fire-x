@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.6.4',
+    headline: 'Expressive User Action Mentions in CV2 Container & Extended Aliases',
+    summary: 'Introduced natural-language action expressions and member mentions for the !gif command (!gif punches @user, !gif hugs @user, !gif dances with @user), rendering an accent borderless Components V2 container that highlights both initiator and target. Integrated automatic verb conjugation, Discord snowflake filtering for federated GIF search engines, and greatly expanded alias catalogs across !gif, !quarantine, and !unquarantine.',
+    whatsNew: [
+      {
+        title: 'Action Expressions with User Mentions in CV2 Container',
+        desc: 'Commands like !gif punches @user, !gif hugs @user, or !gif dances with @user now display formatted ninja bullet headings and sub-headers mentioning both users, persisting context seamlessly across carousel pagination.'
+      },
+      {
+        title: 'Intelligent Verb Conjugation & Anime Action Bridge',
+        desc: 'Engineered an action verb conjugation engine (punch ➔ punches, hug ➔ hugs, dance ➔ dances with) mapped to dedicated anime GIF providers (Purrbot, OtakuGifs, Nekos.best) with query sanitization to prevent raw mention noise.'
+      },
+      {
+        title: 'Extended Quarantine & Unquarantine Aliases',
+        desc: 'Added extensive command aliases for !quarantine (!detain, !contain, !detention, !quarzone, !quarantinezone, !jailuser, !isolateuser, !freezeuser, !quaruser) and !unquarantine (!liftquarantine, !removequarantine, !remquarantine, !unquarzone, !freeuser, !releaseuser, !unjailuser, !unfreezeuser, !pardonuser, !uncontain, !undetain).'
+      },
+      {
+        title: 'Extended GIF Command Aliases',
+        desc: 'Expanded !gif aliases to include !findgif, !searchgif, !gifs, !tenor, !klipy, !g, !gifsearch, !tenorgif, !klipygif, !giphy, !gifme, !reactiongif, !reactgif, !actiongif, and !anigif.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Help Matrix Synchronization',
+        desc: 'Updated help modules (Quarantine System, Roleplay & Affinity Matrix, General Utilities) and command deep-dive explainers in utility.js to reflect new action syntax and alias catalogs.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.6.3',
     headline: 'Help System Upgrade for Statistics Suite & Command Deep Dives',
     summary: "Updated Athena's universal help matrix and command inspection engine (!help / /help) with comprehensive documentation for Stats Bot voice counters, Server Overview HUD, and 3-in-1 !stats routing. Added granular usage guides, full alias catalogs, and architecture explanations across both prefix and slash inspection handlers.",

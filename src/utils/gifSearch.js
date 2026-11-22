@@ -24,12 +24,165 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000).unref();
 
-// Known anime reaction action keywords
-const ANIME_ACTIONS = new Set([
-  'hug', 'kiss', 'slap', 'pat', 'cuddle', 'dance', 'cry', 'smile', 'laugh', 
-  'blush', 'wink', 'punch', 'bite', 'poke', 'wave', 'bonk', 'tickle', 
-  'highfive', 'handhold', 'sleep', 'nom', 'yeet', 'smug', 'pout', 'shrug'
-]);
+// Known anime reaction action keywords and plurals mapping
+export const ANIME_ACTION_MAP = {
+  'punch': 'punch', 'punches': 'punch',
+  'hug': 'hug', 'hugs': 'hug',
+  'slap': 'slap', 'slaps': 'slap',
+  'kiss': 'kiss', 'kisses': 'kiss',
+  'pat': 'pat', 'pats': 'pat',
+  'cuddle': 'cuddle', 'cuddles': 'cuddle',
+  'dance': 'dance', 'dances': 'dance',
+  'cry': 'cry', 'cries': 'cry',
+  'smile': 'smile', 'smiles': 'smile',
+  'laugh': 'laugh', 'laughs': 'laugh',
+  'blush': 'blush', 'blushes': 'blush',
+  'wink': 'wink', 'winks': 'wink',
+  'bite': 'bite', 'bites': 'bite',
+  'poke': 'poke', 'pokes': 'poke',
+  'wave': 'wave', 'waves': 'wave',
+  'bonk': 'bonk', 'bonks': 'bonk',
+  'tickle': 'tickle', 'tickles': 'tickle',
+  'highfive': 'highfive', 'highfives': 'highfive',
+  'handhold': 'handhold', 'handholds': 'handhold',
+  'sleep': 'sleep', 'sleeps': 'sleep',
+  'nom': 'nom', 'noms': 'nom',
+  'yeet': 'yeet', 'yeets': 'yeet',
+  'smug': 'smug',
+  'pout': 'pout', 'pouts': 'pout',
+  'shrug': 'shrug', 'shrugs': 'shrug'
+};
+
+const ANIME_ACTIONS = new Set(Object.keys(ANIME_ACTION_MAP));
+
+// Action verb conjugation dictionary for expressive mentions
+export const VERB_CONJUGATIONS = {
+  'punch': 'punches', 'punches': 'punches',
+  'hug': 'hugs', 'hugs': 'hugs',
+  'slap': 'slaps', 'slaps': 'slaps',
+  'kiss': 'kisses', 'kisses': 'kisses',
+  'kick': 'kicks', 'kicks': 'kicks',
+  'pat': 'pats', 'pats': 'pats',
+  'cuddle': 'cuddles', 'cuddles': 'cuddles',
+  'bite': 'bites', 'bites': 'bites',
+  'poke': 'pokes', 'pokes': 'pokes',
+  'bonk': 'bonks', 'bonks': 'bonks',
+  'tickle': 'tickles', 'tickles': 'tickles',
+  'highfive': 'highfives', 'highfives': 'highfives',
+  'headpat': 'headpats', 'headpats': 'headpats',
+  'yeet': 'yeets', 'yeets': 'yeets',
+  'kill': 'kills', 'kills': 'kills',
+  'shoot': 'shoots', 'shoots': 'shoots',
+  'feed': 'feeds', 'feeds': 'feeds',
+  'smooch': 'smooches', 'smooches': 'smooches',
+  'nom': 'noms on', 'noms': 'noms on',
+  'glare': 'glares at', 'glares': 'glares at',
+  'spank': 'spanks', 'spanks': 'spanks',
+  'tease': 'teases', 'teases': 'teases',
+  'chase': 'chases', 'chase': 'chases',
+  'wave': 'waves at', 'waves': 'waves at',
+  'dance': 'dances with', 'dances': 'dances with',
+  'laugh': 'laughs at', 'laughs': 'laughs at',
+  'smile': 'smiles at', 'smiles': 'smiles at',
+  'stare': 'stares at', 'stares': 'stares at'
+};
+
+/**
+ * Parses user input to extract target mentions, author, and formatted action headline
+ */
+export function parseGifRequest(rawContent, author, mentionsList = []) {
+  let targetUser = null;
+  const mentionsArr = mentionsList && typeof mentionsList.values === 'function' 
+    ? Array.from(mentionsList.values()) 
+    : (Array.isArray(mentionsList) ? mentionsList : []);
+
+  const mentionMatches = [...String(rawContent || '').matchAll(/<@!?(\d+)>/g)];
+  if (mentionMatches.length > 0) {
+    const matchedId = mentionMatches[0][1];
+    targetUser = mentionsArr.find(u => u && u.id === matchedId) || { id: matchedId };
+  }
+
+  // Remove mention syntaxes (<@123...>, <@!123...>, <@&123...>, <#123...>)
+  let cleanText = String(rawContent || '')
+    .replace(/<@!?\d+>/g, '')
+    .replace(/<@&\d+>/g, '')
+    .replace(/<#\d+>/g, '')
+    .trim();
+
+  // If no target mention found yet in text, but explicit mentionsArr passed (e.g. slash target option)
+  if (!targetUser && mentionsArr.length > 0) {
+    targetUser = mentionsArr.find(u => u && u.id !== author?.id) || mentionsArr[0];
+  }
+
+  // If still no target mention found yet, look for raw snowflake
+  if (!targetUser) {
+    const snowflakeMatch = cleanText.match(/\b\d{17,20}\b/);
+    if (snowflakeMatch) {
+      targetUser = { id: snowflakeMatch[0] };
+      cleanText = cleanText.replace(snowflakeMatch[0], '').trim();
+    }
+  }
+
+  cleanText = cleanText.replace(/\s+/g, ' ').trim();
+
+  let actionHeadline = '';
+  let searchQuery = cleanText;
+
+  if (targetUser && author) {
+    if (!cleanText) {
+      actionHeadline = `<@${author.id}> interacts with <@${targetUser.id}>!`;
+      searchQuery = 'anime wave';
+    } else {
+      const words = cleanText.split(' ');
+      const firstWord = words[0].toLowerCase();
+      const conjugated = VERB_CONJUGATIONS[firstWord] || (firstWord.endsWith('s') ? firstWord : firstWord + 's');
+      let rest = words.slice(1).join(' ').trim();
+
+      // Deduplicate prepositions (e.g. 'dances with' + 'with' -> 'dances with')
+      if (rest) {
+        const parts = conjugated.split(' ');
+        if (parts.length > 1) {
+          const prep = parts.slice(1).join(' ');
+          if (rest.toLowerCase().startsWith(prep)) {
+            rest = rest.slice(prep.length).trim();
+          }
+        }
+      }
+
+      const phrase = rest ? `${conjugated} ${rest}` : conjugated;
+      actionHeadline = `<@${author.id}> ${phrase} <@${targetUser.id}>!`;
+
+      const baseAction = ANIME_ACTION_MAP[firstWord] || firstWord.replace(/es$|s$/, '');
+      if (ANIME_ACTION_MAP[baseAction]) {
+        searchQuery = `anime ${baseAction}`;
+      } else {
+        searchQuery = cleanText;
+      }
+    }
+  } else if (author) {
+    if (!cleanText) {
+      cleanText = 'vibing';
+    }
+    const words = cleanText.split(' ');
+    const firstWord = words[0].toLowerCase();
+    if (['is', 'am', 'was'].includes(firstWord)) {
+      actionHeadline = `<@${author.id}> ${cleanText}!`;
+      searchQuery = words.slice(1).join(' ').trim() || cleanText;
+    } else if (VERB_CONJUGATIONS[firstWord] || cleanText.endsWith('ing') || cleanText.endsWith('s')) {
+      const phrase = VERB_CONJUGATIONS[firstWord] ? [VERB_CONJUGATIONS[firstWord], ...words.slice(1)].join(' ') : cleanText;
+      actionHeadline = `<@${author.id}> ${phrase}!`;
+      searchQuery = cleanText;
+    } else {
+      actionHeadline = cleanText.charAt(0).toUpperCase() + cleanText.slice(1);
+      searchQuery = cleanText;
+    }
+  } else {
+    actionHeadline = cleanText ? (cleanText.charAt(0).toUpperCase() + cleanText.slice(1)) : 'GIF Matrix';
+    searchQuery = cleanText;
+  }
+
+  return { targetUser, actionHeadline, cleanQuery: cleanText || searchQuery, searchQuery };
+}
 
 /**
  * Route 1: KLIPY Expression Platform (klipy.com / api.klipy.com)
@@ -155,7 +308,13 @@ async function fetchFromAnimatedWeb(query, offset = 0) {
  */
 async function fetchFromAnimeEndpoints(query) {
   const words = query.toLowerCase().split(/\s+/);
-  const matchedAction = words.find(w => ANIME_ACTIONS.has(w));
+  let matchedAction = null;
+  for (const w of words) {
+    if (ANIME_ACTION_MAP[w]) {
+      matchedAction = ANIME_ACTION_MAP[w];
+      break;
+    }
+  }
   if (!matchedAction) return [];
 
   const items = [];
@@ -314,7 +473,7 @@ export async function searchFederatedGifs(query, options = {}) {
 /**
  * Creates and registers a new search session
  */
-export function createGifSession(query, results, index = 0) {
+export function createGifSession(query, results, index = 0, metadata = {}) {
   const sessionId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
   gifSessions.set(sessionId, {
     id: sessionId,
@@ -322,7 +481,8 @@ export function createGifSession(query, results, index = 0) {
     results,
     index,
     offset: 0,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    ...metadata
   });
   return sessionId;
 }
@@ -330,7 +490,7 @@ export function createGifSession(query, results, index = 0) {
 /**
  * Retrieves an existing session or transparently recovers one from message metadata
  */
-export async function getOrRecoverGifSession(sessionId, fallbackQuery = null) {
+export async function getOrRecoverGifSession(sessionId, fallbackQuery = null, metadata = {}) {
   let session = gifSessions.get(sessionId);
   if (!session && fallbackQuery) {
     const results = await searchFederatedGifs(fallbackQuery, { offset: 0 });
@@ -341,7 +501,8 @@ export async function getOrRecoverGifSession(sessionId, fallbackQuery = null) {
         results,
         index: 0,
         offset: 0,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        ...metadata
       };
       gifSessions.set(sessionId, session);
     }
@@ -352,7 +513,7 @@ export async function getOrRecoverGifSession(sessionId, fallbackQuery = null) {
 /**
  * Fetches a brand new batch of GIFs with advanced offset for 'Fresh Batch'
  */
-export async function fetchFreshBatchForGifSession(sessionId, fallbackQuery = null) {
+export async function fetchFreshBatchForGifSession(sessionId, fallbackQuery = null, metadata = {}) {
   let session = gifSessions.get(sessionId);
   const query = session?.query || fallbackQuery;
   if (!query) return null;
@@ -368,7 +529,8 @@ export async function fetchFreshBatchForGifSession(sessionId, fallbackQuery = nu
         results: newResults,
         index: 0,
         offset: nextOffset,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        ...metadata
       };
     } else {
       session.results = newResults;
@@ -406,6 +568,35 @@ export function extractQueryFromGifMessage(message) {
     return null;
   };
   return scan(message.components);
+}
+
+/**
+ * Scans message components to extract metadata (headline, query, author, target) for recovery
+ */
+export function extractMetadataFromGifMessage(message) {
+  if (!message) return {};
+  const meta = {};
+  const scan = (comps) => {
+    if (!Array.isArray(comps)) return;
+    for (const c of comps) {
+      if (typeof c.content === 'string') {
+        const queryMatch = c.content.match(/\*\*Query:\*\*\s*`([^`]+)`/i);
+        if (queryMatch) meta.query = queryMatch[1];
+
+        const headlineMatch = c.content.match(/#\s*(?:<a:[^:]+:\d+>\s*)?<a:ninja_bullet:1567038601668337705>\s*(.*?)\s*<a:ninja_bullet_rtl:1567038652687712317>/);
+        if (headlineMatch) meta.actionHeadline = headlineMatch[1].trim();
+
+        const actionMatch = c.content.match(/\*\*Action:\*\*\s*<@!?(\d+)>\s*➔\s*<@!?(\d+)>/);
+        if (actionMatch) {
+          meta.authorId = actionMatch[1];
+          meta.targetId = actionMatch[2];
+        }
+      }
+      if (c.components) scan(c.components);
+    }
+  };
+  scan(message.components);
+  return meta;
 }
 
 /**
@@ -467,7 +658,7 @@ export function buildGifResultPayload(sessionId, index = 0) {
     new ButtonBuilder()
       .setLabel('Direct GIF')
       .setStyle(ButtonStyle.Link)
-      .setURL(current.image)
+      .setURL(current.image || current.url || safeUrl || 'https://discord.com')
   );
 
   const cleanTitle = (current.title || session.query)
@@ -476,6 +667,10 @@ export function buildGifResultPayload(sessionId, index = 0) {
     .substring(0, 90) || session.query;
 
   const sourceDomain = current.source || 'web';
+
+  const headerText = session.actionHeadline
+    ? `# <a:ninja_bullet:1567038601668337705> ${session.actionHeadline} <a:ninja_bullet_rtl:1567038652687712317>`
+    : `# ${getRandomHeadingGlyph()} Federated GIF Matrix | ${TICK_EMOJI}`;
 
   // Accent borderless CV2 container (type: 17, no accent_color)
   const container = {
@@ -487,17 +682,18 @@ export function buildGifResultPayload(sessionId, index = 0) {
       },
       {
         type: 10,
-        content: `# ${getRandomHeadingGlyph()} Federated GIF Matrix | ${TICK_EMOJI}\n` +
-                 `> -# <a:uptime:1552608831060844575> **Query:** \`${session.query}\` \u00b7 **Result:** \`${clampedIndex + 1} of ${total}\`\n` +
-                 `> -# ${BULLET_EMOJI} **Title:** \`${cleanTitle}\`\n` +
-                 `> -# ${BULLET_EMOJI} **Provider / Source:** [${sourceDomain}](${safeUrl})`
+        content: `${headerText}\n\n` +
+                 (session.targetId ? `> -# <a:uptime:1552608831060844575> **Action:** <@${session.authorId}> ➔ <@${session.targetId}>\n` : '') +
+                 `> -# <a:uptime:1552608831060844575> **Query:** \`${session.cleanQuery || session.query}\` · **Result:** \`${clampedIndex + 1} of ${total}\`\n` +
+                 `> -# <a:target_blink:1565667466984554588> **Title:** \`${cleanTitle}\`\n` +
+                 `> -# <a:target_blink:1565667466984554588> **Provider / Source:** [${sourceDomain}](${safeUrl})`
       },
       { type: 14, divider: true },
       actionRow.toJSON(),
       { type: 14, divider: true },
       { 
         type: 10, 
-        content: `-# **Athena Federated GIF Matrix \u00b7 KLIPY \u00b7 Tenor \u00b7 GIPHY \u00b7 OtakuGifs**` 
+        content: `-# **Athena Federated GIF Matrix · KLIPY · Tenor · GIPHY · OtakuGifs**` 
       }
     ]
   };

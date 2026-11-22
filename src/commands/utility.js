@@ -391,7 +391,7 @@ export const commands = [
               } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
                   usageText = `${prefix}image <query> / ${prefix}pic / ${prefix}img / ${prefix}photo / ${prefix}picture / ${prefix}searchimg / /image [query]`;
               } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
-                  usageText = `${prefix}gif <need> / ${prefix}findgif / ${prefix}searchgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / /gif [query]`;
+                  usageText = `${prefix}gif <request> [@user] / ${prefix}findgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / ${prefix}g / /gif [query] [target]`;
               } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
                   usageText = `${prefix}stock [symbol] / ${prefix}market / ${prefix}stocks / ${prefix}ticker [symbol] / /stock [symbol]`;
               } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
@@ -422,8 +422,6 @@ export const commands = [
                   usageText = `${prefix}dm [on|off|status] / ${prefix}dms / /dm [action]`;
               } else if (targetCmd.name === "roleplay" || targetCmd.name === "rp" || targetCmd.name === "affinity") {
                   usageText = `${prefix}rp [action|profile|duo|bio|marry|divorce|top|actions|routes] / ${prefix}roleplay / ${prefix}affinity <@user>`;
-              } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
-                  usageText = `${prefix}gif <need> / ${prefix}findgif / ${prefix}searchgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / /gif [query]`;
               } else if (targetCmd.name === "meme" || targetCmd.name === "memegen" || targetCmd.name === "caption" || targetCmd.name === "filter") {
                   usageText = `${prefix}meme <template> [top text] | [bottom text] / ${prefix}caption <text> / ${prefix}filter <name>`;
               } else if (targetCmd.name === "arcade" || targetCmd.name === "tictactoe" || targetCmd.name === "ttt" || targetCmd.name === "arcadestats") {
@@ -432,10 +430,10 @@ export const commands = [
                   usageText = `${prefix}family [@user] / ${prefix}tree / ${prefix}marry @user [ring] / ${prefix}divorce / ${prefix}adopt @user / ${prefix}disown @user`;
               } else if (targetCmd.name === "soundboard" || targetCmd.name === "sfx" || targetCmd.name === "radio" || targetCmd.name === "uploadsound" || targetCmd.name === "stopsound") {
                   usageText = `${prefix}soundboard / ${prefix}sounds / ${prefix}sfx <name> / ${prefix}radio [station] / ${prefix}uploadsound <name> <url> / ${prefix}stopsound`;
-              } else if (targetCmd.name === "quarantine" || targetCmd.name === "qr" || targetCmd.name === "jail" || targetCmd.name === "isolate" || targetCmd.name === "freeze") {
-                  usageText = `${prefix}quarantine <@user> [duration] [reason] / ${prefix}qr / ${prefix}q / ${prefix}jail / ${prefix}freeze / ${prefix}isolate / /quarantine`;
-              } else if (targetCmd.name === "unquarantine" || targetCmd.name === "unq" || targetCmd.name === "lift" || targetCmd.name === "unjail" || targetCmd.name === "unfreeze" || targetCmd.name === "release") {
-                  usageText = `${prefix}unquarantine <@user> / ${prefix}unq / ${prefix}lift / ${prefix}unjail / ${prefix}unfreeze / ${prefix}release / ${prefix}pardon / /unquarantine`;
+              } else if (targetCmd.name === "quarantine" || targetCmd.name === "qr" || targetCmd.name === "jail" || targetCmd.name === "isolate" || targetCmd.name === "freeze" || targetCmd.name === "detain") {
+                  usageText = `${prefix}quarantine <@user> [duration] [reason] / ${prefix}qr / ${prefix}q / ${prefix}jail / ${prefix}freeze / ${prefix}isolate / ${prefix}detain / /quarantine`;
+              } else if (targetCmd.name === "unquarantine" || targetCmd.name === "unq" || targetCmd.name === "lift" || targetCmd.name === "unjail" || targetCmd.name === "unfreeze" || targetCmd.name === "release" || targetCmd.name === "pardon" || targetCmd.name === "free") {
+                  usageText = `${prefix}unquarantine <@user> / ${prefix}unq / ${prefix}lift / ${prefix}unjail / ${prefix}unfreeze / ${prefix}release / ${prefix}pardon / ${prefix}free / /unquarantine`;
               } else if (targetCmd.name === "wiretap" || targetCmd.name === "feed") {
                   usageText = `${prefix}wiretap <add|list|remove|check> / ${prefix}feed`;
               } else if (targetCmd.name === "persona") {
@@ -1137,20 +1135,20 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Marriage & Proposal Registry (${prefix}rp marry @user):** Interactive proposal card with [Yes, I Accept!] and [Decline] buttons. Recorded permanently in SQLite.\n` +
                     `> ${BULLET_EMOJI} **8-Route Federated GIF Engine:** High-velocity failover across KLIPY, Purrbot, OtakuGifs, Nekos.best, Waifu.pics, Nekos.life, Tenor & Giphy.`;
               } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
-                  descContent = `Federated Animated GIF Search Engine displaying results inside an accent borderless Components V2 container with interactive carousel navigation.\n\n` +
-                    `> -# <a:uptime:1552608831060844575> **__Federated Route Pipeline & Bridges:__**\n` +
-                    `> ${BULLET_EMOJI} **KLIPY Expression Platform (klipy.com / api.klipy.com):** Connects to KLIPY Partner API via \`KLIPY_API_KEY\` with static asset scraping fallback directly from \`static.klipy.com\`.\n` +
-                    `> ${BULLET_EMOJI} **Purrbot Anime Media Gateway (purrbot.site):** High-velocity anime action CDN supporting 18+ expressions.\n` +
-                    `> ${BULLET_EMOJI} **OtakuGifs SFW Network (otakugifs.xyz):** 25+ specialized WebP/AVIF/GIF reaction endpoints.\n` +
-                    `> ${BULLET_EMOJI} **Nekos.best & Waifu.pics:** Curated anime reaction pools with sub-millisecond in-memory caching.\n` +
-                    `> ${BULLET_EMOJI} **Google Tenor v2 & GIPHY REST APIs:** Global fallback keyword search when API keys are configured.\n\n` +
-                    `> -# **__Container & Interactive Controls:__**\n` +
-                    `> ${BULLET_EMOJI} **Accent Borderless CV2 Container:** Formatted with server theme accent colors, media gallery layout, and attribution.\n` +
-                    `> ${BULLET_EMOJI} **Interactive Navigation Buttons:** Cycle through results with [Previous] and [Next GIF] or grab direct URL via [Copy Link].\n\n` +
+                  descContent = `Federated Animated GIF Search & Expressive User Actions Engine displaying results inside an accent borderless Components V2 container.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\`. Available to all server members.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Expressive Mentions in CV2 Container:__**\n` +
+                    `> ${BULLET_EMOJI} **User Actions:** Mention any member (\`${prefix}gif punches @user\`, \`${prefix}gif hugs @user\`, \`${prefix}gif dances with @user\`) to produce an interactive CV2 container highlighting both users.\n` +
+                    `> ${BULLET_EMOJI} **Personal Expressions:** \`${prefix}gif is eating popcorn\`, \`${prefix}gif dances\`, \`${prefix}gif dies of laughter\`.\n` +
+                    `> ${BULLET_EMOJI} **General Search:** \`${prefix}gif cat vibing\`, \`${prefix}gif anime celebration\`, \`${prefix}gif rickroll\`.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Federated 8-Route Pipeline:__**\n` +
+                    `> ${BULLET_EMOJI} **Bridges:** KLIPY, OtakuGifs, Nekos.best, Tenor v2, Giphy, GifDB, Imgur & Bing.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Carousel:** Use \`[Prev]\`, \`[Next]\`, \`[Random]\`, and \`[Fresh Batch]\` buttons directly in the message to browse without re-typing.\n\n` +
                     `> -# **__Usage Syntax:__**\n` +
-                    `> ${BULLET_EMOJI} \`${prefix}gif <need>\` — Search animated GIF (e.g. \`${prefix}gif anime hug\`, \`${prefix}gif cat vibing\`, \`${prefix}gif rickroll\`).\n` +
-                    `> ${BULLET_EMOJI} \`${prefix}klipy <query>\` / \`${prefix}tenor <query>\` — Dedicated provider search shortcuts.\n` +
-                    `> ${BULLET_EMOJI} \`/gif query:<need>\` — Modern slash command interface.`;
+                    `> ${BULLET_EMOJI} \`${prefix}gif <action> @user\` — Express an action towards a member (e.g. \`${prefix}gif hugs @user\`).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}gif <need>\` — Search and display animated GIFs.\n` +
+                    `> ${BULLET_EMOJI} \`/gif query:<need> [target:@user]\` — Slash command interface.`;
               } else if (targetCmd.name === "meme" || targetCmd.name === "memegen" || targetCmd.name === "caption" || targetCmd.name === "filter") {
                   descContent = `AI Meme Studio & FX Lab - Create viral image memes, modern captions, and aesthetic visual FX filters with high-resolution Canvas rendering.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Meme Studio Features & Templates:__**\n` +
@@ -1427,7 +1425,7 @@ export const commands = [
         } else if (targetCmd.name === "image" || targetCmd.name === "pic") {
           usageText = `${prefix}image <query> / ${prefix}pic / ${prefix}img / ${prefix}photo / ${prefix}picture / ${prefix}searchimg / /image [query]`;
         } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
-          usageText = `${prefix}gif <need> / ${prefix}findgif / ${prefix}searchgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / /gif [query]`;
+          usageText = `${prefix}gif <request> [@user] / ${prefix}findgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / ${prefix}g / /gif [query] [target]`;
         } else if (targetCmd.name === "stock" || targetCmd.name === "market") {
           usageText = `${prefix}stock [symbol] / ${prefix}market / ${prefix}stocks / ${prefix}ticker [symbol] / /stock [symbol]`;
         } else if (targetCmd.name === "stockai" || targetCmd.name === "stockexplain") {
@@ -1458,8 +1456,6 @@ export const commands = [
           usageText = `${prefix}dm [on|off|status] / ${prefix}dms / /dm [action]`;
         } else if (targetCmd.name === "roleplay" || targetCmd.name === "rp" || targetCmd.name === "affinity") {
           usageText = `${prefix}rp [action|profile|duo|bio|marry|divorce|top|actions|routes] / ${prefix}roleplay / ${prefix}affinity <@user>`;
-        } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
-          usageText = `${prefix}gif <need> / ${prefix}findgif / ${prefix}searchgif / ${prefix}gifs / ${prefix}tenor / ${prefix}klipy / /gif [query]`;
         } else if (targetCmd.name === "meme" || targetCmd.name === "memegen" || targetCmd.name === "caption" || targetCmd.name === "filter") {
           usageText = `${prefix}meme <template> [top text] | [bottom text] / ${prefix}caption <text> / ${prefix}filter <name>`;
         } else if (targetCmd.name === "arcade" || targetCmd.name === "tictactoe" || targetCmd.name === "ttt" || targetCmd.name === "arcadestats") {
@@ -1472,10 +1468,10 @@ export const commands = [
           usageText = `${prefix}wiretap <add|list|remove|check> / ${prefix}feed`;
         } else if (targetCmd.name === "persona") {
           usageText = `${prefix}persona <tsundere|cyberpunk|butler|sensei|default|list> / /persona [name]`;
-        } else if (targetCmd.name === "quarantine" || targetCmd.name === "qr" || targetCmd.name === "jail" || targetCmd.name === "isolate" || targetCmd.name === "freeze") {
-          usageText = `${prefix}quarantine <@user> [duration] [reason] / ${prefix}qr / ${prefix}q / ${prefix}jail / ${prefix}freeze / ${prefix}isolate / /quarantine`;
-        } else if (targetCmd.name === "unquarantine" || targetCmd.name === "unq" || targetCmd.name === "lift" || targetCmd.name === "unjail" || targetCmd.name === "unfreeze" || targetCmd.name === "release") {
-          usageText = `${prefix}unquarantine <@user> / ${prefix}unq / ${prefix}lift / ${prefix}unjail / ${prefix}unfreeze / ${prefix}release / ${prefix}pardon / /unquarantine`;
+        } else if (targetCmd.name === "quarantine" || targetCmd.name === "qr" || targetCmd.name === "jail" || targetCmd.name === "isolate" || targetCmd.name === "freeze" || targetCmd.name === "detain") {
+          usageText = `${prefix}quarantine <@user> [duration] [reason] / ${prefix}qr / ${prefix}q / ${prefix}jail / ${prefix}freeze / ${prefix}isolate / ${prefix}detain / /quarantine`;
+        } else if (targetCmd.name === "unquarantine" || targetCmd.name === "unq" || targetCmd.name === "lift" || targetCmd.name === "unjail" || targetCmd.name === "unfreeze" || targetCmd.name === "release" || targetCmd.name === "pardon" || targetCmd.name === "free") {
+          usageText = `${prefix}unquarantine <@user> / ${prefix}unq / ${prefix}lift / ${prefix}unjail / ${prefix}unfreeze / ${prefix}release / ${prefix}pardon / ${prefix}free / /unquarantine`;
         } else if (targetCmd.name === "serverstats" || targetCmd.name === "statsetup" || targetCmd.name === "vcstats") {
           usageText = `${prefix}serverstats <setup|refresh|config|disable> / ${prefix}statsetup / ${prefix}vcstats / /serverstats`;
         } else if (targetCmd.name === "stats") {
@@ -2047,20 +2043,20 @@ export const commands = [
             `> ${BULLET_EMOJI} **Marriage & Proposal Registry (${prefix}rp marry @user):** Interactive proposal card with [Yes, I Accept!] and [Decline] buttons. Recorded permanently in SQLite.\n` +
             `> ${BULLET_EMOJI} **8-Route Federated GIF Engine:** High-velocity failover across KLIPY, Purrbot, OtakuGifs, Nekos.best, Waifu.pics, Nekos.life, Tenor & Giphy.`;
         } else if (targetCmd.name === "gif" || targetCmd.name === "findgif" || targetCmd.name === "klipy" || targetCmd.name === "tenor") {
-          descContent = `Federated Animated GIF Search Engine displaying results inside an accent borderless Components V2 container with interactive carousel navigation.\n\n` +
-            `> -# <a:uptime:1552608831060844575> **__Federated Route Pipeline & Bridges:__**\n` +
-            `> ${BULLET_EMOJI} **KLIPY Expression Platform (klipy.com / api.klipy.com):** Connects to KLIPY Partner API via \`KLIPY_API_KEY\` with static asset scraping fallback directly from \`static.klipy.com\`.\n` +
-            `> ${BULLET_EMOJI} **Purrbot Anime Media Gateway (purrbot.site):** High-velocity anime action CDN supporting 18+ expressions.\n` +
-            `> ${BULLET_EMOJI} **OtakuGifs SFW Network (otakugifs.xyz):** 25+ specialized WebP/AVIF/GIF reaction endpoints.\n` +
-            `> ${BULLET_EMOJI} **Nekos.best & Waifu.pics:** Curated anime reaction pools with sub-millisecond in-memory caching.\n` +
-            `> ${BULLET_EMOJI} **Google Tenor v2 & GIPHY REST APIs:** Global fallback keyword search when API keys are configured.\n\n` +
-            `> -# **__Container & Interactive Controls:__**\n` +
-            `> ${BULLET_EMOJI} **Accent Borderless CV2 Container:** Formatted with server theme accent colors, media gallery layout, and attribution.\n` +
-            `> ${BULLET_EMOJI} **Interactive Navigation Buttons:** Cycle through results with [Previous] and [Next GIF] or grab direct URL via [Copy Link].\n\n` +
+          descContent = `Federated Animated GIF Search & Expressive User Actions Engine displaying results inside an accent borderless Components V2 container.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\`. Available to all server members.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Expressive Mentions in CV2 Container:__**\n` +
+            `> ${BULLET_EMOJI} **User Actions:** Mention any member (\`${prefix}gif punches @user\`, \`${prefix}gif hugs @user\`, \`${prefix}gif dances with @user\`) to produce an interactive CV2 container highlighting both users.\n` +
+            `> ${BULLET_EMOJI} **Personal Expressions:** \`${prefix}gif is eating popcorn\`, \`${prefix}gif dances\`, \`${prefix}gif dies of laughter\`.\n` +
+            `> ${BULLET_EMOJI} **General Search:** \`${prefix}gif cat vibing\`, \`${prefix}gif anime celebration\`, \`${prefix}gif rickroll\`.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Federated 8-Route Pipeline:__**\n` +
+            `> ${BULLET_EMOJI} **Bridges:** KLIPY, OtakuGifs, Nekos.best, Tenor v2, Giphy, GifDB, Imgur & Bing.\n` +
+            `> ${BULLET_EMOJI} **Interactive Carousel:** Use \`[Prev]\`, \`[Next]\`, \`[Random]\`, and \`[Fresh Batch]\` buttons directly in the message to browse without re-typing.\n\n` +
             `> -# **__Usage Syntax:__**\n` +
-            `> ${BULLET_EMOJI} \`${prefix}gif <need>\` — Search animated GIF (e.g. \`${prefix}gif anime hug\`, \`${prefix}gif cat vibing\`, \`${prefix}gif rickroll\`).\n` +
-            `> ${BULLET_EMOJI} \`${prefix}klipy <query>\` / \`${prefix}tenor <query>\` — Dedicated provider search shortcuts.\n` +
-            `> ${BULLET_EMOJI} \`/gif query:<need>\` — Modern slash command interface.`;
+            `> ${BULLET_EMOJI} \`${prefix}gif <action> @user\` — Express an action towards a member (e.g. \`${prefix}gif hugs @user\`).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}gif <need>\` — Search and display animated GIFs.\n` +
+            `> ${BULLET_EMOJI} \`/gif query:<need> [target:@user]\` — Slash command interface.`;
         } else if (targetCmd.name === "meme" || targetCmd.name === "memegen" || targetCmd.name === "caption" || targetCmd.name === "filter") {
           descContent = `AI Meme Studio & FX Lab - Create viral image memes, modern captions, and aesthetic visual FX filters with high-resolution Canvas rendering.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Meme Studio Features & Templates:__**\n` +
@@ -3093,16 +3089,16 @@ export const helpModules = [
     "`/setupquarantine` - Slash command to deploy, assign leftovers, and sync permissions `[Extra Owner]`",
     "`!qrmanager setup / /qrmanager action:Setup` - Auto-setup, assign unparented channels, & fix all permissions `[Extra Owner]`",
     "`!qrmanager setrole|setcategory|setchannel|setvc|status` - Manage quarantine configuration and view status `[Extra Owner]`",
-    "`!quarantine / !qr / !q / !isolate / !jail / !freeze @user [duration] [reason]` - Strip roles and isolate member `[Extra Owner]`",
-    "`!unquarantine / !unq / !lift / !unjail / !unfreeze / !release / !pardon @user` - Lift quarantine status & restore roles `[Extra Owner]`",
+    "`!quarantine / !qr / !q / !isolate / !jail / !freeze / !detain @user [duration] [reason]` - Strip roles and isolate member `[Extra Owner]`",
+    "`!unquarantine / !unq / !lift / !unjail / !unfreeze / !release / !pardon / !free @user` - Lift quarantine status & restore roles `[Extra Owner]`",
     "`!massquarantine / !mq @role` - Quarantine all members of a role `[Extra Owner]`",
     "`!massunquarantine / !unmq` - Release all currently quarantined members `[Extra Owner]`",
     "`!lockdown / !ld on|off` - Restrict channel to staff only `[Extra Owner]`",
     "`!maxwarnings <amount>` - Configure warnings before auto-quarantine `[Extra Owner]`",
     "",
     "-# **__Quarantine Architecture & Aliases:__**",
-    "-# <a:target_blink:1565667466984554588> **__Quarantine Aliases:__** `!qr`, `!q`, `!isolate`, `!jail`, `!freeze`, `!quarantined`, `!qzone`, `!isolation`, `!iso`, `!lock`, `!timeoutq`, `!quar`, `!quarant`, `!quaran`.",
-    "-# <a:target_blink:1565667466984554588> **__Unquarantine Aliases:__** `!unq`, `!lift`, `!unqr`, `!unjail`, `!unfreeze`, `!release`, `!free`, `!dequarantine`, `!unquarantined`, `!delquarantine`, `!rmquarantine`, `!uniso`, `!unquar`, `!pardon`.",
+    "-# <a:target_blink:1565667466984554588> **__Quarantine Aliases:__** `!qr`, `!q`, `!isolate`, `!jail`, `!freeze`, `!detain`, `!contain`, `!detention`, `!quarzone`, `!quarantinezone`, `!jailuser`, `!isolateuser`, `!freezeuser`, `!quaruser`, `!quarantined`, `!isolation`, `!iso`, `!lock`, `!timeoutq`, `!quar`.",
+    "-# <a:target_blink:1565667466984554588> **__Unquarantine Aliases:__** `!unq`, `!lift`, `!unqr`, `!unjail`, `!unfreeze`, `!release`, `!free`, `!pardon`, `!liftquarantine`, `!removequarantine`, `!remquarantine`, `!unquarzone`, `!freeuser`, `!releaseuser`, `!unjailuser`, `!unfreezeuser`, `!pardonuser`, `!uncontain`, `!undetain`, `!dequarantine`, `!unquarantined`.",
     "-# <a:target_blink:1565667466984554588> **__Dual-Quarantine Protection:__** General Admins cannot lift quarantine. If an unauthorized admin attempts manual role removal, both the target and the admin are quarantined.",
     "-# <a:target_blink:1565667466984554588> **__Manual UI Removal:__** Whitelisted users, Extra Owners, and Server Owners can lift quarantine manually directly in Discord by removing the role.",
     "-# <a:target_blink:1565667466984554588> **__Smart Auto-Setup:__** Creates leftover components, aligns them under `.      You Have Been Quarantined`, and syncs permissions.",
@@ -3464,7 +3460,7 @@ export const helpModules = [
     "`!rp marry <@user> / !marry <@user>` - Propose marriage with interactive [Accept] / [Decline] buttons `[Public]`",
     "`!rp divorce / !divorce` - Dissolve roleplay marriage `[Public]`",
     "`!rp routes / !gifroutes` - Inspect live status of all 8 federated GIF search and reaction providers `[Public]`",
-    "`!gif / !klipy / !tenor <need>` - Search animated GIFs with interactive navigation & copy link `[Public]`",
+    "`!gif / !findgif / !gifs / !tenor / !klipy / !g <request> [@user]` - Expressive user actions & animated GIF search in CV2 container `[Public]`",
     "`!hug / !kiss / !pat / !cuddle / !snuggle / !holdhands / !nuzzle / !feed / !headpat / !smooch / !nom / !pull` - Affection & Romance `[Public]`",
     "`!poke / !tickle / !boop / !bonk / !highfive / !dance / !wink / !wave / !spank / !tease / !chase` - Playful & Friendly `[Public]`",
     "`!slap / !bite / !punch / !kick / !yeet / !shoot / !bully / !tableflip / !glare / !push / !dodge` - Combat & Chaos `[Public]`",
@@ -3551,7 +3547,7 @@ export const helpModules = [
     "`!help / !h [cmd]` - Interactive bot command menu `[Public]`",
     "`!weather / !wtr <location>` - Global weather & satellite map `[Public]`",
     "`!image / !pic <query>` - Web image retrieval & pagination `[Public]`",
-    "`!gif / !tenor <query>` - Animated GIF search across 8 bridges `[Public]`",
+    "`!gif / !findgif / !gifs / !tenor / !klipy / !g <request> [@user]` - Federated animated GIF search & expressive user actions `[Public]`",
     "`!togif / !mp4togif [video]` - Video-to-GIF with Lanczos palette `[Extra Owner]`",
     "`!meme / !memegen <template>` - Memes from 25+ viral templates `[Public]`",
     "`!caption <text>` - Meme caption header on any image `[Public]`",
