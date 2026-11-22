@@ -691,6 +691,15 @@ export const commands = [
       const highestBotRole = message.guild.members.me.roles.highest.position;
       const highestUserRole = message.member.roles.highest.position;
 
+      // Pre-emptively purge quarantine record, exploit taint, and quarantine role
+      // BEFORE applying new roles so quarantine isolation sentinels do not strip the role during assignment
+      db.removeExploitTaint(message.guild.id, target.id);
+      db.removeQuarantine(message.guild.id, target.id);
+      const qRolePre = message.guild.roles.cache.find(r => r.name.toLowerCase() === 'quarantined');
+      if (qRolePre && target.roles.cache.has(qRolePre.id)) {
+        await target.roles.remove(qRolePre, 'Quarantine role cleared via authorized role grant').catch(() => null);
+      }
+
       for (const [id, role] of roles) {
         if (role.position >= highestBotRole) {
           failedRoles.push(`${role.name} (Bot hierarchy too low)`);
@@ -748,6 +757,15 @@ export const commands = [
       const failedRoles = [];
       const highestBotRole = interaction.guild.members.me.roles.highest.position;
       const highestUserRole = interaction.member.roles.highest.position;
+
+      // Pre-emptively purge quarantine record, exploit taint, and quarantine role
+      // BEFORE applying new roles so quarantine isolation sentinels do not strip the role during assignment
+      db.removeExploitTaint(interaction.guild.id, target.id);
+      db.removeQuarantine(interaction.guild.id, target.id);
+      const qRolePre = interaction.guild.roles.cache.find(r => r.name.toLowerCase() === 'quarantined');
+      if (qRolePre && target.roles.cache.has(qRolePre.id)) {
+        await target.roles.remove(qRolePre, 'Quarantine role cleared via authorized role grant').catch(() => null);
+      }
 
       for (const role of roles) {
         if (role.position >= highestBotRole) {

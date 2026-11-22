@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '22 November 2026',
+    version: 'v3.5.7',
+    headline: 'Full Quarantine Alias Suite, Help Directory Integration & Pre-Emptive Role Guard',
+    summary: 'Expanded quarantine and unquarantine command alias routing throughout the system, integrating extensive aliases into the !help module directory, command inspectors, and architectural explainer registry. Hardened role assignment by pre-emptively purging quarantine records and exploit taints in !addrole and /addrole to eliminate isolation sentinel race conditions.',
+    whatsNew: [
+      {
+        title: 'Help Directory & Command Inspector Alias Mapping',
+        desc: 'Fully mapped all quarantine and unquarantine aliases (!qr, !q, !isolate, !jail, !freeze, !unq, !lift, !unjail, !unfreeze, !release, !pardon, etc.) directly to the Quarantine module container in !help and the detailed command inspector with rich architectural descriptions.'
+      },
+      {
+        title: 'Explainer Registry Expansion',
+        desc: 'Documented the complete quarantine and unquarantine command architecture, clearance policies (Server Owner, Extra Owner, Whitelisted Staff), Dual-Quarantine protection for rogue admins, and zero-delay manual UI removal in explainerRegistry.js.'
+      },
+      {
+        title: 'Pre-Emptive Role Assignment Safeguard',
+        desc: 'Enhanced !addrole and /addrole to pre-emptively purge quarantine records, exploit taints, and quarantine roles before applying new roles, eliminating race conditions with quarantine isolation sentinels.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Dual-Quarantine Policy Transparency',
+        desc: 'Updated user-facing help modules and architectural explainers to explicitly detail that general Discord Administrators are barred from lifting quarantine and will be quarantined if they attempt unauthorized manual role removal.'
+      }
+    ]
+  },
+  {
+    date: '22 November 2026',
     version: 'v3.5.6',
     headline: 'Strict Extra Owner Quarantine Enforcement & Dual-Quarantine Breach Sentinel',
     summary: 'Restricted quarantine and unquarantine authorization strictly to Extra Owners, Server Owner, Bot Owners, and Whitelisted Security Staff, completely barring general Administrators. Engineered a dual-quarantine breach countermeasure in guildMemberUpdate that isolates both the target and any unauthorized administrator attempting to manually strip quarantine roles, while allowing authorized whitelisted staff to lift quarantines directly via Discord role removal.',

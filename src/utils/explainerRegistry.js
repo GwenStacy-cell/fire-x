@@ -263,7 +263,7 @@ Athena actively monitors the velocity of destructive administrative actions:
   quarantine: {
     id: 'quarantine',
     label: 'Quarantine Containment',
-    aliases: ['isolation', 'quarantinesystem'],
+    aliases: ['isolation', 'quarantinesystem', 'qr', 'q', 'jail', 'freeze', 'isolate', 'unquarantine', 'unq', 'lift', 'unjail', 'unfreeze', 'release', 'free', 'pardon'],
     title: 'Zero-Trust Quarantine Isolation Architecture | <a:03_tick_circle:1565665642084827206>',
     description: 'Full guild channel permission overrides, role strip caching, and forensic isolation.',
     pages: [
@@ -1888,16 +1888,32 @@ export const DETAILED_COMMANDS = {
 
   quarantine: {
     name: 'quarantine',
-    aliases: ['isolate'],
+    aliases: ['qr', 'q', 'isolate', 'jail', 'freeze', 'quarantined', 'qzone', 'isolation', 'iso', 'lock', 'timeoutq', 'quar', 'quarant', 'quaran', 'quarantineuser', 'setquarantine', 'addquarantine'],
     category: 'Security & Access Control',
-    clearance: 'Extra Owner',
-    syntax: '!quarantine <@user|id> [reason] / !quarantine setup / !quarantine release <@user|id>',
+    clearance: 'Server Owner / Extra Owner / Whitelisted',
+    syntax: '!quarantine <@user|id> [duration] [reason] / !qr / !q / !isolate / !jail / !freeze / /quarantine',
     purpose: 'Isolates suspect accounts into a dedicated, locked quarantine containment environment while backing up original roles.',
     architecture: 
-`• **Permission Enclosure:** Overrides channel permissions across all guild channels to completely isolate the user.
+`• **Dual-Quarantine Protection:** General Discord Admins cannot lift quarantine. If an unauthorized administrator manually removes the Quarantine role, both the target and the admin are quarantined immediately.
+• **Manual UI Release:** Whitelisted users, Extra Owners, Server Owners, and Bot Owners can lift quarantine manually directly in Discord by removing the role.
+• **Permission Enclosure:** Overrides channel permissions across all guild channels to completely isolate the user.
 • **Role Preservation:** Backs up user roles into SQLite database and strips them via API.
-• **Restoration:** On \`!quarantine release\`, retrieves saved role IDs and restores them cleanly.`,
-    example: '!quarantine @user Suspicious behavior'
+• **Clean Restoration:** Restores saved roles and clears exploit taints completely upon release.`,
+    example: '!quarantine @user 1h Suspicious behavior'
+  },
+
+  unquarantine: {
+    name: 'unquarantine',
+    aliases: ['unq', 'lift', 'unqr', 'unjail', 'unfreeze', 'release', 'free', 'dequarantine', 'unquarantined', 'delquarantine', 'rmquarantine', 'uniso', 'unquar', 'unquarant', 'unquaran', 'quarantineoff', 'unquarantineuser', 'pardon', 'disclose'],
+    category: 'Security & Access Control',
+    clearance: 'Server Owner / Extra Owner / Whitelisted',
+    syntax: '!unquarantine <@user|id> / !unq / !lift / !unjail / !unfreeze / !release / !pardon / /unquarantine',
+    purpose: 'Lifts quarantine isolation, restores original roles, clears database exploit taints, and notifies member.',
+    architecture: 
+`• **Clean Role Recovery:** Restores 100% of the member's saved non-managed roles without privilege escalation restrictions.
+• **Exploit Taint Purging:** Completely removes database exploit taints, enabling legitimate staff to assign roles or admin permissions immediately after release.
+• **Zero-Delay Manual Release:** Authorized staff can remove the Quarantined role directly via Discord UI without running commands.`,
+    example: '!unquarantine @user'
   },
 
   backup: {

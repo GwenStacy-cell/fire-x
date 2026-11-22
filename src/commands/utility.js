@@ -293,6 +293,7 @@ export const commands = [
                 ((cmdName === 'count' || cmdName === 'counting') && m.id === 'counting') ||
                 ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
                 ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
+                ((cmdName === 'quarantine' || cmdName === 'qr' || cmdName === 'q' || cmdName === 'unquarantine' || cmdName === 'unq' || cmdName === 'jail' || cmdName === 'unjail' || cmdName === 'freeze' || cmdName === 'unfreeze' || cmdName === 'isolate' || cmdName === 'lift' || cmdName === 'qzone' || cmdName === 'pardon') && m.id === 'quarantine') ||
                 ((cmdName === 'util' || cmdName === 'utility' || cmdName === 'utils') && m.id === 'utilities') ||
                 ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
                 ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
@@ -427,11 +428,15 @@ export const commands = [
                   usageText = `${prefix}family [@user] / ${prefix}tree / ${prefix}marry @user [ring] / ${prefix}divorce / ${prefix}adopt @user / ${prefix}disown @user`;
               } else if (targetCmd.name === "soundboard" || targetCmd.name === "sfx" || targetCmd.name === "radio" || targetCmd.name === "uploadsound" || targetCmd.name === "stopsound") {
                   usageText = `${prefix}soundboard / ${prefix}sounds / ${prefix}sfx <name> / ${prefix}radio [station] / ${prefix}uploadsound <name> <url> / ${prefix}stopsound`;
+              } else if (targetCmd.name === "quarantine" || targetCmd.name === "qr" || targetCmd.name === "jail" || targetCmd.name === "isolate" || targetCmd.name === "freeze") {
+                  usageText = `${prefix}quarantine <@user> [duration] [reason] / ${prefix}qr / ${prefix}q / ${prefix}jail / ${prefix}freeze / ${prefix}isolate / /quarantine`;
+              } else if (targetCmd.name === "unquarantine" || targetCmd.name === "unq" || targetCmd.name === "lift" || targetCmd.name === "unjail" || targetCmd.name === "unfreeze" || targetCmd.name === "release") {
+                  usageText = `${prefix}unquarantine <@user> / ${prefix}unq / ${prefix}lift / ${prefix}unjail / ${prefix}unfreeze / ${prefix}release / ${prefix}pardon / /unquarantine`;
               } else if (targetCmd.name === "wiretap" || targetCmd.name === "feed") {
                   usageText = `${prefix}wiretap <add|list|remove|check> / ${prefix}feed`;
               } else if (targetCmd.name === "persona") {
                   usageText = `${prefix}persona <tsundere|cyberpunk|butler|sensei|default|list> / /persona [name]`;
-              } else if (targetCmd.name === "qr" || targetCmd.name === "fck" || targetCmd.name === "np") {
+              } else if (targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
               
@@ -1211,6 +1216,31 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}persona <name>\` — Switch server's conversational AI personality \`[Extra Owner]\`.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}persona list\` — View all available personalities and current active persona \`[Public]\`.\n` +
                     `> ${BULLET_EMOJI} \`/persona name:<name>\` — Slash command interface.`;
+              } else if (targetCmd.name === "quarantine" || targetCmd.name === "qr" || targetCmd.name === "jail" || targetCmd.name === "isolate" || targetCmd.name === "freeze") {
+                  descContent = `Zero-Trust Quarantine Isolation Architecture - Full guild channel permission overrides, role stripping & caching, and forensic isolation.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner / Extra Owner / Whitelisted\`. General Administrators CANNOT quarantine or unquarantine.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Quarantine Aliases Suite:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}qr\`, \`${prefix}q\`, \`${prefix}isolate\`, \`${prefix}jail\`, \`${prefix}freeze\`, \`${prefix}quarantined\`, \`${prefix}qzone\`, \`${prefix}isolation\`, \`${prefix}iso\`, \`${prefix}lock\`, \`${prefix}timeoutq\`, \`${prefix}quar\`, \`${prefix}quarant\`, \`${prefix}quaran\`\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Dual-Quarantine Protection:__**\n` +
+                    `> ${BULLET_EMOJI} **Rogue Admin Containment:** If an unauthorized administrator manually removes the Quarantine role, both the target and the rogue admin are quarantined immediately.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Manual UI Removal:__**\n` +
+                    `> ${BULLET_EMOJI} **Zero-Delay Discord Release:** Whitelisted users, Extra Owners, and Server Owners can lift quarantine directly via Discord UI by removing the Quarantine role.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}quarantine <@user> [duration] [reason]\` — Strip roles and isolate member into quarantine zone.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}qr @user 1h\` — Quick 1-hour quarantine strike.`;
+              } else if (targetCmd.name === "unquarantine" || targetCmd.name === "unq" || targetCmd.name === "lift" || targetCmd.name === "unjail" || targetCmd.name === "unfreeze" || targetCmd.name === "release") {
+                  descContent = `Quarantine Release & Role Recovery Engine - Seamlessly lifts isolation, recovers saved member roles, and purges database exploit taints.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner / Extra Owner / Whitelisted\`. General Discord Admins cannot lift quarantine.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Unquarantine Aliases Suite:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}unq\`, \`${prefix}lift\`, \`${prefix}unqr\`, \`${prefix}unjail\`, \`${prefix}unfreeze\`, \`${prefix}release\`, \`${prefix}free\`, \`${prefix}dequarantine\`, \`${prefix}unquarantined\`, \`${prefix}delquarantine\`, \`${prefix}rmquarantine\`, \`${prefix}uniso\`, \`${prefix}unquar\`, \`${prefix}pardon\`\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Privilege Escalation Immunity:__**\n` +
+                    `> ${BULLET_EMOJI} **Taint Purging:** Completely clears database exploit taints upon unquarantine so that authorized staff can assign roles or permissions without triggering re-quarantine.\n` +
+                    `> ${BULLET_EMOJI} **100% Role Restoration:** Restores original role structure saved during quarantine isolation.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}unquarantine <@user>\` — Release member, restore saved roles, and purge exploit taint.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}lift @user\` — Fast alias to lift quarantine.`;
               }
 
               const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
@@ -1270,6 +1300,7 @@ export const commands = [
           (cmdName === 'count' && m.id === 'counting') ||
           ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
           ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
+          ((cmdName === 'quarantine' || cmdName === 'qr' || cmdName === 'q' || cmdName === 'unquarantine' || cmdName === 'unq' || cmdName === 'jail' || cmdName === 'unjail' || cmdName === 'freeze' || cmdName === 'unfreeze' || cmdName === 'isolate' || cmdName === 'lift' || cmdName === 'qzone' || cmdName === 'pardon') && m.id === 'quarantine') ||
           ((cmdName === 'util' || cmdName === 'utility' || cmdName === 'utils') && m.id === 'utilities') ||
           ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
           ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
@@ -1386,6 +1417,10 @@ export const commands = [
           usageText = `${prefix}wiretap <add|list|remove|check> / ${prefix}feed`;
         } else if (targetCmd.name === "persona") {
           usageText = `${prefix}persona <tsundere|cyberpunk|butler|sensei|default|list> / /persona [name]`;
+        } else if (targetCmd.name === "quarantine" || targetCmd.name === "qr" || targetCmd.name === "jail" || targetCmd.name === "isolate" || targetCmd.name === "freeze") {
+          usageText = `${prefix}quarantine <@user> [duration] [reason] / ${prefix}qr / ${prefix}q / ${prefix}jail / ${prefix}freeze / ${prefix}isolate / /quarantine`;
+        } else if (targetCmd.name === "unquarantine" || targetCmd.name === "unq" || targetCmd.name === "lift" || targetCmd.name === "unjail" || targetCmd.name === "unfreeze" || targetCmd.name === "release") {
+          usageText = `${prefix}unquarantine <@user> / ${prefix}unq / ${prefix}lift / ${prefix}unjail / ${prefix}unfreeze / ${prefix}release / ${prefix}pardon / /unquarantine`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -2040,6 +2075,31 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}persona <name>\` — Switch server's conversational AI personality \`[Extra Owner]\`.\n` +
             `> ${BULLET_EMOJI} \`${prefix}persona list\` — View all available personalities and current active persona \`[Public]\`.\n` +
             `> ${BULLET_EMOJI} \`/persona name:<name>\` — Slash command interface.`;
+        } else if (targetCmd.name === "quarantine" || targetCmd.name === "qr" || targetCmd.name === "jail" || targetCmd.name === "isolate" || targetCmd.name === "freeze") {
+          descContent = `Zero-Trust Quarantine Isolation Architecture - Full guild channel permission overrides, role stripping & caching, and forensic isolation.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner / Extra Owner / Whitelisted\`. General Administrators CANNOT quarantine or unquarantine.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Quarantine Aliases Suite:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}qr\`, \`${prefix}q\`, \`${prefix}isolate\`, \`${prefix}jail\`, \`${prefix}freeze\`, \`${prefix}quarantined\`, \`${prefix}qzone\`, \`${prefix}isolation\`, \`${prefix}iso\`, \`${prefix}lock\`, \`${prefix}timeoutq\`, \`${prefix}quar\`, \`${prefix}quarant\`, \`${prefix}quaran\`\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Dual-Quarantine Protection:__**\n` +
+            `> ${BULLET_EMOJI} **Rogue Admin Containment:** If an unauthorized administrator manually removes the Quarantine role, both the target and the rogue admin are quarantined immediately.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Manual UI Removal:__**\n` +
+            `> ${BULLET_EMOJI} **Zero-Delay Discord Release:** Whitelisted users, Extra Owners, and Server Owners can lift quarantine directly via Discord UI by removing the Quarantine role.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}quarantine <@user> [duration] [reason]\` — Strip roles and isolate member into quarantine zone.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}qr @user 1h\` — Quick 1-hour quarantine strike.`;
+        } else if (targetCmd.name === "unquarantine" || targetCmd.name === "unq" || targetCmd.name === "lift" || targetCmd.name === "unjail" || targetCmd.name === "unfreeze" || targetCmd.name === "release") {
+          descContent = `Quarantine Release & Role Recovery Engine - Seamlessly lifts isolation, recovers saved member roles, and purges database exploit taints.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner / Extra Owner / Whitelisted\`. General Discord Admins cannot lift quarantine.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Unquarantine Aliases Suite:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}unq\`, \`${prefix}lift\`, \`${prefix}unqr\`, \`${prefix}unjail\`, \`${prefix}unfreeze\`, \`${prefix}release\`, \`${prefix}free\`, \`${prefix}dequarantine\`, \`${prefix}unquarantined\`, \`${prefix}delquarantine\`, \`${prefix}rmquarantine\`, \`${prefix}uniso\`, \`${prefix}unquar\`, \`${prefix}pardon\`\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Privilege Escalation Immunity:__**\n` +
+            `> ${BULLET_EMOJI} **Taint Purging:** Completely clears database exploit taints upon unquarantine so that authorized staff can assign roles or permissions without triggering re-quarantine.\n` +
+            `> ${BULLET_EMOJI} **100% Role Restoration:** Restores original role structure saved during quarantine isolation.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}unquarantine <@user>\` — Release member, restore saved roles, and purge exploit taint.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}lift @user\` — Fast alias to lift quarantine.`;
         }
 
         const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
@@ -2931,14 +2991,18 @@ export const helpModules = [
     "`/setupquarantine` - Slash command to deploy, assign leftovers, and sync permissions `[Extra Owner]`",
     "`!qrmanager setup / /qrmanager action:Setup` - Auto-setup, assign unparented channels, & fix all permissions `[Extra Owner]`",
     "`!qrmanager setrole|setcategory|setchannel|setvc|status` - Manage quarantine configuration and view status `[Extra Owner]`",
-    "`!quarantine / !qr @user [reason]` - Strip roles and isolate member `[Extra Owner]`",
-    "`!unquarantine / !unqr @user` - Lift quarantine status `[Extra Owner]`",
+    "`!quarantine / !qr / !q / !isolate / !jail / !freeze @user [duration] [reason]` - Strip roles and isolate member `[Extra Owner]`",
+    "`!unquarantine / !unq / !lift / !unjail / !unfreeze / !release / !pardon @user` - Lift quarantine status & restore roles `[Extra Owner]`",
     "`!massquarantine / !mq @role` - Quarantine all members of a role `[Extra Owner]`",
     "`!massunquarantine / !unmq` - Release all currently quarantined members `[Extra Owner]`",
     "`!lockdown / !ld on|off` - Restrict channel to staff only `[Extra Owner]`",
     "`!maxwarnings <amount>` - Configure warnings before auto-quarantine `[Extra Owner]`",
     "",
-    "-# **__Quarantine Architecture:__**",
+    "-# **__Quarantine Architecture & Aliases:__**",
+    "-# <a:target_blink:1565667466984554588> **__Quarantine Aliases:__** `!qr`, `!q`, `!isolate`, `!jail`, `!freeze`, `!quarantined`, `!qzone`, `!isolation`, `!iso`, `!lock`, `!timeoutq`, `!quar`, `!quarant`, `!quaran`.",
+    "-# <a:target_blink:1565667466984554588> **__Unquarantine Aliases:__** `!unq`, `!lift`, `!unqr`, `!unjail`, `!unfreeze`, `!release`, `!free`, `!dequarantine`, `!unquarantined`, `!delquarantine`, `!rmquarantine`, `!uniso`, `!unquar`, `!pardon`.",
+    "-# <a:target_blink:1565667466984554588> **__Dual-Quarantine Protection:__** General Admins cannot lift quarantine. If an unauthorized admin attempts manual role removal, both the target and the admin are quarantined.",
+    "-# <a:target_blink:1565667466984554588> **__Manual UI Removal:__** Whitelisted users, Extra Owners, and Server Owners can lift quarantine manually directly in Discord by removing the role.",
     "-# <a:target_blink:1565667466984554588> **__Smart Auto-Setup:__** Creates leftover components, aligns them under `.      You Have Been Quarantined`, and syncs permissions.",
     "-# <a:target_blink:1565667466984554588> **__Pure Font Naming:__** All categories and channels use clean typography without emojis.",
     "-# <a:target_blink:1565667466984554588> **__Role Color:__** Dedicated red `#ff0000` Quarantined role with zero global permissions.",
