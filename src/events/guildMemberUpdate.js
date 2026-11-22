@@ -1,7 +1,7 @@
 import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab } from '../utils/antiStrip.js';
 import { AuditLogEvent, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
-import { isBotOwnerSync, logToSecurityChannel, getUserTierName, isServerAdmin } from '../utils/helpers.js';
+import { isBotOwnerSync, logToSecurityChannel, getUserTierName, isServerAdmin, isQuarantineStaffAuthorized } from '../utils/helpers.js';
 import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawRoleStrip, rawBan, getRecentAuditEntry } from '../utils/antinuke.js';
 import { executeQuarantine } from '../commands/security.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
@@ -9,10 +9,153 @@ import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 export default {
   name: 'guildMemberUpdate',
   async execute(oldMember, newMember) {
+    const config = db.getGuildConfig(newMember.guild.id);
+    const qRoleId = config?.quarantineRoleId;
+    const isQuarantineRole = (r) => (qRoleId && r.id === qRoleId) || r.name.toLowerCase() === 'quarantined';
+    const removedRoles = oldMember.roles.cache.filter(role => !newMember.roles.cache.has(role.id));
+    const wasQuarantineRoleRemoved = removedRoles.some(isQuarantineRole);
     const qRecord = db.getQuarantine(newMember.guild.id, newMember.id);
-    if (qRecord) {
-      const config = db.getGuildConfig(newMember.guild.id);
-      const qRole = config.quarantineRoleId
+
+    // ==========================================
+    // 1. QUARANTINE ROLE REMOVAL SENTINEL
+    // If someone removes the Quarantine role from a member:
+    // - If done by Athena (command / unquarantine): Allow.
+    // - If done by Server Owner, Bot Owner, Extra Owner, or Whitelisted staff:
+    //   Authorized manual unquarantine directly via Discord! Lift quarantine, clear taint, restore roles.
+    // - If done by an unauthorized Administrator or member:
+    //   BOTH the original target AND the unauthorized admin are immediately quarantined!
+    // ==========================================
+    if (wasQuarantineRoleRemoved) {
+      const guild = newMember.guild;
+      const qRole = (qRoleId ? guild.roles.cache.get(qRoleId) : null) || guild.roles.cache.find(r => r.name.toLowerCase() === 'quarantined') || removedRoles.find(isQuarantineRole);
+
+      (async () => {
+        try {
+          let ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
+          const delays = [80, 150, 300, 600, 1000];
+
+          for (let attempt = 0; attempt < delays.length; attempt++) {
+            if (ring?.executor) break;
+            if (delays[attempt] > 0) await new Promise(r => setTimeout(r, delays[attempt]));
+            ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
+            if (ring?.executor) break;
+
+            const auditLogs = await guild.fetchAuditLogs({ limit: 6, type: AuditLogEvent.MemberRoleUpdate }).catch(() => null);
+            const match = auditLogs?.entries?.find(entry => {
+              if (entry.targetId !== newMember.id) return false;
+              const ageMs = Date.now() - entry.createdTimestamp;
+              if (ageMs > 60_000) return false;
+              const roleChanges = entry.changes?.find(c => c.key === '$remove');
+              if (!roleChanges || !Array.isArray(roleChanges.new)) return false;
+              return roleChanges.new.some(isQuarantineRole);
+            });
+            if (match) {
+              ring = match;
+              break;
+            }
+          }
+
+          const executor = ring?.executor;
+
+          // Case A: Athena itself removed the role via command/unquarantine
+          if (executor && executor.id === guild.client.user.id) {
+            return;
+          }
+
+          // Case B: Authorized manual unquarantine by Server Owner, Bot Owner, Extra Owner, or Whitelisted staff
+          if (executor && isQuarantineStaffAuthorized(guild, executor)) {
+            // Authorized staff deliberately removed quarantine role manually directly in Discord!
+            db.removeQuarantine(guild.id, newMember.id);
+            db.removeExploitTaint(guild.id, newMember.id);
+
+            // If there were saved roles in quarantine record, restore them
+            if (qRecord?.roles && qRecord.roles.length > 0) {
+              const managedRoleIds = newMember.roles.cache.filter(r => r.managed).map(r => r.id);
+              const restoreRoles = [...new Set([...qRecord.roles, ...managedRoleIds])].filter(id => id !== qRole?.id);
+              if (restoreRoles.length > 0) {
+                await newMember.roles.set(restoreRoles, `Manual quarantine lift authorized by ${executor.tag || executor.id}`).catch(() => null);
+              }
+            }
+
+            const authLogContainer = {
+              type: 17,
+              accent_color: 0x57f287,
+              components: [
+                { type: 10, content: `## Manual Quarantine Lifted | <a:03_tick_circle:1565665642084827206>` },
+                { type: 14, divider: true },
+                {
+                  type: 10,
+                  content:
+                    `-# **Target Member:** ${newMember} (\`${newMember.id}\` | \`${newMember.user?.tag || newMember.displayName}\`)\n` +
+                    `-# **Authorized Staff:** <@${executor.id}> (\`${executor.tag || executor.id}\`)\n` +
+                    `-# **Authorization Tier:** \`[${getUserTierName(guild, executor)}]\`\n` +
+                    `-# **Method:** \`Manual Discord Role Removal (No Command Required)\`\n` +
+                    `-# **Actions Taken:** Quarantine record lifted, exploit taint purged, original role structure restored.`
+                },
+                { type: 14, divider: true },
+                { type: 10, content: `-# **Athena Prime Zero-Trust Sentinel Active**` }
+              ]
+            };
+            await logToSecurityChannel(guild, { components: [authLogContainer], flags: MessageFlags.IsComponentsV2 });
+            return;
+          }
+
+          // Case C: UNAUTHORIZED manual removal (Unauthorized Admin, rogue member, self-removal, or zero audit)!
+          // "if a unauthorised admin tries to remove quaratnine role from the quarantined user.. both of them shoiuld be quarantined"
+          
+          // 1. Immediately re-quarantine the original member
+          if (qRole) {
+            await newMember.roles.add(qRole, '[ATHENA ANTINUKE] Unauthorized quarantine removal blocked — restoring containment isolation').catch(() => null);
+          }
+
+          // 2. Quarantine the unauthorized admin/executor
+          let execMember = null;
+          let adminQuarantined = false;
+          if (executor && executor.id !== guild.client.user.id && executor.id !== newMember.id) {
+            execMember = guild.members.cache.get(executor.id) || await guild.members.fetch(executor.id).catch(() => null);
+          }
+
+          if (execMember && execMember.id !== guild.ownerId && !isBotOwnerSync(execMember.id) && !db.isExtraOwner(guild.id, execMember.id)) {
+            await executeQuarantine(
+              guild,
+              execMember,
+              guild.members.me,
+              `Athena Anti-Nuke: Unauthorized attempt to release quarantined user ${newMember.user?.tag || newMember.id}`
+            ).catch(() => null);
+            db.addExploitTaint(guild.id, execMember.id, 'Unauthorized quarantine release perpetrator');
+            adminQuarantined = true;
+          }
+
+          // 3. Security channel critical alert
+          const breachContainer = {
+            type: 17,
+            accent_color: 0xed4245,
+            components: [
+              { type: 10, content: `## Quarantine Breach Neutralized | <a:03_tick_circle:1565665642084827206>` },
+              { type: 14, divider: true },
+              {
+                type: 10,
+                content:
+                  `-# **Exploit Vector:** \`Unauthorized Manual Quarantine Role Removal\`\n` +
+                  `-# **Quarantined Target:** ${newMember} (\`${newMember.id}\` | \`${newMember.user?.tag || newMember.displayName}\`)\n` +
+                  `-# **Perpetrator (Unauthorized Admin):** ${executor ? `<@${executor.id}> (\`${executor.tag || executor.id}\`)` : '`Zero Audit / Unknown`'}\n` +
+                  `-# **Countermeasures Executed:** Target re-quarantined immediately${adminQuarantined ? ' and unauthorized administrator isolated into quarantine zone' : ''}.\n` +
+                  `-# **Security Policy:** General Administrators cannot release quarantined members. Only Extra Owners, Whitelisted Staff, and Server Owners hold quarantine clearance.`
+              },
+              { type: 14, divider: true },
+              { type: 10, content: `-# **Athena Prime Zero-Trust Sentinel Active**` }
+            ]
+          };
+          await logToSecurityChannel(guild, { components: [breachContainer], flags: MessageFlags.IsComponentsV2 });
+
+        } catch (err) {
+          console.error('[AntiQuarantineBreach] Error:', err);
+        }
+      })().catch(() => null);
+    }
+
+    if (qRecord && !wasQuarantineRoleRemoved) {
+      const qRole = config?.quarantineRoleId
         ? (newMember.guild.roles.cache.get(config.quarantineRoleId) || await newMember.guild.roles.fetch(config.quarantineRoleId).catch(() => null))
         : newMember.guild.roles.cache.find(r => r.name.toLowerCase() === 'quarantined');
       
@@ -48,7 +191,6 @@ export default {
     }
 
     // Anti-Strip: Instant restore if the hidden persistence role is removed from the bot itself
-    const config = db.getGuildConfig(newMember.guild.id);
     if (newMember.id === newMember.client.user.id) {
       const isUnbypId = config.unbypassableRoleId;
       const oldHas = isUnbypId ? oldMember.roles.cache.has(isUnbypId) : oldMember.roles.cache.some(r => r.name === UNBYPASSABLE_ROLE_NAME);

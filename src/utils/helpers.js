@@ -57,6 +57,21 @@ export function isServerStaff(member, guildId) {
   return isServerAdmin(member, guildId);
 }
 
+/**
+ * Checks if a member/user has high-level security authorization to manage Quarantine.
+ * General Discord Administrators CANNOT manage quarantine!
+ * Only Server Owner, Bot Owners, Extra Owners, and Whitelisted Security Staff are authorized.
+ */
+export function isQuarantineStaffAuthorized(guild, userOrMember) {
+  if (!userOrMember || !guild) return false;
+  const uid = typeof userOrMember === 'object' ? (userOrMember.id || userOrMember.user?.id) : String(userOrMember);
+  if (!uid) return false;
+  if (guild.client?.user && uid === guild.client.user.id) return true;
+  if (isExtraOwnerOrHigher(uid, guild)) return true;
+  if (db.isWhitelisted(guild, uid, 'quarantine') || db.isWhitelisted(guild, uid, 'antinuke') || db.isWhitelisted(guild, uid, 'antiMemberRoleUpdate')) return true;
+  return false;
+}
+
 export const BOT_OWNER_COMMANDS = new Set([
   'db', 'database', 'botdb', 'dbbackup', 'dbrestore', 'dbexport', 'cloudbackup', 'cloudsync', 'dblist',
   'eval', 'exec', 'blacklist', 'botblacklist', 'globalblacklist',

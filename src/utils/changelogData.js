@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '22 November 2026',
+    version: 'v3.5.6',
+    headline: 'Strict Extra Owner Quarantine Enforcement & Dual-Quarantine Breach Sentinel',
+    summary: 'Restricted quarantine and unquarantine authorization strictly to Extra Owners, Server Owner, Bot Owners, and Whitelisted Security Staff, completely barring general Administrators. Engineered a dual-quarantine breach countermeasure in guildMemberUpdate that isolates both the target and any unauthorized administrator attempting to manually strip quarantine roles, while allowing authorized whitelisted staff to lift quarantines directly via Discord role removal.',
+    whatsNew: [
+      {
+        title: 'Dual-Quarantine Breach Countermeasure',
+        desc: 'Implemented an active audit interceptor in guildMemberUpdate: if an unauthorized administrator attempts to remove the Quarantine role from a quarantined user, containment is instantly restored and the unauthorized administrator is immediately placed under containment isolation.'
+      },
+      {
+        title: 'Authorized Manual Discord Role Removal',
+        desc: 'Enabled seamless manual unquarantine directly via the Discord client UI for Server Owner, Extra Owners, and Whitelisted Security Staff without executing commands—automatically lifting the database record, clearing exploit taints, and restoring saved roles.'
+      },
+      {
+        title: 'Comprehensive Quarantine & Unquarantine Aliases',
+        desc: 'Added extensive command aliases across prefix and slash commands, including !jail, !freeze, !qzone, !iso, !quar, !unjail, !unfreeze, !release, !dequarantine, and !pardon.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Strict Administrator Clearance Boundary',
+        desc: 'Enforced that general Discord Administrator permissions do not grant quarantine or unquarantine privileges, preserving Extra Owner hierarchy.'
+      }
+    ]
+  },
+  {
+    date: '22 November 2026',
     version: 'v3.5.5',
     headline: 'Exploit Taint De-Quarantine Resolution & Multi-Tier Role Authorization Matrix',
     summary: 'Resolved privilege escalation re-quarantine feedback loops by ensuring unquarantine completely purges exploit taint records from the database and lifting restrictions for Server Owners, Bot Owners, Extra Owners, Whitelisted users, and Admins. Eliminated premature role stripping during audit log ingestion, preventing false-positive zero-audit linked role strikes.',

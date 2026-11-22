@@ -71,7 +71,8 @@ export const commands = [
       `> ${BULLET_EMOJI} \`!massunban\` ➔ \`!unbanall\`\n` +
       `> ${BULLET_EMOJI} \`!sec\` or \`!shield\` ➔ \`!security\`\n` +
       `> ${BULLET_EMOJI} \`!an\` ➔ \`!antinuke\`\n` +
-      `> ${BULLET_EMOJI} \`!qr\` ➔ \`!quarantine\`\n` +
+      `> ${BULLET_EMOJI} \`!qr\` / \`!q\` / \`!jail\` / \`!freeze\` ➔ \`!quarantine\`\n` +
+      `> ${BULLET_EMOJI} \`!unq\` / \`!lift\` / \`!unjail\` / \`!unfreeze\` ➔ \`!unquarantine\`\n` +
       `> ${BULLET_EMOJI} \`!ld\` ➔ \`!lockdown\`\n` +
       `> ${BULLET_EMOJI} \`!em\` ➔ \`!emergency\`\n\n` +
       `### Utility & Engagement\n` +

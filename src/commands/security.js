@@ -21,7 +21,8 @@ import {
   getUserTierName,
   cleanDisplayName,
   renderSleekProgressBar,
-  isExtraOwnerOrHigher
+  isExtraOwnerOrHigher,
+  isQuarantineStaffAuthorized
 } from '../utils/helpers.js';
 import { connectToHomeVc, toggleBotDeafen } from '../utils/voice.js';
 import { setupDashboardChannel } from '../utils/dashboardManager.js';
@@ -114,7 +115,7 @@ export const commands = [
   // --- QUARANTINE COMMAND ---
   {
     name: 'quarantine',
-    aliases: ['qr', 'q', 'isolate'],
+    aliases: ['qr', 'q', 'isolate', 'jail', 'freeze', 'quarantined', 'qzone', 'isolation', 'iso', 'lock', 'timeoutq', 'quar', 'quarant', 'quaran', 'quarantineuser', 'setquarantine', 'addquarantine'],
     description: 'Isolates a user - strips roles, moves to quarantine VC, DMs them. Default duration: 5m.',
     category: 'security',
     permissions: [PermissionFlagsBits.ModerateMembers],
@@ -139,6 +140,13 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
+      if (!isQuarantineStaffAuthorized(message.guild, message.member)) {
+        return message.reply(cv2.danger(
+          'Unauthorized | <a:04_cross_circle:1565665644806934639>',
+          'You are not authorized to quarantine members. This action is strictly restricted to the **Server Owner**, **Extra Owners**, and **Whitelisted Security Staff**.'
+        ));
+      }
+
       const target = message.mentions.members.first();
       if (!target) {
         return message.reply(cv2.warn('Command Error', `${message.author} **Usage:** \`!quarantine <@user> [duration] [reason]\`\n\nExamples: \`!qr @user 10m spam\` / \`!qr @user 1h\``));
@@ -156,6 +164,13 @@ export const commands = [
       else await message.reply(result.embed || cv2.danger('<:off:1533844858983157851> Failed', result.message));
     },
     async executeSlash(interaction) {
+      if (!isQuarantineStaffAuthorized(interaction.guild, interaction.member)) {
+        return interaction.reply(cv2.danger(
+          'Unauthorized | <a:04_cross_circle:1565665644806934639>',
+          'You are not authorized to quarantine members. This action is strictly restricted to the **Server Owner**, **Extra Owners**, and **Whitelisted Security Staff**.'
+        ));
+      }
+
       const targetUser = interaction.options.getUser('user');
       const durationStr = interaction.options.getString('duration') || '5m';
       const reason = interaction.options.getString('reason') || 'No reason provided';
@@ -182,6 +197,13 @@ export const commands = [
       { name: 'reason',   description: 'Reason',               type: 3, required: false }
     ],
     async executePrefix(message, args) {
+      if (!isQuarantineStaffAuthorized(message.guild, message.member)) {
+        return message.reply(cv2.danger(
+          'Unauthorized | <a:04_cross_circle:1565665644806934639>',
+          'You are not authorized to quarantine members. This action is strictly restricted to the **Server Owner**, **Extra Owners**, and **Whitelisted Security Staff**.'
+        ));
+      }
+
       const target = message.mentions.members.first();
       if (!target) return message.reply(cv2.warn('Usage', `${message.author} **Usage:** \`!qr <@user> [duration] [reason]\``));
       let remaining = args.slice(1);
@@ -196,6 +218,13 @@ export const commands = [
       else await message.reply(result.embed || cv2.danger('<:off:1533844858983157851> Failed', result.message));
     },
     async executeSlash(interaction) {
+      if (!isQuarantineStaffAuthorized(interaction.guild, interaction.member)) {
+        return interaction.reply(cv2.danger(
+          'Unauthorized | <a:04_cross_circle:1565665644806934639>',
+          'You are not authorized to quarantine members. This action is strictly restricted to the **Server Owner**, **Extra Owners**, and **Whitelisted Security Staff**.'
+        ));
+      }
+
       const targetUser = interaction.options.getUser('user');
       const durationStr = interaction.options.getString('duration') || '5m';
       const reason = interaction.options.getString('reason') || 'No reason provided';
@@ -211,7 +240,7 @@ export const commands = [
   // --- UNQUARANTINE COMMAND ---
   {
     name: 'unquarantine',
-    aliases: ['unq', 'lift'],
+    aliases: ['unq', 'lift', 'unqr', 'unjail', 'unfreeze', 'release', 'free', 'dequarantine', 'unquarantined', 'delquarantine', 'rmquarantine', 'uniso', 'unquar', 'unquarant', 'unquaran', 'quarantineoff', 'unquarantineuser', 'pardon', 'disclose'],
     description: 'Restores a quarantined user to their original roles and lifts isolation.',
     category: 'security',
     permissions: [PermissionFlagsBits.ModerateMembers],
@@ -224,19 +253,33 @@ export const commands = [
       }
     ],
     async executePrefix(message) {
+      if (!isQuarantineStaffAuthorized(message.guild, message.member)) {
+        return message.reply(cv2.danger(
+          'Unauthorized | <a:04_cross_circle:1565665644806934639>',
+          'You are not authorized to lift quarantines. This action is strictly restricted to the **Server Owner**, **Extra Owners**, and **Whitelisted Security Staff**.'
+        ));
+      }
+
       const target = message.mentions.members.first();
       if (!target) {
         return message.reply(cv2.warn('Command Error', `${message.author} Please mention a valid member to unquarantine.\n\n**Usage:** \`!unquarantine <@user>\``));
       }
 
       const result = await executeUnquarantine(message.guild, target, message.member);
-        if (result.success) {
-          await message.reply(result.embed);
-        } else {
-          await message.reply(cv2.danger('<:off:1533844858983157851> Failed', result.message));
-        }
+      if (result.success) {
+        await message.reply(result.embed);
+      } else {
+        await message.reply(cv2.danger('<:off:1533844858983157851> Failed', result.message));
+      }
     },
     async executeSlash(interaction) {
+      if (!isQuarantineStaffAuthorized(interaction.guild, interaction.member)) {
+        return interaction.reply(cv2.danger(
+          'Unauthorized | <a:04_cross_circle:1565665644806934639>',
+          'You are not authorized to lift quarantines. This action is strictly restricted to the **Server Owner**, **Extra Owners**, and **Whitelisted Security Staff**.'
+        ));
+      }
+
       const targetUser = interaction.options.getUser('user');
       const target = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
       
@@ -245,11 +288,11 @@ export const commands = [
       }
 
       const result = await executeUnquarantine(interaction.guild, target, interaction.member);
-        if (result.success) {
-          await interaction.reply(result.embed);
-        } else {
-          await interaction.reply(cv2.danger('<:off:1533844858983157851> Failed', result.message));
-        }
+      if (result.success) {
+        await interaction.reply(result.embed);
+      } else {
+        await interaction.reply(cv2.danger('<:off:1533844858983157851> Failed', result.message));
+      }
     }
   },
 
@@ -2699,15 +2742,16 @@ export async function executeUnquarantine(guild, targetMember, moderator, contex
   }
 
   try {
-    // Check if moderator is authorized authority (Server Owner, Bot Owner, Extra Owner, Admin, Whitelisted)
-    const isModAuthorized = (
-      moderator.id === guild.ownerId ||
-      isBotOwnerSync(moderator.id) ||
-      db.isExtraOwner(guild.id, moderator.id) ||
-      isAuthorized(guild, moderator, 'antiMemberRoleUpdate') ||
-      (moderator.permissions?.has && moderator.permissions.has(PermissionFlagsBits.Administrator)) ||
-      isServerAdmin(moderator, guild.id)
-    );
+    // Check if moderator is authorized authority (Server Owner, Bot Owner, Extra Owner, Whitelisted)
+    // NOTE: A regular Discord Admin CANNOT unquarantine! Only Extra Owner, Bot Owner, Server Owner, or Whitelisted staff!
+    const isModAuthorized = isQuarantineStaffAuthorized(guild, moderator);
+
+    if (!isModAuthorized && context !== 'auto' && context !== 'manual_role_removal') {
+      return { 
+        success: false, 
+        message: 'You do not have authorization to unquarantine members. This action is strictly restricted to the **Server Owner**, **Extra Owners**, and **Whitelisted Security Staff**.' 
+      };
+    }
 
     // Determine restore role IDs
     let savedRoleIds = record?.roles || [];
