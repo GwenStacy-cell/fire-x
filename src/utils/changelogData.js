@@ -15,6 +15,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '23 November 2026',
+    version: 'v3.6.2',
+    headline: 'Stats Bot Style Statistics Suite & Interactive Reset/Refresh Engine',
+    summary: 'Replicated the exact Stats Bot aesthetic for server statistics voice channels, introducing the ╭・Statistics category with locked voice counters for Members (🌐), Bots (🤖), and Boosters (🚀). Built an interactive Refresh / Reset button directly on the Components V2 dashboard for instant count synchronization alongside full rate-limit resilience.',
+    whatsNew: [
+      {
+        title: 'Stats Bot Aesthetic ╭・Statistics Suite',
+        desc: '!serverstats setup now creates the exact ╭・Statistics category and locked voice channels: 🌐 . Members: X, 🤖 . Bots: Y, and 🚀 . Server Booster: Z.'
+      },
+      {
+        title: 'Interactive Refresh / Reset Button',
+        desc: 'Added a primary Refresh / Reset button (<a:01_home_beat:1567037361810833428>) to immediately recalculate member and bot counts, syncing voice channel titles in real-time.'
+      },
+      {
+        title: 'Disambiguated !stats & !serverstats Routing',
+        desc: 'Unified subcommands across !stats and !serverstats, allowing setup, refresh, reset, sync, config, and disable to route seamlessly to the statistics channel engine.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Discord Rate-Limit Graceful Degradation',
+        desc: "Manual refreshes gracefully handle Discord's 2-updates-per-10-minutes channel rename rate limit, informing the user while scheduling background updates without throwing errors."
+      },
+      {
+        title: 'Background 6-Minute Auto-Sync Upgrade',
+        desc: 'Updated ready.js periodic interval to keep the booster counter (🚀 . Server Booster: Z) continuously synchronized along with member and bot counts.'
+      }
+    ]
+  },
+  {
     date: '22 November 2026',
     version: 'v3.6.1',
     headline: 'De-conflicted !serverstats Setup Engine & Command Disambiguation',

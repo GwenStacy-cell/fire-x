@@ -414,19 +414,21 @@ export default {
           // For accurate bot count, we check the cache. 
           // Bots are typically fully cached.
           const total = guild.memberCount;
-          const bots = guild.members.cache.filter(member => member.user.bot).size;
+          const bots = guild.members.cache.filter(member => member.user?.bot).size;
           const humans = total - bots;
+          const boosters = guild.premiumSubscriptionCount || 0;
 
-          const totalCh = guild.channels.cache.get(stats.totalId);
-          const humansCh = guild.channels.cache.get(stats.humansId);
-          const botsCh = guild.channels.cache.get(stats.botsId);
+          const totalCh = stats.totalId ? (guild.channels.cache.get(stats.totalId) || await guild.channels.fetch(stats.totalId).catch(() => null)) : null;
+          const humansCh = stats.humansId ? (guild.channels.cache.get(stats.humansId) || await guild.channels.fetch(stats.humansId).catch(() => null)) : null;
+          const botsCh = stats.botsId ? (guild.channels.cache.get(stats.botsId) || await guild.channels.fetch(stats.botsId).catch(() => null)) : null;
+          const boosterCh = stats.boosterId ? (guild.channels.cache.get(stats.boosterId) || await guild.channels.fetch(stats.boosterId).catch(() => null)) : null;
 
-          const e = stats.emoji || '❗';
           const f = stats.font || 'standard';
 
-          const totalName = formatServerStatChannelName('USERS', total, e, f);
-          const humansName = formatServerStatChannelName('MEMBERS', humans, e, f);
-          const botsName = formatServerStatChannelName('BOTS', bots, e, f);
+          const totalName = formatServerStatChannelName('USERS', total, null, f);
+          const humansName = formatServerStatChannelName('MEMBERS', humans, null, f);
+          const botsName = formatServerStatChannelName('BOTS', bots, null, f);
+          const boosterName = formatServerStatChannelName('BOOSTER', boosters, null, f);
 
           if (totalCh && totalCh.name !== totalName) {
             await totalCh.setName(totalName).catch(() => null);
@@ -436,6 +438,9 @@ export default {
           }
           if (botsCh && botsCh.name !== botsName) {
             await botsCh.setName(botsName).catch(() => null);
+          }
+          if (boosterCh && boosterCh.name !== boosterName) {
+            await boosterCh.setName(boosterName).catch(() => null);
           }
         } catch (e) {
           // Ignore API errors

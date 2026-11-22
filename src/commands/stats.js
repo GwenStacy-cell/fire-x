@@ -185,7 +185,7 @@ export const commands = [
       const isMeArg = firstArg === 'me' || firstArg === 'user' || isMention || isSnowflake;
 
       // Check if user wants member count VC management
-      const isVcArg = ['vc', 'setup', 'config', 'disable', 'channel', 'channels'].includes(firstArg);
+      const isVcArg = ['vc', 'setup', 'config', 'disable', 'channel', 'channels', 'refresh', 'reset', 'sync'].includes(firstArg);
       if (isVcArg) {
         const { commands: serverStatsCmds } = await import('./serverstats.js');
         const sstats = serverStatsCmds[0];

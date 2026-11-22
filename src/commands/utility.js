@@ -3165,7 +3165,7 @@ export const helpModules = [
     "`!testgloballog` - Dispatch test cross-server action embed `[Bot Owner]`"
   ] },
   { id: 'config', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Config', label: 'Server Configuration', emoji: 'config', commands: [
-    "`!serverstats / !statsetup setup|config|disable` - Manage voice channels displaying member counts `[Extra Owner]`",
+    "`!serverstats / !statsetup setup|refresh|config|disable` - Stats Bot style `╭・Statistics` counters (Members, Bots, Boosters) with Refresh/Reset `[Extra Owner]`",
     "`!ytstats` - Open **YouTube Stats VC Engine** (Dynamically display live YouTube subscriber counts in VC) `[Extra Owner]`",
     "`!autorole / !autorole-config` - Open **AutoRole & Vanity Engine** (Human/Bot join roles & vanity status rewards) `[Extra Owner]`",
     "`!autovcstatus / !randomvc [on|off|shuffle]` - Rotate custom statuses on all VCs `[Extra Owner]`",

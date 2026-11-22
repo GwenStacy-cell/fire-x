@@ -296,6 +296,14 @@ export default {
     }
 
     // ==========================================
+    // SERVER STATS (╭・Statistics) INTERACTIVE CONTROLS & REFRESH/RESET BUTTON
+    // ==========================================
+    if (interaction.customId && interaction.customId.startsWith('serverstats_')) {
+      const { handleServerStatsInteraction } = await import('../commands/serverstats.js');
+      return handleServerStatsInteraction(interaction);
+    }
+
+    // ==========================================
     // ROLE MANAGER (EDITROLE / ER) INTERACTIVE CONTROLS
     // ==========================================
     if (interaction.customId && interaction.customId.startsWith('rm_')) {
