@@ -321,6 +321,10 @@ export const commands = [
                   permsText = "Server Owner & Extra Owner";
               } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
                   permsText = "Public (Everyone)";
+              } else if (targetCmd.name === "serverstats" || targetCmd.name === "statsetup" || targetCmd.name === "vcstats" || targetCmd.name === "statsconfig") {
+                  permsText = "Extra Owner (or Server Owner)";
+              } else if (targetCmd.name === "stats" || targetCmd.name === "serveroverview" || targetCmd.name === "so") {
+                  permsText = "Public (Everyone)";
               } else if (cmdClearance.requiredClearance === 'Extra Owner') {
                   permsText = "Extra Owner (or Server Owner)";
               } else if (cmdClearance.requiredClearance === 'Bot Owner') {
@@ -436,6 +440,12 @@ export const commands = [
                   usageText = `${prefix}wiretap <add|list|remove|check> / ${prefix}feed`;
               } else if (targetCmd.name === "persona") {
                   usageText = `${prefix}persona <tsundere|cyberpunk|butler|sensei|default|list> / /persona [name]`;
+              } else if (targetCmd.name === "serverstats" || targetCmd.name === "statsetup" || targetCmd.name === "vcstats") {
+                  usageText = `${prefix}serverstats <setup|refresh|config|disable> / ${prefix}statsetup / ${prefix}vcstats / /serverstats`;
+              } else if (targetCmd.name === "stats") {
+                  usageText = `${prefix}stats [24h|7d|30d|all] / ${prefix}stats me / ${prefix}stats @user / ${prefix}stats <setup|refresh|config|disable> / /stats`;
+              } else if (targetCmd.name === "serveroverview" || targetCmd.name === "so") {
+                  usageText = `${prefix}serveroverview [timeframe] / ${prefix}so [timeframe] / /serveroverview`;
               } else if (targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -1241,6 +1251,47 @@ export const commands = [
                     `> -# **__Usage Syntax:__**\n` +
                     `> ${BULLET_EMOJI} \`${prefix}unquarantine <@user>\` — Release member, restore saved roles, and purge exploit taint.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}lift @user\` — Fast alias to lift quarantine.`;
+              } else if (targetCmd.name === "serverstats" || targetCmd.name === "statsetup" || targetCmd.name === "vcstats") {
+                  descContent = `Stats Bot Style Statistics Voice Channels & Interactive Reset/Refresh Engine.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Extra Owner\` (and Server Owner / Bot Owner). Unauthorized users are strictly denied.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Exact Stats Bot Layout & Symbols:__**\n` +
+                    `> ${BULLET_EMOJI} **Category:** \`╭・Statistics\`\n` +
+                    `> ${BULLET_EMOJI} **Members Channel:** \`🌐 . Members: <humans>\` (locked voice channel, live human count)\n` +
+                    `> ${BULLET_EMOJI} **Bots Channel:** \`🤖 . Bots: <bots>\` (locked voice channel, live bot count)\n` +
+                    `> ${BULLET_EMOJI} **Booster Channel:** \`🚀 . Server Booster: <boosters>\` (locked voice channel, live server boost count)\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Interactive Subcommands & Buttons:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}serverstats setup\` — Deploy the \`╭・Statistics\` category and all 3 locked counters.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}serverstats refresh\` (or \`reset\` / \`sync\` / \`[Refresh / Reset]\` button) — Recalculate members, bots, and boosters, and immediately re-sync channel names.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}serverstats config <font>\` — Select typography font style (\`standard\`, \`bold\`, \`smallcaps\`, \`serif\`, \`script\`, \`gothic\`, \`mono\`).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}serverstats disable\` — Delete all statistics channels and clear database configuration.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **Rate Limit Resilience:** Manual refreshes gracefully handle Discord's 2-renames-per-10m limit without crashing; background auto-update runs every 6 minutes.`;
+              } else if (targetCmd.name === "stats") {
+                  descContent = `Unified Server & Member Activity Intelligence Hub with 8-Panel HUD, Canvas Cards & Voice Counters.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` for viewing stats; \`Extra Owner\` for voice channel setup & management.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Core Capabilities & Modes:__**\n` +
+                    `> ${BULLET_EMOJI} **Server Overview HUD (\`${prefix}stats\`):** Statbot-style 8-panel activity dashboard (Messages, Voice, Active Users, Top Contributors, Reactions, Links) with timeframe selector (\`24h\`, \`7d\`, \`30d\`, \`all\`).\n` +
+                    `> ${BULLET_EMOJI} **Personal Stat Card (\`${prefix}stats me\` / \`${prefix}stats @user\`):** High-resolution Canvas telemetry card embedded in borderless Components V2 media gallery.\n` +
+                    `> ${BULLET_EMOJI} **Voice Counters Forwarding (\`${prefix}stats setup\` / \`${prefix}stats refresh\`):** Direct shortcut to deploy or reset Stats Bot style \`╭・Statistics\` channels.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stats\` — Open Server Overview HUD (defaults to 7 Days).\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stats [24h|7d|30d|all]\` — Open server dashboard with specific timeframe.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stats me\` / \`${prefix}mystats\` — Generate your personalized Canvas statistics card.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stats @user\` — Generate statistics card for a specified member.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}stats setup\` / \`${prefix}stats refresh\` — Manage live member count voice channels.`;
+              } else if (targetCmd.name === "serveroverview" || targetCmd.name === "so") {
+                  descContent = `Statbot-Style 8-Panel High-Fidelity Server Overview Dashboard with 9 Interactive Tabs.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\`. Available to all server members.\n\n` +
+                    `> -# **__Dashboard Panels & Tabs:__**\n` +
+                    `> ${BULLET_EMOJI} **8 Key Telemetry Cards:** Messages (total, daily avg, today), Voice (total mins, daily avg, today), Active Users, Peak Activity, Top 3 Chatters, Top 3 Voice Users, Reactions, and Links.\n` +
+                    `> ${BULLET_EMOJI} **Interactive Navigation Tabs:** Switch between Overview, Messages, Voice, Channels, Active Users, Joins & Leaves, Reactions, Roles, and Settings.\n` +
+                    `> ${BULLET_EMOJI} **Timeframe Selector:** Toggle between 24 Hours (1 Day), 7 Days (1 Week), 30 Days (1 Month), and All Tracked Time.\n\n` +
+                    `> -# **__Usage Syntax:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}serveroverview\` (or \`${prefix}so\`) — Launch the live overview dashboard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}serveroverview 24h\` — Launch with 24-hour lookback window.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}serveroverview 30d\` — Launch with 30-day monthly lookback window.`;
               }
 
               const display1 = new TextDisplayBuilder().setContent(`# ${NINJA_BULLET} Command Name: \`${targetCmd.name}\` ${NINJA_BULLET_RTL}\n\n` +
@@ -1327,6 +1378,10 @@ export const commands = [
         } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
           permsText = "Server Owner & Extra Owner";
         } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
+          permsText = "Public (Everyone)";
+        } else if (targetCmd.name === "serverstats" || targetCmd.name === "statsetup" || targetCmd.name === "vcstats" || targetCmd.name === "statsconfig") {
+          permsText = "Extra Owner (or Server Owner)";
+        } else if (targetCmd.name === "stats" || targetCmd.name === "serveroverview" || targetCmd.name === "so") {
           permsText = "Public (Everyone)";
         } else if (cmdClearance.requiredClearance === 'Extra Owner') {
           permsText = "Extra Owner (or Server Owner)";
@@ -1421,6 +1476,12 @@ export const commands = [
           usageText = `${prefix}quarantine <@user> [duration] [reason] / ${prefix}qr / ${prefix}q / ${prefix}jail / ${prefix}freeze / ${prefix}isolate / /quarantine`;
         } else if (targetCmd.name === "unquarantine" || targetCmd.name === "unq" || targetCmd.name === "lift" || targetCmd.name === "unjail" || targetCmd.name === "unfreeze" || targetCmd.name === "release") {
           usageText = `${prefix}unquarantine <@user> / ${prefix}unq / ${prefix}lift / ${prefix}unjail / ${prefix}unfreeze / ${prefix}release / ${prefix}pardon / /unquarantine`;
+        } else if (targetCmd.name === "serverstats" || targetCmd.name === "statsetup" || targetCmd.name === "vcstats") {
+          usageText = `${prefix}serverstats <setup|refresh|config|disable> / ${prefix}statsetup / ${prefix}vcstats / /serverstats`;
+        } else if (targetCmd.name === "stats") {
+          usageText = `${prefix}stats [24h|7d|30d|all] / ${prefix}stats me / ${prefix}stats @user / ${prefix}stats <setup|refresh|config|disable> / /stats`;
+        } else if (targetCmd.name === "serveroverview" || targetCmd.name === "so") {
+          usageText = `${prefix}serveroverview [timeframe] / ${prefix}so [timeframe] / /serveroverview`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -2100,6 +2161,47 @@ export const commands = [
             `> -# **__Usage Syntax:__**\n` +
             `> ${BULLET_EMOJI} \`${prefix}unquarantine <@user>\` — Release member, restore saved roles, and purge exploit taint.\n` +
             `> ${BULLET_EMOJI} \`${prefix}lift @user\` — Fast alias to lift quarantine.`;
+        } else if (targetCmd.name === "serverstats" || targetCmd.name === "statsetup" || targetCmd.name === "vcstats") {
+          descContent = `Stats Bot Style Statistics Voice Channels & Interactive Reset/Refresh Engine.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Extra Owner\` (and Server Owner / Bot Owner). Unauthorized users are strictly denied.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Exact Stats Bot Layout & Symbols:__**\n` +
+            `> ${BULLET_EMOJI} **Category:** \`╭・Statistics\`\n` +
+            `> ${BULLET_EMOJI} **Members Channel:** \`🌐 . Members: <humans>\` (locked voice channel, live human count)\n` +
+            `> ${BULLET_EMOJI} **Bots Channel:** \`🤖 . Bots: <bots>\` (locked voice channel, live bot count)\n` +
+            `> ${BULLET_EMOJI} **Booster Channel:** \`🚀 . Server Booster: <boosters>\` (locked voice channel, live server boost count)\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Interactive Subcommands & Buttons:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}serverstats setup\` — Deploy the \`╭・Statistics\` category and all 3 locked counters.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}serverstats refresh\` (or \`reset\` / \`sync\` / \`[Refresh / Reset]\` button) — Recalculate members, bots, and boosters, and immediately re-sync channel names.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}serverstats config <font>\` — Select typography font style (\`standard\`, \`bold\`, \`smallcaps\`, \`serif\`, \`script\`, \`gothic\`, \`mono\`).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}serverstats disable\` — Delete all statistics channels and clear database configuration.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **Rate Limit Resilience:** Manual refreshes gracefully handle Discord's 2-renames-per-10m limit without crashing; background auto-update runs every 6 minutes.`;
+        } else if (targetCmd.name === "stats") {
+          descContent = `Unified Server & Member Activity Intelligence Hub with 8-Panel HUD, Canvas Cards & Voice Counters.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\` for viewing stats; \`Extra Owner\` for voice channel setup & management.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Core Capabilities & Modes:__**\n` +
+            `> ${BULLET_EMOJI} **Server Overview HUD (\`${prefix}stats\`):** Statbot-style 8-panel activity dashboard (Messages, Voice, Active Users, Top Contributors, Reactions, Links) with timeframe selector (\`24h\`, \`7d\`, \`30d\`, \`all\`).\n` +
+            `> ${BULLET_EMOJI} **Personal Stat Card (\`${prefix}stats me\` / \`${prefix}stats @user\`):** High-resolution Canvas telemetry card embedded in borderless Components V2 media gallery.\n` +
+            `> ${BULLET_EMOJI} **Voice Counters Forwarding (\`${prefix}stats setup\` / \`${prefix}stats refresh\`):** Direct shortcut to deploy or reset Stats Bot style \`╭・Statistics\` channels.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stats\` — Open Server Overview HUD (defaults to 7 Days).\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stats [24h|7d|30d|all]\` — Open server dashboard with specific timeframe.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stats me\` / \`${prefix}mystats\` — Generate your personalized Canvas statistics card.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stats @user\` — Generate statistics card for a specified member.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}stats setup\` / \`${prefix}stats refresh\` — Manage live member count voice channels.`;
+        } else if (targetCmd.name === "serveroverview" || targetCmd.name === "so") {
+          descContent = `Statbot-Style 8-Panel High-Fidelity Server Overview Dashboard with 9 Interactive Tabs.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Public (Everyone)\`. Available to all server members.\n\n` +
+            `> -# **__Dashboard Panels & Tabs:__**\n` +
+            `> ${BULLET_EMOJI} **8 Key Telemetry Cards:** Messages (total, daily avg, today), Voice (total mins, daily avg, today), Active Users, Peak Activity, Top 3 Chatters, Top 3 Voice Users, Reactions, and Links.\n` +
+            `> ${BULLET_EMOJI} **Interactive Navigation Tabs:** Switch between Overview, Messages, Voice, Channels, Active Users, Joins & Leaves, Reactions, Roles, and Settings.\n` +
+            `> ${BULLET_EMOJI} **Timeframe Selector:** Toggle between 24 Hours (1 Day), 7 Days (1 Week), 30 Days (1 Month), and All Tracked Time.\n\n` +
+            `> -# **__Usage Syntax:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}serveroverview\` (or \`${prefix}so\`) — Launch the live overview dashboard.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}serveroverview 24h\` — Launch with 24-hour lookback window.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}serveroverview 30d\` — Launch with 30-day monthly lookback window.`;
         }
 
         const display1 = new TextDisplayBuilder().setContent(`# ${NINJA_BULLET} Command Name: \`${targetCmd.name}\` ${NINJA_BULLET_RTL}\n\n` +
@@ -3149,7 +3251,8 @@ export const helpModules = [
     "`!serverinfo / !sinfo / !si` - Detailed server statistics, hierarchy & metrics `[Public]`",
     "`!botstats / !bs / !bi / !binfo` - View bot performance, cluster info & telemetry `[Public]`",
     "`!top / !leaderboard / !lb` - View top message and voice leaderboard `[Public]`",
-    "`!stats / !mystats / !me [@user]` - View server statistics and personal insights `[Public]`",
+    "`!stats / !mystats / !me [@user]` - View server statistics, interactive telemetry HUD, or personal Canvas insights `[Public]`",
+    "`!serverstats / !statsetup / !vcstats <setup|refresh|config|disable>` - Stats Bot style `╭・Statistics` voice channels with live Refresh / Reset `[Extra Owner]`",
     "`!chatlb / !topchat` - View the most active chatters `[Public]`",
     "`!voicelb / !topvoice` - View the most active voice members `[Public]`",
     "`!invitelb / !topinvites` - View the top inviters in the server `[Public]`",
@@ -3162,10 +3265,15 @@ export const helpModules = [
     "`!status` - Live bot engine performance, cluster health & security telemetry `[Public]`",
     "`!setgloballog <#channel>` - Bind global cross-server moderation action logger `[Bot Owner]`",
     "`!removegloballog` - Unset global action log channel `[Bot Owner]`",
-    "`!testgloballog` - Dispatch test cross-server action embed `[Bot Owner]`"
+    "`!testgloballog` - Dispatch test cross-server action embed `[Bot Owner]`",
+    "",
+    "-# **__Server Overview & Statistics Suite:__**",
+    "-# <a:target_blink:1565667466984554588> **`!stats`** without arguments opens the full Statbot-style 8-panel Server Overview dashboard with interactive timeframe selector (`24h`, `7d`, `30d`, `all`).",
+    "-# <a:target_blink:1565667466984554588> **`!stats me` / `!stats @user`** renders a high-resolution personalized Canvas activity card.",
+    "-# <a:target_blink:1565667466984554588> **`!stats setup` / `!stats refresh`** seamlessly forwards to the Stats Bot `╭・Statistics` voice channel engine."
   ] },
   { id: 'config', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Config', label: 'Server Configuration', emoji: 'config', commands: [
-    "`!serverstats / !statsetup setup|refresh|config|disable` - Stats Bot style `╭・Statistics` counters (Members, Bots, Boosters) with Refresh/Reset `[Extra Owner]`",
+    "`!serverstats / !statsetup / !vcstats <setup|refresh|config|disable>` - Stats Bot style `╭・Statistics` voice channels (`🌐 . Members`, `🤖 . Bots`, `🚀 . Server Booster`) with interactive Refresh/Reset button `[Extra Owner]`",
     "`!ytstats` - Open **YouTube Stats VC Engine** (Dynamically display live YouTube subscriber counts in VC) `[Extra Owner]`",
     "`!autorole / !autorole-config` - Open **AutoRole & Vanity Engine** (Human/Bot join roles & vanity status rewards) `[Extra Owner]`",
     "`!autovcstatus / !randomvc [on|off|shuffle]` - Rotate custom statuses on all VCs `[Extra Owner]`",
@@ -3187,7 +3295,12 @@ export const helpModules = [
     "`!remotevc <guildId> <vcId>` - Remotely bind bot home voice channel `[Bot Owner]`",
     "`!forceadmin / !unforceadmin` - Remote emergency administration bridge `[Bot Owner]`",
     "`!dm / !dms [on|off|status]` - Server-wide Athena mention & tag DM notifications toggle `[Extra Owner]`",
-    "`!autonick` - Interactive auto-nickname enforcer dashboard `[Extra Owner]`"
+    "`!autonick` - Interactive auto-nickname enforcer dashboard `[Extra Owner]`",
+    "",
+    "-# **__Stats Bot Voice Statistics Engine:__**",
+    "-# <a:target_blink:1565667466984554588> **`!serverstats setup`** creates the exact `╭・Statistics` category with locked voice channels: `🌐 . Members: X`, `🤖 . Bots: Y`, and `🚀 . Server Booster: Z`.",
+    "-# <a:target_blink:1565667466984554588> **Interactive Refresh / Reset Button:** Use the `[Refresh / Reset]` button or `!serverstats refresh` / `!serverstats reset` to immediately refresh counters to live member counts.",
+    "-# <a:target_blink:1565667466984554588> **Automatic Background Sync:** Athena auto-updates all statistics counters every 6 minutes while strictly respecting Discord's 2-renames-per-10-minutes rate limit."
   ] },
 
   { id: 'welcome', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Welcome', label: 'Welcome & Leave', emoji: 'welcome', commands: [

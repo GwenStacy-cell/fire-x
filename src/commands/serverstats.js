@@ -406,7 +406,7 @@ export const commands = [
         type: 1 // SUB_COMMAND
       }
     ],
-    aliases: ['statsetup', 'serverstat', 'statsconfig', 'vcstats'],
+    aliases: ['statsetup', 'serverstat', 'statsconfig', 'vcstats', 'statsvc', 'vccounters', 'channelstats'],
     executePrefix: async (message, args) => {
       const action = args[0]?.toLowerCase();
       

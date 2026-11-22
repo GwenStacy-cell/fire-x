@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.6.3',
+    headline: 'Help System Upgrade for Statistics Suite & Command Deep Dives',
+    summary: "Updated Athena's universal help matrix and command inspection engine (!help / /help) with comprehensive documentation for Stats Bot voice counters, Server Overview HUD, and 3-in-1 !stats routing. Added granular usage guides, full alias catalogs, and architecture explanations across both prefix and slash inspection handlers.",
+    whatsNew: [
+      {
+        title: 'Stats Bot Voice Counters in Help Directory',
+        desc: 'Updated Server Configuration and Tracking & Logs help modules to fully document !serverstats / !statsetup / !vcstats with all subcommands (setup, refresh, config, disable) and symbols.'
+      },
+      {
+        title: 'Command Deep Dives for Stats & ServerStats',
+        desc: 'Running !help serverstats or !help stats now returns a dedicated Components V2 inspection panel with command usage, aliases, clearance level, and detailed explanation.'
+      },
+      {
+        title: 'Extended Command Alias Support',
+        desc: 'Added !statsvc, !vccounters, and !channelstats aliases to serverstats.js, all fully indexed and navigable within the help explorer.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Harmonized Prefix & Slash Help Handlers',
+        desc: 'Synchronized executePrefix and executeSlash command explainers to ensure identical clearance verification, usage syntax, and feature descriptions.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.6.2',
     headline: 'Stats Bot Style Statistics Suite & Interactive Reset/Refresh Engine',
     summary: 'Replicated the exact Stats Bot aesthetic for server statistics voice channels, introducing the ╭・Statistics category with locked voice counters for Members (🌐), Bots (🤖), and Boosters (🚀). Built an interactive Refresh / Reset button directly on the Components V2 dashboard for instant count synchronization alongside full rate-limit resilience.',
