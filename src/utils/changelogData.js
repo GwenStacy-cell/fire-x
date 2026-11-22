@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '22 November 2026',
+    version: 'v3.5.8',
+    headline: 'Symmetric Ninja Bullet Header Framing Across Help & Explainer Systems',
+    summary: 'Standardized all help module headings, command inspectors, and architectural deep-dive explainers to always be framed symmetrically between the custom ninja bullet glyphs (<a:ninja_bullet:1567038601668337705> and <a:ninja_bullet_rtl:1567038652687712317>), eliminating inconsistent icon fallbacks and matching official UI standards.',
+    whatsNew: [
+      {
+        title: 'Symmetric Ninja Bullet Help Headings',
+        desc: 'Configured buildHelpContainer in utility.js to unconditionally frame all help module titles symmetrically between NINJA_BULLET and NINJA_BULLET_RTL (e.g. # <a:ninja_bullet:...> AUTOMOD FILTERS <a:ninja_bullet_rtl:...>).'
+      },
+      {
+        title: 'Command Inspector Header Standardization',
+        desc: 'Updated detailed command inspectors in both prefix (!help <command>) and slash (/help command:<command>) interfaces to frame command names between ninja bullet glyphs.'
+      },
+      {
+        title: 'Explainer Registry Header Alignment',
+        desc: 'Updated topic explainers and command architecture deep-dive cards in explainerRegistry.js to consistently use symmetric ninja bullet headers.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Zero Emoji Inconsistency',
+        desc: 'Replaced random probability checks and legacy icon fallbacks with 100% consistent custom animated ninja bullet framing across all help directory interfaces.'
+      }
+    ]
+  },
+  {
+    date: '22 November 2026',
     version: 'v3.5.7',
     headline: 'Full Quarantine Alias Suite, Help Directory Integration & Pre-Emptive Role Guard',
     summary: 'Expanded quarantine and unquarantine command alias routing throughout the system, integrating extensive aliases into the !help module directory, command inspectors, and architectural explainer registry. Hardened role assignment by pre-emptively purging quarantine records and exploit taints in !addrole and /addrole to eliminate isolation sentinel race conditions.',

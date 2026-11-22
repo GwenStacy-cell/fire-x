@@ -1243,7 +1243,7 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}lift @user\` — Fast alias to lift quarantine.`;
               }
 
-              const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
+              const display1 = new TextDisplayBuilder().setContent(`# ${NINJA_BULLET} Command Name: \`${targetCmd.name}\` ${NINJA_BULLET_RTL}\n\n` +
                 `> -# **__Command usage:__** \`${usageText}\`\n` +
                 `> -# **__Aliases:__** ${aliasesText}\n` +
                 `> -# **__Command Permissions:__** \`${permsText}\``
@@ -2102,7 +2102,7 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}lift @user\` — Fast alias to lift quarantine.`;
         }
 
-        const display1 = new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} Command Name: \`${targetCmd.name}\`\n\n` +
+        const display1 = new TextDisplayBuilder().setContent(`# ${NINJA_BULLET} Command Name: \`${targetCmd.name}\` ${NINJA_BULLET_RTL}\n\n` +
           `> -# **__Command usage:__** \`${usageText}\`\n` +
           `> -# **__Aliases:__** ${aliasesText}\n` +
           `> -# **__Command Permissions:__** \`${permsText}\``
@@ -3631,11 +3631,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
     } else {
       const mod = helpModules.find(m => m.id === moduleId || (moduleId === 'defense' && m.id === 'security'));
       if (mod) {
-        const e = getEmoji(mod.emoji, '<a:uptime:1552608831060844575>');
-        const useNinjaHeading = Math.random() < 0.35;
-        let currentChunk = useNinjaHeading 
-          ? `# ${NINJA_BULLET} ${mod.label.toUpperCase()} ${NINJA_BULLET_RTL}` 
-          : `# ${e} ${mod.label.toUpperCase()}`;
+        let currentChunk = `# ${NINJA_BULLET} ${mod.label.toUpperCase()} ${NINJA_BULLET_RTL}`;
         
         for (const cmd of mod.commands) {
           if (cmd === '') {

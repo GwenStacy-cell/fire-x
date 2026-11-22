@@ -3184,7 +3184,7 @@ export function buildExplainContainer(topicOrCmd, pageIndex = 0, prefix = '!', c
     // Header
     rawComponents.push({
       type: 10,
-      content: `# ${getRandomHeadingGlyph()} ${matchedTopic.title}\n> -# **__Topic Overview:__** ${matchedTopic.description}\n> -# **__Section [${safeIndex + 1}/${totalPages}]:__** **__${currentPage.pageTitle}__**`
+      content: `# ${NINJA_BULLET} ${matchedTopic.title} ${NINJA_BULLET_RTL}\n> -# **__Topic Overview:__** ${matchedTopic.description}\n> -# **__Section [${safeIndex + 1}/${totalPages}]:__** **__${currentPage.pageTitle}__**`
     });
     rawComponents.push({ type: 14, divider: true });
 
@@ -3270,7 +3270,7 @@ export function buildExplainContainer(topicOrCmd, pageIndex = 0, prefix = '!', c
     const rawComponents = [
       {
         type: 10,
-        content: `# ${getRandomHeadingGlyph()} Command Architecture: \`${prefix}${matchedCmd.name}\` | <a:03_tick_circle:1565665642084827206>
+        content: `# ${NINJA_BULLET} Command Architecture: \`${prefix}${matchedCmd.name}\` ${NINJA_BULLET_RTL} | <a:03_tick_circle:1565665642084827206>
 > -# **__Category:__** ${matchedCmd.category}
 > -# **__Required Clearance:__** \`${matchedCmd.clearance}\`
 > -# **__Aliases:__** ${aliasesText}
