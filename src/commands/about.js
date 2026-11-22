@@ -1,5 +1,5 @@
 import { MessageFlags } from 'discord.js';
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, NINJA_BULLET, NINJA_BULLET_RTL } from '../utils/emojis.js';
 import { sanitizeCV2Payload } from '../cv2.js';
 import { CHANGELOG_ENTRIES } from '../utils/changelogData.js';
 import os from 'os';
@@ -60,11 +60,12 @@ export const commands = [
       // Container 1: Overview & Military-Grade Architecture
       const container1 = {
         type: 17,
+        accent_color: 0x2B2D31,
         components: [
           {
             type: 10,
-            content: `# ${getRandomHeadingGlyph()} Athena Prime — Enterprise Sentinel | ${TICK_EMOJI}\n` +
-                     `> -# <a:uptime:1552608831060844575> **Autonomous High-Velocity Security & Microsecond Combat Intelligence**\n` +
+            content: `# ${NINJA_BULLET} Athena Prime · Enterprise Autonomous Sentinel ${NINJA_BULLET_RTL}\n` +
+                     `> -# <a:uptime:1552608831060844575> **High-Velocity Microsecond Security & Infrastructure Defense**\n` +
                      `> -# ${BULLET_EMOJI} Athena Prime is an enterprise-grade autonomous security, moderation, and infrastructure governance sentinel engineered for mission-critical community defense.`
           },
           {
@@ -72,12 +73,12 @@ export const commands = [
             components: [{
               type: 10,
               content:
-                `> -# ${BULLET_EMOJI} **Identity :** **Athena Prime** | **Version :** \`${currentVersion}\`\n` +
-                `> -# ${BULLET_EMOJI} **Chief Architect :** **${ownerName}** (${ownerTag})\n` +
-                `> -# ${BULLET_EMOJI} **Engine :** Node.js \`${process.version}\` | Discord.js \`v14.14.1\`\n` +
-                `> -# ${BULLET_EMOJI} **Uptime :** \`${uptimeStr}\` | **Latency :** \`${client.ws.ping}ms\`\n` +
-                `> -# ${BULLET_EMOJI} **Cluster :** \`${totalServers.toLocaleString()} servers\` | \`${totalUsers.toLocaleString()} members\`\n` +
-                `> -# ${BULLET_EMOJI} **Catalog :** \`${uniqueCommands} verified commands\` loaded`
+                `> -# <a:uptime:1552608831060844575> **Identity:** **Athena Prime** · **Version:** \`${currentVersion}\`\n` +
+                `> -# ${BULLET_EMOJI} **Chief Architect:** **${ownerName}** (${ownerTag})\n` +
+                `> -# ${BULLET_EMOJI} **Runtime Engine:** Node.js \`${process.version}\` · Discord.js \`v14.14.1\`\n` +
+                `> -# ${BULLET_EMOJI} **System Uptime:** \`${uptimeStr}\` · **Heartbeat:** \`${client.ws.ping}ms\`\n` +
+                `> -# ${BULLET_EMOJI} **Cluster Scope:** \`${totalServers.toLocaleString()} Guilds\` · \`${totalUsers.toLocaleString()} Members\`\n` +
+                `> -# ${BULLET_EMOJI} **Command Engine:** \`${uniqueCommands} Verified Commands\` loaded`
             }],
             accessory: { type: 11, media: { url: client.user.displayAvatarURL() } }
           },
@@ -85,14 +86,14 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **I. Military-Grade Anti-Nuke Architecture**\n` +
+              `# ${NINJA_BULLET} Military-Grade Anti-Nuke Architecture ${NINJA_BULLET_RTL}\n` +
               `> -# <a:uptime:1552608831060844575> **Zero-Day Interception & Single-Strike Line-Rate Defense Engine**\n` +
-              `> -# ${BULLET_EMOJI} **Zero-Day Bot Eviction :** Intercepts \`GUILD_MEMBER_ADD\` at 0ms TCP layer. Rogue bots are struck with an instant \`rawBan\` in \`<1ms\` before establishing a heartbeat.\n` +
-              `> -# ${BULLET_EMOJI} **Single-Strike Sub-12ms Direct Ban :** Dedicates 100% of socket bandwidth to immediate \`rawBan\` (\`PUT /bans\`) with pre-compiled JSON. Nukers receive \`403 Forbidden\` on their 2nd attempt.\n` +
-              `> -# ${BULLET_EMOJI} **4-Tier TCP Wiretap Hook :** Direct \`client.on('raw')\` packet capture at 0ms before Discord.js event dispatching.\n` +
-              `> -# ${BULLET_EMOJI} **Pre-Warmed TLS Engine :** 120 Undici persistent sockets to \`discord.com\` with a 25s keep-alive heartbeat loop (~50ms saved).\n` +
-              `> -# ${BULLET_EMOJI} **IPv4-First DNS Routing :** Enforces \`dns.setDefaultResultOrder('ipv4first')\`, eliminating dual-stack IPv6 DNS fallback delays (saving 15-30ms).\n` +
-              `> -# ${BULLET_EMOJI} **Ground-Truth Restoration :** Continuous live RAM snapshots indexing channels and roles with zero-duplicate rebuild.`
+              `> -# ${BULLET_EMOJI} **Zero-Day Bot Eviction:** Intercepts \`GUILD_MEMBER_ADD\` at 0ms TCP layer. Rogue bots are struck with an instant \`rawBan\` in \`<1ms\` before establishing a heartbeat.\n` +
+              `> -# ${BULLET_EMOJI} **Single-Strike Sub-12ms Direct Ban:** Dedicates 100% of socket bandwidth to immediate \`rawBan\` (\`PUT /bans\`) with pre-compiled JSON. Nukers receive \`403 Forbidden\` on their 2nd attempt.\n` +
+              `> -# ${BULLET_EMOJI} **4-Tier TCP Wiretap Hook:** Direct \`client.on('raw')\` packet capture at 0ms before Discord.js event dispatching.\n` +
+              `> -# ${BULLET_EMOJI} **Pre-Warmed TLS Engine:** 120 Undici persistent sockets to \`discord.com\` with a 25s keep-alive heartbeat loop (~50ms saved).\n` +
+              `> -# ${BULLET_EMOJI} **IPv4-First DNS Routing:** Enforces \`dns.setDefaultResultOrder('ipv4first')\`, eliminating dual-stack IPv6 DNS fallback delays (saving 15-30ms).\n` +
+              `> -# ${BULLET_EMOJI} **Ground-Truth Restoration:** Continuous live RAM snapshots indexing channels and roles with zero-duplicate rebuild.`
           }
         ]
       };
@@ -100,26 +101,27 @@ export const commands = [
       // Container 2: Defense Spectrum & Controls
       const container2 = {
         type: 17,
+        accent_color: 0x2B2D31,
         components: [
           {
             type: 10,
             content:
-              `### **II. Automated Security Shields & Governance Spectrum**\n` +
-              `> -# ${BULLET_EMOJI} **28 Armed Antinuke Shields :** Protection for Channels, Roles, Webhooks, Bots, Server Updates, Bans, Kicks, and Automod.\n` +
-              `> -# ${BULLET_EMOJI} **In-Flight Combat Priority :** Restorations pause automatically while bans settle, guaranteeing zero API contention during attacks.\n` +
-              `> -# ${BULLET_EMOJI} **Quarantine Facility :** Compromised accounts are stripped and isolated in an automated quarantine zone.\n` +
-              `> -# ${BULLET_EMOJI} **Dual Persistence Sentinels :** Enforces \`Athena Firewall\` and \`Athena Unbypassable\` roles against unauthorized demotions.\n` +
-              `> -# ${BULLET_EMOJI} **Vanity & Invite Protection :** Reclaims vanity URLs at 0ms and vaporizes dangerous invites in \`<1ms\`.\n\n` +
-              `### **III. Operational Monitoring & Quick Controls**\n` +
-              `> -# ${BULLET_EMOJI} \`!combatops\` \u2014 Military-grade live combat telemetry & single-strike timeline breakdown.\n` +
-              `> -# ${BULLET_EMOJI} \`!liveops\` \u2014 Real-time engineering monitor covering V8 runtime, socket pools, and speeds.\n` +
-              `> -# ${BULLET_EMOJI} \`!help\` \u2014 Interactive command catalog across all 376+ subsystems.\n` +
-              `> -# ${BULLET_EMOJI} \`!botstats\` (\`!bi\`) \u2014 Technical statistics, cluster analytics, and resource footprints.`
+              `# ${NINJA_BULLET} Automated Security Shields & Governance Spectrum ${NINJA_BULLET_RTL}\n` +
+              `> -# ${BULLET_EMOJI} **28 Armed Antinuke Shields:** Protection for Channels, Roles, Webhooks, Bots, Server Updates, Bans, Kicks, and Automod.\n` +
+              `> -# ${BULLET_EMOJI} **In-Flight Combat Priority:** Restorations pause automatically while bans settle, guaranteeing zero API contention during attacks.\n` +
+              `> -# ${BULLET_EMOJI} **Quarantine Facility:** Compromised accounts are stripped and isolated in an automated quarantine zone.\n` +
+              `> -# ${BULLET_EMOJI} **Dual Persistence Sentinels:** Enforces \`Athena Firewall\` and \`Athena Unbypassable\` roles against unauthorized demotions.\n` +
+              `> -# ${BULLET_EMOJI} **Vanity & Invite Protection:** Reclaims vanity URLs at 0ms and vaporizes dangerous invites in \`<1ms\`.\n\n` +
+              `# ${NINJA_BULLET} Operational Monitoring & Diagnostic Controls ${NINJA_BULLET_RTL}\n` +
+              `> -# ${BULLET_EMOJI} \`!combatops\` · Military-grade live combat telemetry & single-strike timeline breakdown.\n` +
+              `> -# ${BULLET_EMOJI} \`!liveops\` · Real-time engineering monitor covering V8 runtime, socket pools, and speeds.\n` +
+              `> -# ${BULLET_EMOJI} \`!help\` · Interactive command catalog across all 376+ subsystems.\n` +
+              `> -# ${BULLET_EMOJI} \`!botstats\` (\`!bi\`) · Technical statistics, cluster analytics, and resource footprints.`
           },
           { type: 14, divider: true },
           {
             type: 10,
-            content: `-# **Athena Prime | Military-Grade Defense Matrix | Autonomous Governance**`
+            content: `-# **Athena Prime · Military-Grade Defense Matrix · Autonomous Governance**`
           }
         ]
       };

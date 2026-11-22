@@ -2285,7 +2285,9 @@ export const commands = [
         const components = [
           {
             type: 10,
-            content: `-# **• <a:uptime:1552608831060844575> [${cleanNick}](https://discord.com/users/${message.author.id}) \u00b7 REST: \`${restMs}ms\` \u00b7 WS: \`${wsMs}ms\` \u00b7 DB: \`${dbMs}ms\` \u00b7 Redis: SET: \`${rSet}ms\` GET: \`${rGet}ms\` DEL: \`${rDel}ms\`**`
+            content: `# ${NINJA_BULLET} Gateway & Engine Latency | ${TICK_EMOJI} ${NINJA_BULLET_RTL}\n` +
+                     `> -# <a:uptime:1552608831060844575> **Initiator:** [${cleanNick}](https://discord.com/users/${message.author.id}) · **WebSocket:** \`${wsMs}ms\` · **REST API:** \`${restMs}ms\`\n` +
+                     `> -# <a:target_blink:1565667466984554588> **SQLite Engine:** \`${dbMs}ms\` · **Redis Cache:** \`SET: ${rSet}ms\` · \`GET: ${rGet}ms\` · \`DEL: ${rDel}ms\``
           }
         ];
 
@@ -2300,6 +2302,7 @@ export const commands = [
 
         const pingContainer = {
           type: 17,
+          accent_color: 0x2B2D31,
           components
         };
 
@@ -2339,7 +2342,9 @@ export const commands = [
         const components = [
           {
             type: 10,
-            content: `-# **• <a:uptime:1552608831060844575> [${cleanNick}](https://discord.com/users/${interaction.user.id}) \u00b7 REST: \`${restMs}ms\` \u00b7 WS: \`${wsMs}ms\` \u00b7 DB: \`${dbMs}ms\` \u00b7 Redis: SET: \`${rSet}ms\` GET: \`${rGet}ms\` DEL: \`${rDel}ms\`**`
+            content: `# ${NINJA_BULLET} Gateway & Engine Latency | ${TICK_EMOJI} ${NINJA_BULLET_RTL}\n` +
+                     `> -# <a:uptime:1552608831060844575> **Initiator:** [${cleanNick}](https://discord.com/users/${interaction.user.id}) · **WebSocket:** \`${wsMs}ms\` · **REST API:** \`${restMs}ms\`\n` +
+                     `> -# <a:target_blink:1565667466984554588> **SQLite Engine:** \`${dbMs}ms\` · **Redis Cache:** \`SET: ${rSet}ms\` · \`GET: ${rGet}ms\` · \`DEL: ${rDel}ms\``
           }
         ];
 
@@ -2354,6 +2359,7 @@ export const commands = [
 
         const pingContainer = {
           type: 17,
+          accent_color: 0x2B2D31,
           components
         };
 

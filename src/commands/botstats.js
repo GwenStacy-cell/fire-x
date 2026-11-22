@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, NINJA_BULLET, NINJA_BULLET_RTL, UPTIME_EMOJI } from '../utils/emojis.js';
 import { MessageFlags } from 'discord.js';
 import { sanitizeCV2Payload } from '../cv2.js';
 import { CHANGELOG_ENTRIES } from '../utils/changelogData.js';
@@ -117,36 +117,35 @@ export const commands = [
 
       const container1 = {
         type: 17,
+        accent_color: 0x2B2D31,
         components: [
-          { type: 10, content: `# ${getRandomHeadingGlyph()} ${client.user.username} Intelligence Profile | ${TICK_EMOJI}` },
+          { type: 10, content: `# ${NINJA_BULLET} ${client.user.username} Prime · Operational Intelligence ${NINJA_BULLET_RTL}` },
           {
             type: 9,
             components: [{
               type: 10,
               content:
-                `> -# ${BULLET_EMOJI} **Identity :** **${client.user.username}** \u2022 **Version :** \`${currentVersion}\`\n` +
-                `> -# ${BULLET_EMOJI} **Bot ID :** \`${client.user.id}\`\n` +
-                `> -# ${BULLET_EMOJI} **Architect :** **${ownerName}** (${ownerTag})\n` +
-                `> -# ${BULLET_EMOJI} **Hosting :** **Obsidian Hosting** \u2022 Node.js \`${process.version}\`\n` +
-                `> -# ${BULLET_EMOJI} **Uptime :** **${uptimeStr}** \u2022 **Gateway Latency :** **${client.ws.ping}ms**\n` +
-                `> -# ${BULLET_EMOJI} **Cluster Scope :** **${totalServers.toLocaleString()} servers** \u2022 **${totalUsers.toLocaleString()} users** \u2022 **${totalChannels.toLocaleString()} channels**\n` +
-                `> -# ${BULLET_EMOJI} **Command Engine :** **${uniqueCommands} verified commands** loaded`
+                `> -# <a:uptime:1552608831060844575> **Identity:** **${client.user.username}** · **Version:** \`${currentVersion}\`\n` +
+                `> -# <a:target_blink:1565667466984554588> **Architect:** **${ownerName}** (${ownerTag}) · **Bot ID:** \`${client.user.id}\`\n` +
+                `> -# <a:target_blink:1565667466984554588> **Hosting:** **Obsidian Cloud** · Node.js \`${process.version}\`\n` +
+                `> -# <a:target_blink:1565667466984554588> **Heartbeat:** **${uptimeStr}** · **Gateway Latency:** \`${client.ws.ping}ms\`\n` +
+                `> -# <a:target_blink:1565667466984554588> **Cluster Scope:** \`${totalServers.toLocaleString()} Guilds\` · \`${totalUsers.toLocaleString()} Users\` · \`${totalChannels.toLocaleString()} Channels\`\n` +
+                `> -# <a:target_blink:1565667466984554588> **Engine State:** \`${uniqueCommands} Verified Commands\` loaded`
             }],
             accessory: { type: 11, media: { url: client.user.displayAvatarURL() } }
           },
           { type: 14, divider: true },
-          { type: 10, content: `# ${getRandomHeadingGlyph()} Military-Grade Security & Anti-Nuke Status | ${TICK_EMOJI}` },
+          { type: 10, content: `# ${NINJA_BULLET} Defensive Matrix & Elimination Engine ${NINJA_BULLET_RTL}` },
           {
             type: 10,
             content:
-              `> -# ${BULLET_EMOJI} **Defense Posture :** **ARMED (28 Automated Anti-Nuke Defensive Shields)**\n` +
-              `> -# ${BULLET_EMOJI} **Elimination Engine :** **Sub-12ms Direct rawBan (PUT /bans) without role-strip delay**\n` +
-              `> -# ${BULLET_EMOJI} **Zero-Day Bot Defense :** **<1ms Pre-Emptive Elimination On Join (\`GUILD_MEMBER_ADD\` at 0ms)**\n` +
-              `> -# ${BULLET_EMOJI} **Wiretap Interception :** **Multi-Hook raw TCP packet capture before Discord.js event queue**\n` +
-              `> -# ${BULLET_EMOJI} **Pre-Warmed TLS Engine :** **120 Undici persistent sockets \u2022 25s keep-alive heartbeat loop**\n` +
-              `> -# ${BULLET_EMOJI} **DNS Resolution :** **IPv4-First (\`dns.setDefaultResultOrder\`) saving 15-30ms per request**\n` +
-              `> -# ${BULLET_EMOJI} **Ground-Truth Snapshots :** **Continuous live RAM snapshots with zero-duplicate restoration**\n` +
-              `> -# ${BULLET_EMOJI} **In-Flight Strike Lock :** **Combat priority locks pausing restorations until ban settles**`
+              `> -# <a:uptime:1552608831060844575> **Defense Posture:** **ARMED (28 Automated Anti-Nuke Defensive Shields)**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Elimination Engine:** **Sub-12ms Direct rawBan (PUT /bans) line-rate enforcement**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Zero-Day Bot Defense:** **<1ms Pre-Emptive Elimination On Join (\`GUILD_MEMBER_ADD\` @ 0ms)**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Wiretap Interception:** **Multi-Hook raw TCP packet capture before event queue**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Pre-Warmed TLS Pool:** **120 Undici persistent sockets · 25s keep-alive heartbeat**\n` +
+              `> -# <a:target_blink:1565667466984554588> **DNS Priority:** **IPv4-First (\`dns.setDefaultResultOrder\`) saving 15-30ms**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Ground-Truth Snapshots:** **Continuous live RAM snapshots with zero-duplicate rebuild**`
           }
         ]
       };
@@ -154,18 +153,21 @@ export const commands = [
       const cb = getCodebaseStats();
       const container2 = {
         type: 17,
+        accent_color: 0x2B2D31,
         components: [
-          { type: 10, content: `# ${getRandomHeadingGlyph()} System Resources & Codebase Profile | ${TICK_EMOJI}` },
+          { type: 10, content: `# ${NINJA_BULLET} Host Telemetry & Source Codebase ${NINJA_BULLET_RTL}` },
           {
             type: 10,
             content:
-              `> -# ${BULLET_EMOJI} **V8 Heap Memory :** **${heapUsed} MB consumed**\n` +
-              `> -# ${BULLET_EMOJI} **Host Physical RAM :** **${freeMem} MB free / ${totalMem} MB total**\n` +
-              `> -# ${BULLET_EMOJI} **Host Architecture :** **${os.cpus().length} Logical Cores** (${os.arch()})\n` +
-              `> -# ${BULLET_EMOJI} **Source Codebase :** **${cb.files} files** \u2022 **${cb.linesStr} lines** (${cb.wordsStr} words)\n` +
-              `> -# ${BULLET_EMOJI} **Tracked Emojis :** **${emojis.toLocaleString()} custom emojis**\n` +
-              `> -# ${BULLET_EMOJI} **Tracked Stickers :** **${stickers.toLocaleString()} server stickers**`
-          }
+              `> -# <a:uptime:1552608831060844575> **V8 Heap Memory:** **${heapUsed} MB consumed**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Host RAM:** **${freeMem} MB free / ${totalMem} MB total**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Hardware Arch:** **${os.cpus().length} Logical Cores** (${os.arch()})\n` +
+              `> -# <a:target_blink:1565667466984554588> **Source Codebase:** **${cb.files} Files** · **${cb.linesStr} Lines** (${cb.wordsStr} words)\n` +
+              `> -# <a:target_blink:1565667466984554588> **Tracked Emojis:** **${emojis.toLocaleString()} Custom Emojis**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Tracked Stickers:** **${stickers.toLocaleString()} Server Stickers**`
+          },
+          { type: 14, divider: true },
+          { type: 10, content: `-# **Athena Prime · High-Performance Autonomous Sentinel**` }
         ]
       };
 

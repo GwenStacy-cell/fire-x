@@ -5,8 +5,11 @@ import {
   WARN_EMOJI, 
   BULLET_EMOJI, 
   LEGACY_TICK, 
+  NINJA_BULLET,
+  NINJA_BULLET_RTL,
   getRandomHeadingGlyph,
-  hasHeadingGlyphStart
+  hasHeadingGlyphStart,
+  stripHeadingGlyph
 } from './utils/emojis.js';
 
 export { TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, BULLET_EMOJI };
@@ -362,6 +365,17 @@ function make(title, desc, fields, eph, customFooter, accentColor = 0x5865F2) {
 
 var _m = function(eph) {
   return {
+    framed: function(t, d, f, ft, acc) {
+      var heading = t ? String(t).trim() : '';
+      if (heading) {
+        heading = heading.replaceAll(LEGACY_TICK, TICK_EMOJI);
+        if (!heading.includes(NINJA_BULLET)) {
+          const clean = stripHeadingGlyph(heading).replace(/^#+\s*/, '').trim();
+          heading = `<a:ninja_bullet:1567038601668337705> ${clean} <a:ninja_bullet_rtl:1567038652687712317>`;
+        }
+      }
+      return make(heading, d, f, eph, ft, acc || 0x2B2D31);
+    },
     success: function(t, d, f, ft, acc) {
       var heading = t;
       if (t) {
@@ -370,36 +384,36 @@ var _m = function(eph) {
           heading = heading + ' | ' + TICK_EMOJI;
         }
       }
-      return make(heading, d, f, eph, ft, acc || 0x5865F2);
+      return make(heading, d, f, eph, ft, acc || 0x00E676);
     },
     warn: function(t, d, f, ft, acc) { 
       var heading = t;
       if (t && !heading.includes(WARN_EMOJI)) {
         heading = heading + ' | ' + WARN_EMOJI;
       }
-      return make(heading, d, f, eph, ft, acc || 0xFEE75C); 
+      return make(heading, d, f, eph, ft, acc || 0xFFB300); 
     },
     danger: function(t, d, f, ft, acc) { 
       var heading = t;
       if (t && !heading.includes(WRONG_EMOJI)) {
         heading = heading + ' | ' + WRONG_EMOJI;
       }
-      return make(heading, d, f, eph, ft, acc || 0xED4245); 
+      return make(heading, d, f, eph, ft, acc || 0xFF3366); 
     },
     error: function(t, d, f, ft, acc) { 
       var heading = t;
       if (t && !heading.includes(WRONG_EMOJI)) {
         heading = heading + ' | ' + WRONG_EMOJI;
       }
-      return make(heading, d, f, eph, ft, acc || 0xED4245); 
+      return make(heading, d, f, eph, ft, acc || 0xFF3366); 
     },
     info:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
-    card:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
+    card:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x2B2D31); },
     panel:    function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
-    raid:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0xED4245); },
+    raid:     function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0xFF3366); },
     owner:    function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
-    security: function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
-    defense:  function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x5865F2); },
+    security: function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x2B2D31); },
+    defense:  function(t, d, f, ft, acc) { return make(t, d, f, eph, ft, acc || 0x2B2D31); },
     log:      function(t, d, f, ft, acc) { return make('Log: ' + t, d, f, eph, ft, acc || 0x5865F2); },
   };
 };

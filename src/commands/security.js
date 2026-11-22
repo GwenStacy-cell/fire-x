@@ -5137,13 +5137,25 @@ async function handleAntiLink(guild, moderator, mode) {
 async function getServerInfoEmbed(guild) {
   const config = db.getGuildConfig(guild.id);
   const owner = guild.members.cache.get(guild.ownerId) || await guild.members.fetch(guild.ownerId).catch(() => null);
-  const ownerTag = owner ? owner.user.tag : 'Unknown';
-  const totalMembers = guild.memberCount;
+  const ownerTag = owner ? (owner.user.tag || owner.user.username) : 'Unknown';
+  const totalMembers = guild.memberCount || 0;
+  const bots = guild.members.cache.filter(m => m.user.bot).size;
+  const humans = Math.max(0, totalMembers - bots);
+
   const roleCount = guild.roles.cache.size;
+  const textChannels = guild.channels.cache.filter(c => c.type === 0).size;
+  const voiceChannels = guild.channels.cache.filter(c => c.type === 2).size;
+  const categories = guild.channels.cache.filter(c => c.type === 4).size;
   const channelCount = guild.channels.cache.size;
   const boostLevel = guild.premiumTier;
   const boostCount = guild.premiumSubscriptionCount || 0;
   const createdAt = `<t:${Math.floor(guild.createdTimestamp / 1000)}:F>`;
+
+  const emojis = guild.emojis.cache;
+  const stickers = guild.stickers.cache.size;
+  const extraOwnersCount = db.getExtraOwners(guild.id).length;
+  const wlMap = config.whitelist || {};
+  const whitelistCount = Object.keys(wlMap).length;
 
   const antiNukeStatus   = config.antiNukeEnabled               ? `${TOGGLE_ON} ON`  : `${TOGGLE_OFF} OFF`;
   const antiSpamStatus   = config.antiSpamEnabled               ? `${TOGGLE_ON} ON`  : `${TOGGLE_OFF} OFF`;
@@ -5155,26 +5167,32 @@ async function getServerInfoEmbed(guild) {
 
   const headerSection = {
     type: 9,
-    components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **${guild.name} — Server Info**\n-# **Comprehensive server statistics and Athena Prime security overview.**` }]
+    components: [{ 
+      type: 10, 
+      content: `# ${NINJA_BULLET} ${guild.name} · Server Intelligence ${NINJA_BULLET_RTL}\n-# Comprehensive guild telemetry, member distribution, and Athena Core defense matrix.` 
+    }]
   };
   if (iconUrl) {
     headerSection.accessory = { type: 11, media: { url: iconUrl } };
   }
 
   const statsText =
-    `-# **Owner:** ${ownerTag}\n` +
-    `-# **Members:** **${totalMembers}**   **Roles:** **${roleCount}**   **Channels:** **${channelCount}**\n` +
-    `-# **Boost Level:** Tier ${boostLevel} (${boostCount} boosts)\n` +
-    `-# **Created:** ${createdAt}`;
+    `> -# <a:uptime:1552608831060844575> **Owner:** <@${guild.ownerId}> (${ownerTag}) · **Server ID:** \`${guild.id}\`\n` +
+    `> -# <a:target_blink:1565667466984554588> **Members [${totalMembers.toLocaleString()}]:** \`${humans.toLocaleString()} Humans\` · \`${bots.toLocaleString()} Bots\` · **Boost Tier:** \`Tier ${boostLevel}\` (\`${boostCount} Boosts\`)\n` +
+    `> -# <a:target_blink:1565667466984554588> **Channels [${channelCount}]:** \`${textChannels} Text\` · \`${voiceChannels} Voice\` · \`${categories} Categories\`\n` +
+    `> -# <a:target_blink:1565667466984554588> **Server Assets:** \`${roleCount} Roles\` · \`${emojis.size} Emojis\` · \`${stickers} Stickers\`\n` +
+    `> -# <a:target_blink:1565667466984554588> **Established On:** ${createdAt} (<t:${Math.floor(guild.createdTimestamp / 1000)}:R>)`;
 
   const securityText =
-    `-# **▬▬ Security Status ▬▬**\n` +
-    `-# **Anti-Nuke:** ${antiNukeStatus}   **Anti-Spam:** ${antiSpamStatus}\n` +
-    `-# **Anti-Invite:** ${antiInviteStatus}   **Anti-Link:** ${antiLinkStatus}\n` +
-    `-# **Raid Mode:** ${raidModeStatus}   **Max Warns:** \`${config.maxWarnings}\``;
+    `> -# <a:uptime:1552608831060844575> **Athena Core Defense Posture:** **ACTIVE DEFENSE MATRIX**\n` +
+    `> -# <a:target_blink:1565667466984554588> **Anti-Nuke:** ${antiNukeStatus} · **Anti-Spam:** ${antiSpamStatus}\n` +
+    `> -# <a:target_blink:1565667466984554588> **Anti-Invite:** ${antiInviteStatus} · **Anti-Link:** ${antiLinkStatus}\n` +
+    `> -# <a:target_blink:1565667466984554588> **Raid Mode:** ${raidModeStatus} · **Max Warns:** \`${config.maxWarnings || 3}\`\n` +
+    `> -# <a:target_blink:1565667466984554588> **Whitelisted Entities:** \`${whitelistCount}\` · **Extra Owners:** \`${extraOwnersCount}\``;
 
   const container = {
     type: 17,
+    accent_color: 0x2B2D31,
     components: [
       headerSection,
       { type: 14, divider: true },
@@ -5182,11 +5200,11 @@ async function getServerInfoEmbed(guild) {
       { type: 14, divider: true },
       { type: 10, content: securityText },
       { type: 14, divider: true },
-      { type: 10, content: '-# **Athena Bulletproof Security !!!**' }
+      { type: 10, content: `-# **Athena Prime · Autonomous Guild Sentinel & Infrastructure Defense**` }
     ]
   };
 
-  return { components: [container.toJSON ? container.toJSON() : container], flags: MessageFlags.IsComponentsV2 };
+  return sanitizeCV2Payload({ components: [container], flags: MessageFlags.IsComponentsV2 });
 }
 
 async function getUserInfoEmbed(guild, member) {
@@ -5195,7 +5213,6 @@ async function getUserInfoEmbed(guild, member) {
   const isWhitelisted = !!wlMap[member.id];
   const wlEvents = isWhitelisted ? wlMap[member.id].join(', ') : '';
   const warnings = db.getWarnings(guild.id, member.id);
-  const isExtra = db.isExtraOwner(guild.id, member.id);
   const isBotOwn = isBotOwnerSync(member.id);
   const isServerOwner = member.id === guild.ownerId;
 
@@ -5207,43 +5224,52 @@ async function getUserInfoEmbed(guild, member) {
     .join(', ') || 'None';
 
   let privileges = [];
-  if (isBotOwn) privileges.push(' **Bot Owner**');
-  if (isServerOwner) privileges.push(' **Server Owner**');
-  if (isExtraOwner) privileges.push(' **Extra Owner**');
-  if (isWhitelisted) privileges.push(` **Whitelisted** (${wlEvents})`);
+  if (isBotOwn) privileges.push('**Bot Owner**');
+  if (isServerOwner) privileges.push('**Server Owner**');
+  if (isExtraOwner) privileges.push('**Extra Owner**');
+  if (isWhitelisted) privileges.push(`**Whitelisted** (${wlEvents})`);
   if (privileges.length === 0) privileges.push('Standard Member');
 
   let avatarUrl = member.user.displayAvatarURL({ dynamic: true, size: 256 });
+  const cleanName = cleanDisplayName(member.displayName || member.user.username);
 
   const headerSection = {
     type: 9,
-    components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **User Info — ${member.user.tag}**\n-# **Detailed profile and privilege information.**` }]
+    components: [{ 
+      type: 10, 
+      content: `# ${NINJA_BULLET} ${cleanName} · Member Intelligence ${NINJA_BULLET_RTL}\n-# Granular profile metrics, authority clearance, and server security telemetry.` 
+    }]
   };
   if (avatarUrl) {
     headerSection.accessory = { type: 11, media: { url: avatarUrl } };
   }
 
   const statsText =
-    `-# **Username:** ${member.user.tag}   **ID:** \`${member.id}\`\n` +
-    `-# **Account Created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:R>\n` +
-    `-# **Joined Server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:R>\n` +
-    `-# **Active Warnings:** \`${warnings.length}\`   **Privileges:** ${privileges.join(' | ')}`;
+    `> -# <a:uptime:1552608831060844575> **Member:** <@${member.id}> (${member.user.tag}) · **User ID:** \`${member.id}\`\n` +
+    `> -# <a:target_blink:1565667466984554588> **Account Created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:F> (<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>)\n` +
+    `> -# <a:target_blink:1565667466984554588> **Joined Server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:F> (<t:${Math.floor(member.joinedTimestamp / 1000)}:R>)\n` +
+    `> -# <a:target_blink:1565667466984554588> **Security Clearance:** ${privileges.join(' · ')}\n` +
+    `> -# <a:target_blink:1565667466984554588> **Infraction Record:** \`${warnings.length} Active Warnings\` · **Highest Role:** ${member.roles.highest?.id !== guild.id ? member.roles.highest.toString() : 'None'}`;
 
-  const rolesText = `-# **Roles [${member.roles.cache.size - 1}]:** ${roles}`;
+  const rolesText =
+    `> -# <a:target_blink:1565667466984554588> **Assigned Roles [${Math.max(0, member.roles.cache.size - 1)}]:**\n` +
+    `> ${roles}`;
 
   const container = {
     type: 17,
+    accent_color: 0x2B2D31,
     components: [
       headerSection,
       { type: 14, divider: true },
       { type: 10, content: statsText },
       { type: 14, divider: true },
       { type: 10, content: rolesText },
-      { type: 14, divider: true }
+      { type: 14, divider: true },
+      { type: 10, content: `-# **Athena Prime · User Telemetry & Verification Matrix**` }
     ]
   };
 
-  return { components: [container.toJSON ? container.toJSON() : container], flags: MessageFlags.IsComponentsV2 };
+  return sanitizeCV2Payload({ components: [container], flags: MessageFlags.IsComponentsV2 });
 }
 
 // ==========================================

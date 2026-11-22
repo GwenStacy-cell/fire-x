@@ -16,6 +16,40 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.6.5',
+    headline: 'Universal Components V2 UI Theming & Command Matrix Polish',
+    summary: 'Executed a comprehensive UI upgrade across core commands and the CV2 container rendering engine. Introduced symmetrical ninja bullet framed headers, thematic category accent colors, and high-density telemetry data grids. Modernized userinfo, serverinfo, botstats, about, avatar, banner, and ping with pure Components V2 layouts while eliminating multi-container message spam.',
+    whatsNew: [
+      {
+        title: 'Unified Server Intelligence Dashboard (!serverinfo / !si)',
+        desc: 'Consolidated serverinfo and si into an ultra-clean, high-density single CV2 container featuring framed ninja bullet headings, asset metrics, member demographics, and full Athena defense matrix telemetry.'
+      },
+      {
+        title: 'Member Intelligence Overhaul (!userinfo / !ui)',
+        desc: 'Upgraded userinfo with high-density tabular telemetry, authority clearance tiers, account creation & join timelines, active infraction records, and formatted role pills.'
+      },
+      {
+        title: 'Modern CV2 Media Galleries (!avatar / !banner)',
+        desc: 'Migrated avatar and banner from legacy embeds to borderless Components V2 media galleries with direct asset links (PNG, WEBP, Global HD, Server HD).'
+      },
+      {
+        title: 'Operational Intelligence Reports (!botstats / !about / !ping)',
+        desc: 'Standardized botstats, about, and ping with symmetrical framed ninja bullet headers, custom target blink bullets, and structured latency/cluster telemetry.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Heading Glyph Collision Neutralization',
+        desc: 'Upgraded hasHeadingGlyphStart in emojis.js to detect custom emoji prefixes and ninja bullets, eliminating accidental double-glyph prefixes in sanitizeCV2Payload.'
+      },
+      {
+        title: 'Thematic Category Accent Colors in cv2.js',
+        desc: 'Integrated category-tailored accent colors (stealth obsidian, emerald green, amber warning, and crimson coral) across all cv2 builder helpers.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.6.4',
     headline: 'Expressive User Action Mentions in CV2 Container & Extended Aliases',
     summary: 'Introduced natural-language action expressions and member mentions for the !gif command (!gif punches @user, !gif hugs @user, !gif dances with @user), rendering an accent borderless Components V2 container that highlights both initiator and target. Integrated automatic verb conjugation, Discord snowflake filtering for federated GIF search engines, and greatly expanded alias catalogs across !gif, !quarantine, and !unquarantine.',

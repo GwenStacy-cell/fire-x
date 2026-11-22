@@ -102,12 +102,15 @@ export function getRandomHeadingGlyph() {
 }
 
 /**
- * Checks if a string starts with one of the animated heading glyphs
+ * Checks if a string starts with one of the animated heading glyphs, ninja bullets, or custom emojis
  */
 export function hasHeadingGlyphStart(str) {
   if (!str || typeof str !== 'string') return false;
   const trimmed = str.trim();
-  return HEADING_GLYPHS.some(g => trimmed.startsWith(g));
+  return HEADING_GLYPHS.some(g => trimmed.startsWith(g)) || 
+         trimmed.startsWith('<a:ninja_bullet:') ||
+         trimmed.startsWith(NINJA_BULLET) ||
+         /^<a?:[a-zA-Z0-9_]+:\d+>/.test(trimmed);
 }
 
 /**
