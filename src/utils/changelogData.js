@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '22 November 2026',
+    version: 'v3.6.1',
+    headline: 'De-conflicted !serverstats Setup Engine & Command Disambiguation',
+    summary: 'Resolved command collision between serveroverview and serverstats where running !serverstats setup inadvertently triggered the Graphical Server Overview dashboard. De-registered colliding aliases, restored direct routing for !serverstats setup/config/disable to voice channel management, and added an interactive status HUD for unparameterized !serverstats calls.',
+    whatsNew: [
+      {
+        title: 'Voice Stats Channel Setup Restoration',
+        desc: '!serverstats setup, !serverstats config, and !serverstats disable now execute member count voice channel creation and configuration with zero interference.'
+      },
+      {
+        title: 'Interactive Voice Channel Status HUD',
+        desc: 'Running !serverstats without arguments now displays an informative Components V2 status panel showing channel links, auto-update health, and direct action shortcuts.'
+      },
+      {
+        title: 'Command Alias Disambiguation',
+        desc: 'Cleaned serveroverview aliases in loader and utility help directory, clearly separating !serveroverview / !so (graphical dashboard) from !serverstats (voice counters).'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Clean Components V2 Voice Stats Dashboard',
+        desc: 'Enhanced serverstats prefix handler with one-click button navigation to both voice setup and the graphical server overview dashboard.'
+      }
+    ]
+  },
+  {
+    date: '22 November 2026',
     version: 'v3.6.0',
     headline: 'Unified Server & Member Statistics Hub with Components V2 Architecture',
     summary: 'Resolved !stats command failures by architecting a unified statistics hub that intelligently routes to the high-fidelity Server Overview Dashboard when invoked without arguments, while seamlessly generating personal insight cards for user mentions, IDs, and !stats me. Hardened stat canvas image generation against null guild icons and empty channel records, and wrapped user stat cards in borderless Components V2 media containers.',

@@ -3144,7 +3144,7 @@ export const helpModules = [
   ] },
   { id: 'tracking', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Tracking', label: 'Tracking & Logs', emoji: 'tracking', commands: [
     "`!serverlogs / !slogs` - View interactive server event logs `[Extra Owner]`",
-    "`!serveroverview / !so / !serverstats` - Statbot-style 8-panel graphical Server Overview with 9 interactive tabs & timeframe selector `[Public]`",
+    "`!serveroverview / !so` - Statbot-style 8-panel graphical Server Overview with 9 interactive tabs & timeframe selector `[Public]`",
     "`!userinfo / !ui / !whois [@user]` - User account profile, permissions, badges & join telemetry `[Public]`",
     "`!serverinfo / !sinfo / !si` - Detailed server statistics, hierarchy & metrics `[Public]`",
     "`!botstats / !bs / !bi / !binfo` - View bot performance, cluster info & telemetry `[Public]`",

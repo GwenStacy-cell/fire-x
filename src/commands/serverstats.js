@@ -1,6 +1,7 @@
-import { PermissionFlagsBits, ChannelType, ApplicationCommandOptionType, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { PermissionFlagsBits, ChannelType, ApplicationCommandOptionType, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
 
 export async function updateServerStatsChannels(guild, stats) {
   await guild.members.fetch().catch(() => null);
@@ -296,7 +297,52 @@ export const commands = [
         }
       }
       
-      return message.reply(cv2.info('Server Stats', 'Usage: `!serverstats setup`, `!serverstats disable`, or `!serverstats config`'));
+      const existing = db.getServerStats(message.guild.id);
+      const isConfigured = Boolean(existing && (message.guild.channels.cache.has(existing.totalId) || message.guild.channels.cache.has(existing.categoryId)));
+
+      const infoContainer = {
+        type: 17,
+        accent_color: 0x5865F2,
+        components: [
+          {
+            type: 10,
+            content: `# ${getRandomHeadingGlyph()} Server Stats Voice Channels | <a:03_tick_circle:1565665642084827206>`
+          },
+          { type: 14, divider: true },
+          {
+            type: 10,
+            content:
+              `> -# <a:uptime:1552608831060844575> **Status:** \`${isConfigured ? 'Active & Auto-Updating' : 'Not Configured'}\`\n` +
+              (isConfigured ? `> -# <a:target_blink:1565667466984554588> **Total Members VC:** <#${existing.totalId}>\n` +
+                              `> -# <a:target_blink:1565667466984554588> **Humans VC:** <#${existing.humansId}>\n` +
+                              `> -# <a:target_blink:1565667466984554588> **Bots VC:** <#${existing.botsId}>\n` +
+                              `> -# <a:target_blink:1565667466984554588> **Font:** \`${existing.font || 'standard'}\` | **Emoji:** \`${existing.emoji || 'Standard'}\`\n\n` : '') +
+              `> -# **__Usage Commands:__**\n` +
+              `> <a:target_blink:1565667466984554588> \`!serverstats setup\` — Create auto-updating Member Count VCs.\n` +
+              `> <a:target_blink:1565667466984554588> \`!serverstats config\` — Configure custom font style and emoji prefix.\n` +
+              `> <a:target_blink:1565667466984554588> \`!serverstats disable\` — Remove all server stats voice channels.\n` +
+              `> <a:target_blink:1565667466984554588> \`!serveroverview\` / \`!stats\` — View Statbot-style graphical Server Overview.`
+          },
+          { type: 14, divider: true },
+          {
+            type: 1,
+            components: [
+              new ButtonBuilder()
+                .setCustomId('so_tab:overview:7d')
+                .setLabel('View Server Overview')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('<a:01_home_beat:1567037361810833428>')
+                .toJSON()
+            ]
+          },
+          { type: 14, divider: true },
+          {
+            type: 10,
+            content: `-# **Athena Bulletproof Security Matrix • V1.0.0**`
+          }
+        ]
+      };
+      return message.reply({ components: [infoContainer], flags: MessageFlags.IsComponentsV2 });
     },
     executeSlash: async (interaction) => {
       await interaction.deferReply();
