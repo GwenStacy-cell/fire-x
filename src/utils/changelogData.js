@@ -15,6 +15,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '22 November 2026',
+    version: 'v3.5.4',
+    headline: '24/7 Home VC Anti-Disconnect Architecture & UDP Silence Heartbeat Sentinel',
+    summary: 'Engineered permanent 24/7 Home VC persistence by eliminating unprovoked connection.destroy() teardowns, introducing an automated Opus silence keep-alive heartbeat to prevent Discord idle UDP timeouts, and ensuring Athena remains connected continuously without leaving until explicitly unset with unsethomevc.',
+    whatsNew: [
+      {
+        title: '24/7 Opus Silence Keep-Alive UDP Heartbeat',
+        desc: 'Implemented an automated RFC 6716 Opus silence frame (0xF8, 0xFF, 0xFE) transmission pipeline every 3 seconds, punching through router NAT firewalls and permanently preventing Discord voice servers from terminating idle voice sessions.'
+      },
+      {
+        title: 'Zero-Drop Seamless Rejoin Pipeline',
+        desc: 'Replaced destructive connection.destroy() teardowns during Discord voice server migrations and network hiccups with seamless connection.rejoin(), eliminating audible periodic disconnect/reconnect cycles.'
+      },
+      {
+        title: 'Strict Unsethomevc Boundary Enforcement',
+        desc: 'Enforced that Home VC connections are never voluntarily destroyed or disconnected unless an authorized owner explicitly runs !unsethomevc.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Optimized 24/7 Auto-Reconnect Watchdog',
+        desc: 'Hardened voice state resolution across member fetch caches in the 3-minute watchdog, ensuring existing active voice sessions are never interrupted.'
+      }
+    ]
+  },
+  {
     date: '21 November 2026',
     version: 'v3.5.3',
     headline: 'Server Overview Full CV2 Containerization & Interaction Engine Architecture',

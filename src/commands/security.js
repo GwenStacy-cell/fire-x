@@ -1081,12 +1081,11 @@ export const commands = [
 
       db.updateGuildConfig(message.guild.id, { homeVcId: null });
       
-      const { getVoiceConnection } = await import('@discordjs/voice');
-      const connection = getVoiceConnection(message.guild.id);
-      if (connection) connection.destroy();
+      const { disconnectHomeVc } = await import('../utils/voice.js');
+      disconnectHomeVc(message.guild.id);
       
       // Forcefully disconnect using Discord.js API to guarantee immediate leave
-      await message.guild.members.me.voice.setChannel(null).catch(() => null);
+      await message.guild.members.me?.voice?.setChannel(null).catch(() => null);
 
       await message.reply(cv2.success('Home VC Removed', `Athena Prime's Home Voice Channel has been unset. The bot has disconnected from voice.`));
     },
@@ -1098,12 +1097,11 @@ export const commands = [
 
       db.updateGuildConfig(interaction.guild.id, { homeVcId: null });
       
-      const { getVoiceConnection } = await import('@discordjs/voice');
-      const connection = getVoiceConnection(interaction.guild.id);
-      if (connection) connection.destroy();
+      const { disconnectHomeVc } = await import('../utils/voice.js');
+      disconnectHomeVc(interaction.guild.id);
       
       // Forcefully disconnect using Discord.js API to guarantee immediate leave
-      await interaction.guild.members.me.voice.setChannel(null).catch(() => null);
+      await interaction.guild.members.me?.voice?.setChannel(null).catch(() => null);
 
       await interaction.reply(cv2.success('Home VC Removed', `Athena Prime's Home Voice Channel has been unset. The bot has disconnected from voice.`));
     }

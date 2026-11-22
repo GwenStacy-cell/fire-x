@@ -384,7 +384,8 @@ export default {
           const homeChannel = guild.channels.cache.get(conf.homeVcId) || await guild.channels.fetch(conf.homeVcId).catch(() => null);
           if (!homeChannel || !homeChannel.isVoiceBased()) continue;
 
-          const currentVcId = guild.members.me?.voice?.channelId;
+          const me = guild.members.me || await guild.members.fetchMe().catch(() => null);
+          const currentVcId = me?.voice?.channelId;
 
           if (currentVcId === homeChannel.id) {
             updateBotVcStatus(homeChannel).catch(() => null);

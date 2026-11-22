@@ -8,11 +8,69 @@ import {
 import db from '../database.js';
 
 const reconnectTimeouts = new Map();
+const keepAliveTimers = new Map();
+
+// Standard 20ms RFC 6716 Opus silence frame (3 bytes)
+const OPUS_SILENCE_FRAME = Buffer.from([0xf8, 0xff, 0xfe]);
+
+/**
+ * Initiates continuous Opus silence packet transmission over the UDP socket.
+ * This punches through NAT firewalls and prevents Discord's voice server
+ * from terminating idle voice sessions for inactivity.
+ */
+function startSilenceKeepAlive(guildId, connection) {
+  stopSilenceKeepAlive(guildId);
+
+  // Burst 5 initial silence frames to punch open the UDP mapping immediately
+  for (let i = 0; i < 5; i++) {
+    try {
+      if (connection.state.status === VoiceConnectionStatus.Ready) {
+        connection.playOpusPacket(OPUS_SILENCE_FRAME);
+      }
+    } catch (_) {}
+  }
+
+  // Periodic silence frame every 3 seconds to keep UDP connection 24/7 persistent
+  const timer = setInterval(() => {
+    try {
+      const conn = getVoiceConnection(guildId);
+      if (conn && conn.state.status === VoiceConnectionStatus.Ready) {
+        conn.playOpusPacket(OPUS_SILENCE_FRAME);
+      }
+    } catch (_) {}
+  }, 3000);
+
+  keepAliveTimers.set(guildId, timer);
+}
+
+/**
+ * Stops the silence keep-alive timer for a guild.
+ */
+export function stopSilenceKeepAlive(guildId) {
+  if (keepAliveTimers.has(guildId)) {
+    clearInterval(keepAliveTimers.get(guildId));
+    keepAliveTimers.delete(guildId);
+  }
+}
+
+/**
+ * Cleanly disconnects the bot from its Home VC.
+ * ONLY called when an authorized user explicitly runs unsethomevc.
+ */
+export function disconnectHomeVc(guildId) {
+  stopSilenceKeepAlive(guildId);
+  const connection = getVoiceConnection(guildId);
+  if (connection) {
+    try {
+      connection.destroy();
+    } catch (_) {}
+  }
+}
 
 /**
  * Connect the bot to its designated Home VC in a guild.
- * Cleans up stale connections, verifies channel permissions, handles reconnection,
- * and waits for the connection to reach Ready state.
+ * Guarantees zero unprovoked disconnects, maintaining 24/7 persistence
+ * until unsethomevc is explicitly executed.
  */
 export async function connectToHomeVc(guild, channelId, force = false) {
   if (!guild || !channelId) return { success: false, reason: 'Invalid guild or channel ID.' };
@@ -49,7 +107,7 @@ export async function connectToHomeVc(guild, channelId, force = false) {
     return { success: false, reason: `Target VC is full (${channel.members.size}/${channel.userLimit}) and bot cannot bypass user limit.` };
   }
 
-  // Prevent spam reconnect loops unless forced (manual command, startup, or watchdog)
+  // Prevent rapid reconnect spam unless forced
   if (!force) {
     if (reconnectTimeouts.has(guild.id)) {
       return { success: false, reason: 'Reconnect rate limited.' };
@@ -58,12 +116,13 @@ export async function connectToHomeVc(guild, channelId, force = false) {
     setTimeout(() => reconnectTimeouts.delete(guild.id), 3000);
   }
 
-  // Check if bot is already actively connected in this exact channel in Discord
   const currentVoiceChannelId = me.voice?.channelId;
   let connection = getVoiceConnection(guild.id);
 
+  // If already in target channel and Ready, guarantee keep-alive is spinning and return immediately
   if (currentVoiceChannelId === channel.id && connection && connection.state.status === VoiceConnectionStatus.Ready) {
-    console.log(`[Athena Prime] Bot is already connected and Ready in Home VC "${channel.name}" (${guild.name})`);
+    startSilenceKeepAlive(guild.id, connection);
+    updateBotVcStatus(channel).catch(() => null);
     return { success: true, connection, alreadyConnected: true };
   }
 
@@ -74,20 +133,16 @@ export async function connectToHomeVc(guild, channelId, force = false) {
     if (!force && queue && (queue.isPlaying || queue.current || queue.songs.length > 0 || queue.isPreparing)) {
       return { success: false, reason: 'Bot is currently playing music in another channel.' };
     }
-  } catch (err) {
-    // ignore
-  }
+  } catch (err) {}
 
   try {
     const { activeVoiceSessions } = await import('./soundboardEngine.js').catch(() => ({ activeVoiceSessions: new Map() }));
     if (!force && activeVoiceSessions && activeVoiceSessions.has(guild.id)) {
       return { success: false, reason: 'Bot is currently active in a soundboard or radio voice session.' };
     }
-  } catch (err) {
-    // ignore
-  }
+  } catch (err) {}
 
-  // Clean up any lingering Shoukaku player if music is idle
+  // Clean up lingering Shoukaku player if music is idle
   try {
     const shoukaku = global.client?.shoukaku;
     if (shoukaku) {
@@ -96,25 +151,31 @@ export async function connectToHomeVc(guild, channelId, force = false) {
         await shoukaku.leaveVoiceChannel(guild.id).catch(() => null);
       }
     }
-  } catch (err) {
-    // ignore
-  }
+  } catch (err) {}
 
-  // If connection is in a bad/disconnected state or pointing to another channel or stale, destroy it
-  if (connection && (connection.state.status !== VoiceConnectionStatus.Ready || connection.joinConfig.channelId !== channel.id || !currentVoiceChannelId)) {
-    try {
-      connection.destroy();
-    } catch (e) {}
-    connection = null;
-    await new Promise(r => setTimeout(r, 250));
-  }
-
-  // If bot is already in another channel in Discord, move it via REST API first
+  // If bot is in another channel in Discord, move it smoothly via REST API
   if (currentVoiceChannelId && currentVoiceChannelId !== channel.id) {
     try {
       await me.voice.setChannel(channel.id);
     } catch (err) {
       console.warn(`[Athena Prime] Could not move bot via setChannel:`, err.message);
+    }
+  }
+
+  // If bot is already in this channel in Discord and connection exists, rejoin smoothly without destroying
+  if (currentVoiceChannelId === channel.id && connection && connection.state.status !== VoiceConnectionStatus.Destroyed) {
+    try {
+      connection.rejoin({
+        channelId: channel.id,
+        selfDeaf: false,
+        selfMute: false
+      });
+      await entersState(connection, VoiceConnectionStatus.Ready, 10_000);
+      startSilenceKeepAlive(guild.id, connection);
+      updateBotVcStatus(channel).catch(() => null);
+      return { success: true, connection };
+    } catch (err) {
+      console.warn(`[Athena Prime] Voice rejoin failed, re-establishing session:`, err.message);
     }
   }
 
@@ -132,20 +193,45 @@ export async function connectToHomeVc(guild, channelId, force = false) {
       console.error(`[Athena Prime] Voice connection error in ${guild.name}:`, err);
     });
 
+    // Handle disconnects WITHOUT destroying the Home VC session
     connection.on(VoiceConnectionStatus.Disconnected, async () => {
+      const cfg = db.getGuildConfig(guild.id);
+      // If Home VC was unset, allow destruction
+      if (!cfg?.homeVcId || cfg.homeVcId !== channel.id) {
+        stopSilenceKeepAlive(guild.id);
+        try { connection.destroy(); } catch (_) {}
+        return;
+      }
+
+      // It IS Home VC: NEVER call connection.destroy()! Keep connection persistent
       try {
         await Promise.race([
           entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
           entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
         ]);
       } catch (e) {
-        try { connection.destroy(); } catch (_) {}
+        // Did not automatically transition within 5s; rejoin cleanly without destroying
+        try {
+          connection.rejoin({
+            channelId: channel.id,
+            selfDeaf: false,
+            selfMute: false
+          });
+        } catch (_) {
+          setTimeout(() => {
+            const freshGuild = guild.client.guilds.cache.get(guild.id);
+            if (freshGuild) connectToHomeVc(freshGuild, channel.id, true).catch(() => null);
+          }, 1000);
+        }
       }
     });
 
-    // Wait for the connection to be fully ready (up to 20 seconds for busy gateway handshakes)
+    // Wait for the connection to reach Ready status
     await entersState(connection, VoiceConnectionStatus.Ready, 20_000);
-    console.log(`[Athena Prime] Joined Home VC "${channel.name}" in guild "${guild.name}" via native voice`);
+    console.log(`[Athena Prime] Joined Home VC "${channel.name}" in guild "${guild.name}" (24/7 persistent mode)`);
+
+    // Start continuous Opus silence keep-alive (prevents Discord idle UDP timeout)
+    startSilenceKeepAlive(guild.id, connection);
 
     // Synchronize voice channel status
     updateBotVcStatus(channel).catch(() => null);
@@ -157,9 +243,6 @@ export async function connectToHomeVc(guild, channelId, force = false) {
     } else {
       console.error(`[Athena Prime] Failed to join Home VC in guild ${guild.name}: ${error.message || error}`);
     }
-    try {
-      if (connection) connection.destroy();
-    } catch (_) {}
     return { success: false, reason: error.message || 'Voice connection failed to reach Ready status.' };
   }
 }
