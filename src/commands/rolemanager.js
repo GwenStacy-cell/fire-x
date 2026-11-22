@@ -712,6 +712,12 @@ export const commands = [
       let replyTitle = addedRoles.length === 1 ? 'Role Added' : 'Roles Added';
       let replyDesc = '';
       if (addedRoles.length > 0) {
+        db.removeExploitTaint(message.guild.id, target.id);
+        const qRole = message.guild.roles.cache.find(r => r.name.toLowerCase() === 'quarantined');
+        if (qRole && target.roles.cache.has(qRole.id)) {
+          await target.roles.remove(qRole, 'Quarantine role cleared via authorized role grant').catch(() => null);
+          db.removeQuarantine(message.guild.id, target.id);
+        }
         replyDesc += `${BULLET_EMOJI} ${message.author} has given **${addedRoles.join(', ')}** to ${target}\n`;
       }
       if (failedRoles.length > 0) {
@@ -763,6 +769,12 @@ export const commands = [
       let replyTitle = addedRoles.length === 1 ? 'Role Added' : 'Roles Added';
       let replyDesc = '';
       if (addedRoles.length > 0) {
+        db.removeExploitTaint(interaction.guild.id, target.id);
+        const qRole = interaction.guild.roles.cache.find(r => r.name.toLowerCase() === 'quarantined');
+        if (qRole && target.roles.cache.has(qRole.id)) {
+          await target.roles.remove(qRole, 'Quarantine role cleared via authorized role grant').catch(() => null);
+          db.removeQuarantine(interaction.guild.id, target.id);
+        }
         replyDesc += `${BULLET_EMOJI} ${interaction.user} has given **${addedRoles.join(', ')}** to ${target}\n`;
       }
       if (failedRoles.length > 0) {

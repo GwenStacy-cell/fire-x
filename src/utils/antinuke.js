@@ -2,7 +2,7 @@ import { EmbedBuilder, AuditLogEvent, PermissionFlagsBits, PermissionsBitField, 
 import { performance } from 'perf_hooks';
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import { logToSecurityChannel, isBotOwnerSync } from './helpers.js';
+import { logToSecurityChannel, isBotOwnerSync, isServerAdmin } from './helpers.js';
 import { executeQuarantine } from '../commands/security.js';
 import { recordAndLearnThreat } from './botThreatLearner.js';
 import dns from 'dns';
@@ -2204,6 +2204,21 @@ export async function handleAuditLogEntry(guild, entry) {
 
     case AuditLogEvent.MemberRoleUpdate:
       if (!mods.antiMemberRoleUpdate) return;
+      if (executor && (
+        executor.id === guild.client.user.id || 
+        executor.id === guild.ownerId || 
+        isBotOwnerSync(executor.id) || 
+        db.isExtraOwner(guild.id, executor.id) || 
+        isAuthorized(guild, executor, 'antiMemberRoleUpdate')
+      )) {
+        if (targetId) db.removeExploitTaint(guild.id, targetId);
+        return;
+      }
+      const execMem = executor ? (guild.members.cache.get(executor.id) || await guild.members.fetch(executor.id).catch(() => null)) : null;
+      if (execMem && (isServerAdmin(execMem, guild.id) || (execMem.permissions?.has && execMem.permissions.has(PermissionFlagsBits.Administrator)))) {
+        if (targetId) db.removeExploitTaint(guild.id, targetId);
+        return;
+      }
       const rolesChange = entry.changes?.find(c => c.key === '$add');
       if (rolesChange?.new?.length) {
         const dangerous = rolesChange.new.some(rObj => {

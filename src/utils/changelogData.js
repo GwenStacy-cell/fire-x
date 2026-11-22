@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '22 November 2026',
+    version: 'v3.5.5',
+    headline: 'Exploit Taint De-Quarantine Resolution & Multi-Tier Role Authorization Matrix',
+    summary: 'Resolved privilege escalation re-quarantine feedback loops by ensuring unquarantine completely purges exploit taint records from the database and lifting restrictions for Server Owners, Bot Owners, Extra Owners, Whitelisted users, and Admins. Eliminated premature role stripping during audit log ingestion, preventing false-positive zero-audit linked role strikes.',
+    whatsNew: [
+      {
+        title: 'Exploit Taint Database Purge on Unquarantine',
+        desc: 'Upgraded executeUnquarantine to purge both active quarantine records and database exploit taints (db.removeExploitTaint), preventing members from being permanently barred or re-quarantined when granted roles.'
+      },
+      {
+        title: 'Multi-Tier Role Grant Authorization Recognition',
+        desc: 'Unified dangerous role verification across guildMemberUpdate, antinuke.js, and fastWiretap to recognize Server Owners, Bot Owners, Extra Owners, Whitelisted roles/users, Server Admins, and Athena commands (!addrole) as fully authorized grantors.'
+      },
+      {
+        title: 'Zero-Flicker Role Audit Polling Architecture',
+        desc: 'Eliminated premature pre-emptive role stripping before audit correlation, avoiding false Linked Role Exploit / Zero Audit detections when server owners assign roles in the Discord client.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Self-Clearing Authoritative Role Commands',
+        desc: 'Hardened !addrole and /addrole to automatically remove the Quarantined role and erase exploit taint whenever authorized server staff assign roles.'
+      }
+    ]
+  },
+  {
+    date: '22 November 2026',
     version: 'v3.5.4',
     headline: '24/7 Home VC Anti-Disconnect Architecture & UDP Silence Heartbeat Sentinel',
     summary: 'Engineered permanent 24/7 Home VC persistence by eliminating unprovoked connection.destroy() teardowns, introducing an automated Opus silence keep-alive heartbeat to prevent Discord idle UDP timeouts, and ensuring Athena remains connected continuously without leaving until explicitly unset with unsethomevc.',

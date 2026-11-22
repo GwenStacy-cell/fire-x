@@ -114,113 +114,49 @@ export default {
           );
 
           // ----------------------------------------------------
-          // 3A. EXPLOIT-TAINTED MEMBER PERMANENT RESTRICTION GUARD
-          // If a member was previously tainted by an exploit or rogue invite,
-          // they are PERMANENTLY barred from holding iconic/dangerous permissions.
-          // Even after quarantine is lifted, if anyone attempts to give them
-          // iconic/dangerous permissions:
-          // 1. Roles are stripped immediately.
-          // 2. The unauthorized giver is BANNED immediately and stripped of all roles!
-          // 3. The tainted user is re-quarantined.
-          // ----------------------------------------------------
-          const isTainted = db.isExploitTainted(guild.id, newMember.id);
-          if (isTainted && dangerousRoles.size > 0) {
-            // 1. Remove dangerous roles immediately
-            await newMember.roles.remove(dangerousRoles, '[ATHENA ANTINUKE] Exploit-tainted member is permanently barred from holding iconic/dangerous permissions').catch(() => null);
-
-            // 2. Re-quarantine the tainted member
-            await executeQuarantine(guild, newMember, guild.members.me, 'Athena Anti-Nuke: Exploit-tainted member attempted to acquire iconic/dangerous permissions').catch(() => null);
-
-            // 3. Audit check to identify and ban the giver
-            setTimeout(async () => {
-              try {
-                const auditLogs = await guild.fetchAuditLogs({ limit: 6, type: AuditLogEvent.MemberRoleUpdate }).catch(() => null);
-                const matchingEntry = auditLogs?.entries?.find(entry => {
-                  if (entry.targetId !== newMember.id) return false;
-                  const ageMs = Date.now() - entry.createdTimestamp;
-                  if (ageMs > 30_000) return false;
-                  const roleChanges = entry.changes?.find(c => c.key === '$add');
-                  if (!roleChanges || !Array.isArray(roleChanges.new)) return false;
-                  return roleChanges.new.some(r => dangerousRoles.has(r.id));
-                });
-
-                const giver = matchingEntry?.executor;
-                let giverBanned = false;
-                if (giver && giver.id !== guild.ownerId && !isBotOwnerSync(giver.id) && !db.isExtraOwner(guild.id, giver.id)) {
-                  // Eliminate illegal role giver: Instant Direct Ban (0ms overhead)
-                  rawBan(guild.id, giver.id, guild.client.token, `[ATHENA ANTINUKE] Illegal Role Grant: Assigned iconic/dangerous permissions to exploit-tainted member ${newMember.user?.tag || newMember.id}`).catch(() => null);
-                  db.addExploitTaint(guild.id, giver.id, 'Illegal Role Grant Executor (Target was exploit-tainted)');
-                  giverBanned = true;
-                }
-
-                const roleNames = dangerousRoles.map(r => `\`${r.name}\` (\`${r.id}\`)`).join(', ');
-                const targetTier = getUserTierName(guild, newMember);
-
-                const alertContainer = {
-                  type: 17,
-                  accent_color: 0xed4245,
-                  components: [
-                    { type: 10, content: `## Tainted Member Exploit Blocked | <a:03_tick_circle:1565665642084827206>` },
-                    { type: 14, divider: true },
-                    {
-                      type: 10,
-                      content:
-                        `-# **Exploit Vector:** \`Illegal Role Grant to Exploit-Tainted User\`\n` +
-                        `-# **Target Member:** ${newMember} (\`${newMember.id}\` | \`${newMember.user?.tag || newMember.displayName}\`)\n` +
-                        `-# **Target Clearance Tier:** \`[${targetTier}]\`\n` +
-                        `-# **Illegal Role(s):** ${roleNames}\n` +
-                        `-# **Role Giver:** ${giver ? `<@${giver.id}> (\`${giver.tag || giver.id}\`)` : '`Zero Audit / Unknown`'}\n` +
-                        `-# **Countermeasures Executed:** Roles stripped instantly, target re-quarantined${giverBanned ? ', illegal role giver banned & stripped' : ''}.`
-                    },
-                    { type: 14, divider: true },
-                    { type: 10, content: `-# **Athena Prime Zero-Trust Sentinel Active**` }
-                  ]
-                };
-
-                await logToSecurityChannel(guild, { components: [alertContainer], flags: MessageFlags.IsComponentsV2 });
-              } catch (err) {
-                console.error('[AntiTaintGuard] Error:', err);
-              }
-            }, 1000);
-
-            return;
-          }
-
-          // ----------------------------------------------------
-          // 3B. GENERAL DANGEROUS / LINKED ROLE / ILLEGAL GRANT GUARD
+          // 3. ZERO-TRUST DANGEROUS ROLE & PRIVILEGE ESCALATION SENTINEL
+          // Detects unauthorized dangerous role assignments, rogue admin bots,
+          // and Discord Linked Role (zero-audit connection) exploits.
+          // Fully exempts legitimate grants from Server Owner, Bot Owner, Extra Owners,
+          // Whitelisted users, Server Admins, and Athena herself (e.g. !addrole / unquarantine).
           // ----------------------------------------------------
           if (dangerousRoles.size > 0) {
             const guildCfg = db.getGuildConfig(guild.id);
             const mods = guildCfg?.antinukeModules || {};
 
-            // Only run if antiLinkedRole or antiMemberRoleUpdate is enabled
-            if (mods.antiLinkedRole !== false || mods.antiMemberRoleUpdate !== false) {
+            // Check if anti-nuke / security protection is active
+            if (mods.antiLinkedRole !== false || mods.antiMemberRoleUpdate !== false || guildCfg?.securityEnabled || guildCfg?.antiNukeEnabled) {
+              
+              const isGiverAuthorized = (exec, execMem) => {
+                if (!exec) return false;
+                if (exec.id === guild.client.user.id) return true; // Athena Prime bot itself (e.g. !addrole, unquarantine)
+                if (exec.id === guild.ownerId) return true; // Server Owner
+                if (isBotOwnerSync(exec.id)) return true; // Bot Owner
+                if (db.isExtraOwner(guild.id, exec.id)) return true; // Extra Owner
+                if (isAuthorized(guild, exec, 'antiMemberRoleUpdate')) return true; // Whitelisted user / role for antiMemberRoleUpdate
+                const resolvedMem = execMem || guild.members.cache.get(exec.id);
+                if (isServerAdmin(resolvedMem, guild.id)) return true; // Server Admin
+                if (resolvedMem?.permissions?.has && resolvedMem.permissions.has(PermissionFlagsBits.Administrator)) return true; // Discord Administrator
+                return false;
+              };
+
               // ⚡ STEP 1: Check WebSocket ring buffer first (0ms latency, zero API calls)
               const ringMatch = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
-              let instantAuthorized = false;
-
-              if (ringMatch?.executor) {
-                const exec = ringMatch.executor;
-                const isOwner = exec.id === guild.ownerId || isBotOwnerSync(exec.id) || db.isExtraOwner(guild.id, exec.id);
-                const execMember = guild.members.cache.get(exec.id);
-                if (isOwner || isAuthorized(guild, exec, 'antiMemberRoleUpdate') || isServerAdmin(execMember, guild.id)) {
-                  instantAuthorized = true;
-                }
-              }
-
-              if (instantAuthorized) {
-                // Legitimate role grant confirmed in 0ms! Do not touch the member or the role.
+              if (ringMatch?.executor && isGiverAuthorized(ringMatch.executor, guild.members.cache.get(ringMatch.executor.id))) {
+                // Legitimate role grant confirmed in 0ms!
+                // Clear any lingering exploit taint since an authorized authority deliberately granted permissions
+                db.removeExploitTaint(guild.id, newMember.id);
                 return;
               }
 
-              // ⚡ STEP 2: Pre-emptive isolation while polling audit logs
-              await newMember.roles.remove(dangerousRoles, '[ATHENA ANTINUKE] Pre-emptive dangerous role isolation — verifying authorization').catch(() => null);
-
-              // Verification runner with robust delay window (up to ~3.6s)
+              // ⚡ STEP 2: Asynchronous audit verification window (WITHOUT premature pre-emptive role strip!)
+              // NOTE: DO NOT call newMember.roles.remove pre-emptively here! Pre-emptive stripping destroys audit log
+              // correlation, triggers race conditions with Discord's gateway, and causes false "Zero Audit" quarantines
+              // when the Server Owner or Admins grant roles in Discord.
               (async () => {
                 try {
                   let matchingEntry = null;
-                  const delays = [50, 150, 300, 600, 1000, 1500];
+                  const delays = [80, 150, 300, 600, 1000, 1500];
 
                   for (let attempt = 0; attempt < delays.length; attempt++) {
                     if (delays[attempt] > 0) await new Promise(r => setTimeout(r, delays[attempt]));
@@ -249,30 +185,24 @@ export default {
                     if (matchingEntry) break;
                   }
 
-                  let isExploit = false;
-                  let isIllegalGrant = false;
-                  let exploitReason = '';
-
                   const executor = matchingEntry?.executor;
                   let execMember = null;
                   if (executor) {
                     execMember = guild.members.cache.get(executor.id) || await guild.members.fetch(executor.id).catch(() => null);
                   }
 
-                  const isGiverOwner = executor && (
-                    executor.id === guild.ownerId || 
-                    isBotOwnerSync(executor.id) || 
-                    db.isExtraOwner(guild.id, executor.id) ||
-                    isAuthorized(guild, executor, 'antiMemberRoleUpdate') ||
-                    (execMember?.permissions?.has && execMember.permissions.has(PermissionFlagsBits.Administrator)) ||
-                    isServerAdmin(execMember, guild.id)
-                  );
+                  const authorized = isGiverAuthorized(executor, execMember);
 
-                  if (matchingEntry && isGiverOwner) {
-                    // Authorized grant confirmed! Restore roles safely
-                    await newMember.roles.add(dangerousRoles, 'Athena Anti-Nuke: Authorized Role Grant Verified').catch(() => null);
+                  if (matchingEntry && authorized) {
+                    // Authorized grant confirmed! Clear exploit taint and allow roles to stay untouched.
+                    db.removeExploitTaint(guild.id, newMember.id);
                     return;
                   }
+
+                  // If we reached here, this is an UNAUTHORIZED role grant or a ZERO AUDIT / LINKED ROLE EXPLOIT!
+                  let isExploit = false;
+                  let isIllegalGrant = false;
+                  let exploitReason = '';
 
                   if (!matchingEntry) {
                     // ZERO AUDIT LOG FOUND IN WINDOW -> DISCORD LINKED ROLE EXPLOIT
@@ -282,17 +212,20 @@ export default {
                     // Self-assigned or null executor -> LINKED ROLE EXPLOIT
                     isExploit = true;
                     exploitReason = 'Self-Assigned / Null Audit Executor (Linked Role Connection Bypass)';
-                  } else if (!isGiverOwner) {
+                  } else if (!authorized) {
                     // Assigned by an unauthorized rogue member or bot
                     isExploit = true;
                     isIllegalGrant = true;
                     exploitReason = `Unauthorized Grant by <@${executor.id}> (\`${executor.tag || executor.id}\`)`;
                   }
 
-                  // 1.5. PUNISH ILLEGAL ROLE GIVER: If a person granted a role illegally, BAN THEM!
+                  // 1. STRIP THE DANGEROUS ROLES IMMEDIATELY
+                  await newMember.roles.remove(dangerousRoles, `[ATHENA ANTINUKE] Unauthorized dangerous role assignment revoked (${exploitReason})`).catch(() => null);
+
+                  // 2. PUNISH ILLEGAL ROLE GIVER: Direct Ban
                   let giverBanned = false;
                   if (isIllegalGrant && executor) {
-                    if (executor.id !== guild.ownerId && !isBotOwnerSync(executor.id) && !db.isExtraOwner(guild.id, executor.id)) {
+                    if (executor.id !== guild.ownerId && !isBotOwnerSync(executor.id) && !db.isExtraOwner(guild.id, executor.id) && executor.id !== guild.client.user.id) {
                       // Eliminate illegal role giver: Instant Direct Ban (0ms overhead)
                       rawBan(guild.id, executor.id, guild.client.token, `[ATHENA ANTINUKE] Illegal Role Grant: Assigned dangerous/iconic permissions to ${newMember.user?.tag || newMember.id}`).catch(() => null);
                       db.addExploitTaint(guild.id, executor.id, 'Illegal Role Grant Executor');
@@ -300,7 +233,7 @@ export default {
                     }
                   }
 
-                  // 2. DISARM COMPROMISED ROLE ONLY IF AN ACTUAL LINKED ROLE (guildConnections):
+                  // 3. DISARM COMPROMISED ROLE ONLY IF AN ACTUAL LINKED ROLE (guildConnections):
                   // Standard server roles must NEVER have permissions wiped, as that would break them server-wide!
                   for (const role of dangerousRoles.values()) {
                     if (role.editable && role.tags?.guildConnections && hasDangerousPerms(role.permissions)) {
@@ -309,7 +242,7 @@ export default {
                     }
                   }
 
-                  // 3. QUARANTINE & TAINT THE RECIPIENT
+                  // 4. QUARANTINE & TAINT THE RECIPIENT
                   db.addExploitTaint(guild.id, newMember.id, `Illegal Role Grant Recipient: ${exploitReason}`);
                   if (guildCfg?.securityEnabled || guildCfg?.antiNukeEnabled) {
                     await executeQuarantine(guild, newMember, guild.members.me, `Athena Anti-Nuke: Illegal Role Grant (${exploitReason})`).catch(() => null);

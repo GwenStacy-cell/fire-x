@@ -224,6 +224,13 @@ export function attachWiretap(client) {
                                isBotOwner || 
                                isAuthorized(guild, member || { id: executorId }, modKey || 'antinuke');
 
+      if (isAuthorizedUser) {
+        if (actionType === AuditLogEvent.MemberRoleUpdate && targetId) {
+          db.removeExploitTaint(guildId, targetId);
+        }
+        return;
+      }
+
       if (!isAuthorizedUser) {
         checkGlobalBurst(guild, actionType, executorId);
         if (DESTRUCTIVE_AUDIT_ACTIONS.has(actionType)) {

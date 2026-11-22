@@ -28,7 +28,7 @@ import { setupDashboardChannel } from '../utils/dashboardManager.js';
 import { resolveMediaUrl, isPinterestUrl } from '../utils/pinterest.js';
 import { StringSelectMenuBuilder, UserSelectMenuBuilder, RoleSelectMenuBuilder, ChannelSelectMenuBuilder } from 'discord.js';
 import { auditAndNeutralizeOnboarding, CRITICAL_ONBOARDING_PERMS, hasCriticalOnboardingPerms, getDangerousPermNames } from '../utils/onboardingGuard.js';
-import { hasDangerousPerms } from '../utils/antinuke.js';
+import { hasDangerousPerms, isAuthorized } from '../utils/antinuke.js';
 import { 
   dispatchTacticalAudioToVc, 
   createTacticalDispatchAttachment, 
@@ -2690,16 +2690,28 @@ export async function executeQuarantine(guild, targetMember, moderator, reason, 
 
 export async function executeUnquarantine(guild, targetMember, moderator, context = null) {
   const record = db.getQuarantine(guild.id, targetMember.id);
-  if (!record) {
-    return { success: false, message: `**${targetMember.user.tag}** has no active quarantine records on disk.` };
+  const isTainted = db.isExploitTainted(guild.id, targetMember.id);
+  const quarantineRole = await getOrCreateQuarantineRole(guild);
+  const hasQuarantineRole = quarantineRole && targetMember.roles.cache.has(quarantineRole.id);
+
+  if (!record && !isTainted && !hasQuarantineRole) {
+    return { success: false, message: `**${targetMember.user?.tag || targetMember.id}** has no active quarantine records or exploit sanctions on disk.` };
   }
 
   try {
-    const quarantineRole = await getOrCreateQuarantineRole(guild);
-    
+    // Check if moderator is authorized authority (Server Owner, Bot Owner, Extra Owner, Admin, Whitelisted)
+    const isModAuthorized = (
+      moderator.id === guild.ownerId ||
+      isBotOwnerSync(moderator.id) ||
+      db.isExtraOwner(guild.id, moderator.id) ||
+      isAuthorized(guild, moderator, 'antiMemberRoleUpdate') ||
+      (moderator.permissions?.has && moderator.permissions.has(PermissionFlagsBits.Administrator)) ||
+      isServerAdmin(moderator, guild.id)
+    );
+
     // Determine restore role IDs
-    let savedRoleIds = record.roles || [];
-    if (db.isExploitTainted(guild.id, targetMember.id)) {
+    let savedRoleIds = record?.roles || [];
+    if (!isModAuthorized && isTainted) {
       const authRoles = db.getAuthRoles(guild.id);
       savedRoleIds = savedRoleIds.filter(id => {
         const r = guild.roles.cache.get(id);
@@ -2708,18 +2720,30 @@ export async function executeUnquarantine(guild, targetMember, moderator, contex
         return !hasDangerousPerms(r.permissions);
       });
     }
+
+    const currentRoleIds = targetMember.roles.cache.map(r => r.id);
     const managedRoleIds = targetMember.roles.cache.filter(r => r.managed).map(r => r.id);
-    
-    // Add saved + managed, remove quarantine
-    const restoreRoles = [...new Set([...savedRoleIds, ...managedRoleIds])].filter(id => id !== quarantineRole?.id);
 
-    // Remove DB entry BEFORE restoring roles so the guildMemberUpdate interceptor doesn't falsely strip them!
+    // If there was no record but member had quarantine role or taint, keep their existing roles minus quarantineRole
+    let finalRolesToSet;
+    if (record) {
+      finalRolesToSet = [...new Set([...savedRoleIds, ...managedRoleIds])].filter(id => id !== quarantineRole?.id);
+    } else {
+      finalRolesToSet = currentRoleIds.filter(id => id !== quarantineRole?.id);
+    }
+
+    // Always purge DB quarantine AND exploit taint BEFORE modifying roles in Discord so listeners never falsely re-taint!
     db.removeQuarantine(guild.id, targetMember.id);
+    db.removeExploitTaint(guild.id, targetMember.id);
 
-    await targetMember.roles.set(restoreRoles, `Unquarantined by ${moderator.user?.tag || 'System'}`);
+    if (record && finalRolesToSet.length > 0) {
+      await targetMember.roles.set(finalRolesToSet, `Unquarantined by ${moderator.user?.tag || moderator.displayName || 'System'}`);
+    } else if (quarantineRole && targetMember.roles.cache.has(quarantineRole.id)) {
+      await targetMember.roles.remove(quarantineRole, `Unquarantined by ${moderator.user?.tag || moderator.displayName || 'System'}`).catch(() => null);
+    }
 
     // If target was in voice before quarantine, and is currently connected to voice, restore their channel position
-    if (record.previousVoiceChannelId && targetMember.voice.channelId) {
+    if (record?.previousVoiceChannelId && targetMember.voice.channelId) {
       const prevVc = await guild.channels.fetch(record.previousVoiceChannelId).catch(() => null);
       if (prevVc) {
         await targetMember.voice.setChannel(prevVc, 'Quarantine Release Voice Restoration').catch(() => null);
