@@ -16,6 +16,40 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '22 November 2026',
+    version: 'v3.5.9',
+    headline: 'Multi-Role Deletion Engine, Bot Owner Hierarchy Bypass & Resilient TTS VC Lifecycle',
+    summary: 'Upgraded !deleterole to support batch deletion of multiple roles via mentions, IDs, and names, with complete hierarchy bypass for the Bot Owner. Resolved post-recording TTS audio degradation by restoring voice connection tracking, auto-reconnecting Home VC sessions after recording stops, and ensuring non-blocking audio capture buffers.',
+    whatsNew: [
+      {
+        title: 'Multi-Role Deletion Engine',
+        desc: 'Upgraded deleterole (!dr, !delrole, !roledelete, !role delete) to accept multiple roles in a single command via role mentions, Snowflakes/IDs, and names, reporting per-role execution results.'
+      },
+      {
+        title: 'Bot Owner Hierarchy Exemption',
+        desc: 'Enabled full hierarchy bypass for the Bot Owner, Server Owner, and Extra Owners during role deletion, allowing deletion of roles regardless of the caller\'s member role position in the server.'
+      },
+      {
+        title: 'TTS Voice Connection Recovery',
+        desc: 'Hardened queueTtsMessage and playNext in tts.js to detect destroyed or disconnected voice sockets, auto-reconnect seamlessly, and prevent idle destruction on active Home VCs.'
+      },
+      {
+        title: 'Post-Recording Voice Restoration',
+        desc: 'audioRecorder.js now purges stale TTS connection caches on recording start/stop and automatically restores persistent Home VC connections if configured on the server.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Non-Blocking PCM Silence Padding',
+        desc: 'Optimized zero-byte silence padding in audio capture to write up to 512KB chunks, preventing event loop lag during recording synchronization.'
+      },
+      {
+        title: 'Pure Custom Emoji Enforcement',
+        desc: 'Replaced legacy off indicators in record commands and interactive buttons with Athena custom tick and cross emojis.'
+      }
+    ]
+  },
+  {
+    date: '22 November 2026',
     version: 'v3.5.8',
     headline: 'Symmetric Ninja Bullet Header Framing Across Help & Explainer Systems',
     summary: 'Standardized all help module headings, command inspectors, and architectural deep-dive explainers to always be framed symmetrically between the custom ninja bullet glyphs (<a:ninja_bullet:1567038601668337705> and <a:ninja_bullet_rtl:1567038652687712317>), eliminating inconsistent icon fallbacks and matching official UI standards.',

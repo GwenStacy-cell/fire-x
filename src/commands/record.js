@@ -42,7 +42,7 @@ export const commands = [
             }
         }
         
-        if (!vc) return message.reply(cv2.error('<:off:1533844858983157851> Failed', 'You must be in a Voice Channel to start a recording session, or provide a valid Channel ID / User ID as a target.'));
+        if (!vc) return message.reply(cv2.danger('Voice Recording Failed | <a:04_cross_circle:1565665644806934639>', 'You must be in a Voice Channel to start a recording session, or provide a valid Channel ID / User ID as a target.'));
         
         const targetGuild = vc.guild;
         try {
@@ -64,7 +64,7 @@ export const commands = [
           };
           return message.channel.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
         } catch (err) {
-          return message.reply(cv2.error('<:off:1533844858983157851> Failed', err.message));
+          return message.reply(cv2.danger('Voice Recording Failed | <a:04_cross_circle:1565665644806934639>', err.message));
         }
       }
 
@@ -100,7 +100,7 @@ export const commands = [
           const targetGuild = message.client.guilds.cache.get(targetGuildId) || message.guild;
           const result = await stopRecording(targetGuildId);
           if (!result) {
-             return msg.edit({ components: [{ type: 17, components: [{ type: 10, content: '-# <:off:1533844858983157851> No active recording found for this server.' }] }] });
+             return msg.edit({ components: [{ type: 17, components: [{ type: 10, content: '-# <a:04_cross_circle:1565665644806934639> No active recording found for this server.' }] }] });
           }
           const { mp3Path, startTime, durationMs, userCount } = result;
           
@@ -163,7 +163,7 @@ export const commands = [
           
           try { fs.unlinkSync(mp3Path); } catch(e) {}
         } catch (err) {
-          await msg.edit({ components: [{ type: 17, components: [{ type: 10, content: `-# <:off:1533844858983157851> **Recording Failed:** ${err.message}` }] }] });
+          await msg.edit({ components: [{ type: 17, components: [{ type: 10, content: `-# <a:04_cross_circle:1565665644806934639> **Recording Failed:** ${err.message}` }] }] });
         }
         return;
       }
@@ -192,7 +192,7 @@ export const commands = [
         message.channel.send(cv2.success('Voice Records Setup', `Successfully setup voice logging in <#${channel.id}>.\nAll VC joins and leaves will be recorded there.`));
       } catch (error) {
         console.error(error);
-        message.channel.send(cv2.error('<:off:1533844858983157851> Failed', 'Failed to create the voice records channel. Check my permissions.'));
+        message.channel.send(cv2.danger('Voice Records Setup Failed | <a:04_cross_circle:1565665644806934639>', 'Failed to create the voice records channel. Check my permissions.'));
       }
     }
   }

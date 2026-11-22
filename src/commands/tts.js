@@ -16,7 +16,8 @@ import {
   createAudioResource,
   AudioPlayerStatus,
   VoiceConnectionStatus,
-  getVoiceConnection
+  getVoiceConnection,
+  entersState
 } from '@discordjs/voice';
 import fetch from 'node-fetch';
 import db from '../database.js';
@@ -32,6 +33,20 @@ import {
 // Queue system for guilds: guildId -> { queue: [], player: AudioPlayer, connection: VoiceConnection, isPlaying: boolean, timeout: NodeJS.Timeout }
 const ttsSessions = new Map();
 
+export function resetTtsConnection(guildId) {
+  const session = ttsSessions.get(guildId);
+  if (session) {
+    if (session.timeout) {
+      clearTimeout(session.timeout);
+      session.timeout = null;
+    }
+    session.queue = [];
+    session.isPlaying = false;
+    session.connection = null;
+    ttsSessions.delete(guildId);
+  }
+}
+
 async function playNext(guildId) {
   const session = ttsSessions.get(guildId);
   if (!session) return;
@@ -40,8 +55,12 @@ async function playNext(guildId) {
     session.isPlaying = false;
     // Set a timeout to disconnect after 60 seconds of inactivity
     session.timeout = setTimeout(() => {
-      if (session.connection && session.connection.state.status !== VoiceConnectionStatus.Destroyed) {
-        session.connection.destroy();
+      const cfg = db.getGuildConfig(guildId);
+      // DO NOT destroy voice connection if Home VC is configured on this channel!
+      if (!cfg?.homeVcId || cfg.homeVcId !== session.connection?.joinConfig?.channelId) {
+        if (session.connection && session.connection.state.status !== VoiceConnectionStatus.Destroyed) {
+          try { session.connection.destroy(); } catch (_) {}
+        }
       }
       ttsSessions.delete(guildId);
     }, 60000);
@@ -103,15 +122,62 @@ export async function queueTtsMessage(member, text, overrideVoice = null) {
 
   const session = ttsSessions.get(guildId);
 
-  // If not connected to this specific channel, connect
-  if (!session.connection || session.connection.joinConfig.channelId !== voiceChannel.id) {
-    session.connection = joinVoiceChannel({
-      channelId: voiceChannel.id,
-      guildId: guildId,
-      adapterCreator: voiceChannel.guild.voiceAdapterCreator,
-      selfDeaf: true
-    });
-    session.connection.subscribe(session.player);
+  // Validate existing voice connection: must be matching, alive, ready, and connected to target channel
+  const existingConn = getVoiceConnection(guildId);
+  const isConnAlive = session.connection && 
+                      session.connection === existingConn &&
+                      session.connection.state.status !== VoiceConnectionStatus.Destroyed &&
+                      session.connection.state.status !== VoiceConnectionStatus.Disconnected &&
+                      session.connection.joinConfig?.channelId === voiceChannel.id;
+
+  if (!isConnAlive) {
+    // If there is an existing connection on a different channel or in dead state, clean it up
+    if (session.connection && session.connection.state.status !== VoiceConnectionStatus.Destroyed) {
+      try { session.connection.destroy(); } catch (_) {}
+    }
+    if (existingConn && (existingConn.joinConfig?.channelId !== voiceChannel.id || existingConn.state.status === VoiceConnectionStatus.Destroyed || existingConn.state.status === VoiceConnectionStatus.Disconnected)) {
+      try { existingConn.destroy(); } catch (_) {}
+    }
+
+    try {
+      session.connection = joinVoiceChannel({
+        channelId: voiceChannel.id,
+        guildId: guildId,
+        adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+        selfDeaf: false,
+        selfMute: false
+      });
+
+      session.connection.on(VoiceConnectionStatus.Destroyed, () => {
+        session.connection = null;
+      });
+
+      session.connection.on(VoiceConnectionStatus.Disconnected, async () => {
+        try {
+          await Promise.race([
+            entersState(session.connection, VoiceConnectionStatus.Signalling, 5_000),
+            entersState(session.connection, VoiceConnectionStatus.Connecting, 5_000),
+          ]);
+        } catch (e) {
+          if (session.connection) {
+            try { session.connection.destroy(); } catch (_) {}
+            session.connection = null;
+          }
+        }
+      });
+
+      await entersState(session.connection, VoiceConnectionStatus.Ready, 10_000).catch(() => null);
+    } catch (err) {
+      console.error('[TTS] Error connecting to voice channel:', err);
+      return false;
+    }
+  }
+
+  // Always ensure the audio player is subscribed to the active voice connection!
+  if (session.connection && session.connection.state.status !== VoiceConnectionStatus.Destroyed) {
+    try {
+      session.connection.subscribe(session.player);
+    } catch (_) {}
   }
 
   // Chunk text if it's too long (Google TTS limit is 200 chars)

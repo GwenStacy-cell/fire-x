@@ -2737,7 +2737,7 @@ export default {
       // RECORD BUTTONS
       if (interaction.customId.startsWith('record_stop')) {
         const targetGuildId = interaction.customId.split('_')[2] || interaction.guild?.id;
-        if (!targetGuildId) return interaction.reply({ content: '<:off:1533844858983157851> Cannot determine target server.', flags: 64 });
+        if (!targetGuildId) return interaction.reply({ content: '<a:04_cross_circle:1565665644806934639> Cannot determine target server.', flags: 64 });
         const vc = interaction.member?.voice?.channel;
         const vcName = vc ? vc.name : 'Voice Channel';
         const container = {
@@ -2754,7 +2754,7 @@ export default {
           const { stopRecording } = await import('../utils/audioRecorder.js');
           const result = await stopRecording(targetGuildId);
           if (!result) {
-            const emptyContainer = { type: 17, components: [{ type: 10, content: '-# <:off:1533844858983157851> No active recording found for this server.' }] };
+            const emptyContainer = { type: 17, components: [{ type: 10, content: '-# <a:04_cross_circle:1565665644806934639> No active recording found for this server.' }] };
             return interaction.message.edit({ components: [emptyContainer] });
           }
           
@@ -2819,7 +2819,7 @@ export default {
 
           try { fs.unlinkSync(result.mp3Path); } catch(e) {}
         } catch (err) {
-          const errContainer = { type: 17, components: [{ type: 10, content: `-# <:off:1533844858983157851> **Recording Stopped:** ${err.message}` }] };
+          const errContainer = { type: 17, components: [{ type: 10, content: `-# <a:04_cross_circle:1565665644806934639> **Recording Stopped:** ${err.message}` }] };
           await interaction.message.edit({ components: [errContainer] });
         }
         return;
@@ -2827,13 +2827,13 @@ export default {
 
       if (interaction.customId.startsWith('record_status')) {
         const targetGuildId = interaction.customId.split('_')[2] || interaction.guild?.id;
-        if (!targetGuildId) return interaction.reply({ content: '<:off:1533844858983157851> Cannot determine target server.', flags: 64 });
+        if (!targetGuildId) return interaction.reply({ content: '<a:04_cross_circle:1565665644806934639> Cannot determine target server.', flags: 64 });
         const { getRecordingStatus } = await import('../utils/audioRecorder.js');
         const isActive = getRecordingStatus(targetGuildId);
         const container = {
           type: 17,
           components: [
-            { type: 10, content: `## Voice Recording Status | <a:03_tick_circle:1565665642084827206>\n-# Status: ${isActive ? '<a:uptime:1552608831060844575> **Recording Active**' : '<:off:1533844858983157851> **Inactive**'}` },
+            { type: 10, content: `## Voice Recording Status | <a:03_tick_circle:1565665642084827206>\n-# Status: ${isActive ? '<a:uptime:1552608831060844575> **Recording Active**' : '<a:04_cross_circle:1565665644806934639> **Inactive**'}` },
             { type: 14, divider: true },
             { type: 10, content: '-# Athena Bulletproof Security' }
           ]

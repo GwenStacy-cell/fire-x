@@ -3048,7 +3048,7 @@ export const helpModules = [
     "`!ur @user <new_name>` - Update member nickname `[Extra Owner]`",
     "`!editrole / !er <@role>` - Interactive Role Manager GUI: Rename/Hex/Position modals, hoist/mention toggles, 13-color preset palette, 20-permission toggler, clone & delete `[Extra Owner]`",
     "`!createrole / !cr` - Interactive Role Creator with custom permissions, color & position `[Extra Owner]`",
-    "`!deleterole / !dr @role` - Delete a server role safely with hierarchy protection `[Extra Owner]`",
+    "`!deleterole / !dr <@roles...> / !role delete` - Delete one or multiple server roles `[Bot Owner & Extra Owner]`",
     "`!addrole @user @role` - Add role to a user `[Extra Owner]`",
     "`!removerole @user @role` - Remove role from a user `[Extra Owner]`",
     "`!striproles @user` - Strip all roles from a user `[Extra Owner]`",

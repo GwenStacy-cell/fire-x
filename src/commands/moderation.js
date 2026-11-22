@@ -1057,28 +1057,103 @@ export const commands = [
     name: 'deleterole',
     aliases: ['dr', 'delrole', 'roledel', 'roledelete'],
     slashHidden: true,
-    description: 'Deletes a server role safely.',
+    description: 'Deletes one or multiple server roles safely.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.ManageRoles],
     options: [
       {
         name: 'role',
-        description: 'The role to delete',
+        description: 'First role to delete',
         type: 8,
         required: true
+      },
+      {
+        name: 'role2',
+        description: 'Second role to delete',
+        type: 8,
+        required: false
+      },
+      {
+        name: 'role3',
+        description: 'Third role to delete',
+        type: 8,
+        required: false
+      },
+      {
+        name: 'role4',
+        description: 'Fourth role to delete',
+        type: 8,
+        required: false
+      },
+      {
+        name: 'role5',
+        description: 'Fifth role to delete',
+        type: 8,
+        required: false
       }
     ],
-    async executePrefix(message) {
-      const role = message.mentions.roles.first();
-      if (!role) {
-        return message.reply(cv2.warn('Command Error', `${message.author} Please mention the role you want to delete.\n\n**Usage:** \`!deleterole <@role>\``));
+    async executePrefix(message, args) {
+      const targetRoles = [];
+      const seenIds = new Set();
+
+      // 1. Collect all role mentions
+      if (message.mentions.roles?.size > 0) {
+        for (const [id, r] of message.mentions.roles) {
+          if (!seenIds.has(id)) {
+            targetRoles.push(r);
+            seenIds.add(id);
+          }
+        }
       }
-      const result = await handleDeleteRole(message.guild, message.member, role);
+
+      // 2. Scan remaining args for Role IDs or exact role names
+      if (Array.isArray(args) && args.length > 0) {
+        for (const rawArg of args) {
+          const cleanId = rawArg.replace(/[<@&>]/g, '').trim();
+          if (cleanId && !seenIds.has(cleanId)) {
+            const r = message.guild.roles.cache.get(cleanId);
+            if (r) {
+              targetRoles.push(r);
+              seenIds.add(r.id);
+              continue;
+            }
+          }
+          // Match by exact role name (case-insensitive)
+          const byName = message.guild.roles.cache.find(r => r.name.toLowerCase() === rawArg.toLowerCase().trim());
+          if (byName && !seenIds.has(byName.id)) {
+            targetRoles.push(byName);
+            seenIds.add(byName.id);
+          }
+        }
+      }
+
+      if (targetRoles.length === 0) {
+        return message.reply(cv2.warn(
+          'Command Error',
+          `${message.author} Please mention or specify the role(s) you want to delete.\n\n> -# **Usage:** \`!deleterole <@role1> [@role2...]\` or \`!dr <role_id1> [role_id2...]\``
+        ));
+      }
+
+      const result = await handleDeleteRoles(message.guild, message.member, targetRoles);
       await message.reply(result);
     },
     async executeSlash(interaction) {
-      const role = interaction.options.getRole('role');
-      const result = await handleDeleteRole(interaction.guild, interaction.member, role);
+      const targetRoles = [];
+      for (let i = 1; i <= 5; i++) {
+        const r = interaction.options.getRole(i === 1 ? 'role' : `role${i}`);
+        if (r && !targetRoles.some(existing => existing.id === r.id)) {
+          targetRoles.push(r);
+        }
+      }
+
+      if (targetRoles.length === 0) {
+        return interaction.reply(cv2.warn(
+          'Command Error',
+          `Please specify at least one role to delete.`
+        ));
+      }
+
+      const result = await handleDeleteRoles(interaction.guild, interaction.member, targetRoles);
       await interaction.reply(result);
     }
   },
@@ -2097,37 +2172,99 @@ async function handleCreateRole(guild, moderator, name, color) {
 }
 
 async function handleDeleteRole(guild, moderator, role) {
-  if (role.managed) {
-    return cv2.danger('<:off:1533844858983157851> Failed', 'You cannot delete managed roles (roles tied to bots or integrations).');
+  return handleDeleteRoles(guild, moderator, [role]);
+}
+
+async function handleDeleteRoles(guild, moderator, roles) {
+  if (!Array.isArray(roles)) roles = [roles];
+  if (roles.length === 0) {
+    return cv2.warn(
+      'Command Error',
+      `${moderator} Please mention or specify the role(s) you want to delete.\n\n> -# **Usage:** \`!deleterole <@role1> [@role2...]\` or \`!dr <role_id1> [role_id2...]\``
+    );
   }
 
-  if (role.position >= moderator.roles.highest.position && moderator.id !== guild.ownerId) {
-    return cv2.danger('Permission Denied', 'You cannot delete a role that is equal to or higher than your highest role.');
+  // Clearance and hierarchy bypass checks:
+  // Bot Owner, Server Owner, and Extra Owner have 100% bypass over member role hierarchy!
+  const isOwner = isBotOwnerSync(moderator.id);
+  const isServerOwner = moderator.id === guild.ownerId;
+  const isExtra = db.isExtraOwner(guild.id, moderator.id);
+
+  let me = guild.members.me;
+  if (!me && guild.members?.fetchMe) {
+    me = await guild.members.fetchMe().catch(() => null);
+  }
+  const botHighest = me?.roles?.highest?.position ?? 0;
+  const modHighest = moderator.roles?.highest?.position ?? 0;
+
+  const deletedRoles = [];
+  const failedRoles = [];
+
+  for (const role of roles) {
+    if (!role) continue;
+    if (role.id === guild.id) {
+      failedRoles.push(`\`@everyone\` (Server default role cannot be deleted)`);
+      continue;
+    }
+    if (role.managed) {
+      failedRoles.push(`**${role.name}** (\`Managed by an integration/bot\`)`);
+      continue;
+    }
+
+    // Member hierarchy check:
+    // If not Bot Owner, not Server Owner, and not Extra Owner, block if role is >= moderator's highest role.
+    if (!isOwner && !isServerOwner && !isExtra && role.position >= modHighest) {
+      failedRoles.push(`**${role.name}** (\`Role position equal to or higher than your role\`)`);
+      continue;
+    }
+
+    // Bot physical hierarchy check (enforced by Discord API):
+    if (role.position >= botHighest) {
+      failedRoles.push(`**${role.name}** (\`Athena's role position is too low in Server Settings > Roles\`)`);
+      continue;
+    }
+
+    try {
+      const roleName = role.name;
+      const roleId = role.id;
+      await role.delete(`Deleted by ${moderator.user?.tag || moderator.id} (Athena Multi-Role Management)`);
+      deletedRoles.push({ name: roleName, id: roleId });
+
+      logToSecurityChannel(guild, cv2.log(
+        'Role Deleted',
+        `Moderator deleted a server role.`,
+        [
+          { name: 'Role Name', value: `${roleName} (\`${roleId}\`)`, inline: true },
+          { name: 'Moderator', value: `${moderator.user?.tag || moderator.id} [${getUserTierName(guild, moderator)}]`, inline: true }
+        ],
+        'danger'
+      ));
+    } catch (error) {
+      console.error(`[deleterole] Error deleting role ${role.name}:`, error);
+      failedRoles.push(`**${role.name}** (\`${error.message || 'Discord API Error'}\`)`);
+    }
   }
 
-  try {
-    const roleName = role.name;
-    const roleId = role.id;
-    await role.delete(`Deleted by ${moderator.user.tag}`);
-
-    const modTier = getUserTierName(guild, moderator);
-    const resEmbed = cv2.success('Role Deleted', `Successfully deleted role **${roleName}** (ID: ${roleId}).`);
-
-    logToSecurityChannel(guild, cv2.log(
-      'Role Deleted',
-      `Moderator deleted a role.`,
-      [
-        { name: 'Role Name', value: `${roleName}`, inline: true },
-        { name: 'Moderator', value: `${moderator.user.tag} [${modTier}]`, inline: true }
-      ],
-      'danger'
-    ));
-
-    return resEmbed;
-  } catch (error) {
-    console.error(error);
-    return cv2.danger('<:off:1533844858983157851> Failed', 'Failed to delete the role. Ensure my highest role is above the target role.');
+  if (deletedRoles.length === 0) {
+    return cv2.danger(
+      'Role Deletion Failed',
+      `Failed to delete the specified role(s):\n\n` +
+      failedRoles.map(f => `> ${BULLET_EMOJI} ${f}`).join('\n')
+    );
   }
+
+  let desc = deletedRoles.length === 1
+    ? `Successfully deleted role **${deletedRoles[0].name}** (\`${deletedRoles[0].id}\`).`
+    : `Successfully deleted **${deletedRoles.length}** roles:\n` +
+      deletedRoles.map(r => `> ${BULLET_EMOJI} **${r.name}** (\`${r.id}\`)`).join('\n');
+
+  if (failedRoles.length > 0) {
+    desc += `\n\n> -# **__Failed Deletions (${failedRoles.length}):__**\n` +
+      failedRoles.map(f => `> ${BULLET_EMOJI} ${f}`).join('\n');
+  }
+
+  const title = deletedRoles.length === 1 ? 'Role Deleted' : 'Roles Deleted';
+  return cv2.success(title, desc);
 }
 
 async function handlePurge(guild, channel, moderator, amount, triggerMessage = null) {

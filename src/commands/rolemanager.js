@@ -1199,6 +1199,50 @@ export const commands = [
       }
       return interaction.reply(buildRolePickerPanel(interaction.guild));
     }
+  },
+
+  // --- ROLE COMMAND DISPATCHER ---
+  {
+    name: 'role',
+    aliases: ['rolesmanager'],
+    description: 'Comprehensive role management dispatcher (delete, add, remove, create).',
+    category: 'moderation',
+    permissions: [PermissionFlagsBits.ManageRoles],
+    async executePrefix(message, args) {
+      const sub = args[0] ? args[0].toLowerCase() : '';
+      const subArgs = args.slice(1);
+
+      if (sub === 'delete' || sub === 'del' || sub === 'dr' || sub === 'destroy') {
+        const { commands: modCmds } = await import('./moderation.js');
+        const delCmd = modCmds.find(c => c.name === 'deleterole');
+        if (delCmd) return delCmd.executePrefix(message, subArgs);
+      }
+
+      if (sub === 'add' || sub === 'give') {
+        const addCmd = commands.find(c => c.name === 'addrole');
+        if (addCmd) return addCmd.executePrefix(message, subArgs);
+      }
+
+      if (sub === 'remove' || sub === 'take') {
+        const remCmd = commands.find(c => c.name === 'removerole');
+        if (remCmd) return remCmd.executePrefix(message, subArgs);
+      }
+
+      if (sub === 'create' || sub === 'make' || sub === 'new') {
+        const createCmd = commands.find(c => c.name === 'createrole');
+        if (createCmd) return createCmd.executePrefix(message, subArgs);
+      }
+
+      const prefix = db.getGuildConfig(message.guild.id)?.prefix || '!';
+      return message.reply(cv2.info(
+        'Role Management Suite',
+        `Role commands quick syntax:\n\n` +
+        `> ${BULLET_EMOJI} \`${prefix}deleterole <@roles...>\` / \`${prefix}dr\` / \`${prefix}role delete\` — Delete one or multiple roles safely \`[Bot Owner & Extra Owner]\`\n` +
+        `> ${BULLET_EMOJI} \`${prefix}addrole <@user> <@roles...>\` — Assign one or more roles to a member\n` +
+        `> ${BULLET_EMOJI} \`${prefix}removerole <@user> <@roles...>\` — Revoke one or more roles from a member\n` +
+        `> ${BULLET_EMOJI} \`${prefix}createrole <name>\` — Deploy a new server role with interactive builder`
+      ));
+    }
   }
 
 ];

@@ -44,6 +44,14 @@ export async function startRecording(vc) {
     throw new Error('A recording session is already active in this server.');
   }
 
+  // Pre-emptively reset any pending TTS session so it does not collide with recording
+  try {
+    const { resetTtsConnection } = await import('../commands/tts.js');
+    if (typeof resetTtsConnection === 'function') {
+      resetTtsConnection(guildId);
+    }
+  } catch (_) {}
+
   // Connect to the voice channel (must NOT be self-muted or self-deafened to receive audio)
   const connection = joinVoiceChannel({
     channelId: vc.id,
@@ -127,9 +135,9 @@ export async function startRecording(vc) {
 
       let silenceNeeded = targetBytes - track.currentBytes;
       if (silenceNeeded > 0) {
-        // Pad silence gaps so all speakers are synchronized in time
-        const maxChunk = 38400; // 200ms
-        const zeroBuf = Buffer.alloc(Math.min(silenceNeeded, maxChunk), 0);
+        // Pad silence gaps so all speakers are synchronized in time (efficient chunk sizes)
+        const maxChunk = Math.min(silenceNeeded, 524288); // Up to 512KB per buffer write
+        const zeroBuf = Buffer.alloc(maxChunk, 0);
         while (silenceNeeded > 0) {
           const writeLen = Math.min(silenceNeeded, zeroBuf.length);
           writeStream.write(writeLen === zeroBuf.length ? zeroBuf : zeroBuf.subarray(0, writeLen));
@@ -177,7 +185,7 @@ export async function stopRecording(guildId) {
   activeRecordings.delete(guildId);
   clearInterval(session.keepAliveTimer);
 
-  // Close and flush all user streams
+  // Close and flush all user streams with 3s timeout protection
   const trackPromises = [];
   for (const track of session.userTracks.values()) {
     try {
@@ -188,12 +196,38 @@ export async function stopRecording(guildId) {
       }));
     } catch (e) {}
   }
-  await Promise.all(trackPromises);
+  await Promise.race([
+    Promise.all(trackPromises),
+    new Promise(resolve => setTimeout(resolve, 3000))
+  ]);
 
-  // Destroy the voice connection
+  // Cleanly destroy the recording voice connection
   try {
     session.connection.destroy();
   } catch (e) {}
+
+  // Immediately notify TTS session to purge any stale voice connection reference
+  try {
+    const { resetTtsConnection } = await import('../commands/tts.js');
+    if (typeof resetTtsConnection === 'function') {
+      resetTtsConnection(guildId);
+    }
+  } catch (_) {}
+
+  // If this server has a Home VC configured, automatically restore the Home VC connection!
+  try {
+    const { default: db } = await import('../database.js');
+    const cfg = db.getGuildConfig(guildId);
+    if (cfg?.homeVcId) {
+      const { connectToHomeVc } = await import('./voice.js');
+      const guild = session.connection?.client?.guilds?.cache?.get(guildId);
+      if (guild && typeof connectToHomeVc === 'function') {
+        setTimeout(() => {
+          connectToHomeVc(guild, cfg.homeVcId, true).catch(() => null);
+        }, 500);
+      }
+    }
+  } catch (_) {}
 
   // Verify if any speech or audio packets were actually received
   if (session.totalAudioPackets === 0) {
