@@ -315,7 +315,7 @@ export const commands = [
   {
     name: 'serveroverview',
     description: 'View a high-fidelity Statbot-style overview dashboard of server statistics',
-    aliases: ['so', 'serverstats', 'server', 'serverstat', 'serverview', 'sstats', 'soverview', 'sstat', 'statsview', 'serverstatsview', 'overview'],
+    aliases: ['so', 'serverstats', 'server', 'serverstat', 'serverview', 'sstats', 'soverview', 'sstat', 'statsview', 'serverstatsview', 'overview', 'stats'],
     category: 'utility',
     options: [
       {
@@ -342,11 +342,17 @@ export const commands = [
 
       try {
         const payload = await buildOverviewPayload(message.guild, 'overview', timeframe);
-        await message.channel.send(payload);
-        if (waitMsg) await waitMsg.delete().catch(() => null);
+        if (waitMsg) {
+          await waitMsg.edit(payload).catch(async () => {
+            await waitMsg.delete().catch(() => null);
+            await message.channel.send(payload);
+          });
+        } else {
+          await message.channel.send(payload);
+        }
       } catch (e) {
         console.error('Server overview execution error:', e);
-        if (waitMsg) await waitMsg.edit(cv2.error('Error', 'Failed to render server overview dashboard.')).catch(() => null);
+        if (waitMsg) await waitMsg.edit(cv2.danger('Error', 'Failed to render server overview dashboard.')).catch(() => null);
       }
     },
     async executeSlash(interaction) {
@@ -358,7 +364,7 @@ export const commands = [
         await interaction.editReply(payload);
       } catch (e) {
         console.error('Server overview slash execution error:', e);
-        await interaction.editReply(cv2.error('Error', 'Failed to render server overview dashboard.')).catch(() => null);
+        await interaction.editReply(cv2.danger('Error', 'Failed to render server overview dashboard.')).catch(() => null);
       }
     }
   }

@@ -267,7 +267,7 @@ export async function generateStatCard(user, member, stats, ranks, topChannels, 
   ctx.fillStyle = C.gray;
   
   // Draw small server icon if available
-  const guildIconUrl = guild?.iconURL({ extension: 'png', size: 64 });
+  const guildIconUrl = typeof guild?.iconURL === 'function' ? guild.iconURL({ extension: 'png', size: 64 }) : null;
   let serverTextX = AVATAR_CX + AVATAR_R + 14;
   if (guildIconUrl) {
     // Increased radius from 10 to 14
@@ -419,14 +419,14 @@ export async function generateStatCard(user, member, stats, ranks, topChannels, 
   };
 
   // Top message channel
-  const topMsg = topChannels.messages[0];
-  const topMsgCh = topMsg ? (guild?.channels.cache.get(topMsg.channel_id)) : null;
+  const topMsg = topChannels?.messages?.[0] || null;
+  const topMsgCh = topMsg ? (guild?.channels?.cache?.get(topMsg.channel_id)) : null;
   const topMsgName = topMsgCh ? topMsgCh.name : (topMsg ? 'deleted-channel' : 'No Activity');
   drawChannelRow(BOT_Y + 38, '#', topMsgName, topMsg ? formatNumber(topMsg.total) + ' messages' : '0');
 
   // Top voice channel
-  const topVc = topChannels.voice[0];
-  const topVcCh = topVc ? (guild?.channels.cache.get(topVc.channel_id)) : null;
+  const topVc = topChannels?.voice?.[0] || null;
+  const topVcCh = topVc ? (guild?.channels?.cache?.get(topVc.channel_id)) : null;
   const topVcName = topVcCh ? topVcCh.name : (topVc ? 'deleted-channel' : 'No Activity');
   drawChannelRow(BOT_Y + 76, '\uf028', topVcName, topVc ? formatHours(topVc.total) : '0 secs'); // Volume high
 

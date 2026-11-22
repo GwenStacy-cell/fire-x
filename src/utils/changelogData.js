@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '22 November 2026',
+    version: 'v3.6.0',
+    headline: 'Unified Server & Member Statistics Hub with Components V2 Architecture',
+    summary: 'Resolved !stats command failures by architecting a unified statistics hub that intelligently routes to the high-fidelity Server Overview Dashboard when invoked without arguments, while seamlessly generating personal insight cards for user mentions, IDs, and !stats me. Hardened stat canvas image generation against null guild icons and empty channel records, and wrapped user stat cards in borderless Components V2 media containers.',
+    whatsNew: [
+      {
+        title: 'Unified !stats Routing Hub',
+        desc: 'Running !stats now instantly renders the 8-panel Server Stats Overview HUD (Messages, Voice, Active Users, Top Contributors, Reactions, and Links) with full interactive tab navigation and timeframe controls.'
+      },
+      {
+        title: 'Dual User & Server Context Support',
+        desc: '!stats me, !stats @user, and aliases (!me, !mystats, !statsme) now generate high-resolution personal telemetry cards enclosed within a modern Components V2 container with media gallery embedding.'
+      },
+      {
+        title: 'Voice Count Channel Forwarding',
+        desc: '!stats vc, !stats setup, and !stats config automatically delegate to member count voice channel management for seamless administrative workflow.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Resilient Canvas Telemetry Rendering',
+        desc: 'Added safe functional chaining for guild.iconURL and array checks for top message/voice channels in generateStatCard, preventing canvas render crashes on new or un-iconed guilds.'
+      },
+      {
+        title: 'Components V2 In-Place Message Updates',
+        desc: 'Upgraded serveroverview.js and stats.js to edit thinking messages in-place without deleting and re-sending, eliminating chat flicker and race conditions.'
+      }
+    ]
+  },
+  {
+    date: '22 November 2026',
     version: 'v3.5.9',
     headline: 'Multi-Role Deletion Engine, Bot Owner Hierarchy Bypass & Resilient TTS VC Lifecycle',
     summary: 'Upgraded !deleterole to support batch deletion of multiple roles via mentions, IDs, and names, with complete hierarchy bypass for the Bot Owner. Resolved post-recording TTS audio degradation by restoring voice connection tracking, auto-reconnecting Home VC sessions after recording stops, and ensuring non-blocking audio capture buffers.',
