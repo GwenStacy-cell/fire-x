@@ -16,6 +16,38 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.7.1',
+    headline: 'Minimalist Whitelist UI Refinement & Telemetry De-clutter',
+    summary: 'Refined the Antinuke Whitelist UI (!wl) to deliver a sleek, uncluttered presentation. Completely eliminated heavy progress bars, uptime emojis, and dense header framing in favor of a minimal, clean text layout with subtle animated glyph headings, direct entity mentions, and streamlined action buttons.',
+    whatsNew: [
+      {
+        title: 'Minimalist Whitelist Overview',
+        desc: 'Overhauled !wl overview panel with a clean animated glyph heading, security matrix subtitle, active user/role counts, and direct entity rosters without progress bars or uptime emojis.'
+      },
+      {
+        title: 'Streamlined Clearance Editor',
+        desc: 'Refined single-entity inspection (!wl @user / !wl @role) with clean category bypass listings and custom action limits.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'De-Cluttered Action Palette',
+        desc: 'Organized interactive buttons into standard clean rows (Add/Manage/Remove User, Add/Manage/Remove Role, Close) without visual bloat.'
+      },
+      {
+        title: 'Universal CV2 Text Sanitization',
+        desc: 'Preserved sanitizeCV2Payload wrappers across all whitelist panels to prevent Discord 4,000-character component limit truncation.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Progress Bar & Uptime Emoji Removal',
+        desc: 'Completely removed progress bars and uptime indicators from the whitelist interface as requested.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.7.0',
     headline: 'Whitelist Clearance Matrix Modernization & Tactile Components V2 Overhaul',
     summary: 'Redesigned the entire Antinuke Whitelist Management Suite (!wl, !whitelist, !wlist) with high-fidelity Components V2 architecture. Features symmetrical ninja bullet header framing, real-time 25-slot capacity telemetry progress bar, structured entity clearance cards with action limit badges, tactile dual-row member/role controls, custom animated navigation beats, and payload auto-sanitization.',
