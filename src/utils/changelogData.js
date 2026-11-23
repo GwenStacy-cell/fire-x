@@ -16,6 +16,34 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.8.5',
+    headline: 'Help System & Architecture Explainer Documentation Refresh',
+    summary: 'Synchronized the entire interactive Help Menu (!help) and Explainer Architecture Registry (!explain) with recent feature launches. Documented the Dual-Mode ServerStats engine (Voice Status Subtitles vs Classic Renamed Channels with animated bouncing hearts), the Unified Server Modification & Voice Status Logger (!serverlogs setup / bind), the 5-tier Join-to-Create Voice Hub with 19 animated glyphs and animated pacha arrow subtitles, and Bot Whitelist security immunity.',
+    whatsNew: [
+      {
+        title: 'Help Menu Synchronization',
+        desc: 'Updated the Tracking, Server Configuration, and Voice Utilities help categories with new commands, dual-mode architectures, and setup procedures.'
+      },
+      {
+        title: 'Explainer Registry Expansion',
+        desc: 'Added comprehensive architectural breakdowns for serverlogs, updated serverstats documentation for voice status subtitles, and enriched JTC voice suite pages.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Clear Command Syntaxes',
+        desc: 'Added explicit syntax variations for !serverlogs setup/bind/test and !serverstats setup status/classic across all documentation tiers.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Documentation Alignment',
+        desc: 'Eliminated obsolete single-mode server statistics descriptions and aligned tier permissions across all utility commands.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.4',
     headline: 'Unified Server Modification Logging System with Auto-Creation & Channel Binding',
     summary: 'Engineered a comprehensive server modification audit logging matrix featuring both automatic deployment (!serverlogs setup / create) and flexible binding to any existing channel (!serverlogs bind <#channel>). Tracks and visualizes all live server mutations including channel creations, deletions, updates, voice channel status subtitle pulses (VOICE_CHANNEL_STATUS_UPDATE gateway intercept), role changes and permission diffs, server settings, emojis/stickers, webhooks, and invites with accurate audit log attribution.',

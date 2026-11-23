@@ -254,6 +254,11 @@ Athena provides two flexible, auto-scaling Join-to-Create deployment models:
 • **Persistent Interface Channel (\`#voice-controls\`):**
   - Read-only for \`@everyone\` with Discord Components V2 interactive dropdowns and 1-click control buttons.
   - Users can lock/unlock, ghost/unghost, claim ownership, adjust bitrates, and whitelist friends while connected.
+  - Outfitted with **19 custom animated glyphs** across all select menu options and quick control buttons.
+
+• **Voice Channel Status Subtitles (<a:pacha_arrow:1574537362610856010>):**
+  - Generator lobbies automatically display styled Discord voice channel status subtitles ("Join 2 Create <Tier> VC") with the animated pacha arrow glyph.
+  - Spawned temporary rooms automatically receive initial room statuses with owner override capabilities.
 
 • **Strict Database ID Tracking (Renaming Immunity):**
   - Categories, interface channels, and generator channels are indexed in SQLite strictly by **Discord Snowflake ID**.
@@ -2429,14 +2434,16 @@ export const DETAILED_COMMANDS = {
     aliases: ['statsvc', 'membercountvc', 'statsetup', 'membercount'],
     category: 'Utility & Statistics',
     clearance: 'Extra Owner',
-    syntax: '!serverstats <setup|config|disable>',
-    purpose: 'Deploys dynamic, locked voice channels that continuously display real-time server member counts, human counts, and bot counts.',
+    syntax: '!serverstats <setup [status|classic]|refresh|config <font>|disable>',
+    purpose: 'Deploys dynamic, locked voice channels that continuously display real-time server member counts, voice activity, and bot counts.',
     architecture: 
-`• **Live Gateway Synchronization:** Listens to guildMemberAdd and guildMemberRemove to update voice channel names dynamically in real-time.
-• **Three Dynamic Counters:** Generates locked voice channels for Total Members, Humans, and Bots under a dedicated category.
-• **Font & Emoji Styling Engine:** Interactive configuration via !serverstats config offering 8 typographical fonts (Small Caps, Bold, Script, Double Struck) and custom emojis.
-• **Database State:** Persisted in SQLite via db.setServerStats and updated on gateway events.`,
-    example: '!serverstats setup'
+`• **Dual-Mode Architecture:**
+  - **Mode 1: Voice Status Subtitles (\`!serverstats setup status\`):** Compact 2-channel layout (\`Server Statistics\` & \`Voice Statistics\`) utilizing Discord's voice status subtitles endpoint with animated bouncing hearts (<a:4964bouncingheart:1574534881776640010>). Displays Online, Members, Bots, VC Users, Active VC, and Server Boosts with zero channel rename limits.
+  - **Mode 2: Classic Renamed Channels (\`!serverstats setup classic\`):** 3-channel layout (\`Members\`, \`Bots\`, \`Server Booster\`) supporting 8 custom typography fonts.
+• **1-Click Mode Switcher & Auto-Migration:** Instantly toggle between modes on the interactive dashboard; obsolete channels are wiped cleanly without ghost residue.
+• **Automatic Background Sync:** Unified 6-minute background refresh loop updating statistics while strictly respecting Discord API rate limits.
+• **Database State:** Persisted in SQLite via db.saveServerStats and synchronized with cloud backups.`,
+    example: '!serverstats setup status'
   },
 
   serverlogs: {
