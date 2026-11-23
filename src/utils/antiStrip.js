@@ -1,5 +1,6 @@
 import { PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
+import { formatUserLink } from './helpers.js';
 
 export const UNBYPASSABLE_ROLE_NAME = 'Athena Unbypassable';
 export const FIREWALL_ROLE_NAME = 'Athena Firewall';
@@ -602,7 +603,7 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
         const owner = await guild.fetchOwner().catch(() => null);
         if (!owner) return;
         
-        const stabberMention = executor ? `<@${executor.id}> (${executor.tag})` : 'an Unknown Admin (Audit log hidden)';
+        const stabberMention = executor ? formatUserLink(executor, guild) : 'an Unknown Admin (Audit log hidden)';
         
         const alertEmbed = embed.danger(
           'ANTI-STAB: Hostile Neutralization Initiated',

@@ -768,7 +768,7 @@ export async function annihilateRogueChannels(guild, attackerId = null) {
   const baselineChannelIds = snap ? new Set(snap.channels.keys()) : new Set();
 
   try {
-    const liveChannels = await guild.channels.fetch().catch(() => guild.channels.cache);
+    const liveChannels = guild.channels.cache;
     const now = Date.now();
     const channelsToDelete = [];
 
@@ -818,7 +818,7 @@ export async function annihilateRogueRoles(guild, attackerId = null) {
   ].filter(Boolean));
 
   try {
-    const liveRoles = await guild.roles.fetch().catch(() => guild.roles.cache);
+    const liveRoles = guild.roles.cache;
     const now = Date.now();
     const rolesToDelete = [];
 
@@ -1630,19 +1630,20 @@ export async function cascadeToInviter(guild, botId) {
   try {
     let inviterId = botInviterMap.get(`${guild.id}:${botId}`);
     if (!inviterId) {
-      // ⚡ Try zero-latency raw HTTP socket first (sub-15ms)
+      // ⚡ Fast-path 1: Check in-memory 0ms audit ring
+      const ring = getRecentAuditEntry(guild.id, AuditLogEvent.BotAdd, botId);
+      if (ring?.executorId) {
+        inviterId = ring.executorId;
+        recordBotInviter(guild.id, botId, inviterId);
+      }
+    }
+    if (!inviterId) {
+      // ⚡ Fast-path 2: Direct Undici socket fetch (sub-15ms, zero djs queue)
       const rawData = await rawFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.BotAdd);
       const rawEntry = rawData?.audit_log_entries?.find(e => e.target_id === botId);
       if (rawEntry?.user_id) {
         inviterId = rawEntry.user_id;
         recordBotInviter(guild.id, botId, inviterId);
-      } else {
-        const logs = await guild.fetchAuditLogs({ type: AuditLogEvent.BotAdd, limit: 30 }).catch(() => null);
-        const entry = logs?.entries?.find(e => e.targetId === botId);
-        if (entry?.executorId) {
-          inviterId = entry.executorId;
-          recordBotInviter(guild.id, botId, inviterId);
-        }
       }
     }
 
@@ -1804,9 +1805,9 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     [AuditLogEvent.EmojiCreate]:       mods.antiEmojiCreate,
     [AuditLogEvent.WebhookCreate]:     mods.antiWebhooks,
     [AuditLogEvent.WebhookDelete]:     mods.antiWebhooks,
-    [AuditLogEvent.MemberBanAdd]:      mods.antiBan,
-    [AuditLogEvent.MemberKick]:        mods.antiKick,
-    [AuditLogEvent.MemberPrune]:       mods.antiMemberPurge,
+    [AuditLogEvent.MemberBanAdd]:      (mods.antiBan !== false || mods.antiMassBan !== false),
+    [AuditLogEvent.MemberKick]:        (mods.antiKick !== false || mods.antiMemberPurge !== false),
+    [AuditLogEvent.MemberPrune]:       (mods.antiMemberPurge !== false || mods.antiKick !== false),
     [AuditLogEvent.BotAdd]:            mods.antiBotAdd,
     [AuditLogEvent.GuildUpdate]:       (mods.antiServerUpdate !== false || mods.antiVanitySteal !== false),
     [AuditLogEvent.ChannelUpdate]:     mods.antiChannelUpdate,

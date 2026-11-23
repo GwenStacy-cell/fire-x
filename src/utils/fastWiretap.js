@@ -260,7 +260,7 @@ export function attachWiretap(client) {
               headers: { Authorization: `Bot ${client.token}`, 'User-Agent': 'DiscordBot (Athena, 3.5.0)' }
             }).catch(() => null);
           } else if (actionType === AuditLogEvent.GuildUpdate) {
-            const vanityChange = entry.changes?.find(c => c.key === 'vanity_url_code');
+            const vanityChange = d.changes?.find(c => c.key === 'vanity_url_code');
             if (vanityChange && vanityChange.old) {
               fetch(`https://discord.com/api/v10/guilds/${guildId}/vanity-url`, {
                 method: 'PATCH',
@@ -514,8 +514,14 @@ export function attachWiretap(client) {
           }).then(res => res.json()).then(hooks => {
             if (Array.isArray(hooks)) {
               for (const h of hooks) {
-                if (h.user?.id !== client.user.id) {
+                if (h.user?.id && h.user.id !== client.user.id) {
                   rawDeleteWebhook(h.id, client.token, '[ATHENA WIRETAP] In-Flight Rogue Webhook Vaporized During Active Attack').catch(() => null);
+                  const guild = client.guilds.cache.get(guildId);
+                  if (guild && !isAuthorized(guild, { id: h.user.id }, 'antiwebhooks')) {
+                    condemn(guildId, h.user.id);
+                    const strike = rawBan(guildId, h.user.id, client.token, '[ATHENA WIRETAP] ⚡ Rogue Webhook Creator Banned During Active Attack', { actionType: 'ACTIVE_ATTACK_WEBHOOK' });
+                    trackInFlightPunishment(guildId, strike);
+                  }
                 }
               }
             }

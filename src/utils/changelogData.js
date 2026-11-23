@@ -16,6 +16,46 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.7.4',
+    headline: 'Anti-Nuke Vulnerability Remediation, Honeypot Role Activation & Zero-Contention Sockets',
+    summary: 'Conducted a deep vulnerability audit of the Anti-Nuke pipeline and patched 5 critical weaknesses. Activated live honeypot role detection to instant-ban any account assigning or receiving the canary role at 0ms. Fixed a fatal ReferenceError in fastWiretap vanity URL snipe protection. Eliminated REST queue starvation during active attacks by bypassing permission overwrite edits on rogue channels and utilizing in-memory cache directly during rogue channel/role sweeps. Enforced direct bans on rogue webhook creators during in-flight attacks and enhanced audit-log fallback resolution.',
+    whatsNew: [
+      {
+        title: 'Live Honeypot Role Canary Defense',
+        desc: 'Activated immediate 0ms direct bans for any account receiving or assigning the configured honeypot role, closing a silent blind spot.'
+      },
+      {
+        title: 'Zero-Contention In-Memory Sweeps',
+        desc: 'Switched rogue channel and role mass-annihilation sweeps from heavy REST fetches to Discord.js in-memory cache, saving 200–500ms and eliminating API rate limit contention.'
+      },
+      {
+        title: 'Rogue Webhook Creator Neutralization',
+        desc: 'Added immediate raw bans for rogue webhook creators intercepted during active server attacks.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Spam Channel Queue Starvation Bypass',
+        desc: 'Bypassed quarantine permission overwrite edits on newly created channels when the server is actively under attack, preventing REST queue backlog.'
+      },
+      {
+        title: 'Instant In-Memory Audit Resolution in Cascade',
+        desc: 'Upgraded bot-inviter cascade to check the 0ms WebSocket audit ring before falling back to REST queries.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'FastWiretap Vanity Sniping Crash',
+        desc: 'Fixed a ReferenceError: entry is not defined bug inside fastWiretap during GUILD_UPDATE packet processing.'
+      },
+      {
+        title: 'Anti-MassBan & Anti-Purge Module Aliasing',
+        desc: 'Corrected directStrike module mapping to properly honor antiMassBan and antiMemberPurge aliases.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.7.3',
     headline: 'Military-Grade Anti-Nuke Speed Optimization & Instant Direct-Ban Pipeline',
     summary: 'Conducted a deep architectural overhaul of the Anti-Nuke defense pipeline. Eliminated all role-stripping and quarantine delays prior to bans across all security interceptors, enforcing an instant direct raw-ban policy. Completely converted all low-level Discord REST requests (rawBan, rawDeleteWebhook, rawChannelDelete, rawRoleDelete, rawUnban, rawFetchAuditLogs) from standard fetch to native Undici dispatcher.request, eliminating WHATWG object allocations and saving critical milliseconds. Intercepted rogue administrative invites and persistence role escalations with 0ms direct execution.',

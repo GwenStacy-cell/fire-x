@@ -3,9 +3,10 @@ import { AuditLogEvent } from 'discord.js';
 import { 
   directStrike, 
   getRecentAuditEntry, 
-  triggerSnapshotSync,
-  isRestorationHandled,
-  rawChannelDelete
+  triggerSnapshotSync, 
+  isRestorationHandled, 
+  rawChannelDelete,
+  isGuildUnderAttack
 } from '../utils/antinuke.js';
 import embed from '../embed.js';
 import { logServerEvent } from '../utils/serverLogger.js';
@@ -45,6 +46,8 @@ export default {
     }
 
     // Auto-hide new channels from quarantined users (immediate execution)
+    // ⚡ Fast-path bypass during active attack to prevent REST queue starvation on rogue spam channels
+    if (isGuildUnderAttack(channel.guild.id)) return;
     try {
       const config = db.getGuildConfig(channel.guild.id);
       

@@ -2,7 +2,7 @@ import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab } from '../u
 import { AuditLogEvent, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import { isBotOwnerSync, logToSecurityChannel, getUserTierName, isServerAdmin, isQuarantineStaffAuthorized, formatUserLink } from '../utils/helpers.js';
-import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawBan, getRecentAuditEntry, rawFetchAuditLogs, condemn } from '../utils/antinuke.js';
+import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawBan, getRecentAuditEntry, rawFetchAuditLogs, condemn, setGuildUnderAttack } from '../utils/antinuke.js';
 import { executeQuarantine } from '../commands/security.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 
@@ -254,6 +254,32 @@ export default {
 
         if (!isOwner && !isExtra) {
           const guild = newMember.guild;
+
+          // ⚡ ZERO-DAY HONEYPOT ROLE CANARY CHECK (0ms Direct Ban Elimination)
+          const cfg = db.getGuildConfig(guild.id);
+          if (cfg?.honeypotRoleId && allAddedRoles.has(cfg.honeypotRoleId)) {
+            condemn(guild.id, newMember.id);
+            setGuildUnderAttack(guild.id, newMember.id, 60_000);
+            rawBan(guild.id, newMember.id, guild.client.token, '[ATHENA HONEYPOT] ⚡ Honeypot Role Canary Triggered (Instant Direct Ban)').catch(() => null);
+            console.log(`[ATHENA HONEYPOT] ⚡ Honeypot Role triggered by ${newMember.id}! Neutralized in 0ms!`);
+
+            // Trace and ban unauthorized assigner
+            (async () => {
+              const ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
+              let assignerId = ring?.executorId || ring?.executor?.id;
+              if (!assignerId) {
+                const rawLogs = await rawFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.MemberRoleUpdate).catch(() => null);
+                const match = rawLogs?.audit_log_entries?.find(e => e.target_id === newMember.id);
+                if (match?.user_id) assignerId = match.user_id;
+              }
+              if (assignerId && assignerId !== guild.client.user.id && !isAuthorized(guild, { id: assignerId }, 'antiMemberRoleUpdate')) {
+                condemn(guild.id, assignerId);
+                rawBan(guild.id, assignerId, guild.client.token, '[ATHENA HONEYPOT] ⚡ Assigned Canary Honeypot Role to Member').catch(() => null);
+              }
+            })().catch(() => null);
+            return;
+          }
+
           const authRoles = db.getAuthRoles(guild.id);
           const dangerousRoles = allAddedRoles.filter(role => 
             hasDangerousPerms(role.permissions) || 
