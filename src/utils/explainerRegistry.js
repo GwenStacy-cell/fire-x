@@ -243,11 +243,12 @@ Athena provides two flexible, auto-scaling Join-to-Create deployment models:
   - Ideal for standard community servers desiring a minimalist temporary voice setup.
 
 • **2. Tiered Preset Voice Hub (\`!jtcsetup tiers\` / \`!jtctiers setup\`):**
-  - Creates a dedicated category (\`Athena Voice Hub\`) and 4 preset generator channels:
+  - Creates a dedicated category (\`Athena Voice Hub\`) and 5 preset generator channels:
     - \`👤 Solo [1]\` — Spawns rooms with \`userLimit: 1\` (1v1 duels, private focus).
     - \`👥 Duo [2]\` — Spawns rooms with \`userLimit: 2\` (pair gaming, co-op).
     - \`🎮 Trio [3]\` — Spawns rooms with \`userLimit: 3\` (trios, tactical fireteams).
-    - \`🔊 Squad [Free]\` — Spawns rooms with \`userLimit: 0\` (unlimited group hangout).
+    - \`🔊 Squad [4]\` — Spawns rooms with \`userLimit: 4\` (4-player squad matches).
+    - \`🌐 Unlimited [Free]\` — Spawns rooms with \`userLimit: 0\` (unlimited group hangout).
   - Deploys an exclusive \`#voice-controls\` persistent Interface Channel.
 
 • **Persistent Interface Channel (\`#voice-controls\`):**
@@ -2806,16 +2807,17 @@ export const DETAILED_COMMANDS = {
     category: 'Voice & Media',
     clearance: 'Manage Server / Extra Owner',
     syntax: '!jtctiers [setup|disable|info] / !jtcsetup tiers',
-    purpose: 'Deploys the 4-tier Voice Hub generator suite (Solo, Duo, Trio, Squad) with persistent Components V2 Interface channel.',
+    purpose: 'Deploys the 5-tier Voice Hub generator suite (Solo, Duo, Trio, Squad, Unlimited) with persistent Components V2 Interface channel.',
     architecture: 
-`• **4-Tier Preset Voice Suite:**
+`• **5-Tier Preset Voice Suite:**
   - Dedicated Category: \`Athena Voice Hub\`
   - Interface Channel: \`#voice-controls\` (read-only for chat with persistent control deck).
-  - 4 Preset Generators:
+  - 5 Preset Generators:
     • \`👤 Solo [1]\` — Auto-creates private 1-slot voice rooms.
     • \`👥 Duo [2]\` — Auto-creates 2-slot pair gaming rooms.
     • \`🎮 Trio [3]\` — Auto-creates 3-slot tactical fireteam rooms.
-    • \`🔊 Squad [Free]\` — Auto-creates unlimited slots group rooms.
+    • \`🔊 Squad [4]\` — Auto-creates 4-slot squad gaming rooms.
+    • \`🌐 Unlimited [Free]\` — Auto-creates unlimited slots group rooms.
   - Tracked strictly by database ID (\`db.setTieredJtcConfig\`) for Discord renaming immunity.
   - To wipe and remove: \`!jtctiers disable\` or \`!jtcdisable tiers\`.`,
     example: '!jtctiers setup'

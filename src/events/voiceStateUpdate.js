@@ -478,7 +478,8 @@ export default {
           if (tierInfo.tier === 'solo') channelName = `${member.displayName}'s Solo`;
           else if (tierInfo.tier === 'duo') channelName = `${member.displayName}'s Duo`;
           else if (tierInfo.tier === 'trio') channelName = `${member.displayName}'s Trio`;
-          else if (tierInfo.tier === 'unlimited') channelName = `${member.displayName}'s Squad`;
+          else if (tierInfo.tier === 'squad') channelName = `${member.displayName}'s Squad`;
+          else if (tierInfo.tier === 'unlimited') channelName = `${member.displayName}'s Room`;
         }
 
         // Build secure permission overwrites

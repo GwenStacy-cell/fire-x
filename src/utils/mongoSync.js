@@ -766,7 +766,8 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       'roleplayMarriages', 'family', 'serverSnapshots', 'timeMachineSnapshots',
       'incidentReports', 'securityLiveRecords', 'nukeSignatures', 'minigamesStats',
       'arcadeStats', 'chessStats', 'botBlacklist', 'botBlacklistData', 'bannedServers',
-      'npUsers', 'npServers', 'npManagers', 'npBannedUsers', 'npBannedCommands', 'npPaused'
+      'npUsers', 'npServers', 'npManagers', 'npBannedUsers', 'npBannedCommands', 'npPaused',
+      'backups'
     ]);
     const globalPayload = { _id: 'global_state', updatedAt: timestamp };
     for (const [key, val] of Object.entries(cache)) {
@@ -1334,7 +1335,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     syncStats.triggers = triggerEntries.length + (cache.globalTriggers?.length ? 1 : 0);
     syncStats.rateChannels = Object.keys(cache.rateChannels || {}).length;
     syncStats.editRatings = editRatingEntries.length;
-    syncStats.burnRooms = burnEntries.length;
+    syncStats.burnRooms = activeBurnEntries.length;
     syncStats.mediaChannels = guildEntries.filter(([_, g]) => g.mediaChannelId).length;
     syncStats.quoteChannels = guildEntries.filter(([_, g]) => g.quoteChannelId).length;
     syncStats.autoReacts = autoReactGuilds.length;

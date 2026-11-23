@@ -1741,6 +1741,7 @@ class Database {
         solo: channels?.solo || null,
         duo: channels?.duo || null,
         trio: channels?.trio || null,
+        squad: channels?.squad || null,
         unlimited: channels?.unlimited || null
       }
     };
@@ -1759,11 +1760,12 @@ class Database {
   getTierInfo(guildId, channelId) {
     const tiered = this.cache.jtc?.[guildId]?.tiered;
     if (!tiered || !tiered.channels) return null;
-    const { solo, duo, trio, unlimited } = tiered.channels;
+    const { solo, duo, trio, squad, unlimited } = tiered.channels;
     if (channelId === solo) return { tier: 'solo', userLimit: 1, label: 'Solo [1]' };
     if (channelId === duo) return { tier: 'duo', userLimit: 2, label: 'Duo [2]' };
     if (channelId === trio) return { tier: 'trio', userLimit: 3, label: 'Trio [3]' };
-    if (channelId === unlimited) return { tier: 'unlimited', userLimit: 0, label: 'Squad [Free]' };
+    if (channelId === squad) return { tier: 'squad', userLimit: 4, label: 'Squad [4]' };
+    if (channelId === unlimited) return { tier: 'unlimited', userLimit: 0, label: 'Unlimited [Free]' };
     return null;
   }
 

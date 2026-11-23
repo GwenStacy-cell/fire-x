@@ -3378,7 +3378,7 @@ export const helpModules = [
     "`!voiceanalytics / !va` - 24-hour diurnal voice activity heatmaps, peak windows & channel analytics `[Extra Owner]`",
     "`!voicerole <@role|ID|Name|disable> / !vcrole` - Auto-assign role in VC for all members & bots `[Extra Owner]`",
     "`!jtcnormal / !jtcsingle` - Deploy standard single Join to Create lobby & category `[Manage Server]`",
-    "`!jtcsetup tiers / !jtctiers` - Deploy 4-tier Voice Hub (Solo, Duo, Trio, Squad) & #voice-controls `[Manage Server]`",
+    "`!jtcsetup tiers / !jtctiers` - Deploy 5-tier Voice Hub (Solo, Duo, Trio, Squad, Unlimited) & #voice-controls `[Manage Server]`",
     "`!jtcdisable <standard|tiers|all>` - Wipes JTC categories, interface channel & generator channels `[Manage Server]`",
     "`!secondaryjtc` - Setup a secondary JTC hub `[Manage Server]`",
     "`!jtc add @user` - Whitelist user into locked temporary JTC room `[Public]`",
@@ -3399,7 +3399,7 @@ export const helpModules = [
     "`!botvoice / !bv` - Control bot server mute and deafen status `[Extra Owner]`",
     "",
     "-# **__Dynamic Join to Create (JTC) Architecture:__**",
-    "-# <a:target_blink:1565667466984554588> **__Dual-Mode Engine:__** Deploy single lobby (`!jtcnormal`) or 4-tier generator suite (`!jtcsetup tiers` / `!jtctiers`) with Solo [1], Duo [2], Trio [3], and Squad [Free] lobbies.",
+    "-# <a:target_blink:1565667466984554588> **__Dual-Mode Engine:__** Deploy single lobby (`!jtcnormal`) or 5-tier generator suite (`!jtcsetup tiers` / `!jtctiers`) with Solo [1], Duo [2], Trio [3], Squad [4], and Unlimited [Free] lobbies.",
     "-# <a:target_blink:1565667466984554588> **__Persistent Control Center:__** Dedicated `#voice-controls` interface channel equipped with Components V2 interactive dropdowns and 1-click quick control buttons.",
     "-# <a:target_blink:1565667466984554588> **__Anti-Nuke Synchronization:__** Sub-1ms bypass in `channelCreate`, `channelUpdate`, and `channelDelete` with combat silence during active attacks (`isGuildUnderAttack`) and 3s flood protection.",
     "-# <a:target_blink:1565667466984554588> **__Atomic Teardown:__** Wipes entire JTC categories, interface channels, and generator channels instantly via `!jtcdisable <standard|tiers|all>`."

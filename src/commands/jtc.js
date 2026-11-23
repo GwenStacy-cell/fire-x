@@ -162,7 +162,7 @@ export function buildSharedPanel(guild) {
       new TextDisplayBuilder().setContent(
         `# ${glyph} Voice Hub Interface Panel | ${TICK_EMOJI}\n\n` +
         `**Welcome to the Voice Channel Control Center.**\n\n` +
-        `-# ${BULLET_EMOJI} **Connect:** Join any Join to Create lobby (**Solo**, **Duo**, **Trio**, or **Squad**).\n` +
+        `-# ${BULLET_EMOJI} **Connect:** Join any Join to Create lobby (**Solo [1]**, **Duo [2]**, **Trio [3]**, **Squad [4]**, or **Unlimited**).\n` +
         `-# ${BULLET_EMOJI} **Auto Generation:** Athena instantly creates your private voice channel and moves you in.\n` +
         `-# ${BULLET_EMOJI} **Management:** Use the dropdowns and buttons below while connected to manage your room.\n` +
         `-# ${BULLET_EMOJI} **Private & Secure:** All menu interactions here are ephemeral and completely private.\n` +
@@ -924,7 +924,15 @@ async function deployTieredSuite(guild) {
   });
 
   const squadChannel = await guild.channels.create({
-    name: '🔊 Squad [Free]',
+    name: '🔊 Squad [4]',
+    type: ChannelType.GuildVoice,
+    userLimit: 4,
+    parent: category.id,
+    reason: 'Athena Tiered JTC Squad 4 Lobby'
+  });
+
+  const unlimitedChannel = await guild.channels.create({
+    name: '🌐 Unlimited [Free]',
     type: ChannelType.GuildVoice,
     userLimit: 0,
     parent: category.id,
@@ -938,6 +946,7 @@ async function deployTieredSuite(guild) {
   markRestorationQueued(duoChannel.id);
   markRestorationQueued(trioChannel.id);
   markRestorationQueued(squadChannel.id);
+  markRestorationQueued(unlimitedChannel.id);
 
   // Store in database strictly by ID
   db.setTieredJtcConfig(guild.id, {
@@ -948,7 +957,8 @@ async function deployTieredSuite(guild) {
       solo: soloChannel.id,
       duo: duoChannel.id,
       trio: trioChannel.id,
-      unlimited: squadChannel.id
+      squad: squadChannel.id,
+      unlimited: unlimitedChannel.id
     }
   });
 
@@ -958,7 +968,8 @@ async function deployTieredSuite(guild) {
     soloChannel,
     duoChannel,
     trioChannel,
-    squadChannel
+    squadChannel,
+    unlimitedChannel
   };
 }
 
@@ -1229,7 +1240,8 @@ export const commands = [
           `-# ${BULLET_EMOJI} **Solo [1 Slot]:** ${formatChannelLink(deployed.soloChannel, guild)}\n` +
           `-# ${BULLET_EMOJI} **Duo [2 Slots]:** ${formatChannelLink(deployed.duoChannel, guild)}\n` +
           `-# ${BULLET_EMOJI} **Trio [3 Slots]:** ${formatChannelLink(deployed.trioChannel, guild)}\n` +
-          `-# ${BULLET_EMOJI} **Squad [Free]:** ${formatChannelLink(deployed.squadChannel, guild)}\n\n` +
+          `-# ${BULLET_EMOJI} **Squad [4 Slots]:** ${formatChannelLink(deployed.squadChannel, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Unlimited [Free]:** ${formatChannelLink(deployed.unlimitedChannel, guild)}\n\n` +
           `> Admins may freely rename the category and channels anytime in Discord — Athena tracks them by database ID.\n` +
           `> To wipe this entire suite, run \`!jtcdisable tiers\`.`
         ));
@@ -1294,7 +1306,8 @@ export const commands = [
           `-# ${BULLET_EMOJI} **Solo [1 Slot]:** ${formatChannelLink(deployed.soloChannel, guild)}\n` +
           `-# ${BULLET_EMOJI} **Duo [2 Slots]:** ${formatChannelLink(deployed.duoChannel, guild)}\n` +
           `-# ${BULLET_EMOJI} **Trio [3 Slots]:** ${formatChannelLink(deployed.trioChannel, guild)}\n` +
-          `-# ${BULLET_EMOJI} **Squad [Free]:** ${formatChannelLink(deployed.squadChannel, guild)}\n\n` +
+          `-# ${BULLET_EMOJI} **Squad [4 Slots]:** ${formatChannelLink(deployed.squadChannel, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Unlimited [Free]:** ${formatChannelLink(deployed.unlimitedChannel, guild)}\n\n` +
           `> Admins may freely rename the category and channels anytime in Discord — Athena tracks them by database ID.\n` +
           `> To wipe this entire suite, run \`/jtcdisable target: tiers\`.`
         ));
@@ -1373,7 +1386,8 @@ export const commands = [
         const soloLink = tieredCfg.channels?.solo ? formatChannelLink(tieredCfg.channels.solo, guild) : 'None';
         const duoLink = tieredCfg.channels?.duo ? formatChannelLink(tieredCfg.channels.duo, guild) : 'None';
         const trioLink = tieredCfg.channels?.trio ? formatChannelLink(tieredCfg.channels.trio, guild) : 'None';
-        const squadLink = tieredCfg.channels?.unlimited ? formatChannelLink(tieredCfg.channels.unlimited, guild) : 'None';
+        const squadLink = tieredCfg.channels?.squad ? formatChannelLink(tieredCfg.channels.squad, guild) : (tieredCfg.channels?.unlimited ? formatChannelLink(tieredCfg.channels.unlimited, guild) : 'None');
+        const unlimitedLink = tieredCfg.channels?.unlimited ? formatChannelLink(tieredCfg.channels.unlimited, guild) : 'None';
 
         return message.reply(cv2.info(
           `Tiered Suite Status | ${TICK_EMOJI}`,
@@ -1382,7 +1396,8 @@ export const commands = [
           `-# ${BULLET_EMOJI} **Solo [1]:** ${soloLink}\n` +
           `-# ${BULLET_EMOJI} **Duo [2]:** ${duoLink}\n` +
           `-# ${BULLET_EMOJI} **Trio [3]:** ${trioLink}\n` +
-          `-# ${BULLET_EMOJI} **Squad [Free]:** ${squadLink}`
+          `-# ${BULLET_EMOJI} **Squad [4]:** ${squadLink}\n` +
+          `-# ${BULLET_EMOJI} **Unlimited [Free]:** ${unlimitedLink}`
         ));
       }
 
@@ -1407,7 +1422,8 @@ export const commands = [
         `-# ${BULLET_EMOJI} **Solo [1 Slot]:** ${formatChannelLink(deployed.soloChannel, guild)}\n` +
         `-# ${BULLET_EMOJI} **Duo [2 Slots]:** ${formatChannelLink(deployed.duoChannel, guild)}\n` +
         `-# ${BULLET_EMOJI} **Trio [3 Slots]:** ${formatChannelLink(deployed.trioChannel, guild)}\n` +
-        `-# ${BULLET_EMOJI} **Squad [Free]:** ${formatChannelLink(deployed.squadChannel, guild)}\n\n` +
+        `-# ${BULLET_EMOJI} **Squad [4 Slots]:** ${formatChannelLink(deployed.squadChannel, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Unlimited [Free]:** ${formatChannelLink(deployed.unlimitedChannel, guild)}\n\n` +
         `> Admins may freely rename the category and channels anytime in Discord — Athena tracks them by database ID.\n` +
         `> To wipe this entire suite, run \`!jtctiers disable\`.`
       ));
@@ -1448,7 +1464,8 @@ export const commands = [
         const soloLink = tieredCfg.channels?.solo ? formatChannelLink(tieredCfg.channels.solo, guild) : 'None';
         const duoLink = tieredCfg.channels?.duo ? formatChannelLink(tieredCfg.channels.duo, guild) : 'None';
         const trioLink = tieredCfg.channels?.trio ? formatChannelLink(tieredCfg.channels.trio, guild) : 'None';
-        const squadLink = tieredCfg.channels?.unlimited ? formatChannelLink(tieredCfg.channels.unlimited, guild) : 'None';
+        const squadLink = tieredCfg.channels?.squad ? formatChannelLink(tieredCfg.channels.squad, guild) : (tieredCfg.channels?.unlimited ? formatChannelLink(tieredCfg.channels.unlimited, guild) : 'None');
+        const unlimitedLink = tieredCfg.channels?.unlimited ? formatChannelLink(tieredCfg.channels.unlimited, guild) : 'None';
 
         return interaction.editReply(cv2.info(
           `Tiered Suite Status | ${TICK_EMOJI}`,
@@ -1457,7 +1474,8 @@ export const commands = [
           `-# ${BULLET_EMOJI} **Solo [1]:** ${soloLink}\n` +
           `-# ${BULLET_EMOJI} **Duo [2]:** ${duoLink}\n` +
           `-# ${BULLET_EMOJI} **Trio [3]:** ${trioLink}\n` +
-          `-# ${BULLET_EMOJI} **Squad [Free]:** ${squadLink}`
+          `-# ${BULLET_EMOJI} **Squad [4]:** ${squadLink}\n` +
+          `-# ${BULLET_EMOJI} **Unlimited [Free]:** ${unlimitedLink}`
         ));
       }
 
@@ -1482,7 +1500,8 @@ export const commands = [
         `-# ${BULLET_EMOJI} **Solo [1 Slot]:** ${formatChannelLink(deployed.soloChannel, guild)}\n` +
         `-# ${BULLET_EMOJI} **Duo [2 Slots]:** ${formatChannelLink(deployed.duoChannel, guild)}\n` +
         `-# ${BULLET_EMOJI} **Trio [3 Slots]:** ${formatChannelLink(deployed.trioChannel, guild)}\n` +
-        `-# ${BULLET_EMOJI} **Squad [Free]:** ${formatChannelLink(deployed.squadChannel, guild)}\n\n` +
+        `-# ${BULLET_EMOJI} **Squad [4 Slots]:** ${formatChannelLink(deployed.squadChannel, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Unlimited [Free]:** ${formatChannelLink(deployed.unlimitedChannel, guild)}\n\n` +
         `> Admins may freely rename the category and channels anytime in Discord — Athena tracks them by database ID.\n` +
         `> To wipe this entire suite, run \`/jtctiers action: disable\`.`
       ));

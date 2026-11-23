@@ -15,6 +15,46 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '24 November 2026',
+    version: 'v3.8.0',
+    headline: '5-Tier Dynamic Voice Hub Engine: Squad [4] & Unlimited [Free] Separation, Live Infrastructure Migration & Orphan Cleanup',
+    summary: 'Upgraded Athena Prime\'s Tiered Join to Create (JTC) architecture from 4 tiers to 5 distinct generator lobbies. Separated tactical squad gaming from open community hangouts by assigning Squad [4] a strict 4-member limit and introducing a dedicated 5th generator channel: Unlimited [Free] (0 user limit). Cleaned up orphaned dummy categories left by previous deployment race conditions in active guilds, automatically reconfigured live servers to the new 5-tier schema, synced real-time state with MongoDB Atlas, and refreshed the persistent #voice-controls control deck with updated room tier selectors.',
+    whatsNew: [
+      {
+        title: 'Dedicated 5-Tier Generator Suite',
+        desc: 'Expanded Voice Hub architecture with 5 preset lobbies: Solo [1], Duo [2], Trio [3], Squad [4], and Unlimited [Free].'
+      },
+      {
+        title: 'Squad User Limit Enforcement',
+        desc: 'Fixed Squad rooms to strictly enforce userLimit: 4 for 4-player tactical team games (e.g. Fortnite, Warzone, Valorant, Apex).'
+      },
+      {
+        title: 'New Unlimited [Free] Hub',
+        desc: 'Added a 5th lobby spawning open voice rooms with userLimit: 0 for community chats and music hangouts.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Live JTC Server Migration',
+        desc: 'Automatically upgraded existing JTC servers in-place, creating the 5th unlimited channel, adjusting squad limits, and updating the #voice-controls interactive interface card.'
+      },
+      {
+        title: 'Orphan Category & Channel Cleanup',
+        desc: 'Purged orphaned dummy category and interface channels without disrupting active voice sessions.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Tiered JTC Database Sync',
+        desc: 'Updated getTierInfo and setTieredJtcConfig to index both squad (4 slots) and unlimited (unlimited slots) across SQLite and MongoDB Atlas.'
+      },
+      {
+        title: 'MongoDB Atlas Sync Resilience',
+        desc: 'Resolved burnEntries undefined reference in pushToMongo and added backups to EXCLUDED_CORE_KEYS to optimize cluster payloads.'
+      }
+    ]
+  },
+  {
     date: '23 November 2026',
     version: 'v3.7.9',
     headline: 'Server Owner Exclusive Bot Addition & 100% Full Anti-Nuke Immunity Engine for Whitelisted Bots',

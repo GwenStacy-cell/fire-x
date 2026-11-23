@@ -375,7 +375,7 @@ export async function buildLiveCommandStatusPayload(guild, member, user, cmdName
       const tieredCfg = db.getTieredJtcConfig(guild.id);
       
       const standardStatus = jtcCfg?.lobbyChannelId ? formatChannelLink(jtcCfg.lobbyChannelId, guild) : '`Not Configured`';
-      const tieredStatus = tieredCfg?.categoryId ? `${formatChannelLink(tieredCfg.categoryId, guild)} *(4 Tiers Active)*` : '`Not Configured`';
+      const tieredStatus = tieredCfg?.categoryId ? `${formatChannelLink(tieredCfg.categoryId, guild)} *(5 Tiers Active)*` : '`Not Configured`';
       const ifaceStatus = tieredCfg?.interfaceChannelId ? formatChannelLink(tieredCfg.interfaceChannelId, guild) : (jtcCfg?.panelChannelId ? formatChannelLink(jtcCfg.panelChannelId, guild) : '`VC Text Chat`');
       
       statusPoints.push(`-# ${BULLET_EMOJI} **Standard JTC Lobby:** ${standardStatus}`);
@@ -1320,7 +1320,7 @@ export async function handleAthenaGuideButtons(interaction) {
       const tieredCfg = db.getTieredJtcConfig(guild?.id || '0');
 
       const standardStatus = jtcCfg?.lobbyChannelId ? formatChannelLink(jtcCfg.lobbyChannelId, guild) : '`Not Deployed`';
-      const tieredStatus = tieredCfg?.categoryId ? `${formatChannelLink(tieredCfg.categoryId, guild)} *(4 Tiers Active)*` : '`Not Deployed`';
+      const tieredStatus = tieredCfg?.categoryId ? `${formatChannelLink(tieredCfg.categoryId, guild)} *(5 Tiers Active)*` : '`Not Deployed`';
 
       return cv2.respond(interaction, {
         components: [
@@ -1335,9 +1335,9 @@ export async function handleAthenaGuideButtons(interaction) {
                   `-# ${BULLET_EMOJI} **Deployment:** Auto-creates the \`Voice Rooms\` category & single \`🔊 Join to Create\` lobby.\n` +
                   `-# ${BULLET_EMOJI} **Current Status:** ${standardStatus}\n\n` +
                   `### 2. Tiered Preset Voice Hub (\`${prefix}jtcsetup tiers\` or \`${prefix}jtctiers\`)\n` +
-                  `-# ${BULLET_EMOJI} **Deployment:** Auto-creates \`Athena Voice Hub\` category, persistent \`#voice-controls\` interface channel, and 4 preset generator channels (Solo [1], Duo [2], Trio [3], Squad [Free]).\n` +
+                  `-# ${BULLET_EMOJI} **Deployment:** Auto-creates \`Athena Voice Hub\` category, persistent \`#voice-controls\` interface channel, and 5 preset generator channels (Solo [1], Duo [2], Trio [3], Squad [4], Unlimited [Free]).\n` +
                   `-# ${BULLET_EMOJI} **Current Status:** ${tieredStatus}\n\n` +
-                  `-# **Quick Execution:** Type \`${prefix}jtcnormal\` for single lobby, or \`${prefix}jtcsetup tiers\` for the full 4-tier suite.`
+                  `-# **Quick Execution:** Type \`${prefix}jtcnormal\` for single lobby, or \`${prefix}jtcsetup tiers\` for the full 5-tier suite.`
               }
             ]
           },
