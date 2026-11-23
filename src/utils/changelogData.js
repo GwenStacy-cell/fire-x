@@ -16,6 +16,50 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.7.7',
+    headline: 'Security-Aligned JTC Architecture: Anti-Nuke Harmonization, Combat Silence, Infrastructure Bypass & Rate Limit Armor',
+    summary: 'Full architectural optimization unifying Join to Create (JTC) with Athena\'s military-grade Anti-Nuke defense matrix. Eliminated all Anti-Nuke false alarms, redundant audit log queries, and server log spam caused by temporary voice channel lifecycle events. When JTC channels are created, modified, or deleted, channelCreate.js, channelUpdate.js, and channelDelete.js recognize them instantly as authorized ephemeral infrastructure, completely bypassing Anti-Nuke rollback triggers and deduplication locks. Enforced strict combat-awareness: JTC channel generation automatically suspends during active server attacks (isGuildUnderAttack) to reserve 100% of network sockets and REST rate limits for instant ban strikes against nuke bots. Added per-user 3-second rapid-join cooldown armor to prevent channel creation flood abuse, and embedded quarantine role denial directly into initial channel creation payloads with zero extra REST requests.',
+    whatsNew: [
+      {
+        title: 'Anti-Nuke JTC Harmonization (Zero False Alarms)',
+        desc: 'Added isJtcInfrastructure detection across channelCreate, channelDelete, and channelUpdate. Temporary room actions and admin renames bypass Anti-Nuke rollback triggers without reducing server defense.'
+      },
+      {
+        title: 'Combat-Aware JTC Priority (Security First)',
+        desc: 'JTC channel generation automatically yields during active server attacks (isGuildUnderAttack), dedicating 100% of REST throughput and network bandwidth to immediate ban strikes.'
+      },
+      {
+        title: 'Anti-Flood Gateway Armor',
+        desc: 'Enforced a 3-second per-user cooldown on JTC lobby joins, preventing malicious bots and spam-clickers from flooding Discord with channel creation requests.'
+      },
+      {
+        title: 'Atomic Quarantine Role Security',
+        desc: 'Quarantine role deny overwrites are embedded directly into the initial channel creation payload, guaranteeing quarantined users cannot access JTC rooms with zero extra API calls.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Seamless Infrastructure Teardown Sync',
+        desc: 'Teardown commands (!jtcdisable) register channel deletions with Anti-Nuke deduplication locks, preventing false nuke alerts when categories or suites are removed.'
+      },
+      {
+        title: 'Restoration Queue Integrity',
+        desc: 'Temporary JTC voice channels and linked chats are excluded from snapshot restorations, keeping the backup and repair queue pristine.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Channel Permission & Name Tampering False Strikes',
+        desc: 'Resolved false Anti-Nuke tampering detections when room owners lock, ghost, or rename their temporary voice rooms.'
+      },
+      {
+        title: 'Server Log Spam Elimination',
+        desc: 'Silenced routine channel create and delete log dispatches for ephemeral JTC channels, keeping the server logging channel clean and focused on real events.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.7.6',
     headline: 'Tiered Join to Create (JTC) Voice Hub, Components V2 Control Center & Atomic Teardown Architecture',
     summary: 'Conducted an exhaustive audit and architectural leap of Athena\'s Join to Create (JTC) engine. Introduced an optional 4-Tier Voice Hub suite featuring generator lobbies for Solo [1 slot], Duo [2 slots], Trio [3 slots], and Squad [Unlimited slots] under a dedicated category, alongside a persistent Components V2 Interface Channel control center. Enforced strict database ID tracking allowing admins to rename categories and channels freely in Discord without breaking functionality. Implemented an atomic teardown engine (!jtcdisable tiers) that completely wipes the JTC category, interface channel, and generator channels in seconds. Wired previously dead select menu and modal interaction handlers in interactionCreate.js, added 1-click quick control buttons, and unified all user/channel links with zero native Discord emojis.',

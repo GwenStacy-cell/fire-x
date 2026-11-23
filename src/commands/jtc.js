@@ -30,6 +30,7 @@ import {
   formatChannelLink, 
   cleanDisplayName 
 } from '../utils/helpers.js';
+import { markRestorationQueued, markChannelRestoring } from '../utils/antinuke.js';
 
 function getAccent(guild) {
   if (!guild) return 0x5865F2;
@@ -267,6 +268,7 @@ export async function handleJtcButton(interaction) {
     const currentPerm = vcChannel.permissionOverwrites.cache.get(guild.roles.everyone.id);
     const isLocked = currentPerm?.deny.has(PermissionFlagsBits.Connect);
 
+    markChannelRestoring(vcChannel.id, 3000);
     if (isLocked) {
       await vcChannel.permissionOverwrites.edit(guild.roles.everyone.id, { Connect: null });
       return interaction.reply(cv2.e.success(
@@ -293,6 +295,7 @@ export async function handleJtcButton(interaction) {
     const currentPerm = vcChannel.permissionOverwrites.cache.get(guild.roles.everyone.id);
     const isGhosted = currentPerm?.deny.has(PermissionFlagsBits.ViewChannel);
 
+    markChannelRestoring(vcChannel.id, 3000);
     if (isGhosted) {
       await vcChannel.permissionOverwrites.edit(guild.roles.everyone.id, { ViewChannel: null });
       return interaction.reply(cv2.e.success(
@@ -435,6 +438,7 @@ export async function handleJtcSelectMenu(interaction) {
 
   // ── LOCK ──
   if (value === 'jtc_lock') {
+    markChannelRestoring(vcChannel.id, 3000);
     await vcChannel.permissionOverwrites.edit(guild.roles.everyone.id, { Connect: false });
     return interaction.reply(cv2.e.danger(
       `Channel Locked | ${WRONG_EMOJI}`,
@@ -444,6 +448,7 @@ export async function handleJtcSelectMenu(interaction) {
 
   // ── UNLOCK ──
   if (value === 'jtc_unlock') {
+    markChannelRestoring(vcChannel.id, 3000);
     await vcChannel.permissionOverwrites.edit(guild.roles.everyone.id, { Connect: null });
     return interaction.reply(cv2.e.success(
       `Channel Unlocked | ${TICK_EMOJI}`,
@@ -453,6 +458,7 @@ export async function handleJtcSelectMenu(interaction) {
 
   // ── GHOST ──
   if (value === 'jtc_ghost') {
+    markChannelRestoring(vcChannel.id, 3000);
     await vcChannel.permissionOverwrites.edit(guild.roles.everyone.id, { ViewChannel: false });
     return interaction.reply(cv2.e.info(
       `Channel Hidden | ${TICK_EMOJI}`,
@@ -462,6 +468,7 @@ export async function handleJtcSelectMenu(interaction) {
 
   // ── UNGHOST ──
   if (value === 'jtc_unghost') {
+    markChannelRestoring(vcChannel.id, 3000);
     await vcChannel.permissionOverwrites.edit(guild.roles.everyone.id, { ViewChannel: null });
     return interaction.reply(cv2.e.success(
       `Channel Visible | ${TICK_EMOJI}`,
@@ -672,7 +679,10 @@ export async function handleJtcModal(interaction) {
   }
 
   if (customId === 'jtc_rename_modal') {
-    const newName = interaction.fields.getTextInputValue('jtc_new_name').trim();
+    let newName = interaction.fields.getTextInputValue('jtc_new_name').trim();
+    newName = newName.replace(/@(everyone|here)/gi, '').replace(/discord(?:\.gg|(?:app)?\.com\/invite)\/[a-z0-9]+/gi, '').trim();
+    if (!newName) newName = `${member.displayName}'s Room`;
+    markChannelRestoring(vcChannel.id, 3000);
     await vcChannel.setName(newName).catch(() => null);
     return interaction.reply(cv2.e.success(
       `Channel Renamed | ${TICK_EMOJI}`,
@@ -726,6 +736,7 @@ export async function handleJtcModal(interaction) {
         `Could not find that member in this server.`
       ));
     }
+    markChannelRestoring(vcChannel.id, 3000);
     await vcChannel.permissionOverwrites.edit(userId, { Connect: true, ViewChannel: true });
     return interaction.reply(cv2.e.success(
       `User Whitelisted | ${TICK_EMOJI}`,
@@ -742,6 +753,7 @@ export async function handleJtcModal(interaction) {
         `Could not find that member in this server.`
       ));
     }
+    markChannelRestoring(vcChannel.id, 3000);
     if (target.voice?.channelId === vcChannel.id) {
       await target.voice.disconnect().catch(() => null);
     }
@@ -919,6 +931,14 @@ async function deployTieredSuite(guild) {
     reason: 'Athena Tiered JTC Unlimited Lobby'
   });
 
+  // Mark all created infrastructure in Anti-Nuke deduplication cache
+  markRestorationQueued(category.id);
+  markRestorationQueued(interfaceChannel.id);
+  markRestorationQueued(soloChannel.id);
+  markRestorationQueued(duoChannel.id);
+  markRestorationQueued(trioChannel.id);
+  markRestorationQueued(squadChannel.id);
+
   // Store in database strictly by ID
   db.setTieredJtcConfig(guild.id, {
     categoryId: category.id,
@@ -950,6 +970,7 @@ async function wipeTieredSuite(guild) {
   if (tieredCfg.channels) {
     for (const [key, chId] of Object.entries(tieredCfg.channels)) {
       if (chId) {
+        markRestorationQueued(chId);
         const ch = guild.channels.cache.get(chId) || await guild.channels.fetch(chId).catch(() => null);
         if (ch) await ch.delete('Athena: Purging Tiered JTC Generator Channel').catch(() => null);
       }
@@ -958,6 +979,7 @@ async function wipeTieredSuite(guild) {
 
   // 2. Delete interface channel by ID
   if (tieredCfg.interfaceChannelId) {
+    markRestorationQueued(tieredCfg.interfaceChannelId);
     const iface = guild.channels.cache.get(tieredCfg.interfaceChannelId) || await guild.channels.fetch(tieredCfg.interfaceChannelId).catch(() => null);
     if (iface) await iface.delete('Athena: Purging Tiered JTC Interface Channel').catch(() => null);
   }
@@ -965,9 +987,11 @@ async function wipeTieredSuite(guild) {
   // 3. Purge any active temporary channels created under the category
   const allJtc = db.getAllJtcChannels().filter(c => c.guildId === guild.id);
   for (const record of allJtc) {
+    markRestorationQueued(record.channelId);
     const ch = guild.channels.cache.get(record.channelId) || await guild.channels.fetch(record.channelId).catch(() => null);
     if (ch && (ch.parentId === tieredCfg.categoryId || record.tier)) {
       if (record.textChannelId) {
+        markRestorationQueued(record.textChannelId);
         const textCh = guild.channels.cache.get(record.textChannelId) || await guild.channels.fetch(record.textChannelId).catch(() => null);
         if (textCh) await textCh.delete('Athena: Purging Tiered JTC Temp Text').catch(() => null);
       }
@@ -978,6 +1002,7 @@ async function wipeTieredSuite(guild) {
 
   // 4. Delete the category itself by ID
   if (tieredCfg.categoryId) {
+    markRestorationQueued(tieredCfg.categoryId);
     const cat = guild.channels.cache.get(tieredCfg.categoryId) || await guild.channels.fetch(tieredCfg.categoryId).catch(() => null);
     if (cat) await cat.delete('Athena: Purging Tiered JTC Category').catch(() => null);
   }
@@ -1054,6 +1079,9 @@ async function deployNormalJtc(guild, customCategory = null, customLobby = null,
       });
     }
   }
+
+  markRestorationQueued(category.id);
+  markRestorationQueued(lobbyChannel.id);
 
   const categoryId = category.id;
   const lobbyChannelId = lobbyChannel.id;

@@ -16,8 +16,8 @@ export default {
   async execute(channel) {
     if (!channel.guild) return;
 
-    // ⚡ Ignore channels created by Athena's restoration engine
-    if (isRestorationHandled(channel.id)) return;
+    // ⚡ Ignore channels created by Athena's restoration engine or JTC infrastructure
+    if (isRestorationHandled(channel.id) || db.isJtcChannel(channel.id) || db.isJtcInfrastructure(channel.guild.id, channel.id)) return;
 
     // ⚡ DIRECT STRIKE FIRST — fire the moment channel hits gateway
     directStrike(

@@ -1767,6 +1767,31 @@ class Database {
     return null;
   }
 
+  isJtcInfrastructure(guildId, channelId) {
+    if (!channelId) return false;
+    if (this.cache.jtcChannels?.[channelId]) return true;
+    if (!guildId) {
+      for (const [gId, jtc] of Object.entries(this.cache.jtc || {})) {
+        if (this.isJtcInfrastructure(gId, channelId)) return true;
+      }
+      return false;
+    }
+    const jtc = this.cache.jtc?.[guildId];
+    if (!jtc) return false;
+    if (jtc.lobbyChannelId === channelId) return true;
+    if (jtc.secondaryLobbyChannelId === channelId) return true;
+    if (jtc.categoryId === channelId) return true;
+    if (jtc.panelChannelId === channelId) return true;
+    if (jtc.tiered) {
+      if (jtc.tiered.categoryId === channelId) return true;
+      if (jtc.tiered.interfaceChannelId === channelId) return true;
+      if (jtc.tiered.channels) {
+        if (Object.values(jtc.tiered.channels).includes(channelId)) return true;
+      }
+    }
+    return false;
+  }
+
   // Active temp channels
   getJtcChannel(channelId) {
     if (!this.cache.jtcChannels) this.cache.jtcChannels = {};

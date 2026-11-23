@@ -8,8 +8,8 @@ export default {
     if (!newChannel.guild) return;
     if (db.isModModeActive(newChannel.guild.id)) return;
 
-    // ⚡ Ignore update events fired by Athena's own restoration or modifications
-    if (isChannelRestoring(newChannel.id)) return;
+    // ⚡ Ignore update events fired by Athena's own restoration, JTC rooms, or JTC infrastructure
+    if (isChannelRestoring(newChannel.id) || db.isJtcChannel(newChannel.id) || db.isJtcInfrastructure(newChannel.guild.id, newChannel.id)) return;
 
     const config = db.getGuildConfig(newChannel.guild.id);
     if (!config?.securityEnabled && !config?.antiNukeEnabled) return;

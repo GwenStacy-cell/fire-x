@@ -9,6 +9,7 @@ import { isBotOwnerSync, getSafeUserAvatar, getSafeGuildIcon, sendGuildMemberDM,
 import { handleWarn } from '../commands/moderation.js';
 import { getQueue } from '../utils/musicManager.js';
 import { activeVoiceSessions } from '../utils/soundboardEngine.js';
+import { isGuildUnderAttack, markRestorationQueued } from '../utils/antinuke.js';
 
 const theaterStrikes = new Map();
 
@@ -452,6 +453,19 @@ export default {
       const member = newState.member;
       if (!member) return;
 
+      // ⚡ SECURITY FAST-PATH: Do not create channels during active server attacks
+      // Allocates 100% of network throughput and REST rate limits to the Anti-Nuke defense engine
+      if (isGuildUnderAttack(guild.id)) return;
+
+      // ⚡ ANTI-SPAM FLOOD GATEWAY: Cooldown per user to prevent rapid channel spawn abuse
+      if (!client.jtcCreationCooldowns) client.jtcCreationCooldowns = new Map();
+      const cooldownKey = `${guild.id}-${member.id}`;
+      const now = Date.now();
+      if (client.jtcCreationCooldowns.has(cooldownKey) && now - client.jtcCreationCooldowns.get(cooldownKey) < 3000) {
+        return;
+      }
+      client.jtcCreationCooldowns.set(cooldownKey, now);
+
       try {
         const tieredCfg = tierInfo ? db.getTieredJtcConfig(guild.id) : null;
         const targetCategoryId = tierInfo ? (tieredCfg?.categoryId || newState.channel.parentId || null) : (jtcConfig?.categoryId || newState.channel.parentId || null);
@@ -467,39 +481,59 @@ export default {
           else if (tierInfo.tier === 'unlimited') channelName = `${member.displayName}'s Squad`;
         }
 
+        // Build secure permission overwrites
+        const overwrites = [
+          {
+            id: guild.roles.everyone.id,
+            allow: [PermissionFlagsBits.Connect, PermissionFlagsBits.Speak, PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
+          },
+          {
+            id: member.id,
+            allow: [
+              PermissionFlagsBits.Connect, 
+              PermissionFlagsBits.Speak, 
+              PermissionFlagsBits.ViewChannel, 
+              PermissionFlagsBits.MuteMembers, 
+              PermissionFlagsBits.DeafenMembers, 
+              PermissionFlagsBits.SendMessages
+            ]
+          },
+          {
+            id: client.user.id,
+            allow: [
+              PermissionFlagsBits.Connect, 
+              PermissionFlagsBits.ManageChannels, 
+              PermissionFlagsBits.MoveMembers, 
+              PermissionFlagsBits.ViewChannel, 
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.EmbedLinks,
+              PermissionFlagsBits.ReadMessageHistory,
+              PermissionFlagsBits.UseApplicationCommands
+            ]
+          }
+        ];
+
+        // ⚡ ATOMIC QUARANTINE INTEGRATION: Auto-deny quarantined rogue accounts with zero extra REST requests
+        const guildCfg = db.getGuildConfig(guild.id);
+        if (guildCfg?.quarantineRoleId) {
+          overwrites.push({
+            id: guildCfg.quarantineRoleId,
+            deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect, PermissionFlagsBits.Speak]
+          });
+        }
+
         // Create the temp voice channel
         const tempChannel = await guild.channels.create({
           name: channelName,
           type: ChannelType.GuildVoice,
           userLimit: userLimit,
           parent: targetCategoryId,
-          permissionOverwrites: [
-            {
-              id: guild.roles.everyone,
-              allow: [PermissionFlagsBits.Connect, PermissionFlagsBits.Speak, PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages]
-            },
-            {
-              id: member.id,
-              allow: [PermissionFlagsBits.Connect, PermissionFlagsBits.Speak, PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.MuteMembers, PermissionFlagsBits.DeafenMembers, PermissionFlagsBits.SendMessages]
-            },
-            {
-              id: client.user.id,
-              allow: [
-                PermissionFlagsBits.Connect, 
-                PermissionFlagsBits.ManageChannels, 
-                PermissionFlagsBits.MoveMembers, 
-                PermissionFlagsBits.ViewChannel, 
-                PermissionFlagsBits.SendMessages,
-                PermissionFlagsBits.EmbedLinks,
-                PermissionFlagsBits.ReadMessageHistory,
-                PermissionFlagsBits.UseApplicationCommands
-              ]
-            }
-          ],
+          permissionOverwrites: overwrites,
           reason: `JTC: Created by ${member.user.tag}${tierInfo ? ` (${tierInfo.label})` : ''}`
         });
 
-        // Register in database first so cleanup logic knows it's a JTC room
+        // ⚡ ANTI-NUKE SYNCHRONIZATION: Mark channel handled to bypass Anti-Nuke locks & audit spikes
+        markRestorationQueued(tempChannel.id);
         db.addJtcChannel(tempChannel.id, member.id, guild.id, tierInfo?.tier || null);
 
         // Move the member into their new channel

@@ -31,6 +31,12 @@ export default {
       return;
     }
 
+    // ⚡ JTC Temporary Channel & Infrastructure Sync - Prevent Anti-Nuke false alarms & direct strikes
+    if (db.isJtcChannel(channel.id) || db.isJtcInfrastructure(channel.guild.id, channel.id)) {
+      if (db.isJtcChannel(channel.id)) db.removeJtcChannel(channel.id);
+      return;
+    }
+
     // ⚡ STEP 1: Synchronous Deduplication Lock
     // Prevents duplicate restorations between gateway channelDelete and auditLogEntryCreate
     if (isRestorationHandled(channel.id)) return;
