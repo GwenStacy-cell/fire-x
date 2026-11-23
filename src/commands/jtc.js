@@ -4,7 +4,8 @@ import {
   TICK_EMOJI, 
   WRONG_EMOJI, 
   WARN_EMOJI, 
-  UPTIME_EMOJI 
+  UPTIME_EMOJI,
+  JTC_EMOJIS
 } from '../utils/emojis.js';
 import {
   PermissionFlagsBits,
@@ -42,6 +43,47 @@ function getAccent(guild) {
 }
 
 // ==========================================
+// JTC INTERFACE COMPONENT BUILDERS (Centralized)
+// ==========================================
+function getJtcSettingsOptions() {
+  return [
+    { label: 'Adjust Bitrate', description: 'Configure audio quality bitrate (8 - 384 kbps)', value: 'jtc_bitrate', emoji: JTC_EMOJIS.ADJUST_BITRATE },
+    { label: 'Voice Region', description: 'Change the voice server region', value: 'jtc_region', emoji: JTC_EMOJIS.VOICE_REGION },
+    { label: 'Create Temp Text Chat', description: 'Create a private synced text channel', value: 'jtc_text', emoji: JTC_EMOJIS.CREATE_TEMP_TEXT_CHAT },
+    { label: 'Toggle NSFW', description: 'Mark room as Age-Restricted (NSFW)', value: 'jtc_nsfw', emoji: JTC_EMOJIS.TOGGLE_NSFW },
+    { label: 'Claim Ownership', description: 'Claim owner privileges if previous owner left', value: 'jtc_claim', emoji: JTC_EMOJIS.CLAIM_OWNERSHIP },
+    { label: 'Rename Channel', description: 'Change the voice room name', value: 'jtc_name', emoji: JTC_EMOJIS.RENAME_CHANNEL },
+    { label: 'Set User Limit', description: 'Change the max member limit (0 = Unlimited)', value: 'jtc_limit', emoji: JTC_EMOJIS.SET_USER_LIMIT },
+    { label: 'Set Voice Status', description: 'Set a custom voice room activity status', value: 'jtc_status', emoji: JTC_EMOJIS.SET_VOICE_STATUS },
+    { label: 'Sync Game Activity', description: 'Set room name to your currently playing game', value: 'jtc_game', emoji: JTC_EMOJIS.SYNC_GAME_ACTIVITY },
+    { label: 'Looking For Members (LFM)', description: 'Broadcast an LFM invite card in text chat', value: 'jtc_lfm', emoji: JTC_EMOJIS.LOOKING_FOR_MEMBERS },
+    { label: 'Channel Information', description: 'View real-time statistics and channel metadata', value: 'jtc_info', emoji: JTC_EMOJIS.CHANNEL_INFORMATION }
+  ];
+}
+
+function getJtcPermsOptions() {
+  return [
+    { label: 'Lock Channel', description: 'Prevent new members from joining', value: 'jtc_lock', emoji: JTC_EMOJIS.LOCK_CHANNEL },
+    { label: 'Unlock Channel', description: 'Reopen room for anyone to join', value: 'jtc_unlock', emoji: JTC_EMOJIS.UNLOCK_CHANNEL },
+    { label: 'Ghost Channel', description: 'Hide room completely from other users', value: 'jtc_ghost', emoji: JTC_EMOJIS.GHOST_CHANNEL },
+    { label: 'Unghost Channel', description: 'Make room visible again on server list', value: 'jtc_unghost', emoji: JTC_EMOJIS.UNGHOST_CHANNEL },
+    { label: 'Permit User', description: 'Whitelist a user to join even when locked/ghosted', value: 'jtc_permit', emoji: JTC_EMOJIS.PERMIT_USER },
+    { label: 'Reject / Kick User', description: 'Disconnect and ban a user from this room', value: 'jtc_reject', emoji: JTC_EMOJIS.REJECT_KICK_USER },
+    { label: 'DM Direct Invite', description: 'Send a one-time direct join link via DM', value: 'jtc_invite', emoji: JTC_EMOJIS.DM_DIRECT_INVITE },
+    { label: 'Transfer Ownership', description: 'Pass room control to another member in VC', value: 'jtc_transfer', emoji: JTC_EMOJIS.TRANSFER_OWNERSHIP }
+  ];
+}
+
+function getJtcQuickRow() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('jtc_btn_lock').setLabel('Lock / Unlock').setEmoji(JTC_EMOJIS.LOCK_CHANNEL).setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('jtc_btn_ghost').setLabel('Ghost / Visible').setEmoji(JTC_EMOJIS.GHOST_CHANNEL).setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('jtc_btn_claim').setLabel('Claim Owner').setEmoji(JTC_EMOJIS.CLAIM_OWNERSHIP).setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('jtc_btn_info').setLabel('Room Info').setEmoji(JTC_EMOJIS.CHANNEL_INFORMATION).setStyle(ButtonStyle.Secondary)
+  );
+}
+
+// ==========================================
 // CONTROL PANEL BUILDER (Voice text chat panel)
 // Dedicated per active temporary voice room
 // ==========================================
@@ -54,40 +96,14 @@ export function buildControlPanel(vcChannel, ownerMember, guild = null) {
   const settingsMenu = new StringSelectMenuBuilder()
     .setCustomId('jtc_settings_menu')
     .setPlaceholder('Channel Settings & Configuration')
-    .addOptions([
-      { label: 'Rename Channel', description: 'Change the voice room name', value: 'jtc_name' },
-      { label: 'Set User Limit', description: 'Change the max member limit (0 = Unlimited)', value: 'jtc_limit' },
-      { label: 'Set Voice Status', description: 'Set a custom voice room activity status', value: 'jtc_status' },
-      { label: 'Sync Game Activity', description: 'Set room name to your currently playing game', value: 'jtc_game' },
-      { label: 'Looking For Members (LFM)', description: 'Broadcast an LFM invite card in text chat', value: 'jtc_lfm' },
-      { label: 'Adjust Bitrate', description: 'Configure audio quality bitrate (8 - 384 kbps)', value: 'jtc_bitrate' },
-      { label: 'Voice Region', description: 'Change the voice server region', value: 'jtc_region' },
-      { label: 'Create Temp Text Chat', description: 'Create a private synced text channel', value: 'jtc_text' },
-      { label: 'Toggle NSFW', description: 'Mark room as Age-Restricted (NSFW)', value: 'jtc_nsfw' },
-      { label: 'Claim Ownership', description: 'Claim owner privileges if previous owner left', value: 'jtc_claim' },
-      { label: 'Channel Information', description: 'View real-time statistics and channel metadata', value: 'jtc_info' }
-    ]);
+    .addOptions(getJtcSettingsOptions());
 
   const permsMenu = new StringSelectMenuBuilder()
     .setCustomId('jtc_perms_menu')
     .setPlaceholder('Privacy & Access Permissions')
-    .addOptions([
-      { label: 'Lock Channel', description: 'Prevent new members from joining', value: 'jtc_lock' },
-      { label: 'Unlock Channel', description: 'Reopen room for anyone to join', value: 'jtc_unlock' },
-      { label: 'Ghost Channel', description: 'Hide room completely from other users', value: 'jtc_ghost' },
-      { label: 'Unghost Channel', description: 'Make room visible again on server list', value: 'jtc_unghost' },
-      { label: 'Permit User', description: 'Whitelist a user to join even when locked/ghosted', value: 'jtc_permit' },
-      { label: 'Reject / Kick User', description: 'Disconnect and ban a user from this room', value: 'jtc_reject' },
-      { label: 'DM Direct Invite', description: 'Send a one-time direct join link via DM', value: 'jtc_invite' },
-      { label: 'Transfer Ownership', description: 'Pass room control to another member in VC', value: 'jtc_transfer' }
-    ]);
+    .addOptions(getJtcPermsOptions());
 
-  const quickRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('jtc_btn_lock').setLabel('Lock / Unlock').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('jtc_btn_ghost').setLabel('Ghost / Visible').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('jtc_btn_claim').setLabel('Claim Owner').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('jtc_btn_info').setLabel('Room Info').setStyle(ButtonStyle.Secondary)
-  );
+  const quickRow = getJtcQuickRow();
 
   const container = new ContainerBuilder()
     .addTextDisplayComponents(
@@ -122,40 +138,14 @@ export function buildSharedPanel(guild) {
   const settingsMenu = new StringSelectMenuBuilder()
     .setCustomId('jtc_settings_menu')
     .setPlaceholder('Channel Settings & Configuration')
-    .addOptions([
-      { label: 'Rename Channel', description: 'Change the voice room name', value: 'jtc_name' },
-      { label: 'Set User Limit', description: 'Change the max member limit (0 = Unlimited)', value: 'jtc_limit' },
-      { label: 'Set Voice Status', description: 'Set a custom voice room activity status', value: 'jtc_status' },
-      { label: 'Sync Game Activity', description: 'Set room name to your currently playing game', value: 'jtc_game' },
-      { label: 'Looking For Members (LFM)', description: 'Broadcast an LFM invite card in text chat', value: 'jtc_lfm' },
-      { label: 'Adjust Bitrate', description: 'Configure audio quality bitrate (8 - 384 kbps)', value: 'jtc_bitrate' },
-      { label: 'Voice Region', description: 'Change the voice server region', value: 'jtc_region' },
-      { label: 'Create Temp Text Chat', description: 'Create a private synced text channel', value: 'jtc_text' },
-      { label: 'Toggle NSFW', description: 'Mark room as Age-Restricted (NSFW)', value: 'jtc_nsfw' },
-      { label: 'Claim Ownership', description: 'Claim owner privileges if previous owner left', value: 'jtc_claim' },
-      { label: 'Channel Information', description: 'View real-time statistics and channel metadata', value: 'jtc_info' }
-    ]);
+    .addOptions(getJtcSettingsOptions());
 
   const permsMenu = new StringSelectMenuBuilder()
     .setCustomId('jtc_perms_menu')
     .setPlaceholder('Privacy & Access Permissions')
-    .addOptions([
-      { label: 'Lock Channel', description: 'Prevent new members from joining', value: 'jtc_lock' },
-      { label: 'Unlock Channel', description: 'Reopen room for anyone to join', value: 'jtc_unlock' },
-      { label: 'Ghost Channel', description: 'Hide room completely from other users', value: 'jtc_ghost' },
-      { label: 'Unghost Channel', description: 'Make room visible again on server list', value: 'jtc_unghost' },
-      { label: 'Permit User', description: 'Whitelist a user to join even when locked/ghosted', value: 'jtc_permit' },
-      { label: 'Reject / Kick User', description: 'Disconnect and ban a user from this room', value: 'jtc_reject' },
-      { label: 'DM Direct Invite', description: 'Send a one-time direct join link via DM', value: 'jtc_invite' },
-      { label: 'Transfer Ownership', description: 'Pass room control to another member in VC', value: 'jtc_transfer' }
-    ]);
+    .addOptions(getJtcPermsOptions());
 
-  const quickRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('jtc_btn_lock').setLabel('Lock / Unlock').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('jtc_btn_ghost').setLabel('Ghost / Visible').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('jtc_btn_claim').setLabel('Claim Owner').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('jtc_btn_info').setLabel('Room Info').setStyle(ButtonStyle.Secondary)
-  );
+  const quickRow = getJtcQuickRow();
 
   const container = new ContainerBuilder()
     .addTextDisplayComponents(

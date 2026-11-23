@@ -16,6 +16,38 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.8.1',
+    headline: 'JTC Animated Visual Interface Leap: 19 Custom Action Glyphs for Select Menus & Quick Control Buttons',
+    summary: 'Elevated Athena Prime\'s Voice Hub interface with a comprehensive custom animated emoji overhaul across all Join to Create controls. Integrated 19 numbered animated action glyphs across the Channel Settings & Configuration and Privacy & Access Permissions select menus, as well as the quick-action button strip (Lock/Unlock, Ghost/Visible, Claim Owner, and Room Info). Updated the live persistent #voice-controls interface deck in real-time.',
+    whatsNew: [
+      {
+        title: '19 Custom Animated JTC Glyphs',
+        desc: 'Equipped every option in both JTC dropdown menus with animated visual indicators from 01_adjust_bitrate through 19_transfer_ownership.'
+      },
+      {
+        title: 'Animated Quick Action Buttons',
+        desc: 'Added animated custom glyphs directly to the Lock/Unlock, Ghost/Visible, Claim Owner, and Room Info quick buttons.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Numerical Menu Alignment',
+        desc: 'Organized Channel Settings (01-11) and Privacy Permissions (12-19) into exact numerical sequence matching the action glyph badges.'
+      },
+      {
+        title: 'Centralized Emoji Matrix',
+        desc: 'Added JTC_EMOJIS registry in src/utils/emojis.js to keep all voice action components unified across control panels and ephemeral cards.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Live Panel In-Place Refresh',
+        desc: 'Successfully dispatched live component refresh to the persistent #voice-controls deck without resetting active voice rooms or configuration state.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.0',
     headline: '5-Tier Dynamic Voice Hub Engine: Squad [4] & Unlimited [Free] Separation, Live Infrastructure Migration & Orphan Cleanup',
     summary: 'Upgraded Athena Prime\'s Tiered Join to Create (JTC) architecture from 4 tiers to 5 distinct generator lobbies. Separated tactical squad gaming from open community hangouts by assigning Squad [4] a strict 4-member limit and introducing a dedicated 5th generator channel: Unlimited [Free] (0 user limit). Cleaned up orphaned dummy categories left by previous deployment race conditions in active guilds, automatically reconfigured live servers to the new 5-tier schema, synced real-time state with MongoDB Atlas, and refreshed the persistent #voice-controls control deck with updated room tier selectors.',
