@@ -1,5 +1,5 @@
 import { AuditLogEvent } from 'discord.js';
-import { directStrike, getRecentAuditEntry, rawRoleDelete, isRestorationHandled } from '../utils/antinuke.js';
+import { directStrike, getRecentAuditEntry, rawRoleDelete, isRestorationHandled, isGuildUnderAttack } from '../utils/antinuke.js';
 import db from '../database.js';
 import embed from '../embed.js';
 import { logServerEvent } from '../utils/serverLogger.js';
@@ -28,9 +28,10 @@ export default {
       }
     ).catch(() => null);
 
-    // Non-blocking server logging — zero REST audit contention with Anti-Nuke
+    // Non-blocking server logging — zero REST audit contention with Anti-Nuke (Silenced during attacks)
     (async () => {
       try {
+        if (isGuildUnderAttack(role.guild.id)) return;
         const ring = getRecentAuditEntry(role.guild.id, AuditLogEvent.RoleCreate, role.id);
         let executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown';
 

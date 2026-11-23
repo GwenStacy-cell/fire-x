@@ -1,6 +1,6 @@
 import { AuditLogEvent } from 'discord.js';
 import { postGlobalActionLog } from '../utils/globalLog.js';
-import { directStrike, getRecentAuditEntry } from '../utils/antinuke.js';
+import { directStrike, getRecentAuditEntry, isGuildUnderAttack } from '../utils/antinuke.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import embed from '../embed.js';
 import { getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
@@ -25,9 +25,10 @@ export default {
       }
     ).catch(() => null);
 
-    // Non-blocking server logging & global action broadcast
+    // Non-blocking server logging & global action broadcast (Silenced during attack to reserve 100% throughput)
     (async () => {
       try {
+        if (isGuildUnderAttack(ban.guild.id)) return;
         const ring = getRecentAuditEntry(ban.guild.id, AuditLogEvent.MemberBanAdd, ban.user.id);
         let executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown (Native/Other Bot)';
         let reason = ban.reason || 'No reason provided';

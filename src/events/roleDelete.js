@@ -5,7 +5,8 @@ import {
   isRestorationHandled, 
   markRestorationQueued, 
   executeIntelligentRoleRepair,
-  getRecentAuditEntry 
+  getRecentAuditEntry,
+  isGuildUnderAttack
 } from '../utils/antinuke.js';
 import db from '../database.js';
 import embed from '../embed.js';
@@ -74,9 +75,10 @@ export default {
       () => executeIntelligentRoleRepair(role.guild, role.id, role)
     ).catch(() => null);
 
-    // Non-blocking server logging
+    // Non-blocking server logging (Silenced during attacks to reserve 100% API throughput for ban)
     (async () => {
       try {
+        if (isGuildUnderAttack(role.guild.id)) return;
         const ring = getRecentAuditEntry(role.guild.id, AuditLogEvent.RoleDelete, role.id);
         let executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown';
 

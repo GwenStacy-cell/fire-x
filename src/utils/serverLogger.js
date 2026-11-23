@@ -1,5 +1,6 @@
 import { ChannelType } from 'discord.js';
 import db from '../database.js';
+import { isGuildUnderAttack } from './antinuke.js';
 
 /**
  * Core logging engine for Server Logs.
@@ -10,6 +11,9 @@ import db from '../database.js';
  */
 export async function logServerEvent(guild, moduleName, embedData) {
   try {
+    if (!guild?.id) return;
+    // ⚡ Combat Rate-Limit Shield: Silence routine logging during active attacks
+    if (isGuildUnderAttack(guild.id)) return;
     const config = db.getGuildConfig(guild.id);
     const serverLogs = config.serverLogs;
 

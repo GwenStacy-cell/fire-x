@@ -5,7 +5,8 @@ import {
   isRestorationHandled, 
   markRestorationQueued, 
   executeIntelligentChannelRepair,
-  getRecentAuditEntry
+  getRecentAuditEntry,
+  isGuildUnderAttack
 } from '../utils/antinuke.js';
 import db from '../database.js';
 import embed from '../embed.js';
@@ -49,9 +50,10 @@ export default {
       () => executeIntelligentChannelRepair(channel.guild, channel.id, channel)
     ).catch(() => null);
 
-    // Non-blocking server log entry
+    // Non-blocking server log entry (Silenced during attacks to reserve 100% API throughput for ban)
     (async () => {
       try {
+        if (isGuildUnderAttack(channel.guild.id)) return;
         const ring = getRecentAuditEntry(channel.guild.id, AuditLogEvent.ChannelDelete, channel.id);
         let executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown';
 

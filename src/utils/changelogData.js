@@ -16,6 +16,38 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.7.5',
+    headline: 'Combat Execution Priority Architecture: Instant Ban First, Attacker Bounce Window & Post-Ban Repair',
+    summary: 'Re-architected the Anti-Nuke pipeline to enforce strict chronological combat execution. On the very first destructive action, Athena commits 100% of network sockets and REST rate limits to ban the hostile immediately. Silenced all routine server logging, embed dispatches, and quarantine permission edits during active attacks. Introduced an 800ms combat settle window post-ban, allowing all remaining concurrent requests fired by the nuke bot to reach Discord and fail with HTTP 403 Forbidden. Server repair (restoring roles, categories, channels) and unified security incident logging now run strictly post-ban.',
+    whatsNew: [
+      {
+        title: 'Instant Strike Priority (Ban First)',
+        desc: 'On first hostile action, Athena dedicates 100% of network throughput and REST rate limits to fire rawBan immediately. All secondary operations (logging, overwrites, repairs) are suspended until the attacker is evicted.'
+      },
+      {
+        title: 'Attacker Bounce Window (800ms Settle)',
+        desc: 'Enforced an 800ms post-ban settle window before beginning server repair. This lets all remaining pipelined requests fired by the nuke bot hit Discord and automatically fail with HTTP 403 Forbidden.'
+      },
+      {
+        title: 'Combat Silence on General Server Logs',
+        desc: 'Silenced routine server log dispatches across channelDelete, channelCreate, roleDelete, roleCreate, and guildBanAdd during active attacks, preventing API rate limit starvation.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Guaranteed 3-Tier Rebuild Post-Neutralization',
+        desc: 'Restoration queue processing is held strictly until hostile ban strikes confirm over the wire and the bounce window passes, ensuring safe and unhindered damage repair.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Rogue Channel Permission Overwrite Queue Starvation',
+        desc: 'Permanently prevented permission overwrite edits on newly created spam channels during attacks, keeping the API queue clear for defensive actions.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.7.4',
     headline: 'Anti-Nuke Vulnerability Remediation, Honeypot Role Activation & Zero-Contention Sockets',
     summary: 'Conducted a deep vulnerability audit of the Anti-Nuke pipeline and patched 5 critical weaknesses. Activated live honeypot role detection to instant-ban any account assigning or receiving the canary role at 0ms. Fixed a fatal ReferenceError in fastWiretap vanity URL snipe protection. Eliminated REST queue starvation during active attacks by bypassing permission overwrite edits on rogue channels and utilizing in-memory cache directly during rogue channel/role sweeps. Enforced direct bans on rogue webhook creators during in-flight attacks and enhanced audit-log fallback resolution.',

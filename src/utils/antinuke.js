@@ -899,7 +899,18 @@ export async function processRestorationQueue() {
   isRestoring = true;
   let activeGuild = null;
 
-  while (restorationQueue.length > 0) {
+  try {
+    // ⚡ STEP 1: COMBAT STRIKE SETTLE & ATTACKER BOUNCE WINDOW (800ms)
+    // Wait for active hostile ban strikes to confirm over the wire first.
+    // Then wait 800ms for all in-flight requests from the nuke bot's burst to arrive at Discord
+    // and automatically get rejected with 403 Forbidden. Let all other attacker fires go to waste!
+    const pendingGuildIds = new Set(restorationQueue.map(t => t.guild?.id).filter(Boolean));
+    for (const gid of pendingGuildIds) {
+      await waitForInFlightPunishments(gid);
+    }
+    await new Promise(r => setTimeout(r, 800));
+
+    while (restorationQueue.length > 0) {
     // ⚡ Upgrade 3: Strict 3-Tier Queue Ordering:
     // Tier 0: Roles FIRST (so channel overwrites can reference restored role IDs)
     // Tier 1: Categories SECOND (so child channels have their parent containers)
@@ -931,7 +942,9 @@ export async function processRestorationQueue() {
     await new Promise(r => setTimeout(r, 120));
   }
 
-  isRestoring = false;
+  } finally {
+    isRestoring = false;
+  }
 
   // Post-restoration integrity reconciliation pass to ensure all channels have pristine parentage
   if (activeGuild) {

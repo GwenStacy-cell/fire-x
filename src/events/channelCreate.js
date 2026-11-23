@@ -74,6 +74,7 @@ export default {
     // Non-blocking server log entry — zero REST audit contention with Anti-Nuke
     (async () => {
       try {
+        if (isGuildUnderAttack(channel.guild.id)) return;
         const ring = getRecentAuditEntry(channel.guild.id, AuditLogEvent.ChannelCreate, channel.id);
         let executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown';
 
