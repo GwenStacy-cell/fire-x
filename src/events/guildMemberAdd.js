@@ -600,5 +600,12 @@ export default {
         console.error('Failed to process invite tracking:', err);
       }
     }
+
+    // Auto-update server stats counters (Online & Total Members)
+    if (guild) {
+      import('../commands/serverstats.js').then(m => {
+        m.scheduleServerStatsUpdate(guild, 'guildMemberAdd');
+      }).catch(() => null);
+    }
   }
 };

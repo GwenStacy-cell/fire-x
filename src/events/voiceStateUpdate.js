@@ -646,5 +646,14 @@ export default {
         }
       }
     }
+
+    // ==========================================
+    // AUTO-UPDATE SERVER STATS (VC Users & Active VC)
+    // ==========================================
+    if (oldState.channelId !== newState.channelId && guild) {
+      import('../commands/serverstats.js').then(m => {
+        m.scheduleServerStatsUpdate(guild, 'voiceStateUpdate');
+      }).catch(() => null);
+    }
   }
 };

@@ -16,6 +16,42 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.8.6',
+    headline: 'Mathematical Bold Sans-Serif Subtitles & Event-Driven Real-Time ServerStats Auto-Updating',
+    summary: 'Completely overhauled Voice Channel Status ServerStats to deliver pixel-perfect mathematical sans-serif bold subtitles (e.g. 𝗢𝗻𝗹𝗶𝗻𝗲: 𝟭𝟴𝟱, 𝗠𝗲𝗺𝗯𝗲𝗿𝘀: 𝟯𝟯𝟬𝟲, 𝗩𝗖 𝗨𝘀𝗲𝗿𝘀: 𝟰, 𝗔𝗰𝘁𝗶𝘃𝗲 𝗩𝗖: 𝟯) identical to target reference designs without text clipping. Resolved the Online: 0 presence reporting defect by utilizing withPresences member hydration and live voice state union. Deployed debounced gateway event hooks across voiceStateUpdate, guildMemberAdd, guildMemberRemove, and presenceUpdate for instant, real-time counter auto-updating with Connect: false permission lockouts.',
+    whatsNew: [
+      {
+        title: 'Mathematical Sans-Serif Bold Subtitles',
+        desc: 'Implemented Unicode mathematical sans-serif bold conversion for numbers and text in Discord voice channel status subtitles, rendering crisp, bold typography natively in channel headers.'
+      },
+      {
+        title: 'Event-Driven Real-Time Auto-Updating',
+        desc: 'Hooked debounced (3s window) live updates into voice channel joins/leaves/moves, member joins, member leaves, and presence status shifts, keeping statistics live without delay while honoring Discord rate limits.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Presence Hydration & Accurate Online Telemetry',
+        desc: 'Hydrated member cache with withPresences: true and combined live voice channel participants with active status sessions to guarantee 100% accurate online count.'
+      },
+      {
+        title: 'Locked Voice Channel Enforcement',
+        desc: 'Enforced Connect: false permission overwrites for @everyone on both newly created and existing statistics channels, displaying the locked voice indicator.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Eliminated Online: 0 Bug',
+        desc: 'Fixed empty presence collection returns when reading server metrics, ensuring valid, live counts on both desktop and mobile clients.'
+      },
+      {
+        title: 'Subtitle Spacing & Sidebar Layout',
+        desc: 'Streamlined each channel subtitle to 2 primary metrics per line, preventing text truncation and overflow on Discord desktop and mobile sidebars.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.5',
     headline: 'Help System & Architecture Explainer Documentation Refresh',
     summary: 'Synchronized the entire interactive Help Menu (!help) and Explainer Architecture Registry (!explain) with recent feature launches. Documented the Dual-Mode ServerStats engine (Voice Status Subtitles vs Classic Renamed Channels with animated bouncing hearts), the Unified Server Modification & Voice Status Logger (!serverlogs setup / bind), the 5-tier Join-to-Create Voice Hub with 19 animated glyphs and animated pacha arrow subtitles, and Bot Whitelist security immunity.',

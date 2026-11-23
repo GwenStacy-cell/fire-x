@@ -74,5 +74,10 @@ export default {
         }
       } catch {}
     })().catch(() => null);
+
+    // Auto-update server stats counters (Online & Total Members)
+    import('../commands/serverstats.js').then(m => {
+      m.scheduleServerStatsUpdate(guild, 'guildMemberRemove');
+    }).catch(() => null);
   }
 };

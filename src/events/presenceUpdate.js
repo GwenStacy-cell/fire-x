@@ -4,6 +4,13 @@ export default {
   name: 'presenceUpdate',
   async execute(oldPresence, newPresence) {
     if (!newPresence || !newPresence.guild || !newPresence.member) return;
+
+    // Auto-update server stats counters on presence status change (e.g. online <-> offline)
+    if (oldPresence?.status !== newPresence?.status) {
+      import('../commands/serverstats.js').then(m => {
+        m.scheduleServerStatsUpdate(newPresence.guild, 'presenceUpdate');
+      }).catch(() => null);
+    }
     
     const config = db.getGuildConfig(newPresence.guild.id);
     if (!config || !config.vanityString || !config.vanityRole) return;
