@@ -9,7 +9,8 @@ import {
   isGuildUnderAttack
 } from '../utils/antinuke.js';
 import embed from '../embed.js';
-import { logServerEvent } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { formatUserLink } from '../utils/helpers.js';
 
 export default {
   name: 'channelCreate',
@@ -75,20 +76,25 @@ export default {
     (async () => {
       try {
         if (isGuildUnderAttack(channel.guild.id)) return;
-        const ring = getRecentAuditEntry(channel.guild.id, AuditLogEvent.ChannelCreate, channel.id);
-        let executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown';
+        const { executor, reason } = await getAuditExecutorAndReason(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
+        const executorStr = executor ? `${formatUserLink(executor, channel.guild)} (\`${executor.id}\`)` : 'Unknown';
 
-        if (executor === 'Unknown') {
-          await new Promise(r => setTimeout(r, 2000));
-          const lateRing = getRecentAuditEntry(channel.guild.id, AuditLogEvent.ChannelCreate, channel.id);
-          if (lateRing?.executor) {
-            executor = `${lateRing.executor.tag} (<@${lateRing.executor.id}>)`;
-          }
-        }
+        const isVoice = channel.type === 2 || channel.type === 'GuildVoice';
+        const isCat = channel.type === 4 || channel.type === 'GuildCategory';
+        const title = isCat ? 'Category created' : (isVoice ? 'Voice channel created' : 'Text channel created');
+        const channelLink = `[#${channel.name}](https://discord.com/channels/${channel.guild.id}/${channel.id})`;
 
-        const createEmbed = embed.build({
-          description: `__**Channel Created |**__ <a:uptime:1552608831060844575>\n> **Channel:** ${channel.name} (<#${channel.id}>)\n>  **Type:** ${channel.type}\n>  **Executor:** ${executor}`,
-          color: '#2b2d31'
+        const createEmbed = buildServerLogEmbed({
+          title,
+          color: '#43B581',
+          attributes: {
+            'Name': `${channel.name} (${channelLink})`,
+            'ID': `\`${channel.id}\``,
+            'Category': channel.parent?.name || 'None',
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: channel.guild.client
         });
         await logServerEvent(channel.guild, 'channels', createEmbed);
       } catch {}

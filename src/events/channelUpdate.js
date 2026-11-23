@@ -1,6 +1,8 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, isChannelRestoring, markChannelRestoring } from '../utils/antinuke.js';
+import { directStrike, isChannelRestoring, markChannelRestoring, isGuildUnderAttack } from '../utils/antinuke.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export default {
   name: 'channelUpdate',
@@ -87,5 +89,40 @@ export default {
         ).catch(() => null);
       }
     }
+
+    // 4. Non-blocking server log entry for channel updates
+    (async () => {
+      try {
+        if (isGuildUnderAttack(guild.id)) return;
+        const changes = [];
+        if (oldChannel.name !== newChannel.name) changes.push(`**Name:** \`${oldChannel.name}\` ➔ \`${newChannel.name}\``);
+        if (oldChannel.topic !== newChannel.topic) changes.push(`**Topic:** \`${oldChannel.topic || 'None'}\` ➔ \`${newChannel.topic || 'None'}\``);
+        if (oldChannel.parentId !== newChannel.parentId) changes.push(`**Category:** \`${oldChannel.parent?.name || 'None'}\` ➔ \`${newChannel.parent?.name || 'None'}\``);
+        if (oldChannel.nsfw !== newChannel.nsfw) changes.push(`**NSFW:** \`${oldChannel.nsfw}\` ➔ \`${newChannel.nsfw}\``);
+        if (oldChannel.bitrate !== newChannel.bitrate) changes.push(`**Bitrate:** \`${(oldChannel.bitrate/1000) || 0}kbps\` ➔ \`${(newChannel.bitrate/1000) || 0}kbps\``);
+        if (oldChannel.userLimit !== newChannel.userLimit) changes.push(`**User Limit:** \`${oldChannel.userLimit || 'Unlimited'}\` ➔ \`${newChannel.userLimit || 'Unlimited'}\``);
+        if (oldChannel.rateLimitPerUser !== newChannel.rateLimitPerUser) changes.push(`**Slowmode:** \`${oldChannel.rateLimitPerUser || 0}s\` ➔ \`${newChannel.rateLimitPerUser || 0}s\``);
+
+        if (changes.length === 0) return;
+
+        const { executor, reason } = await getAuditExecutorAndReason(guild, AuditLogEvent.ChannelUpdate, newChannel.id);
+        const executorStr = executor ? `${formatUserLink(executor, guild)} (\`${executor.id}\`)` : 'Unknown';
+        const channelLink = `[#${newChannel.name}](https://discord.com/channels/${guild.id}/${newChannel.id})`;
+
+        const updateEmbed = buildServerLogEmbed({
+          title: 'Channel updated',
+          color: '#5865F2',
+          attributes: {
+            'Channel': `${newChannel.name} (${channelLink})`,
+            'ID': `\`${newChannel.id}\``,
+            'Changes': '\n' + changes.join('\n'),
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: guild.client
+        });
+        await logServerEvent(guild, 'channels', updateEmbed);
+      } catch {}
+    })().catch(() => null);
   }
 };

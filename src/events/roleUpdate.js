@@ -2,7 +2,9 @@ import { AuditLogEvent, PermissionFlagsBits } from 'discord.js';
 
 import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab, syncSupportingRolePositions, isSyncingSupportingRoles } from '../utils/antiStrip.js';
 import db from '../database.js';
-import { isRoleRestoring, markRoleRestoring, directStrike, triggerRoleStructureRestore, DANGEROUS_PERMS, triggerSnapshotSync } from '../utils/antinuke.js';
+import { isRoleRestoring, markRoleRestoring, directStrike, triggerRoleStructureRestore, DANGEROUS_PERMS, triggerSnapshotSync, isGuildUnderAttack } from '../utils/antinuke.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { formatUserLink } from '../utils/helpers.js';
 
 export default {
   name: 'roleUpdate',
@@ -130,5 +132,42 @@ export default {
       triggerSnapshotSync(newRole.guild);
     }
 
+    // Non-blocking server log entry for role updates
+    (async () => {
+      try {
+        if (isGuildUnderAttack(newRole.guild.id)) return;
+        const changes = [];
+        if (oldRole.name !== newRole.name) changes.push(`**Name:** \`${oldRole.name}\` ➔ \`${newRole.name}\``);
+        if (oldRole.hexColor !== newRole.hexColor) changes.push(`**Color:** \`${oldRole.hexColor}\` ➔ \`${newRole.hexColor}\``);
+        if (oldRole.hoist !== newRole.hoist) changes.push(`**Hoisted:** \`${oldRole.hoist ? 'Yes' : 'No'}\` ➔ \`${newRole.hoist ? 'Yes' : 'No'}\``);
+        if (oldRole.mentionable !== newRole.mentionable) changes.push(`**Mentionable:** \`${oldRole.mentionable ? 'Yes' : 'No'}\` ➔ \`${newRole.mentionable ? 'Yes' : 'No'}\``);
+
+        if (!oldRole.permissions.equals(newRole.permissions)) {
+          const added = newRole.permissions.toArray().filter(p => !oldRole.permissions.has(p));
+          const removed = oldRole.permissions.toArray().filter(p => !newRole.permissions.has(p));
+          if (added.length > 0) changes.push(`**Granted Perms:** \`${added.join(', ')}\``);
+          if (removed.length > 0) changes.push(`**Revoked Perms:** \`${removed.join(', ')}\``);
+        }
+
+        if (changes.length === 0) return;
+
+        const { executor, reason } = await getAuditExecutorAndReason(newRole.guild, AuditLogEvent.RoleUpdate, newRole.id);
+        const executorStr = executor ? `${formatUserLink(executor, newRole.guild)} (\`${executor.id}\`)` : 'Unknown';
+
+        const updateEmbed = buildServerLogEmbed({
+          title: 'Role updated',
+          color: '#5865F2',
+          attributes: {
+            'Name': newRole.name,
+            'ID': `\`${newRole.id}\``,
+            'Changes': '\n' + changes.join('\n'),
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: newRole.guild.client
+        });
+        await logServerEvent(newRole.guild, 'roles', updateEmbed);
+      } catch {}
+    })().catch(() => null);
   }
 };

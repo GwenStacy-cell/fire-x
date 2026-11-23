@@ -2439,6 +2439,23 @@ export const DETAILED_COMMANDS = {
     example: '!serverstats setup'
   },
 
+  serverlogs: {
+    name: 'serverlogs',
+    aliases: ['slogs', 'logchannel', 'auditlogs', 'serverlog'],
+    category: 'Utility & Logging',
+    clearance: 'Administrator',
+    syntax: '!serverlogs <setup|bind <#channel>|test|disable>',
+    purpose: 'Automated server modification and voice channel status audit logger with auto-creation and custom channel binding.',
+    architecture: 
+`• **Dual Deployment Options:** 
+  - Auto-Create (\`!serverlogs setup\`): Automatically deploys a private staff-only channel \`📁・server-logs\` under category \`╭・Logs\` with instant permissions configuration.
+  - Bind Existing (\`!serverlogs bind <#channel>\`): Binds any pre-existing text channel to route all live server modifications.
+• **Comprehensive Modification Coverage:** Logs channel creations/updates/deletions, voice channel status subtitle changes, role creations/updates/deletions/permission diffs, server identity changes, emoji/sticker updates, webhooks, and invites.
+• **High-Accuracy Attribution:** Fast-path audit ring buffer and non-blocking REST fallback attributing exact executors using nickname markdown links.
+• **Combat Rate-Limit Shield:** Automatically suspends routine logging during active attacks to preserve 100% gateway API throughput for instant bans.`,
+    example: '!serverlogs setup'
+  },
+
   pinterest: {
     name: 'pinterest',
     aliases: ['pin', 'pinit', 'pintrest'],

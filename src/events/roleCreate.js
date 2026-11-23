@@ -1,8 +1,8 @@
 import { AuditLogEvent } from 'discord.js';
 import { directStrike, getRecentAuditEntry, rawRoleDelete, isRestorationHandled, isGuildUnderAttack } from '../utils/antinuke.js';
 import db from '../database.js';
-import embed from '../embed.js';
-import { logServerEvent } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { formatUserLink } from '../utils/helpers.js';
 
 export default {
   name: 'roleCreate',
@@ -32,20 +32,22 @@ export default {
     (async () => {
       try {
         if (isGuildUnderAttack(role.guild.id)) return;
-        const ring = getRecentAuditEntry(role.guild.id, AuditLogEvent.RoleCreate, role.id);
-        let executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown';
+        const { executor, reason } = await getAuditExecutorAndReason(role.guild, AuditLogEvent.RoleCreate, role.id);
+        const executorStr = executor ? `${formatUserLink(executor, role.guild)} (\`${executor.id}\`)` : 'Unknown';
 
-        if (executor === 'Unknown') {
-          await new Promise(r => setTimeout(r, 2000));
-          const lateRing = getRecentAuditEntry(role.guild.id, AuditLogEvent.RoleCreate, role.id);
-          if (lateRing?.executor) {
-            executor = `${lateRing.executor.tag} (<@${lateRing.executor.id}>)`;
-          }
-        }
-
-        const createEmbed = embed.build({
-          description: `__**Role Created |**__ <a:uptime:1552608831060844575>\n> **Role:** ${role.name} (<@&${role.id}>)\n>  **Executor:** ${executor}`,
-          color: '#2b2d31'
+        const createEmbed = buildServerLogEmbed({
+          title: 'Role created',
+          color: '#43B581',
+          attributes: {
+            'Name': role.name,
+            'ID': `\`${role.id}\``,
+            'Color': role.hexColor !== '#000000' ? role.hexColor : 'Default',
+            'Hoisted': role.hoist ? 'Yes' : 'No',
+            'Mentionable': role.mentionable ? 'Yes' : 'No',
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: role.guild.client
         });
         await logServerEvent(role.guild, 'roles', createEmbed);
       } catch {}

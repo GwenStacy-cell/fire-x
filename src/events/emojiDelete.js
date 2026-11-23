@@ -1,6 +1,8 @@
 ﻿import { AuditLogEvent } from 'discord.js';
-import { cacheDeletedItem, directStrike, deletedCache, queuedRestorations } from '../utils/antinuke.js';
+import { cacheDeletedItem, directStrike, deletedCache, queuedRestorations, isGuildUnderAttack } from '../utils/antinuke.js';
 import db from '../database.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { formatUserLink } from '../utils/helpers.js';
 
 export default {
   name: 'emojiDelete',
@@ -30,5 +32,28 @@ export default {
         } catch {}
       }
     ).catch(() => null);
+
+    // Non-blocking server log entry
+    (async () => {
+      try {
+        if (isGuildUnderAttack(emoji.guild.id)) return;
+        const { executor, reason } = await getAuditExecutorAndReason(emoji.guild, AuditLogEvent.EmojiDelete, emoji.id);
+        const executorStr = executor ? `${formatUserLink(executor, emoji.guild)} (\`${executor.id}\`)` : 'Unknown';
+
+        const delEmbed = buildServerLogEmbed({
+          title: 'Emoji deleted',
+          color: '#F04747',
+          attributes: {
+            'Name': emoji.name,
+            'ID': `\`${emoji.id}\``,
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: emoji.guild.client
+        });
+        await logServerEvent(emoji.guild, 'emojis', delEmbed);
+      } catch {}
+    })().catch(() => null);
   }
 };
+

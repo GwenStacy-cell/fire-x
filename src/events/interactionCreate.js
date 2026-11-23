@@ -304,6 +304,14 @@ export default {
     }
 
     // ==========================================
+    // SERVER LOGS (╭・Logs) INTERACTIVE CONTROLS
+    // ==========================================
+    if (interaction.customId && interaction.customId.startsWith('serverlogs_btn_')) {
+      const { handleServerLogsInteraction } = await import('../commands/serverlogs.js');
+      return handleServerLogsInteraction(interaction);
+    }
+
+    // ==========================================
     // ROLE MANAGER (EDITROLE / ER) INTERACTIVE CONTROLS
     // ==========================================
     if (interaction.customId && interaction.customId.startsWith('rm_')) {

@@ -1,8 +1,9 @@
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
 import { hasDangerousPerms, DANGEROUS_PERMS, rawBan, condemn } from '../utils/antinuke.js';
-import { logToSecurityChannel, isBotOwnerSync, getUserTierName, formatUserLink } from '../utils/helpers.js';
+import { logToSecurityChannel, isBotOwnerSync, getUserTierName, formatUserLink, formatChannelLink } from '../utils/helpers.js';
 import { Routes, PermissionFlagsBits, MessageFlags } from 'discord.js';
+import { buildServerLogEmbed, logServerEvent } from '../utils/serverLogger.js';
 
 export default {
   name: 'inviteCreate',
@@ -141,5 +142,32 @@ export default {
     } catch (err) {
       console.error('[AntiNuke] Error in inviteCreate dangerous role inspection:', err);
     }
+
+    // Non-blocking server log entry for created invites
+    (async () => {
+      try {
+        const creatorStr = invite.inviter 
+          ? `${formatUserLink(invite.inviter, invite.guild)} (\`${invite.inviter.id}\`)`
+          : 'Unknown';
+        const channelStr = invite.channel 
+          ? formatChannelLink(invite.channel.id, invite.guild)
+          : 'Unknown';
+
+        const invEmbed = buildServerLogEmbed({
+          title: 'Invite created',
+          color: '#43B581',
+          attributes: {
+            'Code': `\`${invite.code}\``,
+            'Channel': channelStr,
+            'Creator': creatorStr,
+            'Max Uses': invite.maxUses === 0 ? 'Infinite' : invite.maxUses,
+            'Expires': invite.maxAge === 0 ? 'Never' : `${invite.maxAge} seconds`,
+            'Temporary': invite.temporary ? 'Yes' : 'No'
+          },
+          client: invite.guild?.client
+        });
+        await logServerEvent(invite.guild, 'invites', invEmbed);
+      } catch {}
+    })().catch(() => null);
   }
 };

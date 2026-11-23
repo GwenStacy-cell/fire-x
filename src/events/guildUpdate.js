@@ -1,6 +1,8 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
 import { directStrike, isGuildUnderAttack, dispatcher } from '../utils/antinuke.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export default {
   name: 'guildUpdate',
@@ -82,5 +84,56 @@ export default {
         rollbackIdentity
       ).catch(() => null);
     }
+
+    // 3. Non-blocking server log entry for all server/guild modifications
+    (async () => {
+      try {
+        if (isGuildUnderAttack(newGuild.id)) return;
+        const changes = [];
+        if (oldGuild.name !== newGuild.name) changes.push(`**Server Name:** \`${oldGuild.name}\` ➔ \`${newGuild.name}\``);
+        if (oldGuild.icon !== newGuild.icon) changes.push(`**Server Icon:** Icon updated`);
+        if (oldGuild.banner !== newGuild.banner) changes.push(`**Server Banner:** Banner updated`);
+        if (oldGuild.splash !== newGuild.splash) changes.push(`**Invite Splash:** Splash updated`);
+        if (oldGuild.afkChannelId !== newGuild.afkChannelId) {
+          const oldAfk = oldGuild.afkChannelId ? formatChannelLink(oldGuild.afkChannelId, newGuild) : 'None';
+          const newAfk = newGuild.afkChannelId ? formatChannelLink(newGuild.afkChannelId, newGuild) : 'None';
+          changes.push(`**AFK Channel:** ${oldAfk} ➔ ${newAfk}`);
+        }
+        if (oldGuild.afkTimeout !== newGuild.afkTimeout) changes.push(`**AFK Timeout:** \`${oldGuild.afkTimeout / 60}m\` ➔ \`${newGuild.afkTimeout / 60}m\``);
+        if (oldGuild.systemChannelId !== newGuild.systemChannelId) {
+          const oldSys = oldGuild.systemChannelId ? formatChannelLink(oldGuild.systemChannelId, newGuild) : 'None';
+          const newSys = newGuild.systemChannelId ? formatChannelLink(newGuild.systemChannelId, newGuild) : 'None';
+          changes.push(`**System Channel:** ${oldSys} ➔ ${newSys}`);
+        }
+        if (oldGuild.rulesChannelId !== newGuild.rulesChannelId) {
+          const oldRules = oldGuild.rulesChannelId ? formatChannelLink(oldGuild.rulesChannelId, newGuild) : 'None';
+          const newRules = newGuild.rulesChannelId ? formatChannelLink(newGuild.rulesChannelId, newGuild) : 'None';
+          changes.push(`**Rules Channel:** ${oldRules} ➔ ${newRules}`);
+        }
+        if (oldGuild.verificationLevel !== newGuild.verificationLevel) changes.push(`**Verification Level:** \`${oldGuild.verificationLevel}\` ➔ \`${newGuild.verificationLevel}\``);
+        if (oldGuild.defaultMessageNotifications !== newGuild.defaultMessageNotifications) changes.push(`**Default Notifications:** \`${oldGuild.defaultMessageNotifications}\` ➔ \`${newGuild.defaultMessageNotifications}\``);
+        if (oldGuild.explicitContentFilter !== newGuild.explicitContentFilter) changes.push(`**Explicit Content Filter:** \`${oldGuild.explicitContentFilter}\` ➔ \`${newGuild.explicitContentFilter}\``);
+        if (oldGuild.vanityURLCode !== newGuild.vanityURLCode) changes.push(`**Vanity Code:** \`${oldGuild.vanityURLCode || 'None'}\` ➔ \`${newGuild.vanityURLCode || 'None'}\``);
+
+        if (changes.length === 0) return;
+
+        const { executor, reason } = await getAuditExecutorAndReason(newGuild, AuditLogEvent.GuildUpdate, newGuild.id);
+        const executorStr = executor ? `${formatUserLink(executor, newGuild)} (\`${executor.id}\`)` : 'Unknown';
+
+        const updateEmbed = buildServerLogEmbed({
+          title: 'Server settings updated',
+          color: '#FEE75C',
+          attributes: {
+            'Server': newGuild.name,
+            'ID': `\`${newGuild.id}\``,
+            'Changes': '\n' + changes.join('\n'),
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: newGuild.client
+        });
+        await logServerEvent(newGuild, 'server', updateEmbed);
+      } catch {}
+    })().catch(() => null);
   }
 };

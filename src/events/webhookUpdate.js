@@ -1,6 +1,8 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, rawDeleteWebhook, rawBan, isAuthorized, condemn, setGuildUnderAttack } from '../utils/antinuke.js';
+import { directStrike, rawDeleteWebhook, rawBan, isAuthorized, condemn, setGuildUnderAttack, isGuildUnderAttack } from '../utils/antinuke.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export default {
   name: 'webhooksUpdate',
@@ -66,5 +68,27 @@ export default {
     } catch (err) {
       console.error('[Antinuke] Webhook Wiretap error:', err);
     }
+
+    // Non-blocking server log entry for webhooks
+    (async () => {
+      try {
+        if (isGuildUnderAttack(guild.id)) return;
+        const { executor, reason } = await getAuditExecutorAndReason(guild, AuditLogEvent.WebhookCreate, null);
+        const executorStr = executor ? `${formatUserLink(executor, guild)} (\`${executor.id}\`)` : 'Unknown';
+
+        const whEmbed = buildServerLogEmbed({
+          title: 'Webhook updated',
+          color: '#5865F2',
+          attributes: {
+            'Channel': formatChannelLink(channel.id, guild),
+            'Channel ID': `\`${channel.id}\``,
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: guild.client
+        });
+        await logServerEvent(guild, 'webhooks', whEmbed);
+      } catch {}
+    })().catch(() => null);
   }
 };

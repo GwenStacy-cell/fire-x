@@ -10,7 +10,8 @@ import {
 } from '../utils/antinuke.js';
 import db from '../database.js';
 import embed from '../embed.js';
-import { logServerEvent } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { formatUserLink } from '../utils/helpers.js';
 
 export default {
   name: 'channelDelete',
@@ -33,7 +34,22 @@ export default {
 
     // ⚡ JTC Temporary Channel & Infrastructure Sync - Prevent Anti-Nuke false alarms & direct strikes
     if (db.isJtcChannel(channel.id) || db.isJtcInfrastructure(channel.guild.id, channel.id)) {
-      if (db.isJtcChannel(channel.id)) db.removeJtcChannel(channel.id);
+      const isJtc = db.isJtcChannel(channel.id);
+      if (isJtc) db.removeJtcChannel(channel.id);
+
+      // Log JTC deletion directly matching live server logs layout
+      const jtcEmbed = buildServerLogEmbed({
+        title: 'Voice channel deleted',
+        color: '#F04747',
+        attributes: {
+          'Name': channel.name,
+          'ID': `\`${channel.id}\``,
+          'Category': channel.parent?.name || 'Athena Voice Hub',
+          'Reason': 'JTC: All members left, auto-cleanup'
+        },
+        client: channel.guild.client
+      });
+      logServerEvent(channel.guild, 'channels', jtcEmbed).catch(() => null);
       return;
     }
 
@@ -60,20 +76,24 @@ export default {
     (async () => {
       try {
         if (isGuildUnderAttack(channel.guild.id)) return;
-        const ring = getRecentAuditEntry(channel.guild.id, AuditLogEvent.ChannelDelete, channel.id);
-        let executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown';
+        const { executor, reason } = await getAuditExecutorAndReason(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
+        const executorStr = executor ? `${formatUserLink(executor, channel.guild)} (\`${executor.id}\`)` : 'Unknown';
 
-        if (executor === 'Unknown') {
-          await new Promise(r => setTimeout(r, 2000));
-          const lateRing = getRecentAuditEntry(channel.guild.id, AuditLogEvent.ChannelDelete, channel.id);
-          if (lateRing?.executor) {
-            executor = `${lateRing.executor.tag} (<@${lateRing.executor.id}>)`;
-          }
-        }
+        const isVoice = channel.type === 2 || channel.type === 'GuildVoice';
+        const isCat = channel.type === 4 || channel.type === 'GuildCategory';
+        const title = isVoice ? 'Voice channel deleted' : (isCat ? 'Category deleted' : 'Text channel deleted');
 
-        const delEmbed = embed.build({
-          description: `__**Channel Deleted |**__ <a:uptime:1552608831060844575>\n> **Channel Name:** ${channel.name}\n>  **Type:** ${channel.type}\n>  **Executor:** ${executor}`,
-          color: '#2b2d31'
+        const delEmbed = buildServerLogEmbed({
+          title,
+          color: '#F04747',
+          attributes: {
+            'Name': channel.name,
+            'ID': `\`${channel.id}\``,
+            'Category': channel.parent?.name || 'None',
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: channel.guild.client
         });
         await logServerEvent(channel.guild, 'channels', delEmbed);
       } catch {}

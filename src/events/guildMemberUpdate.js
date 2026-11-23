@@ -5,6 +5,7 @@ import { isBotOwnerSync, logToSecurityChannel, getUserTierName, isServerAdmin, i
 import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawBan, getRecentAuditEntry, rawFetchAuditLogs, condemn, setGuildUnderAttack } from '../utils/antinuke.js';
 import { executeQuarantine } from '../commands/security.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
 
 export default {
   name: 'guildMemberUpdate',
@@ -538,5 +539,51 @@ export default {
       }
     }
 
+    // Non-blocking server log entry for member updates (Nickname / Role changes / Timeout)
+    (async () => {
+      try {
+        if (isGuildUnderAttack(newMember.guild.id)) return;
+        const changes = [];
+        if (oldMember.nickname !== newMember.nickname) {
+          changes.push(`**Nickname:** \`${oldMember.nickname || oldMember.user.username}\` ➔ \`${newMember.nickname || newMember.user.username}\``);
+        }
+
+        const addedRoles = newMember.roles.cache.filter(r => !oldMember.roles.cache.has(r.id) && r.id !== newMember.guild.id);
+        const removedRolesList = oldMember.roles.cache.filter(r => !newMember.roles.cache.has(r.id) && r.id !== newMember.guild.id);
+
+        if (addedRoles.size > 0) {
+          changes.push(`**Added Roles:** ${addedRoles.map(r => `\`${r.name}\``).join(', ')}`);
+        }
+        if (removedRolesList.size > 0) {
+          changes.push(`**Removed Roles:** ${removedRolesList.map(r => `\`${r.name}\``).join(', ')}`);
+        }
+
+        if (oldMember.communicationDisabledUntilTimestamp !== newMember.communicationDisabledUntilTimestamp) {
+          if (newMember.isCommunicationDisabled()) {
+            changes.push(`**Timed Out Until:** <t:${Math.floor(newMember.communicationDisabledUntilTimestamp / 1000)}:R>`);
+          } else {
+            changes.push(`**Timeout Removed**`);
+          }
+        }
+
+        if (changes.length === 0) return;
+
+        const { executor, reason } = await getAuditExecutorAndReason(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
+        const executorStr = executor ? `${formatUserLink(executor, newMember.guild)} (\`${executor.id}\`)` : 'Unknown';
+
+        const memberEmbed = buildServerLogEmbed({
+          title: 'Member updated',
+          color: '#5865F2',
+          attributes: {
+            'Member': `${formatUserLink(newMember, newMember.guild)} (\`${newMember.id}\`)`,
+            'Changes': '\n' + changes.join('\n'),
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: newMember.guild.client
+        });
+        await logServerEvent(newMember.guild, 'roles', memberEmbed);
+      } catch {}
+    })().catch(() => null);
   }
 };

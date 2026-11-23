@@ -9,8 +9,8 @@ import {
   isGuildUnderAttack
 } from '../utils/antinuke.js';
 import db from '../database.js';
-import embed from '../embed.js';
-import { logServerEvent } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { formatUserLink } from '../utils/helpers.js';
 import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, ensureUnbypassableRole, handleAntiStab } from '../utils/antiStrip.js';
 
 export default {
@@ -79,20 +79,19 @@ export default {
     (async () => {
       try {
         if (isGuildUnderAttack(role.guild.id)) return;
-        const ring = getRecentAuditEntry(role.guild.id, AuditLogEvent.RoleDelete, role.id);
-        let executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown';
+        const { executor, reason } = await getAuditExecutorAndReason(role.guild, AuditLogEvent.RoleDelete, role.id);
+        const executorStr = executor ? `${formatUserLink(executor, role.guild)} (\`${executor.id}\`)` : 'Unknown';
 
-        if (executor === 'Unknown') {
-          await new Promise(r => setTimeout(r, 2000));
-          const lateRing = getRecentAuditEntry(role.guild.id, AuditLogEvent.RoleDelete, role.id);
-          if (lateRing?.executor) {
-            executor = `${lateRing.executor.tag} (<@${lateRing.executor.id}>)`;
-          }
-        }
-
-        const delEmbed = embed.build({
-          description: `__**Role Deleted |**__ <a:uptime:1552608831060844575>\n> **Role Name:** ${role.name}\n>  **Executor:** ${executor}`,
-          color: '#2b2d31'
+        const delEmbed = buildServerLogEmbed({
+          title: 'Role deleted',
+          color: '#F04747',
+          attributes: {
+            'Name': role.name,
+            'ID': `\`${role.id}\``,
+            'Executor': executorStr,
+            'Reason': reason
+          },
+          client: role.guild.client
         });
         await logServerEvent(role.guild, 'roles', delEmbed);
       } catch {}

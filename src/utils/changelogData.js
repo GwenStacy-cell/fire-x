@@ -16,6 +16,42 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.8.4',
+    headline: 'Unified Server Modification Logging System with Auto-Creation & Channel Binding',
+    summary: 'Engineered a comprehensive server modification audit logging matrix featuring both automatic deployment (!serverlogs setup / create) and flexible binding to any existing channel (!serverlogs bind <#channel>). Tracks and visualizes all live server mutations including channel creations, deletions, updates, voice channel status subtitle pulses (VOICE_CHANNEL_STATUS_UPDATE gateway intercept), role changes and permission diffs, server settings, emojis/stickers, webhooks, and invites with accurate audit log attribution.',
+    whatsNew: [
+      {
+        title: 'Dual Deployment: Auto-Create & Bind',
+        desc: 'Provides both one-click automated creation of private staff category ╭・Logs & channel 📁・server-logs, and custom binding to any existing channel.'
+      },
+      {
+        title: 'Live Voice Channel Status Intercept',
+        desc: 'Direct gateway packet capture of VOICE_CHANNEL_STATUS_UPDATE logging voice room activity status changes in real-time with deduplication.'
+      },
+      {
+        title: 'Full Server Mutation Suite',
+        desc: 'Logs channel/role/server modifications with before-and-after diffs, exact audit executor attribution via markdown nickname links, and reasons.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Combat Rate-Limit Shield',
+        desc: 'Suspends routine logging during active attacks to preserve 100% gateway API throughput for sub-10ms defensive bans.'
+      },
+      {
+        title: 'Interactive Components V2 Card',
+        desc: 'Added real-time dashboard (!serverlogs) with one-click creation, master toggle, test log verification, and channel unbinding.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Shapeshift iconURL Validation',
+        desc: 'Safeguarded footer iconURL parsing in server logger embeds against empty strings to eliminate Discord.js schema validation crashes.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.3',
     headline: 'Dual-Mode ServerStats Architecture: Voice Status Subtitles & Classic Renamed Channels with Bouncing Heart Glyphs',
     summary: 'Introduced an optional dual-mode server statistics architecture featuring modern compact Voice Status Subtitles alongside classic Renamed Voice Channels under the ╭・Statistics category. Voice Status mode introduces 2 locked voice channels (Server Statistics and Voice Statistics) displaying rich animated metrics using <a:4964bouncingheart:1574534881776640010> (Online, Members, Bots, VC Users, Active VC, Server Boosts), bypassing Discord\'s 2/10m channel rename rate limits. Added seamless one-click mode toggling via interactive dashboard and commands, full automatic channel cleanup/migration, and background auto-sync integration.',
