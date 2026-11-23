@@ -5,7 +5,7 @@ import { getVoiceConnection } from '@discordjs/voice';
 import { buildControlPanel, buildSharedPanel } from '../commands/jtc.js';
 import statsDB from '../statsDB.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
-import { isBotOwnerSync, getSafeUserAvatar, getSafeGuildIcon, sendGuildMemberDM } from '../utils/helpers.js';
+import { isBotOwnerSync, getSafeUserAvatar, getSafeGuildIcon, sendGuildMemberDM, formatUserLink, formatChannelLink } from '../utils/helpers.js';
 import { handleWarn } from '../commands/moderation.js';
 import { getQueue } from '../utils/musicManager.js';
 import { activeVoiceSessions } from '../utils/soundboardEngine.js';
@@ -56,7 +56,9 @@ export default {
         try {
           const targetTextCh = activeJtc.textChannelId ? (guild.channels.cache.get(activeJtc.textChannelId) || await guild.channels.fetch(activeJtc.textChannelId).catch(() => null)) : newState.channel;
           if (targetTextCh && targetTextCh.isTextBased()) {
-            const chimeMsg = `**Entrance Chime | <a:03_tick_circle:1565665642084827206>**\n-# > Welcome <@${userId}> to **${newState.channel.name}**!`;
+            const userLink = formatUserLink(newState.member || userId, guild);
+            const chLink = formatChannelLink(newState.channel, guild);
+            const chimeMsg = `**Entrance Chime | <a:03_tick_circle:1565665642084827206>**\n-# > Welcome ${userLink} to ${chLink}!`;
             targetTextCh.send({ content: chimeMsg }).catch(() => null);
           }
         } catch {}
@@ -349,10 +351,12 @@ export default {
                 else if (m > 0) durStr = `${m}m ${s}s`;
                 else durStr = `${s}s`;
                 
+                const userLink = formatUserLink(member || userId, guild);
+                const oldChannelLink = formatChannelLink(oldChannelId, guild);
                 const leaveEmbed = new EmbedBuilder()
                   .setAuthor({ name: member.user.username, iconURL: getSafeUserAvatar(member, 128) })
                   .setColor('#ff0000') // Pure red
-                  .setDescription(`<@${userId}> left voice channel <#${oldChannelId}>. (lasted ${durStr})`)
+                  .setDescription(`${userLink} left voice channel ${oldChannelLink}. (lasted ${durStr})`)
                   .setFooter({ text: guild.name, iconURL: getSafeGuildIcon(guild, 128) || undefined })
                   .setTimestamp();
                 logChannel.send({ embeds: [leaveEmbed] }).catch(() => null);
@@ -373,10 +377,12 @@ export default {
           if (guildCfg && guildCfg.voiceLogChannel) {
             const logChannel = guild.channels.cache.get(guildCfg.voiceLogChannel);
             if (logChannel) {
+              const userLink = formatUserLink(member || userId, guild);
+              const newChannelLink = formatChannelLink(newChannelId, guild);
               const joinEmbed = new EmbedBuilder()
                 .setAuthor({ name: member.user.username, iconURL: getSafeUserAvatar(member, 128) })
                 .setColor('#00ff00') // Pure green
-                .setDescription(`<@${userId}> joined voice channel <#${newChannelId}>.`)
+                .setDescription(`${userLink} joined voice channel ${newChannelLink}.`)
                 .setFooter({ text: guild.name, iconURL: getSafeGuildIcon(guild, 128) || undefined })
                 .setTimestamp();
               logChannel.send({ embeds: [joinEmbed] }).catch(() => null);
@@ -439,17 +445,34 @@ export default {
     // JOIN TO CREATE — USER JOINED A CHANNEL
     // ==========================================
     const jtcConfig = db.getJtcConfig(guild.id);
+    const tierInfo = db.getTierInfo(guild.id, newState.channelId);
+    const isStandardLobby = jtcConfig && (newState.channelId === jtcConfig.lobbyChannelId || (jtcConfig.secondaryLobbyChannelId && newState.channelId === jtcConfig.secondaryLobbyChannelId));
 
-    if (jtcConfig && oldState.channelId !== newState.channelId && (newState.channelId === jtcConfig.lobbyChannelId || (jtcConfig.secondaryLobbyChannelId && newState.channelId === jtcConfig.secondaryLobbyChannelId))) {
+    if (oldState.channelId !== newState.channelId && (isStandardLobby || tierInfo)) {
       const member = newState.member;
       if (!member) return;
 
       try {
+        const tieredCfg = tierInfo ? db.getTieredJtcConfig(guild.id) : null;
+        const targetCategoryId = tierInfo ? (tieredCfg?.categoryId || newState.channel.parentId || null) : (jtcConfig?.categoryId || newState.channel.parentId || null);
+
+        let channelName = `${member.displayName}'s Room`;
+        let userLimit = 0;
+
+        if (tierInfo) {
+          userLimit = tierInfo.userLimit;
+          if (tierInfo.tier === 'solo') channelName = `${member.displayName}'s Solo`;
+          else if (tierInfo.tier === 'duo') channelName = `${member.displayName}'s Duo`;
+          else if (tierInfo.tier === 'trio') channelName = `${member.displayName}'s Trio`;
+          else if (tierInfo.tier === 'unlimited') channelName = `${member.displayName}'s Squad`;
+        }
+
         // Create the temp voice channel
         const tempChannel = await guild.channels.create({
-          name: `${member.displayName}'s Room`,
+          name: channelName,
           type: ChannelType.GuildVoice,
-          parent: jtcConfig.categoryId || null,
+          userLimit: userLimit,
+          parent: targetCategoryId,
           permissionOverwrites: [
             {
               id: guild.roles.everyone,
@@ -473,22 +496,21 @@ export default {
               ]
             }
           ],
-          reason: `JTC: Created by ${member.user.tag}`
+          reason: `JTC: Created by ${member.user.tag}${tierInfo ? ` (${tierInfo.label})` : ''}`
         });
 
         // Register in database first so cleanup logic knows it's a JTC room
-        db.addJtcChannel(tempChannel.id, member.id, guild.id);
+        db.addJtcChannel(tempChannel.id, member.id, guild.id, tierInfo?.tier || null);
 
         // Move the member into their new channel
-        const moved = await member.voice.setChannel(tempChannel).catch(() => null);
+        await member.voice.setChannel(tempChannel).catch(() => null);
 
         // Ghost channel sweeper: If they didn't move, or left instantly, purge it
         setTimeout(async () => {
-          const freshChannel = await guild.channels.fetch(tempChannel.id).catch(()=>null);
+          const freshChannel = await guild.channels.fetch(tempChannel.id).catch(() => null);
           if (freshChannel && freshChannel.members.size === 0) {
             db.removeJtcChannel(tempChannel.id);
-            await freshChannel.delete('JTC: User failed to move or instantly left').catch(()=>null);
-            
+            await freshChannel.delete('JTC: User failed to move or instantly left').catch(() => null);
           }
         }, 2500);
 
@@ -496,7 +518,7 @@ export default {
 
         // ── Interface channel: ONE persistent panel, never duplicated ──
         const freshCfg = db.getJtcConfig(guild.id);
-        if (freshCfg?.panelChannelId) {
+        if (freshCfg?.panelChannelId && isStandardLobby) {
           const panelCh = guild.channels.cache.get(freshCfg.panelChannelId);
           if (panelCh) {
             let existingMsg = null;
@@ -511,46 +533,28 @@ export default {
                 const stillNoMsg = freshCfgCheck.panelMessageId ? await panelCh.messages.fetch(freshCfgCheck.panelMessageId).catch(() => null) : null;
                 
                 if (!stillNoMsg) {
-                  const sharedPanel = buildSharedPanel(newState.guild.id);
+                  const sharedPanel = buildSharedPanel(guild);
                   const sentMsg = await panelCh.send(sharedPanel).catch(e => console.error('[JTC] Interface channel send failed:', e.message));
                   if (sentMsg) {
                     db.setPanelMessageId(guild.id, sentMsg.id);
-                    console.log(`[JTC]  Created persistent panel in #${panelCh.name}`);
+                    console.log(`[JTC] Created persistent panel in #${panelCh.name}`);
                   }
                 }
               } finally {
                 setTimeout(() => client.jtcPanelLocks.delete(guild.id), 5000); // Release lock after 5s
               }
-            } else if (existingMsg) {
-              console.log(`[JTC]  Reusing existing panel in #${panelCh.name}`);
             }
           }
         }
 
-        // ── Send panel to VC text chat (delayed to let Discord init the channel) ──
+        // ── Send panel to VC text chat (fast & resilient) ──
         setTimeout(async () => {
-          let attempt = 0;
-          const sendPanel = async () => {
-            try {
-              const freshChannel = await guild.channels.fetch(tempChannel.id).catch(() => null);
-              if (!freshChannel) { return; }
-              await freshChannel.send(vcPanel);
-              console.log(`[JTC]  Sent panel to VC text: ${freshChannel.name}`);
-            } catch (e) {
-              if (e.code === 10003 || e.message?.includes('Unknown Channel')) {
-                return; // Channel was deleted when user left, abort retry
-              }
-              attempt++;
-              if (attempt < 3) {
-                console.warn(`[JTC] VC text send failed (attempt ${attempt}): ${e.message}, retrying in 2s...`);
-                setTimeout(sendPanel, 2000);
-              } else {
-                console.error(`[JTC] VC text send failed after 3 attempts: ${e.message}`);
-              }
-            }
-          };
-          sendPanel();
-        }, 3000); // 3 second initial delay
+          try {
+            const freshChannel = await guild.channels.fetch(tempChannel.id).catch(() => null);
+            if (!freshChannel) return;
+            await freshChannel.send(vcPanel).catch(() => null);
+          } catch {}
+        }, 1500);
 
       } catch (err) {
         console.error('[JTC] Failed to create temp channel:', err);

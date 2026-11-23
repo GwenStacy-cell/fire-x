@@ -16,6 +16,54 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.7.6',
+    headline: 'Tiered Join to Create (JTC) Voice Hub, Components V2 Control Center & Atomic Teardown Architecture',
+    summary: 'Conducted an exhaustive audit and architectural leap of Athena\'s Join to Create (JTC) engine. Introduced an optional 4-Tier Voice Hub suite featuring generator lobbies for Solo [1 slot], Duo [2 slots], Trio [3 slots], and Squad [Unlimited slots] under a dedicated category, alongside a persistent Components V2 Interface Channel control center. Enforced strict database ID tracking allowing admins to rename categories and channels freely in Discord without breaking functionality. Implemented an atomic teardown engine (!jtcdisable tiers) that completely wipes the JTC category, interface channel, and generator channels in seconds. Wired previously dead select menu and modal interaction handlers in interactionCreate.js, added 1-click quick control buttons, and unified all user/channel links with zero native Discord emojis.',
+    whatsNew: [
+      {
+        title: 'Tiered Voice Hub Suite (Solo, Duo, Trio, Squad)',
+        desc: 'Deploy a dedicated JTC category with preset generator channels for Solo (1 slot), Duo (2 slots), Trio (3 slots), and Squad (Unlimited) via !jtcsetup tiers or !jtctiers setup.'
+      },
+      {
+        title: 'Persistent Interface Channel Control Center',
+        desc: 'Dedicated #voice-controls text channel with a persistent Components V2 interactive panel featuring dropdown menus and 1-click buttons for room lock/unlock, ghost/unghost, claim, and info.'
+      },
+      {
+        title: 'Atomic Teardown Engine (!jtcdisable tiers)',
+        desc: 'Cleanly wipes the dedicated JTC category, interface channel, generator channels, and active temporary rooms from Discord and purges database records in one command.'
+      },
+      {
+        title: '1-Click Quick Control Buttons',
+        desc: 'Instant, 1-click button row on both per-room and persistent interface panels for instant lock toggle, visibility toggle, ownership claim, and room overview.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Strict Database ID Tracking',
+        desc: 'All JTC categories, interface channels, and generator channels are tracked purely by database ID, enabling admins to rename them freely in Discord without breaking bot logic.'
+      },
+      {
+        title: 'Sub-1.5s Voice Text Initialization',
+        desc: 'Streamlined temporary channel text dispatch with fast-path initialization and auto-recovery from instant user leaves.'
+      },
+      {
+        title: 'Zero Discord Native Emojis & Markdown Links',
+        desc: 'Enforced strict compliance with Athena UI matrix: custom animated ticks, crosses, warning badges, bullets, and rich markdown nickname/channel links across all JTC flows.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Wired Dead JTC Select Menus and Modals',
+        desc: 'Connected jtc_ custom IDs to interactionCreate.js router, fixing a critical bug where dropdown selections and modal submissions were silently ignored.'
+      },
+      {
+        title: 'Voice Logging & Chime Raw Mentions',
+        desc: 'Eliminated raw user and channel mentions in voice state logs and entrance chimes in favor of clean formatted markdown links.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.7.5',
     headline: 'Combat Execution Priority Architecture: Instant Ban First, Attacker Bounce Window & Post-Ban Repair',
     summary: 'Re-architected the Anti-Nuke pipeline to enforce strict chronological combat execution. On the very first destructive action, Athena commits 100% of network sockets and REST rate limits to ban the hostile immediately. Silenced all routine server logging, embed dispatches, and quarantine permission edits during active attacks. Introduced an 800ms combat settle window post-ban, allowing all remaining concurrent requests fired by the nuke bot to reach Discord and fail with HTTP 403 Forbidden. Server repair (restoring roles, categories, channels) and unified security incident logging now run strictly post-ban.',

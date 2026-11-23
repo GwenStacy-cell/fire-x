@@ -871,6 +871,20 @@ export default {
       return;
     }
 
+    // --- JOIN TO CREATE (JTC) INTERACTIONS ---
+    if (interaction.customId && interaction.customId.startsWith('jtc_')) {
+      import('../commands/jtc.js').then(m => {
+        if (interaction.isAnySelectMenu() && m.handleJtcSelectMenu) {
+          m.handleJtcSelectMenu(interaction).catch(e => console.error('[JTC Select Menu Error]:', e));
+        } else if (interaction.isModalSubmit() && m.handleJtcModal) {
+          m.handleJtcModal(interaction).catch(e => console.error('[JTC Modal Error]:', e));
+        } else if (interaction.isButton() && m.handleJtcButton) {
+          m.handleJtcButton(interaction).catch(e => console.error('[JTC Button Error]:', e));
+        }
+      }).catch(e => console.error('[JTC Router Import Error]:', e));
+      return;
+    }
+
     // --- ATHENA GUIDE HUB & ASSISTANT INTERACTIONS ---
     if ((interaction.isButton() || interaction.isModalSubmit()) && interaction.customId.startsWith('athena_')) {
       import('../commands/athena.js').then(m => {

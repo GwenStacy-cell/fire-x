@@ -1688,13 +1688,13 @@ class Database {
     const sameChannel = existing?.panelChannelId === panelChannelId;
     const panelMessageId = (sameChannel ? existing?.panelMessageId : null) || null;
     const secondaryLobbyChannelId = existing?.secondaryLobbyChannelId || null;
-    this.cache.jtc[guildId] = { lobbyChannelId, categoryId, panelChannelId, panelMessageId, secondaryLobbyChannelId };
+    const tiered = existing?.tiered || null;
+    this.cache.jtc[guildId] = { lobbyChannelId, categoryId, panelChannelId, panelMessageId, secondaryLobbyChannelId, tiered };
     this.save();
   }
 
   setPanelMessageId(guildId, messageId) {
     if (!this.cache.jtc?.[guildId]) return;
-    this.cache.jtc[guildId].panelMessageId = messageId;
     this.cache.jtc[guildId].panelMessageId = messageId;
     this.save();
   }
@@ -1709,9 +1709,62 @@ class Database {
   }
 
   clearJtcConfig(guildId) {
-    if (!this.cache.jtc) return;
-    delete this.cache.jtc[guildId];
+    if (!this.cache.jtc?.[guildId]) return;
+    if (this.cache.jtc[guildId].tiered) {
+      this.cache.jtc[guildId].lobbyChannelId = null;
+      this.cache.jtc[guildId].categoryId = null;
+      this.cache.jtc[guildId].panelChannelId = null;
+      this.cache.jtc[guildId].panelMessageId = null;
+      this.cache.jtc[guildId].secondaryLobbyChannelId = null;
+    } else {
+      delete this.cache.jtc[guildId];
+    }
     this.save();
+  }
+
+  // --- Tiered JTC (Solo, Duo, Trio, Unlimited) ---
+  getTieredJtcConfig(guildId) {
+    if (!this.cache.jtc) this.cache.jtc = {};
+    return this.cache.jtc[guildId]?.tiered || null;
+  }
+
+  setTieredJtcConfig(guildId, { categoryId, interfaceChannelId, interfaceMessageId, channels }) {
+    if (!this.cache.jtc) this.cache.jtc = {};
+    if (!this.cache.jtc[guildId]) {
+      this.cache.jtc[guildId] = { lobbyChannelId: null, categoryId: null, panelChannelId: null, panelMessageId: null, secondaryLobbyChannelId: null };
+    }
+    this.cache.jtc[guildId].tiered = {
+      categoryId: categoryId || null,
+      interfaceChannelId: interfaceChannelId || null,
+      interfaceMessageId: interfaceMessageId || null,
+      channels: {
+        solo: channels?.solo || null,
+        duo: channels?.duo || null,
+        trio: channels?.trio || null,
+        unlimited: channels?.unlimited || null
+      }
+    };
+    this.save();
+  }
+
+  clearTieredJtcConfig(guildId) {
+    if (!this.cache.jtc?.[guildId]?.tiered) return;
+    delete this.cache.jtc[guildId].tiered;
+    if (!this.cache.jtc[guildId].lobbyChannelId && !this.cache.jtc[guildId].secondaryLobbyChannelId) {
+      delete this.cache.jtc[guildId];
+    }
+    this.save();
+  }
+
+  getTierInfo(guildId, channelId) {
+    const tiered = this.cache.jtc?.[guildId]?.tiered;
+    if (!tiered || !tiered.channels) return null;
+    const { solo, duo, trio, unlimited } = tiered.channels;
+    if (channelId === solo) return { tier: 'solo', userLimit: 1, label: 'Solo [1]' };
+    if (channelId === duo) return { tier: 'duo', userLimit: 2, label: 'Duo [2]' };
+    if (channelId === trio) return { tier: 'trio', userLimit: 3, label: 'Trio [3]' };
+    if (channelId === unlimited) return { tier: 'unlimited', userLimit: 0, label: 'Squad [Free]' };
+    return null;
   }
 
   // Active temp channels
@@ -1720,9 +1773,9 @@ class Database {
     return this.cache.jtcChannels[channelId] || null;
   }
 
-  addJtcChannel(channelId, ownerId, guildId) {
+  addJtcChannel(channelId, ownerId, guildId, tier = null) {
     if (!this.cache.jtcChannels) this.cache.jtcChannels = {};
-    this.cache.jtcChannels[channelId] = { ownerId, guildId };
+    this.cache.jtcChannels[channelId] = { ownerId, guildId, tier, createdAt: Date.now() };
     this.save();
   }
 

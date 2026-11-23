@@ -1,4 +1,11 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
+import { 
+  getRandomHeadingGlyph, 
+  BULLET_EMOJI, 
+  TICK_EMOJI, 
+  WRONG_EMOJI, 
+  WARN_EMOJI, 
+  UPTIME_EMOJI 
+} from '../utils/emojis.js';
 import {
   PermissionFlagsBits,
   ChannelType,
@@ -11,7 +18,6 @@ import {
   TextDisplayBuilder,
   SeparatorBuilder,
   SectionBuilder,
-  ThumbnailBuilder,
   MessageFlags,
   ModalBuilder,
   TextInputBuilder,
@@ -19,117 +25,171 @@ import {
 } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import { isBotOwnerSync } from '../utils/helpers.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-// Resolve project root from src/commands/jtc.js â†’ ../../
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const PROJECT_ROOT = path.resolve(__dirname, '..', '..');
-
-// Load emoji map (populated by upload-jtc-emojis.mjs)
-const EMOJI_MAP_PATH = path.join(PROJECT_ROOT, 'assets', 'jtc-emoji-map.json');
-let emojiMap = {};
-try {
-  if (fs.existsSync(EMOJI_MAP_PATH)) {
-    emojiMap = JSON.parse(fs.readFileSync(EMOJI_MAP_PATH, 'utf8'));
-    console.log(`[JTC]  Loaded ${Object.keys(emojiMap).length} custom emojis. Path: ${EMOJI_MAP_PATH}`);
-  } else {
-    console.warn(`[JTC]   Emoji map not found at: ${EMOJI_MAP_PATH}`);
-  }
-} catch (e) {
-  console.error('[JTC] Failed to load emoji map:', e.message);
-}
-
-// Get emoji object for a given key (custom or text fallback)
-function getEmoji(key) {
-  if (emojiMap[key]?.id) return { id: emojiMap[key].id, name: emojiMap[key].name };
-  // Fallback text emoji
-  const fallbacks = {
-    name: '', limit: '<a:uptime:1552608831060844575>', status: '<a:uptime:1552608831060844575>', game: '<a:uptime:1552608831060844575>', lfm: '<a:uptime:1552608831060844575>',
-    bitrate: '<a:uptime:1552608831060844575>', region: '<a:uptime:1552608831060844575>', text: '#âƒ£', nsfw: '', claim: '',
-    lock: '<a:uptime:1552608831060844575>', unlock: '<a:uptime:1552608831060844575>', ghost: '<a:uptime:1552608831060844575>', unghost: '<a:uptime:1552608831060844575>',
-    permit: '', reject: '', invite: '', transfer: ''
-  };
-  return fallbacks[key] || '';
-}
+import { 
+  isBotOwnerSync, 
+  formatUserLink, 
+  formatChannelLink, 
+  cleanDisplayName 
+} from '../utils/helpers.js';
 
 function getAccent(guild) {
-  if (!guild) return 0x2f3136;
+  if (!guild) return 0x5865F2;
   const cfg = db.getGuildConfig(guild.id);
   if (cfg?.accentColor) {
     return parseInt(cfg.accentColor.replace('#', ''), 16);
   }
-  return 0x2f3136; // Matches config.colors.dark
+  return 0x5865F2;
 }
 
 // ==========================================
-// CONTROL PANEL BUILDER (VoiceMaster style)
-// Two dropdowns: Channel Settings + Channel Permissions
+// CONTROL PANEL BUILDER (Voice text chat panel)
+// Dedicated per active temporary voice room
 // ==========================================
-export function buildControlPanel(vcChannel, ownerMember) {
+export function buildControlPanel(vcChannel, ownerMember, guild = null) {
+  const g = guild || vcChannel.guild;
+  const userLink = formatUserLink(ownerMember, g);
+  const chLink = formatChannelLink(vcChannel, g);
+  const glyph = getRandomHeadingGlyph();
+
   const settingsMenu = new StringSelectMenuBuilder()
     .setCustomId('jtc_settings_menu')
-    .setPlaceholder('Channel Settings')
+    .setPlaceholder('Channel Settings & Configuration')
     .addOptions([
-      { label: 'Name', description: 'Change the channel name', value: 'jtc_name', emoji: getEmoji('name') },
-      { label: 'Limit', description: 'Change the channel user limit', value: 'jtc_limit', emoji: getEmoji('limit') },
-      { label: 'Status', description: 'Set a custom channel status', value: 'jtc_status', emoji: getEmoji('status') },
-      { label: 'Game', description: 'Set channel name to the game you are playing', value: 'jtc_game', emoji: getEmoji('game') },
-      { label: 'LFM', description: 'Post a Looking For Members message', value: 'jtc_lfm', emoji: getEmoji('lfm') },
-      { label: 'Bitrate', description: 'Change the channel bitrate', value: 'jtc_bitrate', emoji: getEmoji('bitrate') },
-      { label: 'Region', description: 'Change the channel voice region', value: 'jtc_region', emoji: getEmoji('region') },
-      { label: 'Text', description: 'Create a temporary text channel', value: 'jtc_text', emoji: getEmoji('text') },
-      { label: 'NSFW', description: 'Toggle NSFW on your channel', value: 'jtc_nsfw', emoji: getEmoji('nsfw') },
-      { label: 'Claim', description: 'Claim ownership of the channel', value: 'jtc_claim', emoji: getEmoji('claim') },
-      { label: 'Info', description: 'Show channel details', value: 'jtc_info', emoji: getEmoji('info') }
+      { label: 'Rename Channel', description: 'Change the voice room name', value: 'jtc_name' },
+      { label: 'Set User Limit', description: 'Change the max member limit (0 = Unlimited)', value: 'jtc_limit' },
+      { label: 'Set Voice Status', description: 'Set a custom voice room activity status', value: 'jtc_status' },
+      { label: 'Sync Game Activity', description: 'Set room name to your currently playing game', value: 'jtc_game' },
+      { label: 'Looking For Members (LFM)', description: 'Broadcast an LFM invite card in text chat', value: 'jtc_lfm' },
+      { label: 'Adjust Bitrate', description: 'Configure audio quality bitrate (8 - 384 kbps)', value: 'jtc_bitrate' },
+      { label: 'Voice Region', description: 'Change the voice server region', value: 'jtc_region' },
+      { label: 'Create Temp Text Chat', description: 'Create a private synced text channel', value: 'jtc_text' },
+      { label: 'Toggle NSFW', description: 'Mark room as Age-Restricted (NSFW)', value: 'jtc_nsfw' },
+      { label: 'Claim Ownership', description: 'Claim owner privileges if previous owner left', value: 'jtc_claim' },
+      { label: 'Channel Information', description: 'View real-time statistics and channel metadata', value: 'jtc_info' }
     ]);
 
   const permsMenu = new StringSelectMenuBuilder()
     .setCustomId('jtc_perms_menu')
-    .setPlaceholder('Channel Permissions')
+    .setPlaceholder('Privacy & Access Permissions')
     .addOptions([
-      { label: 'Lock', description: 'Prevent others from joining', value: 'jtc_lock', emoji: getEmoji('lock') },
-      { label: 'Unlock', description: 'Reopen the channel to everyone', value: 'jtc_unlock', emoji: getEmoji('unlock') },
-      { label: 'Ghost', description: 'Make your channel invisible to others', value: 'jtc_ghost', emoji: getEmoji('ghost') },
-      { label: 'Unghost', description: 'Make your channel visible again', value: 'jtc_unghost', emoji: getEmoji('unghost') },
-      { label: 'Permit', description: 'Permit a user/role to access the channel', value: 'jtc_permit', emoji: getEmoji('permit') },
-      { label: 'Reject', description: 'Reject/kick a user from the channel', value: 'jtc_reject', emoji: getEmoji('reject') },
-      { label: 'Invite', description: 'Send a user a DM invite to join', value: 'jtc_invite', emoji: getEmoji('invite') },
-      { label: 'Transfer', description: 'Transfer ownership to another user', value: 'jtc_transfer', emoji: getEmoji('transfer') }
+      { label: 'Lock Channel', description: 'Prevent new members from joining', value: 'jtc_lock' },
+      { label: 'Unlock Channel', description: 'Reopen room for anyone to join', value: 'jtc_unlock' },
+      { label: 'Ghost Channel', description: 'Hide room completely from other users', value: 'jtc_ghost' },
+      { label: 'Unghost Channel', description: 'Make room visible again on server list', value: 'jtc_unghost' },
+      { label: 'Permit User', description: 'Whitelist a user to join even when locked/ghosted', value: 'jtc_permit' },
+      { label: 'Reject / Kick User', description: 'Disconnect and ban a user from this room', value: 'jtc_reject' },
+      { label: 'DM Direct Invite', description: 'Send a one-time direct join link via DM', value: 'jtc_invite' },
+      { label: 'Transfer Ownership', description: 'Pass room control to another member in VC', value: 'jtc_transfer' }
     ]);
+
+  const quickRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('jtc_btn_lock').setLabel('Lock / Unlock').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('jtc_btn_ghost').setLabel('Ghost / Visible').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('jtc_btn_claim').setLabel('Claim Owner').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('jtc_btn_info').setLabel('Room Info').setStyle(ButtonStyle.Secondary)
+  );
 
   const container = new ContainerBuilder()
     .addSectionComponents(
       new SectionBuilder()
         .addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} <a:emoji_85:1517491799696867358> Voice Channel Control Panel\n\n` +
-            `**Manage your temporary voice channel using the menus below.**\n\n` +
-            `<a:Dark4luvontop:1518275045963726949> **Take control:** Use the dropdowns to manage your room\n` +
-            `<a:Dark4luvontop:1518275045963726949> **Quick access:** Alternatively use \`/vc\` slash commands\n\n` +
-            `**Channel:** ${vcChannel}\n` +
-            `**Owner:** ${ownerMember}`
+          new TextDisplayBuilder().setContent(
+            `# ${glyph} Voice Channel Control Panel | ${TICK_EMOJI}\n\n` +
+            `**Manage your temporary voice channel using the menus and quick buttons below.**\n\n` +
+            `-# ${BULLET_EMOJI} **Channel:** ${chLink}\n` +
+            `-# ${BULLET_EMOJI} **Owner:** ${userLink}\n` +
+            `-# ${BULLET_EMOJI} **Limit:** \`${vcChannel.userLimit === 0 ? 'Unlimited' : vcChannel.userLimit}\` • **Bitrate:** \`${Math.round(vcChannel.bitrate / 1000)}kbps\`\n` +
+            `-# ${BULLET_EMOJI} **Privacy:** Actions are private to channel managers & room owners.`
           )
-        )
-        .setThumbnailAccessory(
-          new ThumbnailBuilder().setURL('https://cdn.discordapp.com/attachments/1459993139740803116/1524139805959786536/eva_jtc_2.png')
         )
     )
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent('**Channel Settings**'))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Quick Room Controls**`))
+    .addActionRowComponents(quickRow)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Channel Settings**`))
     .addActionRowComponents(new ActionRowBuilder().addComponents(settingsMenu))
     .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent('**Channel Permissions**'))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Channel Permissions**`))
     .addActionRowComponents(new ActionRowBuilder().addComponents(permsMenu));
 
   return { flags: MessageFlags.IsComponentsV2, components: [container] };
 }
 
-// Helper to sync the panel message for a guild
+// ==========================================
+// SHARED INTERFACE PANEL - Persistent message in interface channel
+// ==========================================
+export function buildSharedPanel(guild) {
+  const glyph = getRandomHeadingGlyph();
+
+  const settingsMenu = new StringSelectMenuBuilder()
+    .setCustomId('jtc_settings_menu')
+    .setPlaceholder('Channel Settings & Configuration')
+    .addOptions([
+      { label: 'Rename Channel', description: 'Change the voice room name', value: 'jtc_name' },
+      { label: 'Set User Limit', description: 'Change the max member limit (0 = Unlimited)', value: 'jtc_limit' },
+      { label: 'Set Voice Status', description: 'Set a custom voice room activity status', value: 'jtc_status' },
+      { label: 'Sync Game Activity', description: 'Set room name to your currently playing game', value: 'jtc_game' },
+      { label: 'Looking For Members (LFM)', description: 'Broadcast an LFM invite card in text chat', value: 'jtc_lfm' },
+      { label: 'Adjust Bitrate', description: 'Configure audio quality bitrate (8 - 384 kbps)', value: 'jtc_bitrate' },
+      { label: 'Voice Region', description: 'Change the voice server region', value: 'jtc_region' },
+      { label: 'Create Temp Text Chat', description: 'Create a private synced text channel', value: 'jtc_text' },
+      { label: 'Toggle NSFW', description: 'Mark room as Age-Restricted (NSFW)', value: 'jtc_nsfw' },
+      { label: 'Claim Ownership', description: 'Claim owner privileges if previous owner left', value: 'jtc_claim' },
+      { label: 'Channel Information', description: 'View real-time statistics and channel metadata', value: 'jtc_info' }
+    ]);
+
+  const permsMenu = new StringSelectMenuBuilder()
+    .setCustomId('jtc_perms_menu')
+    .setPlaceholder('Privacy & Access Permissions')
+    .addOptions([
+      { label: 'Lock Channel', description: 'Prevent new members from joining', value: 'jtc_lock' },
+      { label: 'Unlock Channel', description: 'Reopen room for anyone to join', value: 'jtc_unlock' },
+      { label: 'Ghost Channel', description: 'Hide room completely from other users', value: 'jtc_ghost' },
+      { label: 'Unghost Channel', description: 'Make room visible again on server list', value: 'jtc_unghost' },
+      { label: 'Permit User', description: 'Whitelist a user to join even when locked/ghosted', value: 'jtc_permit' },
+      { label: 'Reject / Kick User', description: 'Disconnect and ban a user from this room', value: 'jtc_reject' },
+      { label: 'DM Direct Invite', description: 'Send a one-time direct join link via DM', value: 'jtc_invite' },
+      { label: 'Transfer Ownership', description: 'Pass room control to another member in VC', value: 'jtc_transfer' }
+    ]);
+
+  const quickRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('jtc_btn_lock').setLabel('Lock / Unlock').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('jtc_btn_ghost').setLabel('Ghost / Visible').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('jtc_btn_claim').setLabel('Claim Owner').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('jtc_btn_info').setLabel('Room Info').setStyle(ButtonStyle.Secondary)
+  );
+
+  const container = new ContainerBuilder()
+    .addSectionComponents(
+      new SectionBuilder()
+        .addTextDisplayComponents(
+          new TextDisplayBuilder().setContent(
+            `# ${glyph} Voice Hub Interface Panel | ${TICK_EMOJI}\n\n` +
+            `**Welcome to the Voice Channel Control Center.**\n\n` +
+            `-# ${BULLET_EMOJI} **Connect:** Join any Join to Create lobby (**Solo**, **Duo**, **Trio**, or **Squad**).\n` +
+            `-# ${BULLET_EMOJI} **Auto Generation:** Athena instantly creates your private voice channel and moves you in.\n` +
+            `-# ${BULLET_EMOJI} **Management:** Use the dropdowns and buttons below while connected to manage your room.\n` +
+            `-# ${BULLET_EMOJI} **Private & Secure:** All menu interactions here are ephemeral and completely private.\n` +
+            `-# ${BULLET_EMOJI} **Auto Cleanup:** When all members leave your room, Athena automatically cleans it up.`
+          )
+        )
+    )
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Quick Room Controls**`))
+    .addActionRowComponents(quickRow)
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Channel Settings**`))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(settingsMenu))
+    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
+    .addTextDisplayComponents(new TextDisplayBuilder().setContent(`**Channel Permissions**`))
+    .addActionRowComponents(new ActionRowBuilder().addComponents(permsMenu));
+
+  return { flags: MessageFlags.IsComponentsV2, components: [container] };
+}
+
+// Sync panel helper
 export async function syncPanel(guild) {
-  // db imported at top-level
   const cfg = db.getJtcConfig(guild.id);
   if (!cfg?.panelChannelId || !cfg?.panelMessageId) return false;
 
@@ -140,7 +200,6 @@ export async function syncPanel(guild) {
   if (!msg) return false;
 
   const newPanel = buildSharedPanel(guild);
-  // Clear standard embeds array to avoid API errors with ContainerBuilder payload
   newPanel.embeds = [];
   newPanel.content = '';
   
@@ -148,67 +207,158 @@ export async function syncPanel(guild) {
   return true;
 }
 
+// Helper to resolve the user's active temporary JTC voice channel
+function resolveUserJtcChannel(interaction) {
+  const member = interaction.member;
+  const guild = interaction.guild;
+
+  // Direct connected voice channel
+  let vcChannel = member.voice?.channel;
+  if (vcChannel && db.isJtcChannel(vcChannel.id)) {
+    return vcChannel;
+  }
+
+  // If connected to a voice channel that might not be cached in memory yet
+  if (member.voice?.channelId && db.isJtcChannel(member.voice.channelId)) {
+    return guild.channels.cache.get(member.voice.channelId) || null;
+  }
+
+  // Check if member is in any active JTC room in this guild
+  const allJtc = db.getAllJtcChannels().filter(c => c.guildId === guild.id);
+  for (const record of allJtc) {
+    const ch = guild.channels.cache.get(record.channelId);
+    if (ch && ch.isVoiceBased() && ch.members.has(member.id)) {
+      return ch;
+    }
+  }
+
+  return null;
+}
+
 // ==========================================
-// SHARED PANEL - one persistent message in the interface channel
-// Generic, no channel/owner info. All interactions are ephemeral.
+// QUICK BUTTON HANDLER
 // ==========================================
-export function buildSharedPanel(guild) {
-  const settingsMenu = new StringSelectMenuBuilder()
-    .setCustomId('jtc_settings_menu')
-    .setPlaceholder('Channel Settings')
-    .addOptions([
-      { label: 'Name', description: 'Change the channel name', value: 'jtc_name', emoji: getEmoji('name') },
-      { label: 'Limit', description: 'Change the channel user limit', value: 'jtc_limit', emoji: getEmoji('limit') },
-      { label: 'Status', description: 'Set a custom channel status', value: 'jtc_status', emoji: getEmoji('status') },
-      { label: 'Game', description: 'Set channel name to the game you are playing', value: 'jtc_game', emoji: getEmoji('game') },
-      { label: 'LFM', description: 'Post a Looking For Members message', value: 'jtc_lfm', emoji: getEmoji('lfm') },
-      { label: 'Bitrate', description: 'Change the channel bitrate', value: 'jtc_bitrate', emoji: getEmoji('bitrate') },
-      { label: 'Region', description: 'Change the channel voice region', value: 'jtc_region', emoji: getEmoji('region') },
-      { label: 'Text', description: 'Create a temporary text channel', value: 'jtc_text', emoji: getEmoji('text') },
-      { label: 'NSFW', description: 'Toggle NSFW on your channel', value: 'jtc_nsfw', emoji: getEmoji('nsfw') },
-      { label: 'Claim', description: 'Claim ownership of the channel', value: 'jtc_claim', emoji: getEmoji('claim') },
-      { label: 'Info', description: 'Show channel details', value: 'jtc_info', emoji: getEmoji('info') }
-    ]);
+export async function handleJtcButton(interaction) {
+  const customId = interaction.customId;
+  const member = interaction.member;
+  const guild = interaction.guild;
 
-  const permsMenu = new StringSelectMenuBuilder()
-    .setCustomId('jtc_perms_menu')
-    .setPlaceholder('Channel Permissions')
-    .addOptions([
-      { label: 'Lock', description: 'Prevent others from joining', value: 'jtc_lock', emoji: getEmoji('lock') },
-      { label: 'Unlock', description: 'Reopen the channel to everyone', value: 'jtc_unlock', emoji: getEmoji('unlock') },
-      { label: 'Ghost', description: 'Make your channel invisible to others', value: 'jtc_ghost', emoji: getEmoji('ghost') },
-      { label: 'Unghost', description: 'Make your channel visible again', value: 'jtc_unghost', emoji: getEmoji('unghost') },
-      { label: 'Permit', description: 'Permit a user/role to access the channel', value: 'jtc_permit', emoji: getEmoji('permit') },
-      { label: 'Reject', description: 'Reject/kick a user from the channel', value: 'jtc_reject', emoji: getEmoji('reject') },
-      { label: 'Invite', description: 'Send a user a DM invite to join', value: 'jtc_invite', emoji: getEmoji('invite') },
-      { label: 'Transfer', description: 'Transfer ownership to another user', value: 'jtc_transfer', emoji: getEmoji('transfer') }
-    ]);
+  const vcChannel = resolveUserJtcChannel(interaction);
+  if (!vcChannel) {
+    return interaction.reply(cv2.e.warn(
+      `Voice Channel Required | ${WARN_EMOJI}`,
+      `You must be connected to an active Join to Create channel to use these controls.`
+    ));
+  }
 
-  const container = new ContainerBuilder()
-    .addSectionComponents(
-      new SectionBuilder()
-        .addTextDisplayComponents(
-          new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} <a:emoji_85:1517491799696867358> Voice Channel Control Panel\n\n` +
-            `**Manage your temporary voice channel using the menus below.**\n\n` +
-            `<a:Dark4luvontop:1518275045963726949> **Join first:** Connect to the **Join to Create** lobby\n` +
-            `<a:Dark4luvontop:1518275045963726949> **Take control:** Use the dropdowns to manage your room\n` +
-            `<a:Dark4luvontop:1518275045963726949> **Quick access:** Alternatively use \`/vc\` slash commands\n` +
-            `<a:Dark4luvontop:1518275045963726949> **Stay private:** All interactions are hidden from others\n\n` +
-            `> Only **you** can see the responses - fully private.`
-          )
-        )
-        .setThumbnailAccessory(
-          new ThumbnailBuilder().setURL('https://cdn.discordapp.com/attachments/1459993139740803116/1524139805959786536/eva_jtc_2.png')
-        )
-    )
-    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent('**Channel Settings**'))
-    .addActionRowComponents(new ActionRowBuilder().addComponents(settingsMenu))
-    .addSeparatorComponents(new SeparatorBuilder().setDivider(true))
-    .addTextDisplayComponents(new TextDisplayBuilder().setContent('**Channel Permissions**'))
-    .addActionRowComponents(new ActionRowBuilder().addComponents(permsMenu));
+  const jtcData = db.getJtcChannel(vcChannel.id);
+  if (!jtcData) {
+    return interaction.reply(cv2.e.warn(
+      `Not A JTC Channel | ${WARN_EMOJI}`,
+      `This channel is not recognized as an active temporary voice channel.`
+    ));
+  }
 
-  return { flags: MessageFlags.IsComponentsV2, components: [container] };
+  const isBotOwner = isBotOwnerSync(member.id);
+  const isServerOwner = member.id === guild.ownerId;
+  const isOwner = isBotOwner || isServerOwner || jtcData.ownerId === member.id;
+
+  // ── QUICK LOCK / UNLOCK ──
+  if (customId === 'jtc_btn_lock') {
+    if (!isOwner) {
+      return interaction.reply(cv2.e.danger(
+        `Unauthorized | ${WRONG_EMOJI}`,
+        `Only the room owner, server owner, or bot owner can lock or unlock this room.`
+      ));
+    }
+    const currentPerm = vcChannel.permissionOverwrites.cache.get(guild.roles.everyone.id);
+    const isLocked = currentPerm?.deny.has(PermissionFlagsBits.Connect);
+
+    if (isLocked) {
+      await vcChannel.permissionOverwrites.edit(guild.roles.everyone, { Connect: null });
+      return interaction.reply(cv2.e.success(
+        `Channel Unlocked | ${TICK_EMOJI}`,
+        `Your voice channel is now open for anyone to join.`
+      ));
+    } else {
+      await vcChannel.permissionOverwrites.edit(guild.roles.everyone, { Connect: false });
+      return interaction.reply(cv2.e.danger(
+        `Channel Locked | ${WRONG_EMOJI}`,
+        `Your voice channel has been locked. Only whitelisted members can join.`
+      ));
+    }
+  }
+
+  // ── QUICK GHOST / UNGHOST ──
+  if (customId === 'jtc_btn_ghost') {
+    if (!isOwner) {
+      return interaction.reply(cv2.e.danger(
+        `Unauthorized | ${WRONG_EMOJI}`,
+        `Only the room owner, server owner, or bot owner can hide or reveal this room.`
+      ));
+    }
+    const currentPerm = vcChannel.permissionOverwrites.cache.get(guild.roles.everyone.id);
+    const isGhosted = currentPerm?.deny.has(PermissionFlagsBits.ViewChannel);
+
+    if (isGhosted) {
+      await vcChannel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: null });
+      return interaction.reply(cv2.e.success(
+        `Channel Visible | ${TICK_EMOJI}`,
+        `Your voice channel is now visible on the server channel list.`
+      ));
+    } else {
+      await vcChannel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: false });
+      return interaction.reply(cv2.e.info(
+        `Channel Hidden | ${TICK_EMOJI}`,
+        `Your voice channel is now invisible to others. Permitted members can still see and connect.`
+      ));
+    }
+  }
+
+  // ── QUICK CLAIM ──
+  if (customId === 'jtc_btn_claim') {
+    const ownerInChannel = vcChannel.members.has(jtcData.ownerId);
+    if (ownerInChannel) {
+      return interaction.reply(cv2.e.warn(
+        `Cannot Claim | ${WARN_EMOJI}`,
+        `The current room owner is still connected to the voice channel.`
+      ));
+    }
+    db.setJtcOwner(vcChannel.id, member.id);
+    await vcChannel.permissionOverwrites.edit(member.id, { 
+      Connect: true, 
+      ManageChannels: true, 
+      ViewChannel: true, 
+      MuteMembers: true, 
+      DeafenMembers: true 
+    }).catch(() => null);
+
+    return interaction.reply(cv2.e.success(
+      `Ownership Claimed | ${TICK_EMOJI}`,
+      `You are now the registered owner of **${vcChannel.name}**.`
+    ));
+  }
+
+  // ── QUICK ROOM INFO ──
+  if (customId === 'jtc_btn_info') {
+    const owner = await guild.members.fetch(jtcData.ownerId).catch(() => null);
+    const ownerText = owner ? formatUserLink(owner, guild) : `\`${jtcData.ownerId}\``;
+    const chLink = formatChannelLink(vcChannel, guild);
+    const memberLinks = vcChannel.members.size > 0 
+      ? vcChannel.members.map(m => formatUserLink(m, guild)).join(', ') 
+      : 'None';
+
+    return interaction.reply(cv2.e.info(
+      `Room Overview | ${TICK_EMOJI}`,
+      `-# ${BULLET_EMOJI} **Channel:** ${chLink}\n` +
+      `-# ${BULLET_EMOJI} **Owner:** ${ownerText}\n` +
+      `-# ${BULLET_EMOJI} **User Limit:** \`${vcChannel.userLimit === 0 ? 'Unlimited' : vcChannel.userLimit}\`\n` +
+      `-# ${BULLET_EMOJI} **Audio Bitrate:** \`${Math.round(vcChannel.bitrate / 1000)}kbps\`\n` +
+      `-# ${BULLET_EMOJI} **Region:** \`${vcChannel.rtcRegion || 'Automatic'}\`\n` +
+      `-# ${BULLET_EMOJI} **Age-Restricted:** \`${vcChannel.nsfw ? 'Yes' : 'No'}\`\n` +
+      `-# ${BULLET_EMOJI} **Active Connected:** ${memberLinks}`
+    ));
+  }
 }
 
 // ==========================================
@@ -219,182 +369,233 @@ export async function handleJtcSelectMenu(interaction) {
   const member = interaction.member;
   const guild = interaction.guild;
 
-  // Find the JTC channel - either from voice state or by extracting from the panel message
-  let vcChannel = member.voice?.channel;
-  
+  const vcChannel = resolveUserJtcChannel(interaction);
   if (!vcChannel) {
-    // Safely extract channel ID from message text without JSON.stringify which causes circular errors
-    let text = interaction.message.content || '';
-    if (interaction.message.embeds && interaction.message.embeds.length > 0) {
-      text += ' ' + (interaction.message.embeds[0].description || '');
-    }
-    
-    // Components text (if any)
-    for (const row of interaction.message.components) {
-      for (const comp of row.components) {
-        if (comp.content) text += ' ' + comp.content;
-        if (comp.label) text += ' ' + comp.label;
-      }
-    }
-    
-    const match = text.match(/<#(\d+)>/);
-    if (match) {
-      vcChannel = guild.channels.cache.get(match[1]);
-    }
+    return interaction.reply(cv2.e.warn(
+      `Voice Channel Required | ${WARN_EMOJI}`,
+      `Could not locate your active voice room. You must be connected to an active Join to Create channel.`
+    ));
   }
 
-  const jtcData = vcChannel ? db.getJtcChannel(vcChannel.id) : null;
-
-  if (!vcChannel || !jtcData) {
-    return interaction.reply(cv2.e.warn('Error', 'Could not locate the associated voice channel. You must be connected to it.'));
+  const jtcData = db.getJtcChannel(vcChannel.id);
+  if (!jtcData) {
+    return interaction.reply(cv2.e.warn(
+      `Not A JTC Channel | ${WARN_EMOJI}`,
+      `This channel is not registered as an active temporary voice room.`
+    ));
   }
 
-  // â”€â”€ CLAIM - anyone in channel can do this â”€â”€
+  // ── CLAIM ──
   if (value === 'jtc_claim') {
     const ownerInChannel = vcChannel.members.has(jtcData.ownerId);
     if (ownerInChannel) {
-      return interaction.reply(cv2.e.warn('Cannot Claim', 'The current owner is still in the channel.'));
+      return interaction.reply(cv2.e.warn(
+        `Cannot Claim | ${WARN_EMOJI}`,
+        `The current room owner is still connected to the voice channel.`
+      ));
     }
     db.setJtcOwner(vcChannel.id, member.id);
-    await vcChannel.permissionOverwrites.edit(member.id, { Connect: true, ManageChannels: true }).catch(() => null);
-    return interaction.reply(cv2.e.success('Channel Claimed ', `You are now the owner of **${vcChannel.name}**.`));
+    await vcChannel.permissionOverwrites.edit(member.id, { 
+      Connect: true, 
+      ManageChannels: true, 
+      ViewChannel: true, 
+      MuteMembers: true, 
+      DeafenMembers: true 
+    }).catch(() => null);
+
+    return interaction.reply(cv2.e.success(
+      `Ownership Claimed | ${TICK_EMOJI}`,
+      `You are now the registered owner of **${vcChannel.name}**.`
+    ));
   }
 
-  // â”€â”€ INFO - anyone can view â”€â”€
+  // ── INFO ──
   if (value === 'jtc_info') {
-    const members = vcChannel.members.map(m => m.toString()).join(', ') || 'None';
     const owner = await guild.members.fetch(jtcData.ownerId).catch(() => null);
-    return interaction.reply(cv2.e.info('Channel Info â„¹', null, [
-        { name: '<a:uptime:1552608831060844575> Name', value: vcChannel.name, inline: true },
-        { name: ' Owner', value: owner?.toString() || `\`${jtcData.ownerId}\``, inline: true },
-        { name: '<a:uptime:1552608831060844575> Limit', value: vcChannel.userLimit === 0 ? 'No Limit' : `${vcChannel.userLimit}`, inline: true },
-        { name: '<a:uptime:1552608831060844575> Bitrate', value: `${vcChannel.bitrate / 1000}kbps`, inline: true },
-        { name: '<a:uptime:1552608831060844575> Region', value: vcChannel.rtcRegion || 'Auto', inline: true },
-        { name: ' NSFW', value: vcChannel.nsfw ? 'Yes' : 'No', inline: true },
-        { name: '<a:uptime:1552608831060844575> Members In Channel', value: members }
-      ]));
+    const ownerText = owner ? formatUserLink(owner, guild) : `\`${jtcData.ownerId}\``;
+    const chLink = formatChannelLink(vcChannel, guild);
+    const memberLinks = vcChannel.members.size > 0 
+      ? vcChannel.members.map(m => formatUserLink(m, guild)).join(', ') 
+      : 'None';
+
+    return interaction.reply(cv2.e.info(
+      `Room Overview | ${TICK_EMOJI}`,
+      `-# ${BULLET_EMOJI} **Channel:** ${chLink}\n` +
+      `-# ${BULLET_EMOJI} **Owner:** ${ownerText}\n` +
+      `-# ${BULLET_EMOJI} **User Limit:** \`${vcChannel.userLimit === 0 ? 'Unlimited' : vcChannel.userLimit}\`\n` +
+      `-# ${BULLET_EMOJI} **Audio Bitrate:** \`${Math.round(vcChannel.bitrate / 1000)}kbps\`\n` +
+      `-# ${BULLET_EMOJI} **Region:** \`${vcChannel.rtcRegion || 'Automatic'}\`\n` +
+      `-# ${BULLET_EMOJI} **Age-Restricted:** \`${vcChannel.nsfw ? 'Yes' : 'No'}\`\n` +
+      `-# ${BULLET_EMOJI} **Active Connected:** ${memberLinks}`
+    ));
   }
 
-  // All other actions require being the owner (bot owner and server owner bypass this)
+  // Owner verification
   const isBotOwner = isBotOwnerSync(member.id);
   const isServerOwner = member.id === guild.ownerId;
-  
   if (!isBotOwner && !isServerOwner && jtcData.ownerId !== member.id) {
-    return interaction.reply(cv2.e.danger('Not Owner', 'Only the channel owner, server owner, or bot owner can use these controls.'));
+    return interaction.reply(cv2.e.danger(
+      `Unauthorized | ${WRONG_EMOJI}`,
+      `Only the channel owner, server owner, or bot owner can execute this action.`
+    ));
   }
 
-  // â”€â”€ DIRECT ACTIONS (no modal needed) â”€â”€
-
+  // ── LOCK ──
   if (value === 'jtc_lock') {
     await vcChannel.permissionOverwrites.edit(guild.roles.everyone, { Connect: false });
-    return interaction.reply(cv2.e.danger('Channel Locked <a:uptime:1552608831060844575>', 'No one new can join your channel.'));
+    return interaction.reply(cv2.e.danger(
+      `Channel Locked | ${WRONG_EMOJI}`,
+      `Your channel has been locked. New members cannot connect without permission.`
+    ));
   }
 
+  // ── UNLOCK ──
   if (value === 'jtc_unlock') {
     await vcChannel.permissionOverwrites.edit(guild.roles.everyone, { Connect: null });
-    return interaction.reply(cv2.e.success('Channel Unlocked <a:uptime:1552608831060844575>', 'Your channel is now open for anyone to join.'));
+    return interaction.reply(cv2.e.success(
+      `Channel Unlocked | ${TICK_EMOJI}`,
+      `Your voice channel is now open for anyone to join.`
+    ));
   }
 
+  // ── GHOST ──
   if (value === 'jtc_ghost') {
     await vcChannel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: false });
-    return interaction.reply(cv2.e.info('Channel Hidden <a:uptime:1552608831060844575>', 'Your channel is now invisible to others.\nUsers you permit can still see and join.'));
+    return interaction.reply(cv2.e.info(
+      `Channel Hidden | ${TICK_EMOJI}`,
+      `Your voice channel is now invisible to others. Permitted users can still view and connect.`
+    ));
   }
 
+  // ── UNGHOST ──
   if (value === 'jtc_unghost') {
     await vcChannel.permissionOverwrites.edit(guild.roles.everyone, { ViewChannel: null });
-    return interaction.reply(cv2.e.success('Channel Visible <a:uptime:1552608831060844575>', 'Your channel is now visible to everyone again.'));
+    return interaction.reply(cv2.e.success(
+      `Channel Visible | ${TICK_EMOJI}`,
+      `Your voice channel is now visible on the server list again.`
+    ));
   }
 
+  // ── NSFW TOGGLE ──
   if (value === 'jtc_nsfw') {
     const current = vcChannel.nsfw;
     await vcChannel.setNSFW(!current).catch(() => null);
-    const isNsfw = vcChannel.nsfw;
-    await vcChannel.setNSFW(!isNsfw).catch(() => null);
-    return interaction.reply(cv2.e.success('NSFW Toggled', `Channel NSFW status set to **${!isNsfw}**.`));
+    return interaction.reply(cv2.e.success(
+      `NSFW Toggled | ${TICK_EMOJI}`,
+      `Channel Age-Restricted status has been set to **${!current ? 'Enabled' : 'Disabled'}**.`
+    ));
   }
 
-  // â”€â”€ GAME - set channel name to game â”€â”€
+  // ── GAME ACTIVITY SYNC ──
   if (value === 'jtc_game') {
-    const activity = member.presence?.activities.find(a => a.type === 0); // Playing
+    const activity = member.presence?.activities.find(a => a.type === 0);
     if (!activity) {
-      return interaction.reply(cv2.e.warn('No Game Detected', 'You are not playing any recognized game right now.'));
+      return interaction.reply(cv2.e.warn(
+        `No Activity Found | ${WARN_EMOJI}`,
+        `Discord does not detect any game or activity on your profile right now.`
+      ));
     }
     await vcChannel.setName(activity.name).catch(() => null);
-    return interaction.reply(cv2.e.success('Game Set <a:uptime:1552608831060844575>', `Channel renamed to **${activity.name}**.`));
+    return interaction.reply(cv2.e.success(
+      `Game Name Applied | ${TICK_EMOJI}`,
+      `Channel name updated to **${activity.name}**.`
+    ));
   }
 
-  // â”€â”€ LFM - post Looking For Members message â”€â”€
+  // ── LFM BROADCAST ──
   if (value === 'jtc_lfm') {
+    const chLink = formatChannelLink(vcChannel, guild);
+    const userLink = formatUserLink(member, guild);
+    const slots = vcChannel.userLimit === 0 ? 'Unlimited' : Math.max(0, vcChannel.userLimit - vcChannel.members.size);
+
     const lfmEmbed = new EmbedBuilder()
       .setColor(getAccent(guild))
-      .setTitle('<a:uptime:1552608831060844575> Looking for Members!')
-      .setDescription(`**${member.displayName}** is looking for members to join their voice channel!\n\n**Channel:** ${vcChannel}\n**Slots Available:** ${vcChannel.userLimit === 0 ? 'Unlimited' : vcChannel.userLimit - vcChannel.members.size}`)
-      .setFooter({ text: 'Join their channel to play together!' })
+      .setTitle(`Looking For Members | ${TICK_EMOJI}`)
+      .setDescription(
+        `${userLink} is looking for members to join their voice channel!\n\n` +
+        `-# ${BULLET_EMOJI} **Channel:** ${chLink}\n` +
+        `-# ${BULLET_EMOJI} **Available Slots:** \`${slots}\`\n\n` +
+        `> Join the channel to play together!`
+      )
       .setTimestamp();
-    await interaction.channel.send({ embeds: [lfmEmbed] }).catch(() => null);
-    return interaction.reply(cv2.e.success('LFM Posted <a:uptime:1552608831060844575>', 'Your Looking for Members message has been posted in this channel.'));
+
+    if (interaction.channel && interaction.channel.isTextBased()) {
+      await interaction.channel.send({ embeds: [lfmEmbed] }).catch(() => null);
+    }
+    return interaction.reply(cv2.e.success(
+      `LFM Broadcasted | ${TICK_EMOJI}`,
+      `Your Looking for Members notice has been posted in this channel.`
+    ));
   }
 
-  // â”€â”€ TEXT - create a temp text channel linked to VC â”€â”€
+  // ── TEMP TEXT CHANNEL ──
   if (value === 'jtc_text') {
     const jtcCfg = db.getJtcConfig(guild.id);
-    const existing = guild.channels.cache.find(c => c.name === `${vcChannel.name}-text` && c.parentId === (jtcCfg?.categoryId || vcChannel.parentId));
+    const targetParentId = vcChannel.parentId || jtcCfg?.categoryId || null;
+    const textChannelName = `${vcChannel.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-')}-text`;
+
+    const existing = guild.channels.cache.find(c => c.name === textChannelName && c.parentId === targetParentId);
     if (existing) {
-      return interaction.reply(cv2.e.warn('Already Exists', `A text channel already exists: ${existing}`));
+      return interaction.reply(cv2.e.warn(
+        `Already Exists | ${WARN_EMOJI}`,
+        `A linked text channel already exists: ${formatChannelLink(existing, guild)}`
+      ));
     }
+
     const textCh = await guild.channels.create({
-      name: `${vcChannel.name.toLowerCase().replace(/\s+/g, '-')}-text`,
+      name: textChannelName,
       type: ChannelType.GuildText,
-      parent: jtcCfg?.categoryId || vcChannel.parentId || null,
+      parent: targetParentId,
       permissionOverwrites: [
         { id: guild.roles.everyone, deny: [PermissionFlagsBits.ViewChannel] },
         { id: member.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] }
       ],
-      reason: `JTC Temp Text for ${member.user.tag}`
+      reason: `JTC Temp Text Channel for ${member.user.tag}`
     });
-    // Link text channel to VC in DB
+
     db.setJtcTextChannel(vcChannel.id, textCh.id);
 
-    // Grant access to all current VC members
+    // Permit all current members
     for (const [, m] of vcChannel.members) {
       await textCh.permissionOverwrites.edit(m.id, { ViewChannel: true, SendMessages: true }).catch(() => null);
     }
-    return interaction.reply(cv2.success('Text Channel Created #âƒ£', `Temporary text channel created: ${textCh}
 
-It is only visible to members in your voice channel.`));
+    return interaction.reply(cv2.e.success(
+      `Text Channel Created | ${TICK_EMOJI}`,
+      `Temporary text channel created: ${formatChannelLink(textCh, guild)}\n\nOnly members in your voice room have access.`
+    ));
   }
 
-  // â”€â”€ MODAL-BASED ACTIONS â”€â”€
-
+  // ── MODAL PROMPTS ──
   if (value === 'jtc_name') {
-    const modal = new ModalBuilder().setCustomId('jtc_rename_modal').setTitle('Rename Your Channel');
+    const modal = new ModalBuilder().setCustomId('jtc_rename_modal').setTitle('Rename Voice Channel');
     modal.addComponents(new ActionRowBuilder().addComponents(
       new TextInputBuilder().setCustomId('jtc_new_name').setLabel('New Channel Name')
-        .setStyle(TextInputStyle.Short).setPlaceholder('e.g. Chill Zone').setRequired(true).setMaxLength(100)
+        .setStyle(TextInputStyle.Short).setPlaceholder('e.g. Chill Lounge').setRequired(true).setMaxLength(100)
     ));
     return interaction.showModal(modal);
   }
 
   if (value === 'jtc_limit') {
-    const modal = new ModalBuilder().setCustomId('jtc_limit_modal').setTitle('Set User Limit');
+    const modal = new ModalBuilder().setCustomId('jtc_limit_modal').setTitle('Set Channel Member Limit');
     modal.addComponents(new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('jtc_limit_val').setLabel('User Limit (0 = unlimited, max 99)')
-        .setStyle(TextInputStyle.Short).setPlaceholder('e.g. 5').setRequired(true).setMaxLength(2)
+      new TextInputBuilder().setCustomId('jtc_limit_val').setLabel('User Limit (0 = Unlimited, Max 99)')
+        .setStyle(TextInputStyle.Short).setPlaceholder('e.g. 4').setRequired(true).setMaxLength(2)
     ));
     return interaction.showModal(modal);
   }
 
   if (value === 'jtc_status') {
-    const modal = new ModalBuilder().setCustomId('jtc_status_modal').setTitle('Set Channel Status');
+    const modal = new ModalBuilder().setCustomId('jtc_status_modal').setTitle('Set Voice Status');
     modal.addComponents(new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('jtc_status_val').setLabel('Channel Status')
-        .setStyle(TextInputStyle.Short).setPlaceholder('e.g. Playing Valorant <a:uptime:1552608831060844575>').setRequired(true).setMaxLength(500)
+      new TextInputBuilder().setCustomId('jtc_status_val').setLabel('Channel Voice Status')
+        .setStyle(TextInputStyle.Short).setPlaceholder('e.g. Grinding Ranked').setRequired(true).setMaxLength(500)
     ));
     return interaction.showModal(modal);
   }
 
   if (value === 'jtc_bitrate') {
-    const modal = new ModalBuilder().setCustomId('jtc_bitrate_modal').setTitle('Set Bitrate');
+    const modal = new ModalBuilder().setCustomId('jtc_bitrate_modal').setTitle('Adjust Voice Bitrate');
     modal.addComponents(new ActionRowBuilder().addComponents(
       new TextInputBuilder().setCustomId('jtc_bitrate_val').setLabel('Bitrate in kbps (8 - 384)')
         .setStyle(TextInputStyle.Short).setPlaceholder('e.g. 128').setRequired(true).setMaxLength(3)
@@ -403,49 +604,49 @@ It is only visible to members in your voice channel.`));
   }
 
   if (value === 'jtc_region') {
-    const modal = new ModalBuilder().setCustomId('jtc_region_modal').setTitle('Set Voice Region');
+    const modal = new ModalBuilder().setCustomId('jtc_region_modal').setTitle('Change Voice Region');
     modal.addComponents(new ActionRowBuilder().addComponents(
       new TextInputBuilder().setCustomId('jtc_region_val')
-        .setLabel('Region (leave blank for Auto)')
+        .setLabel('Region (Leave blank for Automatic)')
         .setStyle(TextInputStyle.Short)
-        .setPlaceholder('brazil / europe / india / japan / singapore / us-east / us-west ...')
-        .setRequired(false).setMaxLength(20)
+        .setPlaceholder('brazil / europe / india / japan / singapore / us-east / us-west')
+        .setRequired(false).setMaxLength(25)
     ));
     return interaction.showModal(modal);
   }
 
   if (value === 'jtc_permit') {
-    const modal = new ModalBuilder().setCustomId('jtc_permit_modal').setTitle('Permit a User');
+    const modal = new ModalBuilder().setCustomId('jtc_permit_modal').setTitle('Permit / Whitelist User');
     modal.addComponents(new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('jtc_permit_userid').setLabel('User ID to permit')
-        .setStyle(TextInputStyle.Short).setPlaceholder('Right-click user â†’ Copy ID').setRequired(true)
+      new TextInputBuilder().setCustomId('jtc_permit_userid').setLabel('Target User ID')
+        .setStyle(TextInputStyle.Short).setPlaceholder('Right-click user -> Copy ID').setRequired(true)
     ));
     return interaction.showModal(modal);
   }
 
   if (value === 'jtc_reject') {
-    const modal = new ModalBuilder().setCustomId('jtc_reject_modal').setTitle('Reject a User');
+    const modal = new ModalBuilder().setCustomId('jtc_reject_modal').setTitle('Reject / Ban User');
     modal.addComponents(new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('jtc_reject_userid').setLabel('User ID to reject/kick')
-        .setStyle(TextInputStyle.Short).setPlaceholder('Right-click user â†’ Copy ID').setRequired(true)
+      new TextInputBuilder().setCustomId('jtc_reject_userid').setLabel('Target User ID')
+        .setStyle(TextInputStyle.Short).setPlaceholder('Right-click user -> Copy ID').setRequired(true)
     ));
     return interaction.showModal(modal);
   }
 
   if (value === 'jtc_invite') {
-    const modal = new ModalBuilder().setCustomId('jtc_invite_modal').setTitle('Invite a User');
+    const modal = new ModalBuilder().setCustomId('jtc_invite_modal').setTitle('Send Direct DM Invite');
     modal.addComponents(new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('jtc_invite_userid').setLabel('User ID to invite via DM')
-        .setStyle(TextInputStyle.Short).setPlaceholder('Right-click user â†’ Copy ID').setRequired(true)
+      new TextInputBuilder().setCustomId('jtc_invite_userid').setLabel('Target User ID')
+        .setStyle(TextInputStyle.Short).setPlaceholder('Right-click user -> Copy ID').setRequired(true)
     ));
     return interaction.showModal(modal);
   }
 
   if (value === 'jtc_transfer') {
-    const modal = new ModalBuilder().setCustomId('jtc_transfer_modal').setTitle('Transfer Ownership');
+    const modal = new ModalBuilder().setCustomId('jtc_transfer_modal').setTitle('Transfer Room Ownership');
     modal.addComponents(new ActionRowBuilder().addComponents(
-      new TextInputBuilder().setCustomId('jtc_transfer_userid').setLabel('New Owner User ID (must be in channel)')
-        .setStyle(TextInputStyle.Short).setPlaceholder('Right-click user â†’ Copy ID').setRequired(true)
+      new TextInputBuilder().setCustomId('jtc_transfer_userid').setLabel('New Owner User ID (Must be in VC)')
+        .setStyle(TextInputStyle.Short).setPlaceholder('Right-click user -> Copy ID').setRequired(true)
     ));
     return interaction.showModal(modal);
   }
@@ -458,114 +659,402 @@ export async function handleJtcModal(interaction) {
   const customId = interaction.customId;
   const member = interaction.member;
   const guild = interaction.guild;
-  const vcChannel = member.voice?.channel;
-  const jtcData = vcChannel ? db.getJtcChannel(vcChannel.id) : null;
 
+  const vcChannel = resolveUserJtcChannel(interaction);
+  if (!vcChannel) {
+    return interaction.reply(cv2.e.warn(
+      `Voice Channel Required | ${WARN_EMOJI}`,
+      `Could not locate your active voice channel. You must be connected to an active room.`
+    ));
+  }
+
+  const jtcData = db.getJtcChannel(vcChannel.id);
   const isBotOwner = isBotOwnerSync(member.id);
-  if (!jtcData || (!isBotOwner && jtcData.ownerId !== member.id)) {
-    return interaction.reply(cv2.danger('Not Owner', 'You are not the owner of this channel.'));
+  const isServerOwner = member.id === guild.ownerId;
+  if (!jtcData || (!isBotOwner && !isServerOwner && jtcData.ownerId !== member.id)) {
+    return interaction.reply(cv2.e.danger(
+      `Unauthorized | ${WRONG_EMOJI}`,
+      `Only the channel owner, server owner, or bot owner can configure this channel.`
+    ));
   }
 
   if (customId === 'jtc_rename_modal') {
     const newName = interaction.fields.getTextInputValue('jtc_new_name').trim();
     await vcChannel.setName(newName).catch(() => null);
-    return interaction.reply(cv2.success('Channel Renamed ', `Your channel has been renamed to **${newName}**.`));
+    return interaction.reply(cv2.e.success(
+      `Channel Renamed | ${TICK_EMOJI}`,
+      `Your channel has been renamed to **${newName}**.`
+    ));
   }
 
   if (customId === 'jtc_limit_modal') {
     const val = parseInt(interaction.fields.getTextInputValue('jtc_limit_val')) || 0;
     const limit = Math.min(Math.max(val, 0), 99);
     await vcChannel.setUserLimit(limit).catch(() => null);
-    return interaction.reply(cv2.success('Limit Updated <a:uptime:1552608831060844575>', `User limit set to **${limit === 0 ? 'Unlimited' : limit}**.`));
+    return interaction.reply(cv2.e.success(
+      `Limit Configured | ${TICK_EMOJI}`,
+      `User limit set to **${limit === 0 ? 'Unlimited' : limit}**.`
+    ));
   }
 
   if (customId === 'jtc_status_modal') {
     const status = interaction.fields.getTextInputValue('jtc_status_val').trim();
     await interaction.client.rest.put(`/channels/${vcChannel.id}/voice-status`, { body: { status } }).catch(() => null);
-    return interaction.reply(cv2.success('Status Set <a:uptime:1552608831060844575>', `Channel status set to: **${status}**`));
+    return interaction.reply(cv2.e.success(
+      `Status Configured | ${TICK_EMOJI}`,
+      `Voice status set to: **${status}**`
+    ));
   }
 
   if (customId === 'jtc_bitrate_modal') {
     const kbps = Math.min(Math.max(parseInt(interaction.fields.getTextInputValue('jtc_bitrate_val')) || 64, 8), 384);
     await vcChannel.setBitrate(kbps * 1000).catch(() => null);
-    return interaction.reply(cv2.success('Bitrate Updated <a:uptime:1552608831060844575>', `Bitrate set to **${kbps}kbps**.`));
+    return interaction.reply(cv2.e.success(
+      `Bitrate Configured | ${TICK_EMOJI}`,
+      `Audio bitrate set to **${kbps}kbps**.`
+    ));
   }
 
   if (customId === 'jtc_region_modal') {
     const region = interaction.fields.getTextInputValue('jtc_region_val').trim().toLowerCase() || null;
     await vcChannel.setRTCRegion(region).catch(() => null);
-    return interaction.reply(cv2.success('Region Updated <a:uptime:1552608831060844575>', `Voice region set to **${region || 'Auto'}**.`));
+    return interaction.reply(cv2.e.success(
+      `Region Configured | ${TICK_EMOJI}`,
+      `Voice region set to **${region || 'Automatic'}**.`
+    ));
   }
 
   if (customId === 'jtc_permit_modal') {
     const userId = interaction.fields.getTextInputValue('jtc_permit_userid').trim().replace(/\D/g, '');
     const target = await guild.members.fetch(userId).catch(() => null);
-    if (!target) return interaction.reply(cv2.warn('User Not Found', 'Could not find that user in this server.'));
+    if (!target) {
+      return interaction.reply(cv2.e.warn(
+        `User Not Found | ${WARN_EMOJI}`,
+        `Could not find that member in this server.`
+      ));
+    }
     await vcChannel.permissionOverwrites.edit(userId, { Connect: true, ViewChannel: true });
-    return interaction.reply(cv2.success('User Permitted ', `${target} can now join your channel even when locked or ghosted.`));
+    return interaction.reply(cv2.e.success(
+      `User Whitelisted | ${TICK_EMOJI}`,
+      `${formatUserLink(target, guild)} can now join your room even when locked or hidden.`
+    ));
   }
 
   if (customId === 'jtc_reject_modal') {
     const userId = interaction.fields.getTextInputValue('jtc_reject_userid').trim().replace(/\D/g, '');
     const target = await guild.members.fetch(userId).catch(() => null);
-    if (!target) return interaction.reply(cv2.warn('User Not Found', 'Could not find that user.'));
-    if (target.voice?.channelId === vcChannel.id) await target.voice.disconnect().catch(() => null);
+    if (!target) {
+      return interaction.reply(cv2.e.warn(
+        `User Not Found | ${WARN_EMOJI}`,
+        `Could not find that member in this server.`
+      ));
+    }
+    if (target.voice?.channelId === vcChannel.id) {
+      await target.voice.disconnect().catch(() => null);
+    }
     await vcChannel.permissionOverwrites.edit(userId, { Connect: false, ViewChannel: false });
-    return interaction.reply(cv2.danger('User Rejected ', `${target} has been removed and banned from your channel.`));
+    return interaction.reply(cv2.e.danger(
+      `User Rejected | ${WRONG_EMOJI}`,
+      `${formatUserLink(target, guild)} has been disconnected and blocked from this channel.`
+    ));
   }
 
   if (customId === 'jtc_invite_modal') {
     const userId = interaction.fields.getTextInputValue('jtc_invite_userid').trim().replace(/\D/g, '');
     const target = await guild.members.fetch(userId).catch(() => null);
-    if (!target) return interaction.reply(cv2.warn('User Not Found', 'Could not find that user.'));
+    if (!target) {
+      return interaction.reply(cv2.e.warn(
+        `User Not Found | ${WARN_EMOJI}`,
+        `Could not find that member in this server.`
+      ));
+    }
 
-    const invite = await vcChannel.createInvite({ maxAge: 300, maxUses: 1, reason: 'JTC Invite' }).catch(() => null);
+    const invite = await vcChannel.createInvite({ maxAge: 300, maxUses: 1, reason: 'Athena JTC Direct Invite' }).catch(() => null);
+    const userLink = formatUserLink(member, guild);
+    const chLink = formatChannelLink(vcChannel, guild);
+
     const dmEmbed = new EmbedBuilder()
       .setColor(getAccent(guild))
-      .setTitle(' You\'ve been invited!')
-      .setDescription(`**${member.displayName}** has invited you to join their voice channel in **${guild.name}**.\n\n**Channel:** ${vcChannel.name}\n\n${invite ? `[Click to Join](${invite.url})` : 'Join the server and look for their channel.'}`)
-      .setFooter({ text: 'Athena Prime â€¢ Join to Create' });
+      .setTitle(`Voice Room Invitation | ${TICK_EMOJI}`)
+      .setDescription(
+        `${userLink} has invited you to join their voice channel in **${guild.name}**.\n\n` +
+        `-# ${BULLET_EMOJI} **Channel:** ${chLink}\n` +
+        `-# ${BULLET_EMOJI} **Direct Link:** ${invite ? `[Click to Join](${invite.url})` : 'Join the server and open the room'}`
+      )
+      .setFooter({ text: 'Athena Voice Engine' });
 
     const dmSent = await target.send({ embeds: [dmEmbed] }).catch(() => null);
-    if (!dmSent) return interaction.reply(cv2.warn('<:off:1533844858983157851> Failed', `Could not send a DM to ${target}. They may have DMs disabled.`));
-    return interaction.reply(cv2.success('Invite Sent ', `${target} has been invited to your channel via DM.`));
+    if (!dmSent) {
+      return interaction.reply(cv2.e.warn(
+        `DM Blocked | ${WARN_EMOJI}`,
+        `Could not deliver DM to ${formatUserLink(target, guild)}. Their direct messages may be disabled.`
+      ));
+    }
+    return interaction.reply(cv2.e.success(
+      `Invite Dispatched | ${TICK_EMOJI}`,
+      `An invite link has been dispatched to ${formatUserLink(target, guild)} via DM.`
+    ));
   }
 
   if (customId === 'jtc_transfer_modal') {
     const userId = interaction.fields.getTextInputValue('jtc_transfer_userid').trim().replace(/\D/g, '');
     const target = await guild.members.fetch(userId).catch(() => null);
-    if (!target) return interaction.reply(cv2.warn('User Not Found', 'Could not find that user.'));
-    if (!vcChannel.members.has(userId)) return interaction.reply(cv2.warn('Not In Channel', 'That user must be in your channel to receive ownership.'));
+    if (!target) {
+      return interaction.reply(cv2.e.warn(
+        `User Not Found | ${WARN_EMOJI}`,
+        `Could not find that user in this server.`
+      ));
+    }
+    if (!vcChannel.members.has(userId)) {
+      return interaction.reply(cv2.e.warn(
+        `Not Connected | ${WARN_EMOJI}`,
+        `That user must be inside your voice channel to receive room ownership.`
+      ));
+    }
+
     await vcChannel.permissionOverwrites.edit(member.id, { ManageChannels: false }).catch(() => null);
-    await vcChannel.permissionOverwrites.edit(userId, { Connect: true, ViewChannel: true, ManageChannels: true }).catch(() => null);
+    await vcChannel.permissionOverwrites.edit(userId, { 
+      Connect: true, 
+      ViewChannel: true, 
+      ManageChannels: true, 
+      MuteMembers: true, 
+      DeafenMembers: true 
+    }).catch(() => null);
+
     db.setJtcOwner(vcChannel.id, userId);
-    return interaction.reply(cv2.success('Ownership Transferred ', `${target} is now the owner of this channel.`));
+
+    return interaction.reply(cv2.e.success(
+      `Ownership Transferred | ${TICK_EMOJI}`,
+      `${formatUserLink(target, guild)} is now the registered owner of this channel.`
+    ));
   }
 }
 
 // ==========================================
-// SLASH COMMANDS
+// TIERED SUITE HELPERS
+// ==========================================
+
+async function deployTieredSuite(guild) {
+  // Create Category
+  const category = await guild.channels.create({
+    name: 'Athena Voice Hub',
+    type: ChannelType.GuildCategory,
+    permissionOverwrites: [
+      {
+        id: guild.roles.everyone,
+        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.Connect, PermissionFlagsBits.Speak]
+      },
+      {
+        id: guild.client.user.id,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.ManageChannels,
+          PermissionFlagsBits.Connect,
+          PermissionFlagsBits.Speak,
+          PermissionFlagsBits.MoveMembers,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.EmbedLinks
+        ]
+      }
+    ],
+    reason: 'Athena Tiered JTC Voice Hub Deployment'
+  });
+
+  // Create Interface Channel
+  const interfaceChannel = await guild.channels.create({
+    name: 'voice-controls',
+    type: ChannelType.GuildText,
+    parent: category.id,
+    permissionOverwrites: [
+      {
+        id: guild.roles.everyone,
+        deny: [
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.CreatePublicThreads,
+          PermissionFlagsBits.CreatePrivateThreads,
+          PermissionFlagsBits.AddReactions
+        ],
+        allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory]
+      },
+      {
+        id: guild.client.user.id,
+        allow: [
+          PermissionFlagsBits.ViewChannel,
+          PermissionFlagsBits.SendMessages,
+          PermissionFlagsBits.EmbedLinks,
+          PermissionFlagsBits.ManageMessages
+        ]
+      }
+    ],
+    reason: 'Athena Tiered JTC Interface Channel'
+  });
+
+  // Post persistent panel
+  const sharedPanel = buildSharedPanel(guild);
+  const panelMsg = await interfaceChannel.send(sharedPanel);
+
+  // Create 4 generator voice channels
+  const soloChannel = await guild.channels.create({
+    name: '👤 Solo [1]',
+    type: ChannelType.GuildVoice,
+    userLimit: 1,
+    parent: category.id,
+    reason: 'Athena Tiered JTC Solo Lobby'
+  });
+
+  const duoChannel = await guild.channels.create({
+    name: '👥 Duo [2]',
+    type: ChannelType.GuildVoice,
+    userLimit: 2,
+    parent: category.id,
+    reason: 'Athena Tiered JTC Duo Lobby'
+  });
+
+  const trioChannel = await guild.channels.create({
+    name: '🎮 Trio [3]',
+    type: ChannelType.GuildVoice,
+    userLimit: 3,
+    parent: category.id,
+    reason: 'Athena Tiered JTC Trio Lobby'
+  });
+
+  const squadChannel = await guild.channels.create({
+    name: '🔊 Squad [Free]',
+    type: ChannelType.GuildVoice,
+    userLimit: 0,
+    parent: category.id,
+    reason: 'Athena Tiered JTC Unlimited Lobby'
+  });
+
+  // Store in database strictly by ID
+  db.setTieredJtcConfig(guild.id, {
+    categoryId: category.id,
+    interfaceChannelId: interfaceChannel.id,
+    interfaceMessageId: panelMsg.id,
+    channels: {
+      solo: soloChannel.id,
+      duo: duoChannel.id,
+      trio: trioChannel.id,
+      unlimited: squadChannel.id
+    }
+  });
+
+  return {
+    category,
+    interfaceChannel,
+    soloChannel,
+    duoChannel,
+    trioChannel,
+    squadChannel
+  };
+}
+
+async function wipeTieredSuite(guild) {
+  const tieredCfg = db.getTieredJtcConfig(guild.id);
+  if (!tieredCfg) return false;
+
+  // 1. Delete generator channels by ID
+  if (tieredCfg.channels) {
+    for (const [key, chId] of Object.entries(tieredCfg.channels)) {
+      if (chId) {
+        const ch = guild.channels.cache.get(chId) || await guild.channels.fetch(chId).catch(() => null);
+        if (ch) await ch.delete('Athena: Purging Tiered JTC Generator Channel').catch(() => null);
+      }
+    }
+  }
+
+  // 2. Delete interface channel by ID
+  if (tieredCfg.interfaceChannelId) {
+    const iface = guild.channels.cache.get(tieredCfg.interfaceChannelId) || await guild.channels.fetch(tieredCfg.interfaceChannelId).catch(() => null);
+    if (iface) await iface.delete('Athena: Purging Tiered JTC Interface Channel').catch(() => null);
+  }
+
+  // 3. Purge any active temporary channels created under the category
+  const allJtc = db.getAllJtcChannels().filter(c => c.guildId === guild.id);
+  for (const record of allJtc) {
+    const ch = guild.channels.cache.get(record.channelId) || await guild.channels.fetch(record.channelId).catch(() => null);
+    if (ch && (ch.parentId === tieredCfg.categoryId || record.tier)) {
+      if (record.textChannelId) {
+        const textCh = guild.channels.cache.get(record.textChannelId) || await guild.channels.fetch(record.textChannelId).catch(() => null);
+        if (textCh) await textCh.delete('Athena: Purging Tiered JTC Temp Text').catch(() => null);
+      }
+      await ch.delete('Athena: Purging Tiered JTC Temp Channel').catch(() => null);
+      db.removeJtcChannel(record.channelId);
+    }
+  }
+
+  // 4. Delete the category itself by ID
+  if (tieredCfg.categoryId) {
+    const cat = guild.channels.cache.get(tieredCfg.categoryId) || await guild.channels.fetch(tieredCfg.categoryId).catch(() => null);
+    if (cat) await cat.delete('Athena: Purging Tiered JTC Category').catch(() => null);
+  }
+
+  // 5. Clear DB record
+  db.clearTieredJtcConfig(guild.id);
+  return true;
+}
+
+// ==========================================
+// EXPORTED COMMANDS
 // ==========================================
 export const commands = [
-  // â”€â”€â”€ JTCSETUP â”€â”€â”€
+  // ─── JTCSETUP ───
   {
     name: 'jtcsetup',
     aliases: ['jtc', 'join2create'],
-    description: 'Set up the Join to Create system. [Extra Owner]',
+    description: 'Deploy the Join to Create voice suite (Standard or Tiered). [Manage Server]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
-      { name: 'channel', description: 'Select VC lobby (or use channel_id)', type: 7, required: false, channel_types: [2] },
-      { name: 'channel_id', description: 'Or paste VC lobby ID here', type: 3, required: false },
-      { name: 'category', description: 'Select Category (or use category_id)', type: 7, required: false, channel_types: [4] },
-      { name: 'category_id', description: 'Or paste Category ID here', type: 3, required: false },
-      { name: 'panel_channel', description: 'Select Panel text channel (or use panel_id)', type: 7, required: false, channel_types: [0] },
-      { name: 'panel_id', description: 'Or paste Panel text channel ID here', type: 3, required: false }
+      {
+        name: 'preset',
+        description: 'Choose between Standard single lobby or Tiered (Solo, Duo, Trio, Squad) suite',
+        type: 3,
+        required: false,
+        choices: [
+          { name: 'Tiered Suite (Solo, Duo, Trio, Squad + Interface)', value: 'tiers' },
+          { name: 'Standard Single Lobby', value: 'standard' }
+        ]
+      },
+      { name: 'channel', description: 'Select VC lobby (for standard setup)', type: 7, required: false, channel_types: [2] },
+      { name: 'category', description: 'Select Category (for standard setup)', type: 7, required: false, channel_types: [4] },
+      { name: 'panel_channel', description: 'Select Panel text channel (for standard setup)', type: 7, required: false, channel_types: [0] }
     ],
     async executePrefix(message, args) {
       if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) return;
       const guild = message.guild;
 
+      const subArg = args[0]?.toLowerCase();
+
+      // ── TIERED PRESET DEPLOYMENT ──
+      if (subArg === 'tiers' || subArg === 'tier' || subArg === 'suite') {
+        const existing = db.getTieredJtcConfig(guild.id);
+        if (existing?.categoryId) {
+          const existingCat = guild.channels.cache.get(existing.categoryId) || await guild.channels.fetch(existing.categoryId).catch(() => null);
+          if (existingCat) {
+            return message.reply(cv2.warn(
+              `Already Configured | ${WARN_EMOJI}`,
+              `The Tiered Voice Hub is already deployed under ${formatChannelLink(existingCat, guild)}.\n\nTo wipe and reset it, run \`!jtcdisable tiers\`.`
+            ));
+          }
+        }
+
+        const deployed = await deployTieredSuite(guild);
+        return message.reply(cv2.success(
+          `Tiered JTC Suite Activated | ${TICK_EMOJI}`,
+          `The Tiered Voice Hub suite has been deployed successfully!\n\n` +
+          `-# ${BULLET_EMOJI} **Category:** ${formatChannelLink(deployed.category, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Interface:** ${formatChannelLink(deployed.interfaceChannel, guild)} *(Persistent Control Center)*\n` +
+          `-# ${BULLET_EMOJI} **Solo [1 Slot]:** ${formatChannelLink(deployed.soloChannel, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Duo [2 Slots]:** ${formatChannelLink(deployed.duoChannel, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Trio [3 Slots]:** ${formatChannelLink(deployed.trioChannel, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Squad [Free]:** ${formatChannelLink(deployed.squadChannel, guild)}\n\n` +
+          `> Admins may freely rename the category and channels anytime in Discord — Athena tracks them by database ID.\n` +
+          `> To wipe this entire suite, run \`!jtcdisable tiers\`.`
+        ));
+      }
+
+      // ── STANDARD SETUP ──
       let lobbyChannel = null;
       let category = null;
       let panelChannel = null;
@@ -573,33 +1062,25 @@ export const commands = [
       for (const arg of args) {
         const id = arg.replace(/\D/g, '');
         if (!id) continue;
-        const channel = await guild.channels.fetch(id).catch(() => null);
-        if (!channel) continue;
+        const ch = await guild.channels.fetch(id).catch(() => null);
+        if (!ch) continue;
 
-        if (channel.isVoiceBased()) {
-          lobbyChannel = channel;
-        } else if (channel.type === 4) { // GuildCategory
-          category = channel;
-        } else if (channel.isTextBased()) {
-          panelChannel = channel;
-        }
-      }
-
-      if (!lobbyChannel && !category && !panelChannel && args.length > 0) {
-         return message.reply(cv2.warn('Invalid ID', 'None of the provided IDs resolved to a valid channel in this server. Please check the IDs and try again.'));
+        if (ch.isVoiceBased()) lobbyChannel = ch;
+        else if (ch.type === 4) category = ch;
+        else if (ch.isTextBased()) panelChannel = ch;
       }
 
       if (!lobbyChannel) {
         const existingCfg = db.getJtcConfig(guild.id);
-        if (existingCfg?.channelId) {
-          lobbyChannel = guild.channels.cache.get(existingCfg.channelId) || await guild.channels.fetch(existingCfg.channelId).catch(() => null);
+        if (existingCfg?.lobbyChannelId) {
+          lobbyChannel = guild.channels.cache.get(existingCfg.lobbyChannelId) || await guild.channels.fetch(existingCfg.lobbyChannelId).catch(() => null);
         }
         if (existingCfg?.categoryId && !category) {
           category = guild.channels.cache.get(existingCfg.categoryId) || await guild.channels.fetch(existingCfg.categoryId).catch(() => null);
         }
         if (!lobbyChannel) {
-          const cat = category || await guild.channels.create({ name: 'Voice Rooms', type: ChannelType.GuildCategory, reason: 'Athena Prime JTC Setup' });
-          lobbyChannel = await guild.channels.create({ name: 'Join to Create', type: ChannelType.GuildVoice, parent: cat.id, reason: 'Athena Prime JTC Setup' });
+          const cat = category || await guild.channels.create({ name: 'Voice Rooms', type: ChannelType.GuildCategory, reason: 'Athena JTC Setup' });
+          lobbyChannel = await guild.channels.create({ name: 'Join to Create', type: ChannelType.GuildVoice, parent: cat.id, reason: 'Athena JTC Setup' });
           category = cat;
         }
       }
@@ -608,10 +1089,9 @@ export const commands = [
       const panelChannelId = panelChannel?.id || null;
 
       if (panelChannel) {
-        // Delete old panels to prevent duplicates
         const messages = await panelChannel.messages.fetch({ limit: 20 }).catch(() => null);
         if (messages) {
-          const panels = messages.filter(m => m.author.id === message.client.user.id && m.embeds[0]?.title === 'Voice Channel Control Panel');
+          const panels = messages.filter(m => m.author.id === message.client.user.id);
           for (const p of panels.values()) await p.delete().catch(() => null);
         }
 
@@ -627,49 +1107,70 @@ export const commands = [
         db.setJtcConfig(guild.id, lobbyChannel.id, categoryId, panelChannelId);
       }
 
-      return message.reply(cv2.success('JTC System Activated ðŸš€', [
-          `**Lobby Channel:** ${lobbyChannel}`,
-          `**Category:** ${categoryId ? `<#${categoryId}>` : 'Same as lobby'}`,
-          `**Panel Channel:** ${panelChannelId ? `<#${panelChannelId}>` : 'VC Text Chat (default)'}`,
-          '',
-          'When someone joins the lobby, a private voice channel and control panel will be created automatically.',
-          'To disable: `/jtcdisable`'
-        ].join('\n')));
+      const lobbyLink = formatChannelLink(lobbyChannel, guild);
+      const catLink = categoryId ? formatChannelLink(categoryId, guild) : 'Same as lobby';
+      const panelLink = panelChannelId ? formatChannelLink(panelChannelId, guild) : 'Room Text Chat (Default)';
+
+      return message.reply(cv2.success(
+        `JTC System Activated | ${TICK_EMOJI}`,
+        `Standard Join to Create system has been configured!\n\n` +
+        `-# ${BULLET_EMOJI} **Lobby Channel:** ${lobbyLink}\n` +
+        `-# ${BULLET_EMOJI} **Category:** ${catLink}\n` +
+        `-# ${BULLET_EMOJI} **Panel Channel:** ${panelLink}\n\n` +
+        `> When members connect to the lobby, private temporary channels are automatically created.\n` +
+        `> Want Solo/Duo/Trio/Squad presets? Run \`!jtcsetup tiers\`.`
+      ));
     },
     async executeSlash(interaction) {
       if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.warn('Unauthorized', 'You need Manage Server permissions to use this.'));
+        return interaction.reply(cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'You need Manage Server permissions to use this.'));
       }
-      await interaction.reply(cv2.info('Processing', 'Configuring JTC System...'));
+      await interaction.deferReply();
       const guild = interaction.guild;
+      const preset = interaction.options.getString('preset');
+
+      if (preset === 'tiers') {
+        const existing = db.getTieredJtcConfig(guild.id);
+        if (existing?.categoryId) {
+          const existingCat = guild.channels.cache.get(existing.categoryId) || await guild.channels.fetch(existing.categoryId).catch(() => null);
+          if (existingCat) {
+            return interaction.editReply(cv2.warn(
+              `Already Configured | ${WARN_EMOJI}`,
+              `The Tiered Voice Hub is already deployed under ${formatChannelLink(existingCat, guild)}.\n\nTo wipe and reset it, run \`/jtcdisable target: tiers\`.`
+            ));
+          }
+        }
+
+        const deployed = await deployTieredSuite(guild);
+        return interaction.editReply(cv2.success(
+          `Tiered JTC Suite Activated | ${TICK_EMOJI}`,
+          `The Tiered Voice Hub suite has been deployed successfully!\n\n` +
+          `-# ${BULLET_EMOJI} **Category:** ${formatChannelLink(deployed.category, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Interface:** ${formatChannelLink(deployed.interfaceChannel, guild)} *(Persistent Control Center)*\n` +
+          `-# ${BULLET_EMOJI} **Solo [1 Slot]:** ${formatChannelLink(deployed.soloChannel, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Duo [2 Slots]:** ${formatChannelLink(deployed.duoChannel, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Trio [3 Slots]:** ${formatChannelLink(deployed.trioChannel, guild)}\n` +
+          `-# ${BULLET_EMOJI} **Squad [Free]:** ${formatChannelLink(deployed.squadChannel, guild)}\n\n` +
+          `> Admins may freely rename the category and channels anytime in Discord — Athena tracks them by database ID.\n` +
+          `> To wipe this entire suite, run \`/jtcdisable target: tiers\`.`
+        ));
+      }
 
       let lobbyChannel = interaction.options.getChannel('channel');
-      const lobbyIdStr = interaction.options.getString('channel_id');
-      if (!lobbyChannel && lobbyIdStr) lobbyChannel = await guild.channels.fetch(lobbyIdStr.trim().replace(/\D/g, '')).catch(()=>null);
-      
-      if (!lobbyChannel && lobbyIdStr) {
-         return cv2.edit(interaction, cv2.warn('Invalid ID', 'Could not find the specified lobby channel.'));
-      }
-
       let category = interaction.options.getChannel('category');
-      const categoryIdStr = interaction.options.getString('category_id');
-      if (!category && categoryIdStr) category = await guild.channels.fetch(categoryIdStr.trim().replace(/\D/g, '')).catch(()=>null);
-
       let panelChannel = interaction.options.getChannel('panel_channel');
-      const panelIdStr = interaction.options.getString('panel_id');
-      if (!panelChannel && panelIdStr) panelChannel = await guild.channels.fetch(panelIdStr.trim().replace(/\D/g, '')).catch(()=>null);
 
       if (!lobbyChannel) {
         const existingCfg = db.getJtcConfig(guild.id);
-        if (existingCfg?.channelId) {
-          lobbyChannel = guild.channels.cache.get(existingCfg.channelId) || await guild.channels.fetch(existingCfg.channelId).catch(() => null);
+        if (existingCfg?.lobbyChannelId) {
+          lobbyChannel = guild.channels.cache.get(existingCfg.lobbyChannelId) || await guild.channels.fetch(existingCfg.lobbyChannelId).catch(() => null);
         }
         if (existingCfg?.categoryId && !category) {
           category = guild.channels.cache.get(existingCfg.categoryId) || await guild.channels.fetch(existingCfg.categoryId).catch(() => null);
         }
         if (!lobbyChannel) {
-          const cat = category || await guild.channels.create({ name: 'Voice Rooms', type: ChannelType.GuildCategory, reason: 'Athena Prime JTC Setup' });
-          lobbyChannel = await guild.channels.create({ name: 'Join to Create', type: ChannelType.GuildVoice, parent: cat.id, reason: 'Athena Prime JTC Setup' });
+          const cat = category || await guild.channels.create({ name: 'Voice Rooms', type: ChannelType.GuildCategory, reason: 'Athena JTC Setup' });
+          lobbyChannel = await guild.channels.create({ name: 'Join to Create', type: ChannelType.GuildVoice, parent: cat.id, reason: 'Athena JTC Setup' });
           category = cat;
         }
       }
@@ -678,13 +1179,6 @@ export const commands = [
       const panelChannelId = panelChannel?.id || null;
 
       if (panelChannel) {
-        // Delete old panels to prevent duplicates
-        const messages = await panelChannel.messages.fetch({ limit: 20 }).catch(() => null);
-        if (messages) {
-          const panels = messages.filter(m => m.author.id === interaction.client.user.id && m.embeds[0]?.title === 'Voice Channel Control Panel');
-          for (const p of panels.values()) await p.delete().catch(() => null);
-        }
-
         const sharedPanel = buildSharedPanel(guild);
         const sentMsg = await panelChannel.send(sharedPanel).catch(() => null);
         if (sentMsg) {
@@ -697,127 +1191,473 @@ export const commands = [
         db.setJtcConfig(guild.id, lobbyChannel.id, categoryId, panelChannelId);
       }
 
-      await cv2.edit(interaction, cv2.success('JTC System Activated ðŸš€', [
-          `**Lobby Channel:** ${lobbyChannel}`,
-          `**Category:** ${categoryId ? `<#${categoryId}>` : 'Same as lobby'}`,
-          `**Panel Channel:** ${panelChannelId ? `<#${panelChannelId}>` : 'VC Text Chat (default)'}`,
-          '',
-          'When someone joins the lobby, a private voice channel and control panel will be created automatically.',
-          'To disable: `/jtcdisable`'
-        ].join('\n')));
+      const lobbyLink = formatChannelLink(lobbyChannel, guild);
+      const catLink = categoryId ? formatChannelLink(categoryId, guild) : 'Same as lobby';
+      const panelLink = panelChannelId ? formatChannelLink(panelChannelId, guild) : 'Room Text Chat (Default)';
+
+      return interaction.editReply(cv2.success(
+        `JTC System Activated | ${TICK_EMOJI}`,
+        `Standard Join to Create system has been configured!\n\n` +
+        `-# ${BULLET_EMOJI} **Lobby Channel:** ${lobbyLink}\n` +
+        `-# ${BULLET_EMOJI} **Category:** ${catLink}\n` +
+        `-# ${BULLET_EMOJI} **Panel Channel:** ${panelLink}\n\n` +
+        `> When members connect to the lobby, private temporary channels are automatically created.`
+      ));
     }
   },
-  // â”€â”€â”€ SECONDARY JTC SETUP â”€â”€â”€
+
+  // ─── TIERED JTC SHORTCUT COMMAND ───
   {
-    name: 'secondaryjtc',
-    aliases: ['jtc2', 'secondjtc'],
-    description: 'Set up a secondary Join to Create lobby. [Extra Owner]',
+    name: 'jtctiers',
+    aliases: ['tieredjtc', 'jtcsuite'],
+    description: 'Deploy or manage the Tiered (Solo, Duo, Trio, Squad) Voice Hub suite. [Manage Server]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
-      { name: 'channel', description: 'Select VC lobby (or use channel_id)', type: 7, required: false, channel_types: [2] },
-      { name: 'channel_id', description: 'Or paste VC lobby ID here', type: 3, required: false }
+      {
+        name: 'action',
+        description: 'Action to perform: setup, disable, or info',
+        type: 3,
+        required: true,
+        choices: [
+          { name: 'Setup Suite (Create Category & Channels)', value: 'setup' },
+          { name: 'Disable & Wipe Suite (Delete Category & Channels)', value: 'disable' },
+          { name: 'View Suite Status', value: 'info' }
+        ]
+      }
+    ],
+    async executePrefix(message, args) {
+      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) return;
+      const guild = message.guild;
+      const action = (args[0] || 'setup').toLowerCase();
+
+      if (action === 'disable' || action === 'delete' || action === 'wipe' || action === 'off') {
+        const tieredCfg = db.getTieredJtcConfig(guild.id);
+        if (!tieredCfg) {
+          return message.reply(cv2.warn(
+            `Not Found | ${WARN_EMOJI}`,
+            `No active Tiered Voice Hub configuration found for this server.`
+          ));
+        }
+        await wipeTieredSuite(guild);
+        return message.reply(cv2.success(
+          `Tiered JTC Suite Wiped | ${TICK_EMOJI}`,
+          `The Tiered Voice Hub category, interface channel, generator channels, and active temporary rooms have been completely removed.`
+        ));
+      }
+
+      if (action === 'info' || action === 'status') {
+        const tieredCfg = db.getTieredJtcConfig(guild.id);
+        if (!tieredCfg) {
+          return message.reply(cv2.info(
+            `Tiered Suite Status | ${WARN_EMOJI}`,
+            `No Tiered Voice Hub is currently configured. Deploy one with \`!jtctiers setup\`.`
+          ));
+        }
+        const catLink = tieredCfg.categoryId ? formatChannelLink(tieredCfg.categoryId, guild) : 'None';
+        const ifaceLink = tieredCfg.interfaceChannelId ? formatChannelLink(tieredCfg.interfaceChannelId, guild) : 'None';
+        const soloLink = tieredCfg.channels?.solo ? formatChannelLink(tieredCfg.channels.solo, guild) : 'None';
+        const duoLink = tieredCfg.channels?.duo ? formatChannelLink(tieredCfg.channels.duo, guild) : 'None';
+        const trioLink = tieredCfg.channels?.trio ? formatChannelLink(tieredCfg.channels.trio, guild) : 'None';
+        const squadLink = tieredCfg.channels?.unlimited ? formatChannelLink(tieredCfg.channels.unlimited, guild) : 'None';
+
+        return message.reply(cv2.info(
+          `Tiered Suite Status | ${TICK_EMOJI}`,
+          `-# ${BULLET_EMOJI} **Category:** ${catLink}\n` +
+          `-# ${BULLET_EMOJI} **Interface:** ${ifaceLink}\n` +
+          `-# ${BULLET_EMOJI} **Solo [1]:** ${soloLink}\n` +
+          `-# ${BULLET_EMOJI} **Duo [2]:** ${duoLink}\n` +
+          `-# ${BULLET_EMOJI} **Trio [3]:** ${trioLink}\n` +
+          `-# ${BULLET_EMOJI} **Squad [Free]:** ${squadLink}`
+        ));
+      }
+
+      // Default: Setup
+      const existing = db.getTieredJtcConfig(guild.id);
+      if (existing?.categoryId) {
+        const existingCat = guild.channels.cache.get(existing.categoryId) || await guild.channels.fetch(existing.categoryId).catch(() => null);
+        if (existingCat) {
+          return message.reply(cv2.warn(
+            `Already Configured | ${WARN_EMOJI}`,
+            `The Tiered Voice Hub is already deployed under ${formatChannelLink(existingCat, guild)}.\n\nTo wipe and reset it, run \`!jtctiers disable\`.`
+          ));
+        }
+      }
+
+      const deployed = await deployTieredSuite(guild);
+      return message.reply(cv2.success(
+        `Tiered JTC Suite Activated | ${TICK_EMOJI}`,
+        `The Tiered Voice Hub suite has been deployed successfully!\n\n` +
+        `-# ${BULLET_EMOJI} **Category:** ${formatChannelLink(deployed.category, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Interface:** ${formatChannelLink(deployed.interfaceChannel, guild)} *(Persistent Control Center)*\n` +
+        `-# ${BULLET_EMOJI} **Solo [1 Slot]:** ${formatChannelLink(deployed.soloChannel, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Duo [2 Slots]:** ${formatChannelLink(deployed.duoChannel, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Trio [3 Slots]:** ${formatChannelLink(deployed.trioChannel, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Squad [Free]:** ${formatChannelLink(deployed.squadChannel, guild)}\n\n` +
+        `> Admins may freely rename the category and channels anytime in Discord — Athena tracks them by database ID.\n` +
+        `> To wipe this entire suite, run \`!jtctiers disable\`.`
+      ));
+    },
+    async executeSlash(interaction) {
+      if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(interaction.user.id)) {
+        return interaction.reply(cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'You need Manage Server permissions to use this.'));
+      }
+      await interaction.deferReply();
+      const guild = interaction.guild;
+      const action = interaction.options.getString('action');
+
+      if (action === 'disable') {
+        const tieredCfg = db.getTieredJtcConfig(guild.id);
+        if (!tieredCfg) {
+          return interaction.editReply(cv2.warn(
+            `Not Found | ${WARN_EMOJI}`,
+            `No active Tiered Voice Hub configuration found for this server.`
+          ));
+        }
+        await wipeTieredSuite(guild);
+        return interaction.editReply(cv2.success(
+          `Tiered JTC Suite Wiped | ${TICK_EMOJI}`,
+          `The Tiered Voice Hub category, interface channel, generator channels, and active temporary rooms have been completely removed.`
+        ));
+      }
+
+      if (action === 'info') {
+        const tieredCfg = db.getTieredJtcConfig(guild.id);
+        if (!tieredCfg) {
+          return interaction.editReply(cv2.info(
+            `Tiered Suite Status | ${WARN_EMOJI}`,
+            `No Tiered Voice Hub is currently configured. Deploy one with \`/jtctiers action: setup\`.`
+          ));
+        }
+        const catLink = tieredCfg.categoryId ? formatChannelLink(tieredCfg.categoryId, guild) : 'None';
+        const ifaceLink = tieredCfg.interfaceChannelId ? formatChannelLink(tieredCfg.interfaceChannelId, guild) : 'None';
+        const soloLink = tieredCfg.channels?.solo ? formatChannelLink(tieredCfg.channels.solo, guild) : 'None';
+        const duoLink = tieredCfg.channels?.duo ? formatChannelLink(tieredCfg.channels.duo, guild) : 'None';
+        const trioLink = tieredCfg.channels?.trio ? formatChannelLink(tieredCfg.channels.trio, guild) : 'None';
+        const squadLink = tieredCfg.channels?.unlimited ? formatChannelLink(tieredCfg.channels.unlimited, guild) : 'None';
+
+        return interaction.editReply(cv2.info(
+          `Tiered Suite Status | ${TICK_EMOJI}`,
+          `-# ${BULLET_EMOJI} **Category:** ${catLink}\n` +
+          `-# ${BULLET_EMOJI} **Interface:** ${ifaceLink}\n` +
+          `-# ${BULLET_EMOJI} **Solo [1]:** ${soloLink}\n` +
+          `-# ${BULLET_EMOJI} **Duo [2]:** ${duoLink}\n` +
+          `-# ${BULLET_EMOJI} **Trio [3]:** ${trioLink}\n` +
+          `-# ${BULLET_EMOJI} **Squad [Free]:** ${squadLink}`
+        ));
+      }
+
+      // Default: Setup
+      const existing = db.getTieredJtcConfig(guild.id);
+      if (existing?.categoryId) {
+        const existingCat = guild.channels.cache.get(existing.categoryId) || await guild.channels.fetch(existing.categoryId).catch(() => null);
+        if (existingCat) {
+          return interaction.editReply(cv2.warn(
+            `Already Configured | ${WARN_EMOJI}`,
+            `The Tiered Voice Hub is already deployed under ${formatChannelLink(existingCat, guild)}.\n\nTo wipe and reset it, run \`/jtctiers action: disable\`.`
+          ));
+        }
+      }
+
+      const deployed = await deployTieredSuite(guild);
+      return interaction.editReply(cv2.success(
+        `Tiered JTC Suite Activated | ${TICK_EMOJI}`,
+        `The Tiered Voice Hub suite has been deployed successfully!\n\n` +
+        `-# ${BULLET_EMOJI} **Category:** ${formatChannelLink(deployed.category, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Interface:** ${formatChannelLink(deployed.interfaceChannel, guild)} *(Persistent Control Center)*\n` +
+        `-# ${BULLET_EMOJI} **Solo [1 Slot]:** ${formatChannelLink(deployed.soloChannel, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Duo [2 Slots]:** ${formatChannelLink(deployed.duoChannel, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Trio [3 Slots]:** ${formatChannelLink(deployed.trioChannel, guild)}\n` +
+        `-# ${BULLET_EMOJI} **Squad [Free]:** ${formatChannelLink(deployed.squadChannel, guild)}\n\n` +
+        `> Admins may freely rename the category and channels anytime in Discord — Athena tracks them by database ID.\n` +
+        `> To wipe this entire suite, run \`/jtctiers action: disable\`.`
+      ));
+    }
+  },
+
+  // ─── SECONDARY JTC SETUP ───
+  {
+    name: 'secondaryjtc',
+    aliases: ['jtc2', 'secondjtc'],
+    description: 'Set up a secondary Join to Create lobby. [Manage Server]',
+    category: 'utility',
+    permissions: [PermissionFlagsBits.ManageGuild],
+    options: [
+      { name: 'channel', description: 'Select VC lobby (or use channel_id)', type: 7, required: false, channel_types: [2] }
     ],
     async executePrefix(message, args) {
       if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) return;
       const guild = message.guild;
 
       let lobbyChannel = null;
-
       for (const arg of args) {
         const id = arg.replace(/\D/g, '');
         if (!id) continue;
-        const channel = await guild.channels.fetch(id).catch(() => null);
-        if (channel && channel.isVoiceBased()) {
-          lobbyChannel = channel;
+        const ch = await guild.channels.fetch(id).catch(() => null);
+        if (ch && ch.isVoiceBased()) {
+          lobbyChannel = ch;
           break;
         }
       }
 
-      if (!lobbyChannel && args.length > 0) {
-         return message.reply(cv2.warn('Invalid ID', 'The provided ID did not resolve to a valid voice channel in this server.'));
-      }
-
       if (!lobbyChannel) {
         const jtcConfig = db.getJtcConfig(guild.id);
         const parentId = jtcConfig?.categoryId || null;
-        lobbyChannel = await guild.channels.create({ name: 'âž• Secondary JTC', type: ChannelType.GuildVoice, parent: parentId, reason: 'Athena Prime Secondary JTC Setup' });
+        lobbyChannel = await guild.channels.create({ 
+          name: '➕ Secondary JTC', 
+          type: ChannelType.GuildVoice, 
+          parent: parentId, 
+          reason: 'Athena Secondary JTC Setup' 
+        });
       }
 
       db.setSecondaryJtcConfig(guild.id, lobbyChannel.id);
 
-      return message.reply(cv2.success('Secondary JTC System Activated ðŸš€', [
-          `**Secondary Lobby:** ${lobbyChannel}`,
-          '',
-          'When someone joins this lobby, a voice channel will be created automatically, just like the primary lobby.'
-        ].join('\n')));
+      return message.reply(cv2.success(
+        `Secondary JTC Activated | ${TICK_EMOJI}`,
+        `Secondary Join to Create lobby is ready!\n\n` +
+        `-# ${BULLET_EMOJI} **Secondary Lobby:** ${formatChannelLink(lobbyChannel, guild)}`
+      ));
     },
     async executeSlash(interaction) {
       if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.warn('Unauthorized', 'You need Manage Server permissions to use this.'));
+        return interaction.reply(cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'You need Manage Server permissions to use this.'));
       }
-      await interaction.reply(cv2.info('Processing', 'Configuring JTC System...'));
+      await interaction.deferReply();
       const guild = interaction.guild;
-
       let lobbyChannel = interaction.options.getChannel('channel');
-      const lobbyIdStr = interaction.options.getString('channel_id');
-      if (!lobbyChannel && lobbyIdStr) lobbyChannel = await guild.channels.fetch(lobbyIdStr.trim().replace(/\D/g, '')).catch(()=>null);
-      
-      if (!lobbyChannel && lobbyIdStr) {
-         return cv2.edit(interaction, cv2.warn('Invalid ID', 'Could not find the specified lobby channel.'));
-      }
 
       if (!lobbyChannel) {
         const jtcConfig = db.getJtcConfig(guild.id);
         const parentId = jtcConfig?.categoryId || null;
-        lobbyChannel = await guild.channels.create({ name: 'âž• Secondary JTC', type: ChannelType.GuildVoice, parent: parentId, reason: 'Athena Prime Secondary JTC Setup' });
+        lobbyChannel = await guild.channels.create({ 
+          name: '➕ Secondary JTC', 
+          type: ChannelType.GuildVoice, 
+          parent: parentId, 
+          reason: 'Athena Secondary JTC Setup' 
+        });
       }
 
       db.setSecondaryJtcConfig(guild.id, lobbyChannel.id);
 
-      await cv2.edit(interaction, cv2.success('Secondary JTC System Activated ðŸš€', [
-          `**Secondary Lobby:** ${lobbyChannel}`,
-          '',
-          'When someone joins this lobby, a voice channel will be created automatically, just like the primary lobby.'
-        ].join('\n')));
+      return interaction.editReply(cv2.success(
+        `Secondary JTC Activated | ${TICK_EMOJI}`,
+        `Secondary Join to Create lobby is ready!\n\n` +
+        `-# ${BULLET_EMOJI} **Secondary Lobby:** ${formatChannelLink(lobbyChannel, guild)}`
+      ));
     }
   },
 
-  // â”€â”€â”€ JTCDISABLE â”€â”€â”€
+  // ─── JTCDISABLE ───
   {
     name: 'jtcdisable',
-    aliases: ['jtcoff'],
-    description: ' Disable the Join to Create system. [Extra Owner]',
+    aliases: ['jtcoff', 'jtcstop'],
+    description: 'Disable Join to Create system (Standard or Tiered). [Manage Server]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
-    options: [],
-    async executePrefix(message) {
+    options: [
+      {
+        name: 'target',
+        description: 'Choose which JTC configuration to disable and remove',
+        type: 3,
+        required: false,
+        choices: [
+          { name: 'Tiered Suite (Wipes Category & All Generator Channels)', value: 'tiers' },
+          { name: 'Standard JTC Lobby', value: 'standard' },
+          { name: 'All JTC Configurations', value: 'all' }
+        ]
+      }
+    ],
+    async executePrefix(message, args) {
       if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) return;
-      db.clearJtcConfig(message.guild.id);
-      return message.reply(cv2.danger('JTC Disabled', 'The Join to Create system has been turned off.'));
+      const guild = message.guild;
+      const target = args[0]?.toLowerCase();
+
+      const standardCfg = db.getJtcConfig(guild.id);
+      const tieredCfg = db.getTieredJtcConfig(guild.id);
+
+      if (!standardCfg?.lobbyChannelId && !tieredCfg) {
+        return message.reply(cv2.warn(
+          `Not Found | ${WARN_EMOJI}`,
+          `No active Join to Create system was found configured for this server.`
+        ));
+      }
+
+      // If user specifically requested 'tiers'
+      if (target === 'tiers' || target === 'tier' || target === 'suite') {
+        if (!tieredCfg) {
+          return message.reply(cv2.warn(`Not Found | ${WARN_EMOJI}`, 'No active Tiered Voice Hub found to disable.'));
+        }
+        await wipeTieredSuite(guild);
+        return message.reply(cv2.success(
+          `Tiered JTC Suite Removed | ${TICK_EMOJI}`,
+          `The Tiered Voice Hub category, interface channel, and generator channels have been wiped completely.`
+        ));
+      }
+
+      // If user specifically requested 'standard'
+      if (target === 'standard') {
+        if (!standardCfg?.lobbyChannelId) {
+          return message.reply(cv2.warn(`Not Found | ${WARN_EMOJI}`, 'No active Standard JTC lobby found to disable.'));
+        }
+        db.clearJtcConfig(guild.id);
+        return message.reply(cv2.danger(
+          `Standard JTC Disabled | ${WRONG_EMOJI}`,
+          `The Standard Join to Create system has been turned off.`
+        ));
+      }
+
+      // If user specifically requested 'all'
+      if (target === 'all') {
+        if (tieredCfg) await wipeTieredSuite(guild);
+        db.clearJtcConfig(guild.id);
+        return message.reply(cv2.danger(
+          `All JTC Systems Disabled | ${WRONG_EMOJI}`,
+          `All Join to Create configurations and tiered voice channels have been disabled and purged.`
+        ));
+      }
+
+      // No argument passed: intelligent detection
+      if (tieredCfg && !standardCfg?.lobbyChannelId) {
+        await wipeTieredSuite(guild);
+        return message.reply(cv2.success(
+          `Tiered JTC Suite Removed | ${TICK_EMOJI}`,
+          `The Tiered Voice Hub category, interface channel, and generator channels have been wiped completely.`
+        ));
+      }
+
+      if (!tieredCfg && standardCfg?.lobbyChannelId) {
+        db.clearJtcConfig(guild.id);
+        return message.reply(cv2.danger(
+          `Standard JTC Disabled | ${WRONG_EMOJI}`,
+          `The Standard Join to Create system has been turned off.`
+        ));
+      }
+
+      // Both are active: prompt user with clear choices
+      return message.reply(cv2.info(
+        `Specify Target | ${WARN_EMOJI}`,
+        `You have multiple JTC systems active. Please specify what you wish to disable:\n\n` +
+        `-# ${BULLET_EMOJI} \`!jtcdisable tiers\` - Wipes the Tiered Voice Hub category & channels\n` +
+        `-# ${BULLET_EMOJI} \`!jtcdisable standard\` - Turns off the Standard JTC lobby\n` +
+        `-# ${BULLET_EMOJI} \`!jtcdisable all\` - Disables and purges both systems`
+      ));
     },
     async executeSlash(interaction) {
       if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.warn('Unauthorized', 'You need Manage Server permissions to use this.'));
+        return interaction.reply(cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'You need Manage Server permissions to use this.'));
       }
-      db.clearJtcConfig(interaction.guild.id);
-      return interaction.reply(cv2.danger('JTC Disabled', 'The Join to Create system has been turned off.'));
+      await interaction.deferReply();
+      const guild = interaction.guild;
+      const target = interaction.options.getString('target') || 'tiers';
+
+      const standardCfg = db.getJtcConfig(guild.id);
+      const tieredCfg = db.getTieredJtcConfig(guild.id);
+
+      if (target === 'tiers') {
+        if (!tieredCfg) {
+          return interaction.editReply(cv2.warn(`Not Found | ${WARN_EMOJI}`, 'No active Tiered Voice Hub found to disable.'));
+        }
+        await wipeTieredSuite(guild);
+        return interaction.editReply(cv2.success(
+          `Tiered JTC Suite Removed | ${TICK_EMOJI}`,
+          `The Tiered Voice Hub category, interface channel, and generator channels have been wiped completely.`
+        ));
+      }
+
+      if (target === 'standard') {
+        if (!standardCfg?.lobbyChannelId) {
+          return interaction.editReply(cv2.warn(`Not Found | ${WARN_EMOJI}`, 'No active Standard JTC lobby found to disable.'));
+        }
+        db.clearJtcConfig(guild.id);
+        return interaction.editReply(cv2.danger(
+          `Standard JTC Disabled | ${WRONG_EMOJI}`,
+          `The Standard Join to Create system has been turned off.`
+        ));
+      }
+
+      if (target === 'all') {
+        if (tieredCfg) await wipeTieredSuite(guild);
+        db.clearJtcConfig(guild.id);
+        return interaction.editReply(cv2.danger(
+          `All JTC Systems Disabled | ${WRONG_EMOJI}`,
+          `All Join to Create configurations and tiered voice channels have been disabled and purged.`
+        ));
+      }
     }
   },
 
-  // â”€â”€â”€ VC SLASH COMMANDS â”€â”€â”€
+  // ─── VC QUICK ACTIONS ───
   {
     name: 'vc',
     aliases: ['voicechannel', 'myvc'],
-    description: '<a:uptime:1552608831060844575> Voice channel quick actions.',
+    description: 'Voice channel quick actions and information.',
     category: 'utility',
     permissions: [],
     options: [
       { name: 'claim', description: 'Claim ownership of the channel if the owner left', type: 1 },
-      { name: 'info', description: 'Show your voice channel details', type: 1 }
+      { name: 'info', description: 'Show your voice channel details and statistics', type: 1 }
     ],
-    async executePrefix(message) {
-      return message.reply(cv2.info('Use the Panel', 'Use the control panel buttons in your channel to manage your VC settings.'));
+    async executePrefix(message, args) {
+      const sub = args[0]?.toLowerCase();
+      const member = message.member;
+      const guild = message.guild;
+      const vcChannel = member.voice?.channel;
+
+      if (!vcChannel) {
+        return message.reply(cv2.warn(
+          `Not In Voice | ${WARN_EMOJI}`,
+          `You must be connected to a voice channel to use this.`
+        ));
+      }
+      const jtcData = db.getJtcChannel(vcChannel.id);
+      if (!jtcData) {
+        return message.reply(cv2.warn(
+          `Not A JTC Channel | ${WARN_EMOJI}`,
+          `This command only operates in an active Join to Create channel.`
+        ));
+      }
+
+      if (sub === 'claim') {
+        if (vcChannel.members.has(jtcData.ownerId)) {
+          return message.reply(cv2.warn(
+            `Cannot Claim | ${WARN_EMOJI}`,
+            `The channel owner is still connected to the voice room.`
+          ));
+        }
+        db.setJtcOwner(vcChannel.id, member.id);
+        await vcChannel.permissionOverwrites.edit(member.id, { 
+          Connect: true, 
+          ManageChannels: true, 
+          ViewChannel: true, 
+          MuteMembers: true, 
+          DeafenMembers: true 
+        }).catch(() => null);
+
+        return message.reply(cv2.success(
+          `Ownership Claimed | ${TICK_EMOJI}`,
+          `You are now the owner of **${vcChannel.name}**.`
+        ));
+      }
+
+      // Default: Info
+      const owner = await guild.members.fetch(jtcData.ownerId).catch(() => null);
+      const ownerText = owner ? formatUserLink(owner, guild) : `\`${jtcData.ownerId}\``;
+      const chLink = formatChannelLink(vcChannel, guild);
+      const memberLinks = vcChannel.members.size > 0 
+        ? vcChannel.members.map(m => formatUserLink(m, guild)).join(', ') 
+        : 'None';
+
+      return message.reply(cv2.info(
+        `Channel Overview | ${TICK_EMOJI}`,
+        `-# ${BULLET_EMOJI} **Channel:** ${chLink}\n` +
+        `-# ${BULLET_EMOJI} **Owner:** ${ownerText}\n` +
+        `-# ${BULLET_EMOJI} **User Limit:** \`${vcChannel.userLimit === 0 ? 'Unlimited' : vcChannel.userLimit}\`\n` +
+        `-# ${BULLET_EMOJI} **Audio Bitrate:** \`${Math.round(vcChannel.bitrate / 1000)}kbps\`\n` +
+        `-# ${BULLET_EMOJI} **Region:** \`${vcChannel.rtcRegion || 'Automatic'}\`\n` +
+        `-# ${BULLET_EMOJI} **Age-Restricted:** \`${vcChannel.nsfw ? 'Yes' : 'No'}\`\n` +
+        `-# ${BULLET_EMOJI} **Active Connected:** ${memberLinks}`
+      ));
     },
     async executeSlash(interaction) {
       const sub = interaction.options.getSubcommand();
@@ -825,53 +1665,83 @@ export const commands = [
       const guild = interaction.guild;
       const vcChannel = member.voice?.channel;
 
-      if (!vcChannel) return interaction.reply(cv2.warn('Not In Voice', 'You must be in a voice channel to use this.'));
+      if (!vcChannel) {
+        return interaction.reply(cv2.warn(
+          `Not In Voice | ${WARN_EMOJI}`,
+          `You must be in a voice channel to use this.`
+        ));
+      }
       const jtcData = db.getJtcChannel(vcChannel.id);
-      if (!jtcData) return interaction.reply(cv2.warn('Not A JTC Channel', 'This only works in a Join to Create channel.'));
+      if (!jtcData) {
+        return interaction.reply(cv2.warn(
+          `Not A JTC Channel | ${WARN_EMOJI}`,
+          `This only works in a Join to Create channel.`
+        ));
+      }
 
       if (sub === 'claim') {
-        if (vcChannel.members.has(jtcData.ownerId)) return interaction.reply(cv2.warn('Cannot Claim', 'The owner is still in the channel.'));
+        if (vcChannel.members.has(jtcData.ownerId)) {
+          return interaction.reply(cv2.warn(
+            `Cannot Claim | ${WARN_EMOJI}`,
+            `The owner is still in the channel.`
+          ));
+        }
         db.setJtcOwner(vcChannel.id, member.id);
-        await vcChannel.permissionOverwrites.edit(member.id, { Connect: true, ManageChannels: true }).catch(() => null);
-        return interaction.reply(cv2.success('Claimed ', `You are now the owner of **${vcChannel.name}**.`));
+        await vcChannel.permissionOverwrites.edit(member.id, { 
+          Connect: true, 
+          ManageChannels: true, 
+          ViewChannel: true, 
+          MuteMembers: true, 
+          DeafenMembers: true 
+        }).catch(() => null);
+
+        return interaction.reply(cv2.success(
+          `Ownership Claimed | ${TICK_EMOJI}`,
+          `You are now the owner of **${vcChannel.name}**.`
+        ));
       }
 
       if (sub === 'info') {
         const owner = await guild.members.fetch(jtcData.ownerId).catch(() => null);
-        return interaction.reply(cv2.info('Channel Info', null, [
-          { name: '<a:uptime:1552608831060844575> Name', value: vcChannel.name, inline: true },
-          { name: ' Owner', value: owner?.toString() || `\`${jtcData.ownerId}\``, inline: true },
-          { name: '<a:uptime:1552608831060844575> Limit', value: vcChannel.userLimit === 0 ? 'Unlimited' : `${vcChannel.userLimit}`, inline: true },
-          { name: '<a:uptime:1552608831060844575> Bitrate', value: `${vcChannel.bitrate / 1000}kbps`, inline: true },
-          { name: '<a:uptime:1552608831060844575> Region', value: vcChannel.rtcRegion || 'Auto', inline: true },
-          { name: ' NSFW', value: vcChannel.nsfw ? 'Yes' : 'No', inline: true }
-        ]));
+        const ownerText = owner ? formatUserLink(owner, guild) : `\`${jtcData.ownerId}\``;
+        const chLink = formatChannelLink(vcChannel, guild);
+        const memberLinks = vcChannel.members.size > 0 
+          ? vcChannel.members.map(m => formatUserLink(m, guild)).join(', ') 
+          : 'None';
+
+        return interaction.reply(cv2.info(
+          `Channel Overview | ${TICK_EMOJI}`,
+          `-# ${BULLET_EMOJI} **Channel:** ${chLink}\n` +
+          `-# ${BULLET_EMOJI} **Owner:** ${ownerText}\n` +
+          `-# ${BULLET_EMOJI} **User Limit:** \`${vcChannel.userLimit === 0 ? 'Unlimited' : vcChannel.userLimit}\`\n` +
+          `-# ${BULLET_EMOJI} **Audio Bitrate:** \`${Math.round(vcChannel.bitrate / 1000)}kbps\`\n` +
+          `-# ${BULLET_EMOJI} **Region:** \`${vcChannel.rtcRegion || 'Automatic'}\`\n` +
+          `-# ${BULLET_EMOJI} **Age-Restricted:** \`${vcChannel.nsfw ? 'Yes' : 'No'}\`\n` +
+          `-# ${BULLET_EMOJI} **Active Connected:** ${memberLinks}`
+        ));
       }
     }
   },
+
+  // ─── JTC PERMIT & CHIME ───
   {
     name: 'jtc',
     aliases: ['jointocreate', 'tempvc'],
-    description: 'Join to Create management commands.',
+    description: 'Join to Create quick permit and chime configuration.',
     category: 'utility',
     permissions: [],
     options: [
       {
         name: 'add',
-        description: 'Permit a user to join your locked JTC channel.',
+        description: 'Permit a user to join your locked JTC channel',
         type: 1,
         options: [
-          {
-            name: 'user',
-            description: 'The user to permit',
-            type: 6, // USER type
-            required: true
-          }
+          { name: 'user', description: 'The user to permit', type: 6, required: true }
         ]
       },
       {
         name: 'chime',
-        description: 'Toggle entrance chime soundboard alerts when users enter your voice room',
+        description: 'Toggle entrance chime sound alerts when members enter your voice room',
         type: 1,
         options: [
           {
@@ -892,16 +1762,38 @@ export const commands = [
         const action = args[0].toLowerCase();
         if (action === 'add') {
           const targetUser = message.mentions.users.first();
-          if (!targetUser) return message.reply(cv2.warn('Missing User', 'Please mention a user: `!jtc add @user`'));
+          if (!targetUser) {
+            return message.reply(cv2.warn(
+              `Missing User | ${WARN_EMOJI}`,
+              `Please mention a member: \`!jtc add @user\``
+            ));
+          }
           const vcChannel = message.member?.voice?.channel;
-          if (!vcChannel) return message.reply(cv2.warn('Not In Voice', 'You must be in a voice channel to use this.'));
+          if (!vcChannel) {
+            return message.reply(cv2.warn(
+              `Not In Voice | ${WARN_EMOJI}`,
+              `You must be in a voice channel to use this.`
+            ));
+          }
           const jtcData = db.getJtcChannel(vcChannel.id);
-          if (!jtcData) return message.reply(cv2.warn('Not A JTC Channel', 'This only works in a Join to Create channel.'));
+          if (!jtcData) {
+            return message.reply(cv2.warn(
+              `Not A JTC Channel | ${WARN_EMOJI}`,
+              `This only works in a Join to Create channel.`
+            ));
+          }
           if (jtcData.ownerId !== message.author.id && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return message.reply(cv2.warn('Unauthorized', 'Only the channel owner can permit users.'));
+            return message.reply(cv2.warn(
+              `Unauthorized | ${WARN_EMOJI}`,
+              `Only the channel owner or an administrator can permit users.`
+            ));
           }
           await vcChannel.permissionOverwrites.edit(targetUser.id, { Connect: true, ViewChannel: true });
-          return message.reply(cv2.success('User Permitted', `<@${targetUser.id}> can now join your channel even when locked or ghosted.`));
+          const userLink = formatUserLink(targetUser, message.guild);
+          return message.reply(cv2.success(
+            `User Permitted | ${TICK_EMOJI}`,
+            `${userLink} can now join your channel even when locked or hidden.`
+          ));
         }
 
         if (action === 'chime') {
@@ -910,22 +1802,42 @@ export const commands = [
           const jtcData = vcChannel ? db.getJtcChannel(vcChannel.id) : null;
           if (jtcData) {
             if (jtcData.ownerId !== message.author.id && !message.member.permissions.has(PermissionFlagsBits.Administrator)) {
-              return message.reply(cv2.warn('Unauthorized', 'Only the channel owner can configure channel chimes.'));
+              return message.reply(cv2.warn(
+                `Unauthorized | ${WARN_EMOJI}`,
+                `Only the channel owner can configure channel chimes.`
+              ));
             }
             if (!db.cache.jtcChannels[vcChannel.id]) db.cache.jtcChannels[vcChannel.id] = {};
             db.cache.jtcChannels[vcChannel.id].chime = enable;
             db.save();
-            return message.reply(cv2.success('Welcome Chime Updated', `Entrance welcome chimes have been **${enable ? 'enabled' : 'disabled'}** for **${vcChannel.name}**.`));
+            return message.reply(cv2.success(
+              `Welcome Chime Updated | ${TICK_EMOJI}`,
+              `Entrance welcome chimes have been **${enable ? 'enabled' : 'disabled'}** for **${vcChannel.name}**.`
+            ));
           } else {
             if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) {
-              return message.reply(cv2.warn('Unauthorized', 'You need Manage Server permissions to toggle server-wide JTC chimes.'));
+              return message.reply(cv2.warn(
+                `Unauthorized | ${WARN_EMOJI}`,
+                `You need Manage Server permissions to toggle server-wide JTC chimes.`
+              ));
             }
             db.updateGuildConfig(message.guild.id, { jtcChime: enable });
-            return message.reply(cv2.success('Welcome Chime Configured', `Server-wide JTC entrance welcome chime set to **${enable ? 'ON' : 'OFF'}**.`));
+            return message.reply(cv2.success(
+              `Welcome Chime Configured | ${TICK_EMOJI}`,
+              `Server-wide JTC entrance welcome chime set to **${enable ? 'ON' : 'OFF'}**.`
+            ));
           }
         }
       }
-      return message.reply(cv2.info('Join to Create', 'Commands:\n-# <a:target_blink:1565667466984554588> `!jtc add @user` - Permit user into locked VC\n-# <a:target_blink:1565667466984554588> `!jtc chime on|off` - Toggle entrance chime soundboard alerts\n-# <a:target_blink:1565667466984554588> `!jtcsetup` - Deploy primary JTC hub'));
+
+      return message.reply(cv2.info(
+        `Join to Create Hub | ${TICK_EMOJI}`,
+        `-# ${BULLET_EMOJI} \`!jtc add @user\` - Whitelist user into locked VC\n` +
+        `-# ${BULLET_EMOJI} \`!jtc chime on|off\` - Toggle entrance sound chime\n` +
+        `-# ${BULLET_EMOJI} \`!jtctiers setup\` - Deploy 4-tier Voice Hub suite (Solo, Duo, Trio, Squad)\n` +
+        `-# ${BULLET_EMOJI} \`!jtcdisable tiers\` - Wipe and purge Tiered Voice Hub\n` +
+        `-# ${BULLET_EMOJI} \`!jtcsetup\` - Deploy standard single JTC lobby`
+      ));
     },
     async executeSlash(interaction) {
       const sub = interaction.options.getSubcommand();
@@ -933,15 +1845,32 @@ export const commands = [
       const vcChannel = member.voice?.channel;
 
       if (sub === 'add') {
-        if (!vcChannel) return interaction.reply(cv2.warn('Not In Voice', 'You must be in a voice channel to use this.'));
+        if (!vcChannel) {
+          return interaction.reply(cv2.warn(
+            `Not In Voice | ${WARN_EMOJI}`,
+            `You must be in a voice channel to use this.`
+          ));
+        }
         const jtcData = db.getJtcChannel(vcChannel.id);
-        if (!jtcData) return interaction.reply(cv2.warn('Not A JTC Channel', 'This only works in a Join to Create channel.'));
+        if (!jtcData) {
+          return interaction.reply(cv2.warn(
+            `Not A JTC Channel | ${WARN_EMOJI}`,
+            `This only works in a Join to Create channel.`
+          ));
+        }
         if (jtcData.ownerId !== member.id && !member.permissions.has(PermissionFlagsBits.Administrator)) {
-          return interaction.reply(cv2.warn('Unauthorized', 'Only the channel owner can permit users.'));
+          return interaction.reply(cv2.warn(
+            `Unauthorized | ${WARN_EMOJI}`,
+            `Only the channel owner can permit users.`
+          ));
         }
         const targetUser = interaction.options.getUser('user');
         await vcChannel.permissionOverwrites.edit(targetUser.id, { Connect: true, ViewChannel: true });
-        return interaction.reply(cv2.success('User Permitted', `<@${targetUser.id}> can now join your channel even when locked or ghosted.`));
+        const userLink = formatUserLink(targetUser, interaction.guild);
+        return interaction.reply(cv2.success(
+          `User Permitted | ${TICK_EMOJI}`,
+          `${userLink} can now join your channel even when locked or hidden.`
+        ));
       }
 
       if (sub === 'chime') {
@@ -949,18 +1878,30 @@ export const commands = [
         const jtcData = vcChannel ? db.getJtcChannel(vcChannel.id) : null;
         if (jtcData) {
           if (jtcData.ownerId !== member.id && !member.permissions.has(PermissionFlagsBits.Administrator)) {
-            return interaction.reply(cv2.warn('Unauthorized', 'Only the channel owner can configure channel chimes.'));
+            return interaction.reply(cv2.warn(
+              `Unauthorized | ${WARN_EMOJI}`,
+              `Only the channel owner can configure channel chimes.`
+            ));
           }
           if (!db.cache.jtcChannels[vcChannel.id]) db.cache.jtcChannels[vcChannel.id] = {};
           db.cache.jtcChannels[vcChannel.id].chime = enable;
           db.save();
-          return interaction.reply(cv2.success('Welcome Chime Updated', `Entrance welcome chimes have been **${enable ? 'enabled' : 'disabled'}** for **${vcChannel.name}**.`));
+          return interaction.reply(cv2.success(
+            `Welcome Chime Updated | ${TICK_EMOJI}`,
+            `Entrance welcome chimes have been **${enable ? 'enabled' : 'disabled'}** for **${vcChannel.name}**.`
+          ));
         } else {
           if (!member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(member.id)) {
-            return interaction.reply(cv2.warn('Unauthorized', 'You need Manage Server permissions to toggle server-wide JTC chimes.'));
+            return interaction.reply(cv2.warn(
+              `Unauthorized | ${WARN_EMOJI}`,
+              `You need Manage Server permissions to toggle server-wide JTC chimes.`
+            ));
           }
           db.updateGuildConfig(interaction.guild.id, { jtcChime: enable });
-          return interaction.reply(cv2.success('Welcome Chime Configured', `Server-wide JTC entrance welcome chime set to **${enable ? 'ON' : 'OFF'}**.`));
+          return interaction.reply(cv2.success(
+            `Welcome Chime Configured | ${TICK_EMOJI}`,
+            `Server-wide JTC entrance welcome chime set to **${enable ? 'ON' : 'OFF'}**.`
+          ));
         }
       }
     }
