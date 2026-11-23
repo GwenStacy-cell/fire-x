@@ -212,10 +212,10 @@ Athena's automod engine inspects every message across Discord Gateway at raw vel
 
   voice: {
     id: 'voice',
-    label: 'Voice Grid & Channel Drag Architecture',
-    aliases: ['vcdrag', 'vcmove', 'massmove', 'massdc', 'voicegrid', 'voicecontrol'],
-    title: 'Voice Grid Control & Channel Drag Architecture | <a:03_tick_circle:1565665642084827206>',
-    description: 'High-velocity loop dragging, mass channel evacuations, voice state severing, and anti-drag protections.',
+    label: 'Voice Grid & Dynamic Join to Create (JTC) Architecture',
+    aliases: ['vcdrag', 'vcmove', 'massmove', 'massdc', 'voicegrid', 'voicecontrol', 'jtc', 'jointocreate', 'tempvc', 'jtctiers', 'jtcnormal', 'tieredjtc', 'jtcsuite'],
+    title: 'Voice Grid & Dynamic Join to Create (JTC) Architecture | <a:03_tick_circle:1565665642084827206>',
+    description: 'High-velocity loop dragging, mass channel evacuations, dynamic Join-to-Create voice hubs, and Anti-Nuke security harmonization.',
     pages: [
       {
         pageTitle: 'Voice Drag Loops & Mass Relocation Mechanics',
@@ -231,6 +231,55 @@ Athena's automod engine inspects every message across Discord Gateway at raw vel
 # Mass Relocation & Disconnect (\`!massmove\` & \`!massdc\`)
 • **Mass Move:** Atomically gathers all occupants of a source voice channel and transfers them to a destination channel with a 150ms buffer to respect Discord voice rate-limiting.
 • **Mass Disconnect:** Forcibly kicks all occupants out of a voice channel by patching \`channel_id: null\`, instantly clearing raided or sound-spammed voice channels.`
+      },
+      {
+        pageTitle: 'Join to Create (JTC) & 4-Tier Voice Hub Architecture',
+        content: `# ${getRandomHeadingGlyph()} Dual-Mode JTC Infrastructure
+Athena provides two flexible, auto-scaling Join-to-Create deployment models:
+
+• **1. Normal Single Lobby Mode (\`!jtcnormal\` / \`!jtcsingle\`):**
+  - Creates the \`Voice Rooms\` category and \`🔊 Join to Create\` voice channel.
+  - When a user joins the lobby, Athena instantly generates \`<Name>'s Room\` and transfers the member.
+  - Ideal for standard community servers desiring a minimalist temporary voice setup.
+
+• **2. Tiered Preset Voice Hub (\`!jtcsetup tiers\` / \`!jtctiers setup\`):**
+  - Creates a dedicated category (\`Athena Voice Hub\`) and 4 preset generator channels:
+    - \`👤 Solo [1]\` — Spawns rooms with \`userLimit: 1\` (1v1 duels, private focus).
+    - \`👥 Duo [2]\` — Spawns rooms with \`userLimit: 2\` (pair gaming, co-op).
+    - \`🎮 Trio [3]\` — Spawns rooms with \`userLimit: 3\` (trios, tactical fireteams).
+    - \`🔊 Squad [Free]\` — Spawns rooms with \`userLimit: 0\` (unlimited group hangout).
+  - Deploys an exclusive \`#voice-controls\` persistent Interface Channel.
+
+• **Persistent Interface Channel (\`#voice-controls\`):**
+  - Read-only for \`@everyone\` with Discord Components V2 interactive dropdowns and 1-click control buttons.
+  - Users can lock/unlock, ghost/unghost, claim ownership, adjust bitrates, and whitelist friends while connected.
+
+• **Strict Database ID Tracking (Renaming Immunity):**
+  - Categories, interface channels, and generator channels are indexed in SQLite strictly by **Discord Snowflake ID**.
+  - Admins can rename the category or generator channels in Discord at any time without breaking Athena's detection logic.`
+      },
+      {
+        pageTitle: 'JTC Security Harmonization, Combat Priority & Anti-Nuke Sync',
+        content: `# ${getRandomHeadingGlyph()} Anti-Nuke Harmonization (\`isJtcInfrastructure\`)
+In traditional bots, temporary channel creation and deletion collides violently with Anti-Nuke engines, causing false tampering strikes and API queue starvation. Athena solves this via deep engine harmonization:
+
+• **1. Sub-1ms Anti-Nuke Bypass:**
+  - \`channelCreate.js\`, \`channelDelete.js\`, and \`channelUpdate.js\` inspect \`isJtcInfrastructure(guildId, channelId)\`.
+  - Temporary room lifecycle events and admin category renames bypass Anti-Nuke rollback triggers instantly.
+  - Room owners can lock, unghost, or rename their rooms without triggering Anti-Nuke tampering detections.
+
+• **2. Combat Priority Silence (\`isGuildUnderAttack\`):**
+  - During an active raid or nuke bot attack, Athena commits 100% of network sockets and REST throughput to ban strikes.
+  - JTC automatically suspends new channel creations during active attacks, preventing API rate-limit starvation.
+
+• **3. Anti-Flood Gateway Armor:**
+  - Enforces an in-memory 3-second cooldown per member on lobby connections, completely neutralizing automated channel-spawn flood attacks.
+
+• **4. Atomic Quarantine Role Integration:**
+  - If a quarantine role exists, JTC injects \`ViewChannel: false, Connect: false\` deny overwrites directly into initial channel creation payloads with **zero extra REST calls**. Quarantined accounts can never access private JTC rooms.
+
+• **5. Atomic Teardown Engine (\`!jtcdisable <standard|tiers|all>\`):**
+  - Seamlessly purges categories, interface channels, generator VCs, and active temp rooms while registering deduplication locks to prevent false nuke alerts.`
       }
     ]
   },
@@ -2712,12 +2761,80 @@ export const DETAILED_COMMANDS = {
     name: 'jtc',
     aliases: ['jointocreate', 'tempvc'],
     category: 'Voice & Media',
-    clearance: 'Extra Owner',
-    syntax: '!jtc [setup|panel|lock|limit]',
-    purpose: 'Dynamic temporary voice channel management.',
+    clearance: 'Manage Server / Extra Owner',
+    syntax: '!jtc add @user / !jtc chime on|off / !jtcsetup [tiers|standard]',
+    purpose: 'Complete dynamic temporary voice room management and member permissions.',
     architecture: 
-`• **Voice State Wiretap:** When a member enters the JTC hub, Athena creates a private channel, moves the member, and deletes the channel when empty.`,
-    example: '!jtc setup'
+`• **Dual-Mode Auto-Scaling Voice Architecture:**
+  - Standard single lobby: \`!jtcnormal\` (spawns \`<Name>'s Room\`).
+  - Tiered preset suite: \`!jtctiers setup\` (spawns Solo, Duo, Trio, Squad rooms).
+  - Voice wiretap in \`voiceStateUpdate.js\` intercepts member joins in sub-1ms and moves them into private rooms.
+  - Auto-cleanup: Empty rooms and linked text chats are purged automatically when all members leave.
+
+• **Interactive Control Matrix:**
+  - Control panel in voice text chat with 1-click buttons (\`Lock/Unlock\`, \`Ghost/Visible\`, \`Claim Owner\`, \`Room Info\`) and dropdown menus for bitrate, region, user limits, and game status.
+  - Persistent \`#voice-controls\` interface channel for the tiered suite.
+
+• **Anti-Nuke Harmonization & Defense Alignment:**
+  - Bypasses Anti-Nuke tampering and deletion alerts via \`isJtcInfrastructure\`.
+  - Automatic combat silence during active attacks (\`isGuildUnderAttack\`).
+  - Anti-flood armor: 3-second lobby join cooldown per member.
+  - Atomic quarantine integration: Quarantined accounts denied entry with zero extra API calls.`,
+    example: '!jtc add @Friend'
+  },
+
+  jtcnormal: {
+    name: 'jtcnormal',
+    aliases: ['normaljtc', 'jtcsingle', 'singlejtc', 'jtcstandard'],
+    category: 'Voice & Media',
+    clearance: 'Manage Server / Extra Owner',
+    syntax: '!jtcnormal / /jtcnormal [channel] [category] [panel_channel]',
+    purpose: 'Deploys a single standard Join to Create voice lobby and category.',
+    architecture: 
+`• **Minimalist Ephemeral Voice Grid:**
+  - Creates the \`Voice Rooms\` category and \`🔊 Join to Create\` voice lobby.
+  - Generates \`<Name>'s Room\` when members join and auto-deletes when empty.
+  - Stored strictly by ID in database (\`db.setJtcConfig\`) allowing full Discord renaming freedom.
+  - Integrated with Anti-Nuke deduplication locks (\`markRestorationQueued\`).
+  - To disable and remove: \`!jtcdisable standard\`.`,
+    example: '!jtcnormal'
+  },
+
+  jtctiers: {
+    name: 'jtctiers',
+    aliases: ['tieredjtc', 'jtcsuite', 'jtcsetup tiers'],
+    category: 'Voice & Media',
+    clearance: 'Manage Server / Extra Owner',
+    syntax: '!jtctiers [setup|disable|info] / !jtcsetup tiers',
+    purpose: 'Deploys the 4-tier Voice Hub generator suite (Solo, Duo, Trio, Squad) with persistent Components V2 Interface channel.',
+    architecture: 
+`• **4-Tier Preset Voice Suite:**
+  - Dedicated Category: \`Athena Voice Hub\`
+  - Interface Channel: \`#voice-controls\` (read-only for chat with persistent control deck).
+  - 4 Preset Generators:
+    • \`👤 Solo [1]\` — Auto-creates private 1-slot voice rooms.
+    • \`👥 Duo [2]\` — Auto-creates 2-slot pair gaming rooms.
+    • \`🎮 Trio [3]\` — Auto-creates 3-slot tactical fireteam rooms.
+    • \`🔊 Squad [Free]\` — Auto-creates unlimited slots group rooms.
+  - Tracked strictly by database ID (\`db.setTieredJtcConfig\`) for Discord renaming immunity.
+  - To wipe and remove: \`!jtctiers disable\` or \`!jtcdisable tiers\`.`,
+    example: '!jtctiers setup'
+  },
+
+  jtcdisable: {
+    name: 'jtcdisable',
+    aliases: ['jtcoff', 'jtcstop'],
+    category: 'Voice & Media',
+    clearance: 'Manage Server / Extra Owner',
+    syntax: '!jtcdisable [standard|tiers|all] / /jtcdisable [target]',
+    purpose: 'Atomically wipes and removes Join to Create configurations, categories, interface channels, and generator channels.',
+    architecture: 
+`• **Atomic Teardown Engine:**
+  - \`!jtcdisable standard\` — Deletes standard lobby, cleans empty category, and clears database records.
+  - \`!jtcdisable tiers\` — Deletes all 4 generator channels, interface channel, active temp rooms, and category.
+  - \`!jtcdisable all\` — Completely purges both standard and tiered voice suites.
+  - Registers Anti-Nuke deduplication locks on all deleted channel IDs to prevent false deletion alarms.`,
+    example: '!jtcdisable tiers'
   },
 
   voicerole: {
@@ -3370,8 +3487,8 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
       value: 'onboarding'
     },
     {
-      label: 'Voice Grid & Channel Drag',
-      description: 'High-velocity loop dragging & mass relocation',
+      label: 'Voice Grid & Dynamic JTC Hubs',
+      description: 'Loop dragging, 4-tier Join-to-Create hubs & Anti-Nuke sync',
       value: 'voice'
     },
     {

@@ -19,7 +19,7 @@ import { getSecurityStatusPanel, getAutoModPanel, handleUnlockdown } from './sec
 import { buildTicketManagerPayload, buildTicketPanelPayload } from './ticketpanel.js';
 import { getManagerPanel, executeWelcomeTest } from './welcome.js';
 import { gwManagers, buildManagerContainer } from './giveaway.js';
-import { isBotOwnerSync, isExtraOwnerOrHigher } from '../utils/helpers.js';
+import { isBotOwnerSync, isExtraOwnerOrHigher, formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 const TICK = '<a:03_tick_circle:1565665642084827206>';
 
@@ -364,17 +364,24 @@ export async function buildLiveCommandStatusPayload(guild, member, user, cmdName
       statusPoints.push(`-# ${BULLET_EMOJI} **Bot Auto-Roles:** ${botRoles}`);
     } else if (cleanName === 'counting') {
       const cData = db.getCounting(guild.id);
-      const cChan = cData?.channelId ? `<#${cData.channelId}>` : '`Not Configured`';
+      const cChan = cData?.channelId ? formatChannelLink(cData.channelId, guild) : '`Not Configured`';
       const cCount = cData?.currentCount ?? 0;
-      const cLastUser = cData?.lastUserId ? `<@${cData.lastUserId}>` : '`None`';
+      const cLastUser = cData?.lastUserId ? formatUserLink(cData.lastUserId, guild) : '`None`';
       statusPoints.push(`-# ${BULLET_EMOJI} **Counting Channel:** ${cChan}`);
       statusPoints.push(`-# ${BULLET_EMOJI} **Current Count:** \`${cCount}\``);
       statusPoints.push(`-# ${BULLET_EMOJI} **Last Counter:** ${cLastUser}`);
-    } else if (cleanName === 'jtc' || cleanName === 'vcpanel') {
-      const jChan = cfg.jtcChannelId ? `<#${cfg.jtcChannelId}>` : '`Not Configured`';
-      const jCat = cfg.jtcCategoryId ? `<#${cfg.jtcCategoryId}>` : '`Default Category`';
-      statusPoints.push(`-# ${BULLET_EMOJI} **JTC Hub Channel:** ${jChan}`);
-      statusPoints.push(`-# ${BULLET_EMOJI} **JTC Category:** ${jCat}`);
+    } else if (cleanName === 'jtc' || cleanName === 'vcpanel' || cleanName === 'jtcnormal' || cleanName === 'jtctiers') {
+      const jtcCfg = db.getJtcConfig(guild.id);
+      const tieredCfg = db.getTieredJtcConfig(guild.id);
+      
+      const standardStatus = jtcCfg?.lobbyChannelId ? formatChannelLink(jtcCfg.lobbyChannelId, guild) : '`Not Configured`';
+      const tieredStatus = tieredCfg?.categoryId ? `${formatChannelLink(tieredCfg.categoryId, guild)} *(4 Tiers Active)*` : '`Not Configured`';
+      const ifaceStatus = tieredCfg?.interfaceChannelId ? formatChannelLink(tieredCfg.interfaceChannelId, guild) : (jtcCfg?.panelChannelId ? formatChannelLink(jtcCfg.panelChannelId, guild) : '`VC Text Chat`');
+      
+      statusPoints.push(`-# ${BULLET_EMOJI} **Standard JTC Lobby:** ${standardStatus}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Tiered Voice Hub:** ${tieredStatus}`);
+      statusPoints.push(`-# ${BULLET_EMOJI} **Interface Channel:** ${ifaceStatus}`);
+      actionButtons.unshift({ type: 2, custom_id: 'athena_act_jtc_setup', label: 'Deploy JTC Suite', style: 2 });
     } else if (cleanName === 'security' || cleanName === 'antinuke' || cleanName === 'ss') {
       const secConfig = db.getAntinukeConfig ? db.getAntinukeConfig(guild.id) : null;
       const wl = db.getAllWhitelists ? db.getAllWhitelists(guild.id) : null;
@@ -1305,6 +1312,45 @@ export async function handleAthenaGuideButtons(interaction) {
       const targetCmd = act.replace('cmd_help_', '');
       const payload = await buildDetailedCommandHelpPayload(guild, member, user, targetCmd, prefix);
       return cv2.respond(interaction, payload, 7).catch(() => null);
+    }
+
+    // 21.5. Interactive Join to Create (JTC) Setup Hub
+    if (act === 'jtc_setup') {
+      const jtcCfg = db.getJtcConfig(guild?.id || '0');
+      const tieredCfg = db.getTieredJtcConfig(guild?.id || '0');
+
+      const standardStatus = jtcCfg?.lobbyChannelId ? formatChannelLink(jtcCfg.lobbyChannelId, guild) : '`Not Deployed`';
+      const tieredStatus = tieredCfg?.categoryId ? `${formatChannelLink(tieredCfg.categoryId, guild)} *(4 Tiers Active)*` : '`Not Deployed`';
+
+      return cv2.respond(interaction, {
+        components: [
+          {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content: `# ${getRandomHeadingGlyph()} Join to Create (JTC) Deployment Hub | ${TICK}\n` +
+                  `-# Choose the voice hub deployment model best suited for your server:\n\n` +
+                  `### 1. Minimalist Standard Lobby (\`${prefix}jtcnormal\`)\n` +
+                  `-# ${BULLET_EMOJI} **Deployment:** Auto-creates the \`Voice Rooms\` category & single \`🔊 Join to Create\` lobby.\n` +
+                  `-# ${BULLET_EMOJI} **Current Status:** ${standardStatus}\n\n` +
+                  `### 2. Tiered Preset Voice Hub (\`${prefix}jtcsetup tiers\` or \`${prefix}jtctiers\`)\n` +
+                  `-# ${BULLET_EMOJI} **Deployment:** Auto-creates \`Athena Voice Hub\` category, persistent \`#voice-controls\` interface channel, and 4 preset generator channels (Solo [1], Duo [2], Trio [3], Squad [Free]).\n` +
+                  `-# ${BULLET_EMOJI} **Current Status:** ${tieredStatus}\n\n` +
+                  `-# **Quick Execution:** Type \`${prefix}jtcnormal\` for single lobby, or \`${prefix}jtcsetup tiers\` for the full 4-tier suite.`
+              }
+            ]
+          },
+          {
+            type: 1,
+            components: [
+              { type: 2, custom_id: 'athena_act_cmd_help_jtc', label: 'View !jtc Manual', style: 2 },
+              { type: 2, custom_id: 'athena_act_cmd_status_jtc', label: 'Refresh JTC Status', style: 2 }
+            ]
+          }
+        ],
+        flags: MessageFlags.IsComponentsV2
+      }, 7).catch(() => null);
     }
 
     // 22. Universal Autonomous AI Action Synthesizer (Zero Fake Placeholders)

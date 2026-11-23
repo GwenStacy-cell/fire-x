@@ -16,6 +16,46 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.7.8',
+    headline: 'Complete JTC Explainer & Help Documentation Suite: Dual-Mode Voice Grid, Persistent Control Deck & Anti-Nuke Harmonization Docs',
+    summary: 'Comprehensive synchronization of Join to Create (JTC) architecture into Athena\'s technical explainer documentation engine (!explain), interactive guide hub (!athena), command manual catalog, slash command autocompletes, and public help menus (!help). Documents both standard minimalist lobby deployment (!jtcnormal) and the 4-tier preset voice hub (!jtcsetup tiers / !jtctiers) with persistent #voice-controls interface channels, sub-1ms Anti-Nuke bypass mechanics (isJtcInfrastructure), combat silence priority during hostile raids, and atomic teardown operations (!jtcdisable). Enforced system-wide markdown channel text links and user nickname links, with zero native Discord emojis across all voice documentation interfaces.',
+    whatsNew: [
+      {
+        title: 'JTC Architecture Explainer Topic (!explain voice / !explain jtc)',
+        desc: 'Deep-dive multi-page technical breakdown detailing Dual-Mode JTC infrastructure, Solo/Duo/Trio/Squad generator suites, persistent Components V2 control decks, and anti-nuke combat prioritization.'
+      },
+      {
+        title: 'Dedicated Detailed Command Manuals',
+        desc: 'Registered standalone manuals for !jtcnormal, !jtctiers, !jtcdisable, and expanded !jtc in DETAILED_COMMANDS with clearance levels, syntax, options, and operational flow.'
+      },
+      {
+        title: 'Interactive Guide Hub JTC Deployment Panel (!athena)',
+        desc: 'Added dynamic JTC hub configuration cards and 1-click deployment action buttons (athena_act_jtc_setup) presenting standard vs tiered options with real-time database state checks.'
+      },
+      {
+        title: 'Slash Command Autocomplete Sync (/explain)',
+        desc: 'Added instant discovery choices for voice, jtc, jtcnormal, jtctiers, and jtcdisable in the slash command autocomplete registry.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Help Menu Voice Category Overhaul (!help voice)',
+        desc: 'Reorganized VOICE & MEDIA command listings, updated obsolete JTC syntaxes, and added an architectural summary callout for Dynamic Join to Create.'
+      },
+      {
+        title: 'Strict Markdown Link Formatting',
+        desc: 'Replaced legacy <#channel> and <@user> mentions in counting, verification, and JTC guide cards with formatChannelLink and formatUserLink.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Explainer Directory Indexing',
+        desc: 'Updated buildTopicsDirectoryContainer to display dynamic JTC voice hub topics with live selection options.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.7.7',
     headline: 'Security-Aligned JTC Architecture: Anti-Nuke Harmonization, Combat Silence, Infrastructure Bypass & Rate Limit Armor',
     summary: 'Full architectural optimization unifying Join to Create (JTC) with Athena\'s military-grade Anti-Nuke defense matrix. Eliminated all Anti-Nuke false alarms, redundant audit log queries, and server log spam caused by temporary voice channel lifecycle events. When JTC channels are created, modified, or deleted, channelCreate.js, channelUpdate.js, and channelDelete.js recognize them instantly as authorized ephemeral infrastructure, completely bypassing Anti-Nuke rollback triggers and deduplication locks. Enforced strict combat-awareness: JTC channel generation automatically suspends during active server attacks (isGuildUnderAttack) to reserve 100% of network sockets and REST rate limits for instant ban strikes against nuke bots. Added per-user 3-second rapid-join cooldown armor to prevent channel creation flood abuse, and embedded quarantine role denial directly into initial channel creation payloads with zero extra REST requests.',
