@@ -21,6 +21,10 @@ export const CHANGELOG_ENTRIES = [
     summary: 'Conducted an exhaustive audit and architectural leap of Athena\'s Join to Create (JTC) engine. Introduced an optional 4-Tier Voice Hub suite featuring generator lobbies for Solo [1 slot], Duo [2 slots], Trio [3 slots], and Squad [Unlimited slots] under a dedicated category, alongside a persistent Components V2 Interface Channel control center. Enforced strict database ID tracking allowing admins to rename categories and channels freely in Discord without breaking functionality. Implemented an atomic teardown engine (!jtcdisable tiers) that completely wipes the JTC category, interface channel, and generator channels in seconds. Wired previously dead select menu and modal interaction handlers in interactionCreate.js, added 1-click quick control buttons, and unified all user/channel links with zero native Discord emojis.',
     whatsNew: [
       {
+        title: 'Dedicated Normal Single JTC Command (!jtcnormal)',
+        desc: 'Added a dedicated command !jtcnormal (aliases: !normaljtc, !jtcsingle, !singlejtc, !jtcstandard) to instantly deploy a single standard Join to Create voice lobby and category.'
+      },
+      {
         title: 'Tiered Voice Hub Suite (Solo, Duo, Trio, Squad)',
         desc: 'Deploy a dedicated JTC category with preset generator channels for Solo (1 slot), Duo (2 slots), Trio (3 slots), and Squad (Unlimited) via !jtcsetup tiers or !jtctiers setup.'
       },
@@ -52,6 +56,10 @@ export const CHANGELOG_ENTRIES = [
       }
     ],
     fixes: [
+      {
+        title: 'Resolved ContainerBuilder Shapeshift Validation Error',
+        desc: 'Eliminated invalid SectionBuilder accessory nesting in Components V2 container payloads that triggered Discord.js CombinedError: Received one or more errors during setup.'
+      },
       {
         title: 'Wired Dead JTC Select Menus and Modals',
         desc: 'Connected jtc_ custom IDs to interactionCreate.js router, fixing a critical bug where dropdown selections and modal submissions were silently ignored.'
