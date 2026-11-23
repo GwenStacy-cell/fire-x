@@ -105,9 +105,17 @@ export async function getMongoDetailedAudit() {
     const counts = {};
     for (const c of collections) {
       if (c === 'burn_rooms') {
+        const now = Date.now();
+        await mongoDb.collection('burn_rooms').deleteMany({
+          _id: { $ne: 'active_burn_rooms' },
+          $or: [
+            { expiresAt: { $lte: now } },
+            { expiresAt: { $exists: false } }
+          ]
+        }).catch(() => null);
         counts[c] = await mongoDb.collection('burn_rooms').countDocuments({
           _id: { $ne: 'active_burn_rooms' },
-          expiresAt: { $gt: Date.now() }
+          expiresAt: { $gt: now }
         }).catch(() => 0);
       } else {
         counts[c] = await mongoDb.collection(c).countDocuments().catch(() => 0);
@@ -1571,7 +1579,9 @@ async function hydrateStatsFromMongo(statsDB) {
  * Instantly obliterates an individual burn room from MongoDB cloud collection.
  */
 export async function deleteBurnRoomFromMongo(channelId) {
-  if (!channelId || !isConnected || !mongoDb) return;
+  if (!channelId) return;
+  if (!isConnected && !(await connectMongo())) return;
+  if (!mongoDb) return;
   try {
     const burnRoomsCol = mongoDb.collection('burn_rooms');
     await burnRoomsCol.deleteOne({ _id: String(channelId) }).catch(() => null);

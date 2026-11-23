@@ -2,7 +2,7 @@ import { EmbedBuilder, AuditLogEvent, PermissionFlagsBits, PermissionsBitField, 
 import { performance } from 'perf_hooks';
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import { logToSecurityChannel, isBotOwnerSync, isServerAdmin } from './helpers.js';
+import { logToSecurityChannel, isBotOwnerSync, isServerAdmin, formatUserLink } from './helpers.js';
 import { executeQuarantine } from '../commands/security.js';
 import { recordAndLearnThreat } from './botThreatLearner.js';
 import dns from 'dns';
@@ -154,25 +154,27 @@ const PRECOMPILED_BAN_BODY = '{"delete_message_seconds":0}';
 export async function rawBan(guildId, userId, token, reason = '[ATHENA] Anti-Nuke: Instant elimination', metadata = {}) {
   const startTime = performance.now();
   try {
-    const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/bans/${userId}`, {
+    const { statusCode, body } = await dispatcher.request({
+      origin: 'https://discord.com',
+      path: `/api/v10/guilds/${guildId}/bans/${userId}`,
       method: 'PUT',
       headers: {
-        'Authorization': `Bot ${token}`,
-        'Content-Type': 'application/json',
-        'X-Audit-Log-Reason': encodeURIComponent(reason.slice(0, 512))
+        'authorization': `Bot ${token}`,
+        'content-type': 'application/json',
+        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
       },
-      body: PRECOMPILED_BAN_BODY,
-      dispatcher
+      body: PRECOMPILED_BAN_BODY
     });
+    await body.dump().catch(() => null);
     const latencyMs = performance.now() - startTime;
-    const ok = res.ok || res.status === 204;
+    const ok = statusCode === 200 || statusCode === 204;
     queueMicrotask(() => {
       combatTelemetry.recordStrike({
         guildId,
         userId,
         latencyMs,
-        status: ok ? 'SUCCESS (204 No Content)' : `REJECTED (${res.status})`,
-        statusCode: res.status,
+        status: ok ? 'SUCCESS (204 No Content)' : `REJECTED (${statusCode})`,
+        statusCode,
         reason,
         actionType: metadata.actionType || (reason.includes('Join') ? 'GUILD_MEMBER_ADD (0ms Join)' : reason.includes('ChannelDelete') ? 'CHANNEL_DELETE (Direct)' : reason.includes('RoleDelete') ? 'GUILD_ROLE_DELETE (Direct)' : 'AUDIT_LOG_STRIKE')
       });
@@ -202,17 +204,19 @@ export async function rawBan(guildId, userId, token, reason = '[ATHENA] Anti-Nuk
 // ==========================================
 export async function rawRoleStrip(guildId, userId, token) {
   try {
-    const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/members/${userId}`, {
+    const { statusCode, body } = await dispatcher.request({
+      origin: 'https://discord.com',
+      path: `/api/v10/guilds/${guildId}/members/${userId}`,
       method: 'PATCH',
       headers: {
-        'Authorization': `Bot ${token}`,
-        'Content-Type': 'application/json',
-        'X-Audit-Log-Reason': encodeURIComponent('[ATHENA FIREWALL] Emergency role strip & isolation — hostile neutralization')
+        'authorization': `Bot ${token}`,
+        'content-type': 'application/json',
+        'x-audit-log-reason': encodeURIComponent('[ATHENA FIREWALL] Emergency role strip & isolation — hostile neutralization')
       },
-      body: '{"roles":[]}',
-      dispatcher
+      body: '{"roles":[]}'
     });
-    return res.ok || res.status === 200;
+    await body.dump().catch(() => null);
+    return statusCode === 200 || statusCode === 204;
   } catch {
     return false;
   }
@@ -223,15 +227,17 @@ export async function rawRoleStrip(guildId, userId, token) {
 // ==========================================
 export async function rawDeleteWebhook(webhookId, token, reason = '[ATHENA] Webhook Annihilated') {
   try {
-    const res = await fetch(`https://discord.com/api/v10/webhooks/${webhookId}`, {
+    const { statusCode, body } = await dispatcher.request({
+      origin: 'https://discord.com',
+      path: `/api/v10/webhooks/${webhookId}`,
       method: 'DELETE',
       headers: {
-        'Authorization': `Bot ${token}`,
-        'X-Audit-Log-Reason': encodeURIComponent(reason.slice(0, 512))
-      },
-      dispatcher
+        'authorization': `Bot ${token}`,
+        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
+      }
     });
-    return res.ok || res.status === 204;
+    await body.dump().catch(() => null);
+    return statusCode === 200 || statusCode === 204;
   } catch {
     return false;
   }
@@ -242,15 +248,17 @@ export async function rawDeleteWebhook(webhookId, token, reason = '[ATHENA] Webh
 // ==========================================
 export async function rawChannelDelete(channelId, token, reason = '[ATHENA] Unauthorized Channel Annihilated') {
   try {
-    const res = await fetch(`https://discord.com/api/v10/channels/${channelId}`, {
+    const { statusCode, body } = await dispatcher.request({
+      origin: 'https://discord.com',
+      path: `/api/v10/channels/${channelId}`,
       method: 'DELETE',
       headers: {
-        'Authorization': `Bot ${token}`,
-        'X-Audit-Log-Reason': encodeURIComponent(reason.slice(0, 512))
-      },
-      dispatcher
+        'authorization': `Bot ${token}`,
+        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
+      }
     });
-    return res.ok || res.status === 204;
+    await body.dump().catch(() => null);
+    return statusCode === 200 || statusCode === 204;
   } catch {
     return false;
   }
@@ -261,15 +269,17 @@ export async function rawChannelDelete(channelId, token, reason = '[ATHENA] Unau
 // ==========================================
 export async function rawRoleDelete(guildId, roleId, token, reason = '[ATHENA] Unauthorized Role Annihilated') {
   try {
-    const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/roles/${roleId}`, {
+    const { statusCode, body } = await dispatcher.request({
+      origin: 'https://discord.com',
+      path: `/api/v10/guilds/${guildId}/roles/${roleId}`,
       method: 'DELETE',
       headers: {
-        'Authorization': `Bot ${token}`,
-        'X-Audit-Log-Reason': encodeURIComponent(reason.slice(0, 512))
-      },
-      dispatcher
+        'authorization': `Bot ${token}`,
+        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
+      }
     });
-    return res.ok || res.status === 204;
+    await body.dump().catch(() => null);
+    return statusCode === 200 || statusCode === 204;
   } catch {
     return false;
   }
@@ -280,15 +290,17 @@ export async function rawRoleDelete(guildId, roleId, token, reason = '[ATHENA] U
 // ==========================================
 export async function rawUnban(guildId, userId, token, reason = '[ATHENA] Anti-Nuke: Ban Reverted') {
   try {
-    const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/bans/${userId}`, {
+    const { statusCode, body } = await dispatcher.request({
+      origin: 'https://discord.com',
+      path: `/api/v10/guilds/${guildId}/bans/${userId}`,
       method: 'DELETE',
       headers: {
-        'Authorization': `Bot ${token}`,
-        'X-Audit-Log-Reason': encodeURIComponent(reason.slice(0, 512))
-      },
-      dispatcher
+        'authorization': `Bot ${token}`,
+        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
+      }
     });
-    return res.ok || res.status === 204;
+    await body.dump().catch(() => null);
+    return statusCode === 200 || statusCode === 204;
   } catch {
     return false;
   }
@@ -310,18 +322,22 @@ export async function unbanVictimsParallel(guild, victimIds = []) {
 // ==========================================
 export async function rawFetchAuditLogs(guildId, token, auditType = null) {
   try {
-    let url = `https://discord.com/api/v10/guilds/${guildId}/audit-logs?limit=4`;
-    if (auditType != null) url += `&action_type=${auditType}`;
-    const res = await fetch(url, {
+    let path = `/api/v10/guilds/${guildId}/audit-logs?limit=4`;
+    if (auditType != null) path += `&action_type=${auditType}`;
+    const { statusCode, body } = await dispatcher.request({
+      origin: 'https://discord.com',
+      path,
       method: 'GET',
       headers: {
-        'Authorization': `Bot ${token}`,
-        'Content-Type': 'application/json'
-      },
-      dispatcher
+        'authorization': `Bot ${token}`,
+        'content-type': 'application/json'
+      }
     });
-    if (!res.ok) return null;
-    return await res.json();
+    if (statusCode !== 200) {
+      await body.dump().catch(() => null);
+      return null;
+    }
+    return await body.json();
   } catch {
     return null;
   }
@@ -2416,11 +2432,15 @@ export async function handleAuditLogEntry(guild, entry) {
     }
 
     if (action === AuditLogEvent.SoundboardSoundCreate && targetId) {
-      const { fetch } = await import('undici');
-      await fetch(`https://discord.com/api/v10/guilds/${guild.id}/soundboard-sounds/${targetId}`, {
+      await dispatcher.request({
+        origin: 'https://discord.com',
+        path: `/api/v10/guilds/${guild.id}/soundboard-sounds/${targetId}`,
         method: 'DELETE',
-        headers: { Authorization: `Bot ${guild.client.token}`, 'User-Agent': 'DiscordBot (Athena, 3.5.0)' }
-      }).catch(() => null);
+        headers: {
+          'authorization': `Bot ${guild.client.token}`,
+          'user-agent': 'DiscordBot (Athena, 3.7.3)'
+        }
+      }).then(r => r.body.dump()).catch(() => null);
       rollbackResult = 'Unauthorized soundboard sound annihilated';
     }
 
@@ -2428,12 +2448,12 @@ export async function handleAuditLogEntry(guild, entry) {
       if (targetId && targetId !== guild.client.user.id) {
         await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Unauthorized bot addition').catch(() => null);
       }
-      rollbackResult = `Unauthorized bot <@${targetId}> banned instantly`;
+      rollbackResult = `Unauthorized bot ${formatUserLink(targetId, guild)} banned instantly`;
     }
 
     if (action === AuditLogEvent.MemberUnban) {
       await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Re-applying unauthorized removed ban').catch(() => null);
-      rollbackResult = `Re-banned <@${targetId}> (ban was removed by unauthorized user)`;
+      rollbackResult = `Re-banned ${formatUserLink(targetId, guild)} (ban was removed by unauthorized user)`;
     }
 
     if (action === AuditLogEvent.MemberRoleUpdate) {
@@ -2441,7 +2461,7 @@ export async function handleAuditLogEntry(guild, entry) {
       if (rolesChange?.new) {
         if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate')) {
           await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Recipient of unauthorized dangerous role grant').catch(() => null);
-          rollbackResult = `Banned unauthorized dangerous role recipient <@${targetId}>`;
+          rollbackResult = `Banned unauthorized dangerous role recipient ${formatUserLink(targetId, guild)}`;
         }
       }
     }

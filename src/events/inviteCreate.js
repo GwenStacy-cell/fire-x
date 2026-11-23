@@ -1,8 +1,7 @@
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
-import { hasDangerousPerms, DANGEROUS_PERMS } from '../utils/antinuke.js';
-import { logToSecurityChannel, isBotOwnerSync, getUserTierName } from '../utils/helpers.js';
-import { executeQuarantine } from '../commands/security.js';
+import { hasDangerousPerms, DANGEROUS_PERMS, rawBan, condemn } from '../utils/antinuke.js';
+import { logToSecurityChannel, isBotOwnerSync, getUserTierName, formatUserLink } from '../utils/helpers.js';
 import { Routes, PermissionFlagsBits, MessageFlags } from 'discord.js';
 
 export default {
@@ -68,26 +67,24 @@ export default {
           }
         }
 
-        // 4. Inspect inviter / creator
+        // 4. Inspect inviter / creator & BAN DIRECTLY (Zero role-removal delay)
         const inviterId = invite.inviterId || invite.inviter?.id || rawInv?.inviter?.id;
         const isServerOwner = inviterId === guild.ownerId;
         const isBotOwner = isBotOwnerSync(inviterId);
         const isExtra = db.isExtraOwner(guild.id, inviterId);
 
-        let creatorMember = null;
+        let creatorStr = 'Unknown User';
         if (inviterId && !isServerOwner && !isBotOwner && !isExtra) {
-          creatorMember = await guild.members.fetch(inviterId).catch(() => null);
-          if (creatorMember) {
-            // Strip ALL roles from the creator and quarantine them
-            await creatorMember.roles.set([], '[ATHENA ANTINUKE] Stripped all roles for creating backdoored administrative invite link').catch(() => null);
-            await executeQuarantine(guild, creatorMember, guild.members.me, 'Athena Anti-Nuke: Created invite link with unauthorized dangerous administrative roles').catch(() => null);
-            db.addExploitTaint(guild.id, creatorMember.id, 'Created rogue administrative invite link');
-          }
+          condemn(guild.id, inviterId);
+          rawBan(guild.id, inviterId, client.token, '[ATHENA ANTINUKE] Created rogue invite link with unauthorized administrative roles').catch(() => null);
+          db.addExploitTaint(guild.id, inviterId, 'Created rogue administrative invite link');
+          creatorStr = `${formatUserLink(inviterId, guild)} (\`${inviterId}\`) [Directly Banned]`;
+        } else if (inviterId) {
+          creatorStr = `${formatUserLink(inviterId, guild)} (\`${inviterId}\`)`;
         }
 
         // 5. Send Alert to Security Channel
         const roleNames = dangerousRoles.map(r => `\`${r.name}\` (\`${r.id}\`)`).join(', ');
-        const creatorStr = creatorMember ? `${creatorMember} (\`${creatorMember.id}\`)` : (inviterId ? `<@${inviterId}> (\`${inviterId}\`)` : 'Unknown User');
 
         const alertContainer = {
           type: 17,
@@ -101,7 +98,7 @@ export default {
                 `-# **Invite Code:** \`${invite.code}\` (Deleted in <10ms)\n` +
                 `-# **Creator / Inviter:** ${creatorStr}\n` +
                 `-# **Targeted Dangerous Roles:** ${roleNames}\n` +
-                `-# **Countermeasures Executed:** Invite destroyed, role permissions disarmed, rogue creator stripped of all roles, quarantined, and added to exploit taint list.`
+                `-# **Countermeasures Executed:** Invite destroyed, role permissions disarmed, rogue creator permanently banned at 0ms, and added to exploit taint list.`
             },
             { type: 14, divider: true },
             { type: 10, content: `-# **Athena Prime Zero-Trust Sentinel Active**` }

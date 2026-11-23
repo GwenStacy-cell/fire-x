@@ -5,7 +5,7 @@ import { executeQuarantine } from '../commands/security.js';
 import { PermissionFlagsBits, Routes, MessageFlags } from 'discord.js';
 import { logToSecurityChannel, getOrCreateQuarantineRole, getOrCreateQuarantineChannel, isBotOwnerSync, getUserTierName, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
 import { sendWelcomeMessage } from '../commands/welcome.js';
-import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, rawRoleStrip, condemn, cascadeToInviter, directStrike } from '../utils/antinuke.js';
+import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, condemn, cascadeToInviter, directStrike } from '../utils/antinuke.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 
@@ -76,11 +76,8 @@ export default {
             }
           }
 
-          // 3. Quarantine & Taint the joining member
-          if (config.securityEnabled || config.antiNukeEnabled) {
-            await executeQuarantine(guild, member, guild.members.me, 'Athena Anti-Nuke: Member joined with unauthorized dangerous roles (Linked Role / Onboarding / Invite Link bypass)').catch(() => null);
-            db.addExploitTaint(guild.id, member.id, 'Joined server with pre-assigned administrative role');
-          }
+          // 3. Taint the joining member
+          db.addExploitTaint(guild.id, member.id, 'Joined server with pre-assigned administrative role');
 
           // 3.2. TRACE & PUNISH THE INVITER WHO CREATED/GAVE THIS DANGEROUS INVITE
           let inviterId = null;
@@ -128,17 +125,11 @@ export default {
             console.error('[AntiNuke] Failed to trace rogue invite:', e);
           }
 
-          let inviterMember = null;
           if (inviterId && inviterId !== guild.ownerId && !isBotOwnerSync(inviterId) && !db.isExtraOwner(guild.id, inviterId)) {
-            inviterMember = await guild.members.fetch(inviterId).catch(() => null);
-            if (inviterMember) {
-              // Strip ALL roles from the person who created/gave that invite link!
-              await inviterMember.roles.set([], '[ATHENA ANTINUKE] Stripped all roles for providing dangerous administrative invite link').catch(() => null);
-              // Quarantine the person who created/gave that invite link!
-              await executeQuarantine(guild, inviterMember, guild.members.me, `Athena Anti-Nuke: Created invite link (${rogueInviteCode || 'unknown'}) that granted administrative roles to joiners`).catch(() => null);
-              // Taint the inviter so they can never be given administrative roles again!
-              db.addExploitTaint(guild.id, inviterMember.id, `Created rogue administrative invite link (${rogueInviteCode || 'unknown'}) that granted administrative roles to joiners`);
-            }
+            // DIRECT BAN the inviter who created the backdoored administrative invite!
+            condemn(guild.id, inviterId);
+            rawBan(guild.id, inviterId, guild.client.token, `[ATHENA ANTINUKE] Rogue Administrative Invite Creator (${rogueInviteCode || 'unknown'})`).catch(() => null);
+            db.addExploitTaint(guild.id, inviterId, `Created rogue administrative invite link (${rogueInviteCode || 'unknown'}) that granted administrative roles to joiners`);
           }
 
           // 3.5. Scrub from Discord Onboarding prompts so future joiners cannot acquire it

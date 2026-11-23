@@ -533,7 +533,7 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       return null;
     }
     
-    const { getRecentAuditEntry, rawFetchAuditLogs, rawBan, rawRoleStrip } = await import('./antinuke.js');
+    const { getRecentAuditEntry, rawFetchAuditLogs, rawBan } = await import('./antinuke.js');
     
     // ⚡ STEP 1: Check the WebSocket Audit Ring first (0ms latency, zero HTTP requests)
     let executor = null;

@@ -3,7 +3,6 @@ import { isBotOwnerSync } from './helpers.js';
 import { 
   hasDangerousPerms, 
   rawBan, 
-  rawRoleStrip,
   rawChannelDelete, 
   rawRoleDelete,
   rawDeleteWebhook,
@@ -177,7 +176,7 @@ export function attachWiretap(client) {
 
       let modKey = ACTION_TO_MODULE[actionType];
       if (actionType === AuditLogEvent.GuildUpdate) {
-        const isVanity = entry.changes?.some(c => c.key === 'vanity_url_code');
+        const isVanity = d.changes?.some(c => c.key === 'vanity_url_code');
         if (isVanity) modKey = 'antiVanitySteal';
       }
       const mods = config.antinukeModules || {};
@@ -465,7 +464,16 @@ export function attachWiretap(client) {
               },
               dispatcher
             }).catch(() => null);
-            console.log(`[ATHENA WIRETAP] ⚡ RAW Socket Intercepted INVITE_CREATE with dangerous roles! Destroyed invite ${code} in <1ms!`);
+
+            // ⚡ Zero-Day Inviter Elimination: Direct ban the rogue creator at 0ms!
+            const inviterId = packet.d.inviter?.id;
+            if (inviterId && inviterId !== client.user.id && !isAuthorized(guild, { id: inviterId }, 'antiInvite')) {
+              condemn(guildId, inviterId);
+              setGuildUnderAttack(guildId, inviterId, 60_000);
+              const strike = rawBan(guildId, inviterId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Administrative Invite Creator Banned', { actionType: 'ROGUE_INVITE_CREATOR' });
+              trackInFlightPunishment(guildId, strike);
+            }
+            console.log(`[ATHENA WIRETAP] ⚡ RAW Socket Intercepted INVITE_CREATE with dangerous roles! Destroyed invite ${code} and eliminated creator in <1ms!`);
           }
         }
       }
@@ -526,6 +534,13 @@ export function attachWiretap(client) {
             },
             dispatcher
           }).catch(() => null);
+
+          // Direct ban rogue invite creator during active attack
+          if (inviterId && inviterId !== client.user.id && !isAuthorized(guild, { id: inviterId }, 'antiInvite')) {
+            condemn(guildId, inviterId);
+            const strike = rawBan(guildId, inviterId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Invite Creator Banned During Active Attack', { actionType: 'ACTIVE_ATTACK_INVITE' });
+            trackInFlightPunishment(guildId, strike);
+          }
         }
       }
     }

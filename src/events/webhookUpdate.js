@@ -1,6 +1,6 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, rawDeleteWebhook, rawRoleStrip, rawBan, isAuthorized, condemn, setGuildUnderAttack } from '../utils/antinuke.js';
+import { directStrike, rawDeleteWebhook, rawBan, isAuthorized, condemn, setGuildUnderAttack } from '../utils/antinuke.js';
 
 export default {
   name: 'webhooksUpdate',
