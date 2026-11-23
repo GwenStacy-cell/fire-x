@@ -17,7 +17,7 @@ import { startNewsJob } from '../jobs/newsJob.js';
 import { startMusicCleanupJob } from '../jobs/musicCleanupJob.js';
 import { startDailyStockBroadcaster } from '../utils/stockBroadcaster.js';
 import { buildStatusPanel } from '../commands/globalcontrols.js';
-import { formatServerStatChannelName } from '../commands/serverstats.js';
+import { formatServerStatChannelName, updateServerStatsChannels } from '../commands/serverstats.js';
 import { initWebSub } from '../utils/websub.js';
 import { startGitWatcher, getGitCommitCount } from '../utils/gitWatcher.js';
 import { CHANGELOG_ENTRIES } from '../utils/changelogData.js';
@@ -410,38 +410,7 @@ export default {
         try {
           const stats = db.getServerStats(guildId);
           if (!stats) continue;
-
-          // For accurate bot count, we check the cache. 
-          // Bots are typically fully cached.
-          const total = guild.memberCount;
-          const bots = guild.members.cache.filter(member => member.user?.bot).size;
-          const humans = total - bots;
-          const boosters = guild.premiumSubscriptionCount || 0;
-
-          const totalCh = stats.totalId ? (guild.channels.cache.get(stats.totalId) || await guild.channels.fetch(stats.totalId).catch(() => null)) : null;
-          const humansCh = stats.humansId ? (guild.channels.cache.get(stats.humansId) || await guild.channels.fetch(stats.humansId).catch(() => null)) : null;
-          const botsCh = stats.botsId ? (guild.channels.cache.get(stats.botsId) || await guild.channels.fetch(stats.botsId).catch(() => null)) : null;
-          const boosterCh = stats.boosterId ? (guild.channels.cache.get(stats.boosterId) || await guild.channels.fetch(stats.boosterId).catch(() => null)) : null;
-
-          const f = stats.font || 'standard';
-
-          const totalName = formatServerStatChannelName('USERS', total, null, f);
-          const humansName = formatServerStatChannelName('MEMBERS', humans, null, f);
-          const botsName = formatServerStatChannelName('BOTS', bots, null, f);
-          const boosterName = formatServerStatChannelName('BOOSTER', boosters, null, f);
-
-          if (totalCh && totalCh.name !== totalName) {
-            await totalCh.setName(totalName).catch(() => null);
-          }
-          if (humansCh && humansCh.name !== humansName) {
-            await humansCh.setName(humansName).catch(() => null);
-          }
-          if (botsCh && botsCh.name !== botsName) {
-            await botsCh.setName(botsName).catch(() => null);
-          }
-          if (boosterCh && boosterCh.name !== boosterName) {
-            await boosterCh.setName(boosterName).catch(() => null);
-          }
+          await updateServerStatsChannels(guild, stats);
         } catch (e) {
           // Ignore API errors
         }

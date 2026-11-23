@@ -26,6 +26,7 @@ export const NEXT_BEAT_EMOJI = '<a:04_next_beat:1567037372133019710>';
 
 // Join-To-Create (JTC) Dynamic Room & Permissions Animated Emojis
 export const PACHA_ARROW = '<a:pacha_arrow:1574537362610856010>';
+export const BOUNCING_HEART = '<a:4964bouncingheart:1574534881776640010>';
 
 export const JTC_EMOJIS = {
   PACHA_ARROW: '<a:pacha_arrow:1574537362610856010>',

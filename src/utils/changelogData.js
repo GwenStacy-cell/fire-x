@@ -16,6 +16,42 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.8.3',
+    headline: 'Dual-Mode ServerStats Architecture: Voice Status Subtitles & Classic Renamed Channels with Bouncing Heart Glyphs',
+    summary: 'Introduced an optional dual-mode server statistics architecture featuring modern compact Voice Status Subtitles alongside classic Renamed Voice Channels under the ╭・Statistics category. Voice Status mode introduces 2 locked voice channels (Server Statistics and Voice Statistics) displaying rich animated metrics using <a:4964bouncingheart:1574534881776640010> (Online, Members, Bots, VC Users, Active VC, Server Boosts), bypassing Discord\'s 2/10m channel rename rate limits. Added seamless one-click mode toggling via interactive dashboard and commands, full automatic channel cleanup/migration, and background auto-sync integration.',
+    whatsNew: [
+      {
+        title: 'Voice Status Subtitle Mode (2-Channel Compact)',
+        desc: 'Deploys Server Statistics and Voice Statistics channels featuring rich telemetry metrics updated via live voice channel statuses without hitches or channel rename limits.'
+      },
+      {
+        title: 'Bouncing Heart Metric Glyphs',
+        desc: 'Integrated custom animated bouncing heart glyph (<a:4964bouncingheart:1574534881776640010>) as metric delimiter across all server and voice statistics status lines.'
+      },
+      {
+        title: 'Instant Mode Switching & Auto-Migration',
+        desc: 'Switch between Voice Status and Classic Renamed Modes instantly via interactive panel button or commands with zero leftover ghost channels.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Rate-Limit Immune Updates',
+        desc: 'Voice Status mode uses PUT /channels/:id/voice-status, completely avoiding Discord\'s 2 renames per 10 minutes restriction.'
+      },
+      {
+        title: 'Background Sync Unification',
+        desc: 'Refactored ready.js 6-minute background auto-update loop to delegate to unified updateServerStatsChannels handler across all active servers.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Channel Migration Cleanup',
+        desc: 'Switching modes immediately removes obsolete channels of the former mode and preserves category hierarchy.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.2',
     headline: 'JTC Voice Channel Status Subtitles with Animated Pacha Arrow Glyph',
     summary: 'Configured automated Discord Voice Channel Status subtitles for all Join to Create generator lobbies and dynamic temporary rooms using the custom animated pacha arrow glyph (<a:pacha_arrow:1574537362610856010>). All generator lobbies (Solo, Duo, Trio, Squad, Unlimited, and Standard) now display official styled status badges ("Join 2 Create <Tier> VC") directly below their channel names in the guild channel sidebar. Synchronized the live production channels and updated status modal handlers.',
