@@ -25,7 +25,10 @@ export const PREVIOUS_BEAT_EMOJI = '<a:03_previous_beat:1567037369058598962>';
 export const NEXT_BEAT_EMOJI = '<a:04_next_beat:1567037372133019710>';
 
 // Join-To-Create (JTC) Dynamic Room & Permissions Animated Emojis
+export const PACHA_ARROW = '<a:pacha_arrow:1574537362610856010>';
+
 export const JTC_EMOJIS = {
+  PACHA_ARROW: '<a:pacha_arrow:1574537362610856010>',
   ADJUST_BITRATE: '<a:01_adjust_bitrate:1574536230895624192>',
   VOICE_REGION: '<a:02_voice_region:1574536247660257460>',
   CREATE_TEMP_TEXT_CHAT: '<a:03_create_temp_text_chat:1574536257290109009>',

@@ -16,6 +16,38 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.8.2',
+    headline: 'JTC Voice Channel Status Subtitles with Animated Pacha Arrow Glyph',
+    summary: 'Configured automated Discord Voice Channel Status subtitles for all Join to Create generator lobbies and dynamic temporary rooms using the custom animated pacha arrow glyph (<a:pacha_arrow:1574537362610856010>). All generator lobbies (Solo, Duo, Trio, Squad, Unlimited, and Standard) now display official styled status badges ("Join 2 Create <Tier> VC") directly below their channel names in the guild channel sidebar. Synchronized the live production channels and updated status modal handlers.',
+    whatsNew: [
+      {
+        title: 'Voice Channel Status Subtitles',
+        desc: 'Automated Discord Voice Channel Status subtitles for generator lobbies displaying custom animated pacha arrow indicator.'
+      },
+      {
+        title: 'Dynamic Temporary Room Status',
+        desc: 'Spawned temporary voice rooms automatically receive initial styled room status with seamless support for owner overrides.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'REST Voice Status Utility',
+        desc: 'Added safe setVoiceChannelStatus helper in jtc.js to dispatch voice status changes with rate limit protection.'
+      },
+      {
+        title: 'Live Server Migration',
+        desc: 'Configured animated arrow statuses on all 5 generator lobbies in live server without channel recreation.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Modal Status Prefix Formatting',
+        desc: 'Enhanced jtc_status modal to automatically format and preserve the animated arrow badge on custom user statuses.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.1',
     headline: 'JTC Animated Visual Interface Leap: 19 Custom Action Glyphs for Select Menus & Quick Control Buttons',
     summary: 'Elevated Athena Prime\'s Voice Hub interface with a comprehensive custom animated emoji overhaul across all Join to Create controls. Integrated 19 numbered animated action glyphs across the Channel Settings & Configuration and Privacy & Access Permissions select menus, as well as the quick-action button strip (Lock/Unlock, Ghost/Visible, Claim Owner, and Room Info). Updated the live persistent #voice-controls interface deck in real-time.',

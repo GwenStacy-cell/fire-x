@@ -5,7 +5,8 @@ import {
   WRONG_EMOJI, 
   WARN_EMOJI, 
   UPTIME_EMOJI,
-  JTC_EMOJIS
+  JTC_EMOJIS,
+  PACHA_ARROW
 } from '../utils/emojis.js';
 import {
   PermissionFlagsBits,
@@ -40,6 +41,22 @@ function getAccent(guild) {
     return parseInt(cfg.accentColor.replace('#', ''), 16);
   }
   return 0x5865F2;
+}
+
+/**
+ * Safely sets the Discord Voice Channel Status using the REST API
+ */
+export async function setVoiceChannelStatus(client, channelId, status) {
+  if (!client || !channelId || !status) return false;
+  try {
+    if (typeof client.rest?.put === 'function') {
+      await client.rest.put(`/channels/${channelId}/voice-status`, { body: { status: String(status).substring(0, 500) } });
+      return true;
+    }
+  } catch (err) {
+    console.warn(`[JTC Voice Status] Notice on channel ${channelId}:`, err.message);
+    return false;
+  }
 }
 
 // ==========================================
@@ -691,8 +708,11 @@ export async function handleJtcModal(interaction) {
   }
 
   if (customId === 'jtc_status_modal') {
-    const status = interaction.fields.getTextInputValue('jtc_status_val').trim();
-    await interaction.client.rest.put(`/channels/${vcChannel.id}/voice-status`, { body: { status } }).catch(() => null);
+    let status = interaction.fields.getTextInputValue('jtc_status_val').trim();
+    if (!status.startsWith('<a:') && !status.startsWith('<:') && !status.startsWith('http')) {
+      status = `${PACHA_ARROW} ${status}`.substring(0, 500);
+    }
+    await setVoiceChannelStatus(interaction.client, vcChannel.id, status);
     return interaction.reply(cv2.e.success(
       `Status Configured | ${TICK_EMOJI}`,
       `Voice status set to: **${status}**`
@@ -929,6 +949,13 @@ async function deployTieredSuite(guild) {
     reason: 'Athena Tiered JTC Unlimited Lobby'
   });
 
+  // Set Discord Voice Channel Statuses on generator channels
+  await setVoiceChannelStatus(guild.client, soloChannel.id, `${PACHA_ARROW} Join 2 Create Solo VC`);
+  await setVoiceChannelStatus(guild.client, duoChannel.id, `${PACHA_ARROW} Join 2 Create Duo VC`);
+  await setVoiceChannelStatus(guild.client, trioChannel.id, `${PACHA_ARROW} Join 2 Create Trio VC`);
+  await setVoiceChannelStatus(guild.client, squadChannel.id, `${PACHA_ARROW} Join 2 Create Squad VC`);
+  await setVoiceChannelStatus(guild.client, unlimitedChannel.id, `${PACHA_ARROW} Join 2 Create Unlimited VC`);
+
   // Mark all created infrastructure in Anti-Nuke deduplication cache
   markRestorationQueued(category.id);
   markRestorationQueued(interfaceChannel.id);
@@ -1083,6 +1110,7 @@ async function deployNormalJtc(guild, customCategory = null, customLobby = null,
 
   markRestorationQueued(category.id);
   markRestorationQueued(lobbyChannel.id);
+  await setVoiceChannelStatus(guild.client, lobbyChannel.id, `${PACHA_ARROW} Join 2 Create VC`);
 
   const categoryId = category.id;
   const lobbyChannelId = lobbyChannel.id;

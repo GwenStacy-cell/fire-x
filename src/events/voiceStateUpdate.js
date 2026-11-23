@@ -2,7 +2,8 @@ import { ChannelType, PermissionFlagsBits, AuditLogEvent, EmbedBuilder } from 'd
 import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
 import { getVoiceConnection } from '@discordjs/voice';
-import { buildControlPanel, buildSharedPanel } from '../commands/jtc.js';
+import { buildControlPanel, buildSharedPanel, setVoiceChannelStatus } from '../commands/jtc.js';
+import { PACHA_ARROW } from '../utils/emojis.js';
 import statsDB from '../statsDB.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
 import { isBotOwnerSync, getSafeUserAvatar, getSafeGuildIcon, sendGuildMemberDM, formatUserLink, formatChannelLink } from '../utils/helpers.js';
@@ -536,6 +537,10 @@ export default {
         // ⚡ ANTI-NUKE SYNCHRONIZATION: Mark channel handled to bypass Anti-Nuke locks & audit spikes
         markRestorationQueued(tempChannel.id);
         db.addJtcChannel(tempChannel.id, member.id, guild.id, tierInfo?.tier || null);
+
+        // Set initial dynamic voice room status
+        const roomStatus = `${PACHA_ARROW} ${tierInfo ? tierInfo.label : 'Private'} VC`;
+        setVoiceChannelStatus(guild.client, tempChannel.id, roomStatus).catch(() => null);
 
         // Move the member into their new channel
         await member.voice.setChannel(tempChannel).catch(() => null);
