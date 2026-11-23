@@ -3028,7 +3028,6 @@ export const helpModules = [
     "`!antinuke <config|status|records|guide>` - Antinuke control panel & tripwires `[Extra Owner]`",
     "`!unbypassable / !unbypassable deploy` - Deploy persistence sentinel roles `[Extra Owner]`",
     "`!firewall / !fw / !matrix` - Live telemetry matrix, ping & defense status `[Public]`",
-    "`!explain / !docs [topic|cmd]` - Architectural breakdowns & exploit analyses `[Public]`",
     "`!security <enable|disable all|status>` - 28-module antinuke firewall & strikes `[Extra Owner]`",
     "`!security <enable|disable> <module>` - Toggle specific antinuke defense module `[Extra Owner]`",
     "`!entry / !gate / !screening` - Member join screening with Bot Owner approval `[Extra Owner]`",
@@ -3045,7 +3044,6 @@ export const helpModules = [
     "`!incident / !raidreport` - Post-raid attacker dossier & forensic vectors `[Extra Owner]`",
     "`!anomaly / !burstguard [on|off]` - Staff behavioral anomaly detection `[Extra Owner]`",
     "`!gatekeeper / !raidgate [on|off]` - Account age & avatar perimeter gating `[Extra Owner]`",
-    "`!staffpulse / !modstats [@user]` - Moderation quota tracker & rankings `[Staff Supervisor]`",
     "`!dualkey / !twomanrule [toggle|auth]` - Two-man rule requiring secondary approval `[Server Owner]`",
     "`!burn / !whisper [@users] [mins]` - Self-destructing rooms with auto-purge `[Extra Owner]`",
     "`!antighostping / !agp [on|off]` - Sentry against deleted ghost mentions `[Extra Owner]`",
@@ -3055,8 +3053,6 @@ export const helpModules = [
     "`!lockapps / !unlockapps` - Lock or unlock server application integrations `[Extra Owner]`",
     "`!scanserver` - Scan server for dangerous bot & onboarding perms `[Extra Owner]`",
     "`!neutralizeonboarding` - Audit & neutralize dangerous onboarding roles `[Extra Owner]`",
-    "`!autonick` - Interactive auto-nickname enforcer dashboard `[Extra Owner]`",
-    "`!dm / !dms [on|off|status]` - Server-wide automated mention DM alerts `[Extra Owner]`",
     "`!config / !cfg` - Interactive security & thresholds dashboard `[Extra Owner]`",
     "`!learn / !lambda / !ai [status|on|off]` - Autonomous self-learning diagnostics `[Extra Owner]`",
     "`!np` - Global No-Prefix dashboard for trusted members `[Bot Owner]`",
@@ -3559,29 +3555,17 @@ export const helpModules = [
     "`!caption <text>` - Meme caption header on any image `[Public]`",
     "`!filter <type>` - Visual FX filters (deepfry, glitch) `[Public]`",
     "`!wiretap <add|list|remove>` - Social broadcaster for YT & Reddit `[Extra Owner]`",
-    "`!persona <type>` - Switch Athena conversational AI persona `[Extra Owner]`",
     "`!pinterest / !pin <link>` - Download uncompressed Pinterest media `[Public]`",
     "`!dashboard / !commandcenter` - War-Room: Telemetry & DEFCON `[Extra Owner]`",
     "`!hud / !matrixhud` - Cyber War-Room HUD with live modes `[Public]`",
     "`!bi / !botstats / !botinfo` - Bot performance, metrics & system health `[Public]`",
     "`!about / !aboutathena` - Learn about Athena Prime & military-grade security `[Public]`",
-    "`!athena / !guide [query]` - AI Specialist to instruct setups `[Public]`",
-    "`!ask / !gemini <prompt>` - AI knowledge powered by Gemini `[Public]`",
-    "`!aimode <status|on|off>` - Conversational AI channel mode `[Extra Owner]`",
     "`!dev / !developer` - Developer info & system credits `[Public]`",
     "`!ping / !p / !latency` - Bot latency & heartbeat graph `[Public]`",
     "`!status` - Bot engine performance & telemetry `[Public]`",
-    "`!combatops / !strikeops` - Real-time combat telemetry & single-strike timeline `[Server Owner & Extra Owner]`",
-    "`!liveops / !telemetry` - LiveOps matrix & latency benchmarks `[Server Owner & Extra Owner]`",
     "`!changelog / !cl [page]` - 5-day release history & optimizations `[Extra Owner]`",
     "`!db <status|backup|restore>` - Database cloud backup & reload `[Bot Owner]`",
-    "`!modmail <setup|disable>` - DM support ticket bridge `[Extra Owner]`",
-    "`!reply <message>` - Reply to member inside ticket `[Extra Owner]`",
-    "`!avatar / !av [@user]` - Full resolution user avatar `[Public]`",
-    "`!banner / !bnr [@user]` - Full resolution user banner `[Public]`",
-    "`!userinfo / !ui [@user]` - Detailed profile & permissions `[Public]`",
     "`!time` - Current Indian Standard Time (IST) `[Public]`",
-    "`!snipe / !s` - Last deleted message in channel `[Public]`",
     "`!news` - Configure automated RSS news feeds `[Extra Owner]`",
     "`!shortcuts / !sc on|off` - Toggle command shortcuts `[Public]`",
     "`!calculator / !calc` - Interactive button calculator `[Public]`",
@@ -3590,15 +3574,8 @@ export const helpModules = [
     "`!steal / !stealemoji <emoji>` - Steal emoji to this server `[Extra Owner]`",
     "`!emojis / !emojilist` - Emoji inventory with IDs & codes `[Server Owner]`",
     "`!fileupload [#channel]` - Upload & mirror files in channel `[Extra Owner]`",
-    "`!morning [panel|enable]` - Thought dispatcher & scheduler `[Manage Server]`",
-    "`!afk / !brb [reason]` - AFK status auto-reply when pinged `[Public]`",
-    "`!bump` - Bump server (Disboard integration) `[Public]`",
-    "`!sticky <message>` - Sticky message at bottom of chat `[Extra Owner]`",
-    "`!dm [on|off|status]` - Server mention DM alert toggle `[Extra Owner]`",
-    "`!burn / !whisper [@users] [mins]` - Self-destructing rooms with auto-purge `[Extra Owner]`",
     "`!upload <url>` - Mirror file from direct URL `[Public]`",
-    "`!tier / !mytier / !perms` - Current authorization tier `[Public]`",
-    "`!profile / !card [@user]` - Canvas God of War profile card `[Public]`"
+    "`!morning [panel|enable]` - Thought dispatcher & scheduler `[Manage Server]`"
   ] }
 ];
 
@@ -3856,7 +3833,7 @@ export function buildHelpContainer(client, guildId, moduleId) {
       components: rawComponents
     };
 
-    return rawContainer;
+    return cv2.sanitizeCV2Payload(rawContainer);
 }
 
 /**
@@ -3901,7 +3878,7 @@ export async function handleHelpInteraction(interaction) {
       targetModuleId = currentIdx === -1 ? 'home' : helpModules[currentIdx].id;
     }
 
-    const newComponents = buildHelpContainer(interaction.client, interaction.guild?.id, targetModuleId);
+    const newComponents = cv2.sanitizeCV2Payload(buildHelpContainer(interaction.client, interaction.guild?.id, targetModuleId));
     await interaction.update({ components: [newComponents], flags: MessageFlags.IsComponentsV2 }).catch(async (err) => {
       if (err.code === 10062) return;
       console.warn('[Help] Update failed:', err.message);

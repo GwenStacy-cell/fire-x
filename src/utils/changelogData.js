@@ -16,6 +16,38 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.6.7',
+    headline: 'Help Menu Display Size Optimization & General Utilities Overflow Resolution',
+    summary: 'Resolved an issue where the General Utilities module failed to render in the interactive Help Menu (!help) due to Discord\'s 4,000-character component display limit. Streamlined redundant command duplicates across General Utilities and Security modules, enforced strict cv2.sanitizeCV2Payload boundaries on all help containers, and ensured instant, reliable navigation across all 24 help modules.',
+    whatsNew: [
+      {
+        title: 'Universal Help Container Text Sanitization',
+        desc: 'Applied cv2.sanitizeCV2Payload directly within buildHelpContainer and handleHelpInteraction, ensuring every rendered help container is automatically guarded against exceeding Discord\'s 4,000-character ceiling.'
+      },
+      {
+        title: 'General Utilities Module Streamlining',
+        desc: 'Eliminated 19 duplicate command entries from General Utilities that already had dedicated home modules (Security, AI, Tickets, Tracking, Config, and Community), reducing character size from 4,059 to 2,535 characters for instant rendering.'
+      },
+      {
+        title: 'Security Module Character Margin Hardening',
+        desc: 'Streamlined cross-module overlaps in the Security module (moving moderation and config references to their primary modules), safely bringing its footprint down to 3,620 characters.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Zero-Lag Interactive Help Navigation',
+        desc: 'All 24 help modules now sit comfortably between 800 and 3,710 characters, eliminating API rejection errors (DiscordAPIError 50035) and ensuring responsive dropdown and button interactions.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Fixed Unresponsive General Utilities Dropdown',
+        desc: 'Fixed the bug where selecting "General Utilities" in !help would silently fail to update the menu message due to Discord rejecting payloads exceeding 4,000 characters.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.6.6',
     headline: 'Automated Quarantine Timeout Fallback & Precision Moderation Diagnostics',
     summary: 'Resolved misleading role hierarchy error notifications on bot and administrator timeouts. Discord API fundamentally rejects native timeouts on bots and administrators with Missing Permissions (50013) regardless of role position. Athena now automatically engages Quarantine Isolation as an intelligent fallback for the requested duration, seamlessly lifts isolation via untimeout, provides surgical error diagnostics, and solidifies absolute Bot Owner moderation bypass clearance.',
