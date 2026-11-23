@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, NAV_EMOJI_IDS, NINJA_BULLET, NINJA_BULLET_RTL } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, NAV_EMOJI_IDS, NINJA_BULLET, NINJA_BULLET_RTL, UPTIME_EMOJI } from '../utils/emojis.js';
 import { PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, TextDisplayBuilder, ContainerBuilder, MessageFlags, SectionBuilder, ThumbnailBuilder, Routes } from 'discord.js';
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs/promises';
@@ -4250,13 +4250,14 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
     targetAvatarUrl = guild.iconURL({ extension: 'png', size: 256, forceStatic: true });
   }
 
-  const limitText = wData.triggerLimit === 0 ? 'Unlimited (0)' : `${wData.triggerLimit} Actions`;
+  const limitText = wData.triggerLimit === 0 ? 'Unlimited' : `${wData.triggerLimit} Actions/hr`;
   
   const description = 
-    `# WHITELIST ACCESS\n` +
-    `-# **${targetName}** (${targetId})\n\n` +
-    `-# ${BULLET_EMOJI} **Authorized Categories:** ${accessProgress} (${enabledCount}/${allKeys.length} Whitelisted)\n` +
-    `-# ${BULLET_EMOJI} **Custom Action Limits:** \`${limitText}\`\n\n` +
+    `# ${NINJA_BULLET} ${cleanDisplayName(targetName).toUpperCase()} CLEARANCE ${NINJA_BULLET_RTL}\n` +
+    `-# ${UPTIME_EMOJI} **${type === 'users' ? 'User Identity' : 'Role Hierarchy'} • ID: \`${targetId}\`**\n\n` +
+    `> ${BULLET_EMOJI} **Authorized Shields:** ${accessProgress} (\`${enabledCount} / ${allKeys.length} Categories\`)\n` +
+    `> ${BULLET_EMOJI} **Trigger Action Limit:** \`${limitText}\`\n` +
+    `> ${BULLET_EMOJI} **Clearance Status:** ${enabledCount === allKeys.length ? '`FULL BYPASS (God Tier)`' : (enabledCount > 0 ? '`GRANULAR BYPASS`' : '`RESTRICTED (0 Bypasses)`')}\n\n` +
     `### Anti-Nuke Shields\n` +
     nukeListText +
     `\n### Auto-Mod & Chat Protections\n` +
@@ -4275,10 +4276,13 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
       {
         type: 1,
         components: [
-          { type: 2, custom_id: `wl_manage_${type}_${targetId}`, label: 'Manage', style: 2 },
-          { type: 2, custom_id: `wl_close`, label: 'Close', style: 2 }
+          { type: 2, custom_id: `wl_manage_${type}_${targetId}`, label: 'Manage Bypasses', style: 2 },
+          { type: 2, custom_id: `wlo_back`, emoji: { id: NAV_EMOJI_IDS.HOME }, style: 2 },
+          { type: 2, custom_id: `wl_close`, emoji: { id: NAV_EMOJI_IDS.DELETE }, style: 2 }
         ]
-      }
+      },
+      { type: 14, divider: true },
+      { type: 10, content: '-# **Athena Prime Unbypassable Security • Whitelist Defense Matrix**' }
     );
   } else {
     const nuke1Keys = Object.keys(ANTI_NUKE_SERVER_MODULES);
@@ -4379,7 +4383,7 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
     );
   }
 
-  return { components: [panelContainer], flags: MessageFlags.IsComponentsV2 };
+  return { components: [sanitizeCV2Payload(panelContainer)], flags: MessageFlags.IsComponentsV2 };
 }
 
 export async function getWhitelistOverviewPanel(guild) {
@@ -4388,28 +4392,46 @@ export async function getWhitelistOverviewPanel(guild) {
   const userIds = Object.keys(wlData.users || {});
   const roleIds = Object.keys(wlData.roles || {});
   const totalWl = userIds.length + roleIds.length;
+  const extraOwners = db.getExtraOwners(guild.id) || [];
   
   let usersText = userIds.length > 0 
-    ? userIds.map(id => `| <@${id}>`).slice(0, 10).join('\n') + (userIds.length > 10 ? '\n| ...and more' : '')
-    : '| None';
+    ? userIds.slice(0, 10).map(id => {
+        const uData = wlData.users[id] || {};
+        const isAll = (uData.modules || []).includes('all');
+        const limit = uData.triggerLimit === 0 ? 'Unlimited' : `${uData.triggerLimit}/hr`;
+        const tier = isAll ? 'Full Bypass' : `${(uData.modules || []).length} Shields`;
+        return `> ${BULLET_EMOJI} <@${id}> \`${limit}\` • **${tier}**`;
+      }).join('\n') + (userIds.length > 10 ? `\n> -# *...and ${userIds.length - 10} more*` : '')
+    : '> *No whitelisted users. All members are guarded by Antinuke.*';
     
   let rolesText = roleIds.length > 0
-    ? roleIds.map(id => `| <@&${id}>`).slice(0, 10).join('\n') + (roleIds.length > 10 ? '\n| ...and more' : '')
-    : '| None';
+    ? roleIds.slice(0, 10).map(id => {
+        const rData = wlData.roles[id] || {};
+        const isAll = (rData.modules || []).includes('all');
+        const limit = rData.triggerLimit === 0 ? 'Unlimited' : `${rData.triggerLimit}/hr`;
+        const tier = isAll ? 'Full Bypass' : `${(rData.modules || []).length} Shields`;
+        return `> ${BULLET_EMOJI} <@&${id}> \`${limit}\` • **${tier}**`;
+      }).join('\n') + (roleIds.length > 10 ? `\n> -# *...and ${roleIds.length - 10} more*` : '')
+    : '> *No whitelisted roles.*';
 
-  const wlProgress = renderSleekProgressBar(totalWl, 25, 14);
+  const wlProgress = renderSleekProgressBar(totalWl, 25, 12);
+
+  let extraOwnersText = '';
+  if (extraOwners.length > 0) {
+    extraOwnersText = `\n> ${BULLET_EMOJI} **Extra Owners:** ${extraOwners.map(id => `<@${id}>`).join(' ')} \`Full Bypass\``;
+  }
 
   const description = 
-    `# WL OVERVIEW\n` +
-    `-# **${guild.name} !**\n\n` +
-    `-# ${BULLET_EMOJI} **Whitelist Protection Level:** ${wlProgress} (${totalWl}/25 Trusted)\n` +
-    `-# ${BULLET_EMOJI} **Active Authorizations:** **${userIds.length} Users** • **${roleIds.length} Roles**\n\n` +
-    `**Users Whitelisted**\n\n` +
+    `# ${NINJA_BULLET} WHITELIST CLEARANCE MATRIX ${NINJA_BULLET_RTL}\n` +
+    `-# ${UPTIME_EMOJI} **${guild.name} • Unbypassable Access Control & Security Bypasses**\n\n` +
+    `> ${BULLET_EMOJI} **Clearance Capacity:** ${wlProgress} (\`${totalWl} / 25 Trusted Slots\`)\n` +
+    `> ${BULLET_EMOJI} **Active Whitelists:** \`${userIds.length} Users\` • \`${roleIds.length} Roles\`\n` +
+    `> ${BULLET_EMOJI} **Permanent Master:** <@${guild.ownerId}> \`Immune / Master Bypass\`${extraOwnersText}\n\n` +
+    `### Whitelisted Users (${userIds.length})\n` +
     `${usersText}\n\n` +
-    `**Roles Whitelisted**\n\n` +
+    `### Whitelisted Roles (${roleIds.length})\n` +
     `${rolesText}`;
 
-  const config = db.getGuildConfig(guild.id);
   const iconUrl = guild.iconURL({ extension: 'png', size: 256, forceStatic: true }) || null;
 
   const headerSection = {
@@ -4426,22 +4448,26 @@ export async function getWhitelistOverviewPanel(guild) {
       headerSection,
       { type: 14, divider: true },
       { type: 1, components: [
+          { type: 2, custom_id: 'wlo_add_users', label: 'Add User', style: 2 },
           { type: 2, custom_id: 'wlo_manage_users', label: 'Manage Users', style: 2 },
-          { type: 2, custom_id: 'wlo_remove_users', label: 'Remove User', style: 2 },
-          { type: 2, custom_id: 'wlo_add_users', label: 'Add User', style: 2 }
+          { type: 2, custom_id: 'wlo_remove_users', label: 'Remove User', style: 2 }
       ]},
       { type: 1, components: [
+          { type: 2, custom_id: 'wlo_add_roles', label: 'Add Role', style: 2 },
           { type: 2, custom_id: 'wlo_manage_roles', label: 'Manage Roles', style: 2 },
-          { type: 2, custom_id: 'wlo_remove_roles', label: 'Remove Role', style: 2 },
-          { type: 2, custom_id: 'wlo_add_roles', label: 'Add Role', style: 2 }
+          { type: 2, custom_id: 'wlo_remove_roles', label: 'Remove Role', style: 2 }
       ]},
       { type: 1, components: [
-          { type: 2, custom_id: 'wl_close', label: 'Close', style: 2 }
-      ]}
+          { type: 2, custom_id: 'wlo_back', emoji: { id: NAV_EMOJI_IDS.HOME }, style: 2 },
+          { type: 2, custom_id: 'arch_topic_whitelist', label: 'Explain Matrix', style: 2 },
+          { type: 2, custom_id: 'wl_close', emoji: { id: NAV_EMOJI_IDS.DELETE }, style: 2 }
+      ]},
+      { type: 14, divider: true },
+      { type: 10, content: '-# **Athena Prime Unbypassable Security • Whitelist Defense Matrix**' }
     ]
   };
 
-  return { components: [card.toJSON ? card.toJSON() : card], flags: MessageFlags.IsComponentsV2 };
+  return { components: [sanitizeCV2Payload(card)], flags: MessageFlags.IsComponentsV2 };
 }
 
 export async function getWhitelistSelectPanel(guild, type, action) {
@@ -4488,18 +4514,22 @@ export async function getWhitelistSelectPanel(guild, type, action) {
     }
   }
 
-  const description = `| Select a ${isUser ? 'user' : 'role'} to ${action === 'manage' ? 'manage their whitelist permissions' : (action === 'add' ? 'add to whitelist' : 'remove from whitelist')}`;
+  const title = action === 'manage' ? 'MANAGE PERMISSIONS' : (action === 'add' ? 'ADD TO WHITELIST' : 'REMOVE FROM WHITELIST');
+  const description = 
+    `# ${NINJA_BULLET} ${title} ${NINJA_BULLET_RTL}\n` +
+    `-# ${UPTIME_EMOJI} **Select a ${isUser ? 'member' : 'server role'} from the interactive menu below.**`;
     
   const mainDisplay = new TextDisplayBuilder().setContent(description);
   const panelContainer = new ContainerBuilder().addTextDisplayComponents(mainDisplay);
   
   const row1 = new ActionRowBuilder().addComponents(menu);
   const row2 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('wlo_back').setLabel('Back').setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder().setCustomId('wlo_back').setLabel('Back to Overview').setEmoji(NAV_EMOJI_IDS.HOME).setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('wl_close').setEmoji(NAV_EMOJI_IDS.DELETE).setStyle(ButtonStyle.Secondary)
   );
 
   panelContainer.addActionRowComponents(row1, row2);
-  return { components: [panelContainer.toJSON ? panelContainer.toJSON() : panelContainer], flags: MessageFlags.IsComponentsV2 };
+  return { components: [sanitizeCV2Payload(panelContainer.toJSON ? panelContainer.toJSON() : panelContainer)], flags: MessageFlags.IsComponentsV2 };
 }
 
 async function handleBlacklist(guild, moderator, action, phrase) {

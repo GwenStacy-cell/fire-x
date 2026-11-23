@@ -16,6 +16,42 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.7.0',
+    headline: 'Whitelist Clearance Matrix Modernization & Tactile Components V2 Overhaul',
+    summary: 'Redesigned the entire Antinuke Whitelist Management Suite (!wl, !whitelist, !wlist) with high-fidelity Components V2 architecture. Features symmetrical ninja bullet header framing, real-time 25-slot capacity telemetry progress bar, structured entity clearance cards with action limit badges, tactile dual-row member/role controls, custom animated navigation beats, and payload auto-sanitization.',
+    whatsNew: [
+      {
+        title: 'Tactile Whitelist Clearance Matrix',
+        desc: 'Overhauled !wl overview dashboard with military-grade styling, displaying real-time trusted entity capacity (out of 25 slots), permanent Server Owner master bypass, and Extra Owner rosters.'
+      },
+      {
+        title: 'Structured Entity Clearance Cards',
+        desc: 'Replaced bare text mentions with formatted cards showing assigned action limits (e.g. Unlimited or 10/hr) and active shield bypass summaries.'
+      },
+      {
+        title: 'Dual-Row Action Center & Animated Navigation',
+        desc: 'Organized controls into dedicated User and Role action rows, accompanied by custom animated Home (<a:01_home_beat:...>) and Close (<a:02_delete_beat:...>) navigation buttons.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Single-Entity Clearance Editor Upgrade',
+        desc: 'Modernized !wl @user and !wl @role with categorized shield rosters, clearance status badges (God Tier vs Granular), and quick-action bypass buttons.'
+      },
+      {
+        title: 'Universal CV2 Text Sanitization',
+        desc: 'Guarded all whitelist panels with sanitizeCV2Payload, ensuring zero risk of Discord 4,000-character component overflow errors.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Plain Markdown Layout Modernization',
+        desc: 'Replaced rudimentary plain text whitelist rosters with aesthetic Components V2 containers and live telemetry progress bars.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.6.9',
     headline: 'Command Alias Resolution: Restored !p for Ping & Decommissioned Legacy Music Modules',
     summary: 'Resolved command alias collision where !p was hijacked by legacy music play commands. Removed the p alias from play and decommissioned non-functional music commands from the central loader and help matrix, ensuring !p cleanly and instantly triggers Athena\'s real-time latency and heartbeat graph (!ping / !p / !latency).',
