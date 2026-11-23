@@ -440,7 +440,7 @@ export const commands = [
         const qChans = Object.values(db.cache.guilds || {}).filter(g => g.quoteChannelId).length;
         const aReacts = counts.auto_reacts || Object.values(db.cache.guilds || {}).filter(g => g.autoReacts && Object.keys(g.autoReacts).length > 0).length;
         const trigs = counts.triggers || Object.keys(db.cache.triggers || {}).length;
-        const burns = counts.burn_rooms || Object.keys(db.cache.burnRooms || {}).length;
+        const burns = (typeof counts.burn_rooms === 'number') ? counts.burn_rooms : Object.keys(db.cache.burnRooms || {}).filter(cid => (db.cache.burnRooms[cid]?.expiresAt || 0) > Date.now()).length;
         const stickies = counts.sticky_messages || Object.keys(db.cache.stickyMessages || {}).length;
         const newsCount = counts.news_feeds || Object.keys(db.cache.newsFeeds || {}).filter(gid => db.cache.newsFeeds[gid]?.channelId).length;
         const vrCount = counts.voice_roles || Object.values(db.cache.guilds || {}).filter(g => g.voiceRoleId).length;

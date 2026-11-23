@@ -16,6 +16,38 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.6.8',
+    headline: 'Burn Room Lifecycle Real-Time Erase & Cloud Audit Synchronization',
+    summary: 'Resolved an issue where ephemeral burn room counts persisted in the database audit after manual self-destruction or timer expiration. Added immediate MongoDB cloud deletion via deleteBurnRoomFromMongo upon room destruction, hardened getMongoDetailedAudit to strictly count active unexpired rooms (excluding metadata and stale records), and patched pushToMongo to automatically prune expired chambers and prevent ghost room retention.',
+    whatsNew: [
+      {
+        title: 'Instant MongoDB Cloud Burn Room Obliteration',
+        desc: 'Engineered deleteBurnRoomFromMongo, invoked synchronously by db.removeBurnRoom whenever a member clicks "Self-Destruct Now" or when the 10-minute burn timer expires, ensuring rooms are wiped from cloud storage with zero residual trace.'
+      },
+      {
+        title: 'Strict Active Chamber Audit Filtering',
+        desc: 'Updated getMongoDetailedAudit and !db status to filter MongoDB collection counts for unexpired chambers only (expiresAt > Date.now()), preventing meta-documents and stale logs from displaying artificial active room counts.'
+      },
+      {
+        title: 'Automated Cloud Pruning in Push Pipeline',
+        desc: 'Enhanced pushToMongo to delete any expired or orphaned burn room documents during synchronization, ensuring MongoDB cloud always mirrors active Discord channels.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Ephemeral Channel Delete Interceptor',
+        desc: 'Added automated burn room detection to the channelDelete gateway event handler, instantly cleaning up database records and preventing Antinuke from mistakenly restoring expired ephemeral chambers.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Burn Room Count Not Erasing',
+        desc: 'Fixed ghost active room counts appearing in database audits after burn rooms were deleted or expired, ensuring the room count accurately erases to 0.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.6.7',
     headline: 'Help Menu Display Size Optimization & General Utilities Overflow Resolution',
     summary: 'Resolved an issue where the General Utilities module failed to render in the interactive Help Menu (!help) due to Discord\'s 4,000-character component display limit. Streamlined redundant command duplicates across General Utilities and Security modules, enforced strict cv2.sanitizeCV2Payload boundaries on all help containers, and ensured instant, reliable navigation across all 24 help modules.',

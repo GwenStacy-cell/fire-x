@@ -3731,6 +3731,11 @@ class Database {
     if (!this.cache.burnRooms) return;
     delete this.cache.burnRooms[channelId];
     this.save();
+    import('./utils/mongoSync.js').then(m => {
+      if (m.deleteBurnRoomFromMongo) {
+        m.deleteBurnRoomFromMongo(channelId).catch(() => null);
+      }
+    }).catch(() => null);
   }
 
   // --- 6. GATEKEEPER & ANOMALY & DUALKEY CONFIG HELPERS ---

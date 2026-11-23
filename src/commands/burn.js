@@ -40,9 +40,9 @@ export function ensureBurnTicker(client) {
 
       for (const room of allRooms) {
         if (now >= room.expiresAt) {
-          const guild = client.guilds.cache.get(room.guildId);
+          const guild = client.guilds.cache.get(room.guildId) || await client.guilds.fetch(room.guildId).catch(() => null);
           if (guild) {
-            const channel = guild.channels.cache.get(room.channelId);
+            const channel = guild.channels.cache.get(room.channelId) || await guild.channels.fetch(room.channelId).catch(() => null);
             if (channel && channel.deletable) {
               await channel.delete('[Athena Burn Room] Self-destruct timer expired').catch(() => null);
             }
@@ -51,7 +51,7 @@ export function ensureBurnTicker(client) {
         }
       }
     } catch {}
-  }, 15000);
+  }, 10000);
 }
 
 export async function createBurnRoom(guild, creator, invitedUsers = [], durationMinutes = 10) {

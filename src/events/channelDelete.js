@@ -24,6 +24,12 @@ export default {
       db.save();
     }
 
+    // Ephemeral Burn Room Sync - Clean up and prevent antinuke restore
+    if (db.cache.burnRooms?.[channel.id]) {
+      db.removeBurnRoom(channel.id);
+      return;
+    }
+
     // ⚡ STEP 1: Synchronous Deduplication Lock
     // Prevents duplicate restorations between gateway channelDelete and auditLogEntryCreate
     if (isRestorationHandled(channel.id)) return;

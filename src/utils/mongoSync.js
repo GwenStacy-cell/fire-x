@@ -104,7 +104,14 @@ export async function getMongoDetailedAudit() {
 
     const counts = {};
     for (const c of collections) {
-      counts[c] = await mongoDb.collection(c).countDocuments().catch(() => 0);
+      if (c === 'burn_rooms') {
+        counts[c] = await mongoDb.collection('burn_rooms').countDocuments({
+          _id: { $ne: 'active_burn_rooms' },
+          expiresAt: { $gt: Date.now() }
+        }).catch(() => 0);
+      } else {
+        counts[c] = await mongoDb.collection(c).countDocuments().catch(() => 0);
+      }
     }
 
     const latestSnap = await mongoDb.collection('cloud_backups')
@@ -382,17 +389,22 @@ export async function hydrateFromMongo(db, statsDB = null) {
       }
 
       // 8. Hydrate Dedicated Burn Rooms (!burn)
+      const now = Date.now();
       const allBurnDocs = await burnRoomsCol.find({}).toArray();
       db.cache.burnRooms = db.cache.burnRooms || {};
       for (const doc of allBurnDocs) {
         if (doc._id === 'active_burn_rooms') {
-          db.cache.burnRooms = { ...db.cache.burnRooms, ...(doc.rooms || {}) };
+          for (const [cid, room] of Object.entries(doc.rooms || {})) {
+            if (room && (!room.expiresAt || room.expiresAt > now)) {
+              db.cache.burnRooms[cid] = room;
+            }
+          }
         } else {
           const cid = doc._id;
           const cleanDoc = { ...doc };
           delete cleanDoc._id;
           delete cleanDoc.updatedAt;
-          if (!cleanDoc.expiresAt || cleanDoc.expiresAt > Date.now()) {
+          if (cleanDoc.expiresAt && cleanDoc.expiresAt > now) {
             db.cache.burnRooms[cid] = cleanDoc;
           }
         }
@@ -885,14 +897,35 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
     }
 
     // 8. Bulk Sync Dedicated Burn Rooms (!burn)
+    const now = Date.now();
+    if (cache.burnRooms) {
+      for (const [cid, room] of Object.entries(cache.burnRooms)) {
+        if (room && room.expiresAt && room.expiresAt <= now) {
+          delete cache.burnRooms[cid];
+        }
+      }
+    }
+    const activeBurnEntries = Object.entries(cache.burnRooms || {});
+    const activeBurnIds = activeBurnEntries.map(([cid]) => String(cid));
+
     await burnRoomsCol.updateOne(
       { _id: 'active_burn_rooms' },
       { $set: { rooms: cache.burnRooms || {}, updatedAt: timestamp } },
       { upsert: true }
     );
-    const burnEntries = Object.entries(cache.burnRooms || {});
-    if (burnEntries.length > 0) {
-      const burnOps = burnEntries.map(([cid, room]) => ({
+
+    // Prune obsolete or expired burn room documents from MongoDB
+    await burnRoomsCol.deleteMany({
+      _id: { $ne: 'active_burn_rooms', $nin: activeBurnIds }
+    }).catch(() => null);
+
+    await burnRoomsCol.deleteMany({
+      _id: { $ne: 'active_burn_rooms' },
+      expiresAt: { $lte: now }
+    }).catch(() => null);
+
+    if (activeBurnEntries.length > 0) {
+      const burnOps = activeBurnEntries.map(([cid, room]) => ({
         updateOne: {
           filter: { _id: String(cid) },
           update: { $set: { ...room, updatedAt: timestamp } },
@@ -901,6 +934,7 @@ export async function pushToMongo(db, statsDB = null, reason = 'Routine Sync') {
       }));
       await burnRoomsCol.bulkWrite(burnOps, { ordered: false });
     }
+    syncStats.burnRooms = activeBurnEntries.length;
 
     // 9. Bulk Sync Dedicated Auto-Reacts Collection
     const autoReactGuilds = guildEntries.filter(([_, g]) => g.autoReacts && Object.keys(g.autoReacts).length > 0);
@@ -1530,5 +1564,22 @@ async function hydrateStatsFromMongo(statsDB) {
   } catch (err) {
     console.warn('[MongoSync] Stats hydration warning:', err.message);
     return { userStats: 0, channelStats: 0, invites: 0, joins: 0 };
+  }
+}
+
+/**
+ * Instantly obliterates an individual burn room from MongoDB cloud collection.
+ */
+export async function deleteBurnRoomFromMongo(channelId) {
+  if (!channelId || !isConnected || !mongoDb) return;
+  try {
+    const burnRoomsCol = mongoDb.collection('burn_rooms');
+    await burnRoomsCol.deleteOne({ _id: String(channelId) }).catch(() => null);
+    await burnRoomsCol.updateOne(
+      { _id: 'active_burn_rooms' },
+      { $unset: { [`rooms.${channelId}`]: "" }, $set: { updatedAt: new Date().toISOString() } }
+    ).catch(() => null);
+  } catch (err) {
+    console.warn('[MongoSync] Error deleting burn room from MongoDB:', err.message);
   }
 }
