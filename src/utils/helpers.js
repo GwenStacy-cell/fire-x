@@ -350,23 +350,26 @@ export async function isImmune(user, guild) {
 export function canModerate(moderator, target) {
   if (moderator.id === target.id) return false;
   
-  // Bot owner is UNMODERATABLE
-  if (isBotOwnerSync(target.id)) return false;
-  if (isBotOwnerSync(target.user?.id || target.id)) return false;
+  // Bot owner is UNMODERATABLE by anyone
+  if (isBotOwnerSync(target.id) || isBotOwnerSync(target.user?.id || target.id)) return false;
   
-  // Extra owners are UNMODERATABLE
+  // Bot Owner has 100% bypass clearance over all moderation protocols
+  if (isBotOwnerSync(moderator.id)) return true;
+
+  // Server owner is unmoderatable
+  if (moderator.guild?.ownerId === target.id) return false;
+  
+  // Server Owner can moderate anyone in their guild
+  if (moderator.id === moderator.guild?.ownerId) return true;
+
+  // Extra owners are UNMODERATABLE by normal staff
   if (target.guild && isExtraOwner(target.guild.id, target.id)) return false;
   
-  // Server owner is unmoderatable
-  if (moderator.guild.ownerId === target.id) return false;
-  
-  // Owner can moderate anyone
-  if (moderator.id === moderator.guild.ownerId) return true;
-  if (isBotOwnerSync(moderator.id)) return true;
+  // Extra owner can moderate normal members
   if (moderator.guild && isExtraOwner(moderator.guild.id, moderator.id)) return true;
   
   // Compare role positions
-  return moderator.roles.highest.position > target.roles.highest.position;
+  return (moderator.roles?.highest?.position ?? 0) > (target.roles?.highest?.position ?? 0);
 }
 
 // In-flight channel creation lock to prevent parallel creations

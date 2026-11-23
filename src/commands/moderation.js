@@ -3,8 +3,8 @@ import { PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } from 'di
 import db from '../database.js';
 import cv2 from '../cv2.js';
 import { parseDuration, canModerate, logToSecurityChannel, isBotOwnerSync, isExtraOwner, getUserTierName, cleanDisplayName, renderSleekProgressBar, sendGuildMemberDM } from '../utils/helpers.js';
-import { executeQuarantine } from './security.js';
-import { logServerEvent } from '../utils/serverLogger.js'; // We will implement security.js next
+import { executeQuarantine, executeUnquarantine } from './security.js';
+import { logServerEvent } from '../utils/serverLogger.js';
 
 export const commands = [
   // --- MUTEALL COMMAND ---
@@ -313,14 +313,15 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      const target = message.mentions.members.first();
+      const rawTarget = args[0]?.replace(/[<@!>]/g, '');
+      const target = message.mentions.members.first() || (rawTarget ? await message.guild.members.fetch(rawTarget).catch(() => null) : null);
       if (!target) {
-        return message.reply(cv2.warn('Command Error', `${message.author} Please mention a valid member.\n\n**Usage:** \`!timeout <@user> <duration> [reason]\``));
+        return message.reply(cv2.warn('Command Error', `${message.author} Please mention a valid member or provide their ID.\n\n**Usage:** \`!timeout <@user|id> <duration> [reason]\``));
       }
       
       const durationStr = args[1];
       if (!durationStr) {
-        return message.reply(cv2.warn('Command Error', `${message.author} Please specify a duration.\n\n**Usage:** \`!timeout <@user> <10m|2h|1d> [reason]\``));
+        return message.reply(cv2.warn('Command Error', `${message.author} Please specify a duration.\n\n**Usage:** \`!timeout <@user|id> <10m|2h|1d> [reason]\``));
       }
       const reason = args.slice(2).join(' ') || 'No reason provided';
 
@@ -346,7 +347,7 @@ export const commands = [
   {
     name: 'untimeout',
     aliases: ['removetimeout', 'unto', 'cleartimeout', 'unmute', 'um'],
-    description: 'Removes the timeout from a member.',
+    description: 'Removes the timeout or isolation from a member.',
     category: 'moderation',
     permissions: [PermissionFlagsBits.ModerateMembers],
     options: [
@@ -364,9 +365,10 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      const target = message.mentions.members.first() || (args[0] ? await message.guild.members.fetch(args[0].replace(/[<@!>]/g, '')).catch(() => null) : null);
+      const rawTarget = args[0]?.replace(/[<@!>]/g, '');
+      const target = message.mentions.members.first() || (rawTarget ? await message.guild.members.fetch(rawTarget).catch(() => null) : null);
       if (!target) {
-        return message.reply(cv2.warn('Command Error', `${message.author} Please mention a valid member or provide their ID.\n\n**Usage:** \`!untimeout <@user> [reason]\``));
+        return message.reply(cv2.warn('Command Error', `${message.author} Please mention a valid member or provide their ID.\n\n**Usage:** \`!untimeout <@user|id> [reason]\``));
       }
       const reason = args.slice(1).join(' ') || 'No reason provided';
       const result = await handleUntimeout(message.guild, message.member, target, reason);
@@ -733,86 +735,20 @@ export const commands = [
       { name: 'reason', description: 'Reason for timeout', type: 3, required: false }
     ],
     async executePrefix(message, args) {
-      const target = message.mentions.members.first();
+      const rawTarget = args[0]?.replace(/[<@!>]/g, '');
+      const target = message.mentions.members.first() || (rawTarget ? await message.guild.members.fetch(rawTarget).catch(() => null) : null);
       if (!target) {
-        const errorContainer = {
-          type: 17,
-          components: [
-            {
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Temporary Timeout Error\n` +
-                `-# ${BULLET_EMOJI} **Issue:** **__Missing Target Member__**\n` +
-                `-# ${BULLET_EMOJI} **Usage:** \`!temptimeout <@user> <duration> [reason]\`\n` +
-                `-# ${BULLET_EMOJI} **Examples:** \`!temptimeout @user 10m Spamming\``
-            }
-          ]
-        };
-        return message.reply({ components: [errorContainer], flags: (MessageFlags.IsComponentsV2 || 32768) });
+        return message.reply(cv2.warn('Command Error', `${message.author} Please mention a valid member or provide their ID.\n\n**Usage:** \`!temptimeout <@user|id> <duration> [reason]\``));
       }
 
       const durationStr = args[1];
-      const durationMs = parseDuration(durationStr);
-      if (!durationMs || durationMs > 28 * 24 * 3600 * 1000) {
-        const errorContainer = {
-          type: 17,
-          components: [
-            {
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Invalid Duration\n` +
-                `-# ${BULLET_EMOJI} **Issue:** **__Duration must be between 10s and 28 days__**\n` +
-                `-# ${BULLET_EMOJI} **Valid Formats:** \`10m\`, \`2h\`, \`1d\`, \`7d\``
-            }
-          ]
-        };
-        return message.reply({ components: [errorContainer], flags: (MessageFlags.IsComponentsV2 || 32768) });
+      if (!durationStr) {
+        return message.reply(cv2.warn('Command Error', `${message.author} Please specify a duration.\n\n**Usage:** \`!temptimeout <@user|id> <10m|2h|1d> [reason]\``));
       }
 
       const reason = args.slice(2).join(' ') || 'No reason specified';
-
-      if (!canModerate(message.member, target)) {
-        const permContainer = {
-          type: 17,
-          components: [
-            {
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Hierarchy Blocked\n` +
-                `-# ${BULLET_EMOJI} **Status:** **__Target possesses higher or equal role permissions__**`
-            }
-          ]
-        };
-        return message.reply({ components: [permContainer], flags: (MessageFlags.IsComponentsV2 || 32768) });
-      }
-
-      try {
-        await target.timeout(durationMs, `${reason} - by ${message.author.tag}`);
-        const expiryDate = Math.floor((Date.now() + durationMs) / 1000);
-        const successContainer = {
-          type: 17,
-          components: [
-            {
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Member Timed Out | <a:03_tick_circle:1565665642084827206>\n` +
-                `-# ${BULLET_EMOJI} **Target:** ${target} (\`${target.id}\`)\n` +
-                `-# ${BULLET_EMOJI} **Duration:** \`${durationStr}\`\n` +
-                `-# ${BULLET_EMOJI} **Lift Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
-                `-# ${BULLET_EMOJI} **Reason:** ${reason}\n` +
-                `-# ${BULLET_EMOJI} **Moderator:** ${message.author}`
-            }
-          ]
-        };
-        return message.reply({ components: [successContainer], flags: (MessageFlags.IsComponentsV2 || 32768) });
-      } catch (err) {
-        const failContainer = {
-          type: 17,
-          components: [
-            {
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Execution Failed\n-# ${BULLET_EMOJI} **Error:** \`${err.message}\``
-            }
-          ]
-        };
-        return message.reply({ components: [failContainer], flags: (MessageFlags.IsComponentsV2 || 32768) });
-      }
+      const result = await handleTimeout(message.guild, message.member, target, durationStr, reason);
+      return message.reply(result);
     },
     async executeSlash(interaction) {
       const targetUser = interaction.options.getUser('user');
@@ -821,78 +757,11 @@ export const commands = [
 
       const target = await interaction.guild.members.fetch(targetUser.id).catch(() => null);
       if (!target) {
-        return interaction.reply({
-          components: [{
-            type: 17,
-            components: [{
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Member Not Found\n-# ${BULLET_EMOJI} **Issue:** **__Target is not present in this server__**`
-            }]
-          }],
-          flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
-        });
+        return interaction.reply(cv2.warn('Command Error', 'Target is not present in this server.'));
       }
 
-      const durationMs = parseDuration(durationStr);
-      if (!durationMs || durationMs > 28 * 24 * 3600 * 1000) {
-        return interaction.reply({
-          components: [{
-            type: 17,
-            components: [{
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Invalid Duration\n` +
-                `-# ${BULLET_EMOJI} **Issue:** **__Duration must be between 10s and 28 days__**\n` +
-                `-# ${BULLET_EMOJI} **Valid Formats:** \`10m\`, \`2h\`, \`1d\`, \`7d\``
-            }]
-          }],
-          flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
-        });
-      }
-
-      if (!canModerate(interaction.member, target)) {
-        return interaction.reply({
-          components: [{
-            type: 17,
-            components: [{
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Hierarchy Blocked\n` +
-                `-# ${BULLET_EMOJI} **Status:** **__Target possesses higher or equal role permissions__**`
-            }]
-          }],
-          flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
-        });
-      }
-
-      try {
-        await target.timeout(durationMs, `${reason} - by ${interaction.user.tag}`);
-        const expiryDate = Math.floor((Date.now() + durationMs) / 1000);
-        return interaction.reply({
-          components: [{
-            type: 17,
-            components: [{
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Member Timed Out | <a:03_tick_circle:1565665642084827206>\n` +
-                `-# ${BULLET_EMOJI} **Target:** ${target} (\`${target.id}\`)\n` +
-                `-# ${BULLET_EMOJI} **Duration:** \`${durationStr}\`\n` +
-                `-# ${BULLET_EMOJI} **Lift Expiration:** <t:${expiryDate}:R> (<t:${expiryDate}:F>)\n` +
-                `-# ${BULLET_EMOJI} **Reason:** ${reason}\n` +
-                `-# ${BULLET_EMOJI} **Moderator:** ${interaction.user}`
-            }]
-          }],
-          flags: (MessageFlags.IsComponentsV2 || 32768)
-        });
-      } catch (err) {
-        return interaction.reply({
-          components: [{
-            type: 17,
-            components: [{
-              type: 10,
-              content: `# ${getRandomHeadingGlyph()} Execution Failed\n-# ${BULLET_EMOJI} **Error:** \`${err.message}\``
-            }]
-          }],
-          flags: (MessageFlags.IsComponentsV2 || 32768) | MessageFlags.Ephemeral
-        });
-      }
+      const result = await handleTimeout(interaction.guild, interaction.member, target, durationStr, reason);
+      return interaction.reply(result);
     }
   },
 
@@ -967,7 +836,7 @@ export const commands = [
         await channel.send(text);
         await message.delete().catch(() => null);
       } catch (err) {
-        await message.reply(cv2.danger('<:off:1533844858983157851> Failed', `Failed to send message in ${channel}.\n\`${err.message}\``)).catch(() => null);
+        await message.reply(cv2.danger('Dispatch Failed', `Failed to send message in ${channel}.\n\`${err.message}\``)).catch(() => null);
       }
     },
     async executeSlash(interaction) {
@@ -1005,7 +874,7 @@ export const commands = [
         await channel.send(text);
         await interaction.reply(cv2.success('Message Dispatched', `Message successfully sent to ${channel}.`));
       } catch (err) {
-        await interaction.reply(cv2.danger('<:off:1533844858983157851> Failed', `Failed to send message in ${channel}.\n\`${err.message}\``)).catch(() => null);
+        await interaction.reply(cv2.danger('Dispatch Failed', `Failed to send message in ${channel}.\n\`${err.message}\``)).catch(() => null);
       }
     }
   },
@@ -1747,7 +1616,7 @@ async function handleMassTimeout(guild, moderator, role, durationMs, reason) {
 async function handleMuteAll(guild, moderator) {
   const vc = moderator.voice.channel;
   if (!vc) {
-    return cv2.warn('<:off:1533844858983157851> Failed', 'You must be in a **voice channel** to use this command.');
+    return cv2.warn('Voice Channel Required', 'You must be in a **voice channel** to use this command.');
   }
 
   let mutedCount = 0;
@@ -1771,7 +1640,7 @@ async function handleMuteAll(guild, moderator) {
 async function handleUnmuteAll(guild, moderator) {
   const vc = moderator.voice.channel;
   if (!vc) {
-    return cv2.warn('<:off:1533844858983157851> Failed', 'You must be in a **voice channel** to use this command.');
+    return cv2.warn('Voice Channel Required', 'You must be in a **voice channel** to use this command.');
   }
 
   let unmutedCount = 0;
@@ -1936,7 +1805,11 @@ async function handleClearWarns(guild, moderator, target) {
 
 async function handleTimeout(guild, moderator, target, durationStr, reason) {
   // Owner immunity check
-  if (!isBotOwnerSync(moderator.id) && (isBotOwnerSync(target.id) || isExtraOwner(guild.id, target.id))) {
+  if (isBotOwnerSync(target.id) || isBotOwnerSync(target.user?.id || target.id)) {
+    return cv2.danger('Untouchable', 'This user is a **Bot Owner** and cannot be moderated.');
+  }
+
+  if (!isBotOwnerSync(moderator.id) && isExtraOwner(guild.id, target.id)) {
     return cv2.danger('Untouchable', 'This user is protected by **Athena Prime** and cannot be moderated.');
   }
 
@@ -1944,11 +1817,66 @@ async function handleTimeout(guild, moderator, target, durationStr, reason) {
     return cv2.danger('Permission Denied', `You do not have enough power to timeout **${target.user.tag}**.`);
   }
 
+  if (target.id === guild.ownerId) {
+    return cv2.danger('Action Prohibited', `Discord API does not allow moderating the Server Owner (**<@${guild.ownerId}>**).`);
+  }
+
+  let me = guild.members.me;
+  if (!me && guild.members?.fetchMe) {
+    me = await guild.members.fetchMe().catch(() => null);
+  }
+
   const ms = parseDuration(durationStr);
   if (!ms || ms < 10000 || ms > 2419200000) { // Discord timeout limit is between 10s and 28 days
     return cv2.warn('Invalid Duration', 'Duration must be a format like `10m`, `2h`, `1d` (between 10 seconds and 28 days).');
   }
 
+  // Discord API native limitations:
+  // 1. Bots CANNOT receive native Discord timeouts (communication_disabled_until).
+  // 2. Members with Administrator permission CANNOT receive native Discord timeouts.
+  const isBot = target.user.bot;
+  const isAdmin = target.permissions?.has(PermissionFlagsBits.Administrator);
+
+  if (isBot || isAdmin) {
+    // Automatically fall back to Athena Quarantine Isolation
+    const isoReason = `[Timeout Isolation] ${reason}`;
+    const qResult = await executeQuarantine(guild, target, moderator, isoReason, ms, guild.client);
+    if (qResult && qResult.success !== false) {
+      const classification = isBot ? 'Bot Account' : 'Administrator';
+      const expiryTimestamp = Math.floor((Date.now() + ms) / 1000);
+      const resEmbed = cv2.success(
+        'Timeout Applied (Isolation Mode)',
+        `Discord API forbids native timeouts on **${classification}s**.\nAutomatically engaged **Athena Quarantine Isolation** for **${durationStr}**.`,
+        [
+          { name: 'Target', value: `${target} (\`${target.id}\`)`, inline: true },
+          { name: 'Duration', value: `${durationStr} (<t:${expiryTimestamp}:R>)`, inline: true },
+          { name: 'Classification', value: classification, inline: true },
+          { name: 'Reason', value: reason },
+          { name: 'Isolation Status', value: 'Active (Auto-release scheduled)' }
+        ]
+      );
+
+      const modTier = getUserTierName(guild, moderator);
+      const targetTier = getUserTierName(guild, target);
+      logToSecurityChannel(guild, cv2.log(
+        'Member Timeout (Quarantine Isolation)',
+        `Moderator placed ${classification.toLowerCase()} into timeout isolation.`,
+        [
+          { name: 'Target', value: `${target.user.tag} (${target.id}) [${targetTier}]`, inline: true },
+          { name: 'Moderator', value: `${moderator.user.tag} [${modTier}]`, inline: true },
+          { name: 'Duration', value: durationStr, inline: true },
+          { name: 'Reason', value: reason }
+        ],
+        'danger'
+      ));
+
+      return resEmbed;
+    } else {
+      return cv2.danger('Isolation Failed', qResult?.message || 'Could not isolate target member.');
+    }
+  }
+
+  // Attempt native Discord timeout for normal human members
   try {
     await target.timeout(ms, `${reason} - by ${moderator.user.tag}`);
 
@@ -1981,14 +1909,61 @@ async function handleTimeout(guild, moderator, target, durationStr, reason) {
 
     return resEmbed;
   } catch (error) {
-    console.error(error);
-    return cv2.danger('Failed', 'An error occurred while executing the timeout. Ensure my role is higher than the target.');
+    console.error('[handleTimeout native error]:', error);
+
+    // If Discord API threw 50013 Missing Permissions, try quarantine fallback:
+    if (error.code === 50013 || error.message?.includes('Missing Permissions')) {
+      try {
+        const isoReason = `[Timeout Fallback] ${reason}`;
+        const qResult = await executeQuarantine(guild, target, moderator, isoReason, ms, guild.client);
+        if (qResult && qResult.success !== false) {
+          const expiryTimestamp = Math.floor((Date.now() + ms) / 1000);
+          return cv2.success(
+            'Timeout Executed (Security Isolation)',
+            `Discord native timeout could not be applied. Successfully isolated **${target.user.tag}** via **Athena Quarantine** for **${durationStr}**.`,
+            [
+              { name: 'Target', value: `${target}`, inline: true },
+              { name: 'Duration', value: `${durationStr} (<t:${expiryTimestamp}:R>)`, inline: true },
+              { name: 'Reason', value: reason }
+            ]
+          );
+        }
+      } catch (fallbackErr) {
+        console.error('[handleTimeout quarantine fallback failed]:', fallbackErr);
+      }
+
+      // Precise hierarchy and permission diagnostics:
+      if (me && !me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+        return cv2.danger('Missing Bot Permission', 'Athena lacks the **Moderate Members** permission in this server.');
+      }
+      if (me && me.roles.highest.comparePositionTo(target.roles.highest) <= 0) {
+        return cv2.danger(
+          'Role Hierarchy Conflict',
+          `Athena's role (**${me.roles.highest.name}**, pos ${me.roles.highest.position}) is lower than or equal to **${target.roles.highest.name}** (pos ${target.roles.highest.position}). Please drag Athena's role higher in Server Settings > Roles.`
+        );
+      }
+      if (target.id === guild.ownerId) {
+        return cv2.danger('Action Prohibited', 'Discord API does not allow timing out the Server Owner.');
+      }
+      if (target.user.bot) {
+        return cv2.danger('Bot Target', 'Discord API does not support native timeouts on bot accounts.');
+      }
+      if (target.permissions.has(PermissionFlagsBits.Administrator)) {
+        return cv2.danger('Admin Target', 'Discord API does not support native timeouts on Administrators.');
+      }
+    }
+
+    return cv2.danger('Timeout Failed', `An error occurred while executing the timeout: \`${error.message || 'Discord API Error'}\``);
   }
 }
 
 async function handleUntimeout(guild, moderator, target, reason) {
   // Owner immunity check
-  if (!isBotOwnerSync(moderator.id) && (isBotOwnerSync(target.id) || isExtraOwner(guild.id, target.id))) {
+  if (isBotOwnerSync(target.id) || isBotOwnerSync(target.user?.id || target.id)) {
+    return cv2.danger('Untouchable', 'This user is a **Bot Owner** and cannot be moderated.');
+  }
+
+  if (!isBotOwnerSync(moderator.id) && isExtraOwner(guild.id, target.id)) {
     return cv2.danger('Untouchable', 'This user is protected by **Athena Prime** and cannot be moderated.');
   }
 
@@ -1996,48 +1971,91 @@ async function handleUntimeout(guild, moderator, target, reason) {
     return cv2.danger('Permission Denied', `You do not have enough power to modify timeout for **${target.user.tag}**.`);
   }
 
-  if (!target.isCommunicationDisabled()) {
-    return cv2.warn('Not Timed Out', `**${target.user.tag}** does not have an active timeout.`);
+  let me = guild.members.me;
+  if (!me && guild.members?.fetchMe) {
+    me = await guild.members.fetchMe().catch(() => null);
   }
 
-  try {
-    await target.timeout(null, `${reason} - by ${moderator.user.tag}`);
+  const quarantineRecord = db.getQuarantine(guild.id, target.id);
+  const quarantineRole = guild.roles.cache.find(r => r.name.toLowerCase() === 'quarantined');
+  const isQuarantined = !!quarantineRecord || (quarantineRole && target.roles.cache.has(quarantineRole.id));
+  const hasNativeTimeout = target.isCommunicationDisabled();
 
-    // Send DM
-    const dmEmbed = new EmbedBuilder()
-      .setColor(0x00FF88)
-      .setTitle('Timeout Removed')
-      .setDescription(`Your timeout has been removed in **${guild.name}**.\n\n**Reason:** ${reason}`);
-    await sendGuildMemberDM(guild.id, target, { embeds: [dmEmbed] });
-
-    const resEmbed = cv2.success('Timeout Removed', `Successfully removed timeout from **${target.user.tag}**.`, [
-      { name: 'Member', value: `${target}`, inline: true },
-      { name: 'Reason', value: reason, inline: true }
-    ]);
-
-    const modTier = getUserTierName(guild, moderator);
-    const targetTier = getUserTierName(guild, target);
-    logToSecurityChannel(guild, cv2.log(
-      'Member Timeout Removed',
-      `Moderator removed timeout from member.`,
-      [
-        { name: 'Target', value: `${target.user.tag} (${target.id}) [${targetTier}]`, inline: true },
-        { name: 'Moderator', value: `${moderator.user.tag} [${modTier}]`, inline: true },
-        { name: 'Reason', value: reason }
-      ],
-      'info'
-    ));
-
-    return resEmbed;
-  } catch (error) {
-    console.error(error);
-    return cv2.danger('Failed', 'An error occurred while removing the timeout. Ensure my role is higher than the target.');
+  if (!isQuarantined && !hasNativeTimeout) {
+    return cv2.warn('Not Timed Out', `**${target.user.tag}** does not have an active timeout or quarantine isolation.`);
   }
+
+  let liftedIsolation = false;
+  let liftedNative = false;
+
+  // Lift Quarantine Isolation if active
+  if (isQuarantined) {
+    const unqRes = await executeUnquarantine(guild, target, moderator, 'untimeout');
+    if (unqRes && unqRes.success !== false) {
+      liftedIsolation = true;
+    } else {
+      return cv2.danger('Failed', unqRes?.message || 'Could not lift quarantine isolation from target.');
+    }
+  }
+
+  // Lift Native Discord Timeout if active
+  if (hasNativeTimeout) {
+    try {
+      await target.timeout(null, `${reason} - by ${moderator.user.tag}`);
+      liftedNative = true;
+
+      // Send DM
+      const dmEmbed = new EmbedBuilder()
+        .setColor(0x00FF88)
+        .setTitle('Timeout Removed')
+        .setDescription(`Your timeout has been removed in **${guild.name}**.\n\n**Reason:** ${reason}`);
+      await sendGuildMemberDM(guild.id, target, { embeds: [dmEmbed] });
+    } catch (error) {
+      console.error('[handleUntimeout native error]:', error);
+      if (!liftedIsolation) {
+        if (me && !me.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+          return cv2.danger('Missing Bot Permission', 'Athena lacks the **Moderate Members** permission in this server.');
+        }
+        if (me && me.roles.highest.comparePositionTo(target.roles.highest) <= 0) {
+          return cv2.danger(
+            'Role Hierarchy Conflict',
+            `Athena's role (**${me.roles.highest.name}**, pos ${me.roles.highest.position}) is lower than or equal to **${target.roles.highest.name}** (pos ${target.roles.highest.position}). Please drag Athena's role higher in Server Settings > Roles.`
+          );
+        }
+        return cv2.danger('Failed', `An error occurred while removing the timeout: \`${error.message}\``);
+      }
+    }
+  }
+
+  const resEmbed = cv2.success('Timeout Removed', `Successfully removed timeout from **${target.user.tag}**.`, [
+    { name: 'Member', value: `${target}`, inline: true },
+    { name: 'Status', value: liftedIsolation ? 'Quarantine Isolation Lifted' : 'Native Timeout Cleared', inline: true },
+    { name: 'Reason', value: reason }
+  ]);
+
+  const modTier = getUserTierName(guild, moderator);
+  const targetTier = getUserTierName(guild, target);
+  logToSecurityChannel(guild, cv2.log(
+    'Member Timeout Removed',
+    `Moderator removed timeout from member.`,
+    [
+      { name: 'Target', value: `${target.user.tag} (${target.id}) [${targetTier}]`, inline: true },
+      { name: 'Moderator', value: `${moderator.user.tag} [${modTier}]`, inline: true },
+      { name: 'Reason', value: reason }
+    ],
+    'info'
+  ));
+
+  return resEmbed;
 }
 
 async function handleKick(guild, moderator, target, reason) {
   // Owner immunity check
-  if (!isBotOwnerSync(moderator.id) && (isBotOwnerSync(target.id) || isExtraOwner(guild.id, target.id))) {
+  if (isBotOwnerSync(target.id) || isBotOwnerSync(target.user?.id || target.id)) {
+    return cv2.danger('Untouchable', 'This user is a **Bot Owner** and cannot be moderated.');
+  }
+
+  if (!isBotOwnerSync(moderator.id) && isExtraOwner(guild.id, target.id)) {
     return cv2.danger('Untouchable', 'This user is protected by **Athena Prime** and cannot be moderated.');
   }
 
@@ -2045,8 +2063,32 @@ async function handleKick(guild, moderator, target, reason) {
     return cv2.danger('Permission Denied', `You do not have enough power to kick **${target.user.tag}**.`);
   }
 
+  let me = guild.members.me;
+  if (!me && guild.members?.fetchMe) {
+    me = await guild.members.fetchMe().catch(() => null);
+  }
+
+  if (target.id === guild.ownerId) {
+    return cv2.danger('Action Prohibited', 'Discord API does not allow kicking the Server Owner.');
+  }
+
+  if (target.id === me?.id) {
+    return cv2.danger('Action Prohibited', 'I cannot kick myself.');
+  }
+
+  if (me && me.roles.highest.comparePositionTo(target.roles.highest) <= 0) {
+    return cv2.danger(
+      'Role Hierarchy Conflict',
+      `Athena's role (**${me.roles.highest.name}**, pos ${me.roles.highest.position}) is lower than or equal to **${target.roles.highest.name}** (pos ${target.roles.highest.position}). Please drag Athena's role higher in Server Settings > Roles.`
+    );
+  }
+
+  if (me && !me.permissions.has(PermissionFlagsBits.KickMembers)) {
+    return cv2.danger('Missing Bot Permission', 'Athena lacks the **Kick Members** permission in this server.');
+  }
+
   if (!target.kickable) {
-    return cv2.danger('<:off:1533844858983157851> Failed', `I do not have enough role permissions to kick **${target.user.tag}**.`);
+    return cv2.danger('Kick Blocked', `Discord API rejected kick operation for **${target.user.tag}**.`);
   }
 
   try {
@@ -2080,13 +2122,17 @@ async function handleKick(guild, moderator, target, reason) {
     return resEmbed;
   } catch (error) {
     console.error(error);
-    return cv2.danger('<:off:1533844858983157851> Failed', 'An error occurred while kicking the user.');
+    return cv2.danger('Kick Failed', `An error occurred while kicking the user: \`${error.message}\``);
   }
 }
 
 async function handleBan(guild, moderator, target, reason) {
   // Owner immunity check
-  if (!isBotOwnerSync(moderator.id) && (isBotOwnerSync(target.id) || isExtraOwner(guild.id, target.id))) {
+  if (isBotOwnerSync(target.id) || isBotOwnerSync(target.user?.id || target.id)) {
+    return cv2.danger('Untouchable', 'This user is a **Bot Owner** and cannot be moderated.');
+  }
+
+  if (!isBotOwnerSync(moderator.id) && isExtraOwner(guild.id, target.id)) {
     return cv2.danger('Untouchable', 'This user is protected by **Athena Prime** and cannot be moderated.');
   }
 
@@ -2094,8 +2140,32 @@ async function handleBan(guild, moderator, target, reason) {
     return cv2.danger('Permission Denied', `You do not have enough power to ban **${target.user.tag}**.`);
   }
 
+  let me = guild.members.me;
+  if (!me && guild.members?.fetchMe) {
+    me = await guild.members.fetchMe().catch(() => null);
+  }
+
+  if (target.id === guild.ownerId) {
+    return cv2.danger('Action Prohibited', 'Discord API does not allow banning the Server Owner.');
+  }
+
+  if (target.id === me?.id) {
+    return cv2.danger('Action Prohibited', 'I cannot ban myself.');
+  }
+
+  if (me && me.roles.highest.comparePositionTo(target.roles.highest) <= 0) {
+    return cv2.danger(
+      'Role Hierarchy Conflict',
+      `Athena's role (**${me.roles.highest.name}**, pos ${me.roles.highest.position}) is lower than or equal to **${target.roles.highest.name}** (pos ${target.roles.highest.position}). Please drag Athena's role higher in Server Settings > Roles.`
+    );
+  }
+
+  if (me && !me.permissions.has(PermissionFlagsBits.BanMembers)) {
+    return cv2.danger('Missing Bot Permission', 'Athena lacks the **Ban Members** permission in this server.');
+  }
+
   if (!target.bannable) {
-    return cv2.danger('<:off:1533844858983157851> Failed', `I do not have enough role permissions to ban **${target.user.tag}**.`);
+    return cv2.danger('Ban Blocked', `Discord API rejected ban operation for **${target.user.tag}**.`);
   }
 
   try {
@@ -2129,7 +2199,7 @@ async function handleBan(guild, moderator, target, reason) {
     return resEmbed;
   } catch (error) {
     console.error(error);
-    return cv2.danger('<:off:1533844858983157851> Failed', 'An error occurred while banning the user.');
+    return cv2.danger('Ban Failed', `An error occurred while banning the user: \`${error.message}\``);
   }
 }
 
@@ -2167,7 +2237,7 @@ async function handleCreateRole(guild, moderator, name, color) {
     return resEmbed;
   } catch (error) {
     console.error(error);
-    return cv2.danger('<:off:1533844858983157851> Failed', 'Failed to create the role. Ensure my role is high enough and I have Manage Roles permission.');
+    return cv2.danger('Role Creation Failed', 'Failed to create the role. Ensure my role is high enough and I have Manage Roles permission.');
   }
 }
 
@@ -2353,7 +2423,7 @@ async function handlePurge(guild, channel, moderator, amount, triggerMessage = n
     return resEmbed;
   } catch (error) {
     console.error(error);
-    return cv2.danger('<:off:1533844858983157851> Failed', 'Failed to delete messages. Messages older than 14 days cannot be bulk deleted.');
+    return cv2.danger('Purge Failed', 'Failed to delete messages. Messages older than 14 days cannot be bulk deleted.');
   }
 }
 
@@ -2384,7 +2454,7 @@ async function handleSlowmode(guild, channel, moderator, seconds) {
     return resEmbed;
   } catch (error) {
     console.error(error);
-    return cv2.danger('<:off:1533844858983157851> Failed', 'Failed to set slowmode. Ensure I have Manage Channel permissions.');
+    return cv2.danger('Slowmode Failed', 'Failed to set slowmode. Ensure I have Manage Channel permissions.');
   }
 }
 
@@ -2424,7 +2494,7 @@ async function handleUnban(guild, moderator, userId, reason) {
     return resEmbed;
   } catch (error) {
     console.error(error);
-    return cv2.danger('<:off:1533844858983157851> Failed', 'An error occurred while unbanning the user.');
+    return cv2.danger('Unban Failed', 'An error occurred while unbanning the user.');
   }
 }
 
@@ -2434,7 +2504,7 @@ async function handleUnban(guild, moderator, userId, reason) {
 async function handleBanById(guild, moderator, userId, reason, userObj = null) {
   // Protection check
   if (isBotOwnerSync(userId) || isExtraOwner(guild.id, userId)) {
-    return cv2.danger(' Untouchable', 'This user is protected by **Athena Prime** and cannot be banned.');
+    return cv2.danger('Untouchable', 'This user is protected by **Athena Prime** and cannot be banned.');
   }
 
   if (!isBotOwnerSync(moderator.id) && !moderator.permissions.has(PermissionFlagsBits.BanMembers)) {
@@ -2467,7 +2537,7 @@ async function handleBanById(guild, moderator, userId, reason, userObj = null) {
     return resEmbed;
   } catch (error) {
     console.error(error);
-    return cv2.danger('<:off:1533844858983157851> Failed', `Could not ban user \`${userId}\`: ${error.message}`);
+    return cv2.danger('Ban Failed', `Could not ban user \`${userId}\`: ${error.message}`);
   }
 }
 
@@ -2494,7 +2564,7 @@ async function handleUnbanAll(guild, moderator) {
 
     const resEmbed = cv2.success('All Bans Cleared', `Processed **${bans.size}** ban(s).`, [
       { name: '<a:uptime:1552608831060844575> Unbanned', value: `\`${unbanned}\``, inline: true },
-      { name: '<:off:1533844858983157851> Failed', value: `\`${failed}\``, inline: true },
+      { name: '<a:04_cross_circle:1565665644806934639> Failed', value: `\`${failed}\``, inline: true },
       { name: 'Executed by', value: `${moderator}`, inline: true }
     ]);
 
@@ -2508,7 +2578,7 @@ async function handleUnbanAll(guild, moderator) {
     return resEmbed;
   } catch (error) {
     console.error(error);
-    return cv2.danger('<:off:1533844858983157851> Failed', `An error occurred: ${error.message}`);
+    return cv2.danger('UnbanAll Failed', `An error occurred: ${error.message}`);
   }
 }
 
@@ -2541,7 +2611,7 @@ async function handleVcAction(guild, moderator, targets, action) {
   const actionName = action.charAt(0).toUpperCase() + action.slice(1);
   const embedRes = cv2.success(`${actionName} Complete`, `Processed **${targets.size}** member(s).`, [
     { name: '<a:uptime:1552608831060844575> Success', value: `\`${successCount}\``, inline: true },
-    { name: '<:off:1533844858983157851> Failed/Not in VC', value: `\`${failedCount}\``, inline: true }
+    { name: '<a:04_cross_circle:1565665644806934639> Failed / Not in VC', value: `\`${failedCount}\``, inline: true }
   ]);
 
   return embedRes;

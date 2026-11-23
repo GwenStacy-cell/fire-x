@@ -16,6 +16,40 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.6.6',
+    headline: 'Automated Quarantine Timeout Fallback & Precision Moderation Diagnostics',
+    summary: 'Resolved misleading role hierarchy error notifications on bot and administrator timeouts. Discord API fundamentally rejects native timeouts on bots and administrators with Missing Permissions (50013) regardless of role position. Athena now automatically engages Quarantine Isolation as an intelligent fallback for the requested duration, seamlessly lifts isolation via untimeout, provides surgical error diagnostics, and solidifies absolute Bot Owner moderation bypass clearance.',
+    whatsNew: [
+      {
+        title: 'Intelligent Quarantine Timeout Fallback',
+        desc: 'When attempting to timeout a bot account (like Sapphire) or an Administrator, Athena automatically engages Quarantine Isolation for the requested duration with automated role restoration upon expiry.'
+      },
+      {
+        title: 'Dual-Engine Untimeout & Isolation Release',
+        desc: 'Upgraded !untimeout and !unto to detect both native Discord timeouts and database quarantine records, cleanly restoring original member roles and lifting server isolation.'
+      },
+      {
+        title: 'Surgical Error Diagnostics Matrix',
+        desc: 'Replaced vague role hierarchy error messages with exact diagnostic breakdowns (identifying bot targets, administrator status, Server Owner immunity, missing bot permissions, and precise role position comparisons).'
+      },
+      {
+        title: 'Absolute Bot Owner Moderation Bypass',
+        desc: 'Synchronized canModerate clearance in helpers.js to ensure Bot Owners hold unconditional moderation power across all targets and extra owners without hierarchy friction.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Purged Legacy Off Emojis in Moderation Commands',
+        desc: 'Replaced all legacy <:off:...> emojis across moderation, say, purge, slowmode, and VC actions with rule-compliant custom animated crosses and tick circles.'
+      },
+      {
+        title: 'Temptimeout Engine Standardization',
+        desc: 'Aligned !temptimeout and /temptimeout through the unified handleTimeout pipeline to inherit automatic bot/admin isolation fallbacks and rich status feedback.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.6.5',
     headline: 'Universal Components V2 UI Theming & Command Matrix Polish',
     summary: 'Executed a comprehensive UI upgrade across core commands and the CV2 container rendering engine. Introduced symmetrical ninja bullet framed headers, thematic category accent colors, and high-density telemetry data grids. Modernized userinfo, serverinfo, botstats, about, avatar, banner, and ping with pure Components V2 layouts while eliminating multi-container message spam.',
