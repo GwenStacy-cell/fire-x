@@ -37,7 +37,7 @@ export const commands = [
   
   {
     name: 'play',
-    aliases: ['p'],
+    aliases: [],
     description: 'Play a song in your voice channel',
     category: 'music',
     permissions: [],

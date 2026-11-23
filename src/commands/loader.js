@@ -50,7 +50,6 @@ import { commands as rolemanagerCmds } from './rolemanager.js';
 import { commands as theaterCmds } from './theater.js';
 import { commands as cinemaCmds } from './cinema.js';
 import { commands as bumpCmds } from './bump.js';
-import { commands as musicCmds } from './music.js';
 import { commands as rateCmds } from './rate.js';
 import { commands as rateLeaderboardCmds } from './rateleaderboard.js';
 import adelCmds from './adel.js';
@@ -229,7 +228,6 @@ export const allCommands = [
   ...theaterCmds,
   ...cinemaCmds,
   ...bumpCmds,
-  ...musicCmds,
   ...rateCmds,
   ...recordCmds,
   ...dateCmds,

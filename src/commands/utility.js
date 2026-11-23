@@ -2454,10 +2454,6 @@ export const commands = [
     permissions: [PermissionFlagsBits.Administrator],
     options: [],
     async executePrefix(message, args) {
-      if (args[0] && args[0].toLowerCase() === 'music') {
-        return message.reply(cv2.warn('Command Redirect', 'To setup the Music Player, please use the `!setupmusic` command instead!'));
-      }
-
       const config = db.getGuildConfig(message.guild.id) || {};
       const prefix = config.prefix || '!';
 
@@ -3421,8 +3417,6 @@ export const helpModules = [
     "`!ratelb / !editlb` - View the edit rating leaderboard `[Public]`",
     "`!counting / !count` - Interactive Counting Engine Dashboard & Controls `[Extra Owner]`",
     "`!countlb / !counting lb` - Server Counting records & leaderboard `[Public]`",
-    "`!music / !play <query>` - Open Music Dashboard (Play, Skip, Queue, Volume) `[Public]`",
-    "`!setupmusic` - Deploy 24/7 compact music controller channel `[Extra Owner]`",
     "`!movie / !cinema <play|list|pause|forward|rewind|seek|party|folder|stop>` - Stream local PC movies with surround voice audio & responsive mobile theater `[Public]`",
     "`!media <url>` - Download TikTok/Insta/Twitter/YouTube videos directly `[Public]`",
     "`!mp3 <url>` - Extract audio from video links `[Public]`",

@@ -16,6 +16,34 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.6.9',
+    headline: 'Command Alias Resolution: Restored !p for Ping & Decommissioned Legacy Music Modules',
+    summary: 'Resolved command alias collision where !p was hijacked by legacy music play commands. Removed the p alias from play and decommissioned non-functional music commands from the central loader and help matrix, ensuring !p cleanly and instantly triggers Athena\'s real-time latency and heartbeat graph (!ping / !p / !latency).',
+    whatsNew: [
+      {
+        title: 'Instant !p Resolution for Ping',
+        desc: 'Unbound the p alias collision in the command registry. Typing !p now immediately executes the ping telemetry diagnostic and Canvas latency visualizer without interference.'
+      },
+      {
+        title: 'Legacy Music Decommission',
+        desc: 'Decommissioned non-functional music player commands (!play, !setupmusic) from the command loader and interactive Help Menu.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Cleaned Help Menu Footprint',
+        desc: 'Removed obsolete music command entries from Community tools in the interactive help dashboard, further streamlining CV2 container size.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Fixed !p Command Conflict',
+        desc: 'Fixed !p attempting to queue music instead of returning gateway ping and database latency.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.6.8',
     headline: 'Burn Room Lifecycle Real-Time Erase & Cloud Audit Synchronization',
     summary: 'Resolved an issue where ephemeral burn room counts persisted in the database audit after manual self-destruction or timer expiration. Added immediate MongoDB cloud deletion via deleteBurnRoomFromMongo upon room destruction, hardened getMongoDetailedAudit to strictly count active unexpired rooms (excluding metadata and stale records), and patched pushToMongo to automatically prune expired chambers and prevent ghost room retention.',
