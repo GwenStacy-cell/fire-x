@@ -16,6 +16,38 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.7.2',
+    headline: 'Universal Nickname Profile Links & Channel Text Links Standard',
+    summary: 'Enforced a system-wide formatting policy eliminating raw Discord @user and <#channel> mentions across all bot panels, security overviews, and embeds. Introduced standardized formatUserLink and formatChannelLink helpers ensuring users are consistently presented via clean markdown nickname profile links ([Nickname](https://discord.com/users/id)) and channels via clickable text jump links ([#channel](https://discord.com/channels/guild/channel)).',
+    whatsNew: [
+      {
+        title: 'Markdown Nickname Profile Links',
+        desc: 'Implemented formatUserLink to display all member and owner references as clean, clickable Discord profile links using sanitized nicknames without raw @ mentions.'
+      },
+      {
+        title: 'Markdown Channel Text Links',
+        desc: 'Implemented formatChannelLink to convert raw <#channelId> mentions into formatted text links directly jumping to the respective Discord channel URL.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Security & Whitelist Suite Modernization',
+        desc: 'Overhauled !wl overview, single clearance inspections, Extra Owners rosters, and quarantine notices to universally use nickname profile links.'
+      },
+      {
+        title: 'Burn Protocol Upgrades',
+        desc: 'Updated !burn ephemeral chamber deployment notifications, room rosters, and channel briefings with text channel links and creator profile links.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Raw Mentions & Ghost Pings',
+        desc: 'Eliminated raw @ mentions and unformatted <#channel> IDs across bot messages, protecting users from unwanted pings and unstyled text.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.7.1',
     headline: 'Minimalist Whitelist UI Refinement & Telemetry De-clutter',
     summary: 'Refined the Antinuke Whitelist UI (!wl) to deliver a sleek, uncluttered presentation. Completely eliminated heavy progress bars, uptime emojis, and dense header framing in favor of a minimal, clean text layout with subtle animated glyph headings, direct entity mentions, and streamlined action buttons.',

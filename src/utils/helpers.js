@@ -1139,6 +1139,76 @@ export function cleanDisplayName(name) {
   return clean || 'User';
 }
 
+/**
+ * Formats a user as a clickable markdown nickname/display name link: [Nickname](https://discord.com/users/userId).
+ * Never uses native <@userId> mentions.
+ * @param {User|GuildMember|string} userOrMemberOrId - Discord user, member, or ID string
+ * @param {Guild|null} guild - Optional guild instance to resolve nickname
+ * @returns {string} Markdown nickname link
+ */
+export function formatUserLink(userOrMemberOrId, guild = null) {
+  if (!userOrMemberOrId) return '[User](https://discord.com/)';
+  let id = null;
+  let displayName = null;
+
+  if (typeof userOrMemberOrId === 'object' && userOrMemberOrId !== null) {
+    id = userOrMemberOrId.id || userOrMemberOrId.user?.id;
+    displayName = userOrMemberOrId.displayName || userOrMemberOrId.nickname || userOrMemberOrId.user?.displayName || userOrMemberOrId.user?.username || userOrMemberOrId.username;
+  } else {
+    id = String(userOrMemberOrId).replace(/[<@!>]/g, '').trim();
+  }
+
+  if (!displayName && guild && id) {
+    const mem = guild.members?.cache?.get(id);
+    if (mem) displayName = mem.displayName || mem.nickname || mem.user?.displayName || mem.user?.username;
+    if (!displayName && guild.client?.users?.cache) {
+      const u = guild.client.users.cache.get(id);
+      if (u) displayName = u.displayName || u.username;
+    }
+  }
+
+  const safeName = cleanDisplayName(displayName || (id ? `User` : 'User'));
+  return `[${safeName}](https://discord.com/users/${id || ''})`;
+}
+
+/**
+ * Formats a channel as a clickable markdown text link: [#channel-name](https://discord.com/channels/guildId/channelId).
+ * Never uses native <#channelId> mentions.
+ * @param {GuildChannel|string} channelOrId - Discord channel object or channel ID
+ * @param {Guild|string|null} guildOrGuildId - Guild instance or guild ID string
+ * @returns {string} Markdown channel text link
+ */
+export function formatChannelLink(channelOrId, guildOrGuildId = null) {
+  if (!channelOrId) return '[#channel](https://discord.com/)';
+  let id = null;
+  let name = null;
+  let gid = null;
+
+  if (typeof channelOrId === 'object' && channelOrId !== null) {
+    id = channelOrId.id;
+    name = channelOrId.name;
+    gid = channelOrId.guildId || channelOrId.guild?.id;
+  } else {
+    id = String(channelOrId).replace(/[<#>]/g, '').trim();
+  }
+
+  if (guildOrGuildId) {
+    if (typeof guildOrGuildId === 'object' && guildOrGuildId !== null) {
+      gid = gid || guildOrGuildId.id;
+      if (!name && guildOrGuildId.channels?.cache) {
+        const ch = guildOrGuildId.channels.cache.get(id);
+        if (ch) name = ch.name;
+      }
+    } else {
+      gid = gid || String(guildOrGuildId);
+    }
+  }
+
+  const safeName = name ? String(name).replace(/[\[\]\(\)\\*~_`|]/g, '').trim() : 'channel';
+  const targetGid = gid || '@me';
+  return `[#${safeName}](https://discord.com/channels/${targetGid}/${id || ''})`;
+}
+
 export function formatNickname(layout, name) {
   if (!layout) layout = '{name}';
   const cleanName = (name || 'User').trim();

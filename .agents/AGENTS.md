@@ -23,3 +23,9 @@
 - ALWAYS maintain the rolling 5-day changelog in `src/utils/changelogData.js` (`CHANGELOG_ENTRIES`) whenever new features, bug fixes, or optimizations are implemented.
 - Whenever code is updated, increment the version (e.g. `v2.9.0`) and prepend a new entry at the top of `CHANGELOG_ENTRIES` with clear date, headline, summary, what's new, improvements, and fixes.
 - ALWAYS ensure the bot's custom activity status note (in `src/events/ready.js`: `CHANGELOG_ENTRIES[0]?.version`) updates to reflect the new version in the rotating presence ("Athena {version} is now rolling out..").
+
+# User and Channel Formatting Rules
+- NEVER use `<@userId>` or raw `@username` to mention users anywhere in the bot's responses, embeds, or Components V2 cards.
+- ALWAYS use a **nickname link**: `[Nickname](https://discord.com/users/userId)` (using `cleanDisplayName` to strip markdown/emoji breaks) or `formatUserLink(userOrMemberOrId, guild)`.
+- NEVER use `<#channelId>` to mention channels anywhere in responses, embeds, or Components V2 cards.
+- ALWAYS use a **channel text link**: `[#channel-name](https://discord.com/channels/guildId/channelId)` or `formatChannelLink(channelOrId, guildOrGuildId)`.

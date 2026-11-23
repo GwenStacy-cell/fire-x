@@ -22,7 +22,9 @@ import {
   cleanDisplayName,
   renderSleekProgressBar,
   isExtraOwnerOrHigher,
-  isQuarantineStaffAuthorized
+  isQuarantineStaffAuthorized,
+  formatUserLink,
+  formatChannelLink
 } from '../utils/helpers.js';
 import { connectToHomeVc, toggleBotDeafen } from '../utils/voice.js';
 import { setupDashboardChannel } from '../utils/dashboardManager.js';
@@ -2664,7 +2666,7 @@ export async function executeQuarantine(guild, targetMember, moderator, reason, 
           type: 9,
           components: [{
             type: 10,
-            content: `-# **Server Isolation Notice |** <a:uptime:1552608831060844575>\n> -# **Hello ${targetMember.displayName} , You have been Quarantined in ${guild.name}**\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Your access has been restricted. Please navigate to <#${quarantineChannel.id}> to resolve this matter.\n> -# \u2800\u2800\u2800\u2800\u2570\u203A **Reason:** ${reason}\n> -# \u2800\u2800\u2800\u2800\u2570\u203A **Duration:** ${durationLabel}`
+            content: `-# **Server Isolation Notice |** <a:uptime:1552608831060844575>\n> -# **Hello ${targetMember.displayName} , You have been Quarantined in ${guild.name}**\n> -# \u2800\u2800\u2800\u2800\u2570\u203A Your access has been restricted. Please navigate to ${formatChannelLink(quarantineChannel, guild)} to resolve this matter.\n> -# \u2800\u2800\u2800\u2800\u2570\u203A **Reason:** ${reason}\n> -# \u2800\u2800\u2800\u2800\u2570\u203A **Duration:** ${durationLabel}`
           }],
           accessory: { type: 11, media: { url: guild.iconURL({ dynamic: true }) || undefined } }
         }]
@@ -2719,7 +2721,7 @@ export async function executeQuarantine(guild, targetMember, moderator, reason, 
         { name: 'Member',      value: `[${cleanDisplayName(targetMember.displayName)}](https://discord.com/users/${targetMember.id})`,           inline: true },
         { name: 'Enforced by', value: `[${cleanDisplayName(moderator.displayName || moderator.user?.username || 'System')}](https://discord.com/users/${moderator.id || moderator.user?.id})`,              inline: true },
         { name: 'Duration',    value: durationLabel,               inline: true },
-        { name: 'Channel',     value: `<#${quarantineChannel.id}>`, inline: true },
+        { name: 'Channel',     value: formatChannelLink(quarantineChannel, guild), inline: true },
         { name: 'Reason',      value: reason }
       ]
     );
@@ -3279,12 +3281,12 @@ async function handleLockdown(guild, channel, moderator, mode) {
 
       const lockEmbed = cv2.danger(
         'Channel Lockdown Activated', 
-        `<a:uptime:1552608831060844575> This channel has been placed under administrative lockdown by **${moderator.user?.tag || moderator.tag}**.\n` +
-        `> -# ${BULLET_EMOJI} **Channel:** <#${channel.id}>\n` +
+        `<a:uptime:1552608831060844575> This channel has been placed under administrative lockdown by ${formatUserLink(moderator, guild)}.\n` +
+        `> -# ${BULLET_EMOJI} **Channel:** ${formatChannelLink(channel, guild)}\n` +
         `> -# ${BULLET_EMOJI} **Status:** Writing & reactions restricted across all member roles.\n` +
         `> -# ${BULLET_EMOJI} **Restoration:** Type \`!unlock\` or \`!lockdown channel\` to lift.`
       );
-      logToSecurityChannel(guild, cv2.log('Channel Locked', `Moderator **${moderator.user?.tag || moderator.tag}** [${modTier}] locked down channel <#${channel.id}>. Non-staff role overwrites neutralized.`, [], 'warning'));
+      logToSecurityChannel(guild, cv2.log('Channel Locked', `Moderator ${formatUserLink(moderator, guild)} [${modTier}] locked down channel ${formatChannelLink(channel, guild)}. Non-staff role overwrites neutralized.`, [], 'warning'));
       return lockEmbed;
     } else {
       // mode === 'off'
@@ -3312,16 +3314,16 @@ async function handleLockdown(guild, channel, moderator, mode) {
 
       const unlockEmbed = cv2.success(
         'Channel Lockdown Deactivated', 
-        `<a:uptime:1552608831060844575> Channel lockdown has been lifted by **${moderator.user?.tag || moderator.tag}**.\n` +
-        `> -# ${BULLET_EMOJI} **Channel:** <#${channel.id}>\n` +
+        `<a:uptime:1552608831060844575> Channel lockdown has been lifted by ${formatUserLink(moderator, guild)}.\n` +
+        `> -# ${BULLET_EMOJI} **Channel:** ${formatChannelLink(channel, guild)}\n` +
         `> -# ${BULLET_EMOJI} **Status:** Member speaking/writing permissions fully restored from pre-lockdown state.`
       );
-      logToSecurityChannel(guild, cv2.log('Channel Unlocked', `Moderator **${moderator.user?.tag || moderator.tag}** [${modTier}] unlocked channel <#${channel.id}>. Pre-lockdown permissions restored.`, [], 'success'));
+      logToSecurityChannel(guild, cv2.log('Channel Unlocked', `Moderator ${formatUserLink(moderator, guild)} [${modTier}] unlocked channel ${formatChannelLink(channel, guild)}. Pre-lockdown permissions restored.`, [], 'success'));
       return unlockEmbed;
     }
   } catch (error) {
     console.error(error);
-    return cv2.danger('Lockdown Action Failed', `Could not modify permissions for <#${channel.id}>: ${error.message}`);
+    return cv2.danger('Lockdown Action Failed', `Could not modify permissions for ${formatChannelLink(channel, guild)}: ${error.message}`);
   }
 }
 
@@ -4212,12 +4214,12 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
   let targetName = 'Unknown Target';
   if (type === 'users') {
     const member = await guild.members.fetch(targetId).catch(() => null);
-    if (member) targetName = member.user.tag;
-    else targetName = `<@${targetId}>`;
+    if (member) targetName = member.displayName || member.user.username;
+    else targetName = 'User';
   } else {
     const role = guild.roles.cache.get(targetId);
     if (role) targetName = role.name;
-    else targetName = `<@&${targetId}>`;
+    else targetName = 'Role';
   }
 
   const emojiOn = '<:on:1533844867191406672>'; 
@@ -4254,7 +4256,7 @@ export async function getWhitelistPanel(guild, targetId, type, view = 'info') {
   
   const description = 
     `# ${getRandomHeadingGlyph()} Whitelist Access — ${cleanDisplayName(targetName)}\n` +
-    `-# **${type === 'users' ? 'User Identity' : 'Role Hierarchy'} • ID: \`${targetId}\`**\n\n` +
+    `-# **${type === 'users' ? 'User Identity' : 'Role Hierarchy'} • ${type === 'users' ? formatUserLink(targetId, guild) : `<@&${targetId}>`} (\`${targetId}\`)**\n\n` +
     `> ${BULLET_EMOJI} **Authorized Categories:** \`${enabledCount} / ${allKeys.length}\` Whitelisted\n` +
     `> ${BULLET_EMOJI} **Custom Action Limits:** \`${limitText}\`\n\n` +
     `### Anti-Nuke Shields\n` +
@@ -4389,7 +4391,7 @@ export async function getWhitelistOverviewPanel(guild) {
   const roleIds = Object.keys(wlData.roles || {});
   
   let usersText = userIds.length > 0 
-    ? userIds.slice(0, 10).map(id => `> ${BULLET_EMOJI} <@${id}>`).join('\n') + (userIds.length > 10 ? '\n> -# *...and more*' : '')
+    ? userIds.slice(0, 10).map(id => `> ${BULLET_EMOJI} ${formatUserLink(id, guild)}`).join('\n') + (userIds.length > 10 ? '\n> -# *...and more*' : '')
     : '> *None*';
     
   let rolesText = roleIds.length > 0
@@ -4400,7 +4402,7 @@ export async function getWhitelistOverviewPanel(guild) {
     `# ${getRandomHeadingGlyph()} Whitelist Overview\n` +
     `-# **${guild.name} • Security Matrix**\n\n` +
     `> ${BULLET_EMOJI} **Active Whitelists:** **${userIds.length} Users** • **${roleIds.length} Roles**\n` +
-    `> ${BULLET_EMOJI} **Server Owner:** <@${guild.ownerId}> (Full Master Bypass)\n\n` +
+    `> ${BULLET_EMOJI} **Server Owner:** ${formatUserLink(guild.ownerId, guild)} (Full Master Bypass)\n\n` +
     `**Users Whitelisted**\n\n` +
     `${usersText}\n\n` +
     `**Roles Whitelisted**\n\n` +
@@ -4984,11 +4986,11 @@ async function handleExtraOwner(guild, moderator, action, targetUser) {
     // List
     const owners = db.getExtraOwners(guild.id);
     if (owners.length === 0) {
-      return cv2.info('No Extra Owners', `There are no extra owners configured for this server.\n\n**Bot Owner:** <@${process.env.OWNER_ID || 'Unknown'}>\n**Server Owner:** <@${guild.ownerId}>`);
+      return cv2.info('No Extra Owners', `There are no extra owners configured for this server.\n\n**Bot Owner:** ${formatUserLink(process.env.OWNER_ID || 'Unknown', guild)}\n**Server Owner:** ${formatUserLink(guild.ownerId, guild)}`);
     }
 
-    const formattedList = owners.map(id => `- <@${id}> (ID: \`${id}\`)`).join('\n');
-    return cv2.owner('Extra Owners List', `**Bot Owner:** <@${process.env.OWNER_ID || 'Unknown'}>\n**Server Owner:** <@${guild.ownerId}>\n\n**Extra Owners:**\n${formattedList}`);
+    const formattedList = owners.map(id => `- ${formatUserLink(id, guild)} (ID: \`${id}\`)`).join('\n');
+    return cv2.owner('Extra Owners List', `**Bot Owner:** ${formatUserLink(process.env.OWNER_ID || 'Unknown', guild)}\n**Server Owner:** ${formatUserLink(guild.ownerId, guild)}\n\n**Extra Owners:**\n${formattedList}`);
   }
 }
 
@@ -5007,7 +5009,7 @@ async function handleBotWhitelist(guild, action, botId) {
              `- They can create/delete channels, manage roles, kick, and ban without triggering the firewall.\n` +
              `- To revoke a specific bot's immunity, simply remove the <@&${cleanId}> role from them, or use \`!botwhitelist remove <@&${cleanId}>\` to unwhitelist the role entirely.`;
     } else {
-      desc = `Bot ID <@${cleanId}> (\`${cleanId}\`) has been added to the **Bot Whitelist**.\n\n` +
+      desc = `Bot ID ${formatUserLink(cleanId, guild)} (\`${cleanId}\`) has been added to the **Bot Whitelist**.\n\n` +
              `- This bot is instantly granted **100% full immunity** to all Anti-Nuke protections.\n` +
              `- It can create/delete channels, manage roles, kick, and ban without triggering the firewall.\n` +
              `- To revoke this immunity, use \`!botwhitelist remove ${cleanId}\`.`;
@@ -5060,7 +5062,7 @@ async function handleBotBlacklist(action, targetId, reason = null, client = null
 
     return cv2.success(
       'User Globally Blacklisted',
-      `User <@${targetId}> (\`${targetId}\`) has been **globally banned** from Athena Prime.\n\n` +
+      `User ${formatUserLink(targetId)} (\`${targetId}\`) has been **globally banned** from Athena Prime.\n\n` +
       `> -# **__Reason:__** \`${finalReason}\`\n` +
       `> -# **__Scope:__** All commands (\`!help\`, \`!ping\`, modules) are permanently locked across all servers, including server-owner privileges.\n` +
       `> -# **__Cloud Sync:__** Database snapshot synced to Discord cloud backup with updated blacklist manifest.\n` +
@@ -5081,7 +5083,7 @@ async function handleBotBlacklist(action, targetId, reason = null, client = null
 
       return cv2.success(
         'User Globally Unbanned',
-        `User <@${targetId}> (\`${targetId}\`) has been **unbanned** from Athena Prime.\n\n` +
+        `User ${formatUserLink(targetId)} (\`${targetId}\`) has been **unbanned** from Athena Prime.\n\n` +
         `> -# **__Status:__** Full global access to all bot commands and features has been restored.\n` +
         `> -# **__Cloud Sync:__** Database snapshot synced to Discord cloud backup.`
       );
@@ -5099,7 +5101,7 @@ async function handleBotBlacklist(action, targetId, reason = null, client = null
       const entry = data[id];
       const r = entry?.reason || 'Violation of Athena Bot Rules';
       const timeStr = entry?.timestamp ? ` (<t:${Math.floor(entry.timestamp / 1000)}:R>)` : '';
-      return `> -# **__User:__** <@${id}> (\`${id}\`)\n> -# **__Reason:__** \`${r}\`${timeStr}`;
+      return `> -# **__User:__** ${formatUserLink(id)} (\`${id}\`)\n> -# **__Reason:__** \`${r}\`${timeStr}`;
     }).join('\n\n');
 
     return cv2.danger(
@@ -5173,7 +5175,7 @@ async function getServerInfoEmbed(guild) {
   }
 
   const statsText =
-    `> -# <a:uptime:1552608831060844575> **Owner:** <@${guild.ownerId}> (${ownerTag}) · **Server ID:** \`${guild.id}\`\n` +
+    `> -# <a:uptime:1552608831060844575> **Owner:** ${formatUserLink(guild.ownerId, guild)} (${ownerTag}) · **Server ID:** \`${guild.id}\`\n` +
     `> -# <a:target_blink:1565667466984554588> **Members [${totalMembers.toLocaleString()}]:** \`${humans.toLocaleString()} Humans\` · \`${bots.toLocaleString()} Bots\` · **Boost Tier:** \`Tier ${boostLevel}\` (\`${boostCount} Boosts\`)\n` +
     `> -# <a:target_blink:1565667466984554588> **Channels [${channelCount}]:** \`${textChannels} Text\` · \`${voiceChannels} Voice\` · \`${categories} Categories\`\n` +
     `> -# <a:target_blink:1565667466984554588> **Server Assets:** \`${roleCount} Roles\` · \`${emojis.size} Emojis\` · \`${stickers} Stickers\`\n` +
@@ -5241,7 +5243,7 @@ async function getUserInfoEmbed(guild, member) {
   }
 
   const statsText =
-    `> -# <a:uptime:1552608831060844575> **Member:** <@${member.id}> (${member.user.tag}) · **User ID:** \`${member.id}\`\n` +
+    `> -# <a:uptime:1552608831060844575> **Member:** ${formatUserLink(member, guild)} (${member.user.tag}) · **User ID:** \`${member.id}\`\n` +
     `> -# <a:target_blink:1565667466984554588> **Account Created:** <t:${Math.floor(member.user.createdTimestamp / 1000)}:F> (<t:${Math.floor(member.user.createdTimestamp / 1000)}:R>)\n` +
     `> -# <a:target_blink:1565667466984554588> **Joined Server:** <t:${Math.floor(member.joinedTimestamp / 1000)}:F> (<t:${Math.floor(member.joinedTimestamp / 1000)}:R>)\n` +
     `> -# <a:target_blink:1565667466984554588> **Security Clearance:** ${privileges.join(' · ')}\n` +
@@ -6770,11 +6772,10 @@ export async function getAutoModPanel(guild) {
   const DOT = '•';
   const E_CLOCK = '🕒';
 
-  const linkChannel = (config.linkAllowedChannel || config.urlAllowedChannel || config.antiLinkAllowedChannel)
-    ? `<#${config.linkAllowedChannel || config.urlAllowedChannel || config.antiLinkAllowedChannel}>` 
-    : 'None';
-  const inviteChannel = config.inviteAllowedChannel ? `<#${config.inviteAllowedChannel}>` : 'None';
-  const honeypotChannel = config.honeypotChannelId ? `<#${config.honeypotChannelId}>` : 'None';
+  const allowedChId = config.linkAllowedChannel || config.urlAllowedChannel || config.antiLinkAllowedChannel;
+  const linkChannel = allowedChId ? formatChannelLink(allowedChId, guild) : 'None';
+  const inviteChannel = config.inviteAllowedChannel ? formatChannelLink(config.inviteAllowedChannel, guild) : 'None';
+  const honeypotChannel = config.honeypotChannelId ? formatChannelLink(config.honeypotChannelId, guild) : 'None';
   const honeypotTimeout = config.honeypotTimeoutMinutes || 15;
 
   const bypasses = config.automodBypasses || {};
@@ -6991,7 +6992,7 @@ export async function getAdvancedConfigPanel(guild) {
   
   const { ContainerBuilder, TextDisplayBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelSelectMenuBuilder, ChannelType } = await import('discord.js');
   
-  const honeypotChannel = config.honeypotChannelId ? `<#${config.honeypotChannelId}>` : 'None';
+  const honeypotChannel = config.honeypotChannelId ? formatChannelLink(config.honeypotChannelId, guild) : 'None';
 
   const c = new ContainerBuilder();
   c.addTextDisplayComponents(new TextDisplayBuilder().setContent(`# ${getRandomHeadingGlyph()} AUTOMOD | ADVANCED GLOBAL SETTINGS\n` +
@@ -7557,7 +7558,7 @@ export async function getHoneypotStatusPanel(guild, honeypotChannelId, notice = 
 
   let noticeBlock = '';
   if (notice === 'DEPLOYED') {
-    noticeBlock = `> -# <a:uptime:1552608831060844575> **Status:** Honeypot tripwire deployed to <#${targetId}> and armed in database.\n\n`;
+    noticeBlock = `> -# <a:uptime:1552608831060844575> **Status:** Honeypot tripwire deployed to ${formatChannelLink(targetId, guild)} and armed in database.\n\n`;
   } else if (notice === 'DISARMED') {
     noticeBlock = `> -# <a:uptime:1552608831060844575> **Status:** Honeypot tripwire disarmed and channel purged from database.\n\n`;
   }
@@ -7572,7 +7573,7 @@ export async function getHoneypotStatusPanel(guild, honeypotChannelId, notice = 
             content: `# ${getRandomHeadingGlyph()} Honeypot Raider Sentry | <a:03_tick_circle:1565665642084827206>\n` +
                      noticeBlock +
                      `> -# <a:uptime:1552608831060844575> **Tripwire Status:** ${isArmed ? '`ARMED & MONITORING`' : '`DISARMED`'}\n` +
-                     `> -# ${BULLET_EMOJI} **Active Trap Channel:** ${targetChannel ? `<#${targetChannel.id}> (\`${targetChannel.id}\`)` : '`None`'}\n` +
+                     `> -# ${BULLET_EMOJI} **Active Trap Channel:** ${targetChannel ? `${formatChannelLink(targetChannel, guild)} (\`${targetChannel.id}\`)` : '`None`'}\n` +
                      `> -# ${BULLET_EMOJI} **Neutralization Latency:** \`<15ms\` *(Pre-parsing gateway interceptor)*\n` +
                      `> -# ${BULLET_EMOJI} **Enforcement Action:** Instant Permanent Ban + Message Vaporization\n` +
                      `> -# ${BULLET_EMOJI} **Exemptions:** Server Owner, Extra Owners, Bot Owner, and Verified Whitelist`
@@ -8126,11 +8127,11 @@ export async function getSecurityMatrixHub(guild, moderator) {
                      `### Defense Layer Status\n` +
                      `> ${BULLET_EMOJI} **Anti-Nuke Dual Engine:** ${isAntiNukeArmed ? '`ARMED & SECURED`' : '`DISARMED`'}\n` +
                      `> ${BULLET_EMOJI} **DEFCON Readiness:** ${defconState ? `\`ELEVATED (Tier ${defconState.tier})\`` : '`STANDBY (Tier 0 Peace)`'}\n` +
-                     `> ${BULLET_EMOJI} **Honeypot Raider Trap:** ${isHoneypotArmed ? `<#${config.honeypotChannelId}> (\`<15ms auto-ban\`)` : '`Disarmed`'}\n` +
+                     `> ${BULLET_EMOJI} **Honeypot Raider Trap:** ${isHoneypotArmed ? `${formatChannelLink(config.honeypotChannelId, guild)} (\`<15ms auto-ban\`)` : '`Disarmed`'}\n` +
                      `> ${BULLET_EMOJI} **Anti-GhostPing Sentry:** ${isGhostPingArmed ? '`ACTIVE & MONITORING`' : '`Disabled`'}\n` +
                      `> ${BULLET_EMOJI} **Quarantine Vault:** \`${qCount}\` isolated subject(s)\n` +
                      `> ${BULLET_EMOJI} **Join-Velocity Auto-Shield:** ${isRaidAutoShield ? '`ARMED`' : '`Disabled`'}\n` +
-                     `> ${BULLET_EMOJI} **Security Logs Sentry:** ${config.securityLogChannelId ? `<#${config.securityLogChannelId}>` : '`Not Bound`'}`
+                     `> ${BULLET_EMOJI} **Security Logs Sentry:** ${config.securityLogChannelId ? formatChannelLink(config.securityLogChannelId, guild) : '`Not Bound`'}`
           },
           { type: 14, divider: true },
           new ActionRowBuilder().addComponents(selectMenu).toJSON(),

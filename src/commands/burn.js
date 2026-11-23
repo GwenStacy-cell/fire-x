@@ -16,7 +16,7 @@ import {
   BULLET_EMOJI, 
   UPTIME_EMOJI 
 } from '../utils/emojis.js';
-import { isBotOwnerSync } from '../utils/helpers.js';
+import { isBotOwnerSync, formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export function isAuthorized(guild, member, userId) {
   if (isBotOwnerSync(userId)) return true;
@@ -127,9 +127,9 @@ export async function createBurnRoom(guild, creator, invitedUsers = [], duration
 
   // Send initial briefing inside the burn channel
   const participantMentions = [
-    `<@${creator.id}>`,
-    ...invitedUsers.map(u => `<@${u.id}>`)
-  ].join('  \u00b7  ');
+    formatUserLink(creator, guild),
+    ...invitedUsers.map(u => formatUserLink(u, guild))
+  ].join('  ·  ');
 
   const fields = [
     {
@@ -225,8 +225,8 @@ export const commands = [
         }
 
         const fields = rooms.map(r => ({
-          name: `Channel: <#${r.channelId}>`,
-          value: `**Creator:** <@${r.creatorId}>\n**Self-Destruct:** <t:${Math.floor(r.expiresAt / 1000)}:R>`,
+          name: `Channel: ${formatChannelLink(r.channelId, guild)}`,
+          value: `**Creator:** ${formatUserLink(r.creatorId, guild)}\n**Self-Destruct:** <t:${Math.floor(r.expiresAt / 1000)}:R>`,
           inline: false
         }));
 
@@ -259,7 +259,7 @@ export const commands = [
 
       return message.reply(cv2.success(
         `Ephemeral Burn Room Deployed | ${TICK_EMOJI}`,
-        `> -# **Private Room:** <#${res.channelId}>\n` +
+        `> -# **Private Room:** ${formatChannelLink(res.channelId, guild)}\n` +
         `> -# **Code:** \`#${res.roomCode}\`\n` +
         `> -# **Destruction Countdown:** <t:${Math.floor(res.expiresAt / 1000)}:R>\n` +
         `> -# The channel will self-destruct automatically when the timer reaches zero.`
@@ -293,7 +293,7 @@ export const commands = [
 
       return interaction.reply(cv2.success(
         `Ephemeral Burn Room Deployed | ${TICK_EMOJI}`,
-        `> -# **Private Room:** <#${res.channelId}>\n` +
+        `> -# **Private Room:** ${formatChannelLink(res.channelId, guild)}\n` +
         `> -# **Code:** \`#${res.roomCode}\`\n` +
         `> -# **Destruction Countdown:** <t:${Math.floor(res.expiresAt / 1000)}:R>\n` +
         `> -# The channel will self-destruct automatically when the timer reaches zero.`
