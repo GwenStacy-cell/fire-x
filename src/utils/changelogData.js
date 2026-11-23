@@ -16,6 +16,50 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '23 November 2026',
+    version: 'v3.7.9',
+    headline: 'Server Owner Exclusive Bot Addition & 100% Full Anti-Nuke Immunity Engine for Whitelisted Bots',
+    summary: 'Overhauled server bot addition and whitelist architecture across Athena Prime. Enforced strict Server Owner exclusive bot addition policy: only the Server Owner can add external bots into the server; any attempt by non-owner administrators or compromised staff to invite a bot results in immediate ban strikes against both the rogue bot and the unauthorized inviter. Transformed the Bot Whitelist (!botwhitelist add / !botwhitelist remove / !botunwhitelist) into a full Anti-Nuke immunity authorization system: whitelisted bots receive 100% full immunity to all Anti-Nuke modules (channel creation/deletion/update, role manipulation, kicks, bans, and webhooks). Unwhitelisting a bot atomically revokes its immunity, restoring active Anti-Nuke monitoring in sub-millisecond real-time.',
+    whatsNew: [
+      {
+        title: 'Server Owner Exclusive Bot Addition Policy',
+        desc: 'Only the Server Owner (and Bot Owner) can add bots into the server. All external bot additions by other staff members are automatically neutralized and banned alongside the inviter.'
+      },
+      {
+        title: '100% Full Anti-Nuke Immunity for Whitelisted Bots',
+        desc: 'Bots whitelisted via !botwhitelist add <botId> now receive complete immunity across all 28 Anti-Nuke modules without requiring redundant granular permissions.'
+      },
+      {
+        title: 'Atomic Unwhitelisting Engine (!botwhitelist remove / !botunwhitelist)',
+        desc: 'Added instant immunity revocation via !botwhitelist remove <botId> and dedicated !botunwhitelist <botId> command aliases.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Zero-Latency Inviter Resolution (resolveBotInviter)',
+        desc: 'Combined 0ms in-memory cache, audit log ring buffer, and raw Undici REST fetching with micro-retries to ensure bots invited by the Server Owner are recognized instantly with zero false bans.'
+      },
+      {
+        title: 'Strict Owner Clearance Gating',
+        desc: 'Bound botwhitelist commands strictly to the Server Owner (isBotOwnerOrServerOwnerStrict), preventing extra owners or administrators from tampering with bot immunity.'
+      },
+      {
+        title: 'Enhanced Status & Help Telemetry',
+        desc: 'Integrated !botwhitelist into the security help category (!help security), updated explainer manuals, and formatted all bot cards with clean nickname links and authorized badges.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'False Anti-Nuke Striking of Whitelisted Bots',
+        desc: 'Eliminated false tampering strikes against whitelisted bots performing legitimate server management tasks.'
+      },
+      {
+        title: 'Premature 0ms Pre-Emption Ban on Owner Invites',
+        desc: 'Resolved race condition in fastWiretap.js and guildMemberAdd.js where newly invited owner bots were banned prior to audit log verification.'
+      }
+    ]
+  },
+  {
+    date: '23 November 2026',
     version: 'v3.7.8',
     headline: 'Complete JTC Explainer & Help Documentation Suite: Dual-Mode Voice Grid, Persistent Control Deck & Anti-Nuke Harmonization Docs',
     summary: 'Comprehensive synchronization of Join to Create (JTC) architecture into Athena\'s technical explainer documentation engine (!explain), interactive guide hub (!athena), command manual catalog, slash command autocompletes, and public help menus (!help). Documents both standard minimalist lobby deployment (!jtcnormal) and the 4-tier preset voice hub (!jtcsetup tiers / !jtctiers) with persistent #voice-controls interface channels, sub-1ms Anti-Nuke bypass mechanics (isJtcInfrastructure), combat silence priority during hostile raids, and atomic teardown operations (!jtcdisable). Enforced system-wide markdown channel text links and user nickname links, with zero native Discord emojis across all voice documentation interfaces.',

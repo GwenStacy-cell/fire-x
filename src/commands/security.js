@@ -1557,52 +1557,79 @@ export const commands = [
   // --- BOTWHITELIST COMMAND ---
   {
     name: 'botwhitelist',
-    aliases: ['trustedbots', 'bw'],
-    description: 'Manages trusted bots that are allowed to be in the server (Anti-Nuke bot guard).',
+    aliases: ['trustedbots', 'bw', 'botwl', 'botunwhitelist', 'unbotwhitelist'],
+    description: 'Manages trusted bots granted full immunity to Anti-Nuke protections [Server Owner Only].',
     category: 'security',
     permissions: [],
-    slashHidden: true,
+    slashHidden: false,
     options: [
       {
         name: 'action',
-        description: 'Choose action',
+        description: 'Choose action to perform',
         type: 3,
         required: true,
         choices: [
-          { name: 'Add Bot', value: 'add' },
-          { name: 'Remove Bot', value: 'remove' },
-          { name: 'List Bots', value: 'list' }
+          { name: 'Add Bot (Grant Immunity)', value: 'add' },
+          { name: 'Remove Bot (Revoke Immunity)', value: 'remove' },
+          { name: 'List Whitelisted Bots', value: 'list' }
         ]
       },
       {
         name: 'bot_id',
-        description: 'The bot\'s User ID (right-click -> Copy ID)',
+        description: 'The bot User ID or Role ID',
         type: 3,
         required: false
       }
     ],
     async executePrefix(message, args) {
-      const allowed = await isBotOwnerOrServerOwner(message.author, message.guild);
-      if (!allowed) {
-        return message.reply(cv2.danger('Permission Denied', `${message.author} Only the **Bot Owner** and **Server Owner** can manage the bot whitelist.`));
+      const isOwner = isBotOwnerOrServerOwnerStrict(message.author.id, message.guild);
+      if (!isOwner) {
+        return message.reply(cv2.danger(
+          'Access Denied | <a:04_cross_circle:1565665644806934639>',
+          `${formatUserLink(message.author, message.guild)} Only the **Server Owner** can manage the Bot Whitelist.`
+        ));
       }
-      const action = args[0]?.toLowerCase();
-      const botId = args[1];
-      if (!action || (action !== 'list' && !botId)) {
-        return message.reply(cv2.warn('Usage', `${message.author} \`!botwhitelist add <botId>\`, \`!botwhitelist remove <botId>\`, or \`!botwhitelist list\``));
+
+      // Detect invoked alias
+      const invokedWord = message.content.trim().slice(1).split(/\s+/)[0]?.toLowerCase();
+      let action = args[0]?.toLowerCase();
+      let botId = args[1];
+
+      if (invokedWord === 'botunwhitelist' || invokedWord === 'unbotwhitelist') {
+        action = 'remove';
+        botId = args[0];
       }
+
+      if (!action || action === 'list' || action === 'show') {
+        const result = await handleBotWhitelist(message.guild, 'list', null);
+        return message.reply(result);
+      }
+
+      if ((action === 'add' || action === 'remove' || action === 'delete' || action === 'unwhitelist') && !botId) {
+        return message.reply(cv2.warn(
+          'Usage | <a:exclamation_outline1:1565666739356827759>',
+          `${formatUserLink(message.author, message.guild)} \`!botwhitelist add <botId>\`, \`!botwhitelist remove <botId>\`, or \`!botwhitelist list\``
+        ));
+      }
+
       const result = await handleBotWhitelist(message.guild, action, botId);
       await message.reply(result);
     },
     async executeSlash(interaction) {
-      const allowed = await isBotOwnerOrServerOwner(interaction.user, interaction.guild);
-      if (!allowed) {
-        return interaction.reply(cv2.danger('Permission Denied', `${interaction.user} Only the **Bot Owner** and **Server Owner** can manage the bot whitelist.`));
+      const isOwner = isBotOwnerOrServerOwnerStrict(interaction.user.id, interaction.guild);
+      if (!isOwner) {
+        return interaction.reply(cv2.danger(
+          'Access Denied | <a:04_cross_circle:1565665644806934639>',
+          `${formatUserLink(interaction.user, interaction.guild)} Only the **Server Owner** can manage the Bot Whitelist.`
+        ));
       }
       const action = interaction.options.getString('action');
       const botId = interaction.options.getString('bot_id');
       if (action !== 'list' && !botId) {
-        return interaction.reply(cv2.warn('Error', `${interaction.user} Please provide the bot's User ID.`));
+        return interaction.reply(cv2.warn(
+          'Missing ID | <a:exclamation_outline1:1565666739356827759>',
+          `${formatUserLink(interaction.user, interaction.guild)} Please provide the bot's User ID.`
+        ));
       }
       const result = await handleBotWhitelist(interaction.guild, action, botId);
       await interaction.reply(result);
@@ -4995,46 +5022,79 @@ async function handleExtraOwner(guild, moderator, action, targetUser) {
 }
 
 async function handleBotWhitelist(guild, action, botId) {
-  const cleanId = botId ? botId.replace(/[<@&!>]/g, '') : null;
+  const cleanId = botId ? botId.replace(/[<@&!>]/g, '').trim() : null;
   
-  if (action === 'add') {
-    if (!cleanId || !/^\d{17,20}$/.test(cleanId)) return cv2.warn('Invalid ID', 'Please provide a valid bot User ID or a Role mention/ID.');
+  if (action === 'add' || action === 'whitelist') {
+    if (!cleanId || !/^\d{17,20}$/.test(cleanId)) {
+      return cv2.warn(
+        'Invalid ID | <a:exclamation_outline1:1565666739356827759>',
+        'Please provide a valid bot User ID (or role ID) to whitelist.'
+      );
+    }
     db.addBotToWhitelist(guild.id, cleanId);
     
     const isRole = guild.roles.cache.has(cleanId);
     let desc = '';
     if (isRole) {
-      desc = `Role <@&${cleanId}> has been added to the **Bot Whitelist**.\n\n` +
-             `- Any bot that has this role is instantly granted **100% full immunity** to all Anti-Nuke protections.\n` +
-             `- They can create/delete channels, manage roles, kick, and ban without triggering the firewall.\n` +
-             `- To revoke a specific bot's immunity, simply remove the <@&${cleanId}> role from them, or use \`!botwhitelist remove <@&${cleanId}>\` to unwhitelist the role entirely.`;
+      const role = guild.roles.cache.get(cleanId);
+      desc = `Role **${role?.name || cleanId}** (\`${cleanId}\`) has been added to the **Bot Whitelist**.\n\n` +
+             `<a:target_blink:1565667466984554588> Any bot that holds this role is granted **100% full immunity to ALL Anti-Nuke protections**.\n` +
+             `<a:target_blink:1565667466984554588> They can create/delete channels, manage roles, kick, ban, and modify webhooks without triggering Athena's firewall.\n` +
+             `<a:target_blink:1565667466984554588> To revoke a specific bot's immunity, remove the role or run \`!botwhitelist remove ${cleanId}\`.`;
     } else {
-      desc = `Bot ID ${formatUserLink(cleanId, guild)} (\`${cleanId}\`) has been added to the **Bot Whitelist**.\n\n` +
-             `- This bot is instantly granted **100% full immunity** to all Anti-Nuke protections.\n` +
-             `- It can create/delete channels, manage roles, kick, and ban without triggering the firewall.\n` +
-             `- To revoke this immunity, use \`!botwhitelist remove ${cleanId}\`.`;
+      desc = `Bot ${formatUserLink(cleanId, guild)} (\`${cleanId}\`) has been added to the **Bot Whitelist**.\n\n` +
+             `<a:target_blink:1565667466984554588> This bot is granted **100% full immunity to ALL Anti-Nuke protections**.\n` +
+             `<a:target_blink:1565667466984554588> It can create/delete channels, manage roles, kick, ban, and modify webhooks without triggering Athena's firewall.\n` +
+             `<a:target_blink:1565667466984554588> To revoke this immunity at any time, run \`!botwhitelist remove ${cleanId}\`.`;
     }
     
-    return cv2.success('Whitelisted', desc);
-  } else if (action === 'remove') {
-    if (!cleanId) return cv2.warn('Missing ID', 'Please provide the Bot/Role ID to remove.');
-    db.removeBotFromWhitelist(guild.id, cleanId);
-    return cv2.success('Removed', `ID \`${cleanId}\` has been removed from the Bot Whitelist. It no longer has Anti-Nuke immunity.`);
+    return cv2.success('Bot Whitelisted | <a:03_tick_circle:1565665642084827206>', desc);
+  } else if (action === 'remove' || action === 'delete' || action === 'unwhitelist') {
+    if (!cleanId) {
+      return cv2.warn(
+        'Missing ID | <a:exclamation_outline1:1565666739356827759>',
+        'Please provide the Bot or Role ID to remove from the whitelist.'
+      );
+    }
+    const removed = db.removeBotFromWhitelist(guild.id, cleanId);
+    if (!removed) {
+      return cv2.warn(
+        'Not Whitelisted | <a:exclamation_outline1:1565666739356827759>',
+        `ID \`${cleanId}\` was not found in the Bot Whitelist.`
+      );
+    }
+    return cv2.success(
+      'Bot Unwhitelisted | <a:03_tick_circle:1565665642084827206>',
+      `ID ${formatUserLink(cleanId, guild)} (\`${cleanId}\`) has been **unwhitelisted** from the Bot Whitelist.\n\n` +
+      `<a:target_blink:1565667466984554588> Its Anti-Nuke immunity has been completely revoked.\n` +
+      `<a:target_blink:1565667466984554588> Any future administrative actions (channel deletions, role edits, bans, kicks) will be subject to Athena's firewall.`
+    );
   } else {
     const list = db.getBotWhitelist(guild.id);
-    if (list.length === 0) return cv2.info('No Whitelisted Bots/Roles', 'No bots or roles are currently whitelisted.\n\nUse `!botwhitelist add <botId/roleId>` to whitelist a trusted bot or role.');
+    if (list.length === 0) {
+      return cv2.info(
+        'Bot Whitelist Empty | <a:uptime:1552608831060844575>',
+        'No external bots or roles are currently whitelisted.\n\n' +
+        '<a:target_blink:1565667466984554588> Use `!botwhitelist add <botId>` to grant a trusted bot full Anti-Nuke immunity.\n' +
+        '<a:target_blink:1565667466984554588> Remember: Only the Server Owner can add bots into this server.'
+      );
+    }
     
     const formatted = await Promise.all(list.map(async id => {
       const role = guild.roles.cache.get(id);
-      if (role) return `- **Role:** ${role} (\`${id}\`)`;
+      if (role) return `<a:target_blink:1565667466984554588> **Role:** \`@${role.name}\` (\`${id}\`) — *Full Anti-Nuke Immunity*`;
       
-      const user = await guild.client.users.fetch(id).catch(() => null);
-      if (user) return `- **Bot:** ${user} (\`${id}\`)`;
+      const user = guild.client.users.cache.get(id) || await guild.client.users.fetch(id).catch(() => null);
+      if (user) return `<a:target_blink:1565667466984554588> **Bot:** ${formatUserLink(user, guild)} (\`${id}\`) — *Full Anti-Nuke Immunity*`;
       
-      return `- **Unknown:** \`${id}\``;
+      return `<a:target_blink:1565667466984554588> **Entity:** \`${id}\` — *Full Anti-Nuke Immunity*`;
     }));
     
-    return cv2.info('Whitelisted Bots & Roles', `The following entities have full Anti-Nuke immunity:\n\n${formatted.join('\n')}`);
+    return cv2.info(
+      'Whitelisted Bots & Roles | <a:uptime:1552608831060844575>',
+      `The following bots have **100% full immunity** to all Anti-Nuke protections:\n\n${formatted.join('\n')}\n\n` +
+      `-# To revoke immunity from any bot, use \`!botwhitelist remove <botId>\` (or \`!botunwhitelist <botId>\`).`
+    );
   }
 }
 

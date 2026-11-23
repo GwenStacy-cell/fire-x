@@ -1382,11 +1382,12 @@ const recentBans = new Map();
 // IS BOT AUTHORIZED
 // ==========================================
 export function isBotAuthorized(guild, botId) {
-  if (botId === guild.members.me?.id) return true;
+  if (!guild || !botId) return false;
+  if (botId === guild.client?.user?.id || botId === guild.members?.me?.id) return true;
   if (isBotOwnerSync(botId)) return true;
   if (botId === guild.ownerId) return true;
   if (db.isExtraOwner(guild.id, botId)) return true;
-  if (db.isBotWhitelisted && db.isBotWhitelisted(guild.id, botId)) return true;
+  if (db.isBotWhitelisted && db.isBotWhitelisted(guild, botId)) return true;
   const botWhitelist = db.getBotWhitelist ? db.getBotWhitelist(guild.id) : [];
   if (botWhitelist.includes(botId)) return true;
   const member = guild.members.cache.get(botId);
@@ -1487,13 +1488,12 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
     return isBotAuthorized(guild, executor.id);
   }
 
-  // ⚡ MILITARY GRADE ZERO-TOLERANCE:
-  // 3rd-party bots are STRICTLY FORBIDDEN from performing destructive administrative actions!
-  // Being in the server botWhitelist ONLY authorizes a bot to exist in the server (antiBotAdd).
-  // It NEVER authorizes a bot to delete channels, delete roles, kick, ban, or modify server settings!
+  // ⚡ BOT WHITELIST AUTHORIZATION:
+  // Bots added to the Bot Whitelist (via !botwhitelist add) are granted 100% full immunity to ALL Anti-Nuke protections.
+  // Unwhitelisting a bot (via !botwhitelist remove) revokes this immunity.
   const isBot = Boolean(executor.bot || guild.members.cache.get(executor.id)?.user?.bot);
   if (isBot) {
-    // Only authorized if explicitly granted per-module whitelist for this exact destructive event
+    if (isBotAuthorized(guild, executor.id)) return true;
     return db.isWhitelisted(guild, executor.id, eventType);
   }
 
@@ -1638,8 +1638,8 @@ export function recordBotInviter(guildId, botId, inviterId) {
   botInviterMap.set(`${guildId}:${botId}`, inviterId);
 }
 
-export async function cascadeToInviter(guild, botId) {
-  if (!guild || !botId || botId === guild.client.user.id) return;
+export async function resolveBotInviter(guild, botId) {
+  if (!guild || !botId || botId === guild.client?.user?.id) return null;
   try {
     let inviterId = botInviterMap.get(`${guild.id}:${botId}`);
     if (!inviterId) {
@@ -1659,6 +1659,33 @@ export async function cascadeToInviter(guild, botId) {
         recordBotInviter(guild.id, botId, inviterId);
       }
     }
+    // ⚡ Fast-path 3: Micro-retry after 120ms if audit log entry hasn't settled yet
+    if (!inviterId) {
+      await new Promise(r => setTimeout(r, 120));
+      const ring2 = getRecentAuditEntry(guild.id, AuditLogEvent.BotAdd, botId);
+      if (ring2?.executorId) {
+        inviterId = ring2.executorId;
+        recordBotInviter(guild.id, botId, inviterId);
+      } else {
+        const rawData2 = await rawFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.BotAdd);
+        const rawEntry2 = rawData2?.audit_log_entries?.find(e => e.target_id === botId);
+        if (rawEntry2?.user_id) {
+          inviterId = rawEntry2.user_id;
+          recordBotInviter(guild.id, botId, inviterId);
+        }
+      }
+    }
+    return inviterId || null;
+  } catch (err) {
+    console.error(`[AntiNuke] Error resolving bot inviter of ${botId}:`, err.message);
+    return null;
+  }
+}
+
+export async function cascadeToInviter(guild, botId) {
+  if (!guild || !botId || botId === guild.client.user.id) return;
+  try {
+    const inviterId = await resolveBotInviter(guild, botId);
 
     if (inviterId && inviterId !== guild.client.user.id && !isAuthorized(guild, { id: inviterId })) {
       console.log(`[AntiNuke CASCADE] Malicious bot ${botId} was invited by ${inviterId}. Neutralizing inviter!`);

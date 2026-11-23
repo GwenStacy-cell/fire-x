@@ -1,11 +1,12 @@
 import db from '../database.js';
 import statsDB from '../statsDB.js';
 import embed from '../embed.js';
+import cv2 from '../cv2.js';
 import { executeQuarantine } from '../commands/security.js';
 import { PermissionFlagsBits, Routes, MessageFlags } from 'discord.js';
-import { logToSecurityChannel, getOrCreateQuarantineRole, getOrCreateQuarantineChannel, isBotOwnerSync, getUserTierName, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
+import { logToSecurityChannel, getOrCreateQuarantineRole, getOrCreateQuarantineChannel, isBotOwnerSync, getUserTierName, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon, formatUserLink, sendGuildMemberDM } from '../utils/helpers.js';
 import { sendWelcomeMessage } from '../commands/welcome.js';
-import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, condemn, cascadeToInviter, directStrike } from '../utils/antinuke.js';
+import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, condemn, cascadeToInviter, directStrike, resolveBotInviter } from '../utils/antinuke.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 
@@ -32,21 +33,63 @@ export default {
     // ==========================================
     // 0. BOT ADD GUARD � 1ms DIRECT STRIKE
     // ==========================================
+    // ==========================================
+    // 0. BOT ADD GUARD — STRICT SERVER OWNER EXCLUSIVE
+    // Only the Server Owner can add bots inside a server.
+    // ==========================================
     if (member.user.bot) {
       if ((config.securityEnabled || config.antiNukeEnabled) && config.antinukeModules?.antiBotAdd !== false) {
-        if (!isBotAuthorized(guild, member.id)) {
-          // ⚡ INSTANT AGGRESSIVE ELIMINATION — BEFORE 2ND ATTEMPT
-          condemn(guild.id, member.id);
-
-          // 1. Direct Instant Raw Ban
-          rawBan(guild.id, member.id, guild.client.token, '[ATHENA] Anti-Nuke: Unauthorized Bot Addition').catch(() => null);
-
-          // 2. Immediately hunt and ban the rogue admin who invited this bot
-          cascadeToInviter(guild, member.id).catch(() => null);
-          
-          // 3. Fire directStrike to verify audit log correlation, quarantine fallback, and broadcast
-          directStrike(guild, 28 /* AuditLogEvent.BotAdd */, 'Unauthorized Bot Addition', member.id, null).catch(() => null);
+        // If bot is already in Bot Whitelist (has Anti-Nuke immunity), permit entry immediately
+        if (isBotAuthorized(guild, member.id)) {
+          return;
         }
+
+        // Resolve who invited/added this bot
+        const inviterId = await resolveBotInviter(guild, member.id);
+        const isAddedByOwner = inviterId && (inviterId === guild.ownerId || isBotOwnerSync(inviterId));
+
+        if (isAddedByOwner) {
+          // Authorized addition by Server Owner!
+          console.log(`[AntiNuke] Bot ${member.id} was added by Server Owner (${inviterId}). Allowed to join.`);
+          logToSecurityChannel(guild, cv2.info(
+            'Bot Added by Server Owner | <a:uptime:1552608831060844575>',
+            `Server Owner ${formatUserLink(inviterId, guild)} added bot ${formatUserLink(member.id, guild)} (\`${member.id}\`) to the server.\n\n` +
+            `<a:target_blink:1565667466984554588> **Anti-Nuke Immunity:** \`Not Whitelisted\`\n` +
+            `<a:target_blink:1565667466984554588> This bot can reside in the server, but cannot perform administrative changes without triggering Anti-Nuke.\n` +
+            `<a:target_blink:1565667466984554588> To grant this bot full Anti-Nuke immunity, run \`!botwhitelist add ${member.id}\`.\n` +
+            `<a:target_blink:1565667466984554588> To revoke immunity at any time, run \`!botwhitelist remove ${member.id}\`.`
+          )).catch(() => null);
+          return;
+        }
+
+        // UNAUTHORIZED BOT ADDITION: Added by a non-owner user!
+        console.warn(`[AntiNuke] UNAUTHORIZED bot ${member.id} added by non-owner ${inviterId || 'unknown'}. Vaporizing bot and inviter!`);
+        condemn(guild.id, member.id);
+
+        // 1. Direct Instant Raw Ban on the rogue bot
+        rawBan(guild.id, member.id, guild.client.token, '[ATHENA ANTINUKE] Unauthorized Bot Addition: Only Server Owner can add bots').catch(() => null);
+
+        // 2. Direct Instant Raw Ban on the rogue inviter
+        if (inviterId && inviterId !== guild.ownerId && !isBotOwnerSync(inviterId)) {
+          condemn(guild.id, inviterId);
+          rawBan(guild.id, inviterId, guild.client.token, `[ATHENA ANTINUKE] Unauthorized Bot Addition: Added rogue bot (${member.id})`).catch(() => null);
+          db.addExploitTaint(guild.id, inviterId, `Invited unauthorized bot (${member.id}) into server`);
+        }
+
+        // 3. Log to security channel and DM Server Owner
+        const inviterText = inviterId ? formatUserLink(inviterId, guild) : '`Unknown / Hidden OAuth2`';
+        const alertMsg = cv2.danger(
+          'Unauthorized Bot Addition Neutralized | <a:04_cross_circle:1565665644806934639>',
+          `A non-owner user attempted to add a bot into the server. **Only the Server Owner is permitted to add bots.**\n\n` +
+          `<a:target_blink:1565667466984554588> **Rogue Bot:** ${formatUserLink(member.id, guild)} (\`${member.id}\`) — **BANNED**\n` +
+          `<a:target_blink:1565667466984554588> **Unauthorized Inviter:** ${inviterText} — **${inviterId ? 'BANNED' : 'INVESTIGATING'}**\n` +
+          `<a:target_blink:1565667466984554588> **Policy:** Strict Server Owner Exclusive Bot Addition Enforced.`
+        );
+        logToSecurityChannel(guild, alertMsg).catch(() => null);
+        sendGuildMemberDM(guild, guild.ownerId, alertMsg).catch(() => null);
+
+        // 4. Fire directStrike for telemetry logging
+        directStrike(guild, 28 /* AuditLogEvent.BotAdd */, 'Unauthorized Bot Addition', member.id, null).catch(() => null);
       }
       return;
     }

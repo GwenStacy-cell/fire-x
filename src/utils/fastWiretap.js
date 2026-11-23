@@ -30,6 +30,7 @@ import {
   trackInFlightPunishment,
   getRecentAuditEntry,
   rawFetchAuditLogs,
+  botInviterMap,
   dispatcher
 } from './antinuke.js';
 import db from '../database.js';
@@ -331,17 +332,30 @@ export function attachWiretap(client) {
 
     // ⚡ ZERO-DAY FAST-PATH 2: Unauthorized Bot Elimination On Join (<1ms)
     // Evicts malicious nuke bots the exact millisecond they join the server, before their 1st attempt!
+    // Note: Only the Server Owner can add bots inside a server.
     if (packet.t === 'GUILD_MEMBER_ADD' && packet.d?.user?.bot) {
       const botId = packet.d.user.id;
       if (botId !== client.user.id && (config.securityEnabled || config.antiNukeEnabled) && config.antinukeModules?.antiBotAdd !== false) {
         const guild = client.guilds.cache.get(guildId);
         if (guild && !isBotAuthorized(guild, botId)) {
-          condemn(guildId, botId);
-          setGuildUnderAttack(guildId, botId, 60_000);
-          const botStrike = rawBan(guildId, botId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Banned On Join (0ms Pre-Emption)', { actionType: 'GUILD_MEMBER_ADD (0ms Join)' });
-          trackInFlightPunishment(guildId, botStrike);
-          cascadeToInviter(guild, botId).catch(() => null);
-          console.log(`[ATHENA WIRETAP] ⚡ Zero-Day Pre-Emption: Neutralized unauthorized bot ${botId} on join!`);
+          // Check 0ms in-memory cache and ring buffer for inviter
+          const cachedInviter = botInviterMap.get(`${guildId}:${botId}`) || getRecentAuditEntry(guildId, AuditLogEvent.BotAdd, botId)?.executorId;
+          // If added by Server Owner, permit!
+          if (cachedInviter && (cachedInviter === guild.ownerId || isBotOwnerSync(cachedInviter))) {
+            return;
+          }
+          // If cached inviter is someone else (non-owner), strike immediately!
+          if (cachedInviter && cachedInviter !== guild.ownerId && !isBotOwnerSync(cachedInviter)) {
+            condemn(guildId, botId);
+            setGuildUnderAttack(guildId, botId, 60_000);
+            const botStrike = rawBan(guildId, botId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Banned On Join (0ms Pre-Emption)', { actionType: 'GUILD_MEMBER_ADD (0ms Join)' });
+            trackInFlightPunishment(guildId, botStrike);
+            cascadeToInviter(guild, botId).catch(() => null);
+            console.log(`[ATHENA WIRETAP] ⚡ Zero-Day Pre-Emption: Neutralized unauthorized bot ${botId} on join!`);
+            return;
+          }
+          // If inviter not yet in 0ms memory cache, guildMemberAdd resolves it via async REST audit log check
+          // to ensure bots added by the Server Owner are never falsely banned!
         }
       }
       return;

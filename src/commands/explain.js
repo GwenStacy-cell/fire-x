@@ -100,6 +100,7 @@ export const commands = [
           { name: 'Heuristics: Adaptive Profiling & Threat Signatures', value: 'learn' },
           { name: 'Command: !learn (Heuristic Antinuke Profiling)', value: 'learn' },
           { name: 'Command: !antinuke (Defense Panel & Wiretap)', value: 'antinuke' },
+          { name: 'Command: !botwhitelist (Anti-Nuke Bot Immunity)', value: 'botwhitelist' },
           { name: 'Command: !unbypassable (Sentinel Persistence)', value: 'unbypassable' },
           { name: 'Command: !vcdrag (Voice Loop Drag Engine)', value: 'vcdrag' },
           { name: 'Command: !massmove (Atomic Voice Relocation)', value: 'massmove' },

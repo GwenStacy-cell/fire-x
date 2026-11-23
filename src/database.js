@@ -1872,9 +1872,14 @@ class Database {
   }
 
   removeBotFromWhitelist(guildId, botId) {
-    if (!this.cache.botWhitelist[guildId]) return;
+    if (!this.cache.botWhitelist || !this.cache.botWhitelist[guildId]) return false;
+    const initialLen = this.cache.botWhitelist[guildId].length;
     this.cache.botWhitelist[guildId] = this.cache.botWhitelist[guildId].filter(id => id !== botId);
-    this.save();
+    if (this.cache.botWhitelist[guildId].length !== initialLen) {
+      this.save();
+      return true;
+    }
+    return false;
   }
 
   // Emergency State
@@ -1894,8 +1899,17 @@ class Database {
     }
   }
 
-  isBotWhitelisted(guildId, botId) {
-    return (this.cache.botWhitelist?.[guildId] || []).includes(botId);
+  isBotWhitelisted(guildOrGuildId, botId) {
+    if (!botId) return false;
+    const guildId = typeof guildOrGuildId === 'string' ? guildOrGuildId : guildOrGuildId?.id;
+    if (!guildId) return false;
+    const list = this.cache.botWhitelist?.[guildId] || [];
+    if (list.includes(botId)) return true;
+    if (typeof guildOrGuildId === 'object' && guildOrGuildId?.members) {
+      const member = guildOrGuildId.members.cache.get(botId);
+      if (member && list.some(id => member.roles.cache.has(id))) return true;
+    }
+    return false;
   }
 
   // ==========================================

@@ -2977,13 +2977,23 @@ export const DETAILED_COMMANDS = {
 
   botwhitelist: {
     name: 'botwhitelist',
-    aliases: ['trustedbots', 'bw'],
+    aliases: ['trustedbots', 'bw', 'botwl', 'botunwhitelist', 'unbotwhitelist'],
     category: 'Security & Access Control',
-    clearance: 'Extra Owner / Server Owner',
-    syntax: '!botwhitelist [add|remove|list] <botId>',
-    purpose: 'Authorizes trusted external bots to prevent instant auto-ban on join.',
+    clearance: 'Server Owner Only',
+    syntax: '!botwhitelist [add|remove|list] <botId> / !botunwhitelist <botId>',
+    purpose: 'Authorizes trusted external bots and grants them 100% full immunity across all Anti-Nuke protections.',
     architecture: 
-`• **Whitelist Registry:** Stores authorized bot IDs in SQLite configuration. Any non-whitelisted bot added is banned in <1ms.`,
+`• **Strict Server Owner Exclusive Addition:**
+  - In Athena, only the **Server Owner** can add bots inside the server.
+  - If any non-owner admin attempts to invite an external bot, Athena intercepts the addition within milliseconds, bans the rogue bot, and bans the unauthorized inviter.
+
+• **100% Full Anti-Nuke Immunity:**
+  - Adding a bot via \`!botwhitelist add <botId>\` grants that bot 100% complete immunity to all Anti-Nuke modules.
+  - Whitelisted bots can create/delete channels, modify roles, kick, ban, and manage webhooks without triggering Athena's firewall or rollback actions.
+
+• **Instant Revocation (\`!botwhitelist remove\` / \`!botunwhitelist\`):**
+  - Atomically purges the bot from the whitelist in SQLite storage.
+  - Immediately restores full Anti-Nuke monitoring and firewall enforcement over that bot.`,
     example: '!botwhitelist add 123456789012345678'
   },
 
