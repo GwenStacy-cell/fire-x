@@ -1568,11 +1568,11 @@ export const DETAILED_COMMANDS = {
     aliases: ['market', 'store'],
     category: 'Community & Engagement',
     clearance: 'Public (View/Buy) / Extra Owner (Add/Remove Roles)',
-    syntax: '!shop [crates|boosters|collectibles|roles] | !shop buy <item_id> [quantity]',
-    purpose: 'Browse and purchase mystery crates, luck boosters, streak shields, prestige collectibles, and server roles.',
+    syntax: '!shop [crates|boosters|gear|gems|collectibles|pets|roles] | !shop buy <item_id> [quantity] | !shop sell <item_id> [quantity]',
+    purpose: 'Browse and purchase across 7 commerce departments: mystery crates, luck boosters, hunting/fishing gear, rare gems, luxury flex pieces, companion eggs, and server roles.',
     architecture:
-`• **Multi-Department Catalog:** Interactive Components V2 department switcher spanning Mystery Crates, Boosters & Charms, Prestige Collectibles, and Server Roles.
-• **Atomic Multi-Quantity Purchasing:** Validates wallet balance and atomically adds items to user backpack (!inv) or assigns Discord roles.`,
+`• **7-Department Catalog:** Interactive Components V2 catalog spanning Mystery Crates, Boosters & Charms, Adventure Gear, Gems & Ores, Prestige Collectibles, Mythical Eggs, and Server Roles.
+• **Atomic Multi-Quantity Purchasing & Selling:** Validates wallet balance and atomically adds items to user backpack (!inv) or liquidates mined ores and aquatic catches for cash.`,
     example: '!shop buy crate_common 3'
   },
 
@@ -1634,11 +1634,63 @@ export const DETAILED_COMMANDS = {
     category: 'Community & Engagement',
     clearance: 'Public / Everyone',
     syntax: '!coinflip <heads|tails> <amount>',
-    purpose: 'Wager coins in a provably fair 50/50 double-or-nothing coin toss with Lucky Clover and Gambler\'s Charm synergy.',
+    purpose: 'Wager coins in a provably fair 50/50 double-or-nothing coin toss with Lucky Clover, Golden Horseshoe, and Phoenix Feather synergy.',
     architecture:
-`• **Atomic Ledger Verification:** Deducts bet before coin execution and credits 2x payout (or 2.25x with Gambler's Charm) immediately on victory.
-• **Luck Integration:** Boosts win probability from 50% to 60% when Lucky Clover booster is active.`,
+`• **Atomic Ledger Verification:** Deducts bet before coin execution and credits payouts immediately on victory.
+• **Gear & Buff Synergy:** Boosts win probability with Lucky Clovers (+12%) and Golden Horseshoe (+20%), plus Phoenix Feather loss salvage.`,
     example: '!coinflip heads 100'
+  },
+
+  sell: {
+    name: 'sell',
+    aliases: ['market-sell'],
+    category: 'Community & Engagement',
+    clearance: 'Public / Everyone',
+    syntax: '!sell <item_id> [quantity]',
+    purpose: 'Liquidate mined ores, caught fish, gems, or spare gear from your backpack for instant Athena coins.',
+    architecture:
+`• **Instant Liquidation:** Converts backpack items to coins at established unit resale values.
+• **Atomic Deductions:** Atomically checks owned item counts and credits user wallet with instant audit confirmation.`,
+    example: '!sell gem_ruby 1'
+  },
+
+  hunt: {
+    name: 'hunt',
+    aliases: ['h'],
+    category: 'Community & Engagement',
+    clearance: 'Public / Everyone',
+    syntax: '!hunt / !h',
+    purpose: 'Embark on a woodland hunt to track and capture wildlife for coin bounties.',
+    architecture:
+`• **Gear Scaling:** Integrates with Hunter\'s Longbow (+30% coins), Dragon Crossbow (+75% coins & Mythical Tier), and Golden Net (2x Mythic rate).
+• **Cooldown & Synergies:** 15s cooldown, instantly resettable with Hourglass of Chronos, plus +35 coins from Coin Magnet.`,
+    example: '!hunt'
+  },
+
+  fish: {
+    name: 'fish',
+    aliases: ['f'],
+    category: 'Community & Engagement',
+    clearance: 'Public / Everyone',
+    syntax: '!fish / !f',
+    purpose: 'Cast your line into deep ocean waters for aquatic bounties and sunken treasure chests.',
+    architecture:
+`• **Deep-Sea Equipment:** Synergizes with Sturdy Fishing Rod, Titan Harpoon (+75%), Golden Net, and Enchanted Bait.
+• **Sunken Treasure Drops:** Chance to salvage rare cut rubies and sapphires from sunken pirate galleons.`,
+    example: '!fish'
+  },
+
+  mine: {
+    name: 'mine',
+    aliases: ['dig', 'm'],
+    category: 'Community & Engagement',
+    clearance: 'Public / Everyone',
+    syntax: '!mine / !dig / !m',
+    purpose: 'Excavate subterranean shafts to extract coal, iron ingots, gold bullion, and rare gemstones.',
+    architecture:
+`• **Mining Excavation:** Benefits from Sturdy Iron Pickaxe, Diamond Core Drill (3x gem frequency), and Mining Dynamite (3x blast chunks).
+• **Economy Integration:** Mined ores and gems are saved to backpack and can be sold with \`!sell <id>\` for huge coin payouts.`,
+    example: '!mine'
   },
 
   blackjack: {

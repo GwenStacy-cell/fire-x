@@ -16,6 +16,54 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.9.0',
+    headline: '52-Item Global Market Expansion, Action Mini-Games (!hunt, !fish, !mine) & Instant Liquidation (!sell)',
+    summary: 'Massively expanded Athena\'s commerce catalog to 52 items across 7 distinct departments (Mystery Crates & Vaults, Boosters & Potions, Adventure Gear, Gems & Ores, Prestige Flex Assets, Mythical Eggs, and Server Roles). Introduced rich OwO-style action mini-games: !hunt (track forest wildlife for bounties), !fish (catch deep-sea leviathans and sunken treasure), and !mine (excavate coal, iron, gold, and rare gem deposits). Added !sell / !shop sell to liquidate goods for instant coin payouts, plus Phoenix Feather loss salvage, Golden Horseshoe extreme fortune, Loaded Dice, and Hourglass of Chronos cooldown resets.',
+    whatsNew: [
+      {
+        title: '52-Item 7-Department Global Catalog (!shop)',
+        desc: 'Spanning Mystery Crates & Relic Vaults, Boosters & Potions, Adventure & Gathering Gear, Gems & Ores, Prestige & Luxury Flex Pieces, Mythical Eggs, and Server Roles.'
+      },
+      {
+        title: 'Wildlife Hunting Engine (!hunt / !h)',
+        desc: 'Track and capture woodland game for coin bounties. Synergizes with Hunter\'s Longbow (+30%), Dragon Crossbow (+75% and Mythical Kirin / Griffin tier), Golden Net, and Enchanted Bait.'
+      },
+      {
+        title: 'Deep-Sea Fishing Engine (!fish / !f)',
+        desc: 'Reel in ocean catches and sunken pirate galleons. Synergizes with Sturdy Fishing Rod, Titan Deep-Sea Harpoon (+75%), and salvages rare gems from the abyss.'
+      },
+      {
+        title: 'Subterranean Mining Engine (!mine / !dig / !m)',
+        desc: 'Excavate underground shafts to uncover Coal, Refined Iron Ingots, Pure Gold Bullion, and cut gemstones (Rubies, Sapphires, Emeralds, Amethysts) with pickaxes and dynamite.'
+      },
+      {
+        title: 'Instant Commerce Liquidation (!sell)',
+        desc: 'Liquidate mined ores, captured catches, gems, and spare backpack goods for instant coin earnings at established market values.'
+      },
+      {
+        title: 'Advanced Boosters & Loss Insurance',
+        desc: 'Equip Phoenix Feathers (50% casino defeat loss refund), Golden Horseshoes (+20% extreme luck), Loaded Dice (+15% casino payout bonus), and Hourglass of Chronos (instant cooldown reset).'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Strict Discord ActionRow Button Limits',
+        desc: 'Split shop department buttons across compliant 5-button rows with integrated Backpack and Claim Daily shortcuts.'
+      },
+      {
+        title: 'Full Emoji Registry Preparation',
+        desc: 'Centralized ITEM_EMOJIS registry configured across all 52 items ready for custom animated/static Discord emoji attachments.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'User & Channel Mention Compliance',
+        desc: 'Replaced all raw <@userId> mentions across economy cards and transaction receipts with formatted nickname hyperlinks.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.9',
     headline: 'OwO-Style Global Commerce Matrix, Mystery Crates, Consumables & Casino Slots',
     summary: 'Transformed Athena\'s economy into a rich, OwO-style interactive gaming and commerce ecosystem. Introduced a multi-department Global Market (!shop) featuring Mystery Crates, timed Luck Boosters, Streak Shields, and Prestige Collectibles. Added full backpack inventory tracking (!inv), crate unboxing (!open), booster consumption (!use), and an iconic 3-reel casino slot machine (!slots) with jackpot multipliers. Integrated cross-game shop discovery tips across all economy and casino commands.',
