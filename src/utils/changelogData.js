@@ -16,6 +16,38 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.9.4',
+    headline: 'Sleek & Minimal Voice Control Panel UI Redesign',
+    summary: 'Streamlined the Server Owner Voice Control Panel (!vcpanel) with a modern, compact interface. Removed the oversized server avatar accessory, eliminated redundant button control text lists, rendered all channel/member metadata in sleek grey subtext, and reorganized the 18 voice actions into four perfectly balanced control rows.',
+    whatsNew: [
+      {
+        title: 'Minimalist Header & Avatar Removal',
+        desc: 'Removed the top-right server avatar accessory, giving the control panel title full layout width without awkward multi-line text wrapping.'
+      },
+      {
+        title: 'Unified Grey Subtext Typography',
+        desc: 'Applied sleek grey font styling (-#) across server owner tags, channel links, connected member rosters, and operational dispatches.'
+      },
+      {
+        title: 'Balanced 4-Row Button Architecture',
+        desc: 'Reorganized 18 voice action buttons into four balanced rows (Mass Audio, Target User, Member Moderation, Channel Privacy), completely preventing row overflow on Discord mobile.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'De-Cluttered Interface',
+        desc: 'Eliminated redundant monospace lists of button names, letting the interactive buttons directly drive the UI.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Layout Stability',
+        desc: 'Prevented awkward mobile button wrapping and truncated button labels.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.9.3',
     headline: 'Bot Command Blacklisting & Unblacklisting Suite (!bl / !unbl) with Custom Embed Telemetry',
     summary: 'Introduced dedicated !bl and !unbl commands enabling Server Owners, Extra Owners, and Bot Owners to blacklist and unblacklist users from executing any bot commands. Deployed sleek embed cards matching exact specifications with nickname hyperlinks, moderator links, appeal status, and custom # thumbnail badges. Completely gates blacklisted accounts from all commands and interactions across servers.',

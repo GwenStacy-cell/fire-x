@@ -35,63 +35,73 @@ export const commands = [
       // 3. Build UI Function
       const generatePayload = () => {
         const currentMembers = voiceChannel.members;
-        const connectedTags = currentMembers.size > 0 ? currentMembers.map(m => formatUserLink(m, message.guild)).join(', ') : '`None`';
-        const guildIconUrl = message.guild.iconURL({ dynamic: true, size: 128 }) || null;
+        const connectedTags = currentMembers.size > 0 
+          ? currentMembers.map(m => formatUserLink(m, message.guild)).join(', ') 
+          : '`None`';
 
-        const headerSection = {
-          type: 9,
-          components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **Server Owner Voice | Control Panel**\n` +
-            `-# **Server Owner:** ${formatUserLink(message.guild.ownerId, message.guild)} | **Channel:** ${formatChannelLink(voiceChannel, message.guild)}\n` +
-            `-# **Connected Members (${currentMembers.size}):** ${connectedTags}`
-          }],
-          ...(guildIconUrl ? { accessory: { type: 11, media: { url: guildIconUrl } } } : {})
-        };
-
-        const controlsText =
-          `-# **Button Controls:**\n` +
-          `-# \`Mute All\` \`Unmute All\` \`VMute 1\` \`VUnmute 1\`\n` +
-          `-# \`VC Kick\` \`VC Ban\` \`VC Kick All\` \`VC Ban All\`\n` +
-          `-# \`VC Unban\` \`VC Unban All\`\n` +
-          `-# \`Deafen 1\` \`Undeafen 1\` \`Deafen All\` \`Undeafen All\`\n` +
-          `-# \`Lock VC\` \`Unlock VC\` \`Hide VC\` \`Unhide VC\``;
+        const ownerLink = formatUserLink(message.guild.ownerId, message.guild);
+        const channelLink = formatChannelLink(voiceChannel, message.guild);
 
         const container = {
           type: 17,
           components: [
-            headerSection,
+            {
+              type: 10,
+              content: 
+                `# ${getRandomHeadingGlyph()} **Server Owner Voice | Control Panel**\n` +
+                `-# **Server Owner:** ${ownerLink} • **Channel:** ${channelLink}\n` +
+                `-# **Connected Members (${currentMembers.size}):** ${connectedTags}`
+            },
             { type: 14, divider: true },
-            { type: 10, content: controlsText },
+            {
+              type: 10,
+              content:
+                `-# **Active Voice Controls & Instant Dispatch**\n` +
+                `-# Tap any button below to manage connected members, audio states, and channel privacy.`
+            },
+            {
+              type: 1,
+              components: [
+                { type: 2, custom_id: 'vcp_mute_all', label: 'Mute All', style: 2 },
+                { type: 2, custom_id: 'vcp_unmute_all', label: 'Unmute All', style: 2 },
+                { type: 2, custom_id: 'vcp_deafen_all', label: 'Deafen All', style: 2 },
+                { type: 2, custom_id: 'vcp_undeafen_all', label: 'Undeafen All', style: 2 }
+              ]
+            },
+            {
+              type: 1,
+              components: [
+                { type: 2, custom_id: 'vcp_mute_1', label: 'VMute 1', style: 2 },
+                { type: 2, custom_id: 'vcp_unmute_1', label: 'VUnmute 1', style: 2 },
+                { type: 2, custom_id: 'vcp_deafen_1', label: 'Deafen 1', style: 2 },
+                { type: 2, custom_id: 'vcp_undeafen_1', label: 'Undeafen 1', style: 2 }
+              ]
+            },
+            {
+              type: 1,
+              components: [
+                { type: 2, custom_id: 'vcp_kick_1', label: 'VC Kick', style: 2 },
+                { type: 2, custom_id: 'vcp_ban_1', label: 'VC Ban', style: 2 },
+                { type: 2, custom_id: 'vcp_unban_1', label: 'VC Unban', style: 2 },
+                { type: 2, custom_id: 'vcp_kick_all', label: 'Kick All', style: 2 },
+                { type: 2, custom_id: 'vcp_ban_all', label: 'Ban All', style: 2 }
+              ]
+            },
+            {
+              type: 1,
+              components: [
+                { type: 2, custom_id: 'vcp_unban_all', label: 'Unban All', style: 2 },
+                { type: 2, custom_id: 'vcp_lock', label: 'Lock VC', style: 2 },
+                { type: 2, custom_id: 'vcp_unlock', label: 'Unlock VC', style: 2 },
+                { type: 2, custom_id: 'vcp_hide', label: 'Hide VC', style: 2 },
+                { type: 2, custom_id: 'vcp_unhide', label: 'Unhide VC', style: 2 }
+              ]
+            },
             { type: 14, divider: true },
-            { type: 1, components: [
-              { type: 2, custom_id: 'vcp_mute_all', label: 'Mute All', style: 2 },
-              { type: 2, custom_id: 'vcp_unmute_all', label: 'Unmute All', style: 2 },
-              { type: 2, custom_id: 'vcp_mute_1', label: 'VMute 1', style: 2 },
-              { type: 2, custom_id: 'vcp_unmute_1', label: 'VUnmute 1', style: 2 }
-            ]},
-            { type: 1, components: [
-              { type: 2, custom_id: 'vcp_kick_1', label: 'VC Kick', style: 2 },
-              { type: 2, custom_id: 'vcp_ban_1', label: 'VC Ban', style: 2 },
-              { type: 2, custom_id: 'vcp_kick_all', label: 'VC Kick All', style: 2 },
-              { type: 2, custom_id: 'vcp_ban_all', label: 'VC Ban All', style: 2 }
-            ]},
-            { type: 1, components: [
-              { type: 2, custom_id: 'vcp_unban_1', label: 'VC Unban', style: 2 },
-              { type: 2, custom_id: 'vcp_unban_all', label: 'VC Unban All', style: 2 }
-            ]},
-            { type: 1, components: [
-              { type: 2, custom_id: 'vcp_deafen_1', label: 'Deafen 1', style: 2 },
-              { type: 2, custom_id: 'vcp_undeafen_1', label: 'Undeafen 1', style: 2 },
-              { type: 2, custom_id: 'vcp_deafen_all', label: 'Deafen All', style: 2 },
-              { type: 2, custom_id: 'vcp_undeafen_all', label: 'Undeafen All', style: 2 }
-            ]},
-            { type: 1, components: [
-              { type: 2, custom_id: 'vcp_lock', label: 'Lock VC', style: 2 },
-              { type: 2, custom_id: 'vcp_unlock', label: 'Unlock VC', style: 2 },
-              { type: 2, custom_id: 'vcp_hide', label: 'Hide VC', style: 2 },
-              { type: 2, custom_id: 'vcp_unhide', label: 'Unhide VC', style: 2 }
-            ]},
-            { type: 14, divider: true },
-            { type: 10, content: '-# **Athena Bulletproof Security !!!**' }
+            {
+              type: 10,
+              content: '-# Athena Prime Voice Sentinel Matrix'
+            }
           ]
         };
 
