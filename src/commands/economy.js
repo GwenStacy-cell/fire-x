@@ -2,7 +2,7 @@ import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJ
 import { PermissionFlagsBits, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import { isExtraOwnerOrHigher, formatUserLink } from '../utils/helpers.js';
+import { isBotOwnerSync, isExtraOwnerOrHigher, formatUserLink } from '../utils/helpers.js';
 import { BUILTIN_SHOP_ITEMS, SHOP_CATEGORIES, getBuiltinItem, getAllShopItems, getItemEmoji, getItemSellPrice } from '../utils/shopCatalog.js';
 
 // ==========================================
@@ -659,7 +659,7 @@ export const commands = [
   {
     name: 'givecoins',
     aliases: ['addcoins', 'ecoadd', 'spawncoins'],
-    description: 'Grant Athena coins to a user or to your own wallet (Extra Owner / Server Owner only).',
+    description: 'Grant Athena coins to a user or to your own wallet (Bot Owner only).',
     category: 'community',
     options: [
       {
@@ -676,9 +676,9 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+      if (!isBotOwnerSync(message.author.id)) {
         return message.reply({
-          components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can grant coins.')],
+          components: [cv2.buildContainer('Permission Denied', 'This command is strictly reserved for the Bot Developer / Owner.')],
           flags: MessageFlags.IsComponentsV2
         });
       }
@@ -732,9 +732,9 @@ export const commands = [
       return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
     },
     async executeSlash(interaction) {
-      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+      if (!isBotOwnerSync(interaction.user.id)) {
         return interaction.reply({
-          components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can grant coins.')],
+          components: [cv2.buildContainer('Permission Denied', 'This command is strictly reserved for the Bot Developer / Owner.')],
           flags: MessageFlags.IsComponentsV2
         });
       }

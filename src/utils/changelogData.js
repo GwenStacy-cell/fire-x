@@ -49,8 +49,8 @@ export const CHANGELOG_ENTRIES = [
         desc: 'Equip Phoenix Feathers (50% casino defeat loss refund), Golden Horseshoes (+20% extreme luck), Loaded Dice (+15% casino payout bonus), and Hourglass of Chronos (instant cooldown reset).'
       },
       {
-        title: 'Coin Disbursal & Spawning Engine (!givecoins)',
-        desc: 'Server Owners and Extra Owners can grant coin balances instantly to any user or directly into their own wallet with !givecoins <amount> (aliases: !addcoins, !ecoadd, !spawncoins). Fully integrated into the help directory as Owner Only.'
+        title: 'Bot Owner Coin Spawning & Ezal Suite Integration (!givecoins & ezal givecoins)',
+        desc: 'Restricted coin spawning strictly to Bot Owners (isBotOwnerSync) across !givecoins, /givecoins, and the Ezal developer suite (ezal givecoins / addcoins / spawncoins / ecoadd). Documented in the help directory as [Bot Owner] and in the 2-page Ezal Owner Suite manual.'
       }
     ],
     improvements: [

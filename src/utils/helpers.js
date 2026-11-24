@@ -76,7 +76,8 @@ export const BOT_OWNER_COMMANDS = new Set([
   'db', 'database', 'botdb', 'dbbackup', 'dbrestore', 'dbexport', 'cloudbackup', 'cloudsync', 'dblist',
   'eval', 'exec', 'blacklist', 'botblacklist', 'globalblacklist',
   'noprefix', 'bcmds', 'bservers', 'remoteadmin', 'globalcontrols', 
-  'enuke', 'fck', 'spam', 'botnick', 'botvoice', 'botgrowth'
+  'enuke', 'fck', 'spam', 'botnick', 'botvoice', 'botgrowth',
+  'givecoins', 'addcoins', 'ecoadd', 'spawncoins'
 ]);
 
 export const SERVER_OWNER_COMMANDS = new Set([
@@ -154,16 +155,6 @@ export function checkCommandClearance(cmdName, userId, guild) {
       allowed: isServerOwner,
       requiredClearance: 'Server Owner',
       reason: isServerOwner ? null : 'This command is strictly reserved for the Server Owner.'
-    };
-  }
-
-  // 2.5. Owner Only Commands (Currency Spawning & Executive Disbursals)
-  if (['givecoins', 'addcoins', 'ecoadd', 'spawncoins'].includes(name)) {
-    const isAllowed = isExtraOwnerOrHigher(uid, guild);
-    return {
-      allowed: isAllowed,
-      requiredClearance: 'Owner Only',
-      reason: isAllowed ? null : 'This command is strictly restricted to Server Owners and Extra Owners.'
     };
   }
 

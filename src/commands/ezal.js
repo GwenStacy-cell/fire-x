@@ -997,6 +997,12 @@ export function getEhelpPagePayload(page = 1) {
         '`!db setchannel #channel` - Bind or change dedicated Discord cloud backup channel'
     },
     {
+      name: 'Economy Disbursal & Currency Spawning',
+      value:
+        '`ezal givecoins <amount> [@user]` - Spawn coins directly to wallet *(Bot Owner)*\n' +
+        '`ezal addcoins` / `spawncoins` / `ecoadd` - Alternative command aliases'
+    },
+    {
       name: 'Global Bot Blacklist (Global Ban)',
       value:
         '`!gban <@user|ID> [reason]` - Globally ban user from all bot commands\n' +
@@ -1377,6 +1383,13 @@ export async function handleEzal(message) {
     if (dbCmd) return dbCmd.executePrefix(message, ['mongo', ...parts.slice(1)]);
   }
 
+  // 3.7 Direct givecoins / addcoins invocation
+  if (rawFirst === 'givecoins' || rawFirst === 'addcoins' || rawFirst === 'ecoadd' || rawFirst === 'spawncoins') {
+    const { commands } = await import('./economy.js');
+    const giveCmd = commands.find(c => c.name === 'givecoins');
+    if (giveCmd) return giveCmd.executePrefix(message, parts.slice(1));
+  }
+
   // 4. Typing ezal alone -> Enters Ezal Mode panel!
   if (rawFirst === 'ezal' && !sub) {
     return handleEzalModeEnable(message, 'Ezal', startHr, startCpu);
@@ -1405,6 +1418,16 @@ export async function handleEzal(message) {
     case 'enable':
     case 'start':
       return handleEzalModeEnable(message, 'Ezal');
+
+    case 'givecoins':
+    case 'addcoins':
+    case 'ecoadd':
+    case 'spawncoins': {
+      const { commands } = await import('./economy.js');
+      const giveCmd = commands.find(c => c.name === 'givecoins');
+      if (giveCmd) return giveCmd.executePrefix(message, targetArgs);
+      break;
+    }
 
     case 'mongo':
     case 'mongodb':

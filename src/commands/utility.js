@@ -317,8 +317,6 @@ export const commands = [
               let permsText = "Public (Everyone)";
               if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
                   permsText = "Server Owner & Bot Owner ONLY";
-              } else if (cmdClearance.requiredClearance === 'Owner Only' || targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
-                  permsText = "Owner Only";
               } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
                   permsText = "Server Owner & Extra Owner";
               } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
@@ -1297,7 +1295,7 @@ export const commands = [
               } else if (targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
                   descContent = `Disburse Athena Coins directly into any user's wallet or into your own balance instantly.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
-                    `> ${BULLET_EMOJI} **Required Clearance:** \`Owner Only\` (Server Owner & Extra Owner).\n\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Bot Owner ONLY\` (Bot Developer / Owner).\n\n` +
                     `> -# **__Usage Instructions:__**\n` +
                     `> ${BULLET_EMOJI} \`${prefix}givecoins <amount>\` — Credit specified coin amount directly to your own wallet.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}givecoins <@user> <amount>\` — Credit coins to the mentioned member.\n` +
@@ -1387,8 +1385,6 @@ export const commands = [
         let permsText = "Public (Everyone)";
         if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
           permsText = "Server Owner & Bot Owner ONLY";
-        } else if (cmdClearance.requiredClearance === 'Owner Only' || targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
-          permsText = "Owner Only";
         } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
           permsText = "Server Owner & Extra Owner";
         } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
@@ -2219,7 +2215,7 @@ export const commands = [
         } else if (targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
           descContent = `Disburse Athena Coins directly into any user's wallet or into your own balance instantly.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
-            `> ${BULLET_EMOJI} **Required Clearance:** \`Owner Only\` (Server Owner & Extra Owner).\n\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Bot Owner ONLY\` (Bot Developer / Owner).\n\n` +
             `> -# **__Usage Instructions:__**\n` +
             `> ${BULLET_EMOJI} \`${prefix}givecoins <amount>\` — Credit specified coin amount directly to your own wallet.\n` +
             `> ${BULLET_EMOJI} \`${prefix}givecoins <@user> <amount>\` — Credit coins to the mentioned member.\n` +
@@ -3397,7 +3393,7 @@ export const helpModules = [
     "`!balance / !bal [@user]` - View wallet, vault reserves, and net worth `[Public]`",
     "`!daily` - Claim daily stipend with consecutive day streak multipliers `[Public]`",
     "`!pay @user <amount>` - Transfer coins directly to another member `[Public]`",
-    "`!givecoins / !addcoins <amount> [@user]` - Disburse Athena Coins to user wallet `[Owner Only]`",
+    "`!givecoins / !addcoins <amount> [@user]` - Disburse Athena Coins to user wallet `[Bot Owner]`",
     "`!shop` - 52-item 7-department global commerce catalog with animated custom emojis `[Public]`",
     "`!shop buy <itemId> [qty]` - Purchase crates, boosters, tools, gems & perks `[Public]`",
     "`!sell / !shop sell <itemId> [qty]` - Liquidate mined ores, catches & goods for coins `[Public]`",
