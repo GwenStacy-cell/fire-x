@@ -15,6 +15,38 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '25 November 2026',
+    version: 'v3.9.9',
+    headline: 'Help Directory & Command Inspection Synchronization',
+    summary: 'Fully updated and synchronized the interactive help system (!help), single-command inspector, automod toggle handlers, and explainer registry to reflect the word filter renaming (!wordfilter / !wf) and the global bot command blacklist suite (!bl / !unbl / !bllist).',
+    whatsNew: [
+      {
+        title: 'Bot Blacklist Suite in Security Help',
+        desc: 'Added !bl / !botban, !unbl / !botunban, and !bllist under Security Commands in the interactive help menu (!help security).'
+      },
+      {
+        title: 'Word Filter Help Directory Overhaul',
+        desc: 'Updated the Automod Filters module (!help filters) to document !wordfilter / !wf add, remove, and list, retiring legacy !blacklist references.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Single Command Inspector Mapping',
+        desc: 'Added custom usage syntax, clearance definitions, and alias routing for !help wordfilter (!help wf) and !help bl across prefix and slash commands.'
+      },
+      {
+        title: 'Explainer & Interactive UI Synchronization',
+        desc: 'Updated automod quick-toggle button responses and explainer documentation to reference !wordfilter (!wf).'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Command Collision Resolution',
+        desc: 'Completely eliminated legacy !blacklist usage confusion between server word filtering and global bot command blacklisting.'
+      }
+    ]
+  },
+  {
     date: '24 November 2026',
     version: 'v3.9.8',
     headline: 'Interactive Announcement Builder State Preservation & Media Link Fix',

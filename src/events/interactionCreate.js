@@ -4242,7 +4242,7 @@ async function handleSecurityInteractions(interaction, guild) {
     }
     
     if (customId === 'toggle_blacklist_filter') {
-        return interaction.reply({ content: 'Use `!blacklist add <word>` to enable the word filter, or `!blacklist remove <word>` to disable it.', flags: MessageFlags.Ephemeral });
+        return interaction.reply({ content: 'Use `!wordfilter add <word>` (or `!wf`) to enable the word filter, or `!wordfilter remove <word>` to disable it.', flags: MessageFlags.Ephemeral });
     }
 
   // Security Overview Navigation

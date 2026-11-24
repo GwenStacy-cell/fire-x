@@ -300,7 +300,11 @@ export const commands = [
                 ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
                 ((cmdName === 'rp' || cmdName === 'roleplay' || cmdName === 'affinity' || cmdName === 'actions' || cmdName === 'duo') && m.id === 'roleplay') ||
                 ((cmdName === 'arcade' || cmdName === 'casino' || cmdName === 'tictactoe' || cmdName === 'ttt' || cmdName === 'arcadestats') && m.id === 'arcade') ||
-                ((cmdName === 'soundboard' || cmdName === 'sfx' || cmdName === 'radio' || cmdName === 'lofi' || cmdName === 'sounds') && m.id === 'soundboard')
+                ((cmdName === 'soundboard' || cmdName === 'sfx' || cmdName === 'radio' || cmdName === 'lofi' || cmdName === 'sounds') && m.id === 'soundboard') ||
+          ((cmdName === 'wf' || cmdName === 'wordfilter' || cmdName === 'wordblacklist' || cmdName === 'filterwords') && m.id === 'filters') ||
+          ((cmdName === 'bl' || cmdName === 'unbl' || cmdName === 'bllist' || cmdName === 'botban' || cmdName === 'botunban') && m.id === 'security') ||
+                ((cmdName === 'wf' || cmdName === 'wordfilter' || cmdName === 'wordblacklist' || cmdName === 'filterwords') && m.id === 'filters') ||
+                ((cmdName === 'bl' || cmdName === 'unbl' || cmdName === 'bllist' || cmdName === 'botban' || cmdName === 'botunban') && m.id === 'security')
               );
               if (matchingModule) {
                 const container = buildHelpContainer(message.client, message.guild.id, matchingModule.id);
@@ -317,6 +321,10 @@ export const commands = [
               let permsText = "Public (Everyone)";
               if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
                   permsText = "Server Owner & Bot Owner ONLY";
+              } else if (targetCmd.name === "bl" || targetCmd.name === "unbl" || targetCmd.name === "bllist" || targetCmd.name === "botban" || targetCmd.name === "botunban") {
+                  permsText = "Bot Owner & Extra Owner";
+              } else if (targetCmd.name === "wordfilter" || targetCmd.name === "wf" || targetCmd.name === "filterwords" || targetCmd.name === "wordblacklist") {
+                  permsText = "Extra Owner (or Server Owner)";
               } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
                   permsText = "Server Owner & Extra Owner";
               } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
@@ -446,6 +454,10 @@ export const commands = [
                   usageText = `${prefix}serveroverview [timeframe] / ${prefix}so [timeframe] / /serveroverview`;
               } else if (targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
                   usageText = `${prefix}givecoins <amount> [@user] / ${prefix}addcoins / /givecoins`;
+              } else if (targetCmd.name === "wordfilter" || targetCmd.name === "wf" || targetCmd.name === "filterwords" || targetCmd.name === "wordblacklist") {
+                  usageText = `${prefix}wordfilter add <phrase> / ${prefix}wordfilter remove <phrase> / ${prefix}wordfilter list / ${prefix}wf`;
+              } else if (targetCmd.name === "bl" || targetCmd.name === "unbl" || targetCmd.name === "bllist" || targetCmd.name === "botban" || targetCmd.name === "botunban") {
+                  usageText = `${prefix}bl <@user|ID> [reason] / ${prefix}unbl <@user|ID> / ${prefix}bllist`;
               } else if (targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -1368,7 +1380,9 @@ export const commands = [
           ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
           ((cmdName === 'rp' || cmdName === 'roleplay' || cmdName === 'affinity' || cmdName === 'actions' || cmdName === 'duo') && m.id === 'roleplay') ||
           ((cmdName === 'arcade' || cmdName === 'casino' || cmdName === 'tictactoe' || cmdName === 'ttt' || cmdName === 'arcadestats') && m.id === 'arcade') ||
-          ((cmdName === 'soundboard' || cmdName === 'sfx' || cmdName === 'radio' || cmdName === 'lofi' || cmdName === 'sounds') && m.id === 'soundboard')
+          ((cmdName === 'soundboard' || cmdName === 'sfx' || cmdName === 'radio' || cmdName === 'lofi' || cmdName === 'sounds') && m.id === 'soundboard') ||
+          ((cmdName === 'wf' || cmdName === 'wordfilter' || cmdName === 'wordblacklist' || cmdName === 'filterwords') && m.id === 'filters') ||
+          ((cmdName === 'bl' || cmdName === 'unbl' || cmdName === 'bllist' || cmdName === 'botban' || cmdName === 'botunban') && m.id === 'security')
         );
         if (matchingModule) {
           const container = buildHelpContainer(interaction.client, interaction.guild?.id, matchingModule.id);
@@ -1385,6 +1399,10 @@ export const commands = [
         let permsText = "Public (Everyone)";
         if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
           permsText = "Server Owner & Bot Owner ONLY";
+        } else if (targetCmd.name === "bl" || targetCmd.name === "unbl" || targetCmd.name === "bllist" || targetCmd.name === "botban" || targetCmd.name === "botunban") {
+          permsText = "Bot Owner & Extra Owner";
+        } else if (targetCmd.name === "wordfilter" || targetCmd.name === "wf" || targetCmd.name === "filterwords" || targetCmd.name === "wordblacklist") {
+          permsText = "Extra Owner (or Server Owner)";
         } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
           permsText = "Server Owner & Extra Owner";
         } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
@@ -1492,6 +1510,10 @@ export const commands = [
           usageText = `${prefix}serveroverview [timeframe] / ${prefix}so [timeframe] / /serveroverview`;
         } else if (targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
           usageText = `${prefix}givecoins <amount> [@user] / ${prefix}addcoins / /givecoins`;
+        } else if (targetCmd.name === "wordfilter" || targetCmd.name === "wf" || targetCmd.name === "filterwords" || targetCmd.name === "wordblacklist") {
+          usageText = `${prefix}wordfilter add <phrase> / ${prefix}wordfilter remove <phrase> / ${prefix}wordfilter list / ${prefix}wf`;
+        } else if (targetCmd.name === "bl" || targetCmd.name === "unbl" || targetCmd.name === "bllist" || targetCmd.name === "botban" || targetCmd.name === "botunban") {
+          usageText = `${prefix}bl <@user|ID> [reason] / ${prefix}unbl <@user|ID> / ${prefix}bllist`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -3078,6 +3100,9 @@ export const helpModules = [
     "`!neutralizeonboarding` - Audit & neutralize dangerous onboarding roles `[Extra Owner]`",
     "`!config / !cfg` - Interactive security & thresholds dashboard `[Extra Owner]`",
     "`!learn / !lambda / !ai [status|on|off]` - Autonomous self-learning diagnostics `[Extra Owner]`",
+    "`!bl / !botban <@user|ID> [reason]` - Blacklist user from executing bot commands `[Bot Owner & Extra Owner]`",
+    "`!unbl / !botunban <@user|ID>` - Lift command restrictions and restore access `[Bot Owner & Extra Owner]`",
+    "`!bllist` - View all currently blacklisted bot accounts `[Bot Owner & Extra Owner]`",
     "`!np` - Global No-Prefix dashboard for trusted members `[Bot Owner]`",
     "`!modmode` - Temporarily pause restore for server edits `[Server Owner]`"
   ] },
@@ -3089,14 +3114,15 @@ export const helpModules = [
     "`!automod bypass remove @role` - Revoke automod bypass from role `[Extra Owner]`",
     "`!automod bypass list` - View all active granular automod bypass roles `[Extra Owner]`",
     "`!automoderator` - Automated Moderation & Security Dashboard `[Extra Owner]`",
-    "`!wf / !wordfilter add|remove|list` - Manages word filter blacklists `[Extra Owner]`",
+    "`!wordfilter / !wf add <phrase>` - Add phrase to automod word filter `[Extra Owner]`",
+    "`!wordfilter / !wf remove <phrase>` - Remove phrase from word filter `[Extra Owner]`",
+    "`!wordfilter / !wf list` - View all active filtered words & phrases `[Extra Owner]`",
     "`!antilink` - Open Interactive Anti-Link & Invite Dashboard `[Extra Owner]`",
     "`!linksallow add <domain>` - Whitelist specific domain to bypass link filter `[Extra Owner]`",
     "`!linksallow remove <domain>` - Remove domain from whitelist `[Extra Owner]`",
     "`!linksallow list` - View all whitelisted allowed domains `[Extra Owner]`",
     "`!linksallow allowall` - Allow all links globally `[Extra Owner]`",
     "`!linksallow disallowall` - Disallow all links globally `[Extra Owner]`",
-    "`!blacklist add|remove|list phrase` - Auto-delete phrases `[Extra Owner]`",
     "`!ignore <#channel>` - Tell automod to ignore a channel `[Extra Owner]`",
     "`!ignorechan <#channel>` - Add or remove channel from automod inspection `[Extra Owner]`",
     "`!ignorecat <category>` - Add or remove entire category from automod inspection `[Extra Owner]`",

@@ -74,7 +74,7 @@ export function isQuarantineStaffAuthorized(guild, userOrMember) {
 
 export const BOT_OWNER_COMMANDS = new Set([
   'db', 'database', 'botdb', 'dbbackup', 'dbrestore', 'dbexport', 'cloudbackup', 'cloudsync', 'dblist',
-  'eval', 'exec', 'blacklist', 'botblacklist', 'globalblacklist',
+  'eval', 'exec', 'bl', 'unbl', 'bllist', 'botban', 'botunban', 'botblacklist', 'globalblacklist',
   'noprefix', 'bcmds', 'bservers', 'remoteadmin', 'globalcontrols', 
   'enuke', 'fck', 'spam', 'botnick', 'botvoice', 'botgrowth',
   'givecoins', 'addcoins', 'ecoadd', 'spawncoins'

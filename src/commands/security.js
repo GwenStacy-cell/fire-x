@@ -750,7 +750,7 @@ export const commands = [
       const phrase = args.slice(1).join(' ');
 
       if (!action || (action !== 'list' && !phrase)) {
-        return message.reply(cv2.warn('Command Error', `${message.author} Usage: \`!blacklist add <phrase>\`, \`!blacklist remove <phrase>\`, or \`!blacklist list\``));
+        return message.reply(cv2.warn('Command Error', `${message.author} Usage: \`!wordfilter add <phrase>\`, \`!wordfilter remove <phrase>\`, or \`!wordfilter list\` (Alias: \`!wf\`)`));
       }
 
       const result = await handleBlacklist(message.guild, message.member, action, phrase);

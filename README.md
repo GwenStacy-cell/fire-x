@@ -98,7 +98,8 @@ Welcome to **Medusa Prime**, a powerful, state-of-the-art moderation, Anti-Nuke,
 | **`lockdown`** | `!lockdown [on\|off]` | Restricts channel writing for `@everyone`. | Manage Channels |
 | **`raidmode`** | `!raidmode [on\|off]` | Quarantines all newly joining accounts. | Administrator |
 | **`whitelist`**| `!whitelist <add\|remove\|list> [user]`| Manages whitelisted admins (immune to nuke/spam/etc.) | Administrator |
-| **`blacklist`**| `!blacklist <add\|remove\|list> [phrase]`| Manages filtered words (deletes and warns instantly). | Moderate Members |
+| **`wordfilter`**| `!wordfilter <add|remove|list> [phrase]` (alias: `!wf`)| Manages filtered words (deletes and warns instantly). | Extra Owner |
+| **`bl`**        | `!bl <@user|ID> [reason]` (alias: `!unbl`, `!bllist`)  | Blacklist user from using bot commands globally.      | Bot Owner / Extra Owner |
 | **`autonick`** | `!autonick <on\|off> [prefix] [suffix]`| Manages join nickname formatting. | Manage Nicknames |
 | **`dm`** | `!dm <on\|off\|status>` | Toggles server-wide Athena mention & tag DM notifications. | Manage Guild / Extra Owner |
 | **`config`** | `!config <setting> <value>` | Toggle: `antinuke`, `antispam`, `antiinvite`, `maxwarnings`. | Administrator |

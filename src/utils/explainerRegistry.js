@@ -202,9 +202,9 @@ Athena's automod engine inspects every message across Discord Gateway at raw vel
 • Verifies domains against the guild's approved domain whitelist (\`linksallow\`).
 • If unapproved links are detected, Athena deletes the message and logs forensic details.
 
-# Tier 3: Word Filter & Blacklist (\`!wf\` / \`!blacklist\`)
+# Tier 3: Word Filter (\`!wordfilter\` / \`!wf\`)
 • Normalizes leetspeak, stripped punctuation, and repeated characters.
-• Scans against server blacklist words configured in the database.
+• Scans against server word filter list configured in the database.
 • Granular Role Bypass: Server owners can whitelist specific roles (\`!automod bypass add @role\`) to allow staff to share links without triggering automod.`
       }
     ]
