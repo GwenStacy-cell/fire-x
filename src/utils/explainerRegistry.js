@@ -1556,24 +1556,76 @@ export const DETAILED_COMMANDS = {
     category: 'Community & Engagement',
     clearance: 'Public / Everyone',
     syntax: '!daily / /daily',
-    purpose: 'Claim 24-hour coin dividend with consecutive day streak multipliers.',
+    purpose: 'Claim 24-hour coin dividend with consecutive day streak multipliers, Streak Shield rescues, and Dividend Elixirs.',
     architecture:
-`• **Streak Clock:** Enforces 24-hour cooldown with 48-hour streak protection window.
-• **Multiplier Calculation:** Awards +300 base coins plus up to +600 streak bonus coins.`,
+`• **Streak Clock & Shield Rescue:** Enforces 24-hour cooldown. If inactive for >48h, automatically consumes an owned Streak Shield to rescue your streak.
+• **Multiplier & Elixir Calculation:** Awards +300 base coins plus up to +600 streak bonus coins. Automatically doubles payout if Dividend Elixir buff is active.`,
     example: '!daily'
   },
 
   shop: {
     name: 'shop',
-    aliases: ['shop'],
+    aliases: ['market', 'store'],
     category: 'Community & Engagement',
-    clearance: 'Public (View) / Extra Owner (Add/Remove)',
-    syntax: '!shop [buy <id>|add <name> <price> <@role>|remove <id>]',
-    purpose: 'Browse and purchase server role privileges and exclusive perks using earned Athena coins.',
+    clearance: 'Public (View/Buy) / Extra Owner (Add/Remove Roles)',
+    syntax: '!shop [crates|boosters|collectibles|roles] | !shop buy <item_id> [quantity]',
+    purpose: 'Browse and purchase mystery crates, luck boosters, streak shields, prestige collectibles, and server roles.',
     architecture:
-`• **ID-Based Role Assignment:** Strictly maps items to Discord Role IDs stored in database.
-• **Atomic Purchase Flow:** Verifies wallet balance, deducts coins, and assigns the target role immediately via Discord REST API.`,
-    example: '!shop buy item_vip'
+`• **Multi-Department Catalog:** Interactive Components V2 department switcher spanning Mystery Crates, Boosters & Charms, Prestige Collectibles, and Server Roles.
+• **Atomic Multi-Quantity Purchasing:** Validates wallet balance and atomically adds items to user backpack (!inv) or assigns Discord roles.`,
+    example: '!shop buy crate_common 3'
+  },
+
+  inventory: {
+    name: 'inventory',
+    aliases: ['inv', 'bag'],
+    category: 'Community & Engagement',
+    clearance: 'Public / Everyone',
+    syntax: '!inventory [@user] / !inv',
+    purpose: 'Inspect owned mystery crates, active luck boosters, countdown timers, and prestige collectibles.',
+    architecture:
+`• **Backpack Matrix:** Displays real-time counts for owned crates, consumable boosters, streak shields, and rings.
+• **Active Buff Timers:** Live relative Discord timestamps showing countdowns for active Lucky Clovers, Gambler's Charms, and Dividend Elixirs.`,
+    example: '!inv'
+  },
+
+  open: {
+    name: 'open',
+    aliases: ['unbox', 'crate'],
+    category: 'Community & Engagement',
+    clearance: 'Public / Everyone',
+    syntax: '!open <crate_id>',
+    purpose: 'Unbox a mystery crate from your inventory to reveal surprise coin jackpots, luck charms, and rare loot.',
+    architecture:
+`• **Loot Probability Engine:** Rolls tiered coin payouts with bonus chances for Lucky Clovers, Streak Shields, and Gambler's Charms.
+• **Booster Synergy:** Automatically applies +25% bonus coin payouts if Gambler's Charm is active.`,
+    example: '!open crate_common'
+  },
+
+  use: {
+    name: 'use',
+    aliases: ['consume', 'activate'],
+    category: 'Community & Engagement',
+    clearance: 'Public / Everyone',
+    syntax: '!use <item_id>',
+    purpose: 'Activate consumable boosters and charms from your backpack to gain timed gaming buffs.',
+    architecture:
+`• **Buff Engine:** Activates Lucky Clovers (+12% win rate on coinflip/slots/blackjack), Gambler's Charms (+25% casino payouts), or Dividend Elixirs (2x daily).
+• **Intelligent Routing:** Automatically opens crates if a crate ID is passed, or explains passive protection for Streak Shields.`,
+    example: '!use lucky_clover'
+  },
+
+  slots: {
+    name: 'slots',
+    aliases: ['slot'],
+    category: 'Community & Engagement',
+    clearance: 'Public / Everyone',
+    syntax: '!slots <bet>',
+    purpose: 'Classic 3-reel casino slot machine with payout multipliers, pair victories, and jackpot crowns.',
+    architecture:
+`• **Reel Mechanics:** Spins 3 independent reels across 5 distinct symbols (👑 20x Jackpot, 💎 12x, 🔔 7x, 🍇 5x, 🍒 3x, and 1.5x pair match).
+• **Booster Multipliers:** Integrates with active Lucky Clovers (enhanced match odds) and Gambler's Charms (+25% bonus payout).`,
+    example: '!slots 100'
   },
 
   coinflip: {
@@ -1582,9 +1634,10 @@ export const DETAILED_COMMANDS = {
     category: 'Community & Engagement',
     clearance: 'Public / Everyone',
     syntax: '!coinflip <heads|tails> <amount>',
-    purpose: 'Wager coins in a provably fair 50/50 double-or-nothing coin toss.',
+    purpose: 'Wager coins in a provably fair 50/50 double-or-nothing coin toss with Lucky Clover and Gambler\'s Charm synergy.',
     architecture:
-`• **Atomic Ledger Verification:** Deducts bet before coin execution and credits 2x payout immediately on victory.`,
+`• **Atomic Ledger Verification:** Deducts bet before coin execution and credits 2x payout (or 2.25x with Gambler's Charm) immediately on victory.
+• **Luck Integration:** Boosts win probability from 50% to 60% when Lucky Clover booster is active.`,
     example: '!coinflip heads 100'
   },
 

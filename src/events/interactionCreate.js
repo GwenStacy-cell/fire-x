@@ -893,6 +893,16 @@ export default {
       return;
     }
 
+    // --- GLOBAL SHOP & INVENTORY INTERACTIONS ---
+    if (interaction.customId && (interaction.customId.startsWith('shop_') || interaction.customId.startsWith('inv_'))) {
+      import('../commands/economy.js').then(m => {
+        if (interaction.isButton() && m.handleShopInteraction) {
+          m.handleShopInteraction(interaction).catch(e => console.error('[Shop Interaction Error]:', e));
+        }
+      }).catch(e => console.error('[Shop Router Import Error]:', e));
+      return;
+    }
+
     // --- ATHENA GUIDE HUB & ASSISTANT INTERACTIONS ---
     if ((interaction.isButton() || interaction.isModalSubmit()) && interaction.customId.startsWith('athena_')) {
       import('../commands/athena.js').then(m => {

@@ -1,8 +1,247 @@
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
-import { PermissionFlagsBits, MessageFlags } from 'discord.js';
+import { PermissionFlagsBits, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
 import { isExtraOwnerOrHigher } from '../utils/helpers.js';
+import { BUILTIN_SHOP_ITEMS, SHOP_CATEGORIES, getBuiltinItem, getAllShopItems } from '../utils/shopCatalog.js';
+
+// ==========================================
+// SHOP PANEL BUILDER (COMPONENTS V2)
+// ==========================================
+export function buildShopPanel(guildId, currentCategory = 'crates', page = 0) {
+  const allItems = getAllShopItems(guildId, db);
+  const categoryItems = allItems.filter(it => it.category === currentCategory);
+  const catMeta = SHOP_CATEGORIES.find(c => c.id === currentCategory) || SHOP_CATEGORIES[0];
+
+  let itemsText = '';
+  if (categoryItems.length === 0) {
+    if (currentCategory === 'roles') {
+      itemsText =
+        `- # **The server role shop is currently empty.**\n` +
+        `- # Administrators can list purchasable server roles using:\n` +
+        `- # \`!shop add <name> <price> <@role> [description]\``;
+    } else {
+      itemsText = `- # No items currently available in this category.`;
+    }
+  } else {
+    itemsText = categoryItems.map((it, idx) => {
+      const priceStr = `\`${Number(it.price).toLocaleString()}\` Athena Coins`;
+      let metaLine = `- # ${BULLET_EMOJI} **ID:** \`${it.id}\` • **Price:** ${priceStr}`;
+      if (it.type === 'role' && it.roleId) {
+        metaLine += ` • **Role:** <@&${it.roleId}>`;
+      }
+      return (
+        `**${idx + 1}. ${it.name}**\n` +
+        `${metaLine}\n` +
+        `- # *${it.description || 'Exclusive commerce perk'}*`
+      );
+    }).join('\n\n');
+  }
+
+  const categoryButtons = SHOP_CATEGORIES.map(cat =>
+    new ButtonBuilder()
+      .setCustomId(`shop_tab_${cat.id}`)
+      .setLabel(cat.label)
+      .setStyle(cat.id === currentCategory ? ButtonStyle.Success : ButtonStyle.Secondary)
+  );
+
+  const row1 = new ActionRowBuilder().addComponents(categoryButtons);
+  const row2 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('shop_btn_inv').setLabel('My Inventory').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('shop_btn_daily').setLabel('Claim Daily').setStyle(ButtonStyle.Secondary)
+  );
+
+  const container = {
+    type: 17,
+    components: [
+      {
+        type: 10,
+        content:
+          `### **Athena Global Market | <a:03_tick_circle:1565665642084827206>**\n` +
+          `- # **• Active Department:** **${catMeta.name}** — *${catMeta.description}*\n` +
+          `- # **• How to Buy:** Use \`!shop buy <id> [qty]\` (e.g. \`!shop buy crate_common 3\`)\n` +
+          `- # **• How to Open/Use:** Use \`!open <crate>\` or \`!use <booster>\`\n\n` +
+          itemsText
+      },
+      { type: 14, divider: true },
+      {
+        type: 10,
+        content: `- # 💡 **Use \`!inv\` to check your backpack or \`!daily\` to collect coins.**`
+      },
+      row1.toJSON(),
+      row2.toJSON()
+    ]
+  };
+
+  return { components: [container], flags: MessageFlags.IsComponentsV2 };
+}
+
+// ==========================================
+// INVENTORY PANEL BUILDER (COMPONENTS V2)
+// ==========================================
+export function buildInventoryPanel(guildId, userId, member) {
+  const inv = db.getUserInventory(guildId, userId);
+  const eco = db.getUserEconomy(guildId, userId);
+  const activeBoosters = db.getUserActiveBoosters(guildId, userId);
+
+  // Active boosters display
+  let boosterText = '';
+  const activeKeys = Object.keys(activeBoosters);
+  if (activeKeys.length > 0) {
+    boosterText = activeKeys.map(k => {
+      const it = getBuiltinItem(k);
+      const name = it ? it.name : k;
+      const ts = Math.floor(activeBoosters[k] / 1000);
+      return `- # ${BULLET_EMOJI} **${name}:** Expires <t:${ts}:R>`;
+    }).join('\n');
+  } else {
+    boosterText = `- # *No active booster buffs. Visit \`!shop\` to purchase Lucky Clovers or Charms!*`;
+  }
+
+  // Inventory items
+  const ownedItems = Object.entries(inv.items || {}).filter(([_, count]) => count > 0);
+  let inventoryText = '';
+
+  if (ownedItems.length === 0) {
+    inventoryText =
+      `- # **Your inventory is currently empty.**\n` +
+      `- # Earn coins with \`!daily\`, \`!slots\`, or \`!coinflip\`, then explore \`!shop\`!`;
+  } else {
+    const crates = [];
+    const boosters = [];
+    const collectibles = [];
+    const others = [];
+
+    for (const [itemId, count] of ownedItems) {
+      const it = getBuiltinItem(itemId);
+      if (!it) {
+        others.push(`- # ${BULLET_EMOJI} **${itemId}:** \`x${count}\``);
+        continue;
+      }
+      if (it.type === 'crate') {
+        crates.push(`- # ${BULLET_EMOJI} **${it.name}:** \`x${count}\` • *Use \`!open ${it.id}\`*`);
+      } else if (it.type === 'booster' || it.type === 'passive') {
+        const hint = it.type === 'passive' ? '*Passive protection*' : `*Use \`!use ${it.id}\`*`;
+        boosters.push(`- # ${BULLET_EMOJI} **${it.name}:** \`x${count}\` • ${hint}`);
+      } else {
+        collectibles.push(`- # ${BULLET_EMOJI} **${it.name}:** \`x${count}\` • *Prestige piece*`);
+      }
+    }
+
+    const sections = [];
+    if (crates.length > 0) sections.push(`**Mystery Crates:**\n${crates.join('\n')}`);
+    if (boosters.length > 0) sections.push(`**Consumables & Boosters:**\n${boosters.join('\n')}`);
+    if (collectibles.length > 0) sections.push(`**Prestige Collectibles:**\n${collectibles.join('\n')}`);
+    if (others.length > 0) sections.push(`**Other Items:**\n${others.join('\n')}`);
+
+    inventoryText = sections.join('\n\n');
+  }
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('inv_btn_shop').setLabel('Open Shop').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('inv_btn_daily').setLabel('Claim Daily').setStyle(ButtonStyle.Secondary)
+  );
+
+  const container = {
+    type: 17,
+    components: [
+      {
+        type: 10,
+        content:
+          `### **Member Inventory & Backpack | <a:03_tick_circle:1565665642084827206>**\n` +
+          `- # **• Account Holder:** <@${userId}>\n` +
+          `- # **• Wallet Balance:** \`${(eco.wallet || 0).toLocaleString()}\` Athena Coins\n\n` +
+          `**Active Status Buffs:**\n` +
+          `${boosterText}\n\n` +
+          `${inventoryText}`
+      },
+      { type: 14, divider: true },
+      {
+        type: 10,
+        content: `- # 💡 **Use \`!open <crate>\` to unbox loot or \`!use <item>\` to activate boosters.**`
+      },
+      row.toJSON()
+    ]
+  };
+
+  return { components: [container], flags: MessageFlags.IsComponentsV2 };
+}
+
+// ==========================================
+// INTERACTION HANDLERS FOR BUTTONS
+// ==========================================
+export async function handleShopInteraction(interaction) {
+  const cid = interaction.customId;
+  const guildId = interaction.guild.id;
+
+  if (cid.startsWith('shop_tab_')) {
+    const category = cid.replace('shop_tab_', '');
+    const panel = buildShopPanel(guildId, category);
+    return interaction.update(panel);
+  }
+
+  if (cid === 'shop_btn_inv' || cid === 'inv_btn_shop') {
+    if (cid === 'shop_btn_inv') {
+      const panel = buildInventoryPanel(guildId, interaction.user.id, interaction.member);
+      return interaction.reply({ ...panel, flags: MessageFlags.Ephemeral });
+    } else {
+      const panel = buildShopPanel(guildId, 'crates');
+      return interaction.update(panel);
+    }
+  }
+
+  if (cid === 'shop_btn_daily' || cid === 'inv_btn_daily') {
+    // Route to daily check
+    const eco = db.getUserEconomy(guildId, interaction.user.id);
+    const now = Date.now();
+    const cooldownMs = 24 * 60 * 60 * 1000;
+    const elapsed = now - (eco.lastDaily || 0);
+
+    if (elapsed < cooldownMs) {
+      const remaining = cooldownMs - elapsed;
+      const hours = Math.floor(remaining / (60 * 60 * 1000));
+      const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000));
+      return interaction.reply({
+        components: [
+          cv2.buildContainer(
+            'Stipend Cooldown Active | <a:exclamation_outline1:1565666739356827759>',
+            `You have already claimed your daily stipend.\n\n> -# <a:target_blink:1565667466984554588> **Time Remaining:** \`${hours}h ${minutes}m\`\n> -# <a:target_blink:1565667466984554588> **Streak Protected:** \`${eco.streak || 0} days\`\n\n-# 💡 **Use \`!shop\` to purchase mystery crates, streak shields, or luck boosters!**`
+          )
+        ],
+        flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+      });
+    }
+
+    const streak = (elapsed < 48 * 60 * 60 * 1000) ? (eco.streak || 0) + 1 : 1;
+    const baseReward = 300;
+    const streakBonus = Math.min(streak * 30, 600);
+    let totalClaim = baseReward + streakBonus;
+
+    if (db.isUserBoosterActive(guildId, interaction.user.id, 'daily_potion')) {
+      totalClaim *= 2;
+    }
+
+    db.updateUserEconomy(guildId, interaction.user.id, {
+      wallet: (eco.wallet || 0) + totalClaim,
+      lastDaily: now,
+      streak
+    });
+
+    return interaction.reply({
+      components: [
+        cv2.buildContainer(
+          'Daily Stipend Disbursed | <a:03_tick_circle:1565665642084827206>',
+          `Successfully claimed **\`+${totalClaim.toLocaleString()}\` Athena Coins**!\n\n-# ${BULLET_EMOJI} **Day ${streak} Streak**\n-# ${BULLET_EMOJI} **New Wallet Balance:** \`${((eco.wallet || 0) + totalClaim).toLocaleString()}\` coins\n\n-# 💡 **Use \`!shop\` to explore crates, luck charms, or server perks!**`
+        )
+      ],
+      flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2
+    });
+  }
+}
+
+export async function handleInventoryInteraction(interaction) {
+  return handleShopInteraction(interaction);
+}
 
 export const commands = [
   // --- BALANCE COMMAND ---
@@ -44,7 +283,7 @@ export const commands = [
           { type: 14, divider: true },
           {
             type: 10,
-            content: `-# **Athena Commerce Grid \u00b7 Use \`!daily\` to claim daily dividend**`
+            content: `-# 💡 **Use \`!shop\` to purchase mystery crates & luck charms, or \`!inv\` to view items.**`
           }
         ]
       };
@@ -74,7 +313,7 @@ export const commands = [
           { type: 14, divider: true },
           {
             type: 10,
-            content: `-# **Athena Commerce Grid \u00b7 Use \`/daily\` to claim daily dividend**`
+            content: `-# 💡 **Use \`/shop\` to explore mystery crates & charms, or \`/daily\` to claim stipend.**`
           }
         ]
       };
@@ -105,24 +344,48 @@ export const commands = [
           components: [
             cv2.buildContainer(
               'Stipend Cooldown Active | <a:exclamation_outline1:1565666739356827759>',
-              `You have already claimed your daily stipend.\n\n> -# <a:target_blink:1565667466984554588> **Time Remaining:** \`${hours}h ${minutes}m\`\n> -# <a:target_blink:1565667466984554588> **Streak Protected:** \`${eco.streak || 0} days\``
+              `You have already claimed your daily stipend.\n\n> -# <a:target_blink:1565667466984554588> **Time Remaining:** \`${hours}h ${minutes}m\`\n> -# <a:target_blink:1565667466984554588> **Streak Protected:** \`${eco.streak || 0} days\`\n\n-# 💡 **Use \`!shop\` to purchase mystery crates, streak shields, or luck boosters!**`
             )
           ],
           flags: MessageFlags.IsComponentsV2
         });
       }
 
-      // Check streak (within 48 hours keeps streak, else resets)
-      const streak = (elapsed < 48 * 60 * 60 * 1000) ? (eco.streak || 0) + 1 : 1;
+      // Check streak rescue via Streak Shield if > 48h elapsed
+      let streak = 1;
+      let shieldUsed = false;
+      if (elapsed < 48 * 60 * 60 * 1000) {
+        streak = (eco.streak || 0) + 1;
+      } else if (db.getUserItemCount(guildId, userId, 'streak_shield') > 0) {
+        db.removeUserItem(guildId, userId, 'streak_shield', 1);
+        streak = (eco.streak || 0) + 1;
+        shieldUsed = true;
+      }
+
       const baseReward = 300;
       const streakBonus = Math.min(streak * 30, 600);
-      const totalClaim = baseReward + streakBonus;
+      let totalClaim = baseReward + streakBonus;
+
+      // Check if Dividend Elixir booster is active
+      let elixirUsed = false;
+      if (db.isUserBoosterActive(guildId, userId, 'daily_potion')) {
+        totalClaim *= 2;
+        elixirUsed = true;
+      }
 
       db.updateUserEconomy(guildId, userId, {
         wallet: (eco.wallet || 0) + totalClaim,
         lastDaily: now,
         streak
       });
+
+      let bonusNotes = '';
+      if (shieldUsed) {
+        bonusNotes += `\n-# 🛡️ **Streak Shield Consumed:** Your Day ${streak} streak was saved from resetting!`;
+      }
+      if (elixirUsed) {
+        bonusNotes += `\n-# ✨ **Dividend Elixir Applied:** Payout doubled (+100% boost)!`;
+      }
 
       const container = {
         type: 17,
@@ -134,13 +397,14 @@ export const commands = [
               `-# **• Recipient:** <@${userId}>\n\n` +
               `-# ${BULLET_EMOJI} **Base Stipend:** \`+${baseReward}\` coins\n` +
               `-# ${BULLET_EMOJI} **Streak Multiplier (Day ${streak}):** \`+${streakBonus}\` bonus coins\n` +
-              `-# ${BULLET_EMOJI} **Total Deposited:** **\`+${totalClaim}\` Athena Coins**\n` +
-              `-# ${BULLET_EMOJI} **New Wallet Balance:** \`${((eco.wallet || 0) + totalClaim).toLocaleString()}\` coins`
+              `-# ${BULLET_EMOJI} **Total Deposited:** **\`+${totalClaim.toLocaleString()}\` Athena Coins**\n` +
+              `-# ${BULLET_EMOJI} **New Wallet Balance:** \`${((eco.wallet || 0) + totalClaim).toLocaleString()}\` coins` +
+              bonusNotes
           },
           { type: 14, divider: true },
           {
             type: 10,
-            content: `-# **Return in 24 hours to preserve your Day ${streak} streak streak!**`
+            content: `-# 💡 **Use \`!shop\` to purchase mystery crates, streak shields, or luck boosters!**`
           }
         ]
       };
@@ -163,23 +427,46 @@ export const commands = [
           components: [
             cv2.buildContainer(
               'Stipend Cooldown Active | <a:exclamation_outline1:1565666739356827759>',
-              `You have already claimed your daily stipend.\n\n> -# <a:target_blink:1565667466984554588> **Time Remaining:** \`${hours}h ${minutes}m\`\n> -# <a:target_blink:1565667466984554588> **Streak Protected:** \`${eco.streak || 0} days\``
+              `You have already claimed your daily stipend.\n\n> -# <a:target_blink:1565667466984554588> **Time Remaining:** \`${hours}h ${minutes}m\`\n> -# <a:target_blink:1565667466984554588> **Streak Protected:** \`${eco.streak || 0} days\`\n\n-# 💡 **Use \`!shop\` to purchase mystery crates, streak shields, or luck boosters!**`
             )
           ],
           flags: MessageFlags.IsComponentsV2
         });
       }
 
-      const streak = (elapsed < 48 * 60 * 60 * 1000) ? (eco.streak || 0) + 1 : 1;
+      let streak = 1;
+      let shieldUsed = false;
+      if (elapsed < 48 * 60 * 60 * 1000) {
+        streak = (eco.streak || 0) + 1;
+      } else if (db.getUserItemCount(guildId, userId, 'streak_shield') > 0) {
+        db.removeUserItem(guildId, userId, 'streak_shield', 1);
+        streak = (eco.streak || 0) + 1;
+        shieldUsed = true;
+      }
+
       const baseReward = 300;
       const streakBonus = Math.min(streak * 30, 600);
-      const totalClaim = baseReward + streakBonus;
+      let totalClaim = baseReward + streakBonus;
+
+      let elixirUsed = false;
+      if (db.isUserBoosterActive(guildId, userId, 'daily_potion')) {
+        totalClaim *= 2;
+        elixirUsed = true;
+      }
 
       db.updateUserEconomy(guildId, userId, {
         wallet: (eco.wallet || 0) + totalClaim,
         lastDaily: now,
         streak
       });
+
+      let bonusNotes = '';
+      if (shieldUsed) {
+        bonusNotes += `\n-# 🛡️ **Streak Shield Consumed:** Your Day ${streak} streak was saved from resetting!`;
+      }
+      if (elixirUsed) {
+        bonusNotes += `\n-# ✨ **Dividend Elixir Applied:** Payout doubled (+100% boost)!`;
+      }
 
       const container = {
         type: 17,
@@ -191,13 +478,14 @@ export const commands = [
               `-# **• Recipient:** <@${userId}>\n\n` +
               `-# ${BULLET_EMOJI} **Base Stipend:** \`+${baseReward}\` coins\n` +
               `-# ${BULLET_EMOJI} **Streak Multiplier (Day ${streak}):** \`+${streakBonus}\` bonus coins\n` +
-              `-# ${BULLET_EMOJI} **Total Deposited:** **\`+${totalClaim}\` Athena Coins**\n` +
-              `-# ${BULLET_EMOJI} **New Wallet Balance:** \`${((eco.wallet || 0) + totalClaim).toLocaleString()}\` coins`
+              `-# ${BULLET_EMOJI} **Total Deposited:** **\`+${totalClaim.toLocaleString()}\` Athena Coins**\n` +
+              `-# ${BULLET_EMOJI} **New Wallet Balance:** \`${((eco.wallet || 0) + totalClaim).toLocaleString()}\` coins` +
+              bonusNotes
           },
           { type: 14, divider: true },
           {
             type: 10,
-            content: `-# **Return in 24 hours to preserve your Day ${streak} streak!**`
+            content: `-# 💡 **Use \`/shop\` to explore crates, luck charms, or server perks!**`
           }
         ]
       };
@@ -361,7 +649,7 @@ export const commands = [
 
       if (choice !== 'heads' && choice !== 'tails' && choice !== 'h' && choice !== 't') {
         return message.reply({
-          components: [cv2.buildContainer('Coinflip Usage', 'Please specify `heads` or `tails` followed by your bet amount.\n\n-# **Example:** `!coinflip heads 50`')],
+          components: [cv2.buildContainer('Coinflip Usage', 'Please specify `heads` or `tails` followed by your bet amount.\n\n-# **Example:** `!coinflip heads 50`\n\n-# 💡 **Use \`!shop\` to purchase Lucky Clovers (+12% win rate) or Mystery Crates!**')],
           flags: MessageFlags.IsComponentsV2
         });
       }
@@ -378,22 +666,31 @@ export const commands = [
         const eco = db.getUserEconomy(guildId, message.author.id);
         return message.reply({
           components: [
-            cv2.buildContainer('Insufficient Funds', `You need \`${bet}\` coins in your wallet. Current wallet: \`${eco.wallet || 0}\`.`)
+            cv2.buildContainer('Insufficient Funds', `You need \`${bet}\` coins in your wallet. Current wallet: \`${eco.wallet || 0}\`.\n\n-# 💡 **Use \`!daily\` to collect coins or \`!shop\` to explore items!**`)
           ],
           flags: MessageFlags.IsComponentsV2
         });
       }
 
       const normalizedChoice = (choice === 'h' || choice === 'heads') ? 'heads' : 'tails';
-      const outcome = Math.random() < 0.5 ? 'heads' : 'tails';
-      const won = normalizedChoice === outcome;
+      const hasClover = db.isUserBoosterActive(guildId, message.author.id, 'lucky_clover');
+      const winChance = hasClover ? 0.60 : 0.50;
+      const won = Math.random() < winChance;
+      const outcome = won ? normalizedChoice : (normalizedChoice === 'heads' ? 'tails' : 'heads');
 
+      const hasCharm = db.isUserBoosterActive(guildId, message.author.id, 'gambler_charm');
+      let winnings = 0;
       if (won) {
-        const winnings = bet * 2;
+        const multiplier = hasCharm ? 2.25 : 2;
+        winnings = Math.floor(bet * multiplier);
         db.addWallet(guildId, message.author.id, winnings);
       }
 
       const eco = db.getUserEconomy(guildId, message.author.id);
+      let buffNote = '';
+      if (hasClover) buffNote += `\n-# 🍀 **Lucky Clover Buff:** Win probability boosted to 60%!`;
+      if (won && hasCharm) buffNote += `\n-# ✨ **Gambler's Charm Buff:** +25% bonus payout applied!`;
+
       const container = {
         type: 17,
         components: [
@@ -402,9 +699,15 @@ export const commands = [
             content:
               `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:04_cross_circle:1565665644806934639>'}**\n` +
               `-# **• Player:** <@${message.author.id}>\n` +
-              `-# ${BULLET_EMOJI} **Your Call:** \`${normalizedChoice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
-              `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
-              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+              `-# ${BULLET_EMOJI} **Your Call:** \`${normalizedChoice.toUpperCase()}\` · **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
+              `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${winnings - bet}\` coins (Payout: \`${winnings}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
+              buffNote
+          },
+          { type: 14, divider: true },
+          {
+            type: 10,
+            content: `-# 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`
           }
         ]
       };
@@ -428,20 +731,30 @@ export const commands = [
         const eco = db.getUserEconomy(guildId, interaction.user.id);
         return interaction.reply({
           components: [
-            cv2.buildContainer('Insufficient Funds', `You need \`${bet}\` coins in your wallet. Current wallet: \`${eco.wallet || 0}\`.`)
+            cv2.buildContainer('Insufficient Funds', `You need \`${bet}\` coins in your wallet. Current wallet: \`${eco.wallet || 0}\`.\n\n-# 💡 **Use \`/daily\` to claim stipend or \`/shop\` to explore catalog!**`)
           ],
           flags: MessageFlags.IsComponentsV2
         });
       }
 
-      const outcome = Math.random() < 0.5 ? 'heads' : 'tails';
-      const won = choice === outcome;
+      const hasClover = db.isUserBoosterActive(guildId, interaction.user.id, 'lucky_clover');
+      const winChance = hasClover ? 0.60 : 0.50;
+      const won = Math.random() < winChance;
+      const outcome = won ? choice : (choice === 'heads' ? 'tails' : 'heads');
 
+      const hasCharm = db.isUserBoosterActive(guildId, interaction.user.id, 'gambler_charm');
+      let winnings = 0;
       if (won) {
-        db.addWallet(guildId, interaction.user.id, bet * 2);
+        const multiplier = hasCharm ? 2.25 : 2;
+        winnings = Math.floor(bet * multiplier);
+        db.addWallet(guildId, interaction.user.id, winnings);
       }
 
       const eco = db.getUserEconomy(guildId, interaction.user.id);
+      let buffNote = '';
+      if (hasClover) buffNote += `\n-# 🍀 **Lucky Clover Buff:** Win probability boosted to 60%!`;
+      if (won && hasCharm) buffNote += `\n-# ✨ **Gambler's Charm Buff:** +25% bonus payout applied!`;
+
       const container = {
         type: 17,
         components: [
@@ -450,9 +763,15 @@ export const commands = [
             content:
               `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:04_cross_circle:1565665644806934639>'}**\n` +
               `-# **• Player:** <@${interaction.user.id}>\n` +
-              `-# ${BULLET_EMOJI} **Your Call:** \`${choice.toUpperCase()}\` \u00b7 **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
-              `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${bet}\` coins (Payout: \`${bet * 2}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
-              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+              `-# ${BULLET_EMOJI} **Your Call:** \`${choice.toUpperCase()}\` · **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
+              `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${winnings - bet}\` coins (Payout: \`${winnings}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
+              buffNote
+          },
+          { type: 14, divider: true },
+          {
+            type: 10,
+            content: `-# 💡 **Use \`/shop\` to explore crates, luck charms, or server perks!**`
           }
         ]
       };
@@ -465,69 +784,19 @@ export const commands = [
   {
     name: 'shop',
     aliases: ['market', 'store'],
-    description: 'Browse the server role shop, purchase perks, or manage items.',
+    description: 'Browse the global item catalog, purchase crates, charms, or server roles.',
     category: 'community',
     options: [
       {
-        name: 'view',
-        description: 'View all purchasable items in the server shop',
-        type: 1
-      },
-      {
-        name: 'buy',
-        description: 'Purchase an item by its ID',
-        type: 1,
-        options: [
-          {
-            name: 'item_id',
-            description: 'The ID of the item to purchase',
-            type: 3,
-            required: true
-          }
-        ]
-      },
-      {
-        name: 'add',
-        description: 'Add a role or perk to the shop (Admin)',
-        type: 1,
-        options: [
-          {
-            name: 'name',
-            description: 'Item display name',
-            type: 3,
-            required: true
-          },
-          {
-            name: 'price',
-            description: 'Price in Athena coins',
-            type: 4,
-            required: true
-          },
-          {
-            name: 'role',
-            description: 'Role granted upon purchase',
-            type: 8, // ROLE
-            required: true
-          },
-          {
-            name: 'description',
-            description: 'Short description of the item',
-            type: 3,
-            required: false
-          }
-        ]
-      },
-      {
-        name: 'remove',
-        description: 'Remove an item from the shop (Admin)',
-        type: 1,
-        options: [
-          {
-            name: 'item_id',
-            description: 'The ID of the item to delete',
-            type: 3,
-            required: true
-          }
+        name: 'department',
+        description: 'Shop department to view (crates, boosters, collectibles, roles)',
+        type: 3,
+        required: false,
+        choices: [
+          { name: 'Mystery Crates', value: 'crates' },
+          { name: 'Boosters & Charms', value: 'boosters' },
+          { name: 'Prestige Collectibles', value: 'collectibles' },
+          { name: 'Server Role Perks', value: 'roles' }
         ]
       }
     ],
@@ -535,7 +804,7 @@ export const commands = [
       const guildId = message.guild.id;
       const sub = (args[0] || '').toLowerCase();
 
-      // EXTRA OWNER: ADD ITEM
+      // EXTRA OWNER: ADD ROLE ITEM
       if (sub === 'add') {
         if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
           return message.reply({ components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can manage the shop.')], flags: MessageFlags.IsComponentsV2 });
@@ -563,11 +832,12 @@ export const commands = [
           components: [
             cv2.buildContainer(
               'Shop Item Created | <a:03_tick_circle:1565665642084827206>',
-              `Item **${item.name}** registered successfully!\n\n` +
+              `Item **${item.name}** registered successfully in Server Roles!\n\n` +
               `-# ${BULLET_EMOJI} **Item ID:** \`${item.id}\`\n` +
               `-# ${BULLET_EMOJI} **Price:** \`${item.price.toLocaleString()}\` coins\n` +
               `-# ${BULLET_EMOJI} **Role:** <@&${item.roleId}>\n` +
-              `-# ${BULLET_EMOJI} **Description:** ${item.description}`
+              `-# ${BULLET_EMOJI} **Description:** ${item.description}\n\n` +
+              `-# 💡 **View all items in \`!shop roles\`**`
             )
           ],
           flags: MessageFlags.IsComponentsV2
@@ -588,7 +858,7 @@ export const commands = [
           components: [
             cv2.buildContainer(
               removed ? 'Shop Item Removed | <a:03_tick_circle:1565665642084827206>' : 'Item Not Found',
-              removed ? `Item \`${itemId}\` was purged from the shop.` : `No item matching ID \`${itemId}\` was found.`
+              removed ? `Custom item \`${itemId}\` was purged from the shop.` : `No custom role item matching ID \`${itemId}\` was found.`
             )
           ],
           flags: MessageFlags.IsComponentsV2
@@ -597,240 +867,606 @@ export const commands = [
 
       // BUY ITEM
       if (sub === 'buy') {
-        const itemId = args[1];
+        const itemId = (args[1] || '').toLowerCase();
+        let quantity = parseInt(args[2]) || 1;
+        if (isNaN(quantity) || quantity <= 0) quantity = 1;
+        if (quantity > 50) quantity = 50;
+
         if (!itemId) {
-          return message.reply({ components: [cv2.buildContainer('Missing Item ID', 'Usage: `!shop buy <item_id>`\nUse `!shop` to view item IDs.')], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        const items = db.getShopItems(guildId);
-        const item = items.find(it => it.id === itemId || it.name.toLowerCase() === itemId.toLowerCase());
-        if (!item) {
-          return message.reply({ components: [cv2.buildContainer('Item Not Found', `No item matching \`${itemId}\` exists in the shop.`)], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        const role = message.guild.roles.cache.get(item.roleId);
-        if (!role) {
-          return message.reply({ components: [cv2.buildContainer('Role Missing', 'The role bound to this item no longer exists.')], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        if (message.member.roles.cache.has(role.id)) {
-          return message.reply({ components: [cv2.buildContainer('Already Owned', `You already possess the <@&${role.id}> role.`)], flags: MessageFlags.IsComponentsV2 });
-        }
-
-        const success = db.removeWallet(guildId, message.author.id, item.price);
-        if (!success) {
-          const eco = db.getUserEconomy(guildId, message.author.id);
           return message.reply({
             components: [
               cv2.buildContainer(
-                'Insufficient Funds',
-                `You need \`${item.price.toLocaleString()}\` coins to purchase **${item.name}**.\n-# **Your Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+                'Missing Item ID',
+                'Usage: `!shop buy <item_id> [quantity]`\n\n-# **Examples:**\n-# `!shop buy crate_common 3`\n-# `!shop buy lucky_clover`\n\n-# 💡 **Use \`!shop\` to browse all item IDs and departments.**'
               )
             ],
             flags: MessageFlags.IsComponentsV2
           });
         }
 
-        await message.member.roles.add(role).catch(err => {
-          console.error('[Shop] Failed to assign purchased role:', err);
-        });
+        // Check built-in items first
+        const builtin = getBuiltinItem(itemId);
+        if (builtin) {
+          const totalCost = builtin.price * quantity;
+          const success = db.removeWallet(guildId, message.author.id, totalCost);
+          if (!success) {
+            const eco = db.getUserEconomy(guildId, message.author.id);
+            return message.reply({
+              components: [
+                cv2.buildContainer(
+                  'Insufficient Funds',
+                  `You need \`${totalCost.toLocaleString()}\` Athena coins to purchase **${quantity}x ${builtin.name}**.\n-# **Your Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins\n\n-# 💡 **Claim \`!daily\` or win coins in \`!slots\` to boost your balance!**`
+                )
+              ],
+              flags: MessageFlags.IsComponentsV2
+            });
+          }
 
-        const container = {
-          type: 17,
-          components: [
-            {
-              type: 10,
-              content:
-                `### **Item Purchased | <a:03_tick_circle:1565665642084827206>**\n` +
-                `-# **• Buyer:** <@${message.author.id}>\n` +
-                `-# ${BULLET_EMOJI} **Item:** **${item.name}**\n` +
-                `-# ${BULLET_EMOJI} **Role Granted:** <@&${role.id}>\n` +
-                `-# ${BULLET_EMOJI} **Price Paid:** \`${item.price.toLocaleString()}\` Athena Coins`
-            }
-          ]
-        };
+          const newTotal = db.addUserItem(guildId, message.author.id, builtin.id, quantity);
+          let nextStepHint = '';
+          if (builtin.type === 'crate') {
+            nextStepHint = `Use \`!open ${builtin.id}\` to unbox your mystery rewards!`;
+          } else if (builtin.type === 'booster') {
+            nextStepHint = `Use \`!use ${builtin.id}\` to activate your booster buff!`;
+          } else if (builtin.type === 'passive') {
+            nextStepHint = `This item stays in your backpack and automatically protects your daily streak.`;
+          } else {
+            nextStepHint = `This prestige collectible is now proudly in your \`!inv\`.`;
+          }
 
-        return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-      }
+          const container = {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content:
+                  `### **Purchase Complete | <a:03_tick_circle:1565665642084827206>**\n` +
+                  `-# **• Buyer:** <@${message.author.id}>\n` +
+                  `-# ${BULLET_EMOJI} **Purchased:** **${quantity}x ${builtin.name}**\n` +
+                  `-# ${BULLET_EMOJI} **Total Cost:** \`${totalCost.toLocaleString()}\` Athena Coins\n` +
+                  `-# ${BULLET_EMOJI} **Backpack Total:** \`${newTotal}\` in inventory\n\n` +
+                  `-# ${BULLET_EMOJI} **Action:** *${nextStepHint}*`
+              },
+              { type: 14, divider: true },
+              {
+                type: 10,
+                content: `-# 💡 **Check your backpack anytime with \`!inv\` or explore more in \`!shop\`.**`
+              }
+            ]
+          };
 
-      // DEFAULT: VIEW SHOP
-      const items = db.getShopItems(guildId);
-      if (items.length === 0) {
+          return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+        }
+
+        // Check custom server role items
+        const customItems = db.getShopItems(guildId);
+        const roleItem = customItems.find(it => it.id === itemId || it.name.toLowerCase() === itemId);
+        if (roleItem) {
+          const role = message.guild.roles.cache.get(roleItem.roleId);
+          if (!role) {
+            return message.reply({ components: [cv2.buildContainer('Role Missing', 'The role bound to this item no longer exists in the server.')], flags: MessageFlags.IsComponentsV2 });
+          }
+          if (message.member.roles.cache.has(role.id)) {
+            return message.reply({ components: [cv2.buildContainer('Already Owned', `You already possess the <@&${role.id}> role.`)], flags: MessageFlags.IsComponentsV2 });
+          }
+
+          const success = db.removeWallet(guildId, message.author.id, roleItem.price);
+          if (!success) {
+            const eco = db.getUserEconomy(guildId, message.author.id);
+            return message.reply({
+              components: [
+                cv2.buildContainer(
+                  'Insufficient Funds',
+                  `You need \`${roleItem.price.toLocaleString()}\` coins to purchase **${roleItem.name}**.\n-# **Your Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+                )
+              ],
+              flags: MessageFlags.IsComponentsV2
+            });
+          }
+
+          await message.member.roles.add(role).catch(err => {
+            console.error('[Shop] Failed to assign purchased role:', err);
+          });
+
+          const container = {
+            type: 17,
+            components: [
+              {
+                type: 10,
+                content:
+                  `### **Role Purchased | <a:03_tick_circle:1565665642084827206>**\n` +
+                  `-# **• Buyer:** <@${message.author.id}>\n` +
+                  `-# ${BULLET_EMOJI} **Item:** **${roleItem.name}**\n` +
+                  `-# ${BULLET_EMOJI} **Role Granted:** <@&${role.id}>\n` +
+                  `-# ${BULLET_EMOJI} **Price Paid:** \`${roleItem.price.toLocaleString()}\` Athena Coins`
+              }
+            ]
+          };
+
+          return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+        }
+
         return message.reply({
           components: [
             cv2.buildContainer(
-              'Server Commerce Catalog | <a:03_tick_circle:1565665642084827206>',
-              'The server shop is currently empty.\n\n-# **Administrators:** Add items with `!shop add <name> <price> <@role>`'
+              'Item Not Found',
+              `Could not find any item matching \`${itemId}\` in the global catalog or server roles.\n\n-# 💡 **Use \`!shop\` to browse all valid item IDs.**`
             )
           ],
           flags: MessageFlags.IsComponentsV2
         });
       }
 
-      let itemList = items.map((it, idx) =>
-        `**${idx + 1}. ${it.name}** \u2014 \`${it.price.toLocaleString()}\` coins\n` +
-        `-# ${BULLET_EMOJI} **Role:** <@&${it.roleId}> \u00b7 **ID:** \`${it.id}\`\n` +
-        `-# ${BULLET_EMOJI} *${it.description || 'Exclusive server role perk'}*`
-      ).join('\n\n');
-
-      const container = {
-        type: 17,
-        components: [
-          {
-            type: 10,
-            content:
-              `### **Server Commerce Catalog | <a:03_tick_circle:1565665642084827206>**\n` +
-              `-# **Use \`!shop buy <item_id>\` to purchase an item.**\n\n` +
-              itemList
-          },
-          { type: 14, divider: true },
-          {
-            type: 10,
-            content: `-# **Athena Prime Secure Role Fulfillment Matrix**`
-          }
-        ]
-      };
-
-      return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+      // DEFAULT: BROWSE SHOP
+      const validCategories = ['crates', 'boosters', 'collectibles', 'roles'];
+      const targetCat = validCategories.includes(sub) ? sub : 'crates';
+      return message.reply(buildShopPanel(guildId, targetCat));
     },
     async executeSlash(interaction) {
       const guildId = interaction.guild.id;
-      const sub = interaction.options.getSubcommand();
+      const dept = interaction.options.getString('department') || 'crates';
+      return interaction.reply(buildShopPanel(guildId, dept));
+    }
+  },
 
-      if (sub === 'add') {
-        const name = interaction.options.getString('name');
-        const price = interaction.options.getInteger('price');
-        const role = interaction.options.getRole('role');
-        const desc = interaction.options.getString('description') || `Grants the @${role.name} role`;
-
-        const item = db.addShopItem(guildId, { name, price, roleId: role.id, description: desc });
-        return interaction.reply({
-          components: [
-            cv2.buildContainer(
-              'Shop Item Created | <a:03_tick_circle:1565665642084827206>',
-              `Item **${item.name}** added for \`${item.price.toLocaleString()}\` coins.\n-# **ID:** \`${item.id}\``
-            )
-          ],
-          flags: MessageFlags.IsComponentsV2
-        });
+  // --- INVENTORY COMMAND ---
+  {
+    name: 'inventory',
+    aliases: ['inv', 'bag'],
+    description: 'Inspect your owned mystery crates, active luck boosters, and prestige collectibles.',
+    category: 'community',
+    options: [
+      {
+        name: 'user',
+        description: 'Member to inspect inventory for (defaults to you)',
+        type: 6,
+        required: false
       }
+    ],
+    async executePrefix(message, args) {
+      const targetUser = message.mentions.users.first()
+        || (args[0] ? await message.client.users.fetch(args[0]).catch(() => null) : null)
+        || message.author;
+      const member = message.guild.members.cache.get(targetUser.id);
+      const panel = buildInventoryPanel(message.guild.id, targetUser.id, member);
+      return message.reply(panel);
+    },
+    async executeSlash(interaction) {
+      const targetUser = interaction.options.getUser('user') || interaction.user;
+      const member = interaction.guild.members.cache.get(targetUser.id);
+      const panel = buildInventoryPanel(interaction.guild.id, targetUser.id, member);
+      return interaction.reply(panel);
+    }
+  },
 
-      if (sub === 'remove') {
-        const itemId = interaction.options.getString('item_id');
-        const removed = db.removeShopItem(guildId, itemId);
-        return interaction.reply({
-          components: [
-            cv2.buildContainer(
-              removed ? 'Shop Item Removed | <a:03_tick_circle:1565665642084827206>' : 'Item Not Found',
-              removed ? `Item \`${itemId}\` removed from catalog.` : `Could not find item with ID \`${itemId}\`.`
-            )
-          ],
-          flags: MessageFlags.IsComponentsV2
-        });
-      }
-
-      if (sub === 'buy') {
-        const itemId = interaction.options.getString('item_id');
-        const items = db.getShopItems(guildId);
-        const item = items.find(it => it.id === itemId || it.name.toLowerCase() === itemId.toLowerCase());
-
-        if (!item) {
-          return interaction.reply({
-            components: [cv2.buildContainer('Item Not Found', `No item matching \`${itemId}\` was found.`)],
-            flags: MessageFlags.IsComponentsV2
-          });
-        }
-
-        const role = interaction.guild.roles.cache.get(item.roleId);
-        if (!role) {
-          return interaction.reply({
-            components: [cv2.buildContainer('Role Missing', 'The role bound to this item no longer exists.')],
-            flags: MessageFlags.IsComponentsV2
-          });
-        }
-
-        if (interaction.member.roles.cache.has(role.id)) {
-          return interaction.reply({
-            components: [cv2.buildContainer('Already Owned', `You already possess the <@&${role.id}> role.`)],
-            flags: MessageFlags.IsComponentsV2
-          });
-        }
-
-        const success = db.removeWallet(guildId, interaction.user.id, item.price);
-        if (!success) {
-          const eco = db.getUserEconomy(guildId, interaction.user.id);
-          return interaction.reply({
-            components: [
-              cv2.buildContainer(
-                'Insufficient Funds',
-                `You need \`${item.price.toLocaleString()}\` coins. Current wallet: \`${eco.wallet || 0}\`.`
-              )
-            ],
-            flags: MessageFlags.IsComponentsV2
-          });
-        }
-
-        await interaction.member.roles.add(role).catch(() => null);
-
-        const container = {
-          type: 17,
-          components: [
-            {
-              type: 10,
-              content:
-                `### **Item Purchased | <a:03_tick_circle:1565665642084827206>**\n` +
-                `-# **• Buyer:** <@${interaction.user.id}>\n` +
-                `-# ${BULLET_EMOJI} **Item:** **${item.name}**\n` +
-                `-# ${BULLET_EMOJI} **Role Granted:** <@&${role.id}>\n` +
-                `-# ${BULLET_EMOJI} **Price Paid:** \`${item.price.toLocaleString()}\` coins`
-            }
-          ]
-        };
-
-        return interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
-      }
-
-      // VIEW
-      const items = db.getShopItems(guildId);
-      if (items.length === 0) {
-        return interaction.reply({
-          components: [
-            cv2.buildContainer(
-              'Server Commerce Catalog | <a:03_tick_circle:1565665642084827206>',
-              'The server shop is currently empty.\n\n-# **Administrators:** Use `/shop add` to list items.'
-            )
-          ],
-          flags: MessageFlags.IsComponentsV2
-        });
-      }
-
-      let itemList = items.map((it, idx) =>
-        `**${idx + 1}. ${it.name}** \u2014 \`${it.price.toLocaleString()}\` coins\n` +
-        `-# ${BULLET_EMOJI} **Role:** <@&${it.roleId}> \u00b7 **ID:** \`${it.id}\`\n` +
-        `-# ${BULLET_EMOJI} *${it.description || 'Exclusive server role perk'}*`
-      ).join('\n\n');
-
-      const container = {
-        type: 17,
-        components: [
-          {
-            type: 10,
-            content:
-              `### **Server Commerce Catalog | <a:03_tick_circle:1565665642084827206>**\n` +
-              `-# **Use \`/shop buy <item_id>\` to purchase an item.**\n\n` +
-              itemList
-          },
-          { type: 14, divider: true },
-          {
-            type: 10,
-            content: `-# **Athena Prime Secure Role Fulfillment Matrix**`
-          }
+  // --- OPEN / UNBOX CRATE COMMAND ---
+  {
+    name: 'open',
+    aliases: ['unbox', 'crate'],
+    description: 'Unbox a mystery crate from your inventory to reveal surprise coin jackpots and loot.',
+    category: 'community',
+    options: [
+      {
+        name: 'crate',
+        description: 'The crate ID to unbox (e.g. crate_common, crate_rare, crate_mythic)',
+        type: 3,
+        required: true,
+        choices: [
+          { name: 'Common Crate', value: 'crate_common' },
+          { name: 'Rare Crate', value: 'crate_rare' },
+          { name: 'Mythic Chest', value: 'crate_mythic' }
         ]
-      };
+      }
+    ],
+    async executePrefix(message, args) {
+      const rawId = (args[0] || '').toLowerCase().trim();
+      let crateId = rawId;
+      if (rawId === 'common') crateId = 'crate_common';
+      if (rawId === 'rare') crateId = 'crate_rare';
+      if (rawId === 'mythic' || rawId === 'chest') crateId = 'crate_mythic';
 
-      return interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+      if (!crateId) {
+        return message.reply({
+          components: [
+            cv2.buildContainer(
+              'Unbox Usage',
+              'Please specify which crate to open from your inventory:\n\n-# **Format:** `!open <crate_id>`\n-# **Examples:** `!open crate_common` • `!open crate_rare` • `!open crate_mythic`\n\n-# 💡 **Use \`!inv\` to check your backpack or \`!shop\` to purchase crates!**'
+            )
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+
+      return handleCrateOpen(message, message.author, crateId);
+    },
+    async executeSlash(interaction) {
+      const crateId = interaction.options.getString('crate');
+      return handleCrateOpen(interaction, interaction.user, crateId);
+    }
+  },
+
+  // --- USE ITEM COMMAND ---
+  {
+    name: 'use',
+    aliases: ['consume', 'activate'],
+    description: 'Activate a consumable booster or charm from your inventory.',
+    category: 'community',
+    options: [
+      {
+        name: 'item',
+        description: 'The item ID to activate (e.g. lucky_clover, gambler_charm, daily_potion)',
+        type: 3,
+        required: true,
+        choices: [
+          { name: 'Lucky Clover (1h Luck Boost)', value: 'lucky_clover' },
+          { name: 'Gambler\'s Charm (2h +25% Payout)', value: 'gambler_charm' },
+          { name: 'Dividend Elixir (2x Daily)', value: 'daily_potion' }
+        ]
+      }
+    ],
+    async executePrefix(message, args) {
+      const rawId = (args[0] || '').toLowerCase().trim();
+      let itemId = rawId;
+      if (rawId === 'clover' || rawId === 'lucky') itemId = 'lucky_clover';
+      if (rawId === 'charm' || rawId === 'gambler') itemId = 'gambler_charm';
+      if (rawId === 'elixir' || rawId === 'potion') itemId = 'daily_potion';
+      if (rawId === 'shield') itemId = 'streak_shield';
+
+      if (!itemId) {
+        return message.reply({
+          components: [
+            cv2.buildContainer(
+              'Item Activation Usage',
+              'Please specify which booster to activate from your inventory:\n\n-# **Format:** `!use <item_id>`\n-# **Examples:** `!use lucky_clover` • `!use gambler_charm` • `!use daily_potion`\n\n-# 💡 **Use \`!inv\` to view your owned boosters or \`!shop\` to purchase.**'
+            )
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+
+      return handleItemUse(message, message.author, itemId);
+    },
+    async executeSlash(interaction) {
+      const itemId = interaction.options.getString('item');
+      return handleItemUse(interaction, interaction.user, itemId);
+    }
+  },
+
+  // --- SLOTS COMMAND (OwO STYLE CASINO GAME) ---
+  {
+    name: 'slots',
+    aliases: ['s', 'slot'],
+    description: 'Wager your coins on a 3-reel casino slot machine with jackpot multipliers.',
+    category: 'community',
+    options: [
+      {
+        name: 'bet',
+        description: 'Amount of Athena coins to wager',
+        type: 4,
+        required: true
+      }
+    ],
+    async executePrefix(message, args) {
+      const bet = parseInt(args[0]);
+      if (isNaN(bet) || bet <= 0) {
+        return message.reply({
+          components: [
+            cv2.buildContainer(
+              'Slots Usage',
+              'Please specify a positive coin wager:\n\n-# **Format:** `!slots <bet>` (or `!s <bet>`)\n-# **Example:** `!slots 100`\n\n-# 💡 **Active Lucky Clovers enhance match probabilities!**'
+            )
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+      return runSlotsGame(message, message.author, bet);
+    },
+    async executeSlash(interaction) {
+      const bet = interaction.options.getInteger('bet');
+      if (bet <= 0) {
+        return interaction.reply({
+          components: [cv2.buildContainer('Invalid Wager', 'Please enter a positive coin wager.')],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+      return runSlotsGame(interaction, interaction.user, bet);
     }
   }
 ];
+
+// ==========================================
+// HANDLER: CRATE UNBOXING
+// ==========================================
+async function handleCrateOpen(ctx, user, crateId) {
+  const guildId = ctx.guild.id;
+  const crate = getBuiltinItem(crateId);
+
+  if (!crate || crate.type !== 'crate') {
+    return ctx.reply({
+      components: [
+        cv2.buildContainer(
+          'Invalid Crate',
+          `\`${crateId}\` is not a valid mystery crate.\n\n-# Available Crates: \`crate_common\`, \`crate_rare\`, \`crate_mythic\`\n-# 💡 **Use \`!shop crates\` to browse all mystery boxes.**`
+        )
+      ],
+      flags: MessageFlags.IsComponentsV2
+    });
+  }
+
+  const ownedCount = db.getUserItemCount(guildId, user.id, crate.id);
+  if (ownedCount <= 0) {
+    return ctx.reply({
+      components: [
+        cv2.buildContainer(
+          'No Crates Found',
+          `You do not own any **${crate.name}** in your backpack.\n\n` +
+          `-# **Price:** \`${crate.price.toLocaleString()}\` Athena Coins\n` +
+          `-# **Buy Command:** \`!shop buy ${crate.id}\`\n\n` +
+          `-# 💡 **Use \`!shop\` to purchase crates, or \`!inv\` to see what you own.**`
+        )
+      ],
+      flags: MessageFlags.IsComponentsV2
+    });
+  }
+
+  // Deduct 1 crate
+  db.removeUserItem(guildId, user.id, crate.id, 1);
+
+  // Roll coins
+  const min = crate.minCoins || 300;
+  const max = crate.maxCoins || 1200;
+  let coinsWon = Math.floor(Math.random() * (max - min + 1)) + min;
+
+  // Check Gambler's Charm booster (+25% payout)
+  const hasCharm = db.isUserBoosterActive(guildId, user.id, 'gambler_charm');
+  if (hasCharm) {
+    coinsWon = Math.floor(coinsWon * 1.25);
+  }
+
+  db.addWallet(guildId, user.id, coinsWon);
+
+  // Roll bonus loot
+  let bonusItem = null;
+  if (crate.bonusDrop && Math.random() < crate.bonusDrop.chance) {
+    bonusItem = getBuiltinItem(crate.bonusDrop.itemId);
+    if (bonusItem) {
+      db.addUserItem(guildId, user.id, bonusItem.id, 1);
+    }
+  }
+
+  const remaining = db.getUserItemCount(guildId, user.id, crate.id);
+  const eco = db.getUserEconomy(guildId, user.id);
+
+  let lootDetails = `-# ${BULLET_EMOJI} **Currency Payout:** **\`+${coinsWon.toLocaleString()}\` Athena Coins**`;
+  if (hasCharm) {
+    lootDetails += ` *(+25% Charm Bonus applied!)*`;
+  }
+  if (bonusItem) {
+    lootDetails += `\n-# ✨ **LUCKY BONUS DROP:** **1x ${bonusItem.name}** added to your backpack!`;
+  }
+
+  const container = {
+    type: 17,
+    components: [
+      {
+        type: 10,
+        content:
+          `### **Crate Unboxed | <a:03_tick_circle:1565665642084827206>**\n` +
+          `-# **• Unboxer:** <@${user.id}>\n` +
+          `-# ${BULLET_EMOJI} **Opened:** **${crate.name}**\n\n` +
+          `${lootDetails}\n\n` +
+          `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins\n` +
+          `-# ${BULLET_EMOJI} **Remaining Crates:** \`${remaining}\` in inventory`
+      },
+      { type: 14, divider: true },
+      {
+        type: 10,
+        content: `-# 💡 **Use \`!inv\` to inspect items, or \`!shop\` to purchase more crates!**`
+      }
+    ]
+  };
+
+  return ctx.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+}
+
+// ==========================================
+// HANDLER: ITEM USE / CONSUME
+// ==========================================
+async function handleItemUse(ctx, user, itemId) {
+  const guildId = ctx.guild.id;
+
+  // If user passed a crate, redirect to crate opening
+  if (itemId.startsWith('crate_')) {
+    return handleCrateOpen(ctx, user, itemId);
+  }
+
+  const item = getBuiltinItem(itemId);
+  if (!item) {
+    return ctx.reply({
+      components: [
+        cv2.buildContainer(
+          'Item Not Found',
+          `\`${itemId}\` was not recognized in the item catalog.\n\n-# 💡 **Use \`!inv\` to check your backpack or \`!shop\` to browse items.**`
+        )
+      ],
+      flags: MessageFlags.IsComponentsV2
+    });
+  }
+
+  if (item.type === 'passive') {
+    return ctx.reply({
+      components: [
+        cv2.buildContainer(
+          'Passive Protection Item',
+          `**${item.name}** is a passive protection safeguard!\n\n` +
+          `- # It does not need to be manually activated.\n` +
+          `- # As long as it rests in your \`!inv\`, it will automatically rescue your daily streak if you miss your 24-48h window.\n\n` +
+          `- # 💡 **Owned:** \`${db.getUserItemCount(guildId, user.id, item.id)}\` in inventory.`
+        )
+      ],
+      flags: MessageFlags.IsComponentsV2
+    });
+  }
+
+  if (item.type === 'collectible') {
+    return ctx.reply({
+      components: [
+        cv2.buildContainer(
+          'Prestige Collectible',
+          `**${item.name}** is a permanent prestige piece that showcases on your \`!inv\` and profile.\n\n-# It is permanently preserved in your collection.`
+        )
+      ],
+      flags: MessageFlags.IsComponentsV2
+    });
+  }
+
+  const owned = db.getUserItemCount(guildId, user.id, item.id);
+  if (owned <= 0) {
+    return ctx.reply({
+      components: [
+        cv2.buildContainer(
+          'Item Not Owned',
+          `You do not have any **${item.name}** in your inventory.\n\n-# Price: \`${item.price.toLocaleString()}\` coins\n-# Purchase: \`!shop buy ${item.id}\`\n\n-# 💡 **Explore \`!shop\` to purchase boosters and charms!**`
+        )
+      ],
+      flags: MessageFlags.IsComponentsV2
+    });
+  }
+
+  // Deduct 1 item and activate booster
+  db.removeUserItem(guildId, user.id, item.id, 1);
+  const expiresAt = db.activateUserBooster(guildId, user.id, item.id, item.durationMs || 3600000);
+  const ts = Math.floor(expiresAt / 1000);
+
+  const container = {
+    type: 17,
+    components: [
+      {
+        type: 10,
+        content:
+          `### **Booster Buff Activated | <a:03_tick_circle:1565665642084827206>**\n` +
+          `-# **• User:** <@${user.id}>\n` +
+          `-# ${BULLET_EMOJI} **Activated:** **${item.name}**\n` +
+          `-# ${BULLET_EMOJI} **Effect:** ${item.description}\n` +
+          `-# ${BULLET_EMOJI} **Buff Active Until:** <t:${ts}:R> *(<t:${ts}:f>)*\n` +
+          `-# ${BULLET_EMOJI} **Remaining In Bag:** \`${db.getUserItemCount(guildId, user.id, item.id)}\``
+      },
+      { type: 14, divider: true },
+      {
+        type: 10,
+        content: `-# 💡 **Play \`!slots\`, \`!coinflip\`, or \`!daily\` now to maximize your active buff!**`
+      }
+    ]
+  };
+
+  return ctx.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+}
+
+// ==========================================
+// HANDLER: SLOTS CASINO GAME
+// ==========================================
+async function runSlotsGame(ctx, user, bet) {
+  const guildId = ctx.guild.id;
+
+  const success = db.removeWallet(guildId, user.id, bet);
+  if (!success) {
+    const eco = db.getUserEconomy(guildId, user.id);
+    return ctx.reply({
+      components: [
+        cv2.buildContainer(
+          'Insufficient Funds',
+          `You need \`${bet.toLocaleString()}\` Athena coins to play slots.\n-# **Your Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins\n\n-# 💡 **Use \`!daily\` to collect your free stipend!**`
+        )
+      ],
+      flags: MessageFlags.IsComponentsV2
+    });
+  }
+
+  const SYMBOLS = [
+    { glyph: '👑', name: 'Crown', mult: 20 },
+    { glyph: '💎', name: 'Diamond', mult: 12 },
+    { glyph: '🔔', name: 'Bell', mult: 7 },
+    { glyph: '🍇', name: 'Grapes', mult: 5 },
+    { glyph: '🍒', name: 'Cherry', mult: 3 }
+  ];
+
+  const hasClover = db.isUserBoosterActive(guildId, user.id, 'lucky_clover');
+  const hasCharm = db.isUserBoosterActive(guildId, user.id, 'gambler_charm');
+
+  // Reel spin logic
+  let s1, s2, s3;
+  if (hasClover && Math.random() < 0.35) {
+    const picked = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+    s1 = picked;
+    s2 = picked;
+    s3 = Math.random() < 0.4 ? picked : SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+  } else {
+    s1 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+    s2 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+    s3 = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+  }
+
+  let won = false;
+  let multiplier = 0;
+  let outcomeTitle = 'Defeat | <a:04_cross_circle:1565665644806934639>';
+
+  if (s1.glyph === s2.glyph && s2.glyph === s3.glyph) {
+    won = true;
+    multiplier = s1.mult;
+    outcomeTitle = s1.mult >= 12 ? 'JACKPOT VICTORY | <a:03_tick_circle:1565665642084827206>' : 'Match Victory | <a:03_tick_circle:1565665642084827206>';
+  } else if (s1.glyph === s2.glyph || s2.glyph === s3.glyph || s1.glyph === s3.glyph) {
+    won = true;
+    multiplier = 1.5;
+    outcomeTitle = 'Pair Victory | <a:03_tick_circle:1565665642084827206>';
+  }
+
+  let totalPayout = 0;
+  if (won) {
+    let rawWin = Math.floor(bet * multiplier);
+    if (hasCharm) rawWin = Math.floor(rawWin * 1.25);
+    totalPayout = rawWin;
+    db.addWallet(guildId, user.id, totalPayout);
+  }
+
+  const eco = db.getUserEconomy(guildId, user.id);
+
+  let buffNote = '';
+  if (hasClover) buffNote += `\n-# 🍀 **Lucky Clover Active:** Match frequency enhanced!`;
+  if (won && hasCharm) buffNote += `\n-# ✨ **Gambler's Charm Active:** +25% payout bonus applied!`;
+
+  const slotArt =
+    ```\n` +
+    `   ╔═════════════════╗\n` +
+    `   ║  ${s1.glyph}   ┆  ${s2.glyph}   ┆  ${s3.glyph}   ║\n` +
+    `   ╚═════════════════╝\n` +
+    ````;
+
+  const resultLine = won
+    ? `**WON \`+${totalPayout - bet}\` coins (Payout: \`${totalPayout.toLocaleString()}\` — ${multiplier}x)**`
+    : `**LOST \`-${bet.toLocaleString()}\` coins**`;
+
+  const container = {
+    type: 17,
+    components: [
+      {
+        type: 10,
+        content:
+          `### **Slot Machine ${outcomeTitle}**\n` +
+          `-# **• Player:** <@${user.id}>\n\n` +
+          `${slotArt}\n` +
+          `-# ${BULLET_EMOJI} **Outcome:** ${resultLine}\n` +
+          `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
+          buffNote
+      },
+      { type: 14, divider: true },
+      {
+        type: 10,
+        content: `-# 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`
+      }
+    ]
+  };
+
+  return ctx.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+}
 
 export default commands;

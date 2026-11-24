@@ -72,6 +72,7 @@ const DEFAULT_SCHEMA = {
   baselineProfiles: {}, // guildId -> { actionsRecorded, staffTracked: [], lastAction, lastUpdated }
   economy: {},        // guildId -> { userId -> { wallet, bank, lastDaily, streak } }
   shopItems: {},      // guildId -> [ { id, name, price, roleId, description } ]
+  userInventory: {},  // guildId -> { userId -> { items: {}, activeBoosters: {} } }
   userRankThemes: {}, // userId -> themeName ('hogwarts' | 'athena')
   lockdownSnapshots: {}, // guildId -> { tier, timestamp, channels: [], roles: [] }
   channelLockSnapshots: {}, // `${guildId}-${channelId}` -> { timestamp, overwrites: [] }
@@ -3230,6 +3231,71 @@ class Database {
     items.splice(idx, 1);
     this.save();
     return true;
+  }
+
+  // ==========================================
+  // USER INVENTORY & BOOSTERS
+  // ==========================================
+  getUserInventory(guildId, userId) {
+    if (!this.cache.userInventory) this.cache.userInventory = {};
+    if (!this.cache.userInventory[guildId]) this.cache.userInventory[guildId] = {};
+    if (!this.cache.userInventory[guildId][userId]) {
+      this.cache.userInventory[guildId][userId] = {
+        items: {},
+        activeBoosters: {}
+      };
+    }
+    const inv = this.cache.userInventory[guildId][userId];
+    if (!inv.items) inv.items = {};
+    if (!inv.activeBoosters) inv.activeBoosters = {};
+    return inv;
+  }
+
+  addUserItem(guildId, userId, itemId, count = 1) {
+    const inv = this.getUserInventory(guildId, userId);
+    inv.items[itemId] = (inv.items[itemId] || 0) + Number(count);
+    this.save();
+    return inv.items[itemId];
+  }
+
+  removeUserItem(guildId, userId, itemId, count = 1) {
+    const inv = this.getUserInventory(guildId, userId);
+    const current = inv.items[itemId] || 0;
+    if (current < count) return false;
+    inv.items[itemId] = current - Number(count);
+    if (inv.items[itemId] <= 0) delete inv.items[itemId];
+    this.save();
+    return true;
+  }
+
+  getUserItemCount(guildId, userId, itemId) {
+    const inv = this.getUserInventory(guildId, userId);
+    return inv.items[itemId] || 0;
+  }
+
+  activateUserBooster(guildId, userId, boosterId, durationMs) {
+    const inv = this.getUserInventory(guildId, userId);
+    const now = Date.now();
+    const current = inv.activeBoosters[boosterId] || 0;
+    const base = current > now ? current : now;
+    inv.activeBoosters[boosterId] = base + durationMs;
+    this.save();
+    return inv.activeBoosters[boosterId];
+  }
+
+  isUserBoosterActive(guildId, userId, boosterId) {
+    const inv = this.getUserInventory(guildId, userId);
+    return (inv.activeBoosters[boosterId] || 0) > Date.now();
+  }
+
+  getUserActiveBoosters(guildId, userId) {
+    const inv = this.getUserInventory(guildId, userId);
+    const now = Date.now();
+    const active = {};
+    for (const [k, v] of Object.entries(inv.activeBoosters || {})) {
+      if (v > now) active[k] = v;
+    }
+    return active;
   }
 
   // ==========================================

@@ -16,6 +16,50 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.8.9',
+    headline: 'OwO-Style Global Commerce Matrix, Mystery Crates, Consumables & Casino Slots',
+    summary: 'Transformed Athena\'s economy into a rich, OwO-style interactive gaming and commerce ecosystem. Introduced a multi-department Global Market (!shop) featuring Mystery Crates, timed Luck Boosters, Streak Shields, and Prestige Collectibles. Added full backpack inventory tracking (!inv), crate unboxing (!open), booster consumption (!use), and an iconic 3-reel casino slot machine (!slots) with jackpot multipliers. Integrated cross-game shop discovery tips across all economy and casino commands.',
+    whatsNew: [
+      {
+        title: 'Multi-Department Global Shop (!shop)',
+        desc: 'Interactive Components V2 department switcher covering Mystery Crates (Common, Rare, Mythic), Consumables & Boosters (Lucky Clover, Gambler\'s Charm, Dividend Elixir), Streak Shields, and Prestige Collectibles alongside custom server roles.'
+      },
+      {
+        title: 'Backpack Inventory Matrix (!inv)',
+        desc: 'Inspect owned crates, consumable boosters, active buff countdown timers with live Discord relative timestamps, and jewelry collectibles.'
+      },
+      {
+        title: 'Crate Unboxing Engine (!open)',
+        desc: 'Crack open mystery boxes from your inventory to reveal surprise coin jackpots and lucky bonus drops with instant wallet settlement.'
+      },
+      {
+        title: '3-Reel Casino Slot Machine (!slots)',
+        desc: 'Wager coins on classic 3-reel slots featuring 20x Jackpot Crowns, 12x Diamonds, Bells, Grapes, and 1.5x pair payouts.'
+      },
+      {
+        title: 'Booster Buffs & Streak Shield Automation',
+        desc: 'Equip timed buffs (+12% gambling luck, +25% casino payout bonus) and passive Streak Shields that automatically rescue missed daily streaks.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Cross-Game Shop Discovery Tips',
+        desc: 'Added clean footer instructions across !daily, !balance, !coinflip, !slots, !blackjack, !roulette, and !trivia guiding players to explore the shop.'
+      },
+      {
+        title: 'Batch Purchasing Support',
+        desc: 'Enabled !shop buy <item_id> [quantity] to allow purchasing up to 50 crates or items in a single atomic transaction.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Empty Catalog Resolution',
+        desc: 'Resolved the empty shop screen when no custom server roles are set by providing built-in global commerce items.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.8',
     headline: 'Departure Intelligence & Leave Details Toggle for !leave (Joined, Created, Reason)',
     summary: 'Introduced a 1-Click Toggle Details control button to the !leave manager dashboard, enabling servers to display member join date, account creation age, and live departure reason (Left on will, Kicked, Banned) together at once in farewell embeds. Powered by an intelligent real-time departure auditor that correlates audit logs and ban registries to pinpoint exact departure origins.',

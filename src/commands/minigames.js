@@ -272,22 +272,27 @@ async function handleBlackjack(ctx, user, bet) {
       return sendResponse(ctx, cv2.info(
         'Blackjack Push (Tie)',
         `Both you and the dealer got a Natural 21 Blackjack!\n\n` +
-        `-# \u2022 **Your Hand:** ${formatHand(playerHand)} (Total: **21**)\n` +
-        `-# \u2022 **Dealer Hand:** ${formatHand(dealerHand)} (Total: **21**)\n` +
-        `-# \u2022 **Outcome:** Your wager of **${currentBet.toLocaleString()}** coins has been refunded.`
+        `-# • **Your Hand:** ${formatHand(playerHand)} (Total: **21**)\n` +
+        `-# • **Dealer Hand:** ${formatHand(dealerHand)} (Total: **21**)\n` +
+        `-# • **Outcome:** Your wager of **${currentBet.toLocaleString()}** coins has been refunded.\n\n` +
+        `-# 💡 **Use \`!shop\` to purchase Lucky Clovers (+12% luck) or Gambler's Charms!**`
       ));
     }
     // Player wins 3:2 payout (2.5x)
-    const winnings = Math.floor(currentBet * 2.5);
+    const hasCharm = db.isUserBoosterActive(guildId, user.id, 'gambler_charm');
+    let winnings = Math.floor(currentBet * 2.5);
+    if (hasCharm) winnings = Math.floor(winnings * 1.25);
     db.addWallet(guildId, user.id, winnings);
     db.recordMinigameResult(guildId, user.id, 'blackjack', true, currentBet);
 
+    const charmNote = hasCharm ? ` *(+25% Gambler's Charm bonus applied!)*` : '';
     return sendResponse(ctx, cv2.success(
       'Blackjack Natural 21',
-      `You were dealt a Natural 21 Blackjack! Payout: **3:2**.\n\n` +
-      `-# \u2022 **Your Hand:** ${formatHand(playerHand)} (Total: **21**)\n` +
-      `-# \u2022 **Dealer Hand:** ${formatHand(dealerHand)} (Total: **${dealerVal}**)\n` +
-      `-# \u2022 **Winnings:** +**${(winnings - currentBet).toLocaleString()}** profit (**${winnings.toLocaleString()}** returned).`
+      `You were dealt a Natural 21 Blackjack! Payout: **3:2**${charmNote}.\n\n` +
+      `-# • **Your Hand:** ${formatHand(playerHand)} (Total: **21**)\n` +
+      `-# • **Dealer Hand:** ${formatHand(dealerHand)} (Total: **${dealerVal}**)\n` +
+      `-# • **Winnings:** +**${(winnings - currentBet).toLocaleString()}** profit (**${winnings.toLocaleString()}** returned).\n\n` +
+      `-# 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`
     ));
   }
 
@@ -414,24 +419,26 @@ async function handleBlackjack(ctx, user, bet) {
 
     playerVal = calculateHandValue(playerHand);
     let outcome = '';
+    const hasCharm = db.isUserBoosterActive(guildId, user.id, 'gambler_charm');
+    const multiplier = hasCharm ? 2.25 : 2;
 
     if (dealerVal > 21) {
-      const winAmt = currentBet * 2;
+      const winAmt = Math.floor(currentBet * multiplier);
       db.addWallet(guildId, user.id, winAmt);
       db.recordMinigameResult(guildId, user.id, 'blackjack', true, currentBet);
-      outcome = `-# \u2022 **Outcome: Dealer Busts! (${dealerVal} > 21).** You Won! Received **${winAmt.toLocaleString()}** coins.`;
+      outcome = `-# • **Outcome: Dealer Busts! (${dealerVal} > 21).** You Won! Received **${winAmt.toLocaleString()}** coins.${hasCharm ? ' *(+25% Charm Bonus)*' : ''}\n-# 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`;
     } else if (playerVal > dealerVal) {
-      const winAmt = currentBet * 2;
+      const winAmt = Math.floor(currentBet * multiplier);
       db.addWallet(guildId, user.id, winAmt);
       db.recordMinigameResult(guildId, user.id, 'blackjack', true, currentBet);
-      outcome = `-# \u2022 **Outcome: Victory!** Your **${playerVal}** beats Dealer\'s **${dealerVal}**. Received **${winAmt.toLocaleString()}** coins.`;
+      outcome = `-# • **Outcome: Victory!** Your **${playerVal}** beats Dealer's **${dealerVal}**. Received **${winAmt.toLocaleString()}** coins.${hasCharm ? ' *(+25% Charm Bonus)*' : ''}\n-# 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`;
     } else if (dealerVal > playerVal) {
       db.recordMinigameResult(guildId, user.id, 'blackjack', false, currentBet);
-      outcome = `-# \u2022 **Outcome: Dealer Wins.** Dealer\'s **${dealerVal}** beats your **${playerVal}**. Lost **${currentBet.toLocaleString()}** coins.`;
+      outcome = `-# • **Outcome: Dealer Wins.** Dealer's **${dealerVal}** beats your **${playerVal}**. Lost **${currentBet.toLocaleString()}** coins.\n-# 💡 **Use \`!shop\` to purchase Lucky Clovers (+12% luck) or Mystery Crates!**`;
     } else {
       // Tie
       db.addWallet(guildId, user.id, currentBet);
-      outcome = `-# \u2022 **Outcome: Push (Tie).** Both hands equal **${playerVal}**. Your **${currentBet.toLocaleString()}** coins were returned.`;
+      outcome = `-# • **Outcome: Push (Tie).** Both hands equal **${playerVal}**. Your **${currentBet.toLocaleString()}** coins were returned.\n-# 💡 **Use \`!shop\` to explore mystery crates, luck boosters, or server perks!**`;
     }
 
     const finishPayload = buildGamePayload(true, outcome);
@@ -500,15 +507,19 @@ async function handleRoulette(ctx, user, bet, space) {
   else if (isNumber && numVal === landingNumber) won = true;
 
   if (won) {
-    const payout = bet * multiplier;
+    const hasCharm = db.isUserBoosterActive(guildId, user.id, 'gambler_charm');
+    let payout = bet * multiplier;
+    if (hasCharm) payout = Math.floor(payout * 1.25);
     db.addWallet(guildId, user.id, payout);
     db.recordMinigameResult(guildId, user.id, 'roulette', true, bet);
 
+    const charmNote = hasCharm ? ` *(+25% Gambler's Charm bonus applied!)*` : '';
     const winEmbed = cv2.success(
       'Roulette Victory',
       `The roulette wheel spun and landed on **${landingNumber} (${landingColor.toUpperCase()})**!\n\n` +
-      `-# \u2022 **Your Prediction:** \`${space.toUpperCase()}\` (Multiplier: **${multiplier}x**)\n` +
-      `-# \u2022 **Winnings:** +**${(payout - bet).toLocaleString()}** profit (**${payout.toLocaleString()}** coins added to wallet).`
+      `-# • **Your Prediction:** \`${space.toUpperCase()}\` (Multiplier: **${multiplier}x**)\n` +
+      `-# • **Winnings:** +**${(payout - bet).toLocaleString()}** profit (**${payout.toLocaleString()}** coins added to wallet)${charmNote}.\n\n` +
+      `-# 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`
     );
     return sendResponse(ctx, winEmbed);
   } else {
@@ -517,8 +528,9 @@ async function handleRoulette(ctx, user, bet, space) {
     const lossEmbed = cv2.danger(
       'Roulette Defeat',
       `The roulette wheel spun and landed on **${landingNumber} (${landingColor.toUpperCase()})**.\n\n` +
-      `-# \u2022 **Your Prediction:** \`${space.toUpperCase()}\`\n` +
-      `-# \u2022 **Loss:** **${bet.toLocaleString()}** coins surrendered to the house.`
+      `-# • **Your Prediction:** \`${space.toUpperCase()}\`\n` +
+      `-# • **Loss:** **${bet.toLocaleString()}** coins surrendered to the house.\n\n` +
+      `-# 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`
     );
     return sendResponse(ctx, lossEmbed);
   }
@@ -596,8 +608,9 @@ async function handleTrivia(ctx, user, wager = 0) {
       const winContainer = cv2.success(
         'Trivia Master',
         `**Correct!** The correct answer was indeed **${qObj.answer}**.\n\n` +
-        `-# \u2022 **Reward:** +**${reward.toLocaleString()}** coins credited to your wallet!\n` +
-        `-# \u2022 **Result:** Verified and registered in minigames tournament leaderboard.`
+        `-# • **Reward:** +**${reward.toLocaleString()}** coins credited to your wallet!\n` +
+        `-# • **Result:** Verified and registered in minigames tournament leaderboard.\n\n` +
+        `-# 💡 **Use \`!shop\` to purchase mystery crates, luck boosters, or server perks!**`
       );
       return msg.edit({ components: [winContainer.components[0]], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
     } else {
@@ -606,8 +619,9 @@ async function handleTrivia(ctx, user, wager = 0) {
       const lossContainer = cv2.danger(
         'Incorrect Answer',
         `**Incorrect!** You selected \`${chosenAnswer}\`.\n\n` +
-        `-# \u2022 **Correct Answer:** **${qObj.answer}**\n` +
-        `-# \u2022 **Outcome:** ${wager > 0 ? `Lost **${wager.toLocaleString()}** wager.` : 'No bounty earned.'}`
+        `-# • **Correct Answer:** **${qObj.answer}**\n` +
+        `-# • **Outcome:** ${wager > 0 ? `Lost **${wager.toLocaleString()}** wager.` : 'No bounty earned.'}\n\n` +
+        `-# 💡 **Use \`!shop\` to purchase mystery crates, luck boosters, or server perks!**`
       );
       return msg.edit({ components: [lossContainer.components[0]], flags: MessageFlags.IsComponentsV2 }).catch(() => null);
     }
