@@ -11,6 +11,7 @@ import {
 } from 'discord.js';
 import cv2 from '../cv2.js';
 import db from '../database.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 import { 
   dispatchMorningMessage, 
   buildMorningPayload, 
@@ -228,6 +229,9 @@ export const commands = [
     async executePrefix(message, args) {
       const guild = message.guild;
       if (!guild) return;
+      if (!isExtraOwnerOrHigher(message.author.id, guild)) {
+        return message.reply(cv2.danger('Unauthorized', 'This command is strictly restricted to Extra Owners (or Server Owner).'));
+      }
 
       const sub = (args[0] || '').toLowerCase();
       const config = db.getMorningConfig(guild.id);
@@ -434,6 +438,9 @@ export const commands = [
     async executeSlash(interaction) {
       const guild = interaction.guild;
       if (!guild) return;
+      if (!isExtraOwnerOrHigher(interaction.user.id, guild)) {
+        return interaction.reply({ ...cv2.danger('Unauthorized', 'This command is strictly restricted to Extra Owners (or Server Owner).'), flags: MessageFlags.Ephemeral });
+      }
 
       const sub = interaction.options.getSubcommand() || 'panel';
       const config = db.getMorningConfig(guild.id);
@@ -580,9 +587,9 @@ export async function handleMorningInteraction(interaction) {
 
   // Permission check
   const member = interaction.member;
-  if (!member?.permissions?.has(PermissionFlagsBits.ManageGuild) && !member?.permissions?.has(PermissionFlagsBits.Administrator)) {
+  if (!isExtraOwnerOrHigher(member.id, guild)) {
     return interaction.reply({
-      ...cv2.asEphemeral(cv2.danger('Unauthorized', 'You need **Manage Server** or Administrator clearance to adjust morning message parameters.')),
+      ...cv2.asEphemeral(cv2.danger('Unauthorized', 'This command is strictly restricted to Extra Owners (or Server Owner).')),
       flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
     });
   }

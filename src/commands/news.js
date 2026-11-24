@@ -1,6 +1,7 @@
 import { PermissionFlagsBits, ChannelType } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 import Parser from 'rss-parser';
 
 const parser = new Parser();
@@ -108,9 +109,8 @@ export const commands = [
       const prefix = cfg?.prefix || '!';
       const sub = (args[0] || '').toLowerCase();
 
-      // Check permissions: ManageGuild or Administrator
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
-        return message.reply(cv2.danger('Access Denied', 'You need the `Manage Server` permission to configure news feeds.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'This command is strictly restricted to Extra Owners (or Server Owner).'));
       }
 
       const config = db.getNewsConfig(message.guild.id);
@@ -253,6 +253,9 @@ export const commands = [
     },
 
     async executeSlash(interaction) {
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({ ...cv2.danger('Access Denied', 'This command is strictly restricted to Extra Owners (or Server Owner).'), ephemeral: true });
+      }
       const subCommand = interaction.options.getSubcommand();
       
       if (subCommand === 'setup') {

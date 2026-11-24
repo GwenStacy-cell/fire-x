@@ -699,11 +699,7 @@ export async function handleAthenaGuideButtons(interaction) {
 
     // 3b. Launch AI Announcement Studio Directly
     if (act === 'aiannounce_create') {
-      const hasPerm = member?.permissions?.has(PermissionFlagsBits.ManageGuild) || 
-                      member?.permissions?.has(PermissionFlagsBits.ManageMessages) || 
-                      member?.permissions?.has(PermissionFlagsBits.Administrator) || 
-                      guild?.ownerId === user.id || 
-                      isBotOwnerSync(user.id);
+      const hasPerm = isExtraOwnerOrHigher(user.id, guild);
       if (!hasPerm) {
         return cv2.respond(interaction, {
           components: [
@@ -712,7 +708,7 @@ export async function handleAthenaGuideButtons(interaction) {
               components: [
                 {
                   type: 10,
-                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Manage Server, Manage Messages, or Administrator permissions required to launch the AI Announcement Studio.`
+                  content: `# ${getRandomHeadingGlyph()} Access Denied | ${TICK}\n-# Extra Owner or Server Owner clearance required to launch the AI Announcement Studio.`
                 }
               ]
             }

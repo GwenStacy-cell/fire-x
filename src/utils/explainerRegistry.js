@@ -1787,7 +1787,7 @@ export const DETAILED_COMMANDS = {
     name: 'studio',
     aliases: ['embedstudio', 'containerstudio'],
     category: 'Server Administration',
-    clearance: 'Manage Server',
+    clearance: 'Extra Owner',
     syntax: '!studio [create|list|send|delete] / /studio action: <action>',
     purpose: 'Interactive container, embed & announcement builder studio with persistent template storage.',
     architecture:
@@ -2893,7 +2893,7 @@ export const DETAILED_COMMANDS = {
     name: 'jtc',
     aliases: ['jointocreate', 'tempvc'],
     category: 'Voice & Media',
-    clearance: 'Manage Server / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!jtc add @user / !jtc chime on|off / !jtcsetup [tiers|standard]',
     purpose: 'Complete dynamic temporary voice room management and member permissions.',
     architecture: 
@@ -2919,7 +2919,7 @@ export const DETAILED_COMMANDS = {
     name: 'jtcnormal',
     aliases: ['normaljtc', 'jtcsingle', 'singlejtc', 'jtcstandard'],
     category: 'Voice & Media',
-    clearance: 'Manage Server / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!jtcnormal / /jtcnormal [channel] [category] [panel_channel]',
     purpose: 'Deploys a single standard Join to Create voice lobby and category.',
     architecture: 
@@ -2936,7 +2936,7 @@ export const DETAILED_COMMANDS = {
     name: 'jtctiers',
     aliases: ['tieredjtc', 'jtcsuite', 'jtcsetup tiers'],
     category: 'Voice & Media',
-    clearance: 'Manage Server / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!jtctiers [setup|disable|info] / !jtcsetup tiers',
     purpose: 'Deploys the 5-tier Voice Hub generator suite (Solo, Duo, Trio, Squad, Unlimited) with persistent Components V2 Interface channel.',
     architecture: 
@@ -2958,7 +2958,7 @@ export const DETAILED_COMMANDS = {
     name: 'jtcdisable',
     aliases: ['jtcoff', 'jtcstop'],
     category: 'Voice & Media',
-    clearance: 'Manage Server / Extra Owner',
+    clearance: 'Extra Owner',
     syntax: '!jtcdisable [standard|tiers|all] / /jtcdisable [target]',
     purpose: 'Atomically wipes and removes Join to Create configurations, categories, interface channels, and generator channels.',
     architecture: 
@@ -2974,7 +2974,7 @@ export const DETAILED_COMMANDS = {
     name: 'voicerole',
     aliases: ['vcrole', 'voice-role'],
     category: 'Voice & Community Systems',
-    clearance: 'Manage Server / Manage Roles / Extra Owner / Server Owner',
+    clearance: 'Extra Owner',
     syntax: '!voicerole [@role|ID|Name|disable] / /voicerole [role] [disable]',
     purpose: 'Automatically assigns a designated role to members the instant they connect to ANY voice channel, and strips it when they disconnect.',
     architecture: 

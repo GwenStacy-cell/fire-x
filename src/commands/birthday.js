@@ -1,8 +1,8 @@
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
-import { PermissionFlagsBits, ChannelType, EmbedBuilder } from 'discord.js';
+import { PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import { isBotOwnerOrServerOwnerStrict, isBotOwnerSync } from '../utils/helpers.js';
+import { isBotOwnerOrServerOwnerStrict, isBotOwnerSync, isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 const BDAY_EMOJIS = [
   '<a:cheers:1517075669547483206>',
@@ -159,12 +159,8 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      const isAuthorized = isBotOwnerOrServerOwnerStrict(message.author.id, message.guild) ||
-        message.member?.permissions?.has(PermissionFlagsBits.ManageGuild) ||
-        message.member?.permissions?.has(PermissionFlagsBits.Administrator) ||
-        db.isExtraOwner(message.guild?.id, message.author.id);
-      if (!isAuthorized) {
-        return message.reply(cv2.danger('Permission Denied', 'This command requires **Manage Server** or **Server Owner** permissions.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Permission Denied', 'This command is strictly restricted to Extra Owners (or Server Owner).'));
       }
 
       const subcommand = args[0]?.toLowerCase();
@@ -279,13 +275,8 @@ export const commands = [
     },
     async executeSlash(interaction) {
       const subcommand = interaction.options.getSubcommand();
-      const isAuthorized = isBotOwnerOrServerOwnerStrict(interaction.user.id, interaction.guild) ||
-        interaction.member?.permissions?.has(PermissionFlagsBits.ManageGuild) ||
-        interaction.member?.permissions?.has(PermissionFlagsBits.Administrator) ||
-        db.isExtraOwner(interaction.guild?.id, interaction.user.id);
-
-      if (!isAuthorized) {
-        return interaction.reply(cv2.danger('Permission Denied', 'This command requires **Manage Server** or **Server Owner** permissions.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({ ...cv2.danger('Permission Denied', 'This command is strictly restricted to Extra Owners (or Server Owner).'), flags: MessageFlags.Ephemeral });
       }
 
       if (subcommand === 'setchannel') {

@@ -11,6 +11,7 @@ import {
 } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
+import { isExtraOwnerOrHigher } from '../utils/helpers.js';
 
 // Map audit log action numbers to readable names
 const AUDIT_ACTION_MAP = {
@@ -79,8 +80,8 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
-        return message.reply(cv2.danger('Access Denied', 'Manage Server permission required to access Studio.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'This command is strictly restricted to Extra Owners (or Server Owner).'));
       }
       const action = args[0]?.toLowerCase() || 'create';
 
@@ -122,6 +123,9 @@ export const commands = [
     },
 
     async executeSlash(interaction) {
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({ ...cv2.danger('Access Denied', 'This command is strictly restricted to Extra Owners (or Server Owner).'), flags: MessageFlags.Ephemeral });
+      }
       const action = interaction.options.getString('action');
       const guildId = interaction.guild.id;
 

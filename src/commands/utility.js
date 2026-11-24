@@ -3270,11 +3270,11 @@ export const helpModules = [
     "-# <a:target_blink:1565667466984554588> Automatically creates paired Voice Channels and Text Channels per ticket."
   ] },
   { id: 'tracking', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Tracking', label: 'Tracking & Logs', emoji: 'tracking', commands: [
-    "`!serverlogs / !slogs` - Interactive Server Modification & Voice Status Logging dashboard `[Administrator]`",
-    "`!serverlogs setup / create` - Auto-create `╭・Logs` category & `📁・server-logs` with private staff permissions `[Administrator]`",
-    "`!serverlogs bind <#channel>` - Bind any pre-existing text channel to route all live server modification logs `[Administrator]`",
-    "`!serverlogs test` - Dispatch an immediate verification test log embed `[Administrator]`",
-    "`!serverlogs disable` - Disable server modification and voice status logging `[Administrator]`",
+    "`!serverlogs / !slogs` - Interactive Server Modification & Voice Status Logging dashboard `[Extra Owner]`",
+    "`!serverlogs setup / create` - Auto-create `╭・Logs` category & `📁・server-logs` with private staff permissions `[Extra Owner]`",
+    "`!serverlogs bind <#channel>` - Bind any pre-existing text channel to route all live server modification logs `[Extra Owner]`",
+    "`!serverlogs test` - Dispatch an immediate verification test log embed `[Extra Owner]`",
+    "`!serverlogs disable` - Disable server modification and voice status logging `[Extra Owner]`",
     "`!serveroverview / !so` - Statbot-style 8-panel graphical Server Overview with 9 interactive tabs & timeframe selector `[Public]`",
     "`!userinfo / !ui / !whois [@user]` - User account profile, permissions, badges & join telemetry `[Public]`",
     "`!serverinfo / !sinfo / !si` - Detailed server statistics, hierarchy & metrics `[Public]`",
@@ -3311,11 +3311,11 @@ export const helpModules = [
     "`!serverstats refresh` - Immediately refresh all statistics channels to live member & voice counts `[Extra Owner]`",
     "`!serverstats config <font>` - Change counter typography font (classic mode) `[Extra Owner]`",
     "`!serverstats disable` - Wipe all statistics channels and `╭・Statistics` category `[Extra Owner]`",
-    "`!serverlogs / !slogs` - Interactive Server Modification Logging dashboard `[Administrator]`",
-    "`!serverlogs setup / create` - Auto-create `╭・Logs` category & `📁・server-logs` text channel `[Administrator]`",
-    "`!serverlogs bind <#channel>` - Bind an existing text channel for all server modification logs `[Administrator]`",
-    "`!serverlogs test` - Dispatch test verification log embed `[Administrator]`",
-    "`!serverlogs disable` - Disable server modification logging `[Administrator]`",
+    "`!serverlogs / !slogs` - Interactive Server Modification Logging dashboard `[Extra Owner]`",
+    "`!serverlogs setup / create` - Auto-create `╭・Logs` category & `📁・server-logs` text channel `[Extra Owner]`",
+    "`!serverlogs bind <#channel>` - Bind an existing text channel for all server modification logs `[Extra Owner]`",
+    "`!serverlogs test` - Dispatch test verification log embed `[Extra Owner]`",
+    "`!serverlogs disable` - Disable server modification logging `[Extra Owner]`",
     "`!ytstats` - Open **YouTube Stats VC Engine** (Dynamically display live YouTube subscriber counts in VC) `[Extra Owner]`",
     "`!autorole / !autorole-config` - Open **AutoRole & Vanity Engine** (Human/Bot join roles & vanity status rewards) `[Extra Owner]`",
     "`!autovcstatus / !randomvc [on|off|shuffle]` - Rotate custom statuses on all VCs `[Extra Owner]`",
@@ -3431,10 +3431,10 @@ export const helpModules = [
     "`!tts stop` - Immediately halt speech playback and clear queue `[Public]`",
     "`!voiceanalytics / !va` - 24-hour diurnal voice activity heatmaps, peak windows & channel analytics `[Extra Owner]`",
     "`!voicerole <@role|ID|Name|disable> / !vcrole` - Auto-assign role in VC for all members & bots `[Extra Owner]`",
-    "`!jtcnormal / !jtcsingle` - Deploy standard single Join to Create lobby & category `[Manage Server]`",
-    "`!jtcsetup tiers / !jtctiers` - Deploy 5-tier Voice Hub (Solo [1], Duo [2], Trio [3], Squad [4], Unlimited [Free]) & #voice-controls `[Manage Server]`",
-    "`!jtcdisable <standard|tiers|all>` - Wipes JTC categories, interface channel & generator channels `[Manage Server]`",
-    "`!secondaryjtc` - Setup a secondary JTC hub `[Manage Server]`",
+    "`!jtcnormal / !jtcsingle` - Deploy standard single Join to Create lobby & category `[Extra Owner]`",
+    "`!jtcsetup tiers / !jtctiers` - Deploy 5-tier Voice Hub (Solo [1], Duo [2], Trio [3], Squad [4], Unlimited [Free]) & #voice-controls `[Extra Owner]`",
+    "`!jtcdisable <standard|tiers|all>` - Wipes JTC categories, interface channel & generator channels `[Extra Owner]`",
+    "`!secondaryjtc` - Setup a secondary JTC hub `[Extra Owner]`",
     "`!jtc add @user` - Whitelist user into locked temporary JTC room `[Public]`",
     "`!jtc chime on|off` - Entrance chime notifications for Join to Create voice rooms `[Public]`",
     "`!vcpanel` - Spawn the interactive VC control panel for JTC owners `[Public]`",
@@ -3635,7 +3635,7 @@ export const helpModules = [
     "`!emojis / !emojilist` - Emoji inventory with IDs & codes `[Server Owner]`",
     "`!fileupload [#channel]` - Upload & mirror files in channel `[Extra Owner]`",
     "`!upload <url>` - Mirror file from direct URL `[Public]`",
-    "`!morning [panel|enable]` - Thought dispatcher & scheduler `[Manage Server]`"
+    "`!morning [panel|enable]` - Thought dispatcher & scheduler `[Extra Owner]`"
   ] }
 ];
 

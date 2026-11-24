@@ -28,6 +28,7 @@ import db from '../database.js';
 import cv2 from '../cv2.js';
 import { 
   isBotOwnerSync, 
+  isExtraOwnerOrHigher,
   formatUserLink, 
   formatChannelLink, 
   cleanDisplayName 
@@ -1140,7 +1141,7 @@ export const commands = [
   {
     name: 'jtcnormal',
     aliases: ['normaljtc', 'jtcsingle', 'singlejtc', 'jtcstandard'],
-    description: 'Deploy a single standard Join to Create lobby and category. [Manage Server]',
+    description: 'Deploy a single standard Join to Create lobby and category. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
@@ -1149,7 +1150,7 @@ export const commands = [
       { name: 'panel_channel', description: 'Text channel for the persistent control panel (optional)', type: 7, required: false, channel_types: [0] }
     ],
     async executePrefix(message, args) {
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) return;
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) return;
       const guild = message.guild;
 
       let customLobby = null;
@@ -1182,8 +1183,8 @@ export const commands = [
       ));
     },
     async executeSlash(interaction) {
-      if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'You need Manage Server permissions to use this.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({ ...cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'This command requires Extra Owner clearance.'), flags: MessageFlags.Ephemeral });
       }
       await interaction.deferReply();
       const guild = interaction.guild;
@@ -1212,7 +1213,7 @@ export const commands = [
   {
     name: 'jtcsetup',
     aliases: ['jtc', 'join2create'],
-    description: 'Deploy the Join to Create voice suite (Standard or Tiered). [Manage Server]',
+    description: 'Deploy the Join to Create voice suite (Standard or Tiered). [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
@@ -1231,7 +1232,7 @@ export const commands = [
       { name: 'panel_channel', description: 'Select Panel text channel (for standard setup)', type: 7, required: false, channel_types: [0] }
     ],
     async executePrefix(message, args) {
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) return;
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) return;
       const guild = message.guild;
 
       const subArg = args[0]?.toLowerCase();
@@ -1296,8 +1297,8 @@ export const commands = [
       ));
     },
     async executeSlash(interaction) {
-      if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'You need Manage Server permissions to use this.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({ ...cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'This command requires Extra Owner clearance.'), flags: MessageFlags.Ephemeral });
       }
       await interaction.deferReply();
       const guild = interaction.guild;
@@ -1355,7 +1356,7 @@ export const commands = [
   {
     name: 'jtctiers',
     aliases: ['tieredjtc', 'jtcsuite'],
-    description: 'Deploy or manage the Tiered (Solo, Duo, Trio, Squad) Voice Hub suite. [Manage Server]',
+    description: 'Deploy or manage the Tiered (Solo, Duo, Trio, Squad) Voice Hub suite. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
@@ -1372,7 +1373,7 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) return;
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) return;
       const guild = message.guild;
       const action = (args[0] || 'setup').toLowerCase();
 
@@ -1447,8 +1448,8 @@ export const commands = [
       ));
     },
     async executeSlash(interaction) {
-      if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'You need Manage Server permissions to use this.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({ ...cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'This command requires Extra Owner clearance.'), flags: MessageFlags.Ephemeral });
       }
       await interaction.deferReply();
       const guild = interaction.guild;
@@ -1530,14 +1531,14 @@ export const commands = [
   {
     name: 'secondaryjtc',
     aliases: ['jtc2', 'secondjtc'],
-    description: 'Set up a secondary Join to Create lobby. [Manage Server]',
+    description: 'Set up a secondary Join to Create lobby. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
       { name: 'channel', description: 'Select VC lobby (or use channel_id)', type: 7, required: false, channel_types: [2] }
     ],
     async executePrefix(message, args) {
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) return;
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) return;
       const guild = message.guild;
 
       let lobbyChannel = null;
@@ -1571,8 +1572,8 @@ export const commands = [
       ));
     },
     async executeSlash(interaction) {
-      if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'You need Manage Server permissions to use this.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({ ...cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'This command requires Extra Owner clearance.'), flags: MessageFlags.Ephemeral });
       }
       await interaction.deferReply();
       const guild = interaction.guild;
@@ -1603,7 +1604,7 @@ export const commands = [
   {
     name: 'jtcdisable',
     aliases: ['jtcoff', 'jtcstop'],
-    description: 'Disable Join to Create system (Standard or Tiered). [Manage Server]',
+    description: 'Disable Join to Create system (Standard or Tiered). [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.ManageGuild],
     options: [
@@ -1620,7 +1621,7 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) return;
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) return;
       const guild = message.guild;
       const target = args[0]?.toLowerCase();
 
@@ -1714,8 +1715,8 @@ export const commands = [
       ));
     },
     async executeSlash(interaction) {
-      if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'You need Manage Server permissions to use this.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({ ...cv2.warn(`Unauthorized | ${WARN_EMOJI}`, 'This command requires Extra Owner clearance.'), flags: MessageFlags.Ephemeral });
       }
       await interaction.deferReply();
       const guild = interaction.guild;
@@ -1993,10 +1994,10 @@ export const commands = [
               `Entrance welcome chimes have been **${enable ? 'enabled' : 'disabled'}** for **${vcChannel.name}**.`
             ));
           } else {
-            if (!message.member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(message.author.id)) {
+            if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
               return message.reply(cv2.warn(
                 `Unauthorized | ${WARN_EMOJI}`,
-                `You need Manage Server permissions to toggle server-wide JTC chimes.`
+                `You need Extra Owner clearance to toggle server-wide JTC chimes.`
               ));
             }
             db.updateGuildConfig(message.guild.id, { jtcChime: enable });
@@ -2070,10 +2071,10 @@ export const commands = [
             `Entrance welcome chimes have been **${enable ? 'enabled' : 'disabled'}** for **${vcChannel.name}**.`
           ));
         } else {
-          if (!member.permissions.has(PermissionFlagsBits.ManageGuild) && !isBotOwnerSync(member.id)) {
+          if (!isExtraOwnerOrHigher(member.id, interaction.guild)) {
             return interaction.reply(cv2.warn(
               `Unauthorized | ${WARN_EMOJI}`,
-              `You need Manage Server permissions to toggle server-wide JTC chimes.`
+              `You need Extra Owner clearance to toggle server-wide JTC chimes.`
             ));
           }
           db.updateGuildConfig(interaction.guild.id, { jtcChime: enable });

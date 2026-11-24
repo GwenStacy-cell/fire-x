@@ -17,7 +17,7 @@ import {
   WARN_EMOJI, 
   UPTIME_EMOJI 
 } from '../utils/emojis.js';
-import { formatChannelLink, formatUserLink } from '../utils/helpers.js';
+import { formatChannelLink, formatUserLink, isExtraOwnerOrHigher } from '../utils/helpers.js';
 import { buildServerLogEmbed, logServerEvent } from '../utils/serverLogger.js';
 import { markRestorationQueued } from '../utils/antinuke.js';
 
@@ -147,7 +147,7 @@ export async function bindServerLogsChannel(guild, targetChannel) {
     attributes: {
       'Status': 'Successfully Bound',
       'Target Channel': formatChannelLink(targetChannel, guild),
-      'Assigned By': 'Server Administrator',
+      'Assigned By': 'Server Owner / Extra Owner',
       'Coverage': 'All live server modifications will now route to this channel.'
     },
     client: guild.client
@@ -311,7 +311,7 @@ export const commands = [
   {
     name: 'serverlogs',
     aliases: ['slogs', 'logchannel', 'auditlogs', 'serverlog'],
-    description: 'Configure automated server modification and voice status logging.',
+    description: 'Configure automated server modification and voice status logging. [Extra Owner]',
     category: 'utility',
     permissions: [PermissionFlagsBits.Administrator],
     options: [
@@ -346,6 +346,9 @@ export const commands = [
     ],
 
     async executePrefix(message, args) {
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.warn(`Permission Denied | ${WARN_EMOJI}`, 'This command is strictly restricted to Extra Owners (or Server Owner).'));
+      }
       const sub = args[0]?.toLowerCase();
 
       // 1. Auto-Setup / Create: !serverlogs setup | !serverlogs create
@@ -421,6 +424,9 @@ export const commands = [
     },
 
     async executeSlash(interaction) {
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({ ...cv2.warn(`Permission Denied | ${WARN_EMOJI}`, 'This command is strictly restricted to Extra Owners (or Server Owner).'), flags: MessageFlags.Ephemeral });
+      }
       const sub = interaction.options.getSubcommand() || 'panel';
 
       if (sub === 'setup') {

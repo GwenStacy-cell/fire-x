@@ -71,6 +71,10 @@ export const CHANGELOG_ENTRIES = [
       {
         title: 'Discord Subtext Markdown Formatting (-#)',
         desc: 'Corrected spacing on all economy and action game cards from raw bullet hashes (- #) to standard Discord grey subtext (-#) across shop catalog, inventory, and mini-games.'
+      },
+      {
+        title: 'Zero-Trust Clearance Strict Hierarchy Alignment',
+        desc: 'Replaced all legacy native Discord permission tags ([Administrator], [Manage Server]) across help modules and commands with Athena\'s strict Extra Owner hierarchy, guaranteeing execution access only to Bot Owners, Server Owners, and Extra Owners.'
       }
     ]
   },
