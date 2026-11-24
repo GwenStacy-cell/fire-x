@@ -17,18 +17,18 @@ export function buildShopPanel(guildId, currentCategory = 'crates', page = 0) {
   if (categoryItems.length === 0) {
     if (currentCategory === 'roles') {
       itemsText =
-        `- # **The server role shop is currently empty.**\n` +
-        `- # Administrators can list purchasable server roles using:\n` +
-        `- # \`!shop add <name> <price> <@role> [description]\``;
+        `-# **The server role shop is currently empty.**\n` +
+        `-# Administrators can list purchasable server roles using:\n` +
+        `-# \`!shop add <name> <price> <@role> [description]\``;
     } else {
-      itemsText = `- # No items currently available in this category.`;
+      itemsText = `-# No items currently available in this category.`;
     }
   } else {
     itemsText = categoryItems.map((it, idx) => {
       const priceStr = `\`${Number(it.price).toLocaleString()}\` Athena Coins`;
       const emoji = getItemEmoji(it.id);
       const prefix = emoji ? `${emoji} ` : '';
-      let metaLine = `- # ${BULLET_EMOJI} **ID:** \`${it.id}\` • **Price:** ${priceStr}`;
+      let metaLine = `-# ${BULLET_EMOJI} **ID:** \`${it.id}\` • **Price:** ${priceStr}`;
       if (it.sellPrice) {
         metaLine += ` • **Sell:** \`${it.sellPrice.toLocaleString()}\``;
       }
@@ -38,7 +38,7 @@ export function buildShopPanel(guildId, currentCategory = 'crates', page = 0) {
       return (
         `**${idx + 1}. ${prefix}${it.name}**\n` +
         `${metaLine}\n` +
-        `- # *${it.description || 'Exclusive commerce perk'}*`
+        `-# *${it.description || 'Exclusive commerce perk'}*`
       );
     }).join('\n\n');
   }
@@ -67,17 +67,17 @@ export function buildShopPanel(guildId, currentCategory = 'crates', page = 0) {
         type: 10,
         content:
           `### **Athena Global Market | <a:03_tick_circle:1565665642084827206>**\n` +
-          `- # **• Department:** **${catMeta.name}** — *${catMeta.description}*\n` +
-          `- # **• How to Buy:** Use \`!shop buy <id> [qty]\` (e.g. \`!shop buy crate_common 3\`)\n` +
-          `- # **• How to Sell:** Use \`!sell <id> [qty]\` or \`!shop sell <id> [qty]\`\n` +
-          `- # **• How to Open/Use:** Use \`!open <crate>\` or \`!use <booster>\`\n` +
-          `- # **• Action Games:** \`!hunt\` · \`!fish\` · \`!mine\`\n\n` +
+          `-# **• Department:** **${catMeta.name}** — *${catMeta.description}*\n` +
+          `-# **• How to Buy:** Use \`!shop buy <id> [qty]\` (e.g. \`!shop buy crate_common 3\`)\n` +
+          `-# **• How to Sell:** Use \`!sell <id> [qty]\` or \`!shop sell <id> [qty]\`\n` +
+          `-# **• How to Open/Use:** Use \`!open <crate>\` or \`!use <booster>\`\n` +
+          `-# **• Action Games:** \`!hunt\` · \`!fish\` · \`!mine\`\n\n` +
           itemsText
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: `- # 💡 **Use \`!inv\` to check your backpack or \`!daily\` to collect coins.**`
+        content: `-# 💡 **Use \`!inv\` to check your backpack or \`!daily\` to collect coins.**`
       },
       row1.toJSON(),
       row2.toJSON()
@@ -105,10 +105,10 @@ export function buildInventoryPanel(guildId, userId, member) {
       const emoji = getItemEmoji(k);
       const prefix = emoji ? `${emoji} ` : '';
       const ts = Math.floor(activeBoosters[k] / 1000);
-      return `- # ${BULLET_EMOJI} **${prefix}${name}:** Expires <t:${ts}:R>`;
+      return `-# ${BULLET_EMOJI} **${prefix}${name}:** Expires <t:${ts}:R>`;
     }).join('\n');
   } else {
-    boosterText = `- # *No active booster buffs. Visit \`!shop\` to purchase Lucky Clovers or Charms!*`;
+    boosterText = `-# *No active booster buffs. Visit \`!shop\` to purchase Lucky Clovers or Charms!*`;
   }
 
   // Inventory items
@@ -117,8 +117,8 @@ export function buildInventoryPanel(guildId, userId, member) {
 
   if (ownedItems.length === 0) {
     inventoryText =
-      `- # **Your inventory is currently empty.**\n` +
-      `- # Earn coins with \`!daily\`, \`!hunt\`, \`!fish\`, \`!mine\`, or casino, then explore \`!shop\`!`;
+      `-# **Your inventory is currently empty.**\n` +
+      `-# Earn coins with \`!daily\`, \`!hunt\`, \`!fish\`, \`!mine\`, or casino, then explore \`!shop\`!`;
   } else {
     const crates = [];
     const boosters = [];
@@ -134,24 +134,24 @@ export function buildInventoryPanel(guildId, userId, member) {
       const prefix = emoji ? `${emoji} ` : '';
 
       if (!it) {
-        others.push(`- # ${BULLET_EMOJI} **${itemId}:** \`x${count}\``);
+        others.push(`-# ${BULLET_EMOJI} **${itemId}:** \`x${count}\``);
         continue;
       }
       if (it.type === 'crate') {
-        crates.push(`- # ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Use \`!open ${it.id}\`*`);
+        crates.push(`-# ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Use \`!open ${it.id}\`*`);
       } else if (it.type === 'booster' || it.type === 'instant' || it.type === 'passive') {
         let hint = it.type === 'passive' ? '*Passive protection*' : `*Use \`!use ${it.id}\`*`;
-        boosters.push(`- # ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • ${hint}`);
+        boosters.push(`-# ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • ${hint}`);
       } else if (it.type === 'tool' || it.category === 'gear') {
-        gear.push(`- # ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Action gear*`);
+        gear.push(`-# ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Action gear*`);
       } else if (it.type === 'gem' || it.category === 'gems') {
-        gems.push(`- # ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Sell: \`${getItemSellPrice(it.id).toLocaleString()}\` ea*`);
+        gems.push(`-# ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Sell: \`${getItemSellPrice(it.id).toLocaleString()}\` ea*`);
       } else if (it.category === 'pets' || it.type === 'egg') {
-        pets.push(`- # ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Companion*`);
+        pets.push(`-# ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Companion*`);
       } else if (it.category === 'collectibles' || it.type === 'collectible') {
-        collectibles.push(`- # ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Prestige piece*`);
+        collectibles.push(`-# ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\` • *Prestige piece*`);
       } else {
-        others.push(`- # ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\``);
+        others.push(`-# ${BULLET_EMOJI} **${prefix}${it.name}:** \`x${count}\``);
       }
     }
 
@@ -181,8 +181,8 @@ export function buildInventoryPanel(guildId, userId, member) {
         type: 10,
         content:
           `### **Member Inventory & Backpack | <a:03_tick_circle:1565665642084827206>**\n` +
-          `- # **• Account Holder:** ${userLink}\n` +
-          `- # **• Wallet Balance:** \`${(eco.wallet || 0).toLocaleString()}\` Athena Coins\n\n` +
+          `-# **• Account Holder:** ${userLink}\n` +
+          `-# **• Wallet Balance:** \`${(eco.wallet || 0).toLocaleString()}\` Athena Coins\n\n` +
           `**Active Status Buffs:**\n` +
           `${boosterText}\n\n` +
           `${inventoryText}`
@@ -190,7 +190,7 @@ export function buildInventoryPanel(guildId, userId, member) {
       { type: 14, divider: true },
       {
         type: 10,
-        content: `- # 💡 **Use \`!open <crate>\` to unbox loot, \`!use <item>\` to activate boosters, or \`!sell <item>\` to liquidate goods.**`
+        content: `-# 💡 **Use \`!open <crate>\` to unbox loot, \`!use <item>\` to activate boosters, or \`!sell <item>\` to liquidate goods.**`
       },
       row.toJSON()
     ]
@@ -590,10 +590,10 @@ export const commands = [
             type: 10,
             content:
               `### **Funds Transferred | <a:03_tick_circle:1565665642084827206>**\n` +
-              `- # **• Sender:** ${senderLink}\n` +
-              `- # ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
-              `- # ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
-              `- # ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
+              `-# **• Sender:** ${senderLink}\n` +
+              `-# ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
+              `-# ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
+              `-# ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
           }
         ]
       };
@@ -643,10 +643,10 @@ export const commands = [
             type: 10,
             content:
               `### **Funds Transferred | <a:03_tick_circle:1565665642084827206>**\n` +
-              `- # **• Sender:** ${senderLink}\n` +
-              `- # ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
-              `- # ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
-              `- # ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
+              `-# **• Sender:** ${senderLink}\n` +
+              `-# ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
+              `-# ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
+              `-# ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
           }
         ]
       };
@@ -720,11 +720,11 @@ export const commands = [
             type: 10,
             content:
               `### **Coins Disbursed | <a:03_tick_circle:1565665642084827206>**\n` +
-              `- # **• Authorized By:** ${adminLink}\n` +
-              `- # ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
-              `- # ${BULLET_EMOJI} **Amount Granted:** **\`+${amount.toLocaleString()}\` Athena Coins**\n` +
-              `- # ${BULLET_EMOJI} **Updated Wallet:** \`${newBal.toLocaleString()}\` coins\n\n` +
-              `- # 💡 **Use \`!shop\` to explore 52 catalog items or \`!inv\` to check your backpack.**`
+              `-# **• Authorized By:** ${adminLink}\n` +
+              `-# ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
+              `-# ${BULLET_EMOJI} **Amount Granted:** **\`+${amount.toLocaleString()}\` Athena Coins**\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${newBal.toLocaleString()}\` coins\n\n` +
+              `-# 💡 **Use \`!shop\` to explore 52 catalog items or \`!inv\` to check your backpack.**`
           }
         ]
       };
@@ -761,11 +761,11 @@ export const commands = [
             type: 10,
             content:
               `### **Coins Disbursed | <a:03_tick_circle:1565665642084827206>**\n` +
-              `- # **• Authorized By:** ${adminLink}\n` +
-              `- # ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
-              `- # ${BULLET_EMOJI} **Amount Granted:** **\`+${amount.toLocaleString()}\` Athena Coins**\n` +
-              `- # ${BULLET_EMOJI} **Updated Wallet:** \`${newBal.toLocaleString()}\` coins\n\n` +
-              `- # 💡 **Use \`/shop\` to explore 52 catalog items or \`/inventory\` to check your backpack.**`
+              `-# **• Authorized By:** ${adminLink}\n` +
+              `-# ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
+              `-# ${BULLET_EMOJI} **Amount Granted:** **\`+${amount.toLocaleString()}\` Athena Coins**\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${newBal.toLocaleString()}\` coins\n\n` +
+              `-# 💡 **Use \`/shop\` to explore 52 catalog items or \`/inventory\` to check your backpack.**`
           }
         ]
       };
@@ -878,16 +878,16 @@ export const commands = [
             type: 10,
             content:
               `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:04_cross_circle:1565665644806934639>'}**\n` +
-              `- # **• Player:** ${playerLink}\n` +
-              `- # ${BULLET_EMOJI} **Your Call:** \`${normalizedChoice.toUpperCase()}\` · **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
-              `- # ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${winnings - bet}\` coins (Payout: \`${winnings}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
-              `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
+              `-# **• Player:** ${playerLink}\n` +
+              `-# ${BULLET_EMOJI} **Your Call:** \`${normalizedChoice.toUpperCase()}\` · **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
+              `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${winnings - bet}\` coins (Payout: \`${winnings}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
               buffNote
           },
           { type: 14, divider: true },
           {
             type: 10,
-            content: `- # 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`
+            content: `-# 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`
           }
         ]
       };
@@ -966,16 +966,16 @@ export const commands = [
             type: 10,
             content:
               `### **Coinflip ${won ? 'Victory | <a:03_tick_circle:1565665642084827206>' : 'Defeat | <a:04_cross_circle:1565665644806934639>'}**\n` +
-              `- # **• Player:** ${playerLink}\n` +
-              `- # ${BULLET_EMOJI} **Your Call:** \`${choice.toUpperCase()}\` · **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
-              `- # ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${winnings - bet}\` coins (Payout: \`${winnings}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
-              `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
+              `-# **• Player:** ${playerLink}\n` +
+              `-# ${BULLET_EMOJI} **Your Call:** \`${choice.toUpperCase()}\` · **Coin Landed:** **\`${outcome.toUpperCase()}\`**\n\n` +
+              `-# ${BULLET_EMOJI} **Result:** ${won ? `**WON \`+${winnings - bet}\` coins (Payout: \`${winnings}\`)**` : `**LOST \`-${bet}\` coins**`}\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
               buffNote
           },
           { type: 14, divider: true },
           {
             type: 10,
-            content: `- # 💡 **Use \`/shop\` to explore crates, luck charms, or server perks!**`
+            content: `-# 💡 **Use \`/shop\` to explore crates, luck charms, or server perks!**`
           }
         ]
       };
@@ -1132,16 +1132,16 @@ export const commands = [
                 type: 10,
                 content:
                   `### **Purchase Complete | <a:03_tick_circle:1565665642084827206>**\n` +
-                  `- # **• Buyer:** ${buyerLink}\n` +
-                  `- # ${BULLET_EMOJI} **Purchased:** **${quantity}x ${builtin.name}**\n` +
-                  `- # ${BULLET_EMOJI} **Total Cost:** \`${totalCost.toLocaleString()}\` Athena Coins\n` +
-                  `- # ${BULLET_EMOJI} **Backpack Total:** \`${newTotal}\` in inventory\n\n` +
-                  `- # ${BULLET_EMOJI} **Action:** *${nextStepHint}*`
+                  `-# **• Buyer:** ${buyerLink}\n` +
+                  `-# ${BULLET_EMOJI} **Purchased:** **${quantity}x ${builtin.name}**\n` +
+                  `-# ${BULLET_EMOJI} **Total Cost:** \`${totalCost.toLocaleString()}\` Athena Coins\n` +
+                  `-# ${BULLET_EMOJI} **Backpack Total:** \`${newTotal}\` in inventory\n\n` +
+                  `-# ${BULLET_EMOJI} **Action:** *${nextStepHint}*`
               },
               { type: 14, divider: true },
               {
                 type: 10,
-                content: `- # 💡 **Check your backpack anytime with \`!inv\` or explore more in \`!shop\`.**`
+                content: `-# 💡 **Check your backpack anytime with \`!inv\` or explore more in \`!shop\`.**`
               }
             ]
           };
@@ -1187,10 +1187,10 @@ export const commands = [
                 type: 10,
                 content:
                   `### **Role Purchased | <a:03_tick_circle:1565665642084827206>**\n` +
-                  `- # **• Buyer:** ${buyerLink}\n` +
-                  `- # ${BULLET_EMOJI} **Item:** **${roleItem.name}**\n` +
-                  `- # ${BULLET_EMOJI} **Role Granted:** <@&${role.id}>\n` +
-                  `- # ${BULLET_EMOJI} **Price Paid:** \`${roleItem.price.toLocaleString()}\` Athena Coins`
+                  `-# **• Buyer:** ${buyerLink}\n` +
+                  `-# ${BULLET_EMOJI} **Item:** **${roleItem.name}**\n` +
+                  `-# ${BULLET_EMOJI} **Role Granted:** <@&${role.id}>\n` +
+                  `-# ${BULLET_EMOJI} **Price Paid:** \`${roleItem.price.toLocaleString()}\` Athena Coins`
               }
             ]
           };
@@ -1265,16 +1265,16 @@ export const commands = [
               type: 10,
               content:
                 `### **${CMD_SELL_EMOJI} Item Sale Finalized | <a:03_tick_circle:1565665642084827206>**\n` +
-                `- # **• Seller:** ${sellerLink}\n` +
-                `- # ${BULLET_EMOJI} **Sold:** **${quantity}x ${builtin.name}**\n` +
-                `- # ${BULLET_EMOJI} **Earnings:** \`+${totalEarnings.toLocaleString()}\` Athena Coins (\`${unitSellPrice.toLocaleString()}\`/ea)\n` +
-                `- # ${BULLET_EMOJI} **Remaining:** \`${remaining}\` in backpack\n` +
-                `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+                `-# **• Seller:** ${sellerLink}\n` +
+                `-# ${BULLET_EMOJI} **Sold:** **${quantity}x ${builtin.name}**\n` +
+                `-# ${BULLET_EMOJI} **Earnings:** \`+${totalEarnings.toLocaleString()}\` Athena Coins (\`${unitSellPrice.toLocaleString()}\`/ea)\n` +
+                `-# ${BULLET_EMOJI} **Remaining:** \`${remaining}\` in backpack\n` +
+                `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
             },
             { type: 14, divider: true },
             {
               type: 10,
-              content: `- # 💡 **Use \`!shop\` to purchase items, or \`!inv\` to view your backpack.**`
+              content: `-# 💡 **Use \`!shop\` to purchase items, or \`!inv\` to view your backpack.**`
             }
           ]
         };
@@ -1534,16 +1534,16 @@ export const commands = [
             type: 10,
             content:
               `### **${CMD_SELL_EMOJI} Item Sale Finalized | <a:03_tick_circle:1565665642084827206>**\n` +
-              `- # **• Seller:** ${sellerLink}\n` +
-              `- # ${BULLET_EMOJI} **Sold:** **${quantity}x ${builtin.name}**\n` +
-              `- # ${BULLET_EMOJI} **Earnings:** \`+${totalEarnings.toLocaleString()}\` Athena Coins (\`${unitSellPrice.toLocaleString()}\`/ea)\n` +
-              `- # ${BULLET_EMOJI} **Remaining:** \`${remaining}\` in backpack\n` +
-              `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+              `-# **• Seller:** ${sellerLink}\n` +
+              `-# ${BULLET_EMOJI} **Sold:** **${quantity}x ${builtin.name}**\n` +
+              `-# ${BULLET_EMOJI} **Earnings:** \`+${totalEarnings.toLocaleString()}\` Athena Coins (\`${unitSellPrice.toLocaleString()}\`/ea)\n` +
+              `-# ${BULLET_EMOJI} **Remaining:** \`${remaining}\` in backpack\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
           },
           { type: 14, divider: true },
           {
             type: 10,
-            content: `- # 💡 **Use \`!shop\` to purchase items, or \`!inv\` to view your backpack.**`
+            content: `-# 💡 **Use \`!shop\` to purchase items, or \`!inv\` to view your backpack.**`
           }
         ]
       };
@@ -1594,16 +1594,16 @@ export const commands = [
             type: 10,
             content:
               `### **${CMD_SELL_EMOJI} Item Sale Finalized | <a:03_tick_circle:1565665642084827206>**\n` +
-              `- # **• Seller:** ${sellerLink}\n` +
-              `- # ${BULLET_EMOJI} **Sold:** **${quantity}x ${builtin.name}**\n` +
-              `- # ${BULLET_EMOJI} **Earnings:** \`+${totalEarnings.toLocaleString()}\` Athena Coins (\`${unitSellPrice.toLocaleString()}\`/ea)\n` +
-              `- # ${BULLET_EMOJI} **Remaining:** \`${remaining}\` in backpack\n` +
-              `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+              `-# **• Seller:** ${sellerLink}\n` +
+              `-# ${BULLET_EMOJI} **Sold:** **${quantity}x ${builtin.name}**\n` +
+              `-# ${BULLET_EMOJI} **Earnings:** \`+${totalEarnings.toLocaleString()}\` Athena Coins (\`${unitSellPrice.toLocaleString()}\`/ea)\n` +
+              `-# ${BULLET_EMOJI} **Remaining:** \`${remaining}\` in backpack\n` +
+              `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
           },
           { type: 14, divider: true },
           {
             type: 10,
-            content: `- # 💡 **Use \`!shop\` to purchase items, or \`!inv\` to view your backpack.**`
+            content: `-# 💡 **Use \`!shop\` to purchase items, or \`!inv\` to view your backpack.**`
           }
         ]
       };
@@ -1686,9 +1686,9 @@ async function handleCrateOpen(ctx, user, crateId) {
         cv2.buildContainer(
           'No Crates Found',
           `You do not own any **${crate.name}** in your backpack.\n\n` +
-          `- # **Price:** \`${crate.price.toLocaleString()}\` Athena Coins\n` +
-          `- # **Buy Command:** \`!shop buy ${crate.id}\`\n\n` +
-          `- # 💡 **Use \`!shop\` to purchase crates, or \`!inv\` to see what you own.**`
+          `-# **Price:** \`${crate.price.toLocaleString()}\` Athena Coins\n` +
+          `-# **Buy Command:** \`!shop buy ${crate.id}\`\n\n` +
+          `-# 💡 **Use \`!shop\` to purchase crates, or \`!inv\` to see what you own.**`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -1728,12 +1728,12 @@ async function handleCrateOpen(ctx, user, crateId) {
   const remaining = db.getUserItemCount(guildId, user.id, crate.id);
   const eco = db.getUserEconomy(guildId, user.id);
 
-  let lootDetails = `- # ${BULLET_EMOJI} **Currency Payout:** **\`+${coinsWon.toLocaleString()}\` Athena Coins**`;
+  let lootDetails = `-# ${BULLET_EMOJI} **Currency Payout:** **\`+${coinsWon.toLocaleString()}\` Athena Coins**`;
   if (hasCharm) {
     lootDetails += ` *(+25% Charm Bonus applied!)*`;
   }
   if (bonusItem) {
-    lootDetails += `\n- # ✨ **LUCKY BONUS DROP:** **1x ${bonusItem.name}** added to your backpack!`;
+    lootDetails += `\n-# ✨ **LUCKY BONUS DROP:** **1x ${bonusItem.name}** added to your backpack!`;
   }
 
   const unboxerLink = formatUserLink(user, ctx.guild);
@@ -1746,16 +1746,16 @@ async function handleCrateOpen(ctx, user, crateId) {
         type: 10,
         content:
           `### **${cratePrefix}Mystery Crate Unboxed | <a:03_tick_circle:1565665642084827206>**\n` +
-          `- # **• Opened By:** ${unboxerLink}\n` +
-          `- # **• Unboxed:** **1x ${crate.name}**\n` +
-          `- # **• Crates Remaining:** \`${remaining}\` in backpack\n\n` +
+          `-# **• Opened By:** ${unboxerLink}\n` +
+          `-# **• Unboxed:** **1x ${crate.name}**\n` +
+          `-# **• Crates Remaining:** \`${remaining}\` in backpack\n\n` +
           `${lootDetails}\n\n` +
-          `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
+          `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins`
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: `- # 💡 **Use \`!inv\` to inspect items, or \`!shop\` to purchase more crates!**`
+        content: `-# 💡 **Use \`!inv\` to inspect items, or \`!shop\` to purchase more crates!**`
       }
     ]
   };
@@ -1793,9 +1793,9 @@ async function handleItemUse(ctx, user, itemId) {
         cv2.buildContainer(
           'Adventure Tool Equipped',
           `**${item.name}** is a permanent action tool in your backpack!\n\n` +
-          `- # ${BULLET_EMOJI} It is automatically equipped when you embark on activities.\n` +
-          `- # ${BULLET_EMOJI} Use \`!hunt\` to track wildlife, \`!fish\` to cast your line, or \`!mine\` to excavate ores!\n\n` +
-          `- # 💡 **Owned:** \`${db.getUserItemCount(guildId, user.id, item.id)}\` in backpack.`
+          `-# ${BULLET_EMOJI} It is automatically equipped when you embark on activities.\n` +
+          `-# ${BULLET_EMOJI} Use \`!hunt\` to track wildlife, \`!fish\` to cast your line, or \`!mine\` to excavate ores!\n\n` +
+          `-# 💡 **Owned:** \`${db.getUserItemCount(guildId, user.id, item.id)}\` in backpack.`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -1808,9 +1808,9 @@ async function handleItemUse(ctx, user, itemId) {
         cv2.buildContainer(
           'Precious Gemstone',
           `**${item.name}** is a rare trade mineral and collectible!\n\n` +
-          `- # ${BULLET_EMOJI} Hold it in your \`!inv\` to showcase wealth.\n` +
-          `- # ${BULLET_EMOJI} Or sell it for instant cash with \`!sell ${item.id}\` (Sell Value: \`${getItemSellPrice(item.id).toLocaleString()}\` coins).\n\n` +
-          `- # 💡 **Owned:** \`${db.getUserItemCount(guildId, user.id, item.id)}\` in backpack.`
+          `-# ${BULLET_EMOJI} Hold it in your \`!inv\` to showcase wealth.\n` +
+          `-# ${BULLET_EMOJI} Or sell it for instant cash with \`!sell ${item.id}\` (Sell Value: \`${getItemSellPrice(item.id).toLocaleString()}\` coins).\n\n` +
+          `-# 💡 **Owned:** \`${db.getUserItemCount(guildId, user.id, item.id)}\` in backpack.`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -1823,7 +1823,7 @@ async function handleItemUse(ctx, user, itemId) {
         cv2.buildContainer(
           'Incubating Egg',
           `**${item.name}** is safely incubating in your backpack!\n\n` +
-          `- # ${BULLET_EMOJI} Nurture it with \`pet_treats\` to bond with your future companion.`
+          `-# ${BULLET_EMOJI} Nurture it with \`pet_treats\` to bond with your future companion.`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -1836,9 +1836,9 @@ async function handleItemUse(ctx, user, itemId) {
         cv2.buildContainer(
           'Passive Protection Item',
           `**${item.name}** is a passive protection safeguard!\n\n` +
-          `- # It does not need to be manually activated.\n` +
-          `- # As long as it rests in your \`!inv\`, it will automatically trigger its protection when needed.\n\n` +
-          `- # 💡 **Owned:** \`${db.getUserItemCount(guildId, user.id, item.id)}\` in inventory.`
+          `-# It does not need to be manually activated.\n` +
+          `-# As long as it rests in your \`!inv\`, it will automatically trigger its protection when needed.\n\n` +
+          `-# 💡 **Owned:** \`${db.getUserItemCount(guildId, user.id, item.id)}\` in inventory.`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -1882,8 +1882,8 @@ async function handleItemUse(ctx, user, itemId) {
         cv2.buildContainer(
           'Energizer Consumed | <a:03_tick_circle:1565665642084827206>',
           `You downed a **Coffee Energizer**!\n\n` +
-          `- # ${BULLET_EMOJI} **Effect:** Your \`!daily\` cooldown was reduced by **6 Hours**!\n` +
-          `- # ${BULLET_EMOJI} Check \`!daily\` now to see if your stipend is ready!`
+          `-# ${BULLET_EMOJI} **Effect:** Your \`!daily\` cooldown was reduced by **6 Hours**!\n` +
+          `-# ${BULLET_EMOJI} Check \`!daily\` now to see if your stipend is ready!`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -1901,7 +1901,7 @@ async function handleItemUse(ctx, user, itemId) {
         cv2.buildContainer(
           'Time Warped | <a:03_tick_circle:1565665642084827206>',
           `You inverted the **Hourglass of Chronos**!\n\n` +
-          `- # ${BULLET_EMOJI} **Effect:** All action cooldowns for \`!hunt\`, \`!fish\`, and \`!mine\` were instantly reset to zero!`
+          `-# ${BULLET_EMOJI} **Effect:** All action cooldowns for \`!hunt\`, \`!fish\`, and \`!mine\` were instantly reset to zero!`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -1923,16 +1923,16 @@ async function handleItemUse(ctx, user, itemId) {
         type: 10,
         content:
           `### **${itemPrefix}Booster Buff Activated | <a:03_tick_circle:1565665642084827206>**\n` +
-          `- # **• User:** ${userLink}\n` +
-          `- # ${BULLET_EMOJI} **Activated:** **${item.name}**\n` +
-          `- # ${BULLET_EMOJI} **Effect:** ${item.description}\n` +
-          `- # ${BULLET_EMOJI} **Buff Active Until:** <t:${ts}:R> *(<t:${ts}:f>)*\n` +
-          `- # ${BULLET_EMOJI} **Remaining In Bag:** \`${db.getUserItemCount(guildId, user.id, item.id)}\``
+          `-# **• User:** ${userLink}\n` +
+          `-# ${BULLET_EMOJI} **Activated:** **${item.name}**\n` +
+          `-# ${BULLET_EMOJI} **Effect:** ${item.description}\n` +
+          `-# ${BULLET_EMOJI} **Buff Active Until:** <t:${ts}:R> *(<t:${ts}:f>)*\n` +
+          `-# ${BULLET_EMOJI} **Remaining In Bag:** \`${db.getUserItemCount(guildId, user.id, item.id)}\``
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: `- # 💡 **Play \`!slots\`, \`!coinflip\`, or \`!daily\` now to maximize your active buff!**`
+        content: `-# 💡 **Play \`!slots\`, \`!coinflip\`, or \`!daily\` now to maximize your active buff!**`
       }
     ]
   };
@@ -2051,16 +2051,16 @@ async function runSlotsGame(ctx, user, bet) {
         type: 10,
         content:
           `### **Slot Machine ${outcomeTitle}**\n` +
-          `- # **• Player:** ${playerLink}\n\n` +
+          `-# **• Player:** ${playerLink}\n\n` +
           `${slotDisplay}\n\n` +
-          `- # ${BULLET_EMOJI} **Outcome:** ${resultLine}\n` +
-          `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
+          `-# ${BULLET_EMOJI} **Outcome:** ${resultLine}\n` +
+          `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
           buffNote
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: `- # 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`
+        content: `-# 💡 **Use \`!shop\` to purchase Lucky Clovers, Mystery Crates, or server perks!**`
       }
     ]
   };
@@ -2083,8 +2083,8 @@ async function runHuntGame(ctx, user) {
         cv2.buildContainer(
           'Hunting Cooldown | <a:exclamation_outline1:1565666739356827759>',
           `Your hunting party is catching their breath!\n\n` +
-          `- # Please wait **${remainSec}s** before tracking wildlife again.\n` +
-          `- # 💡 **Tip:** Use an **Hourglass of Chronos** (\`!use chronos_hourglass\`) to instantly reset all cooldowns!`
+          `-# Please wait **${remainSec}s** before tracking wildlife again.\n` +
+          `-# 💡 **Tip:** Use an **Hourglass of Chronos** (\`!use chronos_hourglass\`) to instantly reset all cooldowns!`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -2164,7 +2164,7 @@ async function runHuntGame(ctx, user) {
   if (hasBait) gearNotes.push('Enchanted Bait (Guaranteed Tier)');
   if (hasMagnet) gearNotes.push('Coin Magnet (+35)');
 
-  const gearText = gearNotes.length > 0 ? `\n- # 🏹 **Gear Buffs:** *${gearNotes.join(' · ')}*` : `\n- # 💡 **Equip a Hunter's Longbow in \`!shop gear\` for bigger game!**`;
+  const gearText = gearNotes.length > 0 ? `\n-# 🏹 **Gear Buffs:** *${gearNotes.join(' · ')}*` : `\n-# 💡 **Equip a Hunter's Longbow in \`!shop gear\` for bigger game!**`;
   const hunterLink = formatUserLink(user, ctx.guild);
 
   const container = {
@@ -2174,16 +2174,16 @@ async function runHuntGame(ctx, user) {
         type: 10,
         content:
           `### **${CMD_HUNT_EMOJI} Forest Hunt Successful | <a:03_tick_circle:1565665642084827206>**\n` +
-          `- # **• Hunter:** ${hunterLink}\n` +
-          `- # **• Prey Captured:** **${prey.name}** (\`${tier}\`)\n` +
-          `- # ${BULLET_EMOJI} **Bounty Claimed:** **\`+${totalBounty.toLocaleString()}\` Athena Coins**\n` +
-          `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
+          `-# **• Hunter:** ${hunterLink}\n` +
+          `-# **• Prey Captured:** **${prey.name}** (\`${tier}\`)\n` +
+          `-# ${BULLET_EMOJI} **Bounty Claimed:** **\`+${totalBounty.toLocaleString()}\` Athena Coins**\n` +
+          `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
           gearText
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: `- # 💡 **Use \`!fish\` to cast your rod, \`!mine\` to dig for ores, or \`!shop\` to upgrade gear.**`
+        content: `-# 💡 **Use \`!fish\` to cast your rod, \`!mine\` to dig for ores, or \`!shop\` to upgrade gear.**`
       }
     ]
   };
@@ -2206,8 +2206,8 @@ async function runFishGame(ctx, user) {
         cv2.buildContainer(
           'Fishing Cooldown | <a:exclamation_outline1:1565666739356827759>',
           `Your fishing line is drying out!\n\n` +
-          `- # Please wait **${remainSec}s** before casting line into deep waters again.\n` +
-          `- # 💡 **Tip:** Use an **Hourglass of Chronos** (\`!use chronos_hourglass\`) to instantly reset all cooldowns!`
+          `-# Please wait **${remainSec}s** before casting line into deep waters again.\n` +
+          `-# 💡 **Tip:** Use an **Hourglass of Chronos** (\`!use chronos_hourglass\`) to instantly reset all cooldowns!`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -2294,10 +2294,10 @@ async function runFishGame(ctx, user) {
 
   let bonusNote = '';
   if (bonusItem) {
-    bonusNote = `\n- # ✨ **TREASURE SALVAGED:** Found **1x ${bonusItem.name}** inside the catch! Added to your backpack.`;
+    bonusNote = `\n-# ✨ **TREASURE SALVAGED:** Found **1x ${bonusItem.name}** inside the catch! Added to your backpack.`;
   }
 
-  const gearText = gearNotes.length > 0 ? `\n- # 🎣 **Gear Buffs:** *${gearNotes.join(' · ')}*` : `\n- # 💡 **Equip a Sturdy Fishing Rod in \`!shop gear\` for deep ocean catches!**`;
+  const gearText = gearNotes.length > 0 ? `\n-# 🎣 **Gear Buffs:** *${gearNotes.join(' · ')}*` : `\n-# 💡 **Equip a Sturdy Fishing Rod in \`!shop gear\` for deep ocean catches!**`;
   const anglerLink = formatUserLink(user, ctx.guild);
 
   const container = {
@@ -2307,17 +2307,17 @@ async function runFishGame(ctx, user) {
         type: 10,
         content:
           `### **${CMD_FISH_EMOJI} Deep-Sea Catch Landed | <a:03_tick_circle:1565665642084827206>**\n` +
-          `- # **• Angler:** ${anglerLink}\n` +
-          `- # **• Reeled In:** **${catchData.name}** (\`${tier}\`)\n` +
-          `- # ${BULLET_EMOJI} **Bounty Paid:** **\`+${totalBounty.toLocaleString()}\` Athena Coins**\n` +
-          `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
+          `-# **• Angler:** ${anglerLink}\n` +
+          `-# **• Reeled In:** **${catchData.name}** (\`${tier}\`)\n` +
+          `-# ${BULLET_EMOJI} **Bounty Paid:** **\`+${totalBounty.toLocaleString()}\` Athena Coins**\n` +
+          `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
           bonusNote +
           gearText
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: `- # 💡 **Use \`!hunt\` to track game, \`!mine\` to dig for ores, or \`!shop\` to explore gear.**`
+        content: `-# 💡 **Use \`!hunt\` to track game, \`!mine\` to dig for ores, or \`!shop\` to explore gear.**`
       }
     ]
   };
@@ -2340,8 +2340,8 @@ async function runMineGame(ctx, user) {
         cv2.buildContainer(
           'Mining Cooldown | <a:exclamation_outline1:1565666739356827759>',
           `Your mining drill is cooling down!\n\n` +
-          `- # Please wait **${remainSec}s** before excavating subterranean shafts again.\n` +
-          `- # 💡 **Tip:** Use an **Hourglass of Chronos** (\`!use chronos_hourglass\`) to instantly reset all cooldowns!`
+          `-# Please wait **${remainSec}s** before excavating subterranean shafts again.\n` +
+          `-# 💡 **Tip:** Use an **Hourglass of Chronos** (\`!use chronos_hourglass\`) to instantly reset all cooldowns!`
         )
       ],
       flags: MessageFlags.IsComponentsV2
@@ -2418,10 +2418,10 @@ async function runMineGame(ctx, user) {
 
   let itemFoundNote = '';
   if (minedItem) {
-    itemFoundNote = `\n- # 💎 **ORE EXTRACTED:** **1x ${minedItem.name}** added to your backpack! (Sell value: \`${getItemSellPrice(minedItem.id).toLocaleString()}\` coins via \`!sell ${minedItem.id}\`)`;
+    itemFoundNote = `\n-# 💎 **ORE EXTRACTED:** **1x ${minedItem.name}** added to your backpack! (Sell value: \`${getItemSellPrice(minedItem.id).toLocaleString()}\` coins via \`!sell ${minedItem.id}\`)`;
   }
 
-  const gearText = gearNotes.length > 0 ? `\n- # ⛏️ **Mining Rig:** *${gearNotes.join(' · ')}*` : `\n- # 💡 **Equip a Sturdy Iron Pickaxe in \`!shop gear\` to extract iron and gold!**`;
+  const gearText = gearNotes.length > 0 ? `\n-# ⛏️ **Mining Rig:** *${gearNotes.join(' · ')}*` : `\n-# 💡 **Equip a Sturdy Iron Pickaxe in \`!shop gear\` to extract iron and gold!**`;
   const minerLink = formatUserLink(user, ctx.guild);
 
   const container = {
@@ -2431,17 +2431,17 @@ async function runMineGame(ctx, user) {
         type: 10,
         content:
           `### **${CMD_MINE_EMOJI} Excavation Strike | <a:03_tick_circle:1565665642084827206>**\n` +
-          `- # **• Miner:** ${minerLink}\n` +
-          `- # **• Excavated:** **${excavationData.name}** (\`${tier}\`)\n` +
-          `- # ${BULLET_EMOJI} **Gold Nuggets Uncovered:** **\`+${totalCoins.toLocaleString()}\` Athena Coins**\n` +
-          `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
+          `-# **• Miner:** ${minerLink}\n` +
+          `-# **• Excavated:** **${excavationData.name}** (\`${tier}\`)\n` +
+          `-# ${BULLET_EMOJI} **Gold Nuggets Uncovered:** **\`+${totalCoins.toLocaleString()}\` Athena Coins**\n` +
+          `-# ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
           itemFoundNote +
           gearText
       },
       { type: 14, divider: true },
       {
         type: 10,
-        content: `- # 💡 **Use \`!sell\` to liquidate gems and ores, or explore \`!shop\`!**`
+        content: `-# 💡 **Use \`!sell\` to liquidate gems and ores, or explore \`!shop\`!**`
       }
     ]
   };

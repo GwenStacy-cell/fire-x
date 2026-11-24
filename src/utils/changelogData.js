@@ -67,6 +67,10 @@ export const CHANGELOG_ENTRIES = [
       {
         title: 'User & Channel Mention Compliance',
         desc: 'Replaced all raw <@userId> mentions across economy cards and transaction receipts with formatted nickname hyperlinks.'
+      },
+      {
+        title: 'Discord Subtext Markdown Formatting (-#)',
+        desc: 'Corrected spacing on all economy and action game cards from raw bullet hashes (- #) to standard Discord grey subtext (-#) across shop catalog, inventory, and mini-games.'
       }
     ]
   },
