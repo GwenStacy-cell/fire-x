@@ -267,6 +267,7 @@ export default {
     // Set custom rich activity presence
     const customStatuses = [
       'Athena {version} is now rolling out..',
+      'Word filter command renamed from !blacklist to !wordfilter / !wf',
       'No of Git Commits Done so far - {commits}',
       'Fully Armed !',
       "Fortified by Athena's Firewall !",

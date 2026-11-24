@@ -16,6 +16,30 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.9.6',
+    headline: 'Bot Activity Status Rotation Update',
+    summary: 'Enriched the bot\'s custom activity status note rotation with a notification highlighting that the word filter command was renamed from !blacklist to !wordfilter / !wf, ensuring server owners and staff stay informed across rotating presence cycles.',
+    whatsNew: [
+      {
+        title: 'Word Filter Renaming PSA in Status Rotation',
+        desc: 'Added \'Word filter command renamed from !blacklist to !wordfilter / !wf\' directly to the rotating activity status note in ready.js.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Command Discoverability',
+        desc: 'Elevated awareness across all servers for the dedicated !wordfilter (!wf) suite and the newly decoupled bot blacklist (!bl) commands.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Presence Version Sync',
+        desc: 'Updated the rotating activity status banner to roll out under v3.9.6.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.9.5',
     headline: 'Bot Command Blacklist Messaging Polish & Ezal Suite Integration',
     summary: 'Updated the bot command blacklist confirmation embeds to explicitly communicate user restriction (\'User Blacklisted from using bot cmds\' and \'User Unblacklisted from using bot cmds\'). Fully synchronized the Ezal module with the !bl suite, adding ezal bl, ezal unbl, ezal bllist, and all relevant routing aliases.',
