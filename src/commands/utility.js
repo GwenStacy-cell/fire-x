@@ -317,6 +317,8 @@ export const commands = [
               let permsText = "Public (Everyone)";
               if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
                   permsText = "Server Owner & Bot Owner ONLY";
+              } else if (cmdClearance.requiredClearance === 'Owner Only' || targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
+                  permsText = "Owner Only";
               } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
                   permsText = "Server Owner & Extra Owner";
               } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
@@ -444,6 +446,8 @@ export const commands = [
                   usageText = `${prefix}stats [24h|7d|30d|all] / ${prefix}stats me / ${prefix}stats @user / ${prefix}stats <setup|refresh|config|disable> / /stats`;
               } else if (targetCmd.name === "serveroverview" || targetCmd.name === "so") {
                   usageText = `${prefix}serveroverview [timeframe] / ${prefix}so [timeframe] / /serveroverview`;
+              } else if (targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
+                  usageText = `${prefix}givecoins <amount> [@user] / ${prefix}addcoins / /givecoins`;
               } else if (targetCmd.name === "fck" || targetCmd.name === "np") {
                   usageText = `@bot ${targetCmd.name}`;
               }
@@ -1290,6 +1294,16 @@ export const commands = [
                     `> ${BULLET_EMOJI} \`${prefix}serveroverview\` (or \`${prefix}so\`) — Launch the live overview dashboard.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}serveroverview 24h\` — Launch with 24-hour lookback window.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}serveroverview 30d\` — Launch with 30-day monthly lookback window.`;
+              } else if (targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
+                  descContent = `Disburse Athena Coins directly into any user's wallet or into your own balance instantly.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Owner Only\` (Server Owner & Extra Owner).\n\n` +
+                    `> -# **__Usage Instructions:__**\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}givecoins <amount>\` — Credit specified coin amount directly to your own wallet.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}givecoins <@user> <amount>\` — Credit coins to the mentioned member.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}givecoins <userId> <amount>\` — Credit coins using raw Discord User ID.\n\n` +
+                    `> -# **__Aliases:__** \`${prefix}addcoins\`, \`${prefix}ecoadd\`, \`${prefix}spawncoins\`\n` +
+                    `> -# **__Persistence:__** Flushed immediately to persistent database ledger.`;
               }
 
               const display1 = new TextDisplayBuilder().setContent(`# ${NINJA_BULLET} Command Name: \`${targetCmd.name}\` ${NINJA_BULLET_RTL}\n\n` +
@@ -1373,6 +1387,8 @@ export const commands = [
         let permsText = "Public (Everyone)";
         if (targetCmd.name === "emergency" || targetCmd.name === "endemergency" || targetCmd.name === "panic") {
           permsText = "Server Owner & Bot Owner ONLY";
+        } else if (cmdClearance.requiredClearance === 'Owner Only' || targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
+          permsText = "Owner Only";
         } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
           permsText = "Server Owner & Extra Owner";
         } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
@@ -1478,6 +1494,8 @@ export const commands = [
           usageText = `${prefix}stats [24h|7d|30d|all] / ${prefix}stats me / ${prefix}stats @user / ${prefix}stats <setup|refresh|config|disable> / /stats`;
         } else if (targetCmd.name === "serveroverview" || targetCmd.name === "so") {
           usageText = `${prefix}serveroverview [timeframe] / ${prefix}so [timeframe] / /serveroverview`;
+        } else if (targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
+          usageText = `${prefix}givecoins <amount> [@user] / ${prefix}addcoins / /givecoins`;
         }
         const aliasesText = Array.isArray(targetCmd.aliases) && targetCmd.aliases.length > 0
           ? targetCmd.aliases.map(a => `\`${prefix}${a}\``).join(', ')
@@ -2198,6 +2216,16 @@ export const commands = [
             `> ${BULLET_EMOJI} \`${prefix}serveroverview\` (or \`${prefix}so\`) — Launch the live overview dashboard.\n` +
             `> ${BULLET_EMOJI} \`${prefix}serveroverview 24h\` — Launch with 24-hour lookback window.\n` +
             `> ${BULLET_EMOJI} \`${prefix}serveroverview 30d\` — Launch with 30-day monthly lookback window.`;
+        } else if (targetCmd.name === "givecoins" || targetCmd.name === "addcoins" || targetCmd.name === "spawncoins" || targetCmd.name === "ecoadd") {
+          descContent = `Disburse Athena Coins directly into any user's wallet or into your own balance instantly.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Owner Only\` (Server Owner & Extra Owner).\n\n` +
+            `> -# **__Usage Instructions:__**\n` +
+            `> ${BULLET_EMOJI} \`${prefix}givecoins <amount>\` — Credit specified coin amount directly to your own wallet.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}givecoins <@user> <amount>\` — Credit coins to the mentioned member.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}givecoins <userId> <amount>\` — Credit coins using raw Discord User ID.\n\n` +
+            `> -# **__Aliases:__** \`${prefix}addcoins\`, \`${prefix}ecoadd\`, \`${prefix}spawncoins\`\n` +
+            `> -# **__Persistence:__** Flushed immediately to persistent database ledger.`;
         }
 
         const display1 = new TextDisplayBuilder().setContent(`# ${NINJA_BULLET} Command Name: \`${targetCmd.name}\` ${NINJA_BULLET_RTL}\n\n` +
@@ -3369,13 +3397,22 @@ export const helpModules = [
     "`!balance / !bal [@user]` - View wallet, vault reserves, and net worth `[Public]`",
     "`!daily` - Claim daily stipend with consecutive day streak multipliers `[Public]`",
     "`!pay @user <amount>` - Transfer coins directly to another member `[Public]`",
+    "`!givecoins / !addcoins <amount> [@user]` - Disburse Athena Coins to user wallet `[Owner Only]`",
+    "`!shop` - 52-item 7-department global commerce catalog with animated custom emojis `[Public]`",
+    "`!shop buy <itemId> [qty]` - Purchase crates, boosters, tools, gems & perks `[Public]`",
+    "`!sell / !shop sell <itemId> [qty]` - Liquidate mined ores, catches & goods for coins `[Public]`",
+    "`!inv / !inventory [@user]` - Backpack tracker for crates, gear & active booster buffs `[Public]`",
+    "`!open <crate>` - Unbox mystery crates & relic urns for jackpot coin drops `[Public]`",
+    "`!use <booster>` - Consume luck clovers, charms, or cooldown hourglasses `[Public]`",
+    "`!slots <bet>` - High-stakes 3-reel animated casino slot machine `[Public]`",
+    "`!hunt / !h` - Track and capture wildlife for coin bounties `[Public]`",
+    "`!fish / !f` - Cast fishing line into ocean depths for rare catches `[Public]`",
+    "`!mine / !m` - Excavate subterranean shafts for gold and cut gemstones `[Public]`",
     "`!coinflip <heads|tails> <bet>` - Double or nothing 50/50 coin wager `[Public]`",
     "`!blackjack / !bj <bet>` - Interactive Blackjack with Components V2 buttons & 2.5x natural payouts `[Public]`",
     "`!roulette / !roul <bet> <space>` - European roulette wheel betting (Red, Black, Green, Even, Odd, 0-36) `[Public]`",
     "`!trivia / !quiz [wager]` - Interactive 4-choice knowledge tournament with coin rewards `[Public]`",
     "`!gamestats / !mgstats [@user]` - View personal casino records, wins, and net earnings `[Public]`",
-    "`!shop` - Browse server role and privilege catalog `[Public]`",
-    "`!shop buy <itemId>` - Purchase role perk with coins `[Public]`",
     "`!shop add <name> <price> <@role>` - List new purchasable role perk `[Extra Owner]`",
     "`!shop remove <itemId>` - Purge item from catalog `[Extra Owner]`",
     "",

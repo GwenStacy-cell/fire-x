@@ -50,7 +50,7 @@ export const CHANGELOG_ENTRIES = [
       },
       {
         title: 'Coin Disbursal & Spawning Engine (!givecoins)',
-        desc: 'Server Owners and Extra Owners can grant coin balances instantly to any user or directly into their own wallet with !givecoins <amount> (aliases: !addcoins, !ecoadd, !spawncoins).'
+        desc: 'Server Owners and Extra Owners can grant coin balances instantly to any user or directly into their own wallet with !givecoins <amount> (aliases: !addcoins, !ecoadd, !spawncoins). Fully integrated into the help directory as Owner Only.'
       }
     ],
     improvements: [

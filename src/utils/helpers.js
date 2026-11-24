@@ -157,6 +157,16 @@ export function checkCommandClearance(cmdName, userId, guild) {
     };
   }
 
+  // 2.5. Owner Only Commands (Currency Spawning & Executive Disbursals)
+  if (['givecoins', 'addcoins', 'ecoadd', 'spawncoins'].includes(name)) {
+    const isAllowed = isExtraOwnerOrHigher(uid, guild);
+    return {
+      allowed: isAllowed,
+      requiredClearance: 'Owner Only',
+      reason: isAllowed ? null : 'This command is strictly restricted to Server Owners and Extra Owners.'
+    };
+  }
+
   // 3. Public Commands (Anyone in the server can run)
   if (PUBLIC_COMMANDS.has(name)) {
     return {
