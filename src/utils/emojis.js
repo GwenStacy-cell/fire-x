@@ -18,6 +18,20 @@ export const ARCADE_CASINO_ICON = '<:03_arcade_casino_matrix:1569361549309645000
 export const ROLEPLAY_MATRIX_ICON = '<:02_roleplay_affinity_matrix:1569361546621227103>';
 export const SOUNDBOARD_RADIO_ICON = '<:01_soundboard_lofi_radio:1569361543576027266>';
 
+// Commerce, Action Mini-Games & Slot Matrix Emojis
+export const CMD_FISH_EMOJI = '<a:color_cmd_fish:1574746568958148671>';
+export const CMD_HUNT_EMOJI = '<a:color_cmd_hunt:1574746577736699968>';
+export const CMD_MINE_EMOJI = '<a:color_cmd_mine:1574746583902330890>';
+export const CMD_SELL_EMOJI = '<a:color_cmd_sell:1574746590747435070>';
+
+export const SLOT_EMOJIS = {
+  CROWN: '<a:color_slot_crown:1574747586177409064>',
+  DIAMOND: '<a:color_slot_diamond:1574747591046991973>',
+  BELL: '<a:color_slot_bell:1574747575175610418>',
+  GRAPES: '<a:color_slot_grapes:1574747597627990077>',
+  CHERRY: '<a:color_slot_cherry:1574747580158578749>'
+};
+
 // Navigation & Pagination Beat Emojis
 export const HOME_BEAT_EMOJI = '<a:01_home_beat:1567037361810833428>';
 export const DELETE_BEAT_EMOJI = '<a:02_delete_beat:1567037365547962449>';

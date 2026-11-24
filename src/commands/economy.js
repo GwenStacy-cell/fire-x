@@ -1,4 +1,4 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, CMD_FISH_EMOJI, CMD_HUNT_EMOJI, CMD_MINE_EMOJI, CMD_SELL_EMOJI, SLOT_EMOJIS } from '../utils/emojis.js';
 import { PermissionFlagsBits, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
@@ -1141,7 +1141,7 @@ export const commands = [
             {
               type: 10,
               content:
-                `### **Item Sale Finalized | <a:03_tick_circle:1565665642084827206>**\n` +
+                `### **${CMD_SELL_EMOJI} Item Sale Finalized | <a:03_tick_circle:1565665642084827206>**\n` +
                 `- # **• Seller:** ${sellerLink}\n` +
                 `- # ${BULLET_EMOJI} **Sold:** **${quantity}x ${builtin.name}**\n` +
                 `- # ${BULLET_EMOJI} **Earnings:** \`+${totalEarnings.toLocaleString()}\` Athena Coins (\`${unitSellPrice.toLocaleString()}\`/ea)\n` +
@@ -1410,7 +1410,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Item Sale Finalized | <a:03_tick_circle:1565665642084827206>**\n` +
+              `### **${CMD_SELL_EMOJI} Item Sale Finalized | <a:03_tick_circle:1565665642084827206>**\n` +
               `- # **• Seller:** ${sellerLink}\n` +
               `- # ${BULLET_EMOJI} **Sold:** **${quantity}x ${builtin.name}**\n` +
               `- # ${BULLET_EMOJI} **Earnings:** \`+${totalEarnings.toLocaleString()}\` Athena Coins (\`${unitSellPrice.toLocaleString()}\`/ea)\n` +
@@ -1470,7 +1470,7 @@ export const commands = [
           {
             type: 10,
             content:
-              `### **Item Sale Finalized | <a:03_tick_circle:1565665642084827206>**\n` +
+              `### **${CMD_SELL_EMOJI} Item Sale Finalized | <a:03_tick_circle:1565665642084827206>**\n` +
               `- # **• Seller:** ${sellerLink}\n` +
               `- # ${BULLET_EMOJI} **Sold:** **${quantity}x ${builtin.name}**\n` +
               `- # ${BULLET_EMOJI} **Earnings:** \`+${totalEarnings.toLocaleString()}\` Athena Coins (\`${unitSellPrice.toLocaleString()}\`/ea)\n` +
@@ -1614,13 +1614,15 @@ async function handleCrateOpen(ctx, user, crateId) {
   }
 
   const unboxerLink = formatUserLink(user, ctx.guild);
+  const crateEmoji = getItemEmoji(crate.id);
+  const cratePrefix = crateEmoji ? `${crateEmoji} ` : '';
   const container = {
     type: 17,
     components: [
       {
         type: 10,
         content:
-          `### **Mystery Crate Unboxed | <a:03_tick_circle:1565665642084827206>**\n` +
+          `### **${cratePrefix}Mystery Crate Unboxed | <a:03_tick_circle:1565665642084827206>**\n` +
           `- # **• Opened By:** ${unboxerLink}\n` +
           `- # **• Unboxed:** **1x ${crate.name}**\n` +
           `- # **• Crates Remaining:** \`${remaining}\` in backpack\n\n` +
@@ -1788,6 +1790,8 @@ async function handleItemUse(ctx, user, itemId) {
   const expiresAt = db.activateUserBooster(guildId, user.id, item.id, item.durationMs || 3600000);
   const ts = Math.floor(expiresAt / 1000);
   const userLink = formatUserLink(user, ctx.guild);
+  const itemEmoji = getItemEmoji(item.id);
+  const itemPrefix = itemEmoji ? `${itemEmoji} ` : '';
 
   const container = {
     type: 17,
@@ -1795,7 +1799,7 @@ async function handleItemUse(ctx, user, itemId) {
       {
         type: 10,
         content:
-          `### **Booster Buff Activated | <a:03_tick_circle:1565665642084827206>**\n` +
+          `### **${itemPrefix}Booster Buff Activated | <a:03_tick_circle:1565665642084827206>**\n` +
           `- # **• User:** ${userLink}\n` +
           `- # ${BULLET_EMOJI} **Activated:** **${item.name}**\n` +
           `- # ${BULLET_EMOJI} **Effect:** ${item.description}\n` +
@@ -1834,11 +1838,11 @@ async function runSlotsGame(ctx, user, bet) {
   }
 
   const SYMBOLS = [
-    { glyph: '👑', name: 'Crown', mult: 20 },
-    { glyph: '💎', name: 'Diamond', mult: 12 },
-    { glyph: '🔔', name: 'Bell', mult: 7 },
-    { glyph: '🍇', name: 'Grapes', mult: 5 },
-    { glyph: '🍒', name: 'Cherry', mult: 3 }
+    { glyph: SLOT_EMOJIS.CROWN, name: 'Crown', mult: 20 },
+    { glyph: SLOT_EMOJIS.DIAMOND, name: 'Diamond', mult: 12 },
+    { glyph: SLOT_EMOJIS.BELL, name: 'Bell', mult: 7 },
+    { glyph: SLOT_EMOJIS.GRAPES, name: 'Grapes', mult: 5 },
+    { glyph: SLOT_EMOJIS.CHERRY, name: 'Cherry', mult: 3 }
   ];
 
   const hasClover = db.isUserBoosterActive(guildId, user.id, 'lucky_clover');
@@ -1910,12 +1914,7 @@ async function runSlotsGame(ctx, user, bet) {
   if (won && hasDice) buffNote += `\n-# 🎲 **Loaded Dice Active:** +15% casino payout bonus applied!`;
   if (won && hasMagnet) buffNote += `\n-# 🧲 **Coin Magnet Active:** +35 bonus coins collected!`;
 
-  const slotArt =
-    `\`\`\`\n` +
-    `   ╔═════════════════╗\n` +
-    `   ║  ${s1.glyph}   ┆  ${s2.glyph}   ┆  ${s3.glyph}   ║\n` +
-    `   ╚═════════════════╝\n` +
-    `\`\`\``;
+  const slotDisplay = `## ${s1.glyph} ┆ ${s2.glyph} ┆ ${s3.glyph}\n-# **Reels:** \`${s1.name}\` ┆ \`${s2.name}\` ┆ \`${s3.name}\``;
 
   const resultLine = won
     ? `**WON \`+${totalPayout - bet}\` coins (Payout: \`${totalPayout.toLocaleString()}\` — ${multiplier}x)**`
@@ -1930,7 +1929,7 @@ async function runSlotsGame(ctx, user, bet) {
         content:
           `### **Slot Machine ${outcomeTitle}**\n` +
           `- # **• Player:** ${playerLink}\n\n` +
-          `${slotArt}\n` +
+          `${slotDisplay}\n\n` +
           `- # ${BULLET_EMOJI} **Outcome:** ${resultLine}\n` +
           `- # ${BULLET_EMOJI} **Updated Wallet:** \`${(eco.wallet || 0).toLocaleString()}\` coins` +
           buffNote
@@ -2051,7 +2050,7 @@ async function runHuntGame(ctx, user) {
       {
         type: 10,
         content:
-          `### **Forest Hunt Successful | <a:03_tick_circle:1565665642084827206>**\n` +
+          `### **${CMD_HUNT_EMOJI} Forest Hunt Successful | <a:03_tick_circle:1565665642084827206>**\n` +
           `- # **• Hunter:** ${hunterLink}\n` +
           `- # **• Prey Captured:** **${prey.name}** (\`${tier}\`)\n` +
           `- # ${BULLET_EMOJI} **Bounty Claimed:** **\`+${totalBounty.toLocaleString()}\` Athena Coins**\n` +
@@ -2184,7 +2183,7 @@ async function runFishGame(ctx, user) {
       {
         type: 10,
         content:
-          `### **Deep-Sea Catch Landed | <a:03_tick_circle:1565665642084827206>**\n` +
+          `### **${CMD_FISH_EMOJI} Deep-Sea Catch Landed | <a:03_tick_circle:1565665642084827206>**\n` +
           `- # **• Angler:** ${anglerLink}\n` +
           `- # **• Reeled In:** **${catchData.name}** (\`${tier}\`)\n` +
           `- # ${BULLET_EMOJI} **Bounty Paid:** **\`+${totalBounty.toLocaleString()}\` Athena Coins**\n` +
@@ -2308,7 +2307,7 @@ async function runMineGame(ctx, user) {
       {
         type: 10,
         content:
-          `### **Excavation Strike | <a:03_tick_circle:1565665642084827206>**\n` +
+          `### **${CMD_MINE_EMOJI} Excavation Strike | <a:03_tick_circle:1565665642084827206>**\n` +
           `- # **• Miner:** ${minerLink}\n` +
           `- # **• Excavated:** **${excavationData.name}** (\`${tier}\`)\n` +
           `- # ${BULLET_EMOJI} **Gold Nuggets Uncovered:** **\`+${totalCoins.toLocaleString()}\` Athena Coins**\n` +

@@ -17,9 +17,13 @@ export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
     version: 'v3.9.0',
-    headline: '52-Item Global Market Expansion, Action Mini-Games (!hunt, !fish, !mine) & Instant Liquidation (!sell)',
-    summary: 'Massively expanded Athena\'s commerce catalog to 52 items across 7 distinct departments (Mystery Crates & Vaults, Boosters & Potions, Adventure Gear, Gems & Ores, Prestige Flex Assets, Mythical Eggs, and Server Roles). Introduced rich OwO-style action mini-games: !hunt (track forest wildlife for bounties), !fish (catch deep-sea leviathans and sunken treasure), and !mine (excavate coal, iron, gold, and rare gem deposits). Added !sell / !shop sell to liquidate goods for instant coin payouts, plus Phoenix Feather loss salvage, Golden Horseshoe extreme fortune, Loaded Dice, and Hourglass of Chronos cooldown resets.',
+    headline: '52-Item Global Market Expansion, Action Mini-Games (!hunt, !fish, !mine), Instant Liquidation (!sell) & 62 Custom Animated Emojis',
+    summary: 'Massively expanded Athena\'s commerce catalog to 52 items across 7 distinct departments (Mystery Crates & Vaults, Boosters & Potions, Adventure Gear, Gems & Ores, Prestige Flex Assets, Mythical Eggs, and Server Roles). Wired 62 custom animated Discord emojis across every item, action mini-game command (!hunt, !fish, !mine, !sell), and slot machine reel symbol. Introduced rich OwO-style action mini-games: !hunt (track forest wildlife for bounties), !fish (catch deep-sea leviathans and sunken treasure), and !mine (excavate coal, iron, gold, and rare gem deposits). Added !sell / !shop sell to liquidate goods for instant coin payouts, plus Phoenix Feather loss salvage, Golden Horseshoe extreme fortune, Loaded Dice, and Hourglass of Chronos cooldown resets.',
     whatsNew: [
+      {
+        title: 'Complete 62-Emoji Custom Animated Suite',
+        desc: 'Every single shop item, action game header (!hunt, !fish, !mine, !sell), and slot symbol (Crown, Diamond, Bell, Grapes, Cherry) is now wired with rich custom animated Discord emojis.'
+      },
       {
         title: '52-Item 7-Department Global Catalog (!shop)',
         desc: 'Spanning Mystery Crates & Relic Vaults, Boosters & Potions, Adventure & Gathering Gear, Gems & Ores, Prestige & Luxury Flex Pieces, Mythical Eggs, and Server Roles.'
