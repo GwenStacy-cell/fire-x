@@ -8,7 +8,7 @@ import commandMap from '../commands/loader.js';
 import { executeQuarantine } from '../commands/security.js';
 import { handleEzal, handleBackup, activeEzalSessions } from '../commands/ezal.js';
 import statsDB from '../statsDB.js';
-import { canModerate, logToSecurityChannel, isAuthorized, isBotOwnerSync, getPresenceStatus, findClosestCommand, getUserTierName, cleanDisplayName, checkCommandClearance, formatChannelLink } from '../utils/helpers.js';
+import { canModerate, logToSecurityChannel, isAuthorized, isBotOwnerSync, getPresenceStatus, findClosestCommand, getUserTierName, cleanDisplayName, checkCommandClearance, formatUserLink, formatChannelLink } from '../utils/helpers.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { isBotAuthorized, rawDeleteWebhook } from '../utils/antinuke.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
@@ -182,7 +182,7 @@ export default {
             actionsBlocked: 1,
             latencyMs: 7,
             status: statusText,
-            details: `Unauthorized message sent into Canary Trap channel <#${message.channel.id}>. Punishment: ${punishment.toUpperCase()}. Payload: "${message.content?.substring(0, 100) || 'Attachment'}"`
+            details: `Unauthorized message sent into Canary Trap channel #${message.channel.name || message.channel.id}. Punishment: ${punishment.toUpperCase()}. Payload: "${message.content?.substring(0, 100) || 'Attachment'}"`
           });
 
           const alertCard = {
@@ -191,8 +191,8 @@ export default {
               {
                 type: 10,
                 content: `# ${getRandomHeadingGlyph()} Honeypot Intruder Neutralized | <a:03_tick_circle:1565665642084827206>\n` +
-                         `> -# <a:uptime:1552608831060844575> **${headingStatus}:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
-                         `> -# ${BULLET_EMOJI} **Trap Channel:** <#${message.channel.id}>\n` +
+                         `> -# <a:uptime:1552608831060844575> **${headingStatus}:** ${formatUserLink(message.author, message.guild)} (\`${message.author.tag || message.author.id}\`)\n` +
+                         `> -# ${BULLET_EMOJI} **Trap Channel:** ${formatChannelLink(message.channel, message.guild)}\n` +
                          `> -# ${BULLET_EMOJI} **Trigger Payload:** \`${message.content?.substring(0, 150) || 'Attachment/Media'}\`\n` +
                          `> -# ${BULLET_EMOJI} **Enforcement Action:** ${actionLabel}`
               },
@@ -1180,9 +1180,9 @@ export default {
               {
                 type: 10,
                 content:
-                  `-# **Offending Member:** ${message.author} (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
+                  `-# **Offending Member:** ${formatUserLink(message.author, message.guild)} (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
                   `-# **Author Clearance Tier:** \`[${authorTier}]\`\n` +
-                  `-# **Channel:** <#${message.channel.id}>\n` +
+                  `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}\n` +
                   `-# **Threat Category:** \`${toxScan.category}\`\n` +
                   `-# **Severity Level:** \`[${toxScan.severity}]\`\n` +
                   `-# **Reason:** ${toxScan.reason}\n` +
@@ -1215,9 +1215,9 @@ export default {
             {
               type: 10,
               content:
-                `-# **Offending Member:** ${message.author} (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
+                `-# **Offending Member:** ${formatUserLink(message.author, message.guild)} (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
                 `-# **Author Clearance Tier:** \`[${authorTier}]\`\n` +
-                `-# **Channel:** <#${message.channel.id}>\n` +
+                `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}\n` +
                 `-# **Threat Type:** \`${phishScan.reason}\`\n` +
                 `-# **Detected Domain/Payload:** \`||${phishScan.matchedDomain}||\`\n` +
                 `-# **Action Taken:** \`Message Purged & Member Timed Out (1 Hour)\``
@@ -1269,9 +1269,9 @@ export default {
               {
                 type: 10,
                 content:
-                  `-# **Offending Member:** ${message.author} (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
+                  `-# **Offending Member:** ${formatUserLink(message.author, message.guild)} (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
                   `-# **Author Clearance Tier:** \`[${authorTier}]\`\n` +
-                  `-# **Channel:** <#${message.channel.id}>\n` +
+                  `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}\n` +
                   `-# **Detected Invite URL(s):** ${inviteList}\n` +
                   `-# **Action Taken:** \`Invite Deleted & Auto-Mod Strike Recorded\``
               },
@@ -1353,9 +1353,9 @@ export default {
               {
                 type: 10,
                 content:
-                  `-# **Offending Member:** <@${message.author.id}> (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
+                  `-# **Offending Member:** ${formatUserLink(message.author, message.guild)} (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
                   `-# **Author Clearance Tier:** \`[${authorTier}]\`\n` +
-                  `-# **Channel:** <#${message.channel.id}>\n` +
+                  `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}\n` +
                   `-# **Filtered URL(s):** ${urlList}\n` +
                   `-# **Action Taken:** \`Link Deleted & Auto-Mod Strike Recorded\``
               },
@@ -1374,7 +1374,7 @@ export default {
           let delInnerComps = [
             { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:exclamation_outline1:1565666739356827759>` },
             { type: 14, divider: true },
-            { type: 10, content: `-# **Author:** <@${message.author.id}> (\`${message.author.id}\`) [${authorTier}]` },
+            { type: 10, content: `-# **Author:** ${formatUserLink(message.author, message.guild)} (\`${message.author.id}\`) [${authorTier}]` },
             { type: 10, content: `-# **Deleted By:** Athena Prime (Anti-Link Auto-Mod)` },
             { type: 10, content: `-# **Filtered URL(s):** ${urlList}` },
             { type: 10, content: `-# **Reason:** Unauthorized link/URL detected: ${urlList}` },
@@ -1420,7 +1420,7 @@ export default {
                    components: [
                      { type: 10, content: `# ${getRandomHeadingGlyph()} Message Deleted | <a:exclamation_outline1:1565666739356827759>` },
                      { type: 14, divider: true },
-                     { type: 10, content: `-# **Author:** <@${message.author.id}> (\`${message.author.id}\`) [${authorTier}]` },
+                     { type: 10, content: `-# **Author:** ${formatUserLink(message.author, message.guild)} (\`${message.author.id}\`) [${authorTier}]` },
                      { type: 10, content: `-# **Deleted By:** Athena Prime (Hidden URL Filter)` },
                      { type: 10, content: `-# **Deceptive URL:** \`||${deceptiveUrl}||\`` },
                      { type: 10, content: `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}` },
@@ -1489,9 +1489,9 @@ export default {
                 {
                   type: 10,
                   content:
-                    `-# **Offending Member:** ${message.author} (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
+                    `-# **Offending Member:** ${formatUserLink(message.author, message.guild)} (\`${message.author.id}\` | \`${message.author.tag}\`)\n` +
                     `-# **Author Clearance Tier:** \`[${authorTier}]\`\n` +
-                    `-# **Channel:** <#${message.channel.id}>\n` +
+                    `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}\n` +
                     `-# **Violating Phrase(s):** ${wordList}\n` +
                     `-# **Action Taken:** \`Message Deleted & Auto-Mod Strike Recorded\``
                 },
@@ -1658,8 +1658,8 @@ export default {
                       type: 10,
                       content:
                         `-#  **Trigger Keyword:** \`${t.match}\`\n` +
-                        `-#  **Author:** <@${message.author.id}> (\`${message.author.tag || message.author.id}\`)\n` +
-                        `-#  **Channel:** <#${message.channel.id}>\n` +
+                        `-#  **Author:** ${formatUserLink(message.author, message.guild)} (\`${message.author.tag || message.author.id}\`)\n` +
+                        `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}\n` +
                         `-#  **Message Content:** ${message.content.slice(0, 500)}\n` +
                         `-#  **Jump Link:** [Click to Jump](${message.url})`
                     },
@@ -2237,10 +2237,10 @@ export default {
       if (!excludedCmds.includes(cmd.name) && (loggedCategories.includes(cmd.category) || isModUser)) {
         const logContent = message.content.length > 1000 ? message.content.substring(0, 1000) + '...' : message.content;
         const tierName = message.guild && message.member ? getUserTierName(message.guild, message.member) : 'User';
-        const channelLabel = message.channel?.id ? `<#${message.channel.id}>` : (message.channel?.name || 'Direct Message');
+        const channelLabel = message.channel?.id ? formatChannelLink(message.channel, message.guild) : (message.channel?.name || 'Direct Message');
         const embed = cv2.info(
           `Command Execution Log | ${cv2.TICK_EMOJI}`,
-          `User <@${message.author.id}> (\`${message.author.id}\`) executed a command.`,
+          `User ${formatUserLink(message.author, message.guild)} (\`${message.author.id}\`) executed a command.`,
           [
             { name: 'Command', value: `\`\`\`\n${logContent}\n\`\`\``, inline: false },
             { name: 'Channel', value: channelLabel, inline: true },

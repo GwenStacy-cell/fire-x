@@ -10,7 +10,7 @@ import { setGuildContext } from '../embed.js';
 import * as downloader from '../utils/mediaDownloader.js';
 import db from '../database.js';
 
-import { isBotOwnerSync, isExtraOwner, isServerAdmin, getBotOwnerIds, checkCommandClearance } from '../utils/helpers.js';
+import { isBotOwnerSync, isExtraOwner, isExtraOwnerOrHigher, isServerAdmin, getBotOwnerIds, checkCommandClearance, formatUserLink, formatChannelLink } from '../utils/helpers.js';
 const TOGGLE_ON = '<:emoji_16:1533860111704002665>';
 
 // ==========================================
@@ -269,7 +269,7 @@ export default {
           content: `### Active Panic Lockdown Audit | <a:exclamation_outline1:1565666739356827759>\n` +
             `> **Tier:** \`${snapshot.tierLabel || 'Tier ' + snapshot.tier}\`\n` +
             `> **Channels Secured:** \`${snapshot.channels?.length || 0} channels\`\n` +
-            `> **Enforcer:** <@${snapshot.moderatorId}>\n` +
+            `> **Enforcer:** ${formatUserLink(snapshot.moderatorId, interaction.guild)}\n` +
             `> **Raid Shield:** \`${snapshot.preRaidMode ? 'Active' : 'Standby'}\`\n` +
             `> **Verification Level:** \`${snapshot.preVerifLevel !== undefined ? 'Elevated (Phone Required)' : 'Standard'}\``,
           flags: MessageFlags.Ephemeral
@@ -410,7 +410,7 @@ export default {
       if (interaction.member?.voice?.channel) {
         await dispatchTacticalAudioToVc(interaction.member, script);
         return interaction.editReply({
-          content: `### Tactical Audio Briefing | <a:03_tick_circle:1565665642084827206>\n> <a:uptime:1552608831060844575> **Broadcasting live defense dispatch to <#${interaction.member.voice.channel.id}>...**\n> -# Script: *"${script}"*`
+          content: `### Tactical Audio Briefing | <a:03_tick_circle:1565665642084827206>\n> <a:uptime:1552608831060844575> **Broadcasting live defense dispatch to ${formatChannelLink(interaction.member.voice.channel, interaction.guild)}...**\n> -# Script: *"${script}"*`
         });
       } else {
         const audioAtt = await createTacticalDispatchAttachment(script);
@@ -763,7 +763,7 @@ export default {
             db.save();
           }
           await interaction.update({
-            content: `-# <a:03_tick_circle:1565665642084827206> **Staff Account Cleared:** <@${targetId}> has been restored.`,
+            content: `-# <a:03_tick_circle:1565665642084827206> **Staff Account Cleared:** ${formatUserLink(targetId, interaction.guild)} has been restored.`,
             components: []
           }).catch(() => null);
           return;
@@ -776,7 +776,7 @@ export default {
             db.save();
           }
           await interaction.update({
-            content: `-# <a:04_cross_circle:1565665644806934639> **Breach Confirmed:** <@${targetId}> has been permanently banned from the server.`,
+            content: `-# <a:04_cross_circle:1565665644806934639> **Breach Confirmed:** ${formatUserLink(targetId, interaction.guild)} has been permanently banned from the server.`,
             components: []
           }).catch(() => null);
           return;
@@ -845,7 +845,7 @@ export default {
           const actionId = cid.replace('dualkey_abort_', '');
           db.removePendingDualKey(actionId);
           await interaction.update({
-            content: `-# <a:04_cross_circle:1565665644806934639> **Nuclear Action Aborted:** The operational request was discarded by <@${interaction.user.id}>.`,
+            content: `-# <a:04_cross_circle:1565665644806934639> **Nuclear Action Aborted:** The operational request was discarded by ${formatUserLink(interaction.user, interaction.guild)}.`,
             components: []
           }).catch(() => null);
           return;
@@ -1003,7 +1003,7 @@ export default {
     // --- VC PANEL DROPDOWNS ---
     if (interaction.isStringSelectMenu() && interaction.customId === 'vcp_select') {
       const i = interaction;
-      if (i.user.id !== i.guild.ownerId && !isBotOwnerSync(i.user.id) && !isExtraOwner(i.guild.id, i.user.id)) {
+      if (!isExtraOwnerOrHigher(i.user.id, i.guild)) {
         return i.reply({ content: 'Only the Server Owner, Bot Owner, and Extra Owners can use this panel.', flags: 64 }).catch(()=>{});
       }
 
@@ -1016,7 +1016,7 @@ export default {
       try {
         if (actionFull === 'vcp_unban_1') {
            await vc.permissionOverwrites.delete(targetId).catch(()=>{});
-           return i.update({ content: `Successfully unbanned user ID ${targetId}.`, components: [] }).catch(()=>{});
+           return i.update({ content: `Successfully unbanned ${formatUserLink(targetId, i.guild)}.`, components: [] }).catch(()=>{});
         }
 
         const targetMember = vc.members.get(targetId);
@@ -1024,23 +1024,23 @@ export default {
 
         if (actionFull === 'vcp_mute_1') {
           await targetMember.voice.setMute(true).catch(()=>{});
-          return i.update({ content: `Muted ${targetMember.user.tag}.`, components: [] }).catch(()=>{});
+          return i.update({ content: `Muted ${formatUserLink(targetMember, i.guild)}.`, components: [] }).catch(()=>{});
         } else if (actionFull === 'vcp_unmute_1') {
           await targetMember.voice.setMute(false).catch(()=>{});
-          return i.update({ content: `Unmuted ${targetMember.user.tag}.`, components: [] }).catch(()=>{});
+          return i.update({ content: `Unmuted ${formatUserLink(targetMember, i.guild)}.`, components: [] }).catch(()=>{});
         } else if (actionFull === 'vcp_deafen_1') {
           await targetMember.voice.setDeaf(true).catch(()=>{});
-          return i.update({ content: `Deafened ${targetMember.user.tag}.`, components: [] }).catch(()=>{});
+          return i.update({ content: `Deafened ${formatUserLink(targetMember, i.guild)}.`, components: [] }).catch(()=>{});
         } else if (actionFull === 'vcp_undeafen_1') {
           await targetMember.voice.setDeaf(false).catch(()=>{});
-          return i.update({ content: `Undeafened ${targetMember.user.tag}.`, components: [] }).catch(()=>{});
+          return i.update({ content: `Undeafened ${formatUserLink(targetMember, i.guild)}.`, components: [] }).catch(()=>{});
         } else if (actionFull === 'vcp_kick_1') {
           await targetMember.voice.disconnect().catch(()=>{});
-          return i.update({ content: `Kicked ${targetMember.user.tag}.`, components: [] }).catch(()=>{});
+          return i.update({ content: `Kicked ${formatUserLink(targetMember, i.guild)}.`, components: [] }).catch(()=>{});
         } else if (actionFull === 'vcp_ban_1') {
           await vc.permissionOverwrites.edit(targetId, { Connect: false }).catch(()=>{});
           await targetMember.voice.disconnect().catch(()=>{});
-          return i.update({ content: `Banned ${targetMember.user.tag} from the VC.`, components: [] }).catch(()=>{});
+          return i.update({ content: `Banned ${formatUserLink(targetMember, i.guild)} from the VC.`, components: [] }).catch(()=>{});
         }
       } catch (error) {
         console.error('[VCPanel] Dropdown error:', error);
@@ -1136,7 +1136,7 @@ export default {
           const attachment = await generateRankCard(targetMember, userXp.xp, userXp.level, rank, requiredXp);
           const { getRandomHeadingGlyph, TICK_EMOJI, BULLET_EMOJI } = await import('../utils/emojis.js');
           return interaction.editReply({
-            content: `# ${getRandomHeadingGlyph()} Member XP Statistics | ${TICK_EMOJI}\n-# ${BULLET_EMOJI} **Rank Card for <@${targetUserId}>**`,
+            content: `# ${getRandomHeadingGlyph()} Member XP Statistics | ${TICK_EMOJI}\n-# ${BULLET_EMOJI} **Rank Card for ${formatUserLink(targetUserId, interaction.guild)}**`,
             files: [attachment]
           });
         }
@@ -1202,7 +1202,7 @@ export default {
 
     // --- VC PANEL BUTTONS ---
     if (interaction.customId.startsWith('vcp_')) {
-      if (interaction.user.id !== interaction.guild.ownerId && !isBotOwnerSync(interaction.user.id) && !isExtraOwner(interaction.guild.id, interaction.user.id)) {
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
           return interaction.reply({ content: 'Only the Server Owner, Bot Owner, and Extra Owners can use this panel.', flags: 64 }).catch(()=>{});
         }
 
@@ -2082,7 +2082,7 @@ export default {
           const targetId = interaction.fields.getTextInputValue("target_id");
           const db = (await import("../database.js")).default;
           db.addExtraOwner(interaction.guild.id, targetId);
-          return interaction.reply({ content: `Successfully added Extra Owner: <@${targetId}>`, flags: MessageFlags.Ephemeral });
+          return interaction.reply({ content: `Successfully added Extra Owner: ${formatUserLink(targetId, interaction.guild)}`, flags: MessageFlags.Ephemeral });
       }
       if (interaction.customId === "modal_2fa_setup") {
         const email = interaction.fields.getTextInputValue("2fa_email");
@@ -3876,7 +3876,7 @@ async function handleSecurityInteractions(interaction, guild) {
 
           if (interaction.user.id !== prop.targetId) {
             return interaction.reply({
-              content: `-# <a:exclamation_outline1:1565666739356827759> Only <@${prop.targetId}> can respond to this proposal!`,
+              content: `-# <a:exclamation_outline1:1565666739356827759> Only ${formatUserLink(prop.targetId, guild)} can respond to this proposal!`,
               flags: MessageFlags.Ephemeral
             });
           }
@@ -3891,8 +3891,8 @@ async function handleSecurityInteractions(interaction, guild) {
                 {
                   type: 10,
                   content: `# ${getRandomHeadingGlyph()} Holy Matrimony Finalized | <a:03_tick_circle:1565665642084827206>\n` +
-                           `> -# <a:uptime:1552608831060844575> **The crowd cheers!** <@${prop.targetId}> has said **YES**!\n\n` +
-                           `<a:target_blink:1565667466984554588> <@${prop.proposerId}> and <@${prop.targetId}> are now officially married.\n` +
+                           `> -# <a:uptime:1552608831060844575> **The crowd cheers!** ${formatUserLink(prop.targetId, guild)} has said **YES**!\n\n` +
+                           `<a:target_blink:1565667466984554588> ${formatUserLink(prop.proposerId, guild)} and ${formatUserLink(prop.targetId, guild)} are now officially married.\n` +
                            `<a:target_blink:1565667466984554588> **Engagement Ring:** \`${prop.ring}\`\n` +
                            `<a:target_blink:1565667466984554588> View your lineage anytime using \`!family\`!`
                 },
@@ -3911,7 +3911,7 @@ async function handleSecurityInteractions(interaction, guild) {
                 {
                   type: 10,
                   content: `# ${getRandomHeadingGlyph()} Proposal Declined | <a:04_cross_circle:1565665644806934639>\n` +
-                           `> -# <a:uptime:1552608831060844575> <@${prop.targetId}> declined the proposal from <@${prop.proposerId}>.`
+                           `> -# <a:uptime:1552608831060844575> ${formatUserLink(prop.targetId, guild)} declined the proposal from ${formatUserLink(prop.proposerId, guild)}.`
                 }
               ]
             };
@@ -3948,7 +3948,7 @@ async function handleSecurityInteractions(interaction, guild) {
                 {
                   type: 10,
                   content: `# ${getRandomHeadingGlyph()} Family Adoption Finalized | <a:03_tick_circle:1565665642084827206>\n` +
-                           `> -# <a:uptime:1552608831060844575> <@${adopt.childId}> has officially accepted <@${adopt.parentId}> as their parent!\n\n` +
+                           `> -# <a:uptime:1552608831060844575> ${formatUserLink(adopt.childId, guild)} has officially accepted ${formatUserLink(adopt.parentId, guild)} as their parent!\n\n` +
                            `<a:target_blink:1565667466984554588> Check out the updated family tree with \`!family\`!`
                 },
                 { type: 14, divider: true },
@@ -3966,7 +3966,7 @@ async function handleSecurityInteractions(interaction, guild) {
                 {
                   type: 10,
                   content: `# ${getRandomHeadingGlyph()} Adoption Declined | <a:04_cross_circle:1565665644806934639>\n` +
-                           `> -# <a:uptime:1552608831060844575> <@${adopt.childId}> declined the adoption request from <@${adopt.parentId}>.`
+                           `> -# <a:uptime:1552608831060844575> ${formatUserLink(adopt.childId, guild)} declined the adoption request from ${formatUserLink(adopt.parentId, guild)}.`
                 }
               ]
             };
@@ -4003,7 +4003,7 @@ async function handleSecurityInteractions(interaction, guild) {
           const res = await playSoundEffect(voiceChannel, soundKey);
           if (res.success) {
             return interaction.editReply({
-              content: `-# <a:03_tick_circle:1565665642084827206> Triggered **${res.sound.name}** in <#${voiceChannel.id}>!`
+              content: `-# <a:03_tick_circle:1565665642084827206> Triggered **${res.sound.name}** in ${formatChannelLink(voiceChannel, interaction.guild)}!`
             });
           } else {
             return interaction.editReply({
@@ -4016,7 +4016,7 @@ async function handleSecurityInteractions(interaction, guild) {
           await interaction.deferReply({ flags: MessageFlags.Ephemeral }).catch(() => {});
           const res = await startRadioStream(voiceChannel, soundKey);
           return interaction.editReply({
-            content: `-# <a:03_tick_circle:1565665642084827206> Now streaming **${res.station.name}** in <#${voiceChannel.id}>!`
+            content: `-# <a:03_tick_circle:1565665642084827206> Now streaming **${res.station.name}** in ${formatChannelLink(voiceChannel, interaction.guild)}!`
           });
         }
 

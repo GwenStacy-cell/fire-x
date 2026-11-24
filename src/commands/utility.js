@@ -3433,7 +3433,7 @@ export const helpModules = [
     "`!secondaryjtc` - Setup a secondary JTC hub `[Extra Owner]`",
     "`!jtc add @user` - Whitelist user into locked temporary JTC room `[Public]`",
     "`!jtc chime on|off` - Entrance chime notifications for Join to Create voice rooms `[Public]`",
-    "`!vcpanel` - Spawn the interactive VC control panel for JTC owners `[Public]`",
+    "`!vcpanel` - Spawn the interactive VC control panel for JTC owners `[Extra Owner]`",
     "`!vc claim / !vc info` - Voice channel quick actions and ownership claim `[Public]`",
     "`!vcdrag @user` - Force-drag a user to your VC `[Extra Owner]`",
     "`!vcdragstop @user` - Stop an active voice drag session `[Extra Owner]`",

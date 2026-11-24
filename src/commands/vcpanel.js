@@ -12,7 +12,7 @@ import {
   MessageFlags
 } from 'discord.js';
 
-import { isBotOwnerSync, isExtraOwner } from '../utils/helpers.js';
+import { isBotOwnerSync, isExtraOwner, isExtraOwnerOrHigher, formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export const commands = [
   {
@@ -22,7 +22,7 @@ export const commands = [
     category: 'moderation',
     async executePrefix(message, args) {
       // 1. Permission Check (Guild Owner or Bot Owner only)
-      if (message.author.id !== message.guild.ownerId && !isBotOwnerSync(message.author.id) && !isExtraOwner(message.guild.id, message.author.id)) {
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
         return message.reply(cv2.danger('Access Denied', 'Only the Server Owner, Bot Owner, and Extra Owners can use this panel.')).catch(()=>{});
       }
 
@@ -35,13 +35,13 @@ export const commands = [
       // 3. Build UI Function
       const generatePayload = () => {
         const currentMembers = voiceChannel.members;
-        const connectedTags = currentMembers.size > 0 ? currentMembers.map(m => `<@${m.id}>`).join(', ') : 'None';
+        const connectedTags = currentMembers.size > 0 ? currentMembers.map(m => formatUserLink(m, message.guild)).join(', ') : '`None`';
         const guildIconUrl = message.guild.iconURL({ dynamic: true, size: 128 }) || null;
 
         const headerSection = {
           type: 9,
           components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} **Server Owner Voice | Control Panel**\n` +
-            `-# **Server Owner:** <@${message.guild.ownerId}> | **Channel:** <#${voiceChannel.id}>\n` +
+            `-# **Server Owner:** ${formatUserLink(message.guild.ownerId, message.guild)} | **Channel:** ${formatChannelLink(voiceChannel, message.guild)}\n` +
             `-# **Connected Members (${currentMembers.size}):** ${connectedTags}`
           }],
           ...(guildIconUrl ? { accessory: { type: 11, media: { url: guildIconUrl } } } : {})
@@ -106,7 +106,7 @@ export const commands = [
           try {
             await panelMsg.edit(generatePayload());
           } catch (err) {
-            // Message might be deleted
+            if (err?.code === 10008 || err?.status === 404) message.client.off('voiceStateUpdate', voiceUpdateListener);
           }
         }
       };

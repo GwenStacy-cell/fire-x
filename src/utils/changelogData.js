@@ -16,6 +16,42 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.9.1',
+    headline: 'Universal Nickname Hyperlinks & Emoji-Free Channel Links across Voice Control Panel & System Logs',
+    summary: 'Standardized user and channel link formatting across the Server Owner Voice Control Panel (!vcpanel), interaction handlers, and real-time security telemetry. Eliminated all raw Discord @user mentions and <#channel> tags in favor of formatUserLink ([Nickname](https://discord.com/users/id)) and formatChannelLink ([#clean-name](https://discord.com/channels/guild/channel)), ensuring clean, uncorrupted hyperlinks with all decorative emojis and markdown symbols stripped from link titles. Enforced strict Extra Owner / Server Owner clearance on voice panel controls.',
+    whatsNew: [
+      {
+        title: 'Voice Control Panel Nickname & Channel Links (!vcpanel)',
+        desc: 'Replaced raw @owner, <#voiceChannel>, and raw @connectedMember tags with formatUserLink and formatChannelLink. Display names and voice channel titles are now seamlessly rendered as clean, clickable Markdown hyperlinks.'
+      },
+      {
+        title: 'Dynamic VC Panel Member Live Updater Refactor',
+        desc: 'Updated voiceStateUpdate real-time panel updater to re-render connected members using formatUserLink and auto-deregister listeners when panels are dismissed or deleted.'
+      },
+      {
+        title: 'Voice Action Dropdown & Execution Responses',
+        desc: 'Upgraded all VC panel mute, unmute, deafen, undeafen, kick, ban, and unban action responses to use formatUserLink for targeted member confirmations.'
+      },
+      {
+        title: 'Unified Extra Owner Access Control',
+        desc: 'Standardized permission validation on !vcpanel and its interaction handlers to isExtraOwnerOrHigher (Bot Owner, Server Owner, Extra Owners).'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Security Telemetry & Social Matrix Link Normalization',
+        desc: 'Replaced legacy <@user> and <#channel> tags in honeypot alerts, automated anti-raid security logs, tactical audio briefings, marriage announcements, and family adoption cards with formatUserLink and formatChannelLink.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Clean Channel Link Parsing',
+        desc: 'Ensured cleanChannelName strips custom/native emojis and decorative glyphs so channels with icons like 🎧 General VC render valid markdown links without breaking Discord formatting.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.9.0',
     headline: '52-Item Global Market Expansion, Action Mini-Games (!hunt, !fish, !mine), Instant Liquidation (!sell) & 62 Custom Animated Emojis',
     summary: 'Massively expanded Athena\'s commerce catalog to 52 items across 7 distinct departments (Mystery Crates & Vaults, Boosters & Potions, Adventure Gear, Gems & Ores, Prestige Flex Assets, Mythical Eggs, and Server Roles). Wired 62 custom animated Discord emojis across every item, action mini-game command (!hunt, !fish, !mine, !sell), and slot machine reel symbol. Introduced rich OwO-style action mini-games: !hunt (track forest wildlife for bounties), !fish (catch deep-sea leviathans and sunken treasure), and !mine (excavate coal, iron, gold, and rare gem deposits). Added !sell / !shop sell to liquidate goods for instant coin payouts, plus Phoenix Feather loss salvage, Golden Horseshoe extreme fortune, Loaded Dice, and Hourglass of Chronos cooldown resets.',
