@@ -1,5 +1,5 @@
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI } from '../utils/emojis.js';
-import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, ChannelSelectMenuBuilder, ChannelType } from 'discord.js';
+import { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, ChannelSelectMenuBuilder, ChannelType, AuditLogEvent } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
 import { convertMp4ToGif, uploadGifToDiscord } from '../utils/mediaConverter.js';
@@ -21,7 +21,7 @@ function getOrdinal(n) {
 // COMPREHENSIVE PLACEHOLDER RESOLVER
 // Supports {membercount}, {user}, {server}, {avatar}, {ordinal}, etc.
 // ============================================================
-export function resolvePlaceholders(text, memberOrUser, guildParam = null, cfg = {}) {
+export function resolvePlaceholders(text, memberOrUser, guildParam = null, cfg = {}, extraData = {}) {
   if (!text || typeof text !== 'string') return '';
   if (!memberOrUser) return text;
 
@@ -49,10 +49,18 @@ export function resolvePlaceholders(text, memberOrUser, guildParam = null, cfg =
   const ownerId = guild?.ownerId || '';
   const ownerMention = ownerId ? `<@${ownerId}>` : 'Unknown';
 
-  const userCreated = user?.createdTimestamp || user?.createdAt?.getTime?.() || Date.now();
+  let userCreated = user?.createdTimestamp || user?.createdAt?.getTime?.();
+  if (!userCreated && user?.id) {
+    try {
+      userCreated = Number((BigInt(user.id) >> 22n) + 1420070400000n);
+    } catch {}
+  }
+  userCreated = userCreated || Date.now();
+
   const memberJoined = memberOrUser?.joinedTimestamp || memberOrUser?.joinedAt?.getTime?.() || Date.now();
   const createdTs = Math.floor(userCreated / 1000);
   const joinedTs = Math.floor(memberJoined / 1000);
+  const leaveReason = extraData?.leaveReason || 'Left on will';
 
   return text
     // 1. Compound / Multi-word Placeholders (longer tokens replaced first)
@@ -99,6 +107,11 @@ export function resolvePlaceholders(text, memberOrUser, guildParam = null, cfg =
     .replace(/\{joined_at\}/gi, `<t:${joinedTs}:R>`)
     .replace(/\{joined\}/gi, `<t:${joinedTs}:R>`)
 
+    // 2.5. Departure Reason Placeholders
+    .replace(/\{leavereason\}/gi, leaveReason)
+    .replace(/\{leave_reason\}/gi, leaveReason)
+    .replace(/\{reason\}/gi, leaveReason)
+
     // 3. Server / Guild Placeholders
     .replace(/\{server\.name\}/gi, serverName)
     .replace(/\{guild\.name\}/gi, serverName)
@@ -136,15 +149,16 @@ export function resolvePlaceholders(text, memberOrUser, guildParam = null, cfg =
     .replace(/\{id\}/gi, userId);
 }
 
-function resolve(text, member, cfg = {}) {
-  return resolvePlaceholders(text, member, member?.guild, cfg);
+function resolve(text, member, cfg = {}, extraData = {}) {
+  return resolvePlaceholders(text, member, member?.guild, cfg, extraData);
 }
 
 // ============================================================
 // BUILD EMBED FROM CONFIG
 // ============================================================
-export function buildWelcomeEmbed(member, cfg) {
+export function buildWelcomeEmbed(member, cfg, extraData = {}) {
   if (!cfg) return null;
+  const isLeave = extraData?.isLeave || Boolean(extraData?.leaveReason);
   const e = new EmbedBuilder();
 
   // Inherit server accent color from guild configuration
@@ -164,7 +178,7 @@ export function buildWelcomeEmbed(member, cfg) {
 
   if (cfg.from || avatarPos === 'author') {
     try {
-      const authorText = (cfg.from ? resolve(cfg.from, member, cfg) : resolve('{user}', member, cfg))
+      const authorText = (cfg.from ? resolve(cfg.from, member, cfg, extraData) : resolve('{user}', member, cfg, extraData))
         .replace(/<@!?\d+>/g, user?.username || 'User')
         .trim();
 
@@ -172,7 +186,7 @@ export function buildWelcomeEmbed(member, cfg) {
       if (avatarPos === 'author') {
         authorIcon = userAvatar;
       } else if (cfg.fromIcon) {
-        const rawIcon = resolve(cfg.fromIcon, member, cfg);
+        const rawIcon = resolve(cfg.fromIcon, member, cfg, extraData);
         if (isValidImageUrl(rawIcon)) authorIcon = rawIcon.trim();
       } else {
         const gIcon = getSafeGuildIcon(member?.guild);
@@ -180,27 +194,32 @@ export function buildWelcomeEmbed(member, cfg) {
       }
 
       e.setAuthor({
-        name: authorText.substring(0, 256) || 'Welcome',
+        name: authorText.substring(0, 256) || (isLeave ? 'Goodbye' : 'Welcome'),
         ...(authorIcon && isValidImageUrl(authorIcon) ? { iconURL: authorIcon } : {})
       });
     } catch (err) {}
   }
 
   if (cfg.title) {
-    const t = resolve(cfg.title, member, cfg);
+    const t = resolve(cfg.title, member, cfg, extraData);
     if (t) e.setTitle(t.substring(0, 256));
   }
 
   if (cfg.description) {
-    const d = resolve(cfg.description, member, cfg);
+    const d = resolve(cfg.description, member, cfg, extraData);
     if (d) e.setDescription(d.substring(0, 4096));
   } else if (!cfg.title && !cfg.from) {
-    e.setDescription(`**Welcome to ${member?.guild?.name || 'the server'}!**`);
+    if (isLeave) {
+      const displayName = cleanDisplayName(member?.displayName || user?.displayName || user?.username || 'Member');
+      e.setDescription(`**${displayName} has left the server.**`);
+    } else {
+      e.setDescription(`**Welcome to ${member?.guild?.name || 'the server'}!**`);
+    }
   }
 
   let thumbUrl = null;
   if (cfg.thumbnailUrl) {
-    const rawThumb = resolve(cfg.thumbnailUrl, member, cfg);
+    const rawThumb = resolve(cfg.thumbnailUrl, member, cfg, extraData);
     if (isValidImageUrl(rawThumb)) {
       thumbUrl = rawThumb.trim();
     }
@@ -214,7 +233,7 @@ export function buildWelcomeEmbed(member, cfg) {
 
   let imageUrl = null;
   if (cfg.image) {
-    const rawImage = resolve(cfg.image, member, cfg);
+    const rawImage = resolve(cfg.image, member, cfg, extraData);
     if (isValidImageUrl(rawImage)) {
       imageUrl = rawImage.trim();
     }
@@ -227,17 +246,17 @@ export function buildWelcomeEmbed(member, cfg) {
 
   if (cfg.footer || avatarPos === 'footer') {
     try {
-      const footerText = cfg.footer ? resolve(cfg.footer, member, cfg).trim() : 'Welcome!';
+      const footerText = cfg.footer ? resolve(cfg.footer, member, cfg, extraData).trim() : (isLeave ? 'Goodbye!' : 'Welcome!');
       let footerIcon = undefined;
       if (avatarPos === 'footer') {
         footerIcon = userAvatar;
       } else if (cfg.footerIcon) {
-        const rawFooterIcon = resolve(cfg.footerIcon, member, cfg);
+        const rawFooterIcon = resolve(cfg.footerIcon, member, cfg, extraData);
         if (isValidImageUrl(rawFooterIcon)) footerIcon = rawFooterIcon.trim();
       }
 
       e.setFooter({
-        text: footerText.substring(0, 2048) || 'Welcome!',
+        text: footerText.substring(0, 2048) || (isLeave ? 'Goodbye!' : 'Welcome!'),
         ...(footerIcon && isValidImageUrl(footerIcon) ? { iconURL: footerIcon } : {})
       });
     } catch (err) {}
@@ -245,7 +264,97 @@ export function buildWelcomeEmbed(member, cfg) {
 
   if (cfg.timestamp !== false) e.setTimestamp();
 
+  // Leave Details: Account Created, Account Joined, Leave Reason (all together at once)
+  if (cfg.showDetails) {
+    let userCreated = user?.createdTimestamp || user?.createdAt?.getTime?.();
+    if (!userCreated && user?.id) {
+      try {
+        userCreated = Number((BigInt(user.id) >> 22n) + 1420070400000n);
+      } catch {}
+    }
+    userCreated = userCreated || Date.now();
+
+    const memberJoined = member?.joinedTimestamp || member?.joinedAt?.getTime?.() || Date.now();
+    const createdTs = Math.floor(userCreated / 1000);
+    const joinedTs = Math.floor(memberJoined / 1000);
+    const leaveReason = extraData?.leaveReason || 'Left on will';
+
+    e.addFields([
+      { name: 'Account Created', value: `<t:${createdTs}:R>`, inline: true },
+      { name: 'Account Joined', value: `<t:${joinedTs}:R>`, inline: true },
+      { name: 'Leave Reason', value: `\`${leaveReason}\``, inline: true }
+    ]);
+  }
+
   return e;
+}
+
+/**
+ * Automatically determine the true cause of a member departure:
+ * Detects if the member was Kicked, Banned, or Left on Will.
+ */
+export async function determineLeaveReason(guild, userId) {
+  if (!guild || !userId) return 'Left on will';
+  try {
+    const { getRecentAuditEntry } = await import('../utils/antinuke.js');
+
+    // 1. Check in-memory ring buffer (0ms sub-millisecond check)
+    let kickEntry = getRecentAuditEntry(guild.id, AuditLogEvent.MemberKick, userId);
+    let banEntry = getRecentAuditEntry(guild.id, AuditLogEvent.MemberBanAdd, userId);
+
+    if (kickEntry) {
+      const exec = kickEntry.executor ? cleanDisplayName(kickEntry.executor.displayName || kickEntry.executor.username) : null;
+      return exec ? `Kicked by ${exec}` : 'Kicked';
+    }
+    if (banEntry) {
+      const exec = banEntry.executor ? cleanDisplayName(banEntry.executor.displayName || banEntry.executor.username) : null;
+      return exec ? `Banned by ${exec}` : 'Banned';
+    }
+
+    // 2. Fast check if user is already banned in the guild
+    const ban = await guild.bans?.fetch(userId).catch(() => null);
+    if (ban) {
+      return ban.reason ? `Banned (${ban.reason.slice(0, 40)})` : 'Banned';
+    }
+
+    // 3. Brief wait for Discord audit logs to arrive on the REST gateway
+    await new Promise(r => setTimeout(r, 450));
+
+    // Re-check ring buffer
+    kickEntry = getRecentAuditEntry(guild.id, AuditLogEvent.MemberKick, userId);
+    if (kickEntry) {
+      const exec = kickEntry.executor ? cleanDisplayName(kickEntry.executor.displayName || kickEntry.executor.username) : null;
+      return exec ? `Kicked by ${exec}` : 'Kicked';
+    }
+    banEntry = getRecentAuditEntry(guild.id, AuditLogEvent.MemberBanAdd, userId);
+    if (banEntry) {
+      const exec = banEntry.executor ? cleanDisplayName(banEntry.executor.displayName || banEntry.executor.username) : null;
+      return exec ? `Banned by ${exec}` : 'Banned';
+    }
+
+    // 4. Query Discord Audit Log directly if bot has permissions
+    const me = guild.members?.me;
+    if (me?.permissions?.has(PermissionFlagsBits.ViewAuditLog)) {
+      const audit = await guild.fetchAuditLogs({ limit: 4 }).catch(() => null);
+      if (audit) {
+        const now = Date.now();
+        const kLog = audit.entries.find(e => e.action === AuditLogEvent.MemberKick && e.target?.id === userId && (now - e.createdTimestamp) < 15000);
+        if (kLog) {
+          const exec = kLog.executor ? cleanDisplayName(kLog.executor.displayName || kLog.executor.username) : null;
+          return exec ? `Kicked by ${exec}` : 'Kicked';
+        }
+        const bLog = audit.entries.find(e => e.action === AuditLogEvent.MemberBanAdd && e.target?.id === userId && (now - e.createdTimestamp) < 15000);
+        if (bLog) {
+          const exec = bLog.executor ? cleanDisplayName(bLog.executor.displayName || bLog.executor.username) : null;
+          return exec ? `Banned by ${exec}` : 'Banned';
+        }
+      }
+    }
+
+    return 'Left on will';
+  } catch {
+    return 'Left on will';
+  }
 }
 
 // ============================================================
@@ -276,8 +385,12 @@ export async function sendLeaveMessage(member) {
   if (!cfg?.enabled || !cfg?.channelId) return;
   const channel = guild.channels.cache.get(cfg.channelId) || await guild.channels.fetch(cfg.channelId).catch(() => null);
   if (!channel) return;
-  const content = cfg.message ? resolve(cfg.message, member, cfg) : undefined;
-  const embedObj = buildWelcomeEmbed(member, cfg);
+
+  const leaveReason = await determineLeaveReason(guild, member.id);
+  const extraData = { leaveReason, isLeave: true };
+
+  const content = cfg.message ? resolve(cfg.message, member, cfg, extraData) : undefined;
+  const embedObj = buildWelcomeEmbed(member, cfg, extraData);
   const payload = {};
   if (content) payload.content = content;
   if (embedObj) payload.embeds = [embedObj];
@@ -310,12 +423,13 @@ export function getManagerPanel(guildId, type) {
     `-# ${BULLET_EMOJI} **Footer:** ${cfg.footer ? `\`${cfg.footer.slice(0, 30)}...\`` : '`Not Set`'}\n` +
     `-# ${BULLET_EMOJI} **Name Format:** ${cfg.nameFormat === 'user_link' ? '`Username Link`' : cfg.nameFormat === 'nick_link' ? '`Nickname Link`' : '`Tag (@user)`'}\n` +
     `-# ${BULLET_EMOJI} **Avatar Location:** ${cfg.avatarPos === 'author' ? '`Author Icon`' : cfg.avatarPos === 'footer' ? '`Footer Icon`' : cfg.avatarPos === 'image' ? '`Large Image`' : cfg.avatarPos === 'off' ? '`Hidden`' : '`Thumbnail`'}\n` +
-    `-# ${BULLET_EMOJI} **Timestamp:** ${cfg.timestamp !== false ? '`Enabled`' : '`Disabled`'}\n\n` +
+    `-# ${BULLET_EMOJI} **Timestamp:** ${cfg.timestamp !== false ? '`Enabled`' : '`Disabled`'}\n` +
+    (!isWelcome ? `-# ${BULLET_EMOJI} **Departure Details:** ${cfg.showDetails ? '`Enabled (Created, Joined, Reason)`' : '`Disabled`'}\n\n` : '\n') +
     `-# **__Live Placeholders & Dynamic Variables:__**\n` +
     `-# ${BULLET_EMOJI} **Counts:** \`{membercount}\` • \`{ordinal}\` *(e.g. 1st, 142nd)* • \`{count}\`\n` +
     `-# ${BULLET_EMOJI} **Member:** \`{user}\` *(ping/link)* • \`{username}\` • \`{displayname}\` • \`{tag}\` • \`{userid}\` • \`{avatar}\`\n` +
     `-# ${BULLET_EMOJI} **Server:** \`{server}\` • \`{serverid}\` • \`{server.icon}\` • \`{owner}\` • \`{boosts}\` • \`{roles}\` • \`{channels}\`\n` +
-    `-# ${BULLET_EMOJI} **Times:** \`{created}\` *(account age)* • \`{joined}\` *(join date)*\n` +
+    `-# ${BULLET_EMOJI} **Times & Status:** \`{created}\` *(account age)* • \`{joined}\` *(join date)*${!isWelcome ? ' • `{reason}` *(leave reason)*' : ''}\n` +
     `-# *Click **Placeholders** button below for the full cheat-sheet & copy-paste templates.*`
   );
 
@@ -333,12 +447,23 @@ export function getManagerPanel(guildId, type) {
     new ButtonBuilder().setCustomId(`${prefix}desc`).setLabel('Description').setStyle(ButtonStyle.Secondary)
   );
 
-  const row2 = new ActionRowBuilder().addComponents(
+  const row2Components = [
     new ButtonBuilder().setCustomId(`${prefix}image`).setLabel('Image').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`${prefix}footer`).setLabel('Footer').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`${prefix}cycle_avatar`).setLabel('Avatar Location').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId(`${prefix}toggle_time`).setLabel('Toggle Time').setStyle(cfg.timestamp !== false ? ButtonStyle.Success : ButtonStyle.Secondary)
-  );
+  ];
+
+  if (!isWelcome) {
+    row2Components.push(
+      new ButtonBuilder()
+        .setCustomId(`${prefix}toggle_details`)
+        .setLabel('Toggle Details')
+        .setStyle(cfg.showDetails ? ButtonStyle.Success : ButtonStyle.Secondary)
+    );
+  }
+
+  const row2 = new ActionRowBuilder().addComponents(row2Components);
 
   const row3 = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId(`${prefix}status`).setLabel(cfg.enabled ? 'Disable System' : 'Enable System').setStyle(cfg.enabled ? ButtonStyle.Danger : ButtonStyle.Success),
@@ -377,8 +502,9 @@ export async function executeWelcomeTest(guild, member, type = 'welcome') {
     return { success: false, error: `Configured channel <#${cfg.channelId}> could not be found.` };
   }
 
-  let content = cfg.message ? resolve(cfg.message, member, cfg) : undefined;
-  let testEmbed = buildWelcomeEmbed(member, cfg);
+  const testExtra = !isWelcome ? { leaveReason: 'Left on will (Test Preview)', isLeave: true } : {};
+  let content = cfg.message ? resolve(cfg.message, member, cfg, testExtra) : undefined;
+  let testEmbed = buildWelcomeEmbed(member, cfg, testExtra);
 
   if (!content && !testEmbed) {
     content = isWelcome
@@ -466,6 +592,11 @@ export async function handleWelcomeManagerButton(interaction) {
     return interaction.update(getManagerPanel(guildId, typeStr));
   }
 
+  if (action === 'toggle_details') {
+    setConfig(guildId, { ...cfg, showDetails: !cfg.showDetails });
+    return interaction.update(getManagerPanel(guildId, typeStr));
+  }
+
   if (action === 'reset') {
     setConfig(guildId, {});
     return interaction.update(getManagerPanel(guildId, typeStr));
@@ -494,9 +625,10 @@ export async function handleWelcomeManagerButton(interaction) {
       `-# ${BULLET_EMOJI} \`{boosts}\` — Server Nitro boost count.\n` +
       `-# ${BULLET_EMOJI} \`{roles}\` — Total server role count.\n` +
       `-# ${BULLET_EMOJI} \`{channels}\` — Total server channel count.\n\n` +
-      `### Relative Timestamps\n` +
+      `### Relative Timestamps & Status\n` +
       `-# ${BULLET_EMOJI} \`{created}\` — Discord relative timestamp for account age.\n` +
-      `-# ${BULLET_EMOJI} \`{joined}\` — Discord relative timestamp for guild join date.\n\n` +
+      `-# ${BULLET_EMOJI} \`{joined}\` — Discord relative timestamp for guild join date.\n` +
+      (!isWelcome ? `-# ${BULLET_EMOJI} \`{reason}\` or \`{leavereason}\` — Departure reason (\`Left on will\`, \`Kicked\`, or \`Banned\`).\n\n` : '\n') +
       `### Example Template\n` +
       `-# Top Text: \`hope you enjoy your stay!\`\n` +
       `-# Title: \`୨ৎ - welcome - ୨ৎ\`\n` +
@@ -525,8 +657,9 @@ export async function handleWelcomeManagerButton(interaction) {
       )));
     }
 
-    let content = cfg.message ? resolve(cfg.message, interaction.member, cfg) : undefined;
-    let testEmbed = buildWelcomeEmbed(interaction.member, cfg);
+    const testExtra = !isWelcome ? { leaveReason: 'Left on will (Test Preview)', isLeave: true } : {};
+    let content = cfg.message ? resolve(cfg.message, interaction.member, cfg, testExtra) : undefined;
+    let testEmbed = buildWelcomeEmbed(interaction.member, cfg, testExtra);
     
     if (!content && !testEmbed) {
       content = isWelcome

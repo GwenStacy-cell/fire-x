@@ -2425,7 +2425,9 @@ export const DETAILED_COMMANDS = {
     purpose: 'Interactive visual builder for departure messages when members exit the server.',
     architecture: 
 `• **Interactive Control Dashboard:** Running !leave launches an interactive Components V2 manager panel mirroring the welcome builder.
-• **Shared Interpolation Engine:** Shares resolvePlaceholders to dynamically inject \`{membercount}\`, \`{user}\`, \`{username}\`, \`{server}\`, \`{created}\`, \`{joined}\`, and server statistics into farewell announcements.
+• **Departure Details Intelligence:** 1-Click **Toggle Details** button displays member join timestamp (\`{joined}\`), account creation age (\`{created}\`), and real-time leave reason (\`{reason}\`) together at once.
+• **Real-Time Departure Reason Detection:** Automatically detects whether member left voluntarily (\`Left on will\`), was kicked (\`Kicked by <executor>\`), or was banned (\`Banned by <executor>\`) using in-memory audit ring buffers and live REST audit lookups.
+• **Shared Interpolation Engine:** Shares resolvePlaceholders to dynamically inject \`{membercount}\`, \`{user}\`, \`{username}\`, \`{server}\`, \`{created}\`, \`{joined}\`, \`{reason}\`, and server statistics into farewell announcements.
 • **Gateway Trigger:** Evaluated instantly inside guildMemberRemove alongside server logging.`,
     example: '!leave'
   },

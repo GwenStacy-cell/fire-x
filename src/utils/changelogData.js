@@ -16,6 +16,42 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.8.8',
+    headline: 'Departure Intelligence & Leave Details Toggle for !leave (Joined, Created, Reason)',
+    summary: 'Introduced a 1-Click Toggle Details control button to the !leave manager dashboard, enabling servers to display member join date, account creation age, and live departure reason (Left on will, Kicked, Banned) together at once in farewell embeds. Powered by an intelligent real-time departure auditor that correlates audit logs and ban registries to pinpoint exact departure origins.',
+    whatsNew: [
+      {
+        title: 'Toggle Details Dashboard Button',
+        desc: 'Added a dedicated 1-Click Toggle Details button to the !leave manager panel that activates or deactivates detailed departure metadata cards instantly.'
+      },
+      {
+        title: 'Unified Departure Intelligence Block',
+        desc: 'Displays Account Created, Account Joined, and Leave Reason together at once with live Discord relative timestamps and formatted reason status tags.'
+      },
+      {
+        title: 'Dynamic Leave Reason Placeholders',
+        desc: 'Added {reason}, {leavereason}, and {leave_reason} dynamic placeholder variables supported across Top Text, Titles, Descriptions, and Footers.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Real-Time Audit Log & Ban Correlation',
+        desc: 'Combines Athena in-memory audit ring buffer with REST audit logs and ban cache to reliably distinguish voluntary departures from kicks and bans with executor attribution.'
+      },
+      {
+        title: 'Fail-Safe Snowflake Epoch Resolution',
+        desc: 'Guarantees 100% reliable account age timestamp resolution using Discord snowflake bitwise math even when member cache is partial during guildMemberRemove.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Leave Test Message Preview Fidelity',
+        desc: 'Updated the interactive Test Message preview in !leave to accurately demonstrate departure details and placeholder interpolation before saving.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.7',
     headline: 'Unbreakable Channel Markdown Links & Emoji-Free Channel Names',
     summary: 'Resolved a critical Discord markdown parser flaw where channel links with emojis (e.g. [#📁 . server-logs] and [#🎧 . General VC]) failed to parse, breaking into raw text and URLs. Introduced cleanChannelName to sanitize all channel link labels by stripping custom emojis, native pictographs, variation selectors, and decorative symbols while preserving pure letters, combining marks, numbers, and clean hyphens/spaces. Additionally eliminated emojis from automated server-logs channel and category deployment.',
