@@ -16,6 +16,30 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.9.7',
+    headline: 'Global Bot Blacklist Bot Owner Authority & Server Owner Override',
+    summary: 'Empowered Bot Owners with global override clearance on the !bl suite, permitting Bot Owners to blacklist any user globally—including Server Owners and Extra Owners—from executing Athena bot commands while preserving local protections against unauthorized moderators.',
+    whatsNew: [
+      {
+        title: 'Global Bot Owner Blacklist Override',
+        desc: 'Bot Owners now possess absolute global clearance to blacklist any user, including Server Owners and Extra Owners, from using Athena bot commands.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Tiered Hierarchy Safety Evaluation',
+        desc: 'Maintained strict protection of Server Owners and Extra Owners against local moderators, while honoring supreme global authority for Bot Owners.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Server Owner Blacklist False-Positive',
+        desc: 'Resolved an issue where Bot Owners executing !bl on a Server Owner received a \'You cannot blacklist the Server Owner or Extra Owners\' rejection.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.9.6',
     headline: 'Bot Activity Status Rotation Update',
     summary: 'Enriched the bot\'s custom activity status note rotation with a notification highlighting that the word filter command was renamed from !blacklist to !wordfilter / !wf, ensuring server owners and staff stay informed across rotating presence cycles.',

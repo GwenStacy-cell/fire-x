@@ -5087,11 +5087,12 @@ async function handleBotBlacklist(action, targetId, reason = null, client = null
     if (isBotOwnerSync(targetId)) {
       return cv2.warn('Safety Protection', 'You cannot blacklist the Bot Owner.');
     }
-    if (guild && (guild.ownerId === targetId || isExtraOwner(guild.id, targetId))) {
-      return cv2.warn('Safety Protection', 'You cannot blacklist the Server Owner or Extra Owners.');
-    }
     if (client && client.user && targetId === client.user.id) {
       return cv2.warn('Safety Protection', 'You cannot blacklist Athena.');
+    }
+    const isModBotOwner = isBotOwnerSync(moderator?.id || moderator);
+    if (!isModBotOwner && guild && (guild.ownerId === targetId || isExtraOwner(guild.id, targetId))) {
+      return cv2.warn('Safety Protection', 'You cannot blacklist the Server Owner or Extra Owners.');
     }
     if (db.isUserBotBlacklisted(targetId)) {
       return cv2.warn('Already Blacklisted', `User ${formatUserLink(targetId, guild)} is already blacklisted.`);
