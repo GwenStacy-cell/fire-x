@@ -47,6 +47,10 @@ export const CHANGELOG_ENTRIES = [
       {
         title: 'Advanced Boosters & Loss Insurance',
         desc: 'Equip Phoenix Feathers (50% casino defeat loss refund), Golden Horseshoes (+20% extreme luck), Loaded Dice (+15% casino payout bonus), and Hourglass of Chronos (instant cooldown reset).'
+      },
+      {
+        title: 'Coin Disbursal & Spawning Engine (!givecoins)',
+        desc: 'Server Owners and Extra Owners can grant coin balances instantly to any user or directly into their own wallet with !givecoins <amount> (aliases: !addcoins, !ecoadd, !spawncoins).'
       }
     ],
     improvements: [

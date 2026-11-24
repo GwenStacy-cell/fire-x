@@ -580,6 +580,8 @@ export const commands = [
       }
 
       db.addWallet(guildId, targetUser.id, amount);
+      const senderLink = formatUserLink(message.author, message.guild);
+      const recipientLink = formatUserLink(targetUser, message.guild);
 
       const container = {
         type: 17,
@@ -588,10 +590,10 @@ export const commands = [
             type: 10,
             content:
               `### **Funds Transferred | <a:03_tick_circle:1565665642084827206>**\n` +
-              `-# **• Sender:** <@${message.author.id}>\n` +
-              `-# ${BULLET_EMOJI} **Recipient:** <@${targetUser.id}>\n` +
-              `-# ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
-              `-# ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
+              `- # **• Sender:** ${senderLink}\n` +
+              `- # ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
+              `- # ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
+              `- # ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
           }
         ]
       };
@@ -631,6 +633,8 @@ export const commands = [
       }
 
       db.addWallet(guildId, targetUser.id, amount);
+      const senderLink = formatUserLink(interaction.user, interaction.guild);
+      const recipientLink = formatUserLink(targetUser, interaction.guild);
 
       const container = {
         type: 17,
@@ -639,10 +643,129 @@ export const commands = [
             type: 10,
             content:
               `### **Funds Transferred | <a:03_tick_circle:1565665642084827206>**\n` +
-              `-# **• Sender:** <@${interaction.user.id}>\n` +
-              `-# ${BULLET_EMOJI} **Recipient:** <@${targetUser.id}>\n` +
-              `-# ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
-              `-# ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
+              `- # **• Sender:** ${senderLink}\n` +
+              `- # ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
+              `- # ${BULLET_EMOJI} **Amount:** \`${amount.toLocaleString()}\` Athena Coins\n` +
+              `- # ${BULLET_EMOJI} **Status:** \`Settled instantly on local ledger\``
+          }
+        ]
+      };
+
+      return interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+    }
+  },
+
+  // --- GIVE COINS (ADMIN / OWNER MANAGEMENT) ---
+  {
+    name: 'givecoins',
+    aliases: ['addcoins', 'ecoadd', 'spawncoins'],
+    description: 'Grant Athena coins to a user or to your own wallet (Extra Owner / Server Owner only).',
+    category: 'community',
+    options: [
+      {
+        name: 'amount',
+        description: 'Amount of Athena coins to grant',
+        type: 4,
+        required: true
+      },
+      {
+        name: 'user',
+        description: 'Target member to credit (defaults to you)',
+        type: 6,
+        required: false
+      }
+    ],
+    async executePrefix(message, args) {
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply({
+          components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can grant coins.')],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+
+      let targetUser = message.mentions.users.first();
+      let amountArg = args[0];
+
+      if (targetUser) {
+        amountArg = args[1];
+      } else if (args[0] && isNaN(parseInt(args[0]))) {
+        targetUser = await message.client.users.fetch(args[0]).catch(() => null);
+        amountArg = args[1];
+      }
+
+      if (!targetUser) targetUser = message.author;
+      const amount = parseInt(amountArg);
+
+      if (isNaN(amount) || amount <= 0) {
+        return message.reply({
+          components: [
+            cv2.buildContainer(
+              'Give Coins Usage',
+              'Specify an amount of coins to grant:\n\n-# **Format:** `!givecoins <amount>` or `!givecoins <@user> <amount>`\n-# **Examples:**\n-# `!givecoins 100000` *(adds 100k to your wallet)*\n-# `!givecoins @user 50000`'
+            )
+          ],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+
+      const guildId = message.guild.id;
+      const newBal = db.addWallet(guildId, targetUser.id, amount);
+      const recipientLink = formatUserLink(targetUser, message.guild);
+      const adminLink = formatUserLink(message.author, message.guild);
+
+      const container = {
+        type: 17,
+        components: [
+          {
+            type: 10,
+            content:
+              `### **Coins Disbursed | <a:03_tick_circle:1565665642084827206>**\n` +
+              `- # **• Authorized By:** ${adminLink}\n` +
+              `- # ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
+              `- # ${BULLET_EMOJI} **Amount Granted:** **\`+${amount.toLocaleString()}\` Athena Coins**\n` +
+              `- # ${BULLET_EMOJI} **Updated Wallet:** \`${newBal.toLocaleString()}\` coins\n\n` +
+              `- # 💡 **Use \`!shop\` to explore 52 catalog items or \`!inv\` to check your backpack.**`
+          }
+        ]
+      };
+
+      return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+    },
+    async executeSlash(interaction) {
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply({
+          components: [cv2.buildContainer('Permission Denied', 'Only Extra Owners or the Server Owner can grant coins.')],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+
+      const amount = interaction.options.getInteger('amount');
+      const targetUser = interaction.options.getUser('user') || interaction.user;
+
+      if (!amount || amount <= 0) {
+        return interaction.reply({
+          components: [cv2.buildContainer('Invalid Amount', 'Please specify a positive coin amount.')],
+          flags: MessageFlags.IsComponentsV2
+        });
+      }
+
+      const guildId = interaction.guild.id;
+      const newBal = db.addWallet(guildId, targetUser.id, amount);
+      const recipientLink = formatUserLink(targetUser, interaction.guild);
+      const adminLink = formatUserLink(interaction.user, interaction.guild);
+
+      const container = {
+        type: 17,
+        components: [
+          {
+            type: 10,
+            content:
+              `### **Coins Disbursed | <a:03_tick_circle:1565665642084827206>**\n` +
+              `- # **• Authorized By:** ${adminLink}\n` +
+              `- # ${BULLET_EMOJI} **Recipient:** ${recipientLink}\n` +
+              `- # ${BULLET_EMOJI} **Amount Granted:** **\`+${amount.toLocaleString()}\` Athena Coins**\n` +
+              `- # ${BULLET_EMOJI} **Updated Wallet:** \`${newBal.toLocaleString()}\` coins\n\n` +
+              `- # 💡 **Use \`/shop\` to explore 52 catalog items or \`/inventory\` to check your backpack.**`
           }
         ]
       };
