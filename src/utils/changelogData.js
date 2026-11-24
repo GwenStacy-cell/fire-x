@@ -16,6 +16,42 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.9.8',
+    headline: 'Interactive Announcement Builder State Preservation & Media Link Fix',
+    summary: 'Overhauled the interactive announcement builder (!announce) with an in-memory draft state architecture and REST API fallback, completely eliminating state erasure where previously entered title and description text was wiped upon adding or updating image links.',
+    whatsNew: [
+      {
+        title: 'Persistent Announcement Draft Store',
+        desc: 'Implemented an in-memory announcementDrafts state store keyed by message ID, ensuring title, description, and channel configurations remain 100% intact when media links are added.'
+      },
+      {
+        title: 'Multi-Input Channel Assignment',
+        desc: 'Enhanced target channel detection in the announcement builder to accept raw channel IDs, channel mentions (<#channel>), and plain text channel names.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'URL Sanitization & Auto-Cleaning',
+        desc: 'Added automated bracket stripping (<https://...>) on pasted image and thumbnail URLs alongside deep Pinterest media resolution.'
+      },
+      {
+        title: 'Components V2 Layout Partitioning',
+        desc: 'Re-architected buildAnnouncementContainer to cleanly partition header thumbnails, media gallery banners, and body text without text truncation.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Text Erasure on Media Upload',
+        desc: 'Resolved a bug where submitting image or thumbnail URLs through the Edit Media modal erased existing title and description content.'
+      },
+      {
+        title: 'Compliant Channel Markdown Links',
+        desc: 'Replaced legacy <#channel> mentions with formatChannelLink markdown links across all announcement confirmation notices.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.9.7',
     headline: 'Global Bot Blacklist Bot Owner Authority & Server Owner Override',
     summary: 'Empowered Bot Owners with global override clearance on the !bl suite, permitting Bot Owners to blacklist any user globally—including Server Owners and Extra Owners—from executing Athena bot commands while preserving local protections against unauthorized moderators.',

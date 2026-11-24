@@ -4,6 +4,20 @@ import cv2, { sanitizeCV2Payload } from '../cv2.js';
 import { setGuildContext } from '../embed.js';
 import db from '../database.js';
 import { resolveMediaUrl, isPinterestUrl } from '../utils/pinterest.js';
+import { formatChannelLink } from '../utils/helpers.js';
+
+// In-memory active announcement drafts keyed by message ID to prevent Discord roundtrip state erasure
+export const announcementDrafts = new Map();
+
+// Regularly clean up drafts older than 6 hours
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, draft] of announcementDrafts.entries()) {
+    if (now - (draft.lastUpdated || 0) > 6 * 60 * 60 * 1000) {
+      announcementDrafts.delete(key);
+    }
+  }
+}, 30 * 60 * 1000).unref();
 
 export function buildAnnouncementActionRow() {
   return new ActionRowBuilder().addComponents(
@@ -30,58 +44,141 @@ export function buildAnnouncementActionRow() {
   );
 }
 
-export function buildAnnouncementContainer(embed, color = 0x5865F2) {
-  const accentColor = typeof color === 'string'
-    ? parseInt(color.replace('#', ''), 16)
-    : (color || 0x5865F2);
+export function buildPreviewEmbed(draft, guild = null) {
+  const color = draft?.color || 0x5865F2;
+  const embed = new EmbedBuilder()
+    .setColor(color)
+    .setAuthor({ name: 'Announcement Builder' });
+
+  if (draft?.title) {
+    const clean = stripHeadingGlyph(draft.title);
+    embed.setTitle(`${getRandomHeadingGlyph()} ${clean}`);
+  } else {
+    embed.setTitle(`${getRandomHeadingGlyph()} New Announcement`);
+  }
+
+  if (draft?.description) {
+    embed.setDescription(draft.description);
+  } else {
+    embed.setDescription('Click the buttons below to edit this announcement. You can seamlessly add links, images, and multiple lines of text!');
+  }
+
+  if (draft?.imageUrl && /^https?:\/\//i.test(draft.imageUrl)) {
+    embed.setImage(draft.imageUrl);
+  }
+
+  if (draft?.thumbnailUrl && /^https?:\/\//i.test(draft.thumbnailUrl)) {
+    embed.setThumbnail(draft.thumbnailUrl);
+  }
+
+  const channelText = draft?.targetChannelId 
+    ? `Target Channel: ${draft.targetChannelId}`
+    : 'Target Channel: Not Set';
+  embed.setFooter({ text: channelText });
+
+  return embed;
+}
+
+export function buildAnnouncementContainer(draftOrEmbed, color = 0x5865F2) {
+  let title = null;
+  let desc = null;
+  let thumbUrl = null;
+  let imgUrl = null;
+  let customColor = color;
+
+  if (draftOrEmbed && draftOrEmbed.data) {
+    // EmbedBuilder or Embed instance
+    title = draftOrEmbed.data.title?.trim() || null;
+    desc = draftOrEmbed.data.description?.trim() || null;
+    thumbUrl = draftOrEmbed.data.thumbnail?.url || null;
+    imgUrl = draftOrEmbed.data.image?.url || null;
+    customColor = draftOrEmbed.data.color || color;
+  } else if (draftOrEmbed) {
+    // Plain draft object
+    title = draftOrEmbed.title?.trim() || null;
+    desc = draftOrEmbed.description?.trim() || null;
+    thumbUrl = draftOrEmbed.thumbnailUrl?.trim() || null;
+    imgUrl = draftOrEmbed.imageUrl?.trim() || null;
+    customColor = draftOrEmbed.color || color;
+  }
+
+  const accentColor = typeof customColor === 'string'
+    ? parseInt(customColor.replace('#', ''), 16)
+    : (customColor || 0x5865F2);
 
   const container = { 
     type: 17, 
     accent_color: accentColor, 
     components: [] 
   };
-  let hasHeader = false;
 
-  const rawTitle = embed.data?.title?.trim();
-  const desc = embed.data?.description?.trim();
-  const thumbUrl = embed.data?.thumbnail?.url;
-  const imgUrl = embed.data?.image?.url;
-
-  let title = rawTitle;
   if (title) {
-    title = (hasHeadingGlyphStart(title) || /^<a?:[a-zA-Z0-9_]+:\d+>/.test(title))
-      ? title
-      : `${getRandomHeadingGlyph()} ${title}`;
-  }
-
-  if (title && thumbUrl) {
+    title = stripHeadingGlyph(title);
+    const formattedTitle = `${getRandomHeadingGlyph()} ${title}`;
+    if (thumbUrl && /^https?:\/\//i.test(thumbUrl)) {
+      container.components.push({
+        type: 9,
+        components: [{ type: 10, content: `# ${formattedTitle}` }],
+        accessory: { type: 11, media: { url: thumbUrl } }
+      });
+    } else {
+      container.components.push({ type: 10, content: `# ${formattedTitle}` });
+    }
+    container.components.push({ type: 14, divider: true });
+  } else if (thumbUrl && /^https?:\/\//i.test(thumbUrl)) {
     container.components.push({
       type: 9,
-      components: [{ type: 10, content: `# ${title}` }],
+      components: [{ type: 10, content: `# ${getRandomHeadingGlyph()} Announcement` }],
       accessory: { type: 11, media: { url: thumbUrl } }
     });
-    hasHeader = true;
-  } else if (title) {
-    container.components.push({ type: 10, content: `# ${title}` });
-    hasHeader = true;
-  } else if (thumbUrl) {
-    container.components.push({
-      type: 9,
-      components: [{ type: 10, content: desc || '' }],
-      accessory: { type: 11, media: { url: thumbUrl } }
-    });
-    hasHeader = true;
+    container.components.push({ type: 14, divider: true });
   }
 
-  if (desc && (!hasHeader || title)) {
+  if (imgUrl && /^https?:\/\//i.test(imgUrl)) {
+    container.components.push({ type: 12, items: [{ media: { url: imgUrl } }] });
+    container.components.push({ type: 14, divider: true });
+  }
+
+  if (desc) {
     container.components.push({ type: 10, content: desc });
   }
 
-  if (imgUrl) {
-    container.components.push({ type: 12, items: [{ media: { url: imgUrl } }] });
+  return sanitizeCV2Payload(container);
+}
+
+export async function getOrFetchDraft(interaction) {
+  const msgId = interaction.message?.id;
+  let draft = msgId ? announcementDrafts.get(msgId) : null;
+  if (draft) return draft;
+
+  // Fallback: fetch live message from Discord REST API
+  let msg = interaction.message;
+  if (interaction.channel && msgId) {
+    const fetched = await interaction.channel.messages.fetch(msgId).catch(() => null);
+    if (fetched) msg = fetched;
   }
 
-  return sanitizeCV2Payload(container);
+  const raw = msg?.embeds?.[0];
+  const footerText = raw?.footer?.text || '';
+  const channelMatch = footerText.match(/\b\d{17,20}\b/);
+
+  const config = interaction.guild ? db.getGuildConfig(interaction.guild.id) : null;
+  const color = config?.accentColor || raw?.color || 0x5865F2;
+
+  draft = {
+    guildId: interaction.guild?.id,
+    authorId: interaction.user?.id,
+    title: raw?.title ? stripHeadingGlyph(raw.title) : null,
+    description: (raw?.description && !raw.description.startsWith('Click the buttons below')) ? raw.description : null,
+    imageUrl: raw?.image?.url || null,
+    thumbnailUrl: raw?.thumbnail?.url || null,
+    targetChannelId: channelMatch ? channelMatch[0] : null,
+    color: color,
+    lastUpdated: Date.now()
+  };
+
+  if (msgId) announcementDrafts.set(msgId, draft);
+  return draft;
 }
 
 export const commands = [
@@ -98,17 +195,24 @@ export const commands = [
       const config = db.getGuildConfig(message.guild.id);
       const color = config.accentColor || '#5865F2';
       
-      const previewEmbed = new EmbedBuilder()
-        .setColor(color)
-        .setAuthor({ name: 'Announcement Builder' })
-        .setTitle(`${getRandomHeadingGlyph()} New Announcement`)
-        .setDescription('Click the buttons below to edit this announcement. You can seamlessly add links, images, and multiple lines of text!')
-        .setThumbnail(message.guild.members.me.displayAvatarURL({ dynamic: true, size: 256 }))
-        .setFooter({ text: 'Target Channel: Not Set' });
+      const draft = {
+        guildId: message.guild.id,
+        authorId: message.author.id,
+        title: null,
+        description: null,
+        imageUrl: null,
+        thumbnailUrl: null,
+        targetChannelId: null,
+        color: color,
+        lastUpdated: Date.now()
+      };
 
+      const previewEmbed = buildPreviewEmbed(draft, message.guild);
       const row = buildAnnouncementActionRow();
 
-      await message.channel.send({ embeds: [previewEmbed], components: [row] });
+      const sent = await message.channel.send({ embeds: [previewEmbed], components: [row] });
+      announcementDrafts.set(sent.id, draft);
+
       // Delete the trigger message to keep chat clean
       await message.delete().catch(() => null);
     },
@@ -118,36 +222,31 @@ export const commands = [
       const config = db.getGuildConfig(interaction.guild.id);
       const color = config.accentColor || '#5865F2';
 
-      const previewEmbed = new EmbedBuilder()
-        .setColor(color)
-        .setAuthor({ name: 'Announcement Builder' })
-        .setTitle(`${getRandomHeadingGlyph()} New Announcement`)
-        .setDescription('Click the buttons below to edit this announcement. You can seamlessly add links, images, and multiple lines of text!')
-        .setThumbnail(interaction.guild.members.me.displayAvatarURL({ dynamic: true, size: 256 }))
-        .setFooter({ text: 'Target Channel: Not Set' });
+      const draft = {
+        guildId: interaction.guild.id,
+        authorId: interaction.user.id,
+        title: null,
+        description: null,
+        imageUrl: null,
+        thumbnailUrl: null,
+        targetChannelId: null,
+        color: color,
+        lastUpdated: Date.now()
+      };
 
+      const previewEmbed = buildPreviewEmbed(draft, interaction.guild);
       const row = buildAnnouncementActionRow();
 
-      await interaction.reply({ embeds: [previewEmbed], components: [row] });
+      const reply = await interaction.reply({ embeds: [previewEmbed], components: [row], fetchReply: true });
+      announcementDrafts.set(reply.id, draft);
     }
   }
 ];
 
 export async function handleAnnouncementInteractions(interaction) {
-  const getSafeEmbed = () => {
-    const raw = interaction.message?.embeds?.[0];
-    if (raw) return EmbedBuilder.from(raw);
-    return new EmbedBuilder()
-      .setColor(0x5865F2)
-      .setAuthor({ name: 'Announcement Builder' })
-      .setTitle(`${getRandomHeadingGlyph()} New Announcement`)
-      .setDescription('Click the buttons below to edit this announcement. You can seamlessly add links, images, and multiple lines of text!')
-      .setFooter({ text: 'Target Channel: Not Set' });
-  };
-
   if (interaction.isButton()) {
     const customId = interaction.customId;
-    const embed = getSafeEmbed();
+    const draft = await getOrFetchDraft(interaction);
 
     if (customId === 'ann_edit_text') {
       const modal = new ModalBuilder()
@@ -160,10 +259,8 @@ export async function handleAnnouncementInteractions(interaction) {
         .setStyle(TextInputStyle.Short)
         .setRequired(false);
       
-      const rawTitle = embed.data?.title;
-      if (rawTitle) {
-        const cleanTitle = stripHeadingGlyph(rawTitle);
-        if (cleanTitle) titleInput.setValue(cleanTitle.slice(0, 45));
+      if (draft.title) {
+        titleInput.setValue(draft.title.slice(0, 45));
       }
         
       const descInput = new TextInputBuilder()
@@ -171,8 +268,9 @@ export async function handleAnnouncementInteractions(interaction) {
         .setLabel('Description (Content)')
         .setStyle(TextInputStyle.Paragraph)
         .setRequired(true);
-      if (embed.data?.description) {
-        descInput.setValue(embed.data.description.slice(0, 4000));
+
+      if (draft.description) {
+        descInput.setValue(draft.description.slice(0, 4000));
       }
 
       modal.addComponents(
@@ -201,22 +299,24 @@ export async function handleAnnouncementInteractions(interaction) {
       
       const imageInput = new TextInputBuilder()
         .setCustomId('ann_image')
-        .setLabel('Large Image (Supports URL / Pinterest)')
-        .setPlaceholder('Image URL or Pinterest link (pin.it / pinterest.com)')
+        .setLabel('Large Image (URL or Pinterest link)')
+        .setPlaceholder('https://example.com/banner.png or pin.it/...')
         .setStyle(TextInputStyle.Short)
         .setRequired(false);
-      if (embed.data?.image?.url) {
-        imageInput.setValue(embed.data.image.url.slice(0, 1000));
+
+      if (draft.imageUrl) {
+        imageInput.setValue(draft.imageUrl.slice(0, 1000));
       }
         
       const thumbInput = new TextInputBuilder()
         .setCustomId('ann_thumb')
-        .setLabel('Thumbnail (Supports URL / Pinterest)')
-        .setPlaceholder('Image URL or Pinterest link (pin.it / pinterest.com)')
+        .setLabel('Thumbnail (URL or Pinterest link)')
+        .setPlaceholder('https://example.com/thumb.png or pin.it/...')
         .setStyle(TextInputStyle.Short)
         .setRequired(false);
-      if (embed.data?.thumbnail?.url) {
-        thumbInput.setValue(embed.data.thumbnail.url.slice(0, 1000));
+
+      if (draft.thumbnailUrl) {
+        thumbInput.setValue(draft.thumbnailUrl.slice(0, 1000));
       }
 
       modal.addComponents(
@@ -245,14 +345,13 @@ export async function handleAnnouncementInteractions(interaction) {
       
       const chanInput = new TextInputBuilder()
         .setCustomId('ann_channel')
-        .setLabel('Channel ID')
+        .setLabel('Channel ID, #mention, or Name')
         .setStyle(TextInputStyle.Short)
         .setRequired(true)
-        .setPlaceholder('123456789012345678');
+        .setPlaceholder('e.g. 123456789012345678, #announcements');
 
-      const footerText = embed.data?.footer?.text || '';
-      if (footerText.startsWith('Target Channel: ') && !footerText.includes('Not Set')) {
-        chanInput.setValue(footerText.replace('Target Channel: ', '').trim());
+      if (draft.targetChannelId) {
+        chanInput.setValue(draft.targetChannelId);
       }
 
       modal.addComponents(new ActionRowBuilder().addComponents(chanInput));
@@ -273,8 +372,8 @@ export async function handleAnnouncementInteractions(interaction) {
 
     if (customId === 'ann_test') {
       const config = db.getGuildConfig(interaction.guild.id);
-      const color = config?.accentColor || embed.data?.color || 0x5865F2;
-      const container = buildAnnouncementContainer(embed, color);
+      const color = config?.accentColor || draft.color || 0x5865F2;
+      const container = buildAnnouncementContainer(draft, color);
 
       if (!container.components || container.components.length === 0) {
         return await interaction.reply({
@@ -283,7 +382,7 @@ export async function handleAnnouncementInteractions(interaction) {
         });
       }
 
-      // Clone container and append test dispatch button safely INSIDE the container
+      // Clone container and append test dispatch button safely inside container
       const testContainer = JSON.parse(JSON.stringify(container));
       testContainer.components.push(
         { type: 14, divider: true },
@@ -328,7 +427,7 @@ export async function handleAnnouncementInteractions(interaction) {
       try {
         await interaction.channel.send({ components: [rawContainer], flags: MessageFlags.IsComponentsV2 });
         return await interaction.reply({
-          ...cv2.asEphemeral(cv2.success('Test Dispatched', `A live preview test of your announcement was dispatched to <#${interaction.channel.id}>.`)),
+          ...cv2.asEphemeral(cv2.success('Test Dispatched', `A live preview test of your announcement was dispatched to ${formatChannelLink(interaction.channel, interaction.guild)}.`)),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
       } catch (err) {
@@ -340,26 +439,24 @@ export async function handleAnnouncementInteractions(interaction) {
     }
 
     if (customId === 'ann_publish') {
-      const footer = embed.data?.footer?.text || '';
-      if (!footer.startsWith('Target Channel: ') || footer.includes('Not Set')) {
+      if (!draft.targetChannelId) {
         return await interaction.reply({
           ...cv2.asEphemeral(cv2.warn('Target Channel Required', 'You must set a target channel first by clicking **Set Channel**.')),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
       }
 
-      const channelId = footer.replace('Target Channel: ', '').trim();
-      const targetChannel = interaction.guild.channels.cache.get(channelId) || await interaction.guild.channels.fetch(channelId).catch(() => null);
+      const targetChannel = interaction.guild.channels.cache.get(draft.targetChannelId) || await interaction.guild.channels.fetch(draft.targetChannelId).catch(() => null);
       if (!targetChannel) {
         return await interaction.reply({
-          ...cv2.asEphemeral(cv2.danger('Channel Not Found', 'Target channel not found. Please provide a valid Channel ID.')),
+          ...cv2.asEphemeral(cv2.danger('Channel Not Found', 'Target channel not found. Please provide a valid Channel ID or mention.')),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
       }
 
       const config = db.getGuildConfig(interaction.guild.id);
-      const color = config?.accentColor || embed.data?.color || 0x5865F2;
-      const container = buildAnnouncementContainer(embed, color);
+      const color = config?.accentColor || draft.color || 0x5865F2;
+      const container = buildAnnouncementContainer(draft, color);
 
       try {
         await targetChannel.send({ components: [container], flags: MessageFlags.IsComponentsV2 });
@@ -367,11 +464,15 @@ export async function handleAnnouncementInteractions(interaction) {
         const publishedRow = new ActionRowBuilder().addComponents(
           new ButtonBuilder().setCustomId('pub_dummy').setLabel('Published Successfully').setStyle(ButtonStyle.Success).setDisabled(true)
         );
-        embed.setFooter({ text: 'Status: Published' });
+        const embed = buildPreviewEmbed(draft, interaction.guild);
+        embed.setFooter({ text: `Status: Published to #${targetChannel.name || draft.targetChannelId}` });
+
+        if (interaction.message?.id) announcementDrafts.delete(interaction.message.id);
+
         return await interaction.update({ embeds: [embed], components: [publishedRow] });
       } catch (e) {
         return await interaction.reply({
-          ...cv2.asEphemeral(cv2.danger('Dispatch Failed', `Failed to send announcement to <#${channelId}>: ${e.message}. Please check my channel permissions.`)),
+          ...cv2.asEphemeral(cv2.danger('Dispatch Failed', `Failed to send announcement to ${formatChannelLink(targetChannel, interaction.guild)}: ${e.message}. Please check my channel permissions.`)),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
       }
@@ -380,20 +481,19 @@ export async function handleAnnouncementInteractions(interaction) {
 
   if (interaction.isModalSubmit()) {
     const customId = interaction.customId;
-    const embed = getSafeEmbed();
+    const draft = await getOrFetchDraft(interaction);
     const actionRow = buildAnnouncementActionRow();
 
     if (customId === 'ann_modal_text') {
       const rawTitle = interaction.fields.getTextInputValue('ann_title')?.trim();
       const desc = interaction.fields.getTextInputValue('ann_desc')?.trim();
-      if (rawTitle) {
-        const cleanTitle = stripHeadingGlyph(rawTitle);
-        const formattedTitle = `${getRandomHeadingGlyph()} ${cleanTitle}`;
-        embed.setTitle(formattedTitle);
-      } else {
-        embed.setTitle(null);
-      }
-      embed.setDescription(desc || null);
+      
+      draft.title = rawTitle ? stripHeadingGlyph(rawTitle) : null;
+      draft.description = desc || null;
+      draft.lastUpdated = Date.now();
+      if (interaction.message?.id) announcementDrafts.set(interaction.message.id, draft);
+
+      const embed = buildPreviewEmbed(draft, interaction.guild);
       return await interaction.update({ embeds: [embed], components: [actionRow] });
     }
 
@@ -402,6 +502,9 @@ export async function handleAnnouncementInteractions(interaction) {
       let image = interaction.fields.getTextInputValue('ann_image')?.trim() || null;
       let thumb = interaction.fields.getTextInputValue('ann_thumb')?.trim() || null;
       
+      if (image) image = image.replace(/^<|>$/g, '').trim();
+      if (thumb) thumb = thumb.replace(/^<|>$/g, '').trim();
+
       if (image && isPinterestUrl(image)) {
         image = await resolveMediaUrl(image);
       }
@@ -409,25 +512,40 @@ export async function handleAnnouncementInteractions(interaction) {
         thumb = await resolveMediaUrl(thumb);
       }
 
-      if (image && image.startsWith('http')) embed.setImage(image);
-      else embed.setImage(null);
-      
-      if (thumb && thumb.startsWith('http')) embed.setThumbnail(thumb);
-      else embed.setThumbnail(null);
-      
+      draft.imageUrl = (image && /^https?:\/\//i.test(image)) ? image : null;
+      draft.thumbnailUrl = (thumb && /^https?:\/\//i.test(thumb)) ? thumb : null;
+      draft.lastUpdated = Date.now();
+      if (interaction.message?.id) announcementDrafts.set(interaction.message.id, draft);
+
+      // Re-render preview with intact text data preserved
+      const embed = buildPreviewEmbed(draft, interaction.guild);
       return await interaction.editReply({ embeds: [embed], components: [actionRow] });
     }
 
     if (customId === 'ann_modal_channel') {
-      const chan = interaction.fields.getTextInputValue('ann_channel').replace(/[^0-9]/g, '');
-      const target = interaction.guild.channels.cache.get(chan) || await interaction.guild.channels.fetch(chan).catch(() => null);
+      let chanInput = interaction.fields.getTextInputValue('ann_channel')?.trim() || '';
+      chanInput = chanInput.replace(/[<#>]/g, '').trim();
+      
+      let target = null;
+      if (/^\d{17,20}$/.test(chanInput)) {
+        target = interaction.guild.channels.cache.get(chanInput) || await interaction.guild.channels.fetch(chanInput).catch(() => null);
+      }
+      if (!target) {
+        target = interaction.guild.channels.cache.find(c => c.name.toLowerCase() === chanInput.toLowerCase() && c.isTextBased());
+      }
+
       if (!target) {
         return await interaction.reply({
-          ...cv2.asEphemeral(cv2.danger('Invalid Channel', 'Invalid Channel ID or I cannot access that channel.')),
+          ...cv2.asEphemeral(cv2.danger('Invalid Channel', 'Please provide a valid text Channel ID, #mention, or channel name.')),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         });
       }
-      embed.setFooter({ text: `Target Channel: ${chan}` });
+
+      draft.targetChannelId = target.id;
+      draft.lastUpdated = Date.now();
+      if (interaction.message?.id) announcementDrafts.set(interaction.message.id, draft);
+
+      const embed = buildPreviewEmbed(draft, interaction.guild);
       return await interaction.update({ embeds: [embed], components: [actionRow] });
     }
   }
