@@ -16,6 +16,34 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.9.5',
+    headline: 'Bot Command Blacklist Messaging Polish & Ezal Suite Integration',
+    summary: 'Updated the bot command blacklist confirmation embeds to explicitly communicate user restriction (\'User Blacklisted from using bot cmds\' and \'User Unblacklisted from using bot cmds\'). Fully synchronized the Ezal module with the !bl suite, adding ezal bl, ezal unbl, ezal bllist, and all relevant routing aliases.',
+    whatsNew: [
+      {
+        title: 'Explicit Restriction Messaging',
+        desc: 'Refined confirmation embed descriptions to state \'User Blacklisted from using bot cmds\' and \'User Unblacklisted from using bot cmds\'.'
+      },
+      {
+        title: 'Ezal Command Blacklist Suite',
+        desc: 'Integrated ezal bl, ezal unbl, and ezal bllist directly into Ezal command routing and ehelp documentation.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Comprehensive Routing Aliases',
+        desc: 'Mapped aliases including unblacklist, userunblacklist, botunblacklist, bunban, bbanlist, and blacklistlist across dispatchers.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Ezal Switch Deduplication',
+        desc: 'Cleaned up duplicate case fallthroughs in ezal.js command routing.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.9.4',
     headline: 'Sleek & Minimal Voice Control Panel UI Redesign',
     summary: 'Streamlined the Server Owner Voice Control Panel (!vcpanel) with a modern, compact interface. Removed the oversized server avatar accessory, eliminated redundant button control text lists, rendered all channel/member metadata in sleek grey subtext, and reorganized the 18 voice actions into four perfectly balanced control rows.',

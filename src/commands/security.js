@@ -5116,7 +5116,7 @@ async function handleBotBlacklist(action, targetId, reason = null, client = null
       .setDescription(
         `User: ${userLink} | Moderator: ${modLink}\n\n` +
         `Duration: Permanent | Appeal: ${appealText}\n` +
-        `User Blacklisted`
+        `User Blacklisted from using bot cmds`
       );
 
     const badgePath = path.join(process.cwd(), 'src/assets/blacklist_badge.png');
@@ -5151,7 +5151,7 @@ async function handleBotBlacklist(action, targetId, reason = null, client = null
         .setDescription(
           `User: ${userLink} | Moderator: ${modLink}\n\n` +
           `Status: Restrictions Lifted\n` +
-          `User Unblacklisted`
+          `User Unblacklisted from using bot cmds`
         );
 
       const badgePath = path.join(process.cwd(), 'src/assets/blacklist_badge.png');

@@ -1003,12 +1003,12 @@ export function getEhelpPagePayload(page = 1) {
         '`ezal addcoins` / `spawncoins` / `ecoadd` - Alternative command aliases'
     },
     {
-      name: 'Global Bot Blacklist (Global Ban)',
+      name: 'Bot Command Blacklist (!bl / !unbl)',
       value:
-        '`!gban <@user|ID> [reason]` - Globally ban user from all bot commands\n' +
-        '`!gunban <@user|ID>` - Unban user & restore global access\n' +
-        '`!gbanlist` - View all currently blacklisted users\n' +
-        '> **Aliases:** `!globalban`, `!botban`, `!gblock`, `!botunban`, `!gblacklist`'
+        '`ezal bl <@user|ID> [reason]` - Blacklist user from using bot commands\n' +
+        '`ezal unbl <@user|ID>` - Unblacklist user from using bot commands\n' +
+        '`ezal bllist` - View all currently blacklisted users\n' +
+        '> **Aliases:** `!bl`, `!unbl`, `!bllist`, `!botban`, `!botunban`, `!gban`, `!gunban`'
     },
     {
       name: 'Security & System Health',
@@ -1482,14 +1482,13 @@ export async function handleEzal(message) {
     case 'spampermit': return handleSpamPermit(message, targetArgs);
     case 'spamrevoke': return handleSpamRevoke(message, targetArgs);
     case 'spamlist': return handleSpamList(message);
+    case 'bl':
+    case 'blacklist':
     case 'gban':
     case 'globalban':
     case 'botban':
     case 'globalblock':
     case 'gblock':
-    case 'bl':
-    case 'gban':
-    case 'botban':
     case 'userblacklist':
     case 'botblacklist': {
       const { commands } = await import('./security.js');
@@ -1498,6 +1497,10 @@ export async function handleEzal(message) {
       break;
     }
     case 'unbl':
+    case 'unblacklist':
+    case 'userunblacklist':
+    case 'botunblacklist':
+    case 'bunban':
     case 'gunban':
     case 'globalunban':
     case 'botunban':
@@ -1509,6 +1512,8 @@ export async function handleEzal(message) {
       break;
     }
     case 'bllist':
+    case 'bbanlist':
+    case 'blacklistlist':
     case 'gbanlist':
     case 'globalbanlist':
     case 'botbanlist':
