@@ -542,7 +542,7 @@ export default {
                       { type: 14, divider: true },
                       { 
                         type: 10, 
-                        content: `${glyph2} **Tagged By:** <@${message.author.id}>\n-# Channel: [#${cleanChannel}](https://discord.com/channels/${message.guild.id}/${message.channel.id})\n-# Message: \`${snippet}\`` 
+                        content: `${glyph2} **Tagged By:** ${formatUserLink(message.author, message.guild)}\n-# Channel: ${formatChannelLink(message.channel, message.guild)}\n-# Message: \`${snippet}\`` 
                       },
                       { type: 14, divider: true },
                       {

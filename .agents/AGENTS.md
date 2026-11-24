@@ -28,4 +28,4 @@
 - NEVER use `<@userId>` or raw `@username` to mention users anywhere in the bot's responses, embeds, or Components V2 cards.
 - ALWAYS use a **nickname link**: `[Nickname](https://discord.com/users/userId)` (using `cleanDisplayName` to strip markdown/emoji breaks) or `formatUserLink(userOrMemberOrId, guild)`.
 - NEVER use `<#channelId>` to mention channels anywhere in responses, embeds, or Components V2 cards.
-- ALWAYS use a **channel text link**: `[#channel-name](https://discord.com/channels/guildId/channelId)` or `formatChannelLink(channelOrId, guildOrGuildId)`.
+- ALWAYS use a **channel text link**: `[channel-name](https://discord.com/channels/guildId/channelId)` (no # in link text) or `formatChannelLink(channelOrId, guildOrGuildId)`.

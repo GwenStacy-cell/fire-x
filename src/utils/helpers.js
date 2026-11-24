@@ -1201,14 +1201,14 @@ export function cleanChannelName(name) {
 }
 
 /**
- * Formats a channel as a clickable markdown text link: [#channel-name](https://discord.com/channels/guildId/channelId).
+ * Formats a channel as a clickable markdown text link: [channel-name](https://discord.com/channels/guildId/channelId).
  * Never uses native <#channelId> mentions. Always cleans emojis to avoid failing the link.
  * @param {GuildChannel|string} channelOrId - Discord channel object or channel ID
  * @param {Guild|string|null} guildOrGuildId - Guild instance or guild ID string
  * @returns {string} Markdown channel text link
  */
 export function formatChannelLink(channelOrId, guildOrGuildId = null) {
-  if (!channelOrId) return '[#channel](https://discord.com/)';
+  if (!channelOrId) return '[channel](https://discord.com/)';
   let id = null;
   let name = null;
   let gid = null;
@@ -1239,7 +1239,7 @@ export function formatChannelLink(channelOrId, guildOrGuildId = null) {
 
   const safeName = cleanChannelName(name || 'channel');
   const targetGid = gid || '@me';
-  return `[#${safeName}](https://discord.com/channels/${targetGid}/${id || ''})`;
+  return `[${safeName}](https://discord.com/channels/${targetGid}/${id || ''})`;
 }
 
 export function formatNickname(layout, name) {

@@ -16,6 +16,34 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.9.2',
+    headline: 'Clean Channel Hyperlinks Without Hash (#) Prefixes Across All Modules',
+    summary: 'Refactored formatChannelLink across the entire bot to format channel hyperlinks cleanly as [channel-name](https://discord.com/channels/guild/channel) without a leading # prefix. Ensured voice channel join/leave/switch activity logs, control panels, and security telemetry display seamless, natural channel hyperlinks.',
+    whatsNew: [
+      {
+        title: 'Clean Channel Link Formatting (No # Prefix)',
+        desc: 'Updated formatChannelLink to render channel text links purely as [Channel Name](url) without #, producing natural sentences such as "joined voice channel General VC" instead of "#General VC".'
+      },
+      {
+        title: 'Voice State Activity Log Polish',
+        desc: 'Refined voice join and leave event notifications in voice logs to display clean voice channel hyperlinks with zero hashtag clutter.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Bot-Wide Notification Standardization',
+        desc: 'Replaced manual [#channel] formatting in bot notification event listeners with centralized formatChannelLink.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'AGENTS Formatting Rule Update',
+        desc: 'Updated repository rules to strictly enforce channel text links without # prefixes.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.9.1',
     headline: 'Universal Nickname Hyperlinks & Emoji-Free Channel Links across Voice Control Panel & System Logs',
     summary: 'Standardized user and channel link formatting across the Server Owner Voice Control Panel (!vcpanel), interaction handlers, and real-time security telemetry. Eliminated all raw Discord @user mentions and <#channel> tags in favor of formatUserLink ([Nickname](https://discord.com/users/id)) and formatChannelLink ([#clean-name](https://discord.com/channels/guild/channel)), ensuring clean, uncorrupted hyperlinks with all decorative emojis and markdown symbols stripped from link titles. Enforced strict Extra Owner / Server Owner clearance on voice panel controls.',
