@@ -1,7 +1,8 @@
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, NAV_EMOJI_IDS, NINJA_BULLET, NINJA_BULLET_RTL, UPTIME_EMOJI } from '../utils/emojis.js';
-import { PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, TextDisplayBuilder, ContainerBuilder, MessageFlags, SectionBuilder, ThumbnailBuilder, Routes } from 'discord.js';
+import { PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, EmbedBuilder, TextDisplayBuilder, ContainerBuilder, MessageFlags, SectionBuilder, ThumbnailBuilder, Routes, AttachmentBuilder } from 'discord.js';
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs/promises';
+import fsSync from 'fs';
 import path from 'path';
 import os from 'os';
 import db from '../database.js';
@@ -718,10 +719,10 @@ export const commands = [
     }
   },
 
-  // --- BLACKLIST COMMAND ---
+  // --- WORD FILTER COMMAND ---
   {
-    name: 'blacklist',
-    aliases: ['bl', 'wordfilter', 'wf'],
+    name: 'wordfilter',
+    aliases: ['wf', 'filterwords', 'wordblacklist'],
     description: 'Manages word filter blacklists. Messages matching these terms are deleted and warned.',
     category: 'security',
     permissions: [PermissionFlagsBits.ModerateMembers],
@@ -1368,157 +1369,137 @@ export const commands = [
     }
   },
 
-  // --- GLOBAL BOT BLACKLIST COMMANDS (GBAN, GUNBAN, GBANLIST) ---
+  // --- USER BOT BLACKLIST COMMANDS (BL, UNBL, BLLIST) ---
   {
-    name: 'gban',
-    aliases: ['globalban', 'botban', 'globalblock', 'gblock', 'userblacklist', 'botblacklist'],
-    description: '[BOT OWNER ONLY] Globally block a user from executing any Athena commands across all servers.',
+    name: 'bl',
+    aliases: ['botban', 'bban', 'gban', 'globalban', 'userblacklist', 'botblacklist', 'blacklistuser', 'blacklist'],
+    description: 'Blacklist a user from executing any Athena bot commands.',
     category: 'security',
     permissions: [],
     slashHidden: false,
     options: [
       {
         name: 'target',
-        description: 'Target user mention or ID to globally ban',
+        description: 'Target user mention or ID to blacklist',
         type: 3,
-        required: false
+        required: true
       },
       {
         name: 'reason',
-        description: 'Reason for global blacklist',
+        description: 'Reason for blacklisting',
         type: 3,
         required: false
-      },
-      {
-        name: 'action',
-        description: 'Optional action mode',
-        type: 3,
-        required: false,
-        choices: [
-          { name: 'Ban User', value: 'add' },
-          { name: 'Unban User', value: 'remove' },
-          { name: 'List Banned Users', value: 'list' }
-        ]
       }
     ],
     async executePrefix(message, args) {
-      if (!isBotOwnerSync(message.author.id)) {
-        return message.reply(cv2.danger('Permission Denied', `${message.author} Only the **Bot Owner** can manage the global bot blacklist.`));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the Server Owner, Bot Owner, and Extra Owners can manage bot blacklisting.')).catch(()=>{});
       }
 
       const firstArg = args[0]?.toLowerCase();
       if (!firstArg) {
         return message.reply(cv2.warn(
-          'Command Error',
-          `${message.author} Usage:\n` +
-          `> -# \`!gban <@user|userId> [reason]\` - Globally ban a user\n` +
-          `> -# \`!gunban <@user|userId>\` - Globally unban a user\n` +
-          `> -# \`!gban list\` - View all globally blacklisted users`
+          'Command Usage',
+          `Usage: \`!bl <@user|userId> [reason]\` - Blacklist user from using bot commands\n` +
+          `Usage: \`!unbl <@user|userId>\` - Lift restrictions and unblacklist user\n` +
+          `Usage: \`!bllist\` - View all currently blacklisted accounts`
         ));
       }
 
-      let action = 'add';
-      let targetId = null;
-      let reason = null;
-
       if (firstArg === 'list') {
-        action = 'list';
-      } else if (firstArg === 'add' || firstArg === 'ban' || firstArg === 'block') {
-        action = 'add';
+        const result = await handleBotBlacklist('list', null, null, message.client, message.author, message.guild);
+        return message.reply(result);
+      }
+
+      let targetId = args[0]?.replace(/[<@!>]/g, '');
+      let reason = args.slice(1).join(' ') || null;
+
+      if (firstArg === 'add' || firstArg === 'ban' || firstArg === 'block') {
         targetId = args[1]?.replace(/[<@!>]/g, '');
         reason = args.slice(2).join(' ') || null;
-      } else if (firstArg === 'remove' || firstArg === 'unban' || firstArg === 'unblock') {
-        action = 'remove';
-        targetId = args[1]?.replace(/[<@!>]/g, '');
-      } else {
-        // Direct invocation: !gban @user [reason]
-        action = 'add';
-        targetId = args[0]?.replace(/[<@!>]/g, '');
-        reason = args.slice(1).join(' ') || null;
       }
 
-      const result = await handleBotBlacklist(action, targetId, reason, message.client);
-      await message.reply(result);
+      const result = await handleBotBlacklist('add', targetId, reason, message.client, message.author, message.guild);
+      return message.reply(result);
     },
     async executeSlash(interaction) {
-      if (!isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.danger('Permission Denied', `${interaction.user} Only the **Bot Owner** can manage the global bot blacklist.`));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.danger('Access Denied', 'Only the Server Owner, Bot Owner, and Extra Owners can manage bot blacklisting.'));
       }
 
-      const actionOption = interaction.options.getString('action');
       const targetOption = interaction.options.getString('target')?.replace(/[<@!>]/g, '');
       const reasonOption = interaction.options.getString('reason');
 
-      const action = actionOption || (targetOption ? 'add' : 'list');
-      const result = await handleBotBlacklist(action, targetOption, reasonOption, interaction.client);
-      await interaction.reply(result);
+      const result = await handleBotBlacklist('add', targetOption, reasonOption, interaction.client, interaction.user, interaction.guild);
+      return interaction.reply(result);
     }
   },
 
   {
-    name: 'gunban',
-    aliases: ['globalunban', 'botunban', 'globalunblock', 'gunblock'],
-    description: '[BOT OWNER ONLY] Globally unban a user and restore their access to Athena commands.',
+    name: 'unbl',
+    aliases: ['botunban', 'bunban', 'gunban', 'globalunban', 'userunblacklist', 'botunblacklist', 'unblacklistuser'],
+    description: 'Lift bot restrictions and unblacklist a user.',
     category: 'security',
     permissions: [],
     slashHidden: false,
     options: [
       {
         name: 'target',
-        description: 'Target user mention or ID to unban',
+        description: 'Target user mention or ID to unblacklist',
         type: 3,
         required: true
       }
     ],
     async executePrefix(message, args) {
-      if (!isBotOwnerSync(message.author.id)) {
-        return message.reply(cv2.danger('Permission Denied', `${message.author} Only the **Bot Owner** can manage the global bot blacklist.`));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the Server Owner, Bot Owner, and Extra Owners can manage bot blacklisting.')).catch(()=>{});
       }
 
       const targetId = args[0]?.replace(/[<@!>]/g, '');
       if (!targetId) {
-        return message.reply(cv2.warn('Command Error', `${message.author} Usage: \`!gunban <@user|userId>\``));
+        return message.reply(cv2.warn('Command Usage', 'Usage: `!unbl <@user|userId>`'));
       }
 
-      const result = await handleBotBlacklist('remove', targetId, null, message.client);
-      await message.reply(result);
+      const result = await handleBotBlacklist('remove', targetId, null, message.client, message.author, message.guild);
+      return message.reply(result);
     },
     async executeSlash(interaction) {
-      if (!isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.danger('Permission Denied', `${interaction.user} Only the **Bot Owner** can manage the global bot blacklist.`));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.danger('Access Denied', 'Only the Server Owner, Bot Owner, and Extra Owners can manage bot blacklisting.'));
       }
 
       const targetId = interaction.options.getString('target')?.replace(/[<@!>]/g, '');
-      const result = await handleBotBlacklist('remove', targetId, null, interaction.client);
-      await interaction.reply(result);
+      const result = await handleBotBlacklist('remove', targetId, null, interaction.client, interaction.user, interaction.guild);
+      return interaction.reply(result);
     }
   },
 
   {
-    name: 'gbanlist',
-    aliases: ['globalbanlist', 'botbanlist', 'gblacklist'],
-    description: '[BOT OWNER ONLY] View all users currently globally banned from Athena Prime.',
+    name: 'bllist',
+    aliases: ['botbanlist', 'gbanlist', 'globalbanlist', 'blacklistedusers'],
+    description: 'View all users currently blacklisted from Athena commands.',
     category: 'security',
     permissions: [],
     slashHidden: false,
     async executePrefix(message, args) {
-      if (!isBotOwnerSync(message.author.id)) {
-        return message.reply(cv2.danger('Permission Denied', `${message.author} Only the **Bot Owner** can view the global bot blacklist.`));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the Server Owner, Bot Owner, and Extra Owners can view blacklisted users.')).catch(()=>{});
       }
 
-      const result = await handleBotBlacklist('list', null, null, message.client);
-      await message.reply(result);
+      const result = await handleBotBlacklist('list', null, null, message.client, message.author, message.guild);
+      return message.reply(result);
     },
     async executeSlash(interaction) {
-      if (!isBotOwnerSync(interaction.user.id)) {
-        return interaction.reply(cv2.danger('Permission Denied', `${interaction.user} Only the **Bot Owner** can view the global bot blacklist.`));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.danger('Access Denied', 'Only the Server Owner, Bot Owner, and Extra Owners can view blacklisted users.'));
       }
 
-      const result = await handleBotBlacklist('list', null, null, interaction.client);
-      await interaction.reply(result);
+      const result = await handleBotBlacklist('list', null, null, interaction.client, interaction.user, interaction.guild);
+      return interaction.reply(result);
     }
   },
 
+  
   {
     name: 'incidents',
     aliases: ['liverecords', 'threatlogs', 'securityrecords', 'seclogs'],
@@ -5098,20 +5079,26 @@ async function handleBotWhitelist(guild, action, botId) {
   }
 }
 
-async function handleBotBlacklist(action, targetId, reason = null, client = null) {
+async function handleBotBlacklist(action, targetId, reason = null, client = null, moderator = null, guild = null) {
   if (action === 'add' || action === 'ban' || action === 'block') {
     if (!targetId || !/^\d{17,20}$/.test(targetId)) {
       return cv2.warn('Invalid ID', 'Please provide a valid user ID or mention (17-20 digit number).');
     }
     if (isBotOwnerSync(targetId)) {
-      return cv2.warn('Safety Protection', 'You cannot globally blacklist the Bot Owner.');
+      return cv2.warn('Safety Protection', 'You cannot blacklist the Bot Owner.');
+    }
+    if (guild && (guild.ownerId === targetId || isExtraOwner(guild.id, targetId))) {
+      return cv2.warn('Safety Protection', 'You cannot blacklist the Server Owner or Extra Owners.');
     }
     if (client && client.user && targetId === client.user.id) {
-      return cv2.warn('Safety Protection', 'You cannot globally blacklist Athena.');
+      return cv2.warn('Safety Protection', 'You cannot blacklist Athena.');
+    }
+    if (db.isUserBotBlacklisted(targetId)) {
+      return cv2.warn('Already Blacklisted', `User ${formatUserLink(targetId, guild)} is already blacklisted.`);
     }
 
     const finalReason = reason || 'Violation of Athena Bot Rules & Security Protocols';
-    db.addUserToBotBlacklist(targetId, finalReason);
+    db.addUserToBotBlacklist(targetId, finalReason, moderator?.id || null);
 
     // Automatically trigger immediate persistent cloud backup
     if (client) {
@@ -5120,53 +5107,82 @@ async function handleBotBlacklist(action, targetId, reason = null, client = null
       }).catch(() => null);
     }
 
-    return cv2.success(
-      'User Globally Blacklisted',
-      `User ${formatUserLink(targetId)} (\`${targetId}\`) has been **globally banned** from Athena Prime.\n\n` +
-      `> -# **__Reason:__** \`${finalReason}\`\n` +
-      `> -# **__Scope:__** All commands (\`!help\`, \`!ping\`, modules) are permanently locked across all servers, including server-owner privileges.\n` +
-      `> -# **__Cloud Sync:__** Database snapshot synced to Discord cloud backup with updated blacklist manifest.\n` +
-      `> -# **__Notice:__** Whenever this user invokes any bot command, Athena will immediately display the global ban notice.`
-    );
+    const userLink = formatUserLink(targetId, guild);
+    const modLink = moderator ? formatUserLink(moderator, guild) : '`System`';
+    const appealText = guild?.rulesChannelId ? formatChannelLink(guild.rulesChannelId, guild) : 'unknown';
+
+    const embed = new EmbedBuilder()
+      .setColor(0x2b2d31)
+      .setDescription(
+        `User: ${userLink} | Moderator: ${modLink}\n\n` +
+        `Duration: Permanent | Appeal: ${appealText}\n` +
+        `User Blacklisted`
+      );
+
+    const badgePath = path.join(process.cwd(), 'src/assets/blacklist_badge.png');
+    if (fsSync.existsSync(badgePath)) {
+      const attachment = new AttachmentBuilder(badgePath, { name: 'blacklist_badge.png' });
+      embed.setThumbnail('attachment://blacklist_badge.png');
+      return { embeds: [embed], files: [attachment] };
+    }
+
+    return { embeds: [embed] };
   } else if (action === 'remove' || action === 'unban' || action === 'unblock') {
     if (!targetId || !/^\d{17,20}$/.test(targetId)) {
       return cv2.warn('Invalid ID', 'Please provide a valid user ID or mention to unban.');
     }
+    if (!db.isUserBotBlacklisted(targetId)) {
+      return cv2.warn('Not Blacklisted', `User ${formatUserLink(targetId, guild)} is not currently blacklisted.`);
+    }
+
     const success = db.removeUserFromBotBlacklist(targetId);
     if (success) {
-      // Automatically trigger immediate persistent cloud backup
       if (client) {
         import('../utils/cloudSync.js').then(cs => {
           if (cs.createCloudBackup) cs.createCloudBackup(client, `Global Blacklist Unban: ${targetId}`).catch(() => null);
         }).catch(() => null);
       }
 
-      return cv2.success(
-        'User Globally Unbanned',
-        `User ${formatUserLink(targetId)} (\`${targetId}\`) has been **unbanned** from Athena Prime.\n\n` +
-        `> -# **__Status:__** Full global access to all bot commands and features has been restored.\n` +
-        `> -# **__Cloud Sync:__** Database snapshot synced to Discord cloud backup.`
-      );
+      const userLink = formatUserLink(targetId, guild);
+      const modLink = moderator ? formatUserLink(moderator, guild) : '`System`';
+
+      const embed = new EmbedBuilder()
+        .setColor(0x2b2d31)
+        .setDescription(
+          `User: ${userLink} | Moderator: ${modLink}\n\n` +
+          `Status: Restrictions Lifted\n` +
+          `User Unblacklisted`
+        );
+
+      const badgePath = path.join(process.cwd(), 'src/assets/blacklist_badge.png');
+      if (fsSync.existsSync(badgePath)) {
+        const attachment = new AttachmentBuilder(badgePath, { name: 'blacklist_badge.png' });
+        embed.setThumbnail('attachment://blacklist_badge.png');
+        return { embeds: [embed], files: [attachment] };
+      }
+
+      return { embeds: [embed] };
     } else {
-      return cv2.warn('Not Blacklisted', `User ID \`${targetId}\` is not currently globally blacklisted.`);
+      return cv2.warn('Not Blacklisted', `User ID \`${targetId}\` is not currently blacklisted.`);
     }
   } else {
     // List
     const flagged = db.getBotBlacklist();
     if (flagged.length === 0) {
-      return cv2.info('No Blacklisted Users', 'There are currently no users on the global bot blacklist.');
+      return cv2.info('No Blacklisted Users', 'There are currently no users on the bot blacklist.');
     }
     const data = (db.getBotBlacklistData ? db.getBotBlacklistData() : db.cache.botBlacklistData) || {};
     const formattedList = flagged.map(id => {
       const entry = data[id];
       const r = entry?.reason || 'Violation of Athena Bot Rules';
+      const mod = entry?.moderatorId ? ` | Mod: ${formatUserLink(entry.moderatorId, guild)}` : '';
       const timeStr = entry?.timestamp ? ` (<t:${Math.floor(entry.timestamp / 1000)}:R>)` : '';
-      return `> -# **__User:__** ${formatUserLink(id)} (\`${id}\`)\n> -# **__Reason:__** \`${r}\`${timeStr}`;
+      return `> -# ${BULLET_EMOJI} **User:** ${formatUserLink(id, guild)} (\`${id}\`)${mod}\n> -# **Reason:** \`${r}\`${timeStr}`;
     }).join('\n\n');
 
     return cv2.danger(
-      'Globally Blacklisted Accounts',
-      `-# **__Total Flagged Users:__** \`${flagged.length}\`\n\n${formattedList}`
+      'Blacklisted Bot Accounts',
+      `-# **Total Blacklisted Users:** \`${flagged.length}\`\n\n${formattedList}`
     );
   }
 }

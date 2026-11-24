@@ -1487,30 +1487,35 @@ export async function handleEzal(message) {
     case 'botban':
     case 'globalblock':
     case 'gblock':
+    case 'bl':
+    case 'gban':
+    case 'botban':
     case 'userblacklist':
     case 'botblacklist': {
       const { commands } = await import('./security.js');
-      const gbanCmd = commands.find(c => c.name === 'gban');
-      if (gbanCmd) return gbanCmd.executePrefix(message, targetArgs);
+      const blCmd = commands.find(c => c.name === 'bl');
+      if (blCmd) return blCmd.executePrefix(message, targetArgs);
       break;
     }
+    case 'unbl':
     case 'gunban':
     case 'globalunban':
     case 'botunban':
     case 'globalunblock':
     case 'gunblock': {
       const { commands } = await import('./security.js');
-      const gunbanCmd = commands.find(c => c.name === 'gunban');
-      if (gunbanCmd) return gunbanCmd.executePrefix(message, targetArgs);
+      const unblCmd = commands.find(c => c.name === 'unbl');
+      if (unblCmd) return unblCmd.executePrefix(message, targetArgs);
       break;
     }
+    case 'bllist':
     case 'gbanlist':
     case 'globalbanlist':
     case 'botbanlist':
     case 'gblacklist': {
       const { commands } = await import('./security.js');
-      const gbanlistCmd = commands.find(c => c.name === 'gbanlist');
-      if (gbanlistCmd) return gbanlistCmd.executePrefix(message, targetArgs);
+      const bllistCmd = commands.find(c => c.name === 'bllist');
+      if (bllistCmd) return bllistCmd.executePrefix(message, targetArgs);
       break;
     }
     case 'db':

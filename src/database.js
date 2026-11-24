@@ -2274,7 +2274,7 @@ class Database {
     return this._botBlacklistSet.has(userId);
   }
 
-  addUserToBotBlacklist(userId, reason = null) {
+  addUserToBotBlacklist(userId, reason = null, moderatorId = null) {
     if (!this.cache.botBlacklist) this.cache.botBlacklist = [];
     if (!this.cache.botBlacklistData) this.cache.botBlacklistData = {};
     if (!this.cache.botBlacklist.includes(userId)) {
@@ -2285,6 +2285,7 @@ class Database {
     this.cache.botBlacklistData[userId] = {
       userId,
       reason: reason || 'Violation of Athena Bot Rules & Security Protocols',
+      moderatorId: moderatorId || null,
       timestamp: Date.now()
     };
     this.save();

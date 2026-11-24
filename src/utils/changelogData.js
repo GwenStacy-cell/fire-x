@@ -16,6 +16,42 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.9.3',
+    headline: 'Bot Command Blacklisting & Unblacklisting Suite (!bl / !unbl) with Custom Embed Telemetry',
+    summary: 'Introduced dedicated !bl and !unbl commands enabling Server Owners, Extra Owners, and Bot Owners to blacklist and unblacklist users from executing any bot commands. Deployed sleek embed cards matching exact specifications with nickname hyperlinks, moderator links, appeal status, and custom # thumbnail badges. Completely gates blacklisted accounts from all commands and interactions across servers.',
+    whatsNew: [
+      {
+        title: 'Dedicated Bot Blacklist Command (!bl <@user> [reason])',
+        desc: 'Quickly ban troublesome accounts from invoking any Athena commands. Renders an embed card detailing target user, moderator, duration (Permanent), appeal routing, and the official blacklist badge.'
+      },
+      {
+        title: 'Dedicated Bot Unblacklist Command (!unbl <@user>)',
+        desc: 'Instantly restore full command permissions with !unbl, outputting a confirmed "Status: Restrictions Lifted | User Unblacklisted" embed card.'
+      },
+      {
+        title: 'Full Alias & Execution Matrix',
+        desc: 'Supports intuitive aliases including !bl, !unbl, !botban, !botunban, !bban, !bunban, !bllist, alongside ezal routing.'
+      },
+      {
+        title: 'Strict Access Controls & Safety Protections',
+        desc: 'Enforced isExtraOwnerOrHigher clearance (Bot Owner, Server Owner, Extra Owners) with immutable protections preventing blacklisting of Bot Owners, Server Owners, Extra Owners, or Athena itself.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Wordfilter Decoupling',
+        desc: 'Renamed word filter management from !blacklist to !wordfilter (!wf), preventing command collisions with user blacklisting.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Moderator Tracking & Cloud Persistence',
+        desc: 'Updated addUserToBotBlacklist to record moderator IDs, persisting records across memory cache and cloud snapshots.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.9.2',
     headline: 'Clean Channel Hyperlinks Without Hash (#) Prefixes Across All Modules',
     summary: 'Refactored formatChannelLink across the entire bot to format channel hyperlinks cleanly as [channel-name](https://discord.com/channels/guild/channel) without a leading # prefix. Ensured voice channel join/leave/switch activity logs, control panels, and security telemetry display seamless, natural channel hyperlinks.',
