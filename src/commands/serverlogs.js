@@ -39,14 +39,14 @@ export async function setupServerLogsChannel(guild) {
   const config = db.getGuildConfig(guild.id);
   const sl = config.serverLogs || { enabled: false, defaultChannelId: null, categoryId: null, modules: {} };
 
-  // 1. Ensure Logs Category: ╭・Logs
+  // 1. Ensure Logs Category: Logs (Pure letters, no emojis/decorations)
   let category = sl.categoryId 
     ? guild.channels.cache.get(sl.categoryId) || await guild.channels.fetch(sl.categoryId).catch(() => null)
     : null;
 
   if (!category) {
     category = await guild.channels.create({
-      name: '╭・Logs',
+      name: 'Logs',
       type: ChannelType.GuildCategory,
       permissionOverwrites: [
         {
@@ -68,16 +68,18 @@ export async function setupServerLogsChannel(guild) {
     });
     sl.categoryId = category.id;
     markRestorationQueued(category.id);
+  } else if (category.name === '╭・Logs') {
+    await category.setName('Logs').catch(() => null);
   }
 
-  // 2. Ensure Text Channel: 📁・server-logs
+  // 2. Ensure Text Channel: server-logs (Pure letters, no emojis)
   let logChannel = sl.defaultChannelId
     ? guild.channels.cache.get(sl.defaultChannelId) || await guild.channels.fetch(sl.defaultChannelId).catch(() => null)
     : null;
 
   if (!logChannel) {
     logChannel = await guild.channels.create({
-      name: '📁・server-logs',
+      name: 'server-logs',
       type: ChannelType.GuildText,
       parent: category.id,
       permissionOverwrites: [
@@ -99,6 +101,8 @@ export async function setupServerLogsChannel(guild) {
       reason: 'Athena Server Logs Channel Auto-Creation'
     });
     markRestorationQueued(logChannel.id);
+  } else if (logChannel.name === '📁・server-logs' || logChannel.name === '📁 . server-logs' || logChannel.name.includes('📁')) {
+    await logChannel.setName('server-logs').catch(() => null);
   }
 
   sl.defaultChannelId = logChannel.id;
@@ -111,8 +115,8 @@ export async function setupServerLogsChannel(guild) {
     color: '#5865F2',
     attributes: {
       'Status': 'Active & Operational',
-      'Target Channel': formatChannelLink(logChannel.id, guild),
-      'Category': formatChannelLink(category.id, guild),
+      'Target Channel': formatChannelLink(logChannel, guild),
+      'Category': formatChannelLink(category, guild),
       'Monitored Events': 'Channels, Voice Status, Roles, Server Settings, Emojis, Webhooks, Invites'
     },
     client: guild.client
@@ -142,7 +146,7 @@ export async function bindServerLogsChannel(guild, targetChannel) {
     color: '#43B581',
     attributes: {
       'Status': 'Successfully Bound',
-      'Target Channel': formatChannelLink(targetChannel.id, guild),
+      'Target Channel': formatChannelLink(targetChannel, guild),
       'Assigned By': 'Server Administrator',
       'Coverage': 'All live server modifications will now route to this channel.'
     },
@@ -217,7 +221,7 @@ export function buildServerLogsPanel(guild, note = null) {
           `> -# **__Monitored Modification Suites:__**\n` +
           modulesList +
           `\n\n> -# **__Commands & Usage:__**\n` +
-          `> ${BULLET_EMOJI} \`!serverlogs setup\` — Automatically create \`╭・Logs\` & \`📁・server-logs\`.\n` +
+          `> ${BULLET_EMOJI} \`!serverlogs setup\` — Automatically deploy \`Logs\` & \`server-logs\`.\n` +
           `> ${BULLET_EMOJI} \`!serverlogs bind <#channel>\` — Bind an existing text channel for logs.\n` +
           `> ${BULLET_EMOJI} \`!serverlogs test\` — Dispatch an immediate test verification embed.\n` +
           `> ${BULLET_EMOJI} \`!serverlogs disable\` — Toggle off or unbind logging.`
@@ -252,7 +256,7 @@ export async function handleServerLogsInteraction(interaction) {
     await interaction.deferUpdate().catch(() => null);
     try {
       const { logChannel } = await setupServerLogsChannel(guild);
-      return interaction.editReply(buildServerLogsPanel(guild, `Auto-created and bound ${formatChannelLink(logChannel.id, guild)} successfully!`));
+      return interaction.editReply(buildServerLogsPanel(guild, `Auto-created and bound ${formatChannelLink(logChannel, guild)} successfully!`));
     } catch (err) {
       console.error('[ServerLogs] Auto-setup button error:', err);
       return interaction.followUp(cv2.danger(`Setup Failed | ${WRONG_EMOJI}`, `Could not create channels: ${err.message}`));

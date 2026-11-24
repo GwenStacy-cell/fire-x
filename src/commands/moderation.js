@@ -2,7 +2,7 @@ import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJ
 import { PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import { parseDuration, canModerate, logToSecurityChannel, isBotOwnerSync, isExtraOwner, getUserTierName, cleanDisplayName, renderSleekProgressBar, sendGuildMemberDM } from '../utils/helpers.js';
+import { parseDuration, canModerate, logToSecurityChannel, isBotOwnerSync, isExtraOwner, getUserTierName, cleanDisplayName, renderSleekProgressBar, sendGuildMemberDM, formatChannelLink } from '../utils/helpers.js';
 import { executeQuarantine, executeUnquarantine } from './security.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 
@@ -2377,9 +2377,7 @@ async function handlePurge(guild, channel, moderator, amount, triggerMessage = n
     logComps.push({ type: 14, divider: true });
     logComps.push({ type: 10, content: `-# **Action:** Bulk Delete (Purge)` });
     logComps.push({ type: 10, content: `-# **Executed By:** [${cleanDisplayName(moderator.displayName || moderator.user?.username || 'Moderator')}](https://discord.com/users/${moderator.id || moderator}) [${modTier}]` });
-    let safeChannel = channel.name.replace(/[^a-zA-Z0-9\- ]/g, '').trim();
-    if (!safeChannel) safeChannel = 'Channel';
-    logComps.push({ type: 10, content: `-# **Channel:** [\# ${safeChannel}](https://discord.com/channels/${guild.id}/${channel.id})` });
+    logComps.push({ type: 10, content: `-# **Channel:** ${formatChannelLink(channel, guild)}` });
     logComps.push({ type: 10, content: `-# **Messages Purged:** ${actualAmount}` });
     
     if (triggerMessage) {

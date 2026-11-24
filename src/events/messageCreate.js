@@ -8,7 +8,7 @@ import commandMap from '../commands/loader.js';
 import { executeQuarantine } from '../commands/security.js';
 import { handleEzal, handleBackup, activeEzalSessions } from '../commands/ezal.js';
 import statsDB from '../statsDB.js';
-import { canModerate, logToSecurityChannel, isAuthorized, isBotOwnerSync, getPresenceStatus, findClosestCommand, getUserTierName, cleanDisplayName, checkCommandClearance } from '../utils/helpers.js';
+import { canModerate, logToSecurityChannel, isAuthorized, isBotOwnerSync, getPresenceStatus, findClosestCommand, getUserTierName, cleanDisplayName, checkCommandClearance, formatChannelLink } from '../utils/helpers.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { isBotAuthorized, rawDeleteWebhook } from '../utils/antinuke.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
@@ -1293,7 +1293,7 @@ export default {
             { type: 10, content: `-# **Author:** [${cleanDisplayName(message.author.displayName || message.author.username)}](https://discord.com/users/${message.author.id}) (\`${message.author.id}\`) [${authorTier}]` },
             { type: 10, content: `-# **Deleted By:** Athena Prime (Anti-Invite Auto-Mod)` },
             { type: 10, content: `-# **Reason:** Unauthorized Discord invite promotion: ${inviteList}` },
-            { type: 10, content: `-# **Channel:** [\# ${message.channel.name}](https://discord.com/channels/${message.guild.id}/${message.channel.id})` },
+            { type: 10, content: `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}` },
             { type: 14, divider: true },
             { type: 10, content: `-# **Message Content (Highlighted):**` }
           ];
@@ -1378,7 +1378,7 @@ export default {
             { type: 10, content: `-# **Deleted By:** Athena Prime (Anti-Link Auto-Mod)` },
             { type: 10, content: `-# **Filtered URL(s):** ${urlList}` },
             { type: 10, content: `-# **Reason:** Unauthorized link/URL detected: ${urlList}` },
-            { type: 10, content: `-# **Channel:** [\# ${message.channel.name}](https://discord.com/channels/${message.guild.id}/${message.channel.id})` },
+            { type: 10, content: `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}` },
             { type: 14, divider: true },
             { type: 10, content: `-# **Message Content (Highlighted):**` }
           ];
@@ -1423,7 +1423,7 @@ export default {
                      { type: 10, content: `-# **Author:** <@${message.author.id}> (\`${message.author.id}\`) [${authorTier}]` },
                      { type: 10, content: `-# **Deleted By:** Athena Prime (Hidden URL Filter)` },
                      { type: 10, content: `-# **Deceptive URL:** \`||${deceptiveUrl}||\`` },
-                     { type: 10, content: `-# **Channel:** [\# ${message.channel.name}](https://discord.com/channels/${message.guild.id}/${message.channel.id})` },
+                     { type: 10, content: `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}` },
                      { type: 14, divider: true },
                      { type: 10, content: `-# **Athena Diagnostic Logs**` }
                    ]
@@ -1513,7 +1513,7 @@ export default {
               { type: 10, content: `-# **Author:** [${cleanDisplayName(message.author.displayName || message.author.username)}](https://discord.com/users/${message.author.id}) (\`${message.author.id}\`) [${authorTier}]` },
               { type: 10, content: `-# **Deleted By:** Athena Prime (Blacklisted Word Auto-Mod)` },
               { type: 10, content: `-# **Reason:** Blacklisted phrase matched: ${wordList}` },
-              { type: 10, content: `-# **Channel:** [\# ${message.channel.name}](https://discord.com/channels/${message.guild.id}/${message.channel.id})` },
+              { type: 10, content: `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Message Content (Highlighted):**` }
             ];

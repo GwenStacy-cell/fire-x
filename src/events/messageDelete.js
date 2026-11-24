@@ -2,7 +2,7 @@ import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis
 import db from '../database.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { AuditLogEvent } from 'discord.js';
-import { cleanDisplayName } from '../utils/helpers.js';
+import { cleanDisplayName, formatChannelLink } from '../utils/helpers.js';
 
 export default {
   name: 'messageDelete',
@@ -107,9 +107,7 @@ if (!message.guild) return;
       innerComps.push({ type: 10, content: `-# **Filtered URL(s):** ${uniqueUrls.map(u => `\`||${u}||\``).join(', ')}` });
     }
 
-    let safeChannel = message.channel.name.replace(/[^a-zA-Z0-9\- ]/g, '').trim();
-      if (!safeChannel) safeChannel = 'Channel';
-    innerComps.push({ type: 10, content: `-# **Channel:** [${safeChannel}](https://discord.com/channels/${message.guild.id}/${message.channel.id})` });
+    innerComps.push({ type: 10, content: `-# **Channel:** ${formatChannelLink(message.channel, message.guild)}` });
     
     innerComps.push({ type: 14, divider: true });
     

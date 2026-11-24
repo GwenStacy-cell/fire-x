@@ -16,6 +16,34 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '24 November 2026',
+    version: 'v3.8.7',
+    headline: 'Unbreakable Channel Markdown Links & Emoji-Free Channel Names',
+    summary: 'Resolved a critical Discord markdown parser flaw where channel links with emojis (e.g. [#📁 . server-logs] and [#🎧 . General VC]) failed to parse, breaking into raw text and URLs. Introduced cleanChannelName to sanitize all channel link labels by stripping custom emojis, native pictographs, variation selectors, and decorative symbols while preserving pure letters, combining marks, numbers, and clean hyphens/spaces. Additionally eliminated emojis from automated server-logs channel and category deployment.',
+    whatsNew: [
+      {
+        title: 'Unbreakable Channel Links via cleanChannelName',
+        desc: 'Engineered a specialized channel name sanitizer in helpers.js that removes all emojis, variation selectors, zero-width spaces, and box-drawing symbols so channel links never fail or break into raw URLs in Discord markdown.'
+      },
+      {
+        title: 'Emoji-Free Server Logs Deployment',
+        desc: 'Updated automated server logs infrastructure deployment to name channels and categories using pure letters (e.g. server-logs and Logs) with auto-sanitization of legacy emoji-prefixed channels.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Standardized Event Channel Linking',
+        desc: 'Standardized voice status logs, channel creations, channel updates, and auto-mod message logs to consistently route through formatChannelLink.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Fixed Failed Markdown Channel Links',
+        desc: 'Eliminated markdown link splitting on Discord desktop, web, and mobile where voice leave logs and channel bound embeds displayed raw bracketed text and plain URL links.'
+      }
+    ]
+  },
+  {
+    date: '24 November 2026',
     version: 'v3.8.6',
     headline: 'Mathematical Bold Sans-Serif Subtitles & Event-Driven Real-Time ServerStats Auto-Updating',
     summary: 'Completely overhauled Voice Channel Status ServerStats to deliver pixel-perfect mathematical sans-serif bold subtitles (e.g. 𝗢𝗻𝗹𝗶𝗻𝗲: 𝟭𝟴𝟱, 𝗠𝗲𝗺𝗯𝗲𝗿𝘀: 𝟯𝟯𝟬𝟲, 𝗩𝗖 𝗨𝘀𝗲𝗿𝘀: 𝟰, 𝗔𝗰𝘁𝗶𝘃𝗲 𝗩𝗖: 𝟯) identical to target reference designs without text clipping. Resolved the Online: 0 presence reporting defect by utilizing withPresences member hydration and live voice state union. Deployed debounced gateway event hooks across voiceStateUpdate, guildMemberAdd, guildMemberRemove, and presenceUpdate for instant, real-time counter auto-updating with Connect: false permission lockouts.',

@@ -107,7 +107,7 @@ export default {
 
         const { executor, reason } = await getAuditExecutorAndReason(guild, AuditLogEvent.ChannelUpdate, newChannel.id);
         const executorStr = executor ? `${formatUserLink(executor, guild)} (\`${executor.id}\`)` : 'Unknown';
-        const channelLink = `[#${newChannel.name}](https://discord.com/channels/${guild.id}/${newChannel.id})`;
+        const channelLink = formatChannelLink(newChannel, guild);
 
         const updateEmbed = buildServerLogEmbed({
           title: 'Channel updated',

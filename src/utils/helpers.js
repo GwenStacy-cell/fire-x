@@ -1172,8 +1172,36 @@ export function formatUserLink(userOrMemberOrId, guild = null) {
 }
 
 /**
+ * Strips all native emojis, custom Discord emojis, variation selectors, decorative symbols,
+ * and markdown-breaking characters from a channel name. Preserves only letters, combining vowel marks,
+ * digits, hyphens, underscores, and clean spaces. This guarantees Discord's markdown parser
+ * will NEVER break or fail the channel link.
+ * @param {string} name - Raw channel name
+ * @returns {string} Sanitized letter/number-only channel name
+ */
+export function cleanChannelName(name) {
+  if (!name) return 'channel';
+  let clean = String(name)
+    // 1. Strip custom Discord emojis <:name:id> or <a:name:id>
+    .replace(/<a?:[a-zA-Z0-9_]+:\d+>/g, '')
+    // 2. Strip Unicode variation selectors and zero-width spaces (e.g. \uFE0F)
+    .replace(/[\uFE00-\uFE0F\u200B-\u200D\uFEFF]/g, '')
+    // 3. Keep ONLY letters (from any language), combining vowel marks, digits, spaces, hyphens, underscores
+    // Strips emojis, box drawing characters (╭, ╰, etc.), bullets, decorative dots/slashes
+    .replace(/[^\p{L}\p{M}\p{N}\s\-_]/gu, '')
+    // 4. Normalize multiple spaces
+    .replace(/\s+/g, ' ')
+    .trim()
+    // 5. Strip leading or trailing hyphens, underscores, or spaces
+    .replace(/^[\s\-_]+|[\s\-_]+$/g, '')
+    .trim();
+
+  return clean || 'channel';
+}
+
+/**
  * Formats a channel as a clickable markdown text link: [#channel-name](https://discord.com/channels/guildId/channelId).
- * Never uses native <#channelId> mentions.
+ * Never uses native <#channelId> mentions. Always cleans emojis to avoid failing the link.
  * @param {GuildChannel|string} channelOrId - Discord channel object or channel ID
  * @param {Guild|string|null} guildOrGuildId - Guild instance or guild ID string
  * @returns {string} Markdown channel text link
@@ -1199,12 +1227,16 @@ export function formatChannelLink(channelOrId, guildOrGuildId = null) {
         const ch = guildOrGuildId.channels.cache.get(id);
         if (ch) name = ch.name;
       }
+      if (!name && guildOrGuildId.client?.channels?.cache) {
+        const ch = guildOrGuildId.client.channels.cache.get(id);
+        if (ch) name = ch.name;
+      }
     } else {
       gid = gid || String(guildOrGuildId);
     }
   }
 
-  const safeName = name ? String(name).replace(/[\[\]\(\)\\*~_`|]/g, '').trim() : 'channel';
+  const safeName = cleanChannelName(name || 'channel');
   const targetGid = gid || '@me';
   return `[#${safeName}](https://discord.com/channels/${targetGid}/${id || ''})`;
 }

@@ -144,7 +144,7 @@ export async function logVoiceChannelStatusUpdate(guild, channelId, newStatus) {
   const channel = guild.channels.cache.get(channelId) || await guild.channels.fetch(channelId).catch(() => null);
   const channelName = channel ? channel.name : 'Unknown Voice Channel';
   const channelLink = channel 
-    ? `[🔊 ${channel.name}](https://discord.com/channels/${guild.id}/${channelId})` 
+    ? formatChannelLink(channel, guild) 
     : `\`${channelId}\``;
 
   const embed = buildServerLogEmbed({

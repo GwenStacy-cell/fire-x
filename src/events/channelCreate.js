@@ -10,7 +10,7 @@ import {
 } from '../utils/antinuke.js';
 import embed from '../embed.js';
 import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
-import { formatUserLink } from '../utils/helpers.js';
+import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export default {
   name: 'channelCreate',
@@ -82,7 +82,7 @@ export default {
         const isVoice = channel.type === 2 || channel.type === 'GuildVoice';
         const isCat = channel.type === 4 || channel.type === 'GuildCategory';
         const title = isCat ? 'Category created' : (isVoice ? 'Voice channel created' : 'Text channel created');
-        const channelLink = `[#${channel.name}](https://discord.com/channels/${channel.guild.id}/${channel.id})`;
+        const channelLink = formatChannelLink(channel, channel.guild);
 
         const createEmbed = buildServerLogEmbed({
           title,
