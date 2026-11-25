@@ -15,6 +15,35 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '26 November 2026',
+    version: 'v4.0.8',
+    headline: 'Ultra-Low-Latency Anti-Nuke & 50-Burst Zero-Contention Hardening',
+    summary: 'Squeezed out remaining pre-ban latency, closed Anti-Stab and Linked Role timing bypasses, upgraded Undici to HTTP/2 + Keep-Alive with direct HTTP 429 retry, and enforced strict Ban-First isolation across 50-action nuke bursts.',
+    whatsNew: [],
+    improvements: [
+      {
+        title: '6 Pre-Warmed Keep-Alive Sockets & Direct 429 Recovery',
+        desc: 'Expanded pre-warmed Undici TLS pool headroom (6 active keep-alive sockets across 128 max connections), eliminated per-packet audit ring array allocations, and added direct socket HTTP 429 retry inside rawBan.'
+      },
+      {
+        title: 'Strict Zero-Contention Ban-First Isolation',
+        desc: 'Deferred non-critical REST polls, punish cleanup sweeps, role-member batch restores (chunks of 5), and main-thread DB JSON serialization while bans or raids are in flight.'
+      }
+    ],
+    fixes: [
+      {
+        title: '0ms Wiretap Anti-Stab & Linked Role Fast-Fail',
+        desc: 'Intercepted Administrator stripping on Athena Firewall / Unbypassable / integration roles at 0ms packet speed, fixed roleUpdate reorder AuditLogEvent ID (31 vs 11), guarded both sentinel roles Ban-First in guildMemberUpdate, and tightened Linked Role/audit wait windows.'
+      },
+      {
+        title: 'Webhook Logs, Module Parity & Instant Member Hydration',
+        desc: 'Stopped duplicate bot-join bans and webhook log suppression, aligned handleAuditLogEntry module falsiness checks, and triggered background member cache hydration right after enabling security.'
+      }
+    ],
+    tip: 'Use !ss and !combatops to inspect 32/32 Anti-Nuke shield readiness and live single-shot strike speeds.',
+    author: '@Dev Porsche </>'
+  },
+  {
     date: '25 November 2026',
     version: 'v4.0.7',
     headline: 'Minimalist Grey Subtext !ping Card (No Avatar Accessory)',

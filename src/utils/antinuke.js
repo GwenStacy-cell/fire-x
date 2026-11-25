@@ -39,10 +39,13 @@ export const dispatcher = new Agent({
 setGlobalDispatcher(dispatcher);
 
 // Active multi-socket keep-alive heartbeat daemon:
-// Keeps multiple parallel Undici TLS sockets to discord.com permanently warm, pre-connected, and top-of-pool
+// Keeps parallel Undici TLS/HTTP2 sockets to discord.com permanently warm and top-of-pool
 const prewarmPool = () => {
   const pingOpts = { origin: 'https://discord.com', path: '/api/v10/gateway', method: 'GET' };
   Promise.allSettled([
+    dispatcher.request(pingOpts).then(r => r.body?.dump?.()),
+    dispatcher.request(pingOpts).then(r => r.body?.dump?.()),
+    dispatcher.request(pingOpts).then(r => r.body?.dump?.()),
     dispatcher.request(pingOpts).then(r => r.body?.dump?.()),
     dispatcher.request(pingOpts).then(r => r.body?.dump?.()),
     dispatcher.request(pingOpts).then(r => r.body?.dump?.())
@@ -154,8 +157,9 @@ export const combatTelemetry = {
 
 // ==========================================
 // ⚡ DIRECT API STRIKE (0ms OVERHEAD)
-// Direct REST DELETE/PUT to Discord ban endpoint over pre-warmed TCP_NODELAY socket.
+// Direct REST PUT to Discord ban endpoint over pre-warmed TCP_NODELAY TLS/H2 socket.
 // Completely bypasses discord.js cache and internal queues for instant sub-12ms execution.
+// Handles HTTP 429 rate limits directly over the warm socket instead of dropping to d.js fallback.
 // ==========================================
 const PRECOMPILED_BAN_BODY = '{"delete_message_seconds":0}';
 const authHeaderCache = new Map(); // token -> 'Bot <token>'
@@ -186,34 +190,68 @@ function encodeAuditReason(reason) {
 
 export async function rawBan(guildId, userId, token, reason = '[ATHENA] Anti-Nuke: Instant elimination', metadata = {}) {
   const startTime = performance.now();
+  const authHeader = getBotAuthHeader(token);
+  const encodedReason = encodeAuditReason(reason);
+  const banPath = `/api/v10/guilds/${guildId}/bans/${userId}`;
+  const reqOpts = {
+    origin: 'https://discord.com',
+    path: banPath,
+    method: 'PUT',
+    headers: {
+      'authorization': authHeader,
+      'content-type': 'application/json',
+      'x-audit-log-reason': encodedReason
+    },
+    body: PRECOMPILED_BAN_BODY
+  };
+
   try {
-    const { statusCode, body } = await dispatcher.request({
-      origin: 'https://discord.com',
-      path: `/api/v10/guilds/${guildId}/bans/${userId}`,
-      method: 'PUT',
-      headers: {
-        'authorization': getBotAuthHeader(token),
-        'content-type': 'application/json',
-        'x-audit-log-reason': encodeAuditReason(reason)
-      },
-      body: PRECOMPILED_BAN_BODY
-    });
-    // Non-blocking drain so banStrikePromise / waitForInFlightPunishments resolve immediately on status headers
-    body?.dump?.().catch(() => null);
+    let statusCode = 0;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await dispatcher.request(reqOpts);
+      statusCode = res.statusCode;
+
+      if (statusCode === 200 || statusCode === 204) {
+        res.body?.dump?.().catch(() => null);
+        const latencyMs = performance.now() - startTime;
+        queueMicrotask(() => {
+          combatTelemetry.recordStrike({
+            guildId,
+            userId,
+            latencyMs,
+            status: 'SUCCESS (204 No Content)',
+            statusCode,
+            reason,
+            actionType: metadata.actionType || (reason.includes('Join') ? 'GUILD_MEMBER_ADD (0ms Join)' : reason.includes('ChannelDelete') ? 'CHANNEL_DELETE (Direct)' : reason.includes('RoleDelete') ? 'GUILD_ROLE_DELETE (Direct)' : 'AUDIT_LOG_STRIKE')
+          });
+        });
+        return true;
+      }
+
+      if (statusCode === 429 && attempt < 2) {
+        const rateData = await res.body?.json?.().catch(() => null);
+        const retryMs = Math.min(5000, Math.max(50, Math.ceil((Number(rateData?.retry_after) || 0.25) * 1000)));
+        await new Promise(r => setTimeout(r, retryMs));
+        continue;
+      }
+
+      res.body?.dump?.().catch(() => null);
+      break;
+    }
+
     const latencyMs = performance.now() - startTime;
-    const ok = statusCode === 200 || statusCode === 204;
     queueMicrotask(() => {
       combatTelemetry.recordStrike({
         guildId,
         userId,
         latencyMs,
-        status: ok ? 'SUCCESS (204 No Content)' : `REJECTED (${statusCode})`,
+        status: `REJECTED (${statusCode})`,
         statusCode,
         reason,
-        actionType: metadata.actionType || (reason.includes('Join') ? 'GUILD_MEMBER_ADD (0ms Join)' : reason.includes('ChannelDelete') ? 'CHANNEL_DELETE (Direct)' : reason.includes('RoleDelete') ? 'GUILD_ROLE_DELETE (Direct)' : 'AUDIT_LOG_STRIKE')
+        actionType: metadata.actionType || 'AUDIT_LOG_STRIKE'
       });
     });
-    return ok;
+    return false;
   } catch (err) {
     const latencyMs = performance.now() - startTime;
     queueMicrotask(() => {
@@ -421,12 +459,16 @@ export function markAuditEntryHandled(entryId) {
 
 export function recordAuditEntry(guildId, entry) {
   if (!guildId || !entry) return;
-  const list = auditRing.get(guildId) || [];
-  if (entry.id && list.some(e => e.id === entry.id)) return;
-  const now = Date.now();
+  let list = auditRing.get(guildId);
+  if (!list) {
+    list = [];
+    auditRing.set(guildId, list);
+  } else if (entry.id && list.some(e => e.id === entry.id)) {
+    return;
+  }
 
-  const cleanList = list.filter(e => now - e.timestamp < RING_TTL_MS);
-  cleanList.unshift({
+  const now = Date.now();
+  list.unshift({
     id: entry.id,
     action: entry.action,
     executor: entry.executor,
@@ -435,11 +477,13 @@ export function recordAuditEntry(guildId, entry) {
     timestamp: now
   });
 
-  if (cleanList.length > RING_MAX_ENTRIES) {
-    cleanList.length = RING_MAX_ENTRIES;
+  if (list.length > RING_MAX_ENTRIES) {
+    list.length = RING_MAX_ENTRIES;
   }
-  auditRing.set(guildId, cleanList);
-  notifyRingResolvers(guildId, cleanList[0]);
+  while (list.length > 0 && now - list[list.length - 1].timestamp >= RING_TTL_MS) {
+    list.pop();
+  }
+  notifyRingResolvers(guildId, list[0]);
 }
 
 export function getAuditRingTelemetry(guildId) {
@@ -778,6 +822,14 @@ const activeAttacks = new Map(); // guildId -> { startTime, attackerId, timer }
 
 export function isGuildUnderAttack(guildId) {
   return activeAttacks.has(guildId);
+}
+
+export function isAnyGuildUnderAttack() {
+  return activeAttacks.size > 0;
+}
+
+if (typeof db.setAttackStateChecker === 'function') {
+  db.setAttackStateChecker(isAnyGuildUnderAttack);
 }
 
 export function setGuildUnderAttack(guildId, attackerId = null, durationMs = 60_000) {
@@ -1363,16 +1415,29 @@ export async function executeIntelligentRoleRepair(guild, roleId, fallbackRole =
     const targetPos = Math.min(Math.max(1, rawPos), Math.max(1, botHighest - 1));
     await newRole.setPosition(targetPos, { relative: false, reason: 'Athena Anti-Nuke: Role Hierarchy Alignment' }).catch(() => null);
 
-    // Re-assign restored role back to previous members in parallel
+    // Wait until all active hostile bans settle before batch-restoring role memberships (zero REST 429 contention)
+    await waitForInFlightPunishments(guild.id);
+
+    // Re-assign restored role back to previous members in rate-limit safe batches of 5
     if (membersToRestore && membersToRestore.length > 0) {
-      Promise.allSettled(membersToRestore.map(async mId => {
-        try {
-          const m = guild.members.cache.get(mId) || await guild.members.fetch(mId).catch(() => null);
-          if (m && !m.roles.cache.has(newRole.id)) {
-            await m.roles.add(newRole, 'Athena Anti-Nuke: Re-assigning restored role to member');
-          }
-        } catch {}
-      })).catch(() => null);
+      const BATCH_SIZE = 5;
+      for (let i = 0; i < membersToRestore.length; i += BATCH_SIZE) {
+        if (inFlightPunishments.has(guild.id)) {
+          await waitForInFlightPunishments(guild.id);
+        }
+        const batch = membersToRestore.slice(i, i + BATCH_SIZE);
+        await Promise.allSettled(batch.map(async mId => {
+          try {
+            const m = guild.members.cache.get(mId) || await guild.members.fetch(mId).catch(() => null);
+            if (m && !m.roles.cache.has(newRole.id)) {
+              await m.roles.add(newRole, 'Athena Anti-Nuke: Re-assigning restored role to member');
+            }
+          } catch {}
+        }));
+        if (i + BATCH_SIZE < membersToRestore.length) {
+          await new Promise(r => setTimeout(r, 120));
+        }
+      }
     }
 
     restorationRegistry.restoredRoles.set(roleId, newRole.id);
@@ -1402,14 +1467,18 @@ export async function reconcileGuildStructure(guild) {
     for (const [chId, chSnap] of snap.channels.entries()) {
       if (chSnap.type === ChannelType.GuildCategory) continue;
 
-      // Find channel by mapped ID or by name
-      const liveCh = guild.channels.cache.find(c => 
-        c.name.toLowerCase() === chSnap.name.toLowerCase() && c.type === chSnap.type
+      // Prefer exact mapped restored channel ID before falling back to orphaned name match
+      const mappedId = restorationRegistry.restoredChannels.get(chId);
+      const liveCh = (mappedId && guild.channels.cache.get(mappedId)) || guild.channels.cache.find(c =>
+        c.name.toLowerCase() === chSnap.name.toLowerCase() &&
+        c.type === chSnap.type &&
+        !c.parentId
       );
 
       if (liveCh && chSnap.parentName && !liveCh.parentId) {
         // Child channel was created without parent — re-parent it now
-        const parentCat = guild.channels.cache.find(c => 
+        const mappedParentId = chSnap.parentId ? restorationRegistry.restoredCategories.get(chSnap.parentId) : null;
+        const parentCat = (mappedParentId && guild.channels.cache.get(mappedParentId)) || guild.channels.cache.find(c =>
           c.type === ChannelType.GuildCategory && c.name.toLowerCase() === chSnap.parentName.toLowerCase()
         );
         if (parentCat) {
@@ -1595,8 +1664,8 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
   // ⚡ BOT WHITELIST AUTHORIZATION:
   // Bots added to the Bot Whitelist (via !botwhitelist add) are granted 100% full immunity to ALL Anti-Nuke protections.
   // Unwhitelisting a bot (via !botwhitelist remove) revokes this immunity.
-  const member = guild.members.cache.get(executor.id) || executor;
-  const isBot = Boolean(executor.bot || guild.members.cache.get(executor.id)?.user?.bot);
+  const member = guild.members?.cache?.get(executor.id) || executor;
+  const isBot = Boolean(executor.bot || guild.members?.cache?.get(executor.id)?.user?.bot);
   if (isBot && isBotAuthorized(guild, executor.id)) return true;
 
   // Check direct eventType whitelist (supports both user IDs and cached role whitelists)
@@ -1861,19 +1930,23 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
           }
         }
 
-        // DM fire-and-forget (ONLY for human users, NEVER bots, and only if actually punished)
+        // Defer DM cleanly behind Ban-First barrier (ZERO REST traffic before ban confirms)
         if (!executor.bot && !result.startsWith('Total failure') && !result.startsWith('Hierarchy blocked')) {
-          const cachedMember = guild.members.cache.get(executor.id);
-          const sendDm = (m) => {
-            m?.send(cv2.danger('Eliminated — Athena Prime Firewall',
-              `You have been permanently banned from **${guild.name}**.\n\n**Violation:** ${eventType}\n\n*Athena Prime detected and neutralized your attack before a second action could execute.*`
-            )).catch(() => null);
-          };
-          if (cachedMember) {
-            sendDm(cachedMember);
-          } else {
-            guild.members.fetch(executor.id).then(sendDm).catch(() => null);
-          }
+          queueMicrotask(() => {
+            waitForInFlightPunishments(guild.id).then(() => {
+              const cachedMember = guild.members?.cache?.get(executor.id);
+              const sendDm = (m) => {
+                m?.send?.(cv2.danger('Eliminated — Athena Prime Firewall',
+                  `You have been permanently banned from **${guild.name}**.\n\n**Violation:** ${eventType}\n\n*Athena Prime detected and neutralized your attack before a second action could execute.*`
+                ))?.catch?.(() => null);
+              };
+              if (cachedMember) {
+                sendDm(cachedMember);
+              } else {
+                guild.members?.fetch?.(executor.id)?.then?.(sendDm)?.catch?.(() => null);
+              }
+            }).catch(() => null);
+          });
         }
       } else if (punishment === 'kick') {
         const executorMember = await guild.members.fetch(executor.id).catch(() => null);
@@ -1895,26 +1968,8 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
       result = `Hierarchy blocked (${err.message})`;
     }
 
-    // ⚡ Mark guild under attack & trigger triple rogue cleanup sweep
+    // ⚡ Mark guild under attack cleanly; rogue spam sweeps run strictly AFTER ALL in-flight bans settle
     setGuildUnderAttack(guild.id, executor.id, 60_000);
-    const isChannelOrNuke = eventType.toLowerCase().includes('channel') ||
-                            eventType.toLowerCase().includes('nuke') ||
-                            eventType.toLowerCase().includes('creation');
-    if (isChannelOrNuke) {
-      annihilateRogueChannels(guild, executor.id).catch(() => null);
-      setTimeout(() => annihilateRogueChannels(guild, executor.id).catch(() => null), 1200);
-      setTimeout(() => annihilateRogueChannels(guild, executor.id).catch(() => null), 3000);
-    }
-
-    const isRoleOrNuke = eventType.toLowerCase().includes('role') ||
-                         eventType.toLowerCase().includes('nuke') ||
-                         eventType.toLowerCase().includes('creation');
-    if (isRoleOrNuke) {
-      annihilateRogueRoles(guild, executor.id).catch(() => null);
-      setTimeout(() => annihilateRogueRoles(guild, executor.id).catch(() => null), 1200);
-      setTimeout(() => annihilateRogueRoles(guild, executor.id).catch(() => null), 3000);
-    }
-
     return result;
   })();
 
@@ -1922,11 +1977,30 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
   trackInFlightPunishment(guild.id, executionPromise);
   const finalResult = await executionPromise;
 
-  // Upgrade 1: Cascade Bot Inviter Punishment strictly AFTER primary ban settles (zero REST contention)
+  const isChannelOrNuke = eventType.toLowerCase().includes('channel') ||
+                          eventType.toLowerCase().includes('nuke') ||
+                          eventType.toLowerCase().includes('creation');
+  const isRoleOrNuke = eventType.toLowerCase().includes('role') ||
+                       eventType.toLowerCase().includes('nuke') ||
+                       eventType.toLowerCase().includes('creation');
   const wasBot = executor?.bot || guild.members.cache.get(executor.id)?.user?.bot;
-  if (wasBot && executor.id !== guild.client.user.id) {
-    waitForInFlightPunishments(guild.id).then(() => cascadeToInviter(guild, executor.id)).catch(() => null);
-  }
+
+  // Execute post-ban cascade & spam sweeps ONLY once ALL active bans settle
+  waitForInFlightPunishments(guild.id).then(() => {
+    if (isChannelOrNuke) {
+      annihilateRogueChannels(guild, executor.id).catch(() => null);
+      setTimeout(() => annihilateRogueChannels(guild, executor.id).catch(() => null), 1200).unref();
+      setTimeout(() => annihilateRogueChannels(guild, executor.id).catch(() => null), 3000).unref();
+    }
+    if (isRoleOrNuke) {
+      annihilateRogueRoles(guild, executor.id).catch(() => null);
+      setTimeout(() => annihilateRogueRoles(guild, executor.id).catch(() => null), 1200).unref();
+      setTimeout(() => annihilateRogueRoles(guild, executor.id).catch(() => null), 3000).unref();
+    }
+    if (wasBot && executor.id !== guild.client.user.id) {
+      cascadeToInviter(guild, executor.id).catch(() => null);
+    }
+  }).catch(() => null);
 
   return finalResult;
 }
@@ -1991,11 +2065,13 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     executor = await waitForRingMatch(guild, auditType, targetId, eventType, 20);
   }
 
-  // ⚡ Step 2: If not in ring, use shared coalesced raw REST fetch over keep-alive socket
-  if (!executor) {
+  // ⚡ Step 2: If not in ring and NOT already in active raid lockdown, use shared coalesced raw REST fetch
+  // During active attack bursts, GUILD_AUDIT_LOG_ENTRY_CREATE WebSocket push delivers every event cleanly — zero REST audit spam!
+  if (!executor && !isGuildUnderAttack(guild.id)) {
     const token = guild.client.token;
     const delays = [0, 15, 30, 60, 100];
     for (let attempt = 0; attempt < delays.length; attempt++) {
+      if (isGuildUnderAttack(guild.id)) break;
       if (delays[attempt] > 0) {
         await new Promise(r => setTimeout(r, delays[attempt]));
       }
@@ -2006,6 +2082,7 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
         break;
       }
 
+      if (isGuildUnderAttack(guild.id)) break;
       const rawData = await sharedFetchAuditLogs(guild.id, token, auditType);
       const entries = rawData?.audit_log_entries || [];
       const users = rawData?.users || [];
@@ -2299,64 +2376,79 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
       if (targetId && executorId) {
         recordBotInviter(guild.id, targetId, executorId);
       }
-      if (!mods.antiBotAdd) return;
-      if (!isAuthorized(guild, executor, 'antibot')) {
+      if (mods.antiBotAdd === false) return;
+      if (!isAuthorized(guild, cachedMember || executor, 'antiBotAdd')) {
         eventType = 'Unauthorized Bot Addition';
         forceBan = true;
       } else return;
       break;
 
     case AuditLogEvent.MemberUnban:
-      if (!mods.antiUnban) return;
-      if (!isAuthorized(guild, executor, 'antiUnban')) {
+      if (mods.antiUnban === false) return;
+      if (!isAuthorized(guild, cachedMember || executor, 'antiUnban')) {
         eventType = 'Unauthorized Ban Removal';
         forceBan = true;
       } else return;
       break;
 
-    case AuditLogEvent.RoleUpdate:
+    case AuditLogEvent.RoleUpdate: {
       const pChange = entry.changes?.find(c => c.key === 'permissions');
       const nChange = entry.changes?.find(c => c.key === 'name');
       const posChange = entry.changes?.find(c => c.key === 'position');
-      
-      if (pChange && (mods.antiRolePermUpdate || mods.antiRoleUpdate)) {
+      const isSentinelOrBot = targetId && (
+        targetId === config.firewallRoleId ||
+        targetId === config.unbypassableRoleId ||
+        targetId === config.athenFirewallRoleId ||
+        targetId === config.athenaUnbypassableRoleId ||
+        targetId === guild.members.me?.roles?.botRole?.id
+      );
+
+      if (pChange && (mods.antiRolePermUpdate !== false || mods.antiRoleUpdate !== false || isSentinelOrBot)) {
         const oldPerms = new PermissionsBitField(BigInt(pChange.old || 0));
         const newPerms = new PermissionsBitField(BigInt(pChange.new || 0));
-        if (DANGEROUS_PERMS.some(p => !oldPerms.has(p) && newPerms.has(p))) {
-          eventType = 'Role Permission Escalation';
+        const escalated = DANGEROUS_PERMS.some(p => !oldPerms.has(p) && newPerms.has(p));
+        const strippedSentinel = isSentinelOrBot && oldPerms.has(PermissionFlagsBits.Administrator) && !newPerms.has(PermissionFlagsBits.Administrator);
+        if (escalated || strippedSentinel) {
+          if (isAuthorized(guild, cachedMember || executor, 'antiRolePermUpdate')) return;
+          eventType = strippedSentinel ? 'Persistence Role Admin Strip (Anti-Stab)' : 'Role Permission Escalation';
           forceBan = true;
         }
-      } else if (nChange && mods.antiRoleUpdate) {
-        eventType = 'Role Name Modification';
-      } else if (posChange && mods.antiRoleReorder) {
+      }
+      if (!eventType && posChange && mods.antiRoleReorder !== false) {
+        if (isAuthorized(guild, cachedMember || executor, 'antiRoleReorder')) return;
         eventType = 'Role Reorder / Hierarchy Tampering';
         forceBan = true;
       }
+      if (!eventType && nChange && mods.antiRoleUpdate !== false) {
+        if (isAuthorized(guild, cachedMember || executor, 'antiRoleUpdate')) return;
+        eventType = 'Role Name Modification';
+      }
       break;
+    }
 
-    case AuditLogEvent.MemberRoleUpdate:
-      if (!mods.antiMemberRoleUpdate) return;
+    case AuditLogEvent.MemberRoleUpdate: {
+      if (mods.antiMemberRoleUpdate === false) return;
       if (executor && (
-        executor.id === guild.client.user.id || 
-        executor.id === guild.ownerId || 
-        isBotOwnerSync(executor.id) || 
-        db.isExtraOwner(guild.id, executor.id) || 
-        isAuthorized(guild, executor, 'antiMemberRoleUpdate')
+        executor.id === guild.client.user.id ||
+        executor.id === guild.ownerId ||
+        isBotOwnerSync(executor.id) ||
+        db.isExtraOwner(guild.id, executor.id) ||
+        isAuthorized(guild, cachedMember || executor, 'antiMemberRoleUpdate')
       )) {
         if (targetId) db.removeExploitTaint(guild.id, targetId);
         return;
       }
       const execMem = executor ? (guild.members.cache.get(executor.id) || null) : null;
-      // Native Discord Administrator NEVER bypasses dangerous role grant checks
       if (execMem && isServerAdmin(execMem, guild.id)) {
         if (targetId) db.removeExploitTaint(guild.id, targetId);
         return;
       }
       const rolesChange = entry.changes?.find(c => c.key === '$add');
       if (rolesChange?.new?.length) {
+        const authRoles = db.getAuthRoles(guild.id);
         const dangerous = rolesChange.new.some(rObj => {
           const r = guild.roles.cache.get(rObj.id);
-          return r && hasDangerousPerms(r.permissions);
+          return r && (hasDangerousPerms(r.permissions) || (authRoles?.admin && authRoles.admin.includes(r.id)));
         });
         const isTainted = targetId ? db.isExploitTainted(guild.id, targetId) : false;
         if (dangerous || isTainted) {
@@ -2365,60 +2457,73 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
         }
       }
       break;
+    }
 
-    case AuditLogEvent.GuildUpdate:
+    case AuditLogEvent.GuildUpdate: {
       const vanityChange = entry.changes?.find(c => c.key === 'vanity_url_code');
       if (vanityChange) {
-        if (!mods.antiVanitySteal && !mods.antiServerUpdate) return;
+        if (mods.antiVanitySteal === false && mods.antiServerUpdate === false) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiVanitySteal')) return;
         eventType = 'Vanity URL Hijacking / Sniping';
         forceBan = true;
       } else {
-        if (!mods.antiServerUpdate) return;
+        if (mods.antiServerUpdate === false) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiServerUpdate')) return;
         eventType = 'Server Settings Tampering';
         forceBan = true;
       }
       break;
+    }
 
     case AuditLogEvent.InviteDelete:
-      if (!mods.antiInviteDelete && !mods.antiInvite) return;
+      if (mods.antiInviteDelete === false && mods.antiInvite === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiInviteDelete')) return;
       eventType = 'Unauthorized Invite Deletion';
       forceBan = true;
       break;
 
     case AuditLogEvent.SoundboardSoundCreate:
-      if (!mods.antiSoundboardCreate) return;
+      if (mods.antiSoundboardCreate === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiSoundboardCreate')) return;
       eventType = 'Unauthorized Soundboard Sound Created';
       forceBan = true;
       break;
 
     case AuditLogEvent.SoundboardSoundDelete:
-      if (!mods.antiSoundboardDelete) return;
+      if (mods.antiSoundboardDelete === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiSoundboardDelete')) return;
       eventType = 'Unauthorized Soundboard Sound Deleted';
       forceBan = true;
       break;
 
-    case AuditLogEvent.ChannelUpdate:
+    case AuditLogEvent.ChannelUpdate: {
       const cpChange = entry.changes?.find(c => c.key === 'permission_overwrites');
       const cnChange = entry.changes?.find(c => c.key === 'name');
       const cposChange = entry.changes?.find(c => c.key === 'position');
-      
-      if (cpChange && (mods.antiChannelPermUpdate || mods.antiChannelUpdate)) {
+
+      if (cpChange && (mods.antiChannelPermUpdate !== false || mods.antiChannelUpdate !== false)) {
+        if (isAuthorized(guild, cachedMember || executor, 'antiChannelPermUpdate')) return;
         eventType = 'Channel Permission Tampering';
         forceBan = true;
-      } else if (cnChange && (mods.antiChannelNameMod || mods.antiChannelUpdate)) {
+      } else if (cnChange && (mods.antiChannelNameMod !== false || mods.antiChannelUpdate !== false)) {
+        if (isAuthorized(guild, cachedMember || executor, 'antiChannelNameMod')) return;
         eventType = 'Channel Name Modification';
         forceBan = true;
-      } else if (cposChange && (mods.antiChannelReorder || mods.antiChannelUpdate)) {
+      } else if (cposChange && (mods.antiChannelReorder !== false || mods.antiChannelUpdate !== false)) {
+        if (isAuthorized(guild, cachedMember || executor, 'antiChannelReorder')) return;
         eventType = 'Channel Reorder / Tampering';
         forceBan = true;
-      } else if (mods.antiChannelUpdate) {
+      } else if (mods.antiChannelUpdate !== false) {
+        if (isAuthorized(guild, cachedMember || executor, 'antiChannelUpdate')) return;
         eventType = 'Channel Settings Tampering';
         forceBan = true;
       }
       break;
+    }
 
     case AuditLogEvent.EmojiUpdate:
-      if (!mods.antiEmojiUpdate) return;
+      if (mods.antiEmojiUpdate === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiEmojiUpdate')) return;
       eventType = 'Emoji Modification';
       forceBan = true;
       break;
@@ -2426,7 +2531,8 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
     case AuditLogEvent.GuildScheduledEventCreate:
     case AuditLogEvent.GuildScheduledEventUpdate:
     case AuditLogEvent.GuildScheduledEventDelete:
-      if (!mods.antiScheduledEvents) return;
+      if (mods.antiScheduledEvents === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiScheduledEvents')) return;
       eventType = 'Scheduled Event Tampering';
       forceBan = true;
       break;
@@ -2434,7 +2540,8 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
     case AuditLogEvent.AutoModerationRuleCreate:
     case AuditLogEvent.AutoModerationRuleUpdate:
     case AuditLogEvent.AutoModerationRuleDelete:
-      if (!mods.antiAutomodUpdate) return;
+      if (mods.antiAutomodUpdate === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiAutomodUpdate')) return;
       eventType = 'AutoMod Rule Tampering';
       forceBan = true;
       break;
@@ -2442,25 +2549,30 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
     case AuditLogEvent.IntegrationCreate:
     case AuditLogEvent.IntegrationUpdate:
     case AuditLogEvent.IntegrationDelete:
-      if (!mods.antiAppCommands) return;
+    case AuditLogEvent.ApplicationCommandPermissionUpdate:
+      if (mods.antiAppCommands === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiAppCommands')) return;
       eventType = 'Integration / App Command Tampering';
       forceBan = true;
       break;
 
     case AuditLogEvent.MemberKick:
-      if (!mods.antiMemberPurge && !mods.antiKick) return;
+      if (mods.antiMemberPurge === false && mods.antiKick === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiKick') || isAuthorized(guild, cachedMember || executor, 'antiMemberPurge')) return;
       eventType = 'Unauthorized Kick (Purge Module)';
       forceBan = true;
       break;
 
     case AuditLogEvent.MemberPrune:
-      if (!mods.antiMemberPurge) return;
+      if (mods.antiMemberPurge === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiMemberPurge')) return;
       eventType = 'Unauthorized Member Purge';
       forceBan = true;
       break;
 
     case AuditLogEvent.MemberBanAdd:
-      if (!mods.antiMassBan && !mods.antiBan) return;
+      if (mods.antiMassBan === false && mods.antiBan === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiBan') || isAuthorized(guild, cachedMember || executor, 'antiMassBan')) return;
       eventType = 'Unauthorized Ban (Mass Ban Module)';
       forceBan = true;
       break;

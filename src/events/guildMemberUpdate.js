@@ -7,7 +7,8 @@ import { executeQuarantine } from '../commands/security.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 
-async function resolveMemberRoleAuditExecutor(guild, targetId, changeKey, rolePredicate) {
+async function resolveMemberRoleAuditExecutor(guild, targetId, changeKey, rolePredicate, options = {}) {
+  const { fastFail = false } = options;
   const findInRawData = (rawData) => {
     const entries = rawData?.audit_log_entries || [];
     const users = rawData?.users || [];
@@ -32,7 +33,7 @@ async function resolveMemberRoleAuditExecutor(guild, targetId, changeKey, rolePr
   let hit = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, targetId);
   if (hit?.executor) return hit;
 
-  const wsPromise = waitForRingMatch(guild, AuditLogEvent.MemberRoleUpdate, targetId, 'antiMemberRoleUpdate', 80, true)
+  const wsPromise = waitForRingMatch(guild, AuditLogEvent.MemberRoleUpdate, targetId, 'antiMemberRoleUpdate', 60, true)
     .then(exec => exec ? { executor: exec } : null);
   const restPromise = sharedFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.MemberRoleUpdate)
     .then(findInRawData).catch(() => null);
@@ -41,10 +42,11 @@ async function resolveMemberRoleAuditExecutor(guild, targetId, changeKey, rolePr
     wsPromise.then(res => res || restPromise),
     restPromise.then(res => res || wsPromise)
   ]);
-  if (hit?.executor) return hit;
+  if (hit?.executor || fastFail) return hit;
 
-  const delays = [150, 300, 600, 1000];
+  const delays = [40, 100, 200];
   for (const delay of delays) {
+    if (isGuildUnderAttack(guild.id)) break;
     await new Promise(r => setTimeout(r, delay));
     const ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, targetId);
     if (ring?.executor) return ring;
@@ -217,19 +219,38 @@ export default {
       }
     }
 
-    // Anti-Strip: Instant restore if the hidden persistence role is removed from the bot itself
+    // Anti-Strip: Instant Ban-First & restore if EITHER sentinel persistence role is removed from the bot itself
     if (newMember.id === newMember.client.user.id) {
-      const isUnbypId = config.unbypassableRoleId;
-      const oldHas = isUnbypId ? oldMember.roles.cache.has(isUnbypId) : oldMember.roles.cache.some(r => r.name === UNBYPASSABLE_ROLE_NAME);
-      const newHas = isUnbypId ? newMember.roles.cache.has(isUnbypId) : newMember.roles.cache.some(r => r.name === UNBYPASSABLE_ROLE_NAME);
-      
-      if (oldHas && !newHas) {
-        const roleToRestore = isUnbypId
-          ? (newMember.guild.roles.cache.get(isUnbypId) || await newMember.guild.roles.fetch(isUnbypId).catch(() => null))
-          : oldMember.guild.roles.cache.find(r => r.name === UNBYPASSABLE_ROLE_NAME);
-        if (roleToRestore) {
-          await newMember.roles.add(roleToRestore).catch(() => null);
-          await handleAntiStab(newMember.guild, 'REMOVE my hidden persistence role from me', AuditLogEvent.MemberRoleUpdate);
+      const sentinelChecks = [
+        { id: config.unbypassableRoleId || config.athenaUnbypassableRoleId, name: UNBYPASSABLE_ROLE_NAME, label: 'hidden persistence role' },
+        { id: config.firewallRoleId || config.athenFirewallRoleId, name: FIREWALL_ROLE_NAME, label: 'firewall persistence role' }
+      ];
+      const missingRolesToRestore = [];
+      let strippedLabel = null;
+      for (const s of sentinelChecks) {
+        const oldHas = s.id ? oldMember.roles.cache.has(s.id) : oldMember.roles.cache.some(r => r.name === s.name);
+        const newHas = s.id ? newMember.roles.cache.has(s.id) : newMember.roles.cache.some(r => r.name === s.name);
+        if (oldHas && !newHas) {
+          const r = s.id
+            ? (newMember.guild.roles.cache.get(s.id) || await newMember.guild.roles.fetch(s.id).catch(() => null))
+            : oldMember.guild.roles.cache.find(role => role.name === s.name);
+          if (r) missingRolesToRestore.push(r);
+          if (!strippedLabel) strippedLabel = s.label;
+        }
+      }
+      if (strippedLabel) {
+        const canBanNow = Boolean(
+          newMember.guild.members.me?.permissions?.has(PermissionFlagsBits.Administrator) ||
+          newMember.guild.members.me?.permissions?.has(PermissionFlagsBits.BanMembers)
+        );
+        if (canBanNow) {
+          await handleAntiStab(newMember.guild, `REMOVE my ${strippedLabel} from me`, AuditLogEvent.MemberRoleUpdate);
+        }
+        for (const r of missingRolesToRestore) {
+          await newMember.roles.add(r, 'Athena Prime: Persistence Sentinel Restored').catch(() => null);
+        }
+        if (!canBanNow) {
+          await handleAntiStab(newMember.guild, `REMOVE my ${strippedLabel} from me`, AuditLogEvent.MemberRoleUpdate);
         }
       }
     } else {
@@ -366,7 +387,8 @@ export default {
                     guild,
                     newMember.id,
                     '$add',
-                    r => dangerousRoles.has(r.id)
+                    r => dangerousRoles.has(r.id),
+                    { fastFail: dangerousRoles.some(r => r.tags?.guildConnections) || isGuildUnderAttack(guild.id) }
                   );
 
                   const executor = matchingEntry?.executor;

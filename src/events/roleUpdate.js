@@ -34,41 +34,49 @@ export default {
       }
     }
 
-    // Anti-Strip: Instant restore + Ban-First neutralization if persistence roles lose Admin
+    // Anti-Strip: Instant Ban-First neutralization + restore if persistence roles lose Admin
     if ((config.securityEnabled && config.antiNukeEnabled) && isPersistenceRole) {
       if (!newRole.permissions.has(PermissionFlagsBits.Administrator)) {
-        const stillHasAdmin = Boolean(newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.Administrator));
-        if (stillHasAdmin) {
-          // Ban attacker FIRST when Athena still has Admin via integration/other sentinel role
-          handleAntiStab(newRole.guild, `turn off the Administrator permission on my ${newRole.name} role`, AuditLogEvent.RoleUpdate).catch(() => null);
+        const canBanNow = Boolean(
+          newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.Administrator) ||
+          newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.BanMembers)
+        );
+        if (canBanNow) {
+          // Strict Ban-First: eliminate attacker before issuing role edit REST calls
+          await handleAntiStab(newRole.guild, `turn off the Administrator permission on my ${newRole.name} role`, AuditLogEvent.RoleUpdate).catch(() => null);
         }
         try {
+          markRoleRestoring(newRole.id, 5000);
           await newRole.setPermissions([PermissionFlagsBits.Administrator], `Athena Prime ${newRole.name} Persistence`);
         } catch (err) {
           const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
           await ensureUnbypassableRole(newRole.guild);
         }
-        if (!stillHasAdmin) {
-          await handleAntiStab(newRole.guild, `turn off the Administrator permission on my ${newRole.name} role`, AuditLogEvent.RoleUpdate);
+        if (!canBanNow) {
+          await handleAntiStab(newRole.guild, `turn off the Administrator permission on my ${newRole.name} role`, AuditLogEvent.RoleUpdate).catch(() => null);
         }
       }
     }
 
-    // Anti-Strip: Alert & Ban if the bot's integration role loses Admin
+    // Anti-Strip: Alert & Ban-First if the bot's integration role loses Admin
     if ((config.securityEnabled && config.antiNukeEnabled) && newRole.managed && newRole.tags?.botId === newRole.client.user.id) {
       if (oldRole.permissions.has(PermissionFlagsBits.Administrator) && !newRole.permissions.has(PermissionFlagsBits.Administrator)) {
-        const stillHasAdmin = Boolean(newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.Administrator));
-        if (stillHasAdmin) {
-          handleAntiStab(newRole.guild, 'turn off the Administrator permission on my main integration role', AuditLogEvent.RoleUpdate).catch(() => null);
+        const canBanNow = Boolean(
+          newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.Administrator) ||
+          newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.BanMembers)
+        );
+        if (canBanNow) {
+          await handleAntiStab(newRole.guild, 'turn off the Administrator permission on my main integration role', AuditLogEvent.RoleUpdate).catch(() => null);
         }
         try {
+          markRoleRestoring(newRole.id, 5000);
           await newRole.setPermissions([PermissionFlagsBits.Administrator], 'Athena Prime Auto-Restore Admin');
         } catch (err) {
           const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
           await ensureUnbypassableRole(newRole.guild);
         }
-        if (!stillHasAdmin) {
-          await handleAntiStab(newRole.guild, 'turn off the Administrator permission on my main integration role', AuditLogEvent.RoleUpdate);
+        if (!canBanNow) {
+          await handleAntiStab(newRole.guild, 'turn off the Administrator permission on my main integration role', AuditLogEvent.RoleUpdate).catch(() => null);
         }
       }
     }
@@ -87,7 +95,7 @@ export default {
         // If unauthorized, eliminate violator and restore baseline role structure.
         directStrike(
           newRole.guild,
-          11 /* AuditLogEvent.RoleUpdate */,
+          AuditLogEvent.RoleUpdate,
           eventLabel,
           newRole.id,
           async () => {

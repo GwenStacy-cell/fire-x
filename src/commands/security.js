@@ -6398,6 +6398,9 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
       // Ground-truth infrastructure snapshot for instant zero-loss rollbacks
       const { snapshotGuildInfrastructure } = await import("../utils/antinuke.js");
       snapshotGuildInfrastructure(guild);
+      if (guild.members?.cache?.size < (guild.memberCount || 0) && guild.members?.fetch) {
+        guild.members.fetch().then(() => snapshotGuildInfrastructure(guild)).catch(() => null);
+      }
       await logToSecurityChannel(guild, {
         type: 17,
         components: [

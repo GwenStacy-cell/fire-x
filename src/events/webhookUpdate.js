@@ -1,6 +1,6 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, rawDeleteWebhook, rawBan, isAuthorized, condemn, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, isGuildUnderAttack } from '../utils/antinuke.js';
+import { directStrike, rawDeleteWebhook, rawBan, isAuthorized, isCondemned, condemn, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, isGuildUnderAttack, handleAuditLogEntry } from '../utils/antinuke.js';
 import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
@@ -34,28 +34,41 @@ export default {
           const ownerMember = guild.members.cache.get(owner.id) || owner;
           if (isAuthorized(guild, ownerMember, 'antiwebhooks')) continue;
 
-          // ⚡ Phase 1: Ban offender FIRST
+          // ⚡ Phase 1: Ban offender FIRST (and let logging/DM pipeline still execute on first strike!)
+          const alreadyCondemned = isCondemned(guild.id, owner.id);
           condemn(guild.id, owner.id);
           setGuildUnderAttack(guild.id, owner.id, 60_000);
-          const banPromise = rawBan(guild.id, owner.id, token, '[ATHENA SENTINEL] Unauthorized Webhook Creation');
-          trackInFlightPunishment(guild.id, banPromise);
+          let banPromise = null;
+          if (!alreadyCondemned) {
+            banPromise = rawBan(guild.id, owner.id, token, '[ATHENA SENTINEL] Unauthorized Webhook Creation', { actionType: 'WEBHOOK_UPDATE' });
+            trackInFlightPunishment(guild.id, banPromise);
+          }
 
           // ⚡ Phase 2: Delete webhook ONLY AFTER ban strike settles
-          waitForInFlightPunishments(guild.id).then(() => {
-            rawDeleteWebhook(whId, token, '[ATHENA SENTINEL] Rogue Webhook Neutralized').catch(() => null);
-          }).catch(() => null);
-
-          // Trigger directStrike for logging, quarantine fallback, and owner DM
-          directStrike(
-            guild,
-            AuditLogEvent.WebhookCreate,
-            'Unauthorized Webhook Creation',
-            whId,
-            async () => {
-              await waitForInFlightPunishments(guild.id);
-              await rawDeleteWebhook(whId, token).catch(() => null);
+          waitForInFlightPunishments(guild.id).then(async () => {
+            await rawDeleteWebhook(whId, token, '[ATHENA SENTINEL] Rogue Webhook Neutralized').catch(() => null);
+            if (!alreadyCondemned) {
+              const execObj = {
+                id: owner.id,
+                tag: owner.tag || owner.username || `User (${owner.id})`,
+                username: owner.username || owner.tag,
+                bot: Boolean(owner.bot)
+              };
+              await handleAuditLogEntry(guild, {
+                id: `wh_${whId}`,
+                action: AuditLogEvent.WebhookCreate,
+                executorId: owner.id,
+                targetId: whId,
+                executor: execObj,
+                createdAt: new Date()
+              }, {
+                skipStrike: true,
+                fromWiretap: false,
+                wiretapHandledRollback: true,
+                preExecutedPunishResult: 'Eliminated (Direct Raw Ban — Instant)'
+              }).catch(() => null);
             }
-          ).catch(() => null);
+          }).catch(() => null);
         } else {
           // Owner unknown — let directStrike resolve audit log first, ban first, then delete webhook
           directStrike(

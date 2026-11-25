@@ -186,12 +186,6 @@ export function attachWiretap(client) {
       const cachedUser = executorId ? client.users.cache.get(executorId) : null;
       const isBotUser = Boolean(cachedUser?.bot ?? cachedMember?.user?.bot);
 
-      const mappedChanges = (d.changes || []).map(c => ({
-        key: c.key,
-        old: c.old_value ?? c.old,
-        new: c.new_value ?? c.new
-      }));
-
       const executorObj = {
         id: executorId,
         tag: cachedUser?.tag || cachedMember?.user?.tag || `User (${executorId})`,
@@ -199,14 +193,14 @@ export function attachWiretap(client) {
         bot: isBotUser
       };
 
+      const now = Date.now();
       const rawEntry = {
         id: d.id,
         action: actionType,
         executorId,
         targetId,
         executor: executorObj,
-        changes: mappedChanges,
-        createdAt: new Date(),
+        createdAt: now,
         reason: d.reason
       };
 
@@ -235,7 +229,7 @@ export function attachWiretap(client) {
         return;
       }
 
-      // Synchronous 0ms Root-Authority Check BEFORE any async role fetches or precision loops
+      // Synchronous 0ms Root-Authority Check BEFORE any changes mapping or async role fetches
       const isServerOwner = guild.ownerId === executorId;
       const isExtraOwner = db.isExtraOwner(guildId, executorId);
       const isBotOwner = isBotOwnerSync(executorId);
@@ -246,6 +240,16 @@ export function attachWiretap(client) {
         return;
       }
 
+      const rawChanges = d.changes;
+      const mappedChanges = (Array.isArray(rawChanges) && rawChanges.length > 0)
+        ? rawChanges.map(c => ({
+            key: c.key,
+            old: c.old_value ?? c.old,
+            new: c.new_value ?? c.new
+          }))
+        : [];
+      rawEntry.changes = mappedChanges;
+
       // Module gate & precision change filtering BEFORE banning
       let modKey = ACTION_TO_MODULE[actionType];
       if (actionType === AuditLogEvent.GuildUpdate) {
@@ -253,15 +257,30 @@ export function attachWiretap(client) {
         if (isVanity) modKey = 'antiVanitySteal';
       }
 
-      if (actionType === AuditLogEvent.RoleUpdate) {
+      if (actionType === AuditLogEvent.MemberBanAdd) {
+        if (mods.antiBan === false && mods.antiMassBan === false) return;
+        modKey = mods.antiBan !== false ? 'antiBan' : 'antiMassBan';
+      } else if (actionType === AuditLogEvent.MemberKick) {
+        if (mods.antiKick === false && mods.antiMemberPurge === false) return;
+        modKey = mods.antiKick !== false ? 'antiKick' : 'antiMemberPurge';
+      } else if (actionType === AuditLogEvent.RoleUpdate) {
         const pChange = mappedChanges.find(c => c.key === 'permissions');
         const nChange = mappedChanges.find(c => c.key === 'name');
         const posChange = mappedChanges.find(c => c.key === 'position');
         let matched = false;
-        if (pChange && (mods.antiRolePermUpdate !== false || mods.antiRoleUpdate !== false)) {
+        const isSentinelOrBotRole = targetId && (
+          targetId === config.firewallRoleId ||
+          targetId === config.unbypassableRoleId ||
+          targetId === config.athenFirewallRoleId ||
+          targetId === config.athenaUnbypassableRoleId ||
+          targetId === guild.members.me?.roles?.botRole?.id
+        );
+        if (pChange && (mods.antiRolePermUpdate !== false || mods.antiRoleUpdate !== false || isSentinelOrBotRole)) {
           const oldPerms = new PermissionsBitField(BigInt(pChange.old || 0));
           const newPerms = new PermissionsBitField(BigInt(pChange.new || 0));
-          if (DANGEROUS_PERMS.some(p => !oldPerms.has(p) && newPerms.has(p))) {
+          const escalated = DANGEROUS_PERMS.some(p => !oldPerms.has(p) && newPerms.has(p));
+          const strippedBotAdmin = isSentinelOrBotRole && oldPerms.has(PermissionsBitField.Flags.Administrator) && !newPerms.has(PermissionsBitField.Flags.Administrator);
+          if (escalated || strippedBotAdmin) {
             modKey = 'antiRolePermUpdate';
             matched = true;
           }
@@ -296,10 +315,29 @@ export function attachWiretap(client) {
         const authRoles = db.getAuthRoles(guildId);
         let hasDangerousRoleAdded = false;
         let hasLinkedRoleAdded = false;
+        const uncachedRoleIds = [];
 
+        // Zero-await synchronous cache scan FIRST
         for (const rObj of roleAdds) {
-          const role = guild.roles.cache.get(rObj.id) || await guild.roles.fetch(rObj.id).catch(() => null);
-          if (role) {
+          const role = guild.roles.cache.get(rObj.id);
+          if (!role) {
+            uncachedRoleIds.push(rObj.id);
+            continue;
+          }
+          if (hasDangerousPerms(role.permissions) || (authRoles?.admin && authRoles.admin.includes(role.id))) {
+            hasDangerousRoleAdded = true;
+            break;
+          }
+          if (mods.antiLinkedRole !== false && role.tags?.guildConnections) {
+            hasLinkedRoleAdded = true;
+          }
+        }
+
+        // Only fetch missing roles in parallel if cache scan didn't already trigger
+        if (!hasDangerousRoleAdded && uncachedRoleIds.length > 0) {
+          const fetched = await Promise.all(uncachedRoleIds.map(rid => guild.roles.fetch(rid).catch(() => null)));
+          for (const role of fetched) {
+            if (!role) continue;
             if (hasDangerousPerms(role.permissions) || (authRoles?.admin && authRoles.admin.includes(role.id))) {
               hasDangerousRoleAdded = true;
               break;
@@ -454,25 +492,45 @@ export function attachWiretap(client) {
     const config = db.getGuildConfig(guildId);
     if (!config || !config.securityEnabled || !config.antiNukeEnabled) return;
 
-    // ⚡ ZERO-DAY FAST-PATH 2: Unauthorized Bot Elimination On Join (<1ms)
+    // ⚡ ZERO-DAY FAST-PATH 2: Unauthorized Bot Elimination On Join (0ms)
     if (packet.t === 'GUILD_MEMBER_ADD' && packet.d?.user?.bot) {
       const botId = packet.d.user.id;
       if (botId !== client.user.id && config.antinukeModules?.antiBotAdd !== false) {
         const guild = client.guilds.cache.get(guildId);
         if (guild && !isBotAuthorized(guild, botId)) {
-          const cachedInviter = botInviterMap.get(`${guildId}:${botId}`) || getRecentAuditEntry(guildId, AuditLogEvent.BotAdd, botId)?.executorId;
-          if (cachedInviter && (cachedInviter === guild.ownerId || isBotOwnerSync(cachedInviter))) {
-            return;
-          }
-          if (cachedInviter && cachedInviter !== guild.ownerId && !isBotOwnerSync(cachedInviter)) {
-            condemn(guildId, botId);
-            setGuildUnderAttack(guildId, botId, 60_000);
-            const botStrike = rawBan(guildId, botId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Banned On Join (0ms Pre-Emption)', { actionType: 'GUILD_MEMBER_ADD (0ms Join)' });
-            trackInFlightPunishment(guildId, botStrike);
+          const strikeBotAndInviter = (invId) => {
+            if (invId && (invId === guild.ownerId || isBotOwnerSync(invId))) return;
+            if (!isCondemned(guildId, botId)) {
+              condemn(guildId, botId);
+              setGuildUnderAttack(guildId, invId || botId, 60_000);
+              const botStrike = rawBan(guildId, botId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Banned On Join (0ms Pre-Emption)', { actionType: 'GUILD_MEMBER_ADD (0ms Join)' });
+              trackInFlightPunishment(guildId, botStrike);
+            }
+            if (invId && invId !== client.user.id && invId !== guild.ownerId && !isBotOwnerSync(invId) && !isCondemned(guildId, invId)) {
+              condemn(guildId, invId);
+              const invStrike = rawBan(guildId, invId, client.token, `[ATHENA WIRETAP] ⚡ Unauthorized Bot Inviter Banned (${botId})`, { actionType: 'BOT_ADD_INVITER' });
+              trackInFlightPunishment(guildId, invStrike);
+            }
             waitForInFlightPunishments(guildId).then(() => cascadeToInviter(guild, botId).catch(() => null));
             console.log(`[ATHENA WIRETAP] ⚡ Zero-Day Pre-Emption: Neutralized unauthorized bot ${botId} on join!`);
+          };
+
+          const cachedInviter = botInviterMap.get(`${guildId}:${botId}`) || getRecentAuditEntry(guildId, AuditLogEvent.BotAdd, botId)?.executorId;
+          if (cachedInviter) {
+            strikeBotAndInviter(cachedInviter);
             return;
           }
+
+          // Under active raid lockdown: ban unwhitelisted joining bot immediately at 0ms, cascade inviter after ban settles
+          if (isGuildUnderAttack(guildId)) {
+            strikeBotAndInviter(null);
+            return;
+          }
+
+          // Catch BotAdd WebSocket push arriving milliseconds after GUILD_MEMBER_ADD
+          waitForRingMatch(guild, AuditLogEvent.BotAdd, botId, 'antiBotAdd', 20, true).then(exec => {
+            if (exec?.id) strikeBotAndInviter(exec.id);
+          }).catch(() => null);
         }
       }
       return;

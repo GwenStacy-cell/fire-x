@@ -6,7 +6,7 @@ import { executeQuarantine } from '../commands/security.js';
 import { PermissionFlagsBits, Routes, MessageFlags } from 'discord.js';
 import { logToSecurityChannel, getOrCreateQuarantineRole, getOrCreateQuarantineChannel, isBotOwnerSync, getUserTierName, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon, formatUserLink, sendGuildMemberDM } from '../utils/helpers.js';
 import { sendWelcomeMessage } from '../commands/welcome.js';
-import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, condemn, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, resolveBotInviter } from '../utils/antinuke.js';
+import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, condemn, isCondemned, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, resolveBotInviter } from '../utils/antinuke.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 
@@ -44,6 +44,9 @@ export default {
           return;
         }
 
+        // If Wiretap already condemned & queued rawBan for this bot at 0ms, avoid duplicate REST ban on the bot
+        const botAlreadyCondemned = isCondemned(guild.id, member.id);
+
         // Resolve who invited/added this bot
         const inviterId = await resolveBotInviter(guild, member.id);
         const isAddedByOwner = inviterId && (inviterId === guild.ownerId || isBotOwnerSync(inviterId));
@@ -63,15 +66,17 @@ export default {
         }
 
         // UNAUTHORIZED BOT ADDITION: Added by a non-owner user!
-        console.warn(`[AntiNuke] UNAUTHORIZED bot ${member.id} added by non-owner ${inviterId || 'unknown'}. Vaporizing bot and inviter!`);
         condemn(guild.id, member.id);
         setGuildUnderAttack(guild.id, inviterId || member.id, 60_000);
 
         // 1 & 2. Phase 1: Raw Ban rogue bot + rogue inviter FIRST (tracked in inFlightPunishments)
-        const botBanPromise = rawBan(guild.id, member.id, guild.client.token, '[ATHENA ANTINUKE] Unauthorized Bot Addition: Only Server Owner can add bots', { actionType: 'BOT_ADD_JOIN' });
-        trackInFlightPunishment(guild.id, botBanPromise);
+        if (!botAlreadyCondemned) {
+          console.warn(`[AntiNuke] UNAUTHORIZED bot ${member.id} added by non-owner ${inviterId || 'unknown'}. Vaporizing bot and inviter!`);
+          const botBanPromise = rawBan(guild.id, member.id, guild.client.token, '[ATHENA ANTINUKE] Unauthorized Bot Addition: Only Server Owner can add bots', { actionType: 'BOT_ADD_JOIN' });
+          trackInFlightPunishment(guild.id, botBanPromise);
+        }
 
-        if (inviterId && inviterId !== guild.ownerId && !isBotOwnerSync(inviterId)) {
+        if (inviterId && inviterId !== guild.ownerId && !isBotOwnerSync(inviterId) && !isCondemned(guild.id, inviterId)) {
           condemn(guild.id, inviterId);
           const invBanPromise = rawBan(guild.id, inviterId, guild.client.token, `[ATHENA ANTINUKE] Unauthorized Bot Addition: Added rogue bot (${member.id})`, { actionType: 'BOT_ADD_INVITER' });
           trackInFlightPunishment(guild.id, invBanPromise);
@@ -80,6 +85,7 @@ export default {
 
         // Wait until BOTH hostile bans settle over the wire before logging / DMing (Ban-First guarantee)
         await waitForInFlightPunishments(guild.id);
+        if (botAlreadyCondemned) return;
 
         // 3. Log to security channel and DM Server Owner
         const inviterText = inviterId ? formatUserLink(inviterId, guild) : '`Unknown / Hidden OAuth2`';

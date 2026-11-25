@@ -323,13 +323,22 @@ class Database {
     } catch {}
   }
 
-  save() {
+  setAttackStateChecker(fn) {
+    this.attackStateChecker = typeof fn === 'function' ? fn : null;
+  }
+
+  save(deferCount = 0) {
     this.needsSave = true;
     if (this.saveTimeout) return; // Debounce already in progress
     
     // Debounce the save by 3.5 seconds to batch multiple rapid changes cleanly
     this.saveTimeout = setTimeout(async () => {
       this.saveTimeout = null;
+      // Combat Priority Shield: Avoid synchronous main-thread JSON.stringify blocking gateway packets mid-raid
+      if (this.attackStateChecker?.() && deferCount < 6) {
+        this.save(deferCount + 1);
+        return;
+      }
       if (this.isSaving) {
         // If a save is currently writing to disk, try again next tick
         this.save();

@@ -536,7 +536,7 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       return null;
     }
     
-    const { getRecentAuditEntry, sharedFetchAuditLogs, rawBan, condemn, setGuildUnderAttack, trackInFlightPunishment } = await import('./antinuke.js');
+    const { getRecentAuditEntry, waitForRingMatch, sharedFetchAuditLogs, rawBan, condemn, setGuildUnderAttack, trackInFlightPunishment } = await import('./antinuke.js');
     
     // ⚡ STEP 1: Check the WebSocket Audit Ring first (0ms latency, zero HTTP requests)
     let executor = null;
@@ -545,7 +545,15 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       executor = ringMatch.executor;
     }
 
-    // ⚡ STEP 2: If not in ring, fetch via coalesced Undici socket (zero redundant REST spam)
+    // ⚡ STEP 1.5: Brief 25ms WebSocket push wait before touching REST audit logs
+    if (!executor) {
+      const wsExec = await waitForRingMatch(guild, auditLogType, null, 'antinuke', 25, true).catch(() => null);
+      if (wsExec && wsExec.id !== guild.client.user.id) {
+        executor = wsExec;
+      }
+    }
+
+    // ⚡ STEP 2: If still not in ring, fetch via coalesced Undici socket
     if (!executor) {
       const rawData = await sharedFetchAuditLogs(guild.id, guild.client.token, auditLogType);
       const entries = rawData?.audit_log_entries || [];
