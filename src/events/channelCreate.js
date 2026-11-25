@@ -2,14 +2,14 @@ import db from '../database.js';
 import { AuditLogEvent } from 'discord.js';
 import { 
   directStrike, 
-  getRecentAuditEntry, 
   triggerSnapshotSync, 
   isRestorationHandled, 
   rawChannelDelete,
-  isGuildUnderAttack
+  isGuildUnderAttack,
+  waitForInFlightPunishments
 } from '../utils/antinuke.js';
 import embed from '../embed.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export default {
@@ -32,11 +32,13 @@ export default {
       }
     ).catch(() => null);
 
-    // Debounced baseline infrastructure sync (non-blocking)
-    triggerSnapshotSync(channel.guild, 15_000);
+    // Debounced baseline infrastructure sync (skipped during attacks)
+    if (!isGuildUnderAttack(channel.guild.id)) {
+      triggerSnapshotSync(channel.guild, 15_000);
+    }
 
-    // Auto VC Status for newly created voice channels
-    if (channel.type === 2) { // 2 = GuildVoice
+    // Auto VC Status for newly created voice channels (skipped if under attack)
+    if (channel.type === 2 && !isGuildUnderAttack(channel.guild.id)) { // 2 = GuildVoice
       const cfg = db.getGuildConfig(channel.guild.id);
       if (cfg && cfg.autoVcStatus) {
         import('../commands/autovcstatus.js').then(mod => {
@@ -46,14 +48,14 @@ export default {
       }
     }
 
-    // Auto-hide new channels from quarantined users (immediate execution)
-    // ⚡ Fast-path bypass during active attack to prevent REST queue starvation on rogue spam channels
-    if (isGuildUnderAttack(channel.guild.id)) return;
+    // Auto-hide new channels from quarantined users strictly AFTER any pending ban settles
+    await waitForInFlightPunishments(channel.guild.id);
+    if (isGuildUnderAttack(channel.guild.id) || isRestorationHandled(channel.id)) return;
     try {
       const config = db.getGuildConfig(channel.guild.id);
       
       if (config.quarantineRoleId) {
-        const qRole = await channel.guild.roles.fetch(config.quarantineRoleId).catch(() => null);
+        const qRole = channel.guild.roles.cache.get(config.quarantineRoleId);
         if (qRole) {
           // Check if this channel is the quarantine channel itself
           const isQChannel = config.quarantineChannelId === channel.id || config.quarantineVcId === channel.id;
@@ -72,10 +74,10 @@ export default {
       console.error('Failed to auto-hide new channel from quarantine role:', err);
     }
 
-    // Non-blocking server log entry — zero REST audit contention with Anti-Nuke
+    // Non-blocking server log entry — zero REST audit contention with Anti-Nuke or when logs disabled
     (async () => {
       try {
-        if (isGuildUnderAttack(channel.guild.id)) return;
+        if (!isServerLogModuleEnabled(channel.guild.id, 'channels')) return;
         const { executor, reason } = await getAuditExecutorAndReason(channel.guild, AuditLogEvent.ChannelCreate, channel.id);
         const executorStr = executor ? `${formatUserLink(executor, channel.guild)} (\`${executor.id}\`)` : 'Unknown';
 

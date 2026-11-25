@@ -84,6 +84,22 @@ export async function getAuditExecutorAndReason(guild, actionType, targetId) {
 }
 
 /**
+ * Fast synchronous check for whether server logging is active for a given module.
+ * Prevents wasted REST audit-log fetches when logging is disabled.
+ */
+export function isServerLogModuleEnabled(guildId, moduleName) {
+  if (!guildId) return false;
+  if (isGuildUnderAttack(guildId)) return false;
+  const config = db.getGuildConfig(guildId);
+  const serverLogs = config?.serverLogs;
+  if (!serverLogs) return false;
+  const moduleConfig = serverLogs.modules?.[moduleName];
+  if (moduleConfig && moduleConfig.enabled === false) return false;
+  const targetChannelId = moduleConfig?.channelId || (serverLogs.enabled ? serverLogs.defaultChannelId : null);
+  return Boolean(targetChannelId);
+}
+
+/**
  * Core logging engine for Server Logs.
  * 
  * @param {Guild} guild - The Discord guild object

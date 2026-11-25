@@ -2,7 +2,7 @@ import { EmbedBuilder, AuditLogEvent, PermissionFlagsBits, PermissionsBitField, 
 import { performance } from 'perf_hooks';
 import db from '../database.js';
 import cv2 from '../cv2.js';
-import { logToSecurityChannel, isBotOwnerSync, isServerAdmin, formatUserLink } from './helpers.js';
+import { logToSecurityChannel, isBotOwnerSync, isServerAdmin, formatUserLink, formatChannelLink } from './helpers.js';
 import { executeQuarantine } from '../commands/security.js';
 import { recordAndLearnThreat } from './botThreatLearner.js';
 import dns from 'dns';
@@ -18,30 +18,37 @@ try {
 // Keeps multiple TLS sockets to discord.com open indefinitely with TCP_NODELAY enabled,
 // completely eliminating handshake latency and TCP buffering delay (saves ~50-80ms)
 // ==========================================
+const POOL_CONNECTIONS = 128;
+const POOL_KEEP_ALIVE_TIMEOUT_MS = 60_000;
+const POOL_PREWARM_INTERVAL_MS = 8_000;
+
 export const dispatcher = new Agent({
-  keepAliveTimeout: 60_000,
+  keepAliveTimeout: POOL_KEEP_ALIVE_TIMEOUT_MS,
   keepAliveMaxTimeout: 600_000,
-  connections: 128,
+  connections: POOL_CONNECTIONS,
   pipelining: 1,
   connect: {
     timeout: 3_000,
     keepAlive: true,
     keepAliveInitialDelay: 0,
-    noDelay: true // ⚡ TCP_NODELAY: Disables Nagle's algorithm for sub-1ms TCP packet dispatch!
+    noDelay: true, // ⚡ TCP_NODELAY: Disables Nagle's algorithm for sub-1ms TCP packet dispatch!
+    maxCachedSessions: 128 // TLS session ticket resumption for zero-RTT reconnects
   },
   maxRedirections: 0
 });
 setGlobalDispatcher(dispatcher);
 
-// Active multi-socket keep-alive heartbeat daemon (every 8s):
+// Active multi-socket keep-alive heartbeat daemon:
 // Keeps multiple parallel Undici TLS sockets to discord.com permanently warm, pre-connected, and top-of-pool
 const prewarmPool = () => {
+  const pingOpts = { origin: 'https://discord.com', path: '/api/v10/gateway', method: 'GET' };
   Promise.allSettled([
-    fetch('https://discord.com/api/v10/gateway', { method: 'GET', dispatcher }),
-    fetch('https://discord.com/api/v10/gateway', { method: 'GET', dispatcher })
+    dispatcher.request(pingOpts).then(r => r.body?.dump?.()),
+    dispatcher.request(pingOpts).then(r => r.body?.dump?.()),
+    dispatcher.request(pingOpts).then(r => r.body?.dump?.())
   ]).catch(() => null);
 };
-setInterval(prewarmPool, 8_000).unref();
+setInterval(prewarmPool, POOL_PREWARM_INTERVAL_MS).unref();
 prewarmPool();
 
 // ==========================================
@@ -134,9 +141,10 @@ export const combatTelemetry = {
       cachedDeletedCount: (typeof deletedCache !== 'undefined' ? deletedCache.size : 0),
       queuedRestorationsCount: (typeof restorationRegistry !== 'undefined' ? restorationRegistry.queued.size : 0),
       socketPool: {
-        connections: 120,
-        keepAliveTimeout: '60,000ms',
-        heartbeatDaemon: '25s (Active Heartbeat)',
+        connections: POOL_CONNECTIONS,
+        keepAliveTimeout: `${POOL_KEEP_ALIVE_TIMEOUT_MS.toLocaleString('en-US')}ms`,
+        heartbeatDaemon: `${Math.round(POOL_PREWARM_INTERVAL_MS / 1000)}s (Active Heartbeat)`,
+        transport: 'HTTP/1.1 Keep-Alive + TLS Session Resumption (128 sessions)',
         dnsRouting: 'IPv4 First (dns.setDefaultResultOrder)',
         payloadPrecompiled: '{"delete_message_seconds":0}'
       }
@@ -150,6 +158,31 @@ export const combatTelemetry = {
 // Completely bypasses discord.js cache and internal queues for instant sub-12ms execution.
 // ==========================================
 const PRECOMPILED_BAN_BODY = '{"delete_message_seconds":0}';
+const authHeaderCache = new Map(); // token -> 'Bot <token>'
+const encodedReasonCache = new Map(); // rawReason -> encodedReason
+
+function getBotAuthHeader(token) {
+  let h = authHeaderCache.get(token);
+  if (!h) {
+    h = `Bot ${token}`;
+    if (authHeaderCache.size > 4) authHeaderCache.clear();
+    authHeaderCache.set(token, h);
+  }
+  return h;
+}
+
+function encodeAuditReason(reason) {
+  let enc = encodedReasonCache.get(reason);
+  if (!enc) {
+    enc = encodeURIComponent(String(reason || '').slice(0, 512));
+    if (encodedReasonCache.size >= 500) {
+      const oldest = encodedReasonCache.keys().next().value;
+      encodedReasonCache.delete(oldest);
+    }
+    encodedReasonCache.set(reason, enc);
+  }
+  return enc;
+}
 
 export async function rawBan(guildId, userId, token, reason = '[ATHENA] Anti-Nuke: Instant elimination', metadata = {}) {
   const startTime = performance.now();
@@ -159,13 +192,14 @@ export async function rawBan(guildId, userId, token, reason = '[ATHENA] Anti-Nuk
       path: `/api/v10/guilds/${guildId}/bans/${userId}`,
       method: 'PUT',
       headers: {
-        'authorization': `Bot ${token}`,
+        'authorization': getBotAuthHeader(token),
         'content-type': 'application/json',
-        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
+        'x-audit-log-reason': encodeAuditReason(reason)
       },
       body: PRECOMPILED_BAN_BODY
     });
-    await body.dump().catch(() => null);
+    // Non-blocking drain so banStrikePromise / waitForInFlightPunishments resolve immediately on status headers
+    body?.dump?.().catch(() => null);
     const latencyMs = performance.now() - startTime;
     const ok = statusCode === 200 || statusCode === 204;
     queueMicrotask(() => {
@@ -209,9 +243,9 @@ export async function rawRoleStrip(guildId, userId, token) {
       path: `/api/v10/guilds/${guildId}/members/${userId}`,
       method: 'PATCH',
       headers: {
-        'authorization': `Bot ${token}`,
+        'authorization': getBotAuthHeader(token),
         'content-type': 'application/json',
-        'x-audit-log-reason': encodeURIComponent('[ATHENA FIREWALL] Emergency role strip & isolation — hostile neutralization')
+        'x-audit-log-reason': encodeAuditReason('[ATHENA FIREWALL] Emergency role strip & isolation — hostile neutralization')
       },
       body: '{"roles":[]}'
     });
@@ -232,8 +266,8 @@ export async function rawDeleteWebhook(webhookId, token, reason = '[ATHENA] Webh
       path: `/api/v10/webhooks/${webhookId}`,
       method: 'DELETE',
       headers: {
-        'authorization': `Bot ${token}`,
-        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
+        'authorization': getBotAuthHeader(token),
+        'x-audit-log-reason': encodeAuditReason(reason)
       }
     });
     await body.dump().catch(() => null);
@@ -253,8 +287,8 @@ export async function rawChannelDelete(channelId, token, reason = '[ATHENA] Unau
       path: `/api/v10/channels/${channelId}`,
       method: 'DELETE',
       headers: {
-        'authorization': `Bot ${token}`,
-        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
+        'authorization': getBotAuthHeader(token),
+        'x-audit-log-reason': encodeAuditReason(reason)
       }
     });
     await body.dump().catch(() => null);
@@ -274,8 +308,8 @@ export async function rawRoleDelete(guildId, roleId, token, reason = '[ATHENA] U
       path: `/api/v10/guilds/${guildId}/roles/${roleId}`,
       method: 'DELETE',
       headers: {
-        'authorization': `Bot ${token}`,
-        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
+        'authorization': getBotAuthHeader(token),
+        'x-audit-log-reason': encodeAuditReason(reason)
       }
     });
     await body.dump().catch(() => null);
@@ -295,12 +329,33 @@ export async function rawUnban(guildId, userId, token, reason = '[ATHENA] Anti-N
       path: `/api/v10/guilds/${guildId}/bans/${userId}`,
       method: 'DELETE',
       headers: {
-        'authorization': `Bot ${token}`,
-        'x-audit-log-reason': encodeURIComponent(reason.slice(0, 512))
+        'authorization': getBotAuthHeader(token),
+        'x-audit-log-reason': encodeAuditReason(reason)
       }
     });
     await body.dump().catch(() => null);
     return statusCode === 200 || statusCode === 204;
+  } catch {
+    return false;
+  }
+}
+
+export async function rawVanityReclaim(guildId, code, token, reason = '[ATHENA] Anti-Nuke: Vanity URL Reclaimed') {
+  if (!guildId || !code || !token) return false;
+  try {
+    const { statusCode, body } = await dispatcher.request({
+      origin: 'https://discord.com',
+      path: `/api/v10/guilds/${guildId}/vanity-url`,
+      method: 'PATCH',
+      headers: {
+        'authorization': getBotAuthHeader(token),
+        'content-type': 'application/json',
+        'x-audit-log-reason': encodeAuditReason(reason)
+      },
+      body: JSON.stringify({ code })
+    });
+    await body.dump().catch(() => null);
+    return statusCode >= 200 && statusCode < 300;
   } catch {
     return false;
   }
@@ -329,7 +384,7 @@ export async function rawFetchAuditLogs(guildId, token, auditType = null) {
       path,
       method: 'GET',
       headers: {
-        'authorization': `Bot ${token}`,
+        'authorization': getBotAuthHeader(token),
         'content-type': 'application/json'
       }
     });
@@ -350,10 +405,24 @@ export async function rawFetchAuditLogs(guildId, token, auditType = null) {
 const auditRing = new Map(); // guildId -> Array<{ id, action, executor, targetId, timestamp }>
 const RING_MAX_ENTRIES = 60;
 const RING_TTL_MS = 30000;
+const handledAuditEntryIds = new Set();
+
+export function markAuditEntryHandled(entryId) {
+  if (!entryId) return true;
+  const idStr = String(entryId);
+  if (handledAuditEntryIds.has(idStr)) return false;
+  handledAuditEntryIds.add(idStr);
+  if (handledAuditEntryIds.size > 3000) {
+    const oldest = handledAuditEntryIds.values().next().value;
+    if (oldest) handledAuditEntryIds.delete(oldest);
+  }
+  return true;
+}
 
 export function recordAuditEntry(guildId, entry) {
   if (!guildId || !entry) return;
   const list = auditRing.get(guildId) || [];
+  if (entry.id && list.some(e => e.id === entry.id)) return;
   const now = Date.now();
 
   const cleanList = list.filter(e => now - e.timestamp < RING_TTL_MS);
@@ -393,7 +462,7 @@ export function notifyRingResolvers(guildId, entry) {
   }
 }
 
-export function waitForRingMatch(guild, auditType, targetId, eventType, timeoutMs = 20) {
+export function waitForRingMatch(guild, auditType, targetId, eventType, timeoutMs = 20, allowAuthorized = false) {
   return new Promise((resolve) => {
     let timer = null;
     const resolver = {
@@ -403,7 +472,7 @@ export function waitForRingMatch(guild, auditType, targetId, eventType, timeoutM
         const matchesType = !auditType || entry.action === auditType;
         const matchesTarget = !targetId || !entry.targetId || entry.targetId === targetId;
         if (matchesType && matchesTarget) {
-          if (!isAuthorized(guild, entry.executor, eventType)) {
+          if (allowAuthorized || !isAuthorized(guild, entry.executor, eventType)) {
             cleanup();
             resolve(entry.executor);
           }
@@ -419,7 +488,7 @@ export function waitForRingMatch(guild, auditType, targetId, eventType, timeoutM
     ringResolvers.add(resolver);
 
     const current = getRecentAuditEntry(guild.id, auditType, targetId);
-    if (current?.executor && !isAuthorized(guild, current.executor, eventType)) {
+    if (current?.executor && (allowAuthorized || !isAuthorized(guild, current.executor, eventType))) {
       cleanup();
       return resolve(current.executor);
     }
@@ -444,9 +513,11 @@ export function getRecentAuditEntry(guildId, auditType, targetId) {
   );
   if (exact) return exact;
 
-  // Tier 2: Correlation match — Recent destructive action of same type within 10s
+  // Tier 2: Correlation match — ONLY match when targetId was unavailable/omitted on the audit entry
+  // Prevents false-attribution onto an innocent admin who touched a different target within 10s
   return list.find(e =>
     e.action === auditType &&
+    (!targetId || !e.targetId) &&
     (now - e.timestamp < 10000) &&
     e.executor &&
     e.executorId !== guildId
@@ -455,6 +526,18 @@ export function getRecentAuditEntry(guildId, auditType, targetId) {
 
 // In-flight shared fetchAuditLogs promises to eliminate redundant REST spam
 const inFlightAuditFetches = new Map(); // `${guildId}:${auditType}` -> Promise
+
+export async function sharedFetchAuditLogs(guildId, token, auditType = null) {
+  const fetchKey = `${guildId}:${auditType ?? 'all'}`;
+  let existing = inFlightAuditFetches.get(fetchKey);
+  if (!existing) {
+    existing = rawFetchAuditLogs(guildId, token, auditType).finally(() => {
+      inFlightAuditFetches.delete(fetchKey);
+    });
+    inFlightAuditFetches.set(fetchKey, existing);
+  }
+  return await existing;
+}
 
 // ==========================================
 // LIVE CONTINUOUS INFRASTRUCTURE SNAPSHOTS
@@ -869,9 +952,10 @@ export function triggerSnapshotSync(guild, delayMs = 30_000) {
 // Rate-Limit Rule: Hostile elimination (rawBan/rawRoleStrip) strictly takes 100% of API throughput.
 // Restorations NEVER consume API quotas until attacker is completely eliminated.
 // Upgrade 3: Strict 3-Tier Queue Ordering (Roles FIRST -> Categories SECOND -> Channels THIRD)
+// Scoped per-guild so concurrent attacks in separate guilds never block each other.
 // ==========================================
 export const restorationQueue = [];
-let isRestoring = false;
+const activeGuildRestores = new Set(); // Set<guildId>
 
 // In-flight punishment tracker across guilds to prevent rate limit contention
 const inFlightPunishments = new Map(); // guildId -> Set<Promise>
@@ -888,15 +972,19 @@ export function trackInFlightPunishment(guildId, promise) {
 }
 
 export async function waitForInFlightPunishments(guildId) {
-  const set = inFlightPunishments.get(guildId);
-  if (set && set.size > 0) {
+  let set = inFlightPunishments.get(guildId);
+  while (set && set.size > 0) {
     await Promise.allSettled(Array.from(set));
+    set = inFlightPunishments.get(guildId);
   }
 }
 
-export async function processRestorationQueue() {
-  if (isRestoring || restorationQueue.length === 0) return;
-  isRestoring = true;
+async function processGuildRestorationQueue(guildId) {
+  if (!guildId || activeGuildRestores.has(guildId)) return;
+  const hasTasks = restorationQueue.some(t => t.guild?.id === guildId);
+  if (!hasTasks) return;
+
+  activeGuildRestores.add(guildId);
   let activeGuild = null;
 
   try {
@@ -904,52 +992,69 @@ export async function processRestorationQueue() {
     // Wait for active hostile ban strikes to confirm over the wire first.
     // Then wait 800ms for all in-flight requests from the nuke bot's burst to arrive at Discord
     // and automatically get rejected with 403 Forbidden. Let all other attacker fires go to waste!
-    const pendingGuildIds = new Set(restorationQueue.map(t => t.guild?.id).filter(Boolean));
-    for (const gid of pendingGuildIds) {
-      await waitForInFlightPunishments(gid);
-    }
+    await waitForInFlightPunishments(guildId);
     await new Promise(r => setTimeout(r, 800));
 
-    while (restorationQueue.length > 0) {
-    // ⚡ Upgrade 3: Strict 3-Tier Queue Ordering:
-    // Tier 0: Roles FIRST (so channel overwrites can reference restored role IDs)
-    // Tier 1: Categories SECOND (so child channels have their parent containers)
-    // Tier 2: Channels THIRD
-    restorationQueue.sort((a, b) => {
-      const getPriority = (task) => {
-        if (task.isRole || task.itemType === 'role') return 0;
-        if (task.isCategory || task.itemType === 'category') return 1;
-        return 2;
-      };
-      return getPriority(a) - getPriority(b);
-    });
+    const getPriority = (task) => {
+      if (task.isRole || task.itemType === 'role') return 0;
+      if (task.isCategory || task.itemType === 'category') return 1;
+      return 2;
+    };
 
-    const task = restorationQueue.shift();
-    if (!task) continue;
-    if (task.guild) activeGuild = task.guild;
+    while (true) {
+      let bestIdx = -1;
+      let bestPriority = Infinity;
+      for (let i = 0; i < restorationQueue.length; i++) {
+        const t = restorationQueue[i];
+        if (t?.guild?.id !== guildId) continue;
+        const p = getPriority(t);
+        if (p < bestPriority) {
+          bestPriority = p;
+          bestIdx = i;
+          if (p === 0) break;
+        }
+      }
+      if (bestIdx === -1) break;
 
-    // ⚡ Rate Limit Priority: Await any active punishments in this guild before calling Discord API!
-    if (task.guild?.id) {
-      await waitForInFlightPunishments(task.guild.id);
+      const [task] = restorationQueue.splice(bestIdx, 1);
+      if (!task) continue;
+      if (task.guild) activeGuild = task.guild;
+
+      // ⚡ Rate Limit Priority: Await any active punishments in this guild before calling Discord API!
+      await waitForInFlightPunishments(guildId);
+
+      try {
+        await task.execute();
+      } catch (e) {
+        console.error('[AntiNuke] Restore task error:', e.message);
+      }
+      // Rate-limit safe 120ms gap
+      await new Promise(r => setTimeout(r, 120));
     }
-
-    try {
-      await task.execute();
-    } catch (e) {
-      console.error('[AntiNuke] Restore task error:', e.message);
-    }
-    // Rate-limit safe 120ms gap
-    await new Promise(r => setTimeout(r, 120));
+  } finally {
+    activeGuildRestores.delete(guildId);
   }
 
-  } finally {
-    isRestoring = false;
+  // Re-check if late tasks arrived while releasing lock
+  if (restorationQueue.some(t => t.guild?.id === guildId)) {
+    processGuildRestorationQueue(guildId);
+    return;
   }
 
   // Post-restoration integrity reconciliation pass to ensure all channels have pristine parentage
   if (activeGuild) {
     reconcileGuildStructure(activeGuild).catch(() => null);
   }
+}
+
+export async function processRestorationQueue(targetGuildId = null) {
+  if (restorationQueue.length === 0) return;
+  if (targetGuildId) {
+    await processGuildRestorationQueue(targetGuildId);
+    return;
+  }
+  const pendingGuildIds = new Set(restorationQueue.map(t => t.guild?.id).filter(Boolean));
+  await Promise.allSettled(Array.from(pendingGuildIds).map(gid => processGuildRestorationQueue(gid)));
 }
 
 // ==========================================
@@ -1078,14 +1183,14 @@ export async function executeIntelligentChannelRepair(guild, channelId, fallback
         }
       }
 
-      // Fallback: match by category name
+      // Fallback: match by category name scoped strictly to this guild
       if (!resolvedParentId && parentName) {
-        const lowerName = parentName.toLowerCase();
+        const lowerName = `${guild.id}:${parentName.toLowerCase()}`;
         if (restorationRegistry.restoredCategoriesByName.has(lowerName)) {
           resolvedParentId = restorationRegistry.restoredCategoriesByName.get(lowerName);
         } else {
           const matchByName = guild.channels.cache.find(c => 
-            (c.type === ChannelType.GuildCategory || c.type === 4) && c.name.toLowerCase() === lowerName
+            (c.type === ChannelType.GuildCategory || c.type === 4) && c.name.toLowerCase() === parentName.toLowerCase()
           );
           if (matchByName) resolvedParentId = matchByName.id;
         }
@@ -1140,11 +1245,11 @@ export async function executeIntelligentChannelRepair(guild, channelId, fallback
       await newChannel.setPosition(rawPos, { relative: false }).catch(() => null);
     }
 
-    // 6. Record mappings
+    // 6. Record mappings (category name index scoped per guild)
     restorationRegistry.restoredChannels.set(channelId, newChannel.id);
     if (isCategory) {
       restorationRegistry.restoredCategories.set(channelId, newChannel.id);
-      restorationRegistry.restoredCategoriesByName.set(name.toLowerCase(), newChannel.id);
+      restorationRegistry.restoredCategoriesByName.set(`${guild.id}:${name.toLowerCase()}`, newChannel.id);
     }
 
     // 7. Mark restored with 15-minute TTL
@@ -1330,10 +1435,9 @@ export function isCondemned(guildId, userId) {
 
 export function condemn(guildId, userId) {
   if (!guildId || !userId) return;
-  // Extra owners and Bot Owner can NEVER be condemned
+  // Extra owners and ALL Bot Owners can NEVER be condemned
   if (db.isExtraOwner(guildId, userId)) return;
-  const ownerIdEnv = process.env.OWNER_ID;
-  if (ownerIdEnv && userId === ownerIdEnv) return;
+  if (isBotOwnerSync(userId)) return;
   if (!condemnedNukers.has(guildId)) condemnedNukers.set(guildId, new Set());
   condemnedNukers.get(guildId).add(userId);
   setTimeout(() => condemnedNukers.get(guildId)?.delete(userId), 180_000);
@@ -1491,15 +1595,11 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
   // ⚡ BOT WHITELIST AUTHORIZATION:
   // Bots added to the Bot Whitelist (via !botwhitelist add) are granted 100% full immunity to ALL Anti-Nuke protections.
   // Unwhitelisting a bot (via !botwhitelist remove) revokes this immunity.
-  const isBot = Boolean(executor.bot || guild.members.cache.get(executor.id)?.user?.bot);
-  if (isBot) {
-    if (isBotAuthorized(guild, executor.id)) return true;
-    return db.isWhitelisted(guild, executor.id, eventType);
-  }
-
   const member = guild.members.cache.get(executor.id) || executor;
+  const isBot = Boolean(executor.bot || guild.members.cache.get(executor.id)?.user?.bot);
+  if (isBot && isBotAuthorized(guild, executor.id)) return true;
 
-  // Check direct eventType whitelist
+  // Check direct eventType whitelist (supports both user IDs and cached role whitelists)
   if (db.isWhitelisted(guild, member, eventType)) return true;
 
   // Check normalized module key (e.g. 'Channel Deletion' -> 'antiChannelDelete')
@@ -1515,6 +1615,8 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
 const dmThrottle = new Set();
 
 async function notifyAndLog(guild, executor, eventType, punishResult, rollbackResult) {
+  // Never emit logging or BotThreatLearner REST traffic while hostile bans are still settling
+  await waitForInFlightPunishments(guild.id);
   // ⚡ Persistent Real-Time Live Security Audit Record
   try {
     db.addSecurityLiveRecord(guild.id, {
@@ -1615,9 +1717,14 @@ export function checkGlobalBurst(guild, actionType, executorId) {
     if (!isGuildUnderAttack(guild.id)) {
       setGuildUnderAttack(guild.id, executorId, 15 * 60_000); // 15-minute emergency lockdown
       console.log(`[AntiNuke BURST] ⚡ Coordinated multi-account raid on ${guild.name} (${list.length} actions in 2s)! Engaging emergency lockdown.`);
-      notifyMultiAccountBurst(guild, list.length).catch(() => null);
-      annihilateRogueChannels(guild, executorId).catch(() => null);
-      annihilateRogueRoles(guild, executorId).catch(() => null);
+      // Defer notifications and cleanup sweeps until any active hostile ban settles over the wire
+      queueMicrotask(() => {
+        waitForInFlightPunishments(guild.id).then(() => {
+          notifyMultiAccountBurst(guild, list.length).catch(() => null);
+          annihilateRogueChannels(guild, executorId).catch(() => null);
+          annihilateRogueRoles(guild, executorId).catch(() => null);
+        }).catch(() => null);
+      });
     }
     return true;
   }
@@ -1651,28 +1758,28 @@ export async function resolveBotInviter(guild, botId) {
       }
     }
     if (!inviterId) {
-      // ⚡ Fast-path 2: Direct Undici socket fetch (sub-15ms, zero djs queue)
-      const rawData = await rawFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.BotAdd);
-      const rawEntry = rawData?.audit_log_entries?.find(e => e.target_id === botId);
-      if (rawEntry?.user_id) {
-        inviterId = rawEntry.user_id;
+      // ⚡ Fast-path 2: Race live WebSocket ring push (up to 45ms) with coalesced REST audit fetch (zero 120ms blind sleep)
+      const wsPromise = waitForRingMatch(guild, AuditLogEvent.BotAdd, botId, 'antiBotAdd', 45, true);
+      const restPromise = sharedFetchAuditLogs(guild.id, guild.client?.token, AuditLogEvent.BotAdd).catch(() => null);
+      inviterId = await new Promise((resolve) => {
+        let settled = false;
+        const finish = (id) => {
+          if (!settled) {
+            settled = true;
+            resolve(id || null);
+          }
+        };
+        wsPromise.then(exec => { if (exec?.id) finish(exec.id); });
+        restPromise.then(rawData => {
+          const rawEntry = rawData?.audit_log_entries?.find(e => e.target_id === botId);
+          if (rawEntry?.user_id) finish(rawEntry.user_id);
+        });
+        Promise.allSettled([wsPromise, restPromise]).then(() => {
+          finish(getRecentAuditEntry(guild.id, AuditLogEvent.BotAdd, botId)?.executorId || null);
+        });
+      });
+      if (inviterId) {
         recordBotInviter(guild.id, botId, inviterId);
-      }
-    }
-    // ⚡ Fast-path 3: Micro-retry after 120ms if audit log entry hasn't settled yet
-    if (!inviterId) {
-      await new Promise(r => setTimeout(r, 120));
-      const ring2 = getRecentAuditEntry(guild.id, AuditLogEvent.BotAdd, botId);
-      if (ring2?.executorId) {
-        inviterId = ring2.executorId;
-        recordBotInviter(guild.id, botId, inviterId);
-      } else {
-        const rawData2 = await rawFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.BotAdd);
-        const rawEntry2 = rawData2?.audit_log_entries?.find(e => e.target_id === botId);
-        if (rawEntry2?.user_id) {
-          inviterId = rawEntry2.user_id;
-          recordBotInviter(guild.id, botId, inviterId);
-        }
       }
     }
     return inviterId || null;
@@ -1717,23 +1824,16 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
   if (!executor || !executor.id) return result;
   if (executor.id === guild.ownerId) return result;
   if (executor.id === guild.client.user.id) return result;
-  if (isBotOwnerSync(executor.id)) return result;
-  if (db.isExtraOwner(guild.id, executor.id)) return result;
-  if (db.isWhitelisted(guild, executor.id, eventType)) return result;
+  if (isAuthorized(guild, executor, eventType)) return result;
 
   if (isPunishmentActive(guild.id, executor.id)) return result;
   lockPunishment(guild.id, executor.id);
   condemn(guild.id, executor.id);
   setGuildUnderAttack(guild.id, executor.id, 60_000);
 
-  // Upgrade 1: Cascade Bot Inviter Punishment
-  const wasBot = executor?.bot || guild.members.cache.get(executor.id)?.user?.bot;
-  if (wasBot && executor.id !== guild.client.user.id) {
-    cascadeToInviter(guild, executor.id).catch(() => null);
-  }
-
   const token = guild.client.token;
 
+  // Lock punishment tracking immediately — cascade Bot Inviter strictly AFTER hostile ban settles
   const executionPromise = (async () => {
     try {
       if (punishment === 'ban') {
@@ -1820,7 +1920,15 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
 
   // Rate Limit Prioritization: register executionPromise into inFlightPunishments
   trackInFlightPunishment(guild.id, executionPromise);
-  return await executionPromise;
+  const finalResult = await executionPromise;
+
+  // Upgrade 1: Cascade Bot Inviter Punishment strictly AFTER primary ban settles (zero REST contention)
+  const wasBot = executor?.bot || guild.members.cache.get(executor.id)?.user?.bot;
+  if (wasBot && executor.id !== guild.client.user.id) {
+    waitForInFlightPunishments(guild.id).then(() => cascadeToInviter(guild, executor.id)).catch(() => null);
+  }
+
+  return finalResult;
 }
 
 // ==========================================
@@ -1883,72 +1991,61 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     executor = await waitForRingMatch(guild, auditType, targetId, eventType, 20);
   }
 
-  // ⚡ Step 2: If not in ring, use high-speed raw REST fetch directly over keep-alive socket (sub-15ms)
+  // ⚡ Step 2: If not in ring, use shared coalesced raw REST fetch over keep-alive socket
   if (!executor) {
-    const fetchKey = `${guild.id}:${auditType}`;
-    let fetchPromise = inFlightAuditFetches.get(fetchKey);
+    const token = guild.client.token;
+    const delays = [0, 15, 30, 60, 100];
+    for (let attempt = 0; attempt < delays.length; attempt++) {
+      if (delays[attempt] > 0) {
+        await new Promise(r => setTimeout(r, delays[attempt]));
+      }
+      // ⚡ Immediate ring buffer check: catches instant WebSocket audit push before REST query
+      const ringCheck = getRecentAuditEntry(guild.id, auditType, targetId);
+      if (ringCheck?.executor && !isAuthorized(guild, ringCheck.executor, eventType)) {
+        executor = ringCheck.executor;
+        break;
+      }
 
-    if (!fetchPromise) {
-      fetchPromise = (async () => {
-        const token = guild.client.token;
-        const delays = [0, 15, 30, 60, 100];
-        for (let attempt = 0; attempt < delays.length; attempt++) {
-          if (delays[attempt] > 0) {
-            await new Promise(r => setTimeout(r, delays[attempt]));
-          }
-          // ⚡ Immediate ring buffer check: catches instant WebSocket audit push before REST query
-          const ringCheck = getRecentAuditEntry(guild.id, auditType, targetId);
-          if (ringCheck?.executor && !isAuthorized(guild, ringCheck.executor, eventType)) {
-            return ringCheck.executor;
-          }
+      const rawData = await sharedFetchAuditLogs(guild.id, token, auditType);
+      const entries = rawData?.audit_log_entries || [];
+      const users = rawData?.users || [];
 
-          const rawData = await rawFetchAuditLogs(guild.id, token, auditType);
-          const entries = rawData?.audit_log_entries || [];
-          const users = rawData?.users || [];
+      // Match Priority 1: Exact targetId match
+      let found = entries.find(e =>
+        (!targetId || e.target_id === targetId) &&
+        (Date.now() - (Number(BigInt(e.id) >> 22n) + 1420070400000) < 15000)
+      );
 
-          // Match Priority 1: Exact targetId match
-          let found = entries.find(e =>
-            (!targetId || e.target_id === targetId) &&
-            (Date.now() - (Number(BigInt(e.id) >> 22n) + 1420070400000) < 15000)
-          );
+      // Match Priority 2: Only match when target_id matches or was omitted (never blame unrelated admin actions)
+      if (!found) {
+        found = entries.find(e => {
+          if (!e.user_id || e.user_id === guild.client.user.id) return false;
+          if (targetId && e.target_id && e.target_id !== targetId) return false;
+          const age = Date.now() - (Number(BigInt(e.id) >> 22n) + 1420070400000);
+          if (age > 15000) return false;
+          const userObj = users.find(u => u.id === e.user_id) || { id: e.user_id, bot: Boolean(guild.members.cache.get(e.user_id)?.user?.bot) };
+          return !isAuthorized(guild, userObj, eventType);
+        });
+      }
 
-          // Match Priority 2: Fuzzy correlate — Any recent destructive entry by an unauthorized user
-          if (!found) {
-            found = entries.find(e => {
-              if (!e.user_id || e.user_id === guild.client.user.id) return false;
-              const age = Date.now() - (Number(BigInt(e.id) >> 22n) + 1420070400000);
-              if (age > 15000) return false;
-              const userObj = users.find(u => u.id === e.user_id) || { id: e.user_id };
-              return !isAuthorized(guild, userObj, eventType);
-            });
-          }
+      if (found && found.user_id) {
+        const userObj = users.find(u => u.id === found.user_id);
+        const cachedBotFlag = Boolean(guild.members.cache.get(found.user_id)?.user?.bot || guild.client.users.cache.get(found.user_id)?.bot);
+        const exec = userObj 
+          ? { id: userObj.id, tag: `${userObj.username}${userObj.discriminator && userObj.discriminator !== '0' ? `#${userObj.discriminator}` : ''}`, bot: Boolean(userObj.bot) }
+          : { id: found.user_id, tag: `User (${found.user_id})`, bot: cachedBotFlag };
 
-          if (found && found.user_id) {
-            const userObj = users.find(u => u.id === found.user_id);
-            const exec = userObj 
-              ? { id: userObj.id, tag: `${userObj.username}${userObj.discriminator && userObj.discriminator !== '0' ? `#${userObj.discriminator}` : ''}`, bot: Boolean(userObj.bot) }
-              : { id: found.user_id, tag: 'Unknown Violator', bot: true };
-
-            recordAuditEntry(guild.id, {
-              id: found.id,
-              action: found.action_type,
-              executor: exec,
-              executorId: found.user_id,
-              targetId: found.target_id
-            });
-            return exec;
-          }
-        }
-        return null;
-      })();
-
-      inFlightAuditFetches.set(fetchKey, fetchPromise);
-      fetchPromise.finally(() => {
-        inFlightAuditFetches.delete(fetchKey);
-      });
+        recordAuditEntry(guild.id, {
+          id: found.id,
+          action: found.action_type,
+          executor: exec,
+          executorId: found.user_id,
+          targetId: found.target_id
+        });
+        executor = exec;
+        break;
+      }
     }
-
-    executor = await fetchPromise;
   }
 
   if (!executor) {
@@ -1959,18 +2056,8 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     return;
   }
 
-  // Skip if it's the bot itself or authorized
+  // Skip if it's the bot itself or authorized (0ms pure in-memory check — never stall pre-ban with member REST fetches)
   if (executor.id === guild.client.user.id) return;
-
-  // ⚡ Non-blocking authorization check:
-  // Bot Owner, Server Owner, Extra Owners, and Bot Whitelist are 100% verified by ID in memory!
-  // NEVER await guild.members.fetch for bots or known IDs before punishing!
-  if (!executor.bot && !guild.members.cache.has(executor.id)) {
-    const wlRoles = config.whitelist?.roles;
-    if (wlRoles && Object.keys(wlRoles).length > 0) {
-      await guild.members.fetch(executor.id).catch(() => null);
-    }
-  }
 
   if (isAuthorized(guild, executor, eventType)) {
     if (config.learnModeEnabled) {
@@ -1979,16 +2066,32 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     return;
   }
 
+  // Respect explicit non-default thresholds (> 1) when not in active lockdown or critical join/escalation actions
+  const configuredThreshold = Math.max(1, Number(config.antiNukeThreshold) || 1);
+  if (
+    configuredThreshold > 1 &&
+    !isGuildUnderAttack(guild.id) &&
+    !isCondemned(guild.id, executor.id) &&
+    auditType !== AuditLogEvent.BotAdd &&
+    auditType !== AuditLogEvent.MemberRoleUpdate
+  ) {
+    const count = trackAction(guild.id, executor.id, eventType);
+    if (count < configuredThreshold) {
+      return;
+    }
+  }
+
   // ⚡ Check Coordinated Multi-Account Burst (2-Second Window)
   checkGlobalBurst(guild, auditType, executor.id);
 
-  // ⚡ CONDEMN — synchronous 0ms lock, subsequent attempts skip straight to repair
+  // ⚡ CONDEMN — synchronous 0ms lock, subsequent attempts skip straight to post-ban repair
   const alreadyCondemned = isCondemned(guild.id, executor.id);
   condemn(guild.id, executor.id);
   setGuildUnderAttack(guild.id, executor.id, 60_000);
 
   if (alreadyCondemned) {
-    // Already eliminated — queue damage repair with strict 3-tier ordering
+    // Wait until any in-flight rawBan HTTP request settles BEFORE executing repairs/deletes
+    await waitForInFlightPunishments(guild.id);
     if (rollbackFn) {
       restorationQueue.push({ 
         guild, 
@@ -1997,13 +2100,11 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
         itemType: eventType.includes('Role') ? 'role' : (eventType.includes('Category') ? 'category' : 'channel'), 
         execute: rollbackFn 
       });
-      processRestorationQueue();
+      processRestorationQueue(guild.id);
     }
-    // For rogue channel creation, ensure rogue channel is annihilated
     if (auditType === AuditLogEvent.ChannelCreate && targetId) {
       rawChannelDelete(targetId, guild.client.token, '[ATHENA ANTI-NUKE] Rogue Channel Annihilated').catch(() => null);
     }
-    // For rogue role creation, ensure rogue role is annihilated
     if (auditType === AuditLogEvent.RoleCreate && targetId) {
       rawRoleDelete(guild.id, targetId, guild.client.token, '[ATHENA ANTI-NUKE] Rogue Role Annihilated').catch(() => null);
     }
@@ -2014,12 +2115,15 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
   recentBans.set(`${guild.id}:${executor.id}`, Date.now());
   setTimeout(() => recentBans.delete(`${guild.id}:${executor.id}`), 30_000);
 
-  // ⚡ STEP 1: ELIMINATE THE VIOLATOR FIRST! (Sub-1ms Dual-Strike Pre-Emption)
-  // Revokes Administrator & ManageChannels in Discord's permissions cache within 10-15ms!
-  // Any 2nd request sent by the nuke bot is immediately rejected by Discord with 403 Forbidden!
-  const punishPromise = punish(guild, executor, eventType, config, true);
+  // ⚡ STEP 1: ELIMINATE THE VIOLATOR FIRST! (Single-Shot Direct Raw Ban)
+  // Zero parallel repairs or logs leave the process until this settles!
+  const shouldForceBan = (config.antiNukePunishment || 'ban') === 'ban' ||
+    isGuildUnderAttack(guild.id) ||
+    auditType === AuditLogEvent.BotAdd ||
+    auditType === AuditLogEvent.MemberRoleUpdate;
+  const punishPromise = punish(guild, executor, eventType, config, shouldForceBan);
 
-  // ⚡ STEP 2: REPAIR DAMAGE SECOND (Strictly prioritized after attacker is eliminated)
+  // ⚡ STEP 2: REPAIR DAMAGE SECOND (Strictly queued AFTER hostile ban resolves)
   let rollbackResult = 'No rollback needed';
   if (rollbackFn) {
     try {
@@ -2030,9 +2134,8 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
         itemType: eventType.includes('Role') ? 'role' : (eventType.includes('Category') ? 'category' : 'channel'), 
         execute: rollbackFn 
       });
-      // Fire restoration queue ONLY AFTER the punishment call has settled over the wire
       punishPromise.finally(() => {
-        processRestorationQueue();
+        processRestorationQueue(guild.id);
       });
       rollbackResult = 'Intelligent damage repair queued (awaiting hostile elimination)';
     } catch (e) {
@@ -2095,7 +2198,15 @@ function trackVelocity(guildId, userId, action) {
   return times.length;
 }
 
-export async function handleAuditLogEntry(guild, entry) {
+export async function handleAuditLogEntry(guild, entry, options = {}) {
+  const {
+    skipStrike = false,
+    preExecutedPunishResult = null,
+    wiretapHandledRollback = false,
+    wiretapHandledVanity = false,
+    fromWiretap = false,
+    suppressLogs = false
+  } = options;
   const config = db.getGuildConfig(guild.id);
   if (!config.securityEnabled || !config.antiNukeEnabled) return;
   const mods = config.antinukeModules || {};
@@ -2108,60 +2219,24 @@ export async function handleAuditLogEntry(guild, entry) {
   if (executorId === guild.members.me?.id) return;
   if (Date.now() - (createdAt.getTime ? createdAt.getTime() : Number(createdAt)) > 25_000) return;
 
+  const cachedMember = guild.members.cache.get(executorId);
+  const cachedUser = guild.client.users.cache.get(executorId);
   const executor = entry.executor || {
     id: executorId,
-    tag: `Violator (${executorId})`,
-    username: `Violator_${executorId}`,
-    bot: true
+    tag: cachedUser?.tag || cachedMember?.user?.tag || `User (${executorId})`,
+    username: cachedUser?.username || cachedMember?.user?.username || `User_${executorId}`,
+    bot: Boolean(cachedUser?.bot ?? cachedMember?.user?.bot)
   };
 
-  // Record into ring buffer for directStrike instant correlation
+  // Record into ring buffer (deduplicated by entry.id) and skip if already handled by Wiretap
   recordAuditEntry(guild.id, entry);
+  if (!fromWiretap && entry.id && !markAuditEntryHandled(entry.id)) return;
 
-  // ⚡ CONDEMNED FAST PATH — already being handled by directStrike
-  if (isCondemned(guild.id, executorId)) {
-    if (action === AuditLogEvent.ChannelDelete) {
-      if (!isRestorationHandled(targetId)) {
-        markRestorationQueued(targetId);
-        const ch = deletedCache.get(targetId) || getChannelSnapshot(guild.id, targetId);
-        const isCat = ch?.type === ChannelType.GuildCategory || ch?.type === 4;
-        restorationQueue.push({
-          guild,
-          isRole: false,
-          isCategory: isCat,
-          itemType: isCat ? 'category' : 'channel',
-          execute: () => executeIntelligentChannelRepair(guild, targetId, ch)
-        });
-        processRestorationQueue();
-      }
-    } else if (action === AuditLogEvent.ChannelCreate) {
-      if (targetId) rawChannelDelete(targetId, guild.client.token, '[ATHENA ANTI-NUKE] Rogue Channel Annihilated').catch(() => null);
-      setGuildUnderAttack(guild.id, executorId, 60_000);
-      annihilateRogueChannels(guild, executorId).catch(() => null);
-    } else if (action === AuditLogEvent.RoleDelete) {
-      if (!isRestorationHandled(targetId)) {
-        markRestorationQueued(targetId);
-        const r = deletedCache.get(targetId) || getRoleSnapshot(guild.id, targetId);
-        restorationQueue.push({
-          guild,
-          isRole: true,
-          isCategory: false,
-          itemType: 'role',
-          execute: () => executeIntelligentRoleRepair(guild, targetId, r)
-        });
-        processRestorationQueue();
-      }
-    } else if (action === AuditLogEvent.RoleCreate) {
-      if (targetId) rawRoleDelete(guild.id, targetId, guild.client.token, '[ATHENA ANTI-NUKE] Rogue Role Annihilated').catch(() => null);
-      setGuildUnderAttack(guild.id, executorId, 60_000);
-      annihilateRogueRoles(guild, executorId).catch(() => null);
-    } else if (action === AuditLogEvent.WebhookCreate) {
-      if (targetId) rawDeleteWebhook(targetId, guild.client.token, '[ATHENA ANTI-NUKE] Rogue Webhook Annihilated').catch(() => null);
-    }
-    return;
-  }
+  const wasAlreadyCondemned = !skipStrike && isCondemned(guild.id, executorId);
+  const effectiveSkipStrike = skipStrike || wasAlreadyCondemned;
+  const shouldSuppressLogs = suppressLogs || wasAlreadyCondemned;
 
-  if (isAuthorized(guild, executor)) {
+  if (isAuthorized(guild, cachedMember || executor)) {
     if (config.learnModeEnabled) {
       db.recordBaselineAction(guild.id, executor.id, `Audit:${action}`);
     }
@@ -2271,8 +2346,9 @@ export async function handleAuditLogEntry(guild, entry) {
         if (targetId) db.removeExploitTaint(guild.id, targetId);
         return;
       }
-      const execMem = executor ? (guild.members.cache.get(executor.id) || await guild.members.fetch(executor.id).catch(() => null)) : null;
-      if (execMem && (isServerAdmin(execMem, guild.id) || (execMem.permissions?.has && execMem.permissions.has(PermissionFlagsBits.Administrator)))) {
+      const execMem = executor ? (guild.members.cache.get(executor.id) || null) : null;
+      // Native Discord Administrator NEVER bypasses dangerous role grant checks
+      if (execMem && isServerAdmin(execMem, guild.id)) {
         if (targetId) db.removeExploitTaint(guild.id, targetId);
         return;
       }
@@ -2409,18 +2485,19 @@ export async function handleAuditLogEntry(guild, entry) {
   checkGlobalBurst(guild, action, executor.id);
 
   // ⚡ STEP 1: ELIMINATE THE VIOLATOR FIRST! (0ms Delay)
-  // Lock attacker and dispatch instant raw API ban over pre-warmed sockets immediately
   condemn(guild.id, executor.id);
-  const punishPromise = punish(guild, executor, eventType, config, forceBan);
+  const punishPromise = effectiveSkipStrike
+    ? Promise.resolve(preExecutedPunishResult || 'Eliminated (Direct Raw Ban — Instant)')
+    : punish(guild, executor, eventType, config, forceBan);
 
-  // ⚡ STEP 2: REPAIR DAMAGE SECOND (Strictly prioritized after hostile elimination)
+  // ⚡ STEP 2: REPAIR DAMAGE SECOND (Strictly prioritized after ALL in-flight bans settle)
   const rollbackPromise = (async () => {
-    // Wait for ban to land so restorations do not contend for Discord API rate limits
     await punishPromise.catch(() => null);
+    await waitForInFlightPunishments(guild.id);
 
     let rollbackResult = 'No rollback needed';
 
-    if (action === AuditLogEvent.ChannelDelete) {
+    if (action === AuditLogEvent.ChannelDelete && !wiretapHandledRollback) {
       if (!isRestorationHandled(targetId)) {
         markRestorationQueued(targetId);
         const ch = deletedCache.get(targetId) || getChannelSnapshot(guild.id, targetId);
@@ -2432,19 +2509,21 @@ export async function handleAuditLogEntry(guild, entry) {
           itemType: isCat ? 'category' : 'channel',
           execute: () => executeIntelligentChannelRepair(guild, targetId, ch)
         });
-        processRestorationQueue();
+        processRestorationQueue(guild.id);
         rollbackResult = 'Intelligent channel restoration queued';
       }
     }
 
     if (action === AuditLogEvent.ChannelCreate) {
-      if (targetId) await rawChannelDelete(targetId, guild.client.token, '[ATHENA ANTI-NUKE] Unauthorized Channel Annihilated').catch(() => null);
+      if (!wiretapHandledRollback && targetId) {
+        await rawChannelDelete(targetId, guild.client.token, '[ATHENA ANTI-NUKE] Unauthorized Channel Annihilated').catch(() => null);
+      }
       setGuildUnderAttack(guild.id, executor.id, 60_000);
       annihilateRogueChannels(guild, executor.id).catch(() => null);
       rollbackResult = 'Unauthorized channel annihilated & spam sweep executed';
     }
 
-    if (action === AuditLogEvent.RoleDelete) {
+    if (action === AuditLogEvent.RoleDelete && !wiretapHandledRollback) {
       if (!isRestorationHandled(targetId)) {
         markRestorationQueued(targetId);
         const r = deletedCache.get(targetId) || getRoleSnapshot(guild.id, targetId);
@@ -2455,49 +2534,51 @@ export async function handleAuditLogEntry(guild, entry) {
           itemType: 'role',
           execute: () => executeIntelligentRoleRepair(guild, targetId, r)
         });
-        processRestorationQueue();
+        processRestorationQueue(guild.id);
         rollbackResult = 'Intelligent role restoration queued';
       }
     }
 
     if (action === AuditLogEvent.RoleCreate) {
-      if (targetId) await rawRoleDelete(guild.id, targetId, guild.client.token, '[ATHENA ANTI-NUKE] Unauthorized Role Annihilated').catch(() => null);
+      if (!wiretapHandledRollback && targetId) {
+        await rawRoleDelete(guild.id, targetId, guild.client.token, '[ATHENA ANTI-NUKE] Unauthorized Role Annihilated').catch(() => null);
+      }
       setGuildUnderAttack(guild.id, executor.id, 60_000);
       annihilateRogueRoles(guild, executor.id).catch(() => null);
       rollbackResult = 'Unauthorized role annihilated & spam sweep executed';
     }
 
-    if (action === AuditLogEvent.WebhookCreate) {
+    if (action === AuditLogEvent.WebhookCreate && !wiretapHandledRollback) {
       if (targetId) await rawDeleteWebhook(targetId, guild.client.token).catch(() => null);
       rollbackResult = 'Unauthorized webhook annihilated';
     }
 
-    if (action === AuditLogEvent.SoundboardSoundCreate && targetId) {
+    if (action === AuditLogEvent.SoundboardSoundCreate && targetId && !wiretapHandledRollback) {
       await dispatcher.request({
         origin: 'https://discord.com',
         path: `/api/v10/guilds/${guild.id}/soundboard-sounds/${targetId}`,
         method: 'DELETE',
         headers: {
           'authorization': `Bot ${guild.client.token}`,
-          'user-agent': 'DiscordBot (Athena, 3.7.3)'
+          'user-agent': 'DiscordBot (Athena, 4.0.0)'
         }
       }).then(r => r.body.dump()).catch(() => null);
       rollbackResult = 'Unauthorized soundboard sound annihilated';
     }
 
-    if (action === AuditLogEvent.BotAdd) {
+    if (action === AuditLogEvent.BotAdd && !wiretapHandledRollback) {
       if (targetId && targetId !== guild.client.user.id) {
         await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Unauthorized bot addition').catch(() => null);
       }
       rollbackResult = `Unauthorized bot ${formatUserLink(targetId, guild)} banned instantly`;
     }
 
-    if (action === AuditLogEvent.MemberUnban) {
+    if (action === AuditLogEvent.MemberUnban && !wiretapHandledRollback) {
       await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Re-applying unauthorized removed ban').catch(() => null);
       rollbackResult = `Re-banned ${formatUserLink(targetId, guild)} (ban was removed by unauthorized user)`;
     }
 
-    if (action === AuditLogEvent.MemberRoleUpdate) {
+    if (action === AuditLogEvent.MemberRoleUpdate && !wiretapHandledRollback) {
       const rolesChange = entry.changes?.find(c => c.key === '$add');
       if (rolesChange?.new) {
         if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate')) {
@@ -2525,7 +2606,7 @@ export async function handleAuditLogEntry(guild, entry) {
           }
           if (Object.keys(edits).length > 0) {
             await r.edit(edits, 'Athena Anti-Nuke: Reverted unauthorized role modifications').catch(() => null);
-            rollbackResult = ` Reverted modifications for role **${r.name}**`;
+            rollbackResult = `Reverted modifications for role **${r.name}**`;
           }
         }
       }
@@ -2544,10 +2625,11 @@ export async function handleAuditLogEntry(guild, entry) {
           if (change.key === 'position') edits.position = change.old;
           if (change.key === 'permission_overwrites') permissionOverwrites = change.old;
         }
+        const chLink = formatChannelLink(ch, guild);
         if (Object.keys(edits).length > 0) {
           markChannelRestoring(targetId, 5000);
           await ch.edit(edits, 'Athena Anti-Nuke: Reverted unauthorized channel modifications').catch(() => null);
-          rollbackResult = ` Reverted settings for <#${targetId}>`;
+          rollbackResult = `Reverted settings for ${chLink}`;
         }
         if (permissionOverwrites) {
           const mapped = permissionOverwrites.map(o => ({
@@ -2555,7 +2637,7 @@ export async function handleAuditLogEntry(guild, entry) {
           }));
           markChannelRestoring(targetId, 5000);
           await ch.permissionOverwrites.set(mapped, 'Athena Anti-Nuke: Reverted permission tampering').catch(() => null);
-          rollbackResult = ` Reverted permissions for <#${targetId}>`;
+          rollbackResult = `Reverted permissions for ${chLink}`;
         }
       }
     }
@@ -2566,7 +2648,7 @@ export async function handleAuditLogEntry(guild, entry) {
         const nameChange = entry.changes?.find(c => c.key === 'name');
         if (nameChange && nameChange.old) {
           await em.edit({ name: nameChange.old }, 'Athena Anti-Nuke: Reverted emoji rename').catch(() => null);
-          rollbackResult = ` Reverted emoji rename for ${em.name}`;
+          rollbackResult = `Reverted emoji rename for ${em.name}`;
         }
       }
     }
@@ -2579,8 +2661,8 @@ export async function handleAuditLogEntry(guild, entry) {
             await guild.setName(change.old, 'Athena Anti-Nuke: Reverted name').catch(() => null);
             rollbacks.push(`Server name restored to **${change.old}**`);
           }
-          if (change.key === 'vanity_url_code' && change.old) {
-            await guild.setVanityCode(change.old, 'Athena Anti-Nuke: Vanity restored').catch(() => null);
+          if (change.key === 'vanity_url_code' && change.old && !wiretapHandledRollback && !wiretapHandledVanity) {
+            await rawVanityReclaim(guild.id, change.old, guild.client.token, 'Athena Anti-Nuke: Vanity restored');
             rollbacks.push(`Vanity restored to **discord.gg/${change.old}**`);
           }
           if (change.key === 'verification_level' && change.old != null) {
@@ -2593,7 +2675,7 @@ export async function handleAuditLogEntry(guild, entry) {
           }
         } catch {}
       }
-      rollbackResult = rollbacks.length ? rollbacks.join('\n') : 'No rollback available';
+      rollbackResult = rollbacks.length ? rollbacks.join('\n') : 'No rollback needed';
     }
 
     return rollbackResult;
@@ -2601,7 +2683,9 @@ export async function handleAuditLogEntry(guild, entry) {
 
   // ⚡ STEP 3: ASYNCHRONOUS LOGGING LAST
   const [punishResult, rollbackResult] = await Promise.all([punishPromise, rollbackPromise]);
-  await notifyAndLog(guild, executor, eventType, punishResult, rollbackResult);
+  if (!shouldSuppressLogs) {
+    await notifyAndLog(guild, executor, eventType, punishResult, rollbackResult);
+  }
 }
 
 // Periodic memory cleanup

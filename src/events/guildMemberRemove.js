@@ -1,11 +1,11 @@
 import { AuditLogEvent } from 'discord.js';
-import { directStrike, getRecentAuditEntry } from '../utils/antinuke.js';
+import { getRecentAuditEntry } from '../utils/antinuke.js';
 import db from '../database.js';
 import statsDB from '../statsDB.js';
 import { sendLeaveMessage } from '../commands/welcome.js';
-import { logServerEvent } from '../utils/serverLogger.js';
+import { logServerEvent, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import embed from '../embed.js';
-import { getSafeUserAvatar, getSafeGuildIcon } from '../utils/helpers.js';
+import { getSafeUserAvatar, getSafeGuildIcon, formatUserLink } from '../utils/helpers.js';
 
 export default {
   name: 'guildMemberRemove',
@@ -30,43 +30,43 @@ export default {
       member.send({ embeds: [leaveDm] }).catch(() => null);
     } catch {}
 
-    // ⚡ DIRECT STRIKE — detect kicks the instant the gateway fires
-    // No 500ms wait. directStrike fetches the audit log immediately.
-    directStrike(
-      guild,
-      AuditLogEvent.MemberKick,
-      'Member Kick (Mass Kick Attack)',
-      member.id,
-      null // Kicks cannot be auto-reversed
-    ).catch(() => null);
+    // Kicks are intercepted at 0ms directly via Gateway GUILD_AUDIT_LOG_ENTRY_CREATE in fastWiretap.js.
+    // Do NOT poll REST GET /audit-logs on normal voluntary member leaves!
 
-    // Non-blocking server logging — zero REST audit contention with Anti-Nuke
+    // Non-blocking server logging — skips completely if neither kicks nor leaves logging is active
     (async () => {
       try {
+        const kickLogOn = isServerLogModuleEnabled(guild.id, 'kicks');
+        const leaveLogOn = isServerLogModuleEnabled(guild.id, 'leaves');
+        if (!kickLogOn && !leaveLogOn) return;
+
         let ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberKick, member.id);
-        if (!ring) {
+        if (!ring || ring.targetId !== member.id) {
           await new Promise(r => setTimeout(r, 1500));
           ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberKick, member.id);
         }
 
-        const isKick = !!ring;
-        const executor = ring?.executor ? `${ring.executor.tag} (<@${ring.executor.id}>)` : 'Unknown (Native/Other Bot)';
+        const isKick = Boolean(ring && ring.targetId === member.id);
+        if (isKick && !kickLogOn) return;
+        if (!isKick && !leaveLogOn) return;
+
+        const executor = ring?.executor ? `${formatUserLink(ring.executor, guild)} (\`${ring.executor.id}\`)` : 'Unknown (Native/Other Bot)';
         const reason = ring?.reason || 'No reason provided';
 
         const memberUser = member.user || await member.client.users.fetch(member.id).catch(() => null);
-        const userTag = memberUser ? memberUser.tag : (member.displayName || member.id);
+        const userLink = formatUserLink(memberUser || member, guild);
         const avatarUrl = getSafeUserAvatar(memberUser || member, 256);
 
         if (isKick) {
           const kickEmbed = embed.build({
-            description: `__**Member Kicked |**__ <a:uptime:1552608831060844575>\n> **User:** ${userTag} (<@${member.id}>)\n>  **Executor:** ${executor}\n>  **Reason:** ${reason}`,
+            description: `__**Member Kicked |**__ <a:uptime:1552608831060844575>\n> **User:** ${userLink} (\`${member.id}\`)\n>  **Executor:** ${executor}\n>  **Reason:** ${reason}`,
             color: '#2b2d31',
             thumbnail: avatarUrl
           });
           await logServerEvent(guild, 'kicks', kickEmbed);
         } else {
           const leaveEmbed = embed.build({
-            description: `__**Member Left |**__ <a:uptime:1552608831060844575>\n> **User:** ${userTag} (<@${member.id}>)`,
+            description: `__**Member Left |**__ <a:uptime:1552608831060844575>\n> **User:** ${userLink} (\`${member.id}\`)`,
             color: '#2b2d31',
             thumbnail: avatarUrl
           });

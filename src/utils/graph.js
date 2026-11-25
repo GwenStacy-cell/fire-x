@@ -33,141 +33,215 @@ function drawSpline(ctx, pts) {
   }
 }
 
-export async function generatePingGraph(pingHistory, accentColorHex = '#00e5ff', guildsCount = 10, patternsCount = 41) {
+export async function generatePingGraph(
+  pingHistory,
+  accentColorHex = '#00e5ff',
+  guildsCount = 10,
+  extraMetrics = {}
+) {
   let rawData = Array.isArray(pingHistory) ? [...pingHistory] : [pingHistory];
-  rawData = rawData.filter(v => typeof v === 'number' && !isNaN(v) && v > 0);
+  rawData = rawData
+    .filter(v => typeof v === 'number' && Number.isFinite(v) && v >= 0)
+    .map(v => Math.round(v));
 
-  const currentPing = rawData.length > 0 ? Math.round(rawData[rawData.length - 1]) : 17;
-  const numPoints = 16;
+  if (rawData.length === 0) rawData = [0];
 
-  // Build 16 rich timeline samples with natural network packet jitter
-  let data = [];
-  if (rawData.length >= numPoints) {
-    data = rawData.slice(-numPoints);
-  } else if (rawData.length > 1) {
-    data = [...rawData];
-    while (data.length < numPoints) {
-      const prev = data[0];
-      const jitter = (Math.random() - 0.5) * (prev * 0.3);
-      data.unshift(Math.max(5, Math.round(prev + jitter)));
+  const maxPoints = 16;
+  const realSamples = rawData.slice(-maxPoints);
+  const currentPing = realSamples[realSamples.length - 1];
+
+  // Genuine stats strictly derived from recorded real samples (zero fake spikes/jitter)
+  const minVal = Math.min(...realSamples);
+  const maxVal = Math.max(...realSamples);
+  const avgVal = Math.round(realSamples.reduce((a, b) => a + b, 0) / realSamples.length);
+
+  // Mean consecutive sample delta for real jitter
+  let jitterNum = 0;
+  if (realSamples.length > 1) {
+    let deltaSum = 0;
+    for (let i = 1; i < realSamples.length; i++) {
+      deltaSum += Math.abs(realSamples[i] - realSamples[i - 1]);
     }
-  } else {
-    const base = currentPing;
-    for (let i = 0; i < numPoints - 1; i++) {
-      const spikeChance = (i === 4 || i === 11) || Math.random() < 0.2;
-      const spike = spikeChance ? (Math.random() * 0.4 + 0.2) * base : 0;
-      const wave = Math.sin(i * 0.7) * (base * 0.2);
-      const randomJitter = (Math.random() - 0.5) * (base * 0.25);
-      const val = Math.max(5, Math.round(base + wave + randomJitter + spike));
-      data.push(val);
-    }
-    data.push(base); // Final node is always current live ping
+    jitterNum = deltaSum / (realSamples.length - 1);
   }
+  const jitterVal = jitterNum.toFixed(1);
 
-  // Ensure visible telemetry curve variation
-  const minRaw = Math.min(...data);
-  const maxRaw = Math.max(...data);
-  if (maxRaw - minRaw < 8) {
-    data = data.map((val, idx) => {
-      if (idx === numPoints - 1) return val;
-      const mod = Math.sin(idx * 0.8) * 6 + (Math.random() * 5 - 2.5);
-      return Math.max(5, Math.round(val + mod));
-    });
-  }
+  // Keep a smooth 2+ point plot even when only 1 sample exists at cold boot
+  const data = realSamples.length === 1 ? [realSamples[0], realSamples[0]] : realSamples;
+  const numPoints = data.length;
 
-  const minVal = Math.min(...data);
-  const maxVal = Math.max(...data);
-  const avgVal = Math.round(data.reduce((a, b) => a + b, 0) / data.length);
-  const jitterVal = (Math.abs(maxVal - minVal) / 4).toFixed(1);
-
-  const width = 880;
-  const height = 270;
+  const width = 920;
+  const height = 300;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
-  // Exact server accent color parsing
-  const { r, g, b, hex: cleanHex } = hexToRgb(accentColorHex);
+  const { r, g, b } = hexToRgb(accentColorHex);
+  const socketMs = extraMetrics?.socketMs ?? null;
+  const restMs = extraMetrics?.restMs ?? null;
+  const strikeLabel = extraMetrics?.strikeSummaryShort || 'STANDBY';
 
-  // Background - deep technical slate
-  ctx.fillStyle = '#08090d';
+  // Background — deep obsidian tactical card with rounded clipped border
+  ctx.save();
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(0, 0, width, height, 14);
+  else ctx.rect(0, 0, width, height);
+  ctx.clip();
+
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+  bgGrad.addColorStop(0, '#090b12');
+  bgGrad.addColorStop(1, '#06070c');
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, width, height);
 
-  // Ambient radial glow matching accent color
-  const bgRadial = ctx.createRadialGradient(width / 2, height / 2, 30, width / 2, height / 2, 420);
-  bgRadial.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.10)`);
-  bgRadial.addColorStop(0.6, `rgba(${r}, ${g}, ${b}, 0.03)`);
-  bgRadial.addColorStop(1, 'rgba(8, 9, 13, 0)');
+  // Subtle ambient accent glow behind chart center-right
+  const bgRadial = ctx.createRadialGradient(width * 0.65, height * 0.45, 20, width * 0.65, height * 0.45, 420);
+  bgRadial.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.14)`);
+  bgRadial.addColorStop(0.55, `rgba(${r}, ${g}, ${b}, 0.04)`);
+  bgRadial.addColorStop(1, 'rgba(6, 7, 12, 0)');
   ctx.fillStyle = bgRadial;
   ctx.fillRect(0, 0, width, height);
 
-  // Auto-ranging Y scale with comfortable margins
-  const yMin = Math.max(0, Math.floor(minVal * 0.75));
-  const yMax = Math.ceil(maxVal * 1.3);
-  const yRange = Math.max(12, yMax - yMin);
+  // Top Header Strip
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
+  ctx.fillRect(0, 0, width, 54);
+  ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.22)`;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, 54);
+  ctx.lineTo(width, 54);
+  ctx.stroke();
 
-  const plotLeft = 68;
-  const plotRight = 835;
-  const plotTop = 48;
-  const plotBottom = 215;
+  // Header Title
+  ctx.fillStyle = '#f8fafc';
+  ctx.font = 'bold 15px sans-serif';
+  ctx.textAlign = 'left';
+  const titleLeft = 'ATHENA ';
+  ctx.fillText(titleLeft, 28, 33);
+  const leftW = ctx.measureText(titleLeft).width;
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  ctx.fillText('TELEMETRY MATRIX', 28 + leftW, 33);
+
+  // Health signal chip
+  const statusLabel = currentPing < 80 ? 'OPTIMAL' : currentPing < 160 ? 'NOMINAL' : 'ELEVATED';
+  const statusChipX = 28 + leftW + ctx.measureText('TELEMETRY MATRIX').width + 14;
+  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.16)`;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(statusChipX, 18, 76, 20, 5);
+  else ctx.rect(statusChipX, 18, 76, 20);
+  ctx.fill();
+  ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.45)`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  ctx.font = 'bold 10px monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(statusLabel, statusChipX + 38, 32);
+
+  // Top-right real transport chips
+  const topChips = [
+    { label: 'WS', value: `${currentPing}ms` },
+    ...(socketMs != null ? [{ label: 'TLS', value: `${socketMs}ms` }] : []),
+    ...(restMs != null ? [{ label: 'REST', value: `${restMs}ms` }] : [])
+  ];
+  let chipCursorX = width - 26;
+  ctx.font = 'bold 11px monospace';
+  for (let i = topChips.length - 1; i >= 0; i--) {
+    const ch = topChips[i];
+    const textStr = `${ch.label} ${ch.value}`;
+    const chipW = ctx.measureText(textStr).width + 20;
+    chipCursorX -= chipW;
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.045)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(chipCursorX, 16, chipW, 24, 6);
+    else ctx.rect(chipCursorX, 16, chipW, 24);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.22)';
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillText(textStr, chipCursorX + chipW / 2, 32);
+    chipCursorX -= 8;
+  }
+
+  // Plot geometry
+  const plotLeft = 70;
+  const plotRight = width - 30;
+  const plotTop = 76;
+  const plotBottom = 236;
   const plotWidth = plotRight - plotLeft;
   const plotHeight = plotBottom - plotTop;
 
-  // Grid styling - subtle dashed horizontal lines
-  ctx.lineWidth = 1;
+  const yPad = Math.max(6, Math.ceil((maxVal - minVal) * 0.25) + 4);
+  const yMin = Math.max(0, minVal - yPad);
+  const yMax = Math.max(yMin + 12, maxVal + yPad);
+  const yRange = yMax - yMin;
+
+  // Horizontal dashed gridlines & Y ticks
   const ySteps = 4;
+  ctx.font = '10px monospace';
   for (let i = 0; i <= ySteps; i++) {
     const y = plotTop + (i * (plotHeight / ySteps));
-    ctx.strokeStyle = i === ySteps ? '#252936' : '#141722';
+    ctx.save();
+    ctx.strokeStyle = i === ySteps ? 'rgba(148, 163, 184, 0.24)' : 'rgba(148, 163, 184, 0.09)';
+    if (i < ySteps) ctx.setLineDash([4, 6]);
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(plotLeft, y);
     ctx.lineTo(plotRight, y);
     ctx.stroke();
+    ctx.restore();
+
+    const tickMs = Math.round(yMax - (i * (yRange / ySteps)));
+    ctx.fillStyle = '#64748b';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${tickMs}ms`, plotLeft - 10, y + 3);
   }
 
-  // Vertical timeline division lines
+  // Vertical timeline divisions
   for (let i = 0; i < numPoints; i++) {
-    const x = plotLeft + (i * (plotWidth / (numPoints - 1)));
-    ctx.strokeStyle = '#12151f';
+    const x = plotLeft + (i * (plotWidth / Math.max(1, numPoints - 1)));
+    ctx.strokeStyle = 'rgba(148, 163, 184, 0.06)';
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x, plotTop);
     ctx.lineTo(x, plotBottom);
     ctx.stroke();
   }
 
-  // Average benchmark line (dashed accent line)
-  const avgFraction = (avgVal - yMin) / yRange;
-  const avgY = plotBottom - (avgFraction * plotHeight);
+  // Average benchmark dashed line
+  const avgY = plotBottom - (((avgVal - yMin) / yRange) * plotHeight);
   if (avgY >= plotTop && avgY <= plotBottom) {
     ctx.save();
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.28)`;
-    ctx.setLineDash([4, 6]);
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.35)`;
+    ctx.setLineDash([5, 5]);
+    ctx.lineWidth = 1.2;
     ctx.beginPath();
     ctx.moveTo(plotLeft, avgY);
     ctx.lineTo(plotRight, avgY);
     ctx.stroke();
     ctx.restore();
 
-    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.65)`;
+    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.85)`;
     ctx.font = 'bold 9px monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText(`AVG: ${avgVal}ms`, plotRight - 6, avgY - 4);
+    ctx.textAlign = 'left';
+    ctx.fillText(`AVG ${avgVal}ms`, plotLeft, plotTop - 7);
   }
 
-  // Calculate points on canvas
-  const points = data.map((val, i) => {
-    const fraction = (val - yMin) / yRange;
-    return {
-      x: plotLeft + (i * (plotWidth / (numPoints - 1))),
-      y: plotBottom - (fraction * plotHeight),
-      val,
-      index: i
-    };
-  });
+  // Points
+  const points = data.map((val, i) => ({
+    x: plotLeft + (i * (plotWidth / Math.max(1, numPoints - 1))),
+    y: plotBottom - (((val - yMin) / yRange) * plotHeight),
+    val,
+    index: i
+  }));
 
-  // Gradient area fill under the curve
+  // Gradient area fill
   const areaGradient = ctx.createLinearGradient(0, plotTop, 0, plotBottom);
-  areaGradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.40)`);
-  areaGradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, 0.14)`);
+  areaGradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.36)`);
+  areaGradient.addColorStop(0.65, `rgba(${r}, ${g}, ${b}, 0.08)`);
   areaGradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.0)`);
 
   ctx.beginPath();
@@ -179,54 +253,49 @@ export async function generatePingGraph(pingHistory, accentColorHex = '#00e5ff',
   ctx.fillStyle = areaGradient;
   ctx.fill();
 
-  // Multi-pass glowing curve
   // Outer glow pass
   ctx.beginPath();
   ctx.moveTo(points[0].x, points[0].y);
   drawSpline(ctx, points);
-  ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.45)`;
-  ctx.lineWidth = 6;
+  ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.32)`;
+  ctx.lineWidth = 7;
   ctx.stroke();
 
-  // Crisp core line
+  // Core neon stroke
   ctx.beginPath();
   ctx.moveTo(points[0].x, points[0].y);
   drawSpline(ctx, points);
   ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
-  ctx.lineWidth = 2.5;
-  ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.9)`;
-  ctx.shadowBlur = 12;
+  ctx.lineWidth = 2.6;
+  ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.85)`;
+  ctx.shadowBlur = 10;
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  // Timeline Nodes along the curve
+  // Nodes
   for (let i = 0; i < points.length; i++) {
     const pt = points[i];
     const isLatest = i === points.length - 1;
-    const isPeak = pt.val === maxVal && !isLatest;
 
     if (isLatest) {
-      // Pulsing outer aura ring
       ctx.beginPath();
       ctx.arc(pt.x, pt.y, 11, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.22)`;
+      ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.20)`;
       ctx.fill();
 
-      // Middle ring
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 7, 0, Math.PI * 2);
+      ctx.arc(pt.x, pt.y, 6.5, 0, Math.PI * 2);
       ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.55)`;
       ctx.fill();
 
-      // Bright solid core
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 4.5, 0, Math.PI * 2);
+      ctx.arc(pt.x, pt.y, 3.8, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();
     } else {
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = isPeak ? `rgb(${r}, ${g}, ${b})` : '#08090d';
+      ctx.arc(pt.x, pt.y, 3.2, 0, Math.PI * 2);
+      ctx.fillStyle = '#07090e';
       ctx.fill();
       ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
       ctx.lineWidth = 1.8;
@@ -234,121 +303,63 @@ export async function generatePingGraph(pingHistory, accentColorHex = '#00e5ff',
     }
   }
 
-  // Live telemetry badge on the latest point
+  // Live point pill
   const lastPt = points[points.length - 1];
-  const badgeText = `${lastPt.val}ms LIVE`;
-  ctx.font = 'bold 11px sans-serif';
+  const badgeText = `${currentPing}ms NOW`;
+  ctx.font = 'bold 11px monospace';
   const badgeWidth = ctx.measureText(badgeText).width + 18;
-  const badgeX = Math.min(plotRight - badgeWidth / 2, Math.max(plotLeft + badgeWidth / 2, lastPt.x));
-  const badgeY = Math.max(plotTop + 14, lastPt.y - 14);
+  const badgeX = Math.min(plotRight - badgeWidth / 2 - 2, Math.max(plotLeft + badgeWidth / 2, lastPt.x));
+  const badgeY = lastPt.y - 34 < plotTop ? lastPt.y + 24 : lastPt.y - 26;
 
-  // Badge background pill
   ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-  ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.6)`;
+  ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.5)`;
   ctx.shadowBlur = 8;
   ctx.beginPath();
-  if (ctx.roundRect) {
-    ctx.roundRect(badgeX - badgeWidth / 2, badgeY - 10, badgeWidth, 20, 5);
-  } else {
-    ctx.rect(badgeX - badgeWidth / 2, badgeY - 10, badgeWidth, 20);
-  }
+  if (ctx.roundRect) ctx.roundRect(badgeX - badgeWidth / 2, badgeY - 10, badgeWidth, 20, 5);
+  else ctx.rect(badgeX - badgeWidth / 2, badgeY - 10, badgeWidth, 20);
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  // Tiny live dot inside badge
-  ctx.fillStyle = '#08090d';
-  ctx.beginPath();
-  ctx.arc(badgeX - badgeWidth / 2 + 9, badgeY, 3, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Badge text
-  ctx.fillStyle = '#08090d';
-  ctx.textAlign = 'left';
-  ctx.fillText(badgeText, badgeX - badgeWidth / 2 + 16, badgeY + 4);
-
-  // Precision Timeline axis ticks & labels
-  const timelineLabels = [
-    { idx: 0, text: '-60s' },
-    { idx: 3, text: '-45s' },
-    { idx: 6, text: '-30s' },
-    { idx: 9, text: '-20s' },
-    { idx: 12, text: '-10s' },
-    { idx: 15, text: 'NOW' }
-  ];
-
-  ctx.font = '10px monospace';
-  for (let i = 0; i < numPoints; i++) {
-    const x = plotLeft + (i * (plotWidth / (numPoints - 1)));
-    const isLatest = i === numPoints - 1;
-
-    // Small tick marks on timeline axis
-    ctx.strokeStyle = isLatest ? `rgb(${r}, ${g}, ${b})` : '#303444';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x, plotBottom);
-    ctx.lineTo(x, plotBottom + (isLatest ? 7 : 4));
-    ctx.stroke();
-
-    const labelObj = timelineLabels.find(l => l.idx === i);
-    if (labelObj) {
-      ctx.fillStyle = isLatest ? `rgb(${r}, ${g}, ${b})` : '#6a7082';
-      ctx.textAlign = 'center';
-      ctx.fillText(labelObj.text, x, plotBottom + 18);
-    }
-  }
-
-  // Y-axis tick values
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#7a8196';
-  ctx.font = '10px monospace';
-  ctx.fillText(`${yMin}ms`, plotLeft - 10, plotBottom + 3);
-  ctx.fillText(`${Math.round((yMin + yMax) / 2)}ms`, plotLeft - 10, Math.round((plotTop + plotBottom) / 2) + 3);
-  ctx.fillText(`${yMax}ms`, plotLeft - 10, plotTop + 4);
-
-  // Rotated Y-axis title
-  ctx.save();
-  ctx.translate(20, Math.round((plotTop + plotBottom) / 2));
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  ctx.fillStyle = '#06070c';
   ctx.textAlign = 'center';
-  ctx.font = 'bold 10px monospace';
-  ctx.fillText('LATENCY (ms)', 0, 0);
+  ctx.fillText(badgeText, badgeX, badgeY + 4);
+
+  // Sample timeline ticks
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#64748b';
+  ctx.fillText(realSamples.length > 1 ? `T-${realSamples.length - 1}` : 'INIT', plotLeft, plotBottom + 16);
+  ctx.textAlign = 'right';
+  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+  ctx.fillText(`NOW (${realSamples.length}/${maxPoints} SAMPLES)`, plotRight, plotBottom + 16);
+
+  // Bottom KPI Footer Bar
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
+  ctx.fillRect(0, height - 34, width, 34);
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, height - 34);
+  ctx.lineTo(width, height - 34);
+  ctx.stroke();
+
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText(`MIN ${minVal}ms   •   AVG ${avgVal}ms   •   PEAK ${maxVal}ms   •   JITTER ±${jitterVal}ms`, 28, height - 13);
+
+  ctx.textAlign = 'right';
+  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.90)`;
+  ctx.fillText(`${guildsCount} GUILDS   •   128 TLS SOCKETS   •   STRIKE ${strikeLabel}`, width - 28, height - 13);
+
+  // Outer card frame stroke
+  ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.30)`;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(0.75, 0.75, width - 1.5, height - 1.5, 14);
+  else ctx.rect(0.75, 0.75, width - 1.5, height - 1.5);
+  ctx.stroke();
+
   ctx.restore();
-
-  // Bottom Timeline Subtext
-  ctx.fillStyle = '#454a5c';
-  ctx.font = '9px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('TELEMETRY TIMELINE ──► BUFFER CAPTURE TO LIVE SOCKET STREAM', Math.round((plotLeft + plotRight) / 2), height - 10);
-
-  // Header Title
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 15px sans-serif';
-  ctx.textAlign = 'left';
-  const prefix = 'SYSTEM LATENCY ';
-  ctx.fillText(prefix, plotLeft, 25);
-  const pWidth = ctx.measureText(prefix).width;
-  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-  ctx.fillText('TIMELINE', plotLeft + pWidth, 25);
-
-  // Status tag chip
-  const tagX = plotLeft + pWidth + ctx.measureText('TIMELINE').width + 14;
-  ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.18)`;
-  ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(tagX, 13, 62, 16, 4);
-  else ctx.rect(tagX, 13, 62, 16);
-  ctx.fill();
-
-  ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-  ctx.font = 'bold 9px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('● ACTIVE', tagX + 31, 24);
-
-  // Right Telemetry Metrics
-  ctx.fillStyle = '#8f95a8';
-  ctx.font = '10px monospace';
-  ctx.textAlign = 'right';
-  ctx.fillText(`MIN: ${minVal}ms  •  AVG: ${avgVal}ms  •  PEAK: ${maxVal}ms  •  JITTER: ±${jitterVal}ms  •  ${guildsCount} GUILDS`, plotRight, 25);
-
   return canvas.toBuffer('image/png');
 }

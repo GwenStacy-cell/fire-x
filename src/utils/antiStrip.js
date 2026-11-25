@@ -395,8 +395,10 @@ export async function syncSupportingRolePositions(guild, reason = 'Athena Auto-D
       : false;
     if (!hasManageRoles) return false;
 
-    // Always fetch latest role cache
-    await guild.roles.fetch().catch(() => null);
+    // Only hit REST roles.fetch when explicitly forced or role cache isn't hydrated yet
+    if (options?.force || guild.roles.cache.size <= 1) {
+      await guild.roles.fetch().catch(() => null);
+    }
 
     const firewallId = config.firewallRoleId || config.athenFirewallRoleId;
     const unbypassableId = config.unbypassableRoleId || config.athenaUnbypassableRoleId;
@@ -534,7 +536,7 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       return null;
     }
     
-    const { getRecentAuditEntry, rawFetchAuditLogs, rawBan } = await import('./antinuke.js');
+    const { getRecentAuditEntry, sharedFetchAuditLogs, rawBan, condemn, setGuildUnderAttack, trackInFlightPunishment } = await import('./antinuke.js');
     
     // ⚡ STEP 1: Check the WebSocket Audit Ring first (0ms latency, zero HTTP requests)
     let executor = null;
@@ -543,9 +545,9 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       executor = ringMatch.executor;
     }
 
-    // ⚡ STEP 2: If not in ring, fetch from direct Undici socket (sub-15ms)
+    // ⚡ STEP 2: If not in ring, fetch via coalesced Undici socket (zero redundant REST spam)
     if (!executor) {
-      const rawData = await rawFetchAuditLogs(guild.id, guild.client.token, auditLogType);
+      const rawData = await sharedFetchAuditLogs(guild.id, guild.client.token, auditLogType);
       const entries = rawData?.audit_log_entries || [];
       const users = rawData?.users || [];
       const found = entries.find(e => 
@@ -555,7 +557,8 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       );
       if (found && found.user_id) {
         const u = users.find(usr => usr.id === found.user_id);
-        executor = u ? { id: u.id, tag: `${u.username}`, bot: Boolean(u.bot) } : { id: found.user_id, tag: 'Violator', bot: true };
+        const cachedBotFlag = Boolean(guild.members.cache.get(found.user_id)?.user?.bot || guild.client.users.cache.get(found.user_id)?.bot);
+        executor = u ? { id: u.id, tag: `${u.username}`, bot: Boolean(u.bot) } : { id: found.user_id, tag: `User (${found.user_id})`, bot: cachedBotFlag };
       }
     }
 
@@ -564,8 +567,12 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       const token = guild.client.token;
       const reason = `[ATHENA ANTI-STAB] Hostile neutralized: Attempted to ${actionText}`;
 
-      // ⚡ STEP 3: SUB-1MS DIRECT RAW BAN (NO ROLE STRIP OVERHEAD)
-      const banOk = await rawBan(guild.id, executor.id, token, reason);
+      // ⚡ STEP 3: SUB-1MS TRACKED DIRECT RAW BAN (NO ROLE STRIP OVERHEAD)
+      condemn(guild.id, executor.id);
+      setGuildUnderAttack(guild.id, executor.id, 60_000);
+      const banPromise = rawBan(guild.id, executor.id, token, reason);
+      trackInFlightPunishment(guild.id, banPromise);
+      const banOk = await banPromise;
 
       if (banOk) {
         punishedText = `\n\n**Hostile Neutralization:** Directly and permanently **BANNED** the attacker before a second action could execute.`;

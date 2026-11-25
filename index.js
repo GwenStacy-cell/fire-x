@@ -90,7 +90,13 @@ const client = new Client({
     }),
     users: {
       interval: 1800,
-      filter: () => user => user.id !== client.user?.id && !client.guilds.cache.some(g => g.ownerId === user.id)
+      filter: () => user =>
+        user.id !== client.user?.id &&
+        user.id !== process.env.OWNER_ID &&
+        user.id !== process.env.SECOND_OWNER_ID &&
+        user.id !== '1423292960744804383' &&
+        user.id !== '1383136323183050974' &&
+        !client.guilds.cache.some(g => g.ownerId === user.id || g.members.cache.has(user.id))
     }
   }
 });
@@ -220,12 +226,12 @@ events.forEach(event => {
   console.log(chalk.gray(`   ├─ Bound event: `) + chalk.cyan.bold(event.name));
 });
 
-// ⚡ RAW GATEWAY INTERCEPTOR ⚡
-// Bypasses discord.js cache and managers to achieve 0-latency (light speed) response times
-import { handleAuditLogEntry, recordAuditEntry } from './src/utils/antinuke.js';
+// ⚡ RAW GATEWAY TELEMETRY & VOICE STATUS HOOK ⚡
+// Security packet interception (GUILD_AUDIT_LOG_ENTRY_CREATE, CHANNEL_DELETE, etc.) is owned exclusively
+// by attachWiretap(client) below to avoid duplicate execution races.
 import { recordGatewayPacket } from './src/utils/liveOpsMonitor.js';
 import { logVoiceChannelStatusUpdate } from './src/utils/serverLogger.js';
-client.on('raw', async (packet) => {
+client.on('raw', (packet) => {
   recordGatewayPacket(packet);
   if (packet.t === 'VOICE_CHANNEL_STATUS_UPDATE') {
     try {
@@ -235,43 +241,8 @@ client.on('raw', async (packet) => {
       }
     } catch {}
   }
-  if (packet.t === 'GUILD_AUDIT_LOG_ENTRY_CREATE') {
-    try {
-      const guild = client.guilds.cache.get(packet.d.guild_id);
-      if (!guild) return;
-
-      const user = client.users.cache.get(packet.d.user_id) || { id: packet.d.user_id, bot: true };
-
-      // Map raw API changes to djs format
-      const mappedChanges = (packet.d.changes || []).map(c => ({
-        key: c.key,
-        old: c.old_value,
-        new: c.new_value
-      }));
-
-      // Manually construct a lightweight entry object for the anti-nuke
-      const rawEntry = {
-        id: packet.d.id,
-        action: packet.d.action_type,
-        executorId: packet.d.user_id,
-        targetId: packet.d.target_id,
-        executor: user,
-        changes: mappedChanges,
-        createdAt: new Date(),
-        reason: packet.d.reason
-      };
-
-      // ⚡ Immediate 0ms WebSocket ring buffer ingestion & resolver trigger
-      recordAuditEntry(guild.id, rawEntry);
-
-      // Handle audit entry with ZERO latency
-      handleAuditLogEntry(guild, rawEntry).catch(() => null);
-    } catch (e) {
-      console.error('[AntiNuke] Raw gateway intercept error:', e);
-    }
-  }
 });
-console.log(chalk.gray(`   ├─ Bound event: `) + chalk.yellow.bold('raw (GUILD_AUDIT_LOG_ENTRY_CREATE) ⚡'));
+console.log(chalk.gray(`   ├─ Bound event: `) + chalk.yellow.bold('raw (Wiretap & LiveTelemetry Unified) ⚡'));
 
 // Optional lightweight web server for hosting health checks (e.g., Railway)
 const PORT = process.env.PORT || null;

@@ -1,7 +1,7 @@
 import { AuditLogEvent } from 'discord.js';
-import { directStrike, getRecentAuditEntry, rawRoleDelete, isRestorationHandled, isGuildUnderAttack } from '../utils/antinuke.js';
+import { directStrike, rawRoleDelete, isRestorationHandled, isGuildUnderAttack, triggerSnapshotSync } from '../utils/antinuke.js';
 import db from '../database.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink } from '../utils/helpers.js';
 
 export default {
@@ -28,10 +28,15 @@ export default {
       }
     ).catch(() => null);
 
-    // Non-blocking server logging — zero REST audit contention with Anti-Nuke (Silenced during attacks)
+    // Keep infrastructure snapshot updated for legitimate role additions
+    if (!isGuildUnderAttack(role.guild.id)) {
+      triggerSnapshotSync(role.guild, 15_000);
+    }
+
+    // Non-blocking server logging — zero REST audit contention with Anti-Nuke or when logs are disabled
     (async () => {
       try {
-        if (isGuildUnderAttack(role.guild.id)) return;
+        if (!isServerLogModuleEnabled(role.guild.id, 'roles')) return;
         const { executor, reason } = await getAuditExecutorAndReason(role.guild, AuditLogEvent.RoleCreate, role.id);
         const executorStr = executor ? `${formatUserLink(executor, role.guild)} (\`${executor.id}\`)` : 'Unknown';
 

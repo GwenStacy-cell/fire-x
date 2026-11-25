@@ -600,9 +600,8 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      const allowed = message.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(message.author.id) || message.author.id === message.guild.ownerId || db.isExtraOwner(message.guild.id, message.author.id);
-      if (!allowed) {
-        return message.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'));
       }
 
       if (!args[0] || args[0].toLowerCase() === 'list') {
@@ -641,9 +640,8 @@ export const commands = [
       await message.reply(panel);
     },
     async executeSlash(interaction) {
-      const allowed = interaction.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild.ownerId || db.isExtraOwner(interaction.guild.id, interaction.user.id);
-      if (!allowed) {
-        return interaction.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'));
       }
 
       const target = interaction.options.getMentionable('target');
@@ -698,9 +696,8 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      const allowed = message.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(message.author.id) || message.author.id === message.guild.ownerId || db.isExtraOwner(message.guild.id, message.author.id);
-      if (!allowed) {
-        return message.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'));
       }
       const action = (args[0] || 'list').toLowerCase();
       const domain = args[1];
@@ -708,9 +705,8 @@ export const commands = [
       return message.reply(panel);
     },
     async executeSlash(interaction) {
-      const allowed = interaction.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild.ownerId || db.isExtraOwner(interaction.guild.id, interaction.user.id);
-      if (!allowed) {
-        return interaction.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'));
       }
       const action = interaction.options.getString('action') || 'list';
       const domain = interaction.options.getString('domain');
@@ -890,9 +886,8 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      const allowed = message.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(message.author.id) || message.author.id === message.guild.ownerId || db.isExtraOwner(message.guild.id, message.author.id);
-      if (!allowed) {
-        return message.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'));
       }
       
       const sub = args.join(' ').toLowerCase().trim();
@@ -1516,18 +1511,16 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      const allowed = message.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(message.author.id) || message.author.id === message.guild.ownerId || db.isExtraOwner(message.guild.id, message.author.id);
-      if (!allowed) {
-        return message.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can view live security records.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can view live security records.'));
       }
       const page = Math.max(0, (parseInt(args[0]) || 1) - 1);
       const panel = await getSecurityLiveRecordsPanel(message.guild, page);
       return message.reply(panel);
     },
     async executeSlash(interaction) {
-      const allowed = interaction.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild.ownerId || db.isExtraOwner(interaction.guild.id, interaction.user.id);
-      if (!allowed) {
-        return interaction.reply(cv2.danger('Access Denied', ' Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can view live security records.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can view live security records.'));
       }
       const page = Math.max(0, (interaction.options.getInteger('page') || 1) - 1);
       const panel = await getSecurityLiveRecordsPanel(interaction.guild, page);
@@ -2374,17 +2367,15 @@ export const commands = [
     permissions: [PermissionFlagsBits.Administrator],
     options: [],
     async executePrefix(message) {
-      const allowed = message.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(message.author.id) || message.author.id === message.guild.ownerId || db.isExtraOwner(message.guild.id, message.author.id);
-      if (!allowed) {
-        return message.reply(cv2.danger('Access Denied', 'Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'));
       }
       const panel = await getSecurityHealthPanel(message.guild);
       await message.reply(panel);
     },
     async executeSlash(interaction) {
-      const allowed = interaction.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild.ownerId || db.isExtraOwner(interaction.guild.id, interaction.user.id);
-      if (!allowed) {
-        return interaction.reply(cv2.danger('Access Denied', 'Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can use this command.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can use this command.'));
       }
       await interaction.deferReply();
       const panel = await getSecurityHealthPanel(interaction.guild);
@@ -2408,18 +2399,16 @@ export const commands = [
       }
     ],
     async executePrefix(message, args) {
-      const allowed = message.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(message.author.id) || message.author.id === message.guild.ownerId || db.isExtraOwner(message.guild.id, message.author.id);
-      if (!allowed) {
-        return message.reply(cv2.danger('Access Denied', 'Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can request a tactical dispatch.'));
+      if (!isExtraOwnerOrHigher(message.author.id, message.guild)) {
+        return message.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can request a tactical dispatch.'));
       }
       const targetVc = message.mentions.channels.first() || (args[0] ? message.guild.channels.cache.get(args[0]) : null) || message.member.voice?.channel;
       const result = await handleTacticalBriefing(message.guild, message.member, message.channel, targetVc);
       return message.reply(result);
     },
     async executeSlash(interaction) {
-      const allowed = interaction.member.permissions.has(PermissionFlagsBits.Administrator) || isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild.ownerId || db.isExtraOwner(interaction.guild.id, interaction.user.id);
-      if (!allowed) {
-        return interaction.reply(cv2.danger('Access Denied', 'Only **Administrators**, the **Server Owner**, **Extra Owners**, or the **Bot Owner** can request a tactical dispatch.'));
+      if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+        return interaction.reply(cv2.danger('Access Denied', 'Only the **Server Owner**, designated **Extra Owners**, or the **Bot Owner** can request a tactical dispatch.'));
       }
       const targetVc = interaction.options.getChannel('voicechannel') || interaction.member.voice?.channel;
       await interaction.deferReply();
@@ -4900,10 +4889,16 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
       return cv2.danger('Sentinel Creation Failed | <a:04_cross_circle:1565665644806934639>', 'Failed to create or assign persistence roles to Athena. Please check bot permissions and hierarchy in Server Settings.');
     }
 
-    updates.firewallRoleId = roleRes.firewallRole?.id || null;
-    updates.unbypassableRoleId = roleRes.unbypassableRole?.id || null;
-    updates.athenFirewallRoleId = roleRes.firewallRole?.id || null;
-    updates.athenaUnbypassableRoleId = roleRes.unbypassableRole?.id || null;
+    const cfg = db.getGuildConfig(guild.id);
+    const updates = {
+      securityEnabled: true,
+      antiNukeEnabled: true,
+      antinukeModules: Object.fromEntries(ANTINUKE_ALL_KEYS.map(k => [k, true])),
+      firewallRoleId: roleRes.firewallRole?.id || null,
+      unbypassableRoleId: roleRes.unbypassableRole?.id || null,
+      athenFirewallRoleId: roleRes.firewallRole?.id || null,
+      athenaUnbypassableRoleId: roleRes.unbypassableRole?.id || null
+    };
     db.updateGuildConfig(guild.id, updates);
 
     const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
@@ -4911,10 +4906,15 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
   } else {
     const { removePersistenceRoles } = await import('../utils/antiStrip.js');
     await removePersistenceRoles(guild).catch(() => null);
-    updates.firewallRoleId = null;
-    updates.unbypassableRoleId = null;
-    updates.athenFirewallRoleId = null;
-    updates.athenaUnbypassableRoleId = null;
+    const updates = {
+      securityEnabled: false,
+      antiNukeEnabled: false,
+      antinukeModules: Object.fromEntries(ANTINUKE_ALL_KEYS.map(k => [k, false])),
+      firewallRoleId: null,
+      unbypassableRoleId: null,
+      athenFirewallRoleId: null,
+      athenaUnbypassableRoleId: null
+    };
     db.updateGuildConfig(guild.id, updates);
   }
 
@@ -4925,8 +4925,6 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
       db.addBlacklistWord(guild.id, 'nuke');
       db.addBlacklistWord(guild.id, 'spam');
     }
-  } else {
-    db.updateGuildConfig(guild.id, { blacklistWords: [] });
   }
 
   const resEmbed = enable
@@ -5433,7 +5431,6 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
       allowAllLinks:            false,
       allowInvitesGlobally:     false,
       botOwnerBypass:           false,
-      blacklistWords:           [],
       antinukeModules:          Object.fromEntries(ANTINUKE_ALL_KEYS.map(k => [k, false])),
       firewallRoleId:           null,
       unbypassableRoleId:       null,
@@ -6283,6 +6280,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
             automodAIEnabled: true,
             automodDoxxingEnabled: true,
             automodToxicityEnabled: true,
+            aiToxicityEnabled: true,
             antinukeModules: activeModules
           });
 
@@ -6389,6 +6387,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
         automodAIEnabled: true,
         automodDoxxingEnabled: true,
         automodToxicityEnabled: true,
+        aiToxicityEnabled: true,
         antinukeModules: modules
       });
 

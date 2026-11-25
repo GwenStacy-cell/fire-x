@@ -1,9 +1,13 @@
-import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, WRONG_EMOJI, WARN_EMOJI, MARKET_CAP_ICON, GLOBAL_STOCK_ICON, CHESS_ICON, ARCADE_CASINO_ICON, ROLEPLAY_MATRIX_ICON, SOUNDBOARD_RADIO_ICON, NINJA_BULLET, NINJA_BULLET_RTL, HOME_BEAT_EMOJI, DELETE_BEAT_EMOJI, PREVIOUS_BEAT_EMOJI, NEXT_BEAT_EMOJI, NAV_EMOJI_IDS } from '../utils/emojis.js';
-import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, MessageFlags, Routes } from 'discord.js';
+import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI, UPTIME_EMOJI, WRONG_EMOJI, WARN_EMOJI, MARKET_CAP_ICON, GLOBAL_STOCK_ICON, CHESS_ICON, ARCADE_CASINO_ICON, ROLEPLAY_MATRIX_ICON, SOUNDBOARD_RADIO_ICON, NINJA_BULLET, NINJA_BULLET_RTL, HOME_BEAT_EMOJI, DELETE_BEAT_EMOJI, PREVIOUS_BEAT_EMOJI, NEXT_BEAT_EMOJI, NAV_EMOJI_IDS } from '../utils/emojis.js';
+import { PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType, ContainerBuilder, SectionBuilder, TextDisplayBuilder, ThumbnailBuilder, SeparatorBuilder, MessageFlags, Routes, AttachmentBuilder } from 'discord.js';
 import db from '../database.js';
 import cv2 from '../cv2.js';
 import { processMp3Link, processMediaLink } from '../utils/mediaDownloader.js';
-import { isAuthorized, cleanDisplayName, checkCommandClearance } from '../utils/helpers.js';
+import { isAuthorized, cleanDisplayName, checkCommandClearance, formatUserLink } from '../utils/helpers.js';
+import { combatTelemetry, dispatcher } from '../utils/antinuke.js';
+import { generatePingGraph } from '../utils/graph.js';
+import { CHANGELOG_ENTRIES } from '../utils/changelogData.js';
+import { performance } from 'perf_hooks';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -80,6 +84,146 @@ export async function optimizeEmojiBuffer(buffer, isAnimated = false) {
 // ——————————————————————————————————————————————————
 function h(text) {
   return `__**${text.toUpperCase()}**__`;
+}
+
+export async function buildPingPayload(client, guild, user, member = null) {
+  const cfg = db.getGuildConfig(guild?.id || '0');
+  const accentHex = cfg?.accentColor || '#00e5ff';
+  const parsedHex = parseInt(String(accentHex).replace('#', ''), 16);
+  const accentColorInt = Number.isFinite(parsedHex) ? parsedHex : 0x00E5FF;
+
+  const rawWsPing = client.ws?.ping;
+  const hasWsPing = typeof rawWsPing === 'number' && Number.isFinite(rawWsPing) && rawWsPing >= 0;
+  const wsMs = hasWsPing ? Math.round(rawWsPing) : 0;
+  const wsDisplay = hasWsPing ? `${wsMs}ms` : 'Calibrating...';
+
+  if (!Array.isArray(client.pingHistory)) client.pingHistory = [];
+  if (hasWsPing) {
+    client.pingHistory.push(wsMs);
+    if (client.pingHistory.length > 25) client.pingHistory.shift();
+  }
+
+  // Real DB cache lookup timing (nanosecond resolution, zero simulated jitter)
+  const dbStart = process.hrtime.bigint();
+  db.getGuildConfig(guild?.id || '0');
+  const dbNanos = Number(process.hrtime.bigint() - dbStart);
+  const dbMs = Math.max(0.01, dbNanos / 1e6).toFixed(2);
+
+  // Measure warm Undici TLS socket RTT & Discord.js REST RTT concurrently
+  const restPromise = (async () => {
+    if (!client.rest?.get) return null;
+    const t0 = performance.now();
+    const ok = await client.rest.get(Routes.gateway()).then(() => true).catch(() => false);
+    return ok ? Math.max(1, Math.round(performance.now() - t0)) : null;
+  })();
+
+  const tlsPromise = (async () => {
+    const t0 = performance.now();
+    try {
+      const res = await dispatcher.request({
+        origin: 'https://discord.com',
+        path: '/api/v10/gateway',
+        method: 'GET'
+      });
+      await res.body?.dump?.().catch(() => null);
+      return Math.max(1, Math.round(performance.now() - t0));
+    } catch {
+      return null;
+    }
+  })();
+
+  const [restMs, socketMs] = await Promise.all([restPromise, tlsPromise]);
+
+  const stats = combatTelemetry.getStats();
+  const strikeSummaryShort = stats.totalStrikes > 0 ? `${stats.avgLatency}ms AVG` : 'STANDBY';
+  const strikeText = stats.totalStrikes > 0
+    ? `${stats.avgLatency}ms avg (${stats.minLatency}-${stats.maxLatency}ms · ${stats.successfulStrikes}/${stats.totalStrikes} strikes)`
+    : `Standby (0 strikes · Armed)`;
+
+  const guildCount = client.guilds?.cache?.size || 0;
+  const buffer = await generatePingGraph(
+    client.pingHistory.length > 0 ? client.pingHistory : [wsMs],
+    accentHex,
+    guildCount,
+    { socketMs, restMs, strikeSummaryShort }
+  ).catch(() => null);
+
+  const uptimeSec = Math.max(0, Math.floor(process.uptime()));
+  const d = Math.floor(uptimeSec / 86400);
+  const h = Math.floor((uptimeSec % 86400) / 3600);
+  const m = Math.floor((uptimeSec % 3600) / 60);
+  const s = uptimeSec % 60;
+  const uptimeStr = [d ? `${d}d` : null, (h || d) ? `${h}h` : null, `${m}m`, `${s}s`].filter(Boolean).join(' ');
+
+  const mem = process.memoryUsage();
+  const heapMb = (mem.heapUsed / 1048576).toFixed(1);
+  const rssMb = (mem.rss / 1048576).toFixed(1);
+
+  const shardId = guild?.shardId ?? 0;
+  const totalShards = client.ws?.shards?.size || 1;
+  const signalTier = !hasWsPing ? 'Calibrating' : (wsMs < 80 ? 'Optimal' : wsMs < 160 ? 'Nominal' : 'Elevated');
+  const poolSize = stats.socketPool?.connections || 128;
+  const poolHeartbeat = stats.socketPool?.heartbeatDaemon || '8s (Active Heartbeat)';
+  const version = CHANGELOG_ENTRIES[0]?.version || 'v4.0.5';
+
+  const initiatorLink = formatUserLink(member || user, guild);
+  const networkBlockText =
+    `### Network & Anti-Nuke Pipeline\n` +
+    `> ${BULLET_EMOJI} **Gateway WebSocket:** \`${wsDisplay}\` · **Discord REST:** \`${restMs != null ? `${restMs}ms` : 'N/A'}\`\n` +
+    `> ${BULLET_EMOJI} **Warm TLS Socket:** \`${socketMs != null ? `${socketMs}ms` : 'N/A'}\` · **Pool:** \`${poolSize} sockets (${poolHeartbeat})\`\n` +
+    `> ${BULLET_EMOJI} **Anti-Nuke Strike Latency:** \`${strikeText}\``;
+
+  const runtimeBlockText =
+    `### Runtime & Memory Health\n` +
+    `> ${BULLET_EMOJI} **Config Cache Lookup:** \`${dbMs}ms\` · **Process RAM:** \`${heapMb} MB Heap\` / \`${rssMb} MB RSS\`\n` +
+    `> ${BULLET_EMOJI} **System Uptime:** \`${uptimeStr}\` · **Cluster Scope:** \`${guildCount.toLocaleString()} guilds\``;
+
+  const botAvatarUrl = client.user?.displayAvatarURL?.({ size: 256 }) || null;
+  const components = [
+    {
+      type: 10,
+      content:
+        `# ${NINJA_BULLET} Athena System & Combat Telemetry | ${TICK_EMOJI} ${NINJA_BULLET_RTL}\n` +
+        `-# ${UPTIME_EMOJI} **Requested by:** ${initiatorLink} · **Signal:** \`${signalTier}\` · **Shard:** \`#${shardId + 1}/${totalShards}\``
+    },
+    { type: 14, divider: true },
+    botAvatarUrl
+      ? {
+          type: 9,
+          components: [{ type: 10, content: networkBlockText }],
+          accessory: { type: 11, media: { url: botAvatarUrl } }
+        }
+      : { type: 10, content: networkBlockText },
+    { type: 10, content: runtimeBlockText }
+  ];
+
+  const files = [];
+  if (buffer && buffer.length > 0) {
+    files.push(new AttachmentBuilder(buffer, { name: 'ping_graph.png' }));
+    components.push({ type: 14, divider: true });
+    components.push({
+      type: 12,
+      items: [{ media: { url: 'attachment://ping_graph.png' } }]
+    });
+  }
+
+  components.push({ type: 14, divider: true });
+  components.push({
+    type: 10,
+    content: `-# **Athena Prime ${version} · Pre-Warmed TCP_NODELAY Pipeline · Real-Time Telemetry**`
+  });
+
+  const pingContainer = {
+    type: 17,
+    accent_color: accentColorInt,
+    components
+  };
+
+  return {
+    components: [pingContainer],
+    files,
+    flags: MessageFlags.IsComponentsV2
+  };
 }
 
 export const commands = [
@@ -2293,137 +2437,20 @@ export const commands = [
   // --- PING COMMAND ---
   {
     name: 'ping',
-      aliases: ['p', 'latency'],
-      description: 'Checks the bot and gateway latency.',
-      category: 'utility',
-      permissions: [],
-      async executePrefix(message) {
-        const { AttachmentBuilder } = await import('discord.js');
-        let generatePingGraph; try { generatePingGraph = (await import('../utils/graph.js')).generatePingGraph; } catch(e) { }
-        const cfg = db.getGuildConfig(message.guild?.id || '0');
-        const accentHex = cfg?.accentColor || '#00e5ff';
-        const wsMs  = Math.max(5, Math.round(message.client.ws.ping) || 17);
-
-        if (!message.client.pingHistory) message.client.pingHistory = [];
-        message.client.pingHistory.push(wsMs);
-        if (message.client.pingHistory.length > 25) message.client.pingHistory.shift();
-
-        const dbStart = process.hrtime.bigint();
-        db.getGuildConfig(message.guild?.id || '0');
-        const dbNanos = Number(process.hrtime.bigint() - dbStart);
-        const dbMs = (Math.max(0.1, dbNanos / 1e6) + (Math.random() * 0.2)).toFixed(1);
-
-        const rSet = (0.7 + Math.random() * 0.8).toFixed(1);
-        const rGet = (0.2 + Math.random() * 0.4).toFixed(1);
-        const rDel = (0.4 + Math.random() * 0.6).toFixed(1);
-
-        // Ultra-low latency concurrent REST roundtrip & Canvas graph generation
-        const restStart = Date.now();
-        const [gatewayData, buffer] = await Promise.all([
-          message.client.rest.get(Routes.gateway()).catch(() => null),
-          generatePingGraph ? generatePingGraph(message.client.pingHistory, accentHex, message.client.guilds.cache.size) : null
-        ]);
-        const restMs = Math.max(1, Date.now() - restStart);
-
-        const rawName = message.member?.displayName || message.author.displayName || message.author.username;
-        const cleanNick = cleanDisplayName(rawName);
-
-        const components = [
-          {
-            type: 10,
-            content: `# ${NINJA_BULLET} Gateway & Engine Latency | ${TICK_EMOJI} ${NINJA_BULLET_RTL}\n` +
-                     `> -# <a:uptime:1552608831060844575> **Initiator:** [${cleanNick}](https://discord.com/users/${message.author.id}) · **WebSocket:** \`${wsMs}ms\` · **REST API:** \`${restMs}ms\`\n` +
-                     `> -# <a:target_blink:1565667466984554588> **SQLite Engine:** \`${dbMs}ms\` · **Redis Cache:** \`SET: ${rSet}ms\` · \`GET: ${rGet}ms\` · \`DEL: ${rDel}ms\``
-          }
-        ];
-
-        const files = [];
-        if (buffer) {
-          files.push(new AttachmentBuilder(buffer, { name: 'ping_graph.png' }));
-          components.push({
-            type: 12,
-            items: [{ media: { url: 'attachment://ping_graph.png' } }]
-          });
-        }
-
-        const pingContainer = {
-          type: 17,
-          accent_color: 0x2B2D31,
-          components
-        };
-
-        await message.reply({ components: [pingContainer], files, flags: 32768 });
-      },
-      async executeSlash(interaction) {
-        const { AttachmentBuilder } = await import('discord.js');
-        let generatePingGraph; try { generatePingGraph = (await import('../utils/graph.js')).generatePingGraph; } catch(e) { }
-        const cfg = db.getGuildConfig(interaction.guild?.id || '0');
-        const accentHex = cfg?.accentColor || '#00e5ff';
-        const wsMs  = Math.max(5, Math.round(interaction.client.ws.ping) || 17);
-
-        if (!interaction.client.pingHistory) interaction.client.pingHistory = [];
-        interaction.client.pingHistory.push(wsMs);
-        if (interaction.client.pingHistory.length > 25) interaction.client.pingHistory.shift();
-
-        const dbStart = process.hrtime.bigint();
-        db.getGuildConfig(interaction.guild?.id || '0');
-        const dbNanos = Number(process.hrtime.bigint() - dbStart);
-        const dbMs = (Math.max(0.1, dbNanos / 1e6) + (Math.random() * 0.2)).toFixed(1);
-
-        const rSet = (0.7 + Math.random() * 0.8).toFixed(1);
-        const rGet = (0.2 + Math.random() * 0.4).toFixed(1);
-        const rDel = (0.4 + Math.random() * 0.6).toFixed(1);
-
-        // Ultra-low latency concurrent REST roundtrip & Canvas graph generation
-        const restStart = Date.now();
-        const [gatewayData, buffer] = await Promise.all([
-          interaction.client.rest.get(Routes.gateway()).catch(() => null),
-          generatePingGraph ? generatePingGraph(interaction.client.pingHistory, accentHex, interaction.client.guilds.cache.size) : null
-        ]);
-        const restMs = Math.max(1, Date.now() - restStart);
-
-        const rawName = interaction.member?.displayName || interaction.user.displayName || interaction.user.username;
-        const cleanNick = cleanDisplayName(rawName);
-
-        const components = [
-          {
-            type: 10,
-            content: `# ${NINJA_BULLET} Gateway & Engine Latency | ${TICK_EMOJI} ${NINJA_BULLET_RTL}\n` +
-                     `> -# <a:uptime:1552608831060844575> **Initiator:** [${cleanNick}](https://discord.com/users/${interaction.user.id}) · **WebSocket:** \`${wsMs}ms\` · **REST API:** \`${restMs}ms\`\n` +
-                     `> -# <a:target_blink:1565667466984554588> **SQLite Engine:** \`${dbMs}ms\` · **Redis Cache:** \`SET: ${rSet}ms\` · \`GET: ${rGet}ms\` · \`DEL: ${rDel}ms\``
-          }
-        ];
-
-        const files = [];
-        if (buffer) {
-          files.push(new AttachmentBuilder(buffer, { name: 'ping_graph.png' }));
-          components.push({
-            type: 12,
-            items: [{ media: { url: 'attachment://ping_graph.png' } }]
-          });
-        }
-
-        const pingContainer = {
-          type: 17,
-          accent_color: 0x2B2D31,
-          components
-        };
-
-        if (interaction.deferred || interaction.replied) {
-          await interaction.editReply({
-            components: [pingContainer],
-            files,
-            flags: 32768
-          });
-        } else {
-          await interaction.reply({
-            components: [pingContainer],
-            files,
-            flags: 32768
-          });
-        }
-      }
+    aliases: ['p', 'latency'],
+    description: 'Checks the bot, WebSocket, warm TLS socket, Anti-Nuke strike, and runtime telemetry.',
+    category: 'utility',
+    permissions: [],
+    async executePrefix(message) {
+      const payload = await buildPingPayload(message.client, message.guild, message.author, message.member);
+      await message.reply(payload);
     },
+    async executeSlash(interaction) {
+      await interaction.deferReply();
+      const payload = await buildPingPayload(interaction.client, interaction.guild, interaction.user, interaction.member);
+      await interaction.editReply(payload);
+    }
+  },
     // --- TIME COMMAND ---
   {
     name: 'time',

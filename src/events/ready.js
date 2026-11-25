@@ -221,7 +221,7 @@ export default {
     const homeVcGuilds = [];
 
     client.guilds.cache.forEach(guild => {
-      // Take ground-truth infrastructure snapshot for zero-delay intelligent restoration
+      // Take initial ground-truth infrastructure snapshot, then warm member roster in background for role whitelists & role-member restore
       snapshotGuildInfrastructure(guild);
       pruneDuplicateSecurityLogChannels(guild).catch(() => null);
 
@@ -230,6 +230,13 @@ export default {
       if (cfg && (cfg.securityEnabled || cfg.antiNukeEnabled)) {
         ensureUnbypassableRole(guild, { force: true }).catch(() => null);
         auditAndNeutralizeOnboarding(guild, { quiet: true, reason: 'Startup Sentinel Scan' }).catch(() => null);
+        // Hydrate full member cache asynchronously (keeps 0ms in-memory role whitelist & role-member snapshots accurate)
+        const wlRoles = cfg.whitelist?.roles;
+        if (guild.members.cache.size < guild.memberCount || (wlRoles && Object.keys(wlRoles).length > 0)) {
+          setTimeout(() => {
+            guild.members.fetch().then(() => snapshotGuildInfrastructure(guild)).catch(() => null);
+          }, 1500).unref();
+        }
       } else {
         // IDLE MODE: When security / antinuke is not enabled, bot must NOT keep persistence roles
         removePersistenceRoles(guild).catch(() => null);

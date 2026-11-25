@@ -300,7 +300,7 @@ export async function collectLiveTelemetry(guild, client) {
     rolesCount: guildSnapshot?.roles?.size || 0,
     lastUpdated: guildSnapshot?.lastUpdated ? `<t:${Math.floor(guildSnapshot.lastUpdated / 1000)}:R>` : 'Active',
     deletedItemsCached: deletedCache?.size || 0,
-    restorationsQueued: restorationRegistry?.queued?.length || 0
+    restorationsQueued: restorationRegistry?.queued?.size || 0
   };
 
   // Guild Hierarchy & 200 Member Gate

@@ -6,7 +6,7 @@ import { executeQuarantine } from '../commands/security.js';
 import { PermissionFlagsBits, Routes, MessageFlags } from 'discord.js';
 import { logToSecurityChannel, getOrCreateQuarantineRole, getOrCreateQuarantineChannel, isBotOwnerSync, getUserTierName, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon, formatUserLink, sendGuildMemberDM } from '../utils/helpers.js';
 import { sendWelcomeMessage } from '../commands/welcome.js';
-import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, condemn, cascadeToInviter, directStrike, resolveBotInviter } from '../utils/antinuke.js';
+import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, condemn, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, resolveBotInviter } from '../utils/antinuke.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 
@@ -65,16 +65,21 @@ export default {
         // UNAUTHORIZED BOT ADDITION: Added by a non-owner user!
         console.warn(`[AntiNuke] UNAUTHORIZED bot ${member.id} added by non-owner ${inviterId || 'unknown'}. Vaporizing bot and inviter!`);
         condemn(guild.id, member.id);
+        setGuildUnderAttack(guild.id, inviterId || member.id, 60_000);
 
-        // 1. Direct Instant Raw Ban on the rogue bot
-        rawBan(guild.id, member.id, guild.client.token, '[ATHENA ANTINUKE] Unauthorized Bot Addition: Only Server Owner can add bots').catch(() => null);
+        // 1 & 2. Phase 1: Raw Ban rogue bot + rogue inviter FIRST (tracked in inFlightPunishments)
+        const botBanPromise = rawBan(guild.id, member.id, guild.client.token, '[ATHENA ANTINUKE] Unauthorized Bot Addition: Only Server Owner can add bots', { actionType: 'BOT_ADD_JOIN' });
+        trackInFlightPunishment(guild.id, botBanPromise);
 
-        // 2. Direct Instant Raw Ban on the rogue inviter
         if (inviterId && inviterId !== guild.ownerId && !isBotOwnerSync(inviterId)) {
           condemn(guild.id, inviterId);
-          rawBan(guild.id, inviterId, guild.client.token, `[ATHENA ANTINUKE] Unauthorized Bot Addition: Added rogue bot (${member.id})`).catch(() => null);
+          const invBanPromise = rawBan(guild.id, inviterId, guild.client.token, `[ATHENA ANTINUKE] Unauthorized Bot Addition: Added rogue bot (${member.id})`, { actionType: 'BOT_ADD_INVITER' });
+          trackInFlightPunishment(guild.id, invBanPromise);
           db.addExploitTaint(guild.id, inviterId, `Invited unauthorized bot (${member.id}) into server`);
         }
+
+        // Wait until BOTH hostile bans settle over the wire before logging / DMing (Ban-First guarantee)
+        await waitForInFlightPunishments(guild.id);
 
         // 3. Log to security channel and DM Server Owner
         const inviterText = inviterId ? formatUserLink(inviterId, guild) : '`Unknown / Hidden OAuth2`';
@@ -87,9 +92,17 @@ export default {
         );
         logToSecurityChannel(guild, alertMsg).catch(() => null);
         sendGuildMemberDM(guild, guild.ownerId, alertMsg).catch(() => null);
-
-        // 4. Fire directStrike for telemetry logging
-        directStrike(guild, 28 /* AuditLogEvent.BotAdd */, 'Unauthorized Bot Addition', member.id, null).catch(() => null);
+        try {
+          db.addSecurityLiveRecord(guild.id, {
+            executorTag: inviterId || member.id,
+            executorId: inviterId || member.id,
+            eventType: 'Unauthorized Bot Addition',
+            verdict: 'Bot & Inviter Raw Banned',
+            rollback: 'Rogue bot and inviter eliminated on join',
+            latencyMs: 1,
+            severity: 'critical'
+          });
+        } catch {}
       }
       return;
     }
@@ -108,23 +121,19 @@ export default {
         );
 
         if (dangerousJoinRoles.size > 0) {
-          // 1. Instant Direct Raw Ban: Sub-10ms permanent eviction without role-strip delay
-          await rawBan(guild.id, member.id, guild.client.token, '[ATHENA ANTINUKE] Joined with unauthorized dangerous/administrative permissions (Linked Role / Onboarding bypass)').catch(() => null);
-
-          // 2. Disarm dangerous permissions from the roles themselves ONLY if actual Linked Role (guildConnections)
-          for (const role of dangerousJoinRoles.values()) {
-            if (role.editable && role.tags?.guildConnections && hasDangerousPerms(role.permissions)) {
-              const safePerms = role.permissions.remove(DANGEROUS_PERMS);
-              await role.setPermissions(safePerms, '[ATHENA ANTINUKE] Disarming dangerous permissions from join-exploited role').catch(() => null);
-            }
-          }
-
-          // 3. Taint the joining member
+          // 1. Instant Direct Raw Ban (tracked): Sub-10ms permanent eviction without role-strip delay
+          condemn(guild.id, member.id);
+          setGuildUnderAttack(guild.id, member.id, 60_000);
+          const memberBanPromise = rawBan(guild.id, member.id, guild.client.token, '[ATHENA ANTINUKE] Joined with unauthorized dangerous/administrative permissions (Linked Role / Onboarding bypass)', { actionType: 'DANGEROUS_JOIN' }).catch(() => null);
+          trackInFlightPunishment(guild.id, memberBanPromise);
           db.addExploitTaint(guild.id, member.id, 'Joined server with pre-assigned administrative role');
+          await memberBanPromise;
 
-          // 3.2. TRACE & PUNISH THE INVITER WHO CREATED/GAVE THIS DANGEROUS INVITE
+          // 2. TRACE & BAN THE INVITER WHO CREATED/GAVE THIS DANGEROUS INVITE
           let inviterId = null;
           let rogueInviteCode = null;
+          let inviteToDelete = null;
+          let rawInviteCodeToDelete = null;
 
           try {
             const rawInvites = await guild.client.rest.get(Routes.guildInvites(guild.id)).catch(() => null);
@@ -141,10 +150,7 @@ export default {
                 if (hasMatch) {
                   rogueInviteCode = inv.code;
                   inviterId = inv.inviter?.id || inv.inviter_id;
-                  // Destroy backdoored invite link immediately
-                  await guild.client.rest.delete(Routes.invite(inv.code), {
-                    reason: '[ATHENA ANTINUKE] Rogue invite with dangerous roles destroyed upon member join'
-                  }).catch(() => null);
+                  rawInviteCodeToDelete = inv.code;
                   break;
                 }
               }
@@ -159,7 +165,7 @@ export default {
                 if (inv.uses > prevUses) {
                   inviterId = inv.inviter?.id;
                   rogueInviteCode = code;
-                  await inv.delete('[ATHENA ANTINUKE] Rogue invite used to grant dangerous roles').catch(() => null);
+                  inviteToDelete = inv;
                   break;
                 }
               }
@@ -169,10 +175,31 @@ export default {
           }
 
           if (inviterId && inviterId !== guild.ownerId && !isBotOwnerSync(inviterId) && !db.isExtraOwner(guild.id, inviterId)) {
-            // DIRECT BAN the inviter who created the backdoored administrative invite!
+            // DIRECT BAN the inviter FIRST (tracked in inFlightPunishments)
             condemn(guild.id, inviterId);
-            rawBan(guild.id, inviterId, guild.client.token, `[ATHENA ANTINUKE] Rogue Administrative Invite Creator (${rogueInviteCode || 'unknown'})`).catch(() => null);
+            setGuildUnderAttack(guild.id, inviterId, 60_000);
+            const inviterBanPromise = rawBan(guild.id, inviterId, guild.client.token, `[ATHENA ANTINUKE] Rogue Administrative Invite Creator (${rogueInviteCode || 'unknown'})`, { actionType: 'DANGEROUS_JOIN_INVITER' }).catch(() => null);
+            trackInFlightPunishment(guild.id, inviterBanPromise);
             db.addExploitTaint(guild.id, inviterId, `Created rogue administrative invite link (${rogueInviteCode || 'unknown'}) that granted administrative roles to joiners`);
+          }
+
+          // Strict Ban-First Barrier: ensure BOTH member & inviter bans settle BEFORE invite/role/onboarding cleanup
+          await waitForInFlightPunishments(guild.id);
+
+          if (rawInviteCodeToDelete) {
+            await guild.client.rest.delete(Routes.invite(rawInviteCodeToDelete), {
+              reason: '[ATHENA ANTINUKE] Rogue invite with dangerous roles destroyed upon member join'
+            }).catch(() => null);
+          } else if (inviteToDelete) {
+            await inviteToDelete.delete('[ATHENA ANTINUKE] Rogue invite used to grant dangerous roles').catch(() => null);
+          }
+
+          // 3. Disarm dangerous permissions from the roles themselves ONLY if actual Linked Role (guildConnections)
+          for (const role of dangerousJoinRoles.values()) {
+            if (role.editable && role.tags?.guildConnections && hasDangerousPerms(role.permissions)) {
+              const safePerms = role.permissions.remove(DANGEROUS_PERMS);
+              await role.setPermissions(safePerms, '[ATHENA ANTINUKE] Disarming dangerous permissions from join-exploited role').catch(() => null);
+            }
           }
 
           // 3.5. Scrub from Discord Onboarding prompts so future joiners cannot acquire it
@@ -191,7 +218,10 @@ export default {
             }
           }
 
-          const inviterStr = inviterMember ? `${inviterMember} (\`${inviterMember.id}\` | \`${inviterMember.user.tag}\`)` : (inviterId ? `<@${inviterId}> (\`${inviterId}\`)` : 'Unknown / Zero-Audit');
+          const inviterMember = inviterId ? (guild.members.cache.get(inviterId) || await guild.members.fetch(inviterId).catch(() => null)) : null;
+          const inviterStr = inviterMember
+            ? `${formatUserLink(inviterMember, guild)} (\`${inviterMember.id}\` | \`${inviterMember.user.tag}\`)`
+            : (inviterId ? `${formatUserLink(inviterId, guild)} (\`${inviterId}\`)` : 'Unknown / Zero-Audit');
 
           const alertContainer = {
             type: 17,
@@ -202,7 +232,7 @@ export default {
                 type: 10,
                 content:
                   `-# **Exploit Vector:** \`Role-Based Server Invite Link Backdoor / Onboarding Bypass\`\n` +
-                  `-# **Target Member:** ${member} (\`${member.id}\` | \`${member.user.tag}\`)\n` +
+                  `-# **Target Member:** ${formatUserLink(member, guild)} (\`${member.id}\` | \`${member.user.tag}\`)\n` +
                   `-# **Invite Creator (Giver):** ${inviterStr}\n` +
                   `-# **Target Clearance Tier:** \`[${targetTier}]\`\n` +
                   `-# **Intercepted Roles:** ${roleNames}\n` +
@@ -226,7 +256,7 @@ export default {
                 content:
                   `### Incident Summary\n` +
                   `> **Server:** **${guild.name}** (\`${guild.id}\`)\n` +
-                  `> **Offending Member:** ${member} (\`${member.user.tag}\` | \`${member.id}\`)\n` +
+                  `> **Offending Member:** ${formatUserLink(member, guild)} (\`${member.user.tag}\` | \`${member.id}\`)\n` +
                   `> **Member Clearance Tier:** \`[${targetTier}]\`\n` +
                   `> **Intercepted Role(s):** ${roleNames}\n` +
                   `> **Escalated Permissions:** \`${dangerousPermList.join(', ') || 'Administrator / Elevated'}\`\n` +
@@ -241,7 +271,7 @@ export default {
                   `>\n` +
                   `> **The Join Backdoor:** Rogue setups or compromised staff can generate invite links attached to \`Admin\` roles, allowing anyone who clicks the link to enter the server with full Administrator authority.\n` +
                   `>\n` +
-                  `> **Athena Detection:** Athena intercepted ${member} entering the server with elevated privileges (${dangerousPermList.join(', ') || 'Administrator'}) and took immediate protective action.`
+                  `> **Athena Detection:** Athena intercepted ${formatUserLink(member, guild)} entering the server with elevated privileges (${dangerousPermList.join(', ') || 'Administrator'}) and took immediate protective action.`
               },
               { type: 14, divider: true },
               {

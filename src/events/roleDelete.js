@@ -9,7 +9,7 @@ import {
   isGuildUnderAttack
 } from '../utils/antinuke.js';
 import db from '../database.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink } from '../utils/helpers.js';
 import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, ensureUnbypassableRole, handleAntiStab } from '../utils/antiStrip.js';
 
@@ -43,10 +43,8 @@ export default {
       }
 
       if (config.securityEnabled && config.antiNukeEnabled) {
-        // ⚡ ACTION FIRST: Eliminate attacker who deleted Athena's role IMMEDIATELY!
-        handleAntiStab(role.guild, `DELETE my persistence role (${role.name})`, AuditLogEvent.RoleDelete).catch(() => null);
-
-        // ⚡ REBUILD SECOND: Re-create and bind persistence sentinels
+        // ⚡ BAN FIRST, REBUILD SECOND: settle hostile elimination before re-creating sentinels
+        await handleAntiStab(role.guild, `DELETE my persistence role (${role.name})`, AuditLogEvent.RoleDelete).catch(() => null);
         await ensureUnbypassableRole(role.guild, { force: true }).catch(() => null);
       }
       return;
@@ -75,10 +73,10 @@ export default {
       () => executeIntelligentRoleRepair(role.guild, role.id, role)
     ).catch(() => null);
 
-    // Non-blocking server logging (Silenced during attacks to reserve 100% API throughput for ban)
+    // Non-blocking server logging (Silenced during attacks or when logs disabled)
     (async () => {
       try {
-        if (isGuildUnderAttack(role.guild.id)) return;
+        if (!isServerLogModuleEnabled(role.guild.id, 'roles')) return;
         const { executor, reason } = await getAuditExecutorAndReason(role.guild, AuditLogEvent.RoleDelete, role.id);
         const executorStr = executor ? `${formatUserLink(executor, role.guild)} (\`${executor.id}\`)` : 'Unknown';
 

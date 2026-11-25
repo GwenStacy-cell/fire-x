@@ -16,6 +16,194 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '25 November 2026',
+    version: 'v4.0.5',
+    headline: 'Tactical !ping UI Redesign & Authentic Multi-Layer Telemetry Graph',
+    summary: 'Redesigned !ping / /ping with a modern Components V2 tactical telemetry card, live warm-TLS & REST latency probes, real Anti-Nuke strike benchmarks, runtime memory/uptime readouts, and an upgraded obsidian telemetry matrix graph driven purely by real samples.',
+    whatsNew: [
+      {
+        title: 'Redesigned !ping Tactical HUD & Live Matrix Graph',
+        desc: 'Upgraded utility.js and graph.js into a unified buildPingPayload card displaying real Gateway WS ping, concurrent Discord REST & 128-socket Undici TLS RTT, combatTelemetry strike latency, process heap/RSS RAM, uptime, shard index, and a sleek 920x300 telemetry chart.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Authentic Measurements & Unified Prefix/Slash Rendering',
+        desc: 'Removed simulated Math.random() DB/Redis jitter and synthetic graph spikes, unified duplicate prefix and slash handlers into buildPingPayload, and wired server accent color + bot avatar section framing cleanly.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Cold-Start Zero-Byte Graph & Emoji Compliance Guard',
+        desc: 'Guarded attachment generation against empty fallback buffers and enforced Athena ninja-bullet headings, animated custom bullets, and nickname links.'
+      }
+    ],
+    tip: 'Run !ping after startup or combat strikes to monitor real WebSocket, Undici TLS pool, and rawBan millisecond latencies.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '25 November 2026',
+    version: 'v4.0.4',
+    headline: 'Gateway Delete-Before-Audit Race Fix & Multi-Ban While-Loop Barrier',
+    summary: 'Fixed the ChannelDelete/RoleDelete vs GUILD_AUDIT_LOG_ENTRY_CREATE ordering race in fastWiretap, upgraded waitForInFlightPunishments to drain dynamically queued multi-attacker bans cleanly before any repair or log fires, eliminated duplicate active-attack webhook REST fetches, and converted pool heartbeat prewarming to raw Undici requests.',
+    whatsNew: [
+      {
+        title: 'Strict Sequential Ban-First → Parallel Repair + Logging Guarantee',
+        desc: 'Upgraded waitForInFlightPunishments to loop while any ban for the guild remains active on the wire and gated notifyAndLog behind it so concurrent multi-bot bans settle 100% before parallel repairs and logs begin.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Gateway Ordering Race Eliminated',
+        desc: 'Scoped Wiretap self-restoration guards in fastWiretap.js so ChannelDelete/RoleDelete audit packets never skip 0ms rawBan strikes when channelDelete/roleDelete mark queued state 1ms earlier, and used isChannelRestoring for ChannelUpdate.'
+      },
+      {
+        title: 'Socket Prewarm & Webhook REST Cleanup',
+        desc: 'Converted prewarmPool to zero-allocation dispatcher.request, reused cached getBotAuthHeader in rawFetchAuditLogs, skipped redundant channel.fetchWebhooks in webhookUpdate.js during active attacks, and avoided double GuildUpdate vanity reclaims.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Ban-First Barrier Re-Entrancy',
+        desc: 'Fixed waitForInFlightPunishments snapshot edge case where a second ban starting mid-flight could let repairs start early.'
+      }
+    ],
+    tip: 'Host near Discord US-East (iad) and keep Athena above all staff/bot roles so Discord rejects burst requests with 403 immediately after single-shot rawBan.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '25 November 2026',
+    version: 'v4.0.3',
+    headline: 'Interactive Panel Zero-Trust Lock, Audit Dedupe & Condemned Rollback Completion',
+    summary: 'Locked all unauthenticated security UI buttons/modals (Extra Owner, Whitelist, AutoMod, 2FA), deduplicated Wiretap vs Discord.js audit dispatch with full condemned-attacker rollbacks, fixed Vanity module gating, and eliminated the 80ms blind sleep and REST contention across role, invite, join, and Anti-Stab paths.',
+    whatsNew: [
+      {
+        title: 'Strict Zero-Trust Clearance Across Security Panels & Modals',
+        desc: 'Enforced Server Owner / Bot Owner checks on sec_extra_owner, sec_2fa_gmail, modal_sec_extra_owner, and modal_2fa_setup/verify, gated all sec_*, am_*, bp_*, wlo_*, wl_*, and wlModal_limit_* controls to Extra Owners+, and removed stale Administrator fallbacks in security.js commands.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Single-Flight Audit Entry Deduplication & Full Condemned Rollbacks',
+        desc: 'Added entry.id deduplication across recordAuditEntry and handleAuditLogEntry via markAuditEntryHandled, prevented duplicate ChannelCreate/RoleCreate/WebhookCreate deletions, and ensured condemned attackers follow-up actions still ban rogue bots/recipients and revert channel/role/guild tampers.'
+      },
+      {
+        title: 'Zero-Sleep Role Audit Race & Warm Undici Sockets Everywhere',
+        desc: 'Replaced the 80ms blind sleep and discord.js fetchAuditLogs in guildMemberUpdate.js with an immediate waitForRingMatch vs sharedFetchAuditLogs race, moved cascadeToInviter strictly post-ban, switched Wiretap WEBHOOKS_UPDATE from fetch() to warm Undici dispatcher, and eliminated normal-invite REST polling during attacks.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Independent Anti-Vanity Steal Gate & Anti-Stab Tracking',
+        desc: 'Fixed GUILD_UPDATE vanity sniping requiring antiServerUpdate !== false when antiVanitySteal was enabled independently, and registered tracked Ban-First strikes cleanly in antiStrip.js and guildMemberAdd.js.'
+      }
+    ],
+    tip: 'Only grant Extra Owner clearance to fully trusted co-owners via !extraowner; Athena enforces Zero-Trust even on interactive dashboards.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '25 November 2026',
+    version: 'v4.0.2',
+    headline: 'Button Admin Bypass Closure, Webhook Raid Elimination & Bot-Join Acceleration',
+    summary: 'Closed remaining native Administrator bypasses on security interactive panels, upgraded unauthorized bot and webhook spam interceptors to execute Ban-First / Delete-First elimination, eliminated the 120ms bot-join audit sleep, and deferred quarantine overwrites on channel creation until in-flight bans settle.',
+    whatsNew: [
+      {
+        title: 'Pre-Existing Webhook & Bot Raid Neutralization',
+        desc: 'Upgraded messageCreate to permanently rawBan unauthorized bots spamming mass pings/invites/floods and rawDeleteWebhook compromised webhooks committing phishing, invite, flood, or @everyone raid bursts.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Zero-Sleep Bot Inviter Resolution',
+        desc: 'Replaced the 120ms blind sleep in resolveBotInviter with a live WebSocket ring race against coalesced sharedFetchAuditLogs and tracked join-time bot/inviter rawBans cleanly via trackInFlightPunishment.'
+      },
+      {
+        title: 'Quarantine Overwrite Deferral',
+        desc: 'Updated channelCreate to await waitForInFlightPunishments and skip REST quarantine role edits during active attacks so hostile bans keep 100% REST throughput.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Security Interactive Button Hardening',
+        desc: 'Removed native Discord Administrator bypasses from lockdown_lift, honeypot_*, exploitscan_*, tm_restore_*, and gk_* button controls in interactionCreate.js and fixed logToSecurityChannel imports.'
+      }
+    ],
+    tip: 'Keep Athena Prime directly beneath the Server Owner role and wipe legacy unused webhooks periodically via !decapitate.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '25 November 2026',
+    version: 'v4.0.1',
+    headline: 'Sub-Millisecond Hot-Path Anti-Nuke & TLS Session Optimization',
+    summary: 'Eliminated per-packet configuration loops via O(1) WeakSet memoization, upgraded pre-warmed Undici transport with 128-session TLS resumption, pre-cached auth/reason headers with non-blocking strike drains, and prioritized Anti-Stab bans ahead of role repairs.',
+    whatsNew: [
+      {
+        title: 'O(1) Hot-Path Config Cache',
+        desc: 'Added WeakSet normalization memoization to db.getGuildConfig so every Gateway packet avoids repeated 32-module schema scans while automatically invalidating on updateGuildConfig.'
+      },
+      {
+        title: 'TLS Session Resumption & Pre-Cached Strike Headers',
+        desc: 'Configured Undici Agent with maxCachedSessions: 128 for zero-RTT TLS reconnects alongside cached auth/audit-reason headers and non-blocking rawBan response drains.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Owner-First MemberRoleUpdate Fast Path',
+        desc: 'Moved Server Owner, Extra Owner, and Bot Owner checks above async guild.roles.fetch in fastWiretap to guarantee zero REST latency on authorized grants.'
+      },
+      {
+        title: 'Active-Attack REST Conservation',
+        desc: 'Skipped redundant sharedFetchAuditLogs calls in CHANNEL_DELETE and GUILD_ROLE_DELETE when isGuildUnderAttack is already active and deferred hot-path console logging via queueMicrotask.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Ban-First Anti-Stab Ordering',
+        desc: 'Updated roleUpdate and roleDelete persistence guards so attackers stripping Admin are neutralized first whenever Athena still retains guild Administrator permissions.'
+      }
+    ],
+    tip: 'Keep Athena Prime directly beneath the Server Owner role and host near US-East for minimum round-trip ban latency.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '25 November 2026',
+    version: 'v4.0.0',
+    headline: 'Military-Grade Ban-First Engine, 32-Module Sync & Zero-Trust Security Hardening',
+    summary: 'Eliminated parallel REST contention during nuke bursts so hostile bans settle strictly before repairs or logs leave the wire, synchronized all 32 Anti-Nuke modules, closed native Administrator escalation bypasses, and fixed critical AutoMod and wiretap defects.',
+    whatsNew: [
+      {
+        title: 'Strict Ban-First Wiretap Pipeline',
+        desc: 'Unified GUILD_AUDIT_LOG_ENTRY_CREATE packet interception into a single fastWiretap pipeline that awaits waitForInFlightPunishments before running repairs, cleanups, vanity reclaims, or logging.'
+      },
+      {
+        title: 'Full 32-Module Synchronization',
+        desc: 'Synchronized all 32 Anti-Nuke module keys (including antiVanitySteal, antiSoundboardCreate, antiSoundboardDelete, and antiInviteDelete) while preserving individual admin toggles.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Coalesced Audit Fetch & Zero-Contention Restoration',
+        desc: 'Shared in-flight audit fetches via sharedFetchAuditLogs across burst events, removed voluntary member-leave audit polling, gated server-log audit lookups behind active logging modules, and scoped restoration queues per guild.'
+      },
+      {
+        title: 'Expanded Pre-Warmed Undici Connection Pool',
+        desc: 'Updated socket keep-alive heartbeats, Vanity URL PATCH payloads ({ code }), and startup member-cache warming for zero-delay role whitelist and member-role recovery.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Zero-Trust Administrator Bypass & False-Ban Prevention',
+        desc: 'Removed native Administrator bypasses from privilege-escalation guards and 9 security command modules, stopped spoofing bot: true on uncached users, and fixed Bot Owner checks in condemn and whitelist lookups.'
+      },
+      {
+        title: 'Packet Dedupe, AutoMod & Join Guard Repairs',
+        desc: 'Fixed processedPacketKeys dropping repeat GUILD_UPDATE/WEBHOOKS_UPDATE events, repaired inviterMember crash in join guards, fixed AI Toxicity await/key mismatches, honored allowedLinks domains, and preserved blacklistWords across toggles.'
+      }
+    ],
+    tip: 'Keep Athena Prime directly beneath the Server Owner role so single-shot rawBan strikes execute cleanly against compromised bots.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '25 November 2026',
     version: 'v3.9.9',
     headline: 'Help Directory & Command Inspection Synchronization',
     summary: 'Fully updated and synchronized the interactive help system (!help), single-command inspector, automod toggle handlers, and explainer registry to reflect the word filter renaming (!wordfilter / !wf) and the global bot command blacklist suite (!bl / !unbl / !bllist).',

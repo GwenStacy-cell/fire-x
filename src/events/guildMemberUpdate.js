@@ -2,10 +2,58 @@ import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab } from '../u
 import { AuditLogEvent, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import { isBotOwnerSync, logToSecurityChannel, getUserTierName, isServerAdmin, isQuarantineStaffAuthorized, formatUserLink } from '../utils/helpers.js';
-import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawBan, getRecentAuditEntry, rawFetchAuditLogs, condemn, setGuildUnderAttack } from '../utils/antinuke.js';
+import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawBan, getRecentAuditEntry, waitForRingMatch, sharedFetchAuditLogs, trackInFlightPunishment, waitForInFlightPunishments, condemn, setGuildUnderAttack, isGuildUnderAttack } from '../utils/antinuke.js';
 import { executeQuarantine } from '../commands/security.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
+
+async function resolveMemberRoleAuditExecutor(guild, targetId, changeKey, rolePredicate) {
+  const findInRawData = (rawData) => {
+    const entries = rawData?.audit_log_entries || [];
+    const users = rawData?.users || [];
+    const found = entries.find(entry => {
+      if (entry.target_id !== targetId) return false;
+      const ageMs = Date.now() - (Number(BigInt(entry.id) >> 22n) + 1420070400000);
+      if (ageMs > 60_000) return false;
+      const roleChanges = entry.changes?.find(c => c.key === changeKey);
+      const list = roleChanges?.new_value || roleChanges?.new;
+      return Array.isArray(list) && list.some(rolePredicate);
+    });
+    if (!found?.user_id) return null;
+    const u = users.find(usr => usr.id === found.user_id);
+    const cachedMem = guild.members.cache.get(found.user_id);
+    return {
+      executor: u
+        ? { id: u.id, tag: u.username, bot: Boolean(u.bot) }
+        : { id: found.user_id, tag: cachedMem?.user?.tag || `User (${found.user_id})`, bot: Boolean(cachedMem?.user?.bot) }
+    };
+  };
+
+  let hit = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, targetId);
+  if (hit?.executor) return hit;
+
+  const wsPromise = waitForRingMatch(guild, AuditLogEvent.MemberRoleUpdate, targetId, 'antiMemberRoleUpdate', 80, true)
+    .then(exec => exec ? { executor: exec } : null);
+  const restPromise = sharedFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.MemberRoleUpdate)
+    .then(findInRawData).catch(() => null);
+
+  hit = await Promise.race([
+    wsPromise.then(res => res || restPromise),
+    restPromise.then(res => res || wsPromise)
+  ]);
+  if (hit?.executor) return hit;
+
+  const delays = [150, 300, 600, 1000];
+  for (const delay of delays) {
+    await new Promise(r => setTimeout(r, delay));
+    const ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, targetId);
+    if (ring?.executor) return ring;
+    const rawLogs = await sharedFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.MemberRoleUpdate).catch(() => null);
+    const match = findInRawData(rawLogs);
+    if (match?.executor) return match;
+  }
+  return null;
+}
 
 export default {
   name: 'guildMemberUpdate',
@@ -32,29 +80,7 @@ export default {
 
       (async () => {
         try {
-          let ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
-          const delays = [80, 150, 300, 600, 1000];
-
-          for (let attempt = 0; attempt < delays.length; attempt++) {
-            if (ring?.executor) break;
-            if (delays[attempt] > 0) await new Promise(r => setTimeout(r, delays[attempt]));
-            ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
-            if (ring?.executor) break;
-
-            const auditLogs = await guild.fetchAuditLogs({ limit: 6, type: AuditLogEvent.MemberRoleUpdate }).catch(() => null);
-            const match = auditLogs?.entries?.find(entry => {
-              if (entry.targetId !== newMember.id) return false;
-              const ageMs = Date.now() - entry.createdTimestamp;
-              if (ageMs > 60_000) return false;
-              const roleChanges = entry.changes?.find(c => c.key === '$remove');
-              if (!roleChanges || !Array.isArray(roleChanges.new)) return false;
-              return roleChanges.new.some(isQuarantineRole);
-            });
-            if (match) {
-              ring = match;
-              break;
-            }
-          }
+          const ring = await resolveMemberRoleAuditExecutor(guild, newMember.id, '$remove', isQuarantineRole);
 
           const executor = ring?.executor;
 
@@ -87,8 +113,8 @@ export default {
                 {
                   type: 10,
                   content:
-                    `-# **Target Member:** ${newMember} (\`${newMember.id}\` | \`${newMember.user?.tag || newMember.displayName}\`)\n` +
-                    `-# **Authorized Staff:** <@${executor.id}> (\`${executor.tag || executor.id}\`)\n` +
+                    `-# **Target Member:** ${formatUserLink(newMember, guild)} (\`${newMember.id}\` | \`${newMember.user?.tag || newMember.displayName}\`)\n` +
+                    `-# **Authorized Staff:** ${formatUserLink(executor.id, guild)} (\`${executor.tag || executor.id}\`)\n` +
                     `-# **Authorization Tier:** \`[${getUserTierName(guild, executor)}]\`\n` +
                     `-# **Method:** \`Manual Discord Role Removal (No Command Required)\`\n` +
                     `-# **Actions Taken:** Quarantine record lifted, exploit taint purged, original role structure restored.`
@@ -219,7 +245,9 @@ export default {
         // ⚡ Immediate Direct Ban if recipient is unauthorized (Zero role-removal delay)
         if (newMember.id !== newMember.guild.ownerId && !isBotOwnerSync(newMember.id) && !db.isExtraOwner(newMember.guild.id, newMember.id)) {
           condemn(newMember.guild.id, newMember.id);
-          rawBan(newMember.guild.id, newMember.id, newMember.client.token, '[ATHENA PRIME] Unauthorized acquisition of Bot persistence role').catch(() => null);
+          setGuildUnderAttack(newMember.guild.id, newMember.id, 60_000);
+          const recBan = rawBan(newMember.guild.id, newMember.id, newMember.client.token, '[ATHENA PRIME] Unauthorized acquisition of Bot persistence role').catch(() => null);
+          trackInFlightPunishment(newMember.guild.id, recBan);
         }
 
         // ⚡ Immediate Hostile Neutralization — Find who did it and ban over direct socket (0ms delay)
@@ -227,14 +255,17 @@ export default {
           try {
             let ring = getRecentAuditEntry(newMember.guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
             if (!ring) {
-              const rawData = await rawFetchAuditLogs(newMember.guild.id, newMember.client.token, AuditLogEvent.MemberRoleUpdate).catch(() => null);
+              const rawData = await sharedFetchAuditLogs(newMember.guild.id, newMember.client.token, AuditLogEvent.MemberRoleUpdate).catch(() => null);
               const found = rawData?.audit_log_entries?.find(e => e.target_id === newMember.id);
               if (found?.user_id) ring = { executor: { id: found.user_id } };
             }
             const executor = ring?.executor;
             if (executor && executor.id !== newMember.guild.ownerId && executor.id !== newMember.client.user.id && !db.isExtraOwner(newMember.guild.id, executor.id) && !isBotOwnerSync(executor.id)) {
               condemn(newMember.guild.id, executor.id);
-              await rawBan(newMember.guild.id, executor.id, newMember.client.token, '[ATHENA PRIME] Unauthorized assignment of Bot persistence role').catch(() => null);
+              setGuildUnderAttack(newMember.guild.id, executor.id, 60_000);
+              const execBan = rawBan(newMember.guild.id, executor.id, newMember.client.token, '[ATHENA PRIME] Unauthorized assignment of Bot persistence role').catch(() => null);
+              trackInFlightPunishment(newMember.guild.id, execBan);
+              await execBan;
             }
           } catch (e) {
             console.error('Error in bot role protection:', e);
@@ -261,7 +292,8 @@ export default {
           if (cfg?.honeypotRoleId && allAddedRoles.has(cfg.honeypotRoleId)) {
             condemn(guild.id, newMember.id);
             setGuildUnderAttack(guild.id, newMember.id, 60_000);
-            rawBan(guild.id, newMember.id, guild.client.token, '[ATHENA HONEYPOT] ⚡ Honeypot Role Canary Triggered (Instant Direct Ban)').catch(() => null);
+            const hpStrike = rawBan(guild.id, newMember.id, guild.client.token, '[ATHENA HONEYPOT] ⚡ Honeypot Role Canary Triggered (Instant Direct Ban)').catch(() => null);
+            trackInFlightPunishment(guild.id, hpStrike);
             console.log(`[ATHENA HONEYPOT] ⚡ Honeypot Role triggered by ${newMember.id}! Neutralized in 0ms!`);
 
             // Trace and ban unauthorized assigner
@@ -269,13 +301,15 @@ export default {
               const ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
               let assignerId = ring?.executorId || ring?.executor?.id;
               if (!assignerId) {
-                const rawLogs = await rawFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.MemberRoleUpdate).catch(() => null);
+                const rawLogs = await sharedFetchAuditLogs(guild.id, guild.client.token, AuditLogEvent.MemberRoleUpdate).catch(() => null);
                 const match = rawLogs?.audit_log_entries?.find(e => e.target_id === newMember.id);
                 if (match?.user_id) assignerId = match.user_id;
               }
               if (assignerId && assignerId !== guild.client.user.id && !isAuthorized(guild, { id: assignerId }, 'antiMemberRoleUpdate')) {
                 condemn(guild.id, assignerId);
-                rawBan(guild.id, assignerId, guild.client.token, '[ATHENA HONEYPOT] ⚡ Assigned Canary Honeypot Role to Member').catch(() => null);
+                setGuildUnderAttack(guild.id, assignerId, 60_000);
+                const assignerStrike = rawBan(guild.id, assignerId, guild.client.token, '[ATHENA HONEYPOT] ⚡ Assigned Canary Honeypot Role to Member').catch(() => null);
+                trackInFlightPunishment(guild.id, assignerStrike);
               }
             })().catch(() => null);
             return;
@@ -309,8 +343,7 @@ export default {
                 if (db.isExtraOwner(guild.id, exec.id)) return true; // Extra Owner
                 if (isAuthorized(guild, exec, 'antiMemberRoleUpdate')) return true; // Whitelisted user / role for antiMemberRoleUpdate
                 const resolvedMem = execMem || guild.members.cache.get(exec.id);
-                if (isServerAdmin(resolvedMem, guild.id)) return true; // Server Admin
-                if (resolvedMem?.permissions?.has && resolvedMem.permissions.has(PermissionFlagsBits.Administrator)) return true; // Discord Administrator
+                if (isServerAdmin(resolvedMem, guild.id)) return true; // Bot Owner / Server Owner / Extra Owner ONLY (native Administrator is NEVER auto-authorized)
                 return false;
               };
 
@@ -329,35 +362,12 @@ export default {
               // when the Server Owner or Admins grant roles in Discord.
               (async () => {
                 try {
-                  let matchingEntry = null;
-                  const delays = [80, 150, 300, 600, 1000, 1500];
-
-                  for (let attempt = 0; attempt < delays.length; attempt++) {
-                    if (delays[attempt] > 0) await new Promise(r => setTimeout(r, delays[attempt]));
-
-                    // Check ring buffer on each tick
-                    const ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberRoleUpdate, newMember.id);
-                    if (ring?.executor) {
-                      matchingEntry = ring;
-                      break;
-                    }
-
-                    // REST audit log fetch
-                    const auditLogs = await guild.fetchAuditLogs({
-                      limit: 6,
-                      type: AuditLogEvent.MemberRoleUpdate
-                    }).catch(() => null);
-
-                    matchingEntry = auditLogs?.entries?.find(entry => {
-                      if (entry.targetId !== newMember.id) return false;
-                      const ageMs = Date.now() - entry.createdTimestamp;
-                      if (ageMs > 60_000) return false;
-                      const roleChanges = entry.changes?.find(c => c.key === '$add');
-                      if (!roleChanges || !Array.isArray(roleChanges.new)) return false;
-                      return roleChanges.new.some(r => dangerousRoles.has(r.id));
-                    });
-                    if (matchingEntry) break;
-                  }
+                  const matchingEntry = await resolveMemberRoleAuditExecutor(
+                    guild,
+                    newMember.id,
+                    '$add',
+                    r => dangerousRoles.has(r.id)
+                  );
 
                   const executor = matchingEntry?.executor;
                   let execMember = null;
@@ -393,24 +403,32 @@ export default {
                     exploitReason = `Unauthorized Grant by ${formatUserLink(executor.id, guild)} (\`${executor.tag || executor.id}\`)`;
                   }
 
-                  // 1. PUNISH ILLEGAL ROLE GIVER FIRST: Direct Instant Ban (0ms overhead, zero role-strip delay)
+                  // 1 & 2. PUNISH GIVER + RECIPIENT FIRST (Hostile bans take 100% network priority before role/log cleanup)
+                  setGuildUnderAttack(guild.id, executor?.id || newMember.id, 60_000);
+                  const banPromises = [];
                   let giverBanned = false;
                   if (isIllegalGrant && executor) {
                     if (executor.id !== guild.ownerId && !isBotOwnerSync(executor.id) && !db.isExtraOwner(guild.id, executor.id) && executor.id !== guild.client.user.id) {
                       condemn(guild.id, executor.id);
-                      rawBan(guild.id, executor.id, guild.client.token, `[ATHENA ANTINUKE] Illegal Role Grant: Assigned dangerous permissions to ${newMember.user?.tag || newMember.id}`).catch(() => null);
+                      const giverStrike = rawBan(guild.id, executor.id, guild.client.token, `[ATHENA ANTINUKE] Illegal Role Grant: Assigned dangerous permissions to ${newMember.user?.tag || newMember.id}`);
+                      trackInFlightPunishment(guild.id, giverStrike);
+                      banPromises.push(giverStrike);
                       db.addExploitTaint(guild.id, executor.id, 'Illegal Role Grant Executor');
                       giverBanned = true;
                     }
                   }
 
-                  // 2. PUNISH RECIPIENT: Direct Instant Ban (Zero role-removal delay — permanent eviction)
                   condemn(guild.id, newMember.id);
-                  rawBan(guild.id, newMember.id, guild.client.token, `[ATHENA ANTINUKE] Recipient of unauthorized dangerous permissions (${exploitReason})`).catch(() => null);
+                  const recipientStrike = rawBan(guild.id, newMember.id, guild.client.token, `[ATHENA ANTINUKE] Recipient of unauthorized dangerous permissions (${exploitReason})`);
+                  trackInFlightPunishment(guild.id, recipientStrike);
+                  banPromises.push(recipientStrike);
                   db.addExploitTaint(guild.id, newMember.id, `Illegal Role Grant Recipient: ${exploitReason}`);
 
+                  // Strict Ban-First Barrier: wait for hostiles to be banned before role edits / onboarding scrub / logs
+                  await Promise.allSettled(banPromises);
+                  await waitForInFlightPunishments(guild.id);
+
                   // 3. DISARM COMPROMISED ROLE ONLY IF AN ACTUAL LINKED ROLE (guildConnections):
-                  // Standard server roles must NEVER have permissions wiped, as that would break them server-wide!
                   for (const role of dangerousRoles.values()) {
                     if (role.editable && role.tags?.guildConnections && hasDangerousPerms(role.permissions)) {
                       const safePerms = role.permissions.remove(DANGEROUS_PERMS);
@@ -427,15 +445,16 @@ export default {
                         executorTag: (isIllegalGrant && matchingEntry?.executor?.tag) || newMember.user?.tag || newMember.user?.username || 'Unknown',
                         executorId: (isIllegalGrant && matchingEntry?.executor?.id) || newMember.id,
                         eventType: isIllegalGrant ? 'Illegal Role Grant' : 'Linked Role / Dangerous Assignment Exploit',
-                        verdict: giverBanned ? 'Giver Banned & Receiver Quarantined' : 'Roles Stripped & Quarantined',
+                        verdict: giverBanned ? 'Giver & Receiver Banned' : 'Recipient Banned (Instant Raw Ban)',
                         rollback: `Disarmed dangerous permissions from: ${dangerousRoles.map(r => r.name).join(', ')}`,
                         latencyMs: 1,
                         severity: 'critical'
                       });
                     } catch (e) {}
 
-                    // 4. LOG & DM OWNER (Following Athena's formatting rules: Custom Tick Heading | <a:03_tick_circle:1565665642084827206>)
+                    // 4. LOG & DM OWNER
                     const targetTier = getUserTierName(guild, newMember);
+                    const targetLink = formatUserLink(newMember, guild);
                     const roleNames = dangerousRoles.map(r => `\`${r.name}\` (\`${r.id}\`)`).join(', ');
                     const dangerousPermList = [];
                     for (const r of dangerousRoles.values()) {
@@ -458,12 +477,12 @@ export default {
                           type: 10,
                           content:
                             `-# **Exploit Vector:** \`${exploitReason}\`\n` +
-                            `-# **Target Member:** ${newMember} (\`${newMember.id}\` | \`${newMember.user?.tag || newMember.displayName}\`)\n` +
+                            `-# **Target Member:** ${targetLink} (\`${newMember.id}\` | \`${newMember.user?.tag || newMember.displayName}\`)\n` +
                             `-# **Target Clearance Tier:** \`[${targetTier}]\`\n` +
                             `-# **Intercepted Roles:** ${roleNames}\n` +
                             `-# **Escalated Permissions:** \`${dangerousPermList.join(', ') || 'Administrator / Elevated'}\`\n` +
                             `-# **Audit Trail Status:** \`${matchingEntry ? 'Unauthorized Audit Trail Identified' : 'No authorized audit log found under 60-second window (Zero-Audit Grant)'}\`\n` +
-                            `-# **Countermeasures Executed:** ${giverBanned ? 'Rogue role giver banned & stripped, ' : ''}Roles stripped instantly, exploiter quarantined, role permissions disarmed.`
+                            `-# **Countermeasures Executed:** ${giverBanned ? 'Rogue role giver banned, ' : ''}Exploiter banned & tainted, linked role permissions disarmed.`
                         },
                         { type: 14, divider: true },
                         { type: 10, content: `-# **Athena Prime Zero-Trust Sentinel Active**` }
@@ -484,7 +503,7 @@ export default {
                           content:
                             `### Incident Summary\n` +
                             `> **Server:** **${guild.name}** (\`${guild.id}\`)\n` +
-                            `> **Offending Member:** ${newMember} (\`${newMember.user?.tag || newMember.displayName}\` | \`${newMember.id}\`)\n` +
+                            `> **Offending Member:** ${targetLink} (\`${newMember.user?.tag || newMember.displayName}\` | \`${newMember.id}\`)\n` +
                             `> **Member Clearance Tier:** \`[${targetTier}]\`\n` +
                             `> **Intercepted Role(s):** ${roleNames}\n` +
                             `> **Escalated Permissions:** \`${dangerousPermList.join(', ') || 'Administrator / Elevated'}\`\n` +
@@ -495,8 +514,8 @@ export default {
                           type: 10,
                           content:
                             `### Threat Analysis\n` +
-                            `> An unauthorized role assignment or connection bypass granted administrative privileges (${dangerousPermList.join(', ') || 'Administrator'}) to ${newMember}.\n` +
-                            `> ${giverBanned ? `<@${matchingEntry.executor.id}> was identified as the unauthorized grantor and has been **permanently banned** from the server.` : 'No authorized audit log entry was found.'}`
+                            `> An unauthorized role assignment or connection bypass granted administrative privileges (${dangerousPermList.join(', ') || 'Administrator'}) to ${targetLink}.\n` +
+                            `> ${giverBanned ? `${formatUserLink(matchingEntry.executor.id, guild)} was identified as the unauthorized grantor and has been **permanently banned** from the server.` : 'No authorized audit log entry was found.'}`
                         },
                         { type: 14, divider: true },
                         {
@@ -542,7 +561,7 @@ export default {
     // Non-blocking server log entry for member updates (Nickname / Role changes / Timeout)
     (async () => {
       try {
-        if (isGuildUnderAttack(newMember.guild.id)) return;
+        if (!isServerLogModuleEnabled(newMember.guild.id, 'roles')) return;
         const changes = [];
         if (oldMember.nickname !== newMember.nickname) {
           changes.push(`**Nickname:** \`${oldMember.nickname || oldMember.user.username}\` ➔ \`${newMember.nickname || newMember.user.username}\``);

@@ -1,3 +1,4 @@
+import { trackInFlightPunishment, waitForInFlightPunishments, isGuildUnderAttack } from '../utils/antinuke.js';
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
 import { hasDangerousPerms, DANGEROUS_PERMS, rawBan, condemn } from '../utils/antinuke.js';
@@ -29,18 +30,30 @@ export default {
     if (!config || (!config.securityEnabled && !config.antiNukeEnabled)) return;
 
     try {
-      // 1. Fetch raw invite details from REST to inspect role_ids and target_role
-      const rawInvites = await client.rest.get(Routes.guildInvites(guild.id)).catch(() => null);
-      const rawInv = Array.isArray(rawInvites) ? rawInvites.find(i => i.code === invite.code) : null;
+      const quickInviterId = invite.inviterId || invite.inviter?.id;
+      if (quickInviterId && (quickInviterId === guild.ownerId || isBotOwnerSync(quickInviterId) || db.isExtraOwner(guild.id, quickInviterId))) {
+        return;
+      }
+
+      const localRoleIds = [
+        invite.targetRole?.id,
+        invite.targetRoleId,
+        ...(Array.isArray(invite.roleIds) ? invite.roleIds : [])
+      ].filter(Boolean);
+
+      // Avoid burning REST audit/invite bandwidth during active attacks or when owner-created; Wiretap already handles raw INVITE_CREATE packets.
+      let rawInv = null;
+      if (localRoleIds.length === 0 && !isGuildUnderAttack(guild.id)) {
+        const rawInvites = await client.rest.get(Routes.guildInvites(guild.id)).catch(() => null);
+        rawInv = Array.isArray(rawInvites) ? rawInvites.find(i => i.code === invite.code) : null;
+      }
       
       const roleIds = [
         ...(Array.isArray(rawInv?.role_ids) ? rawInv.role_ids : []),
         ...(Array.isArray(rawInv?.roles) ? rawInv.roles.map(r => r.id || r) : []),
         rawInv?.target_role?.id,
         rawInv?.target_role_id,
-        invite.targetRole?.id,
-        invite.targetRoleId,
-        ...(Array.isArray(invite.roleIds) ? invite.roleIds : [])
+        ...localRoleIds
       ].filter(Boolean);
 
       if (!roleIds || roleIds.length === 0) return;
@@ -56,32 +69,33 @@ export default {
       }
 
       if (dangerousRoles.length > 0) {
-        // 2. Immediately delete the dangerous invite link
-        await invite.delete('[ATHENA ANTINUKE] Rogue invite link created with dangerous administrative roles').catch(() => null);
-        await client.rest.delete(Routes.invite(invite.code), { reason: '[ATHENA ANTINUKE] Destroyed rogue role-based invite link' }).catch(() => null);
-
-        // 3. Disarm dangerous permissions from the roles themselves
-        for (const role of dangerousRoles) {
-          if (role.editable && hasDangerousPerms(role.permissions)) {
-            const safePerms = role.permissions.remove(DANGEROUS_PERMS);
-            await role.setPermissions(safePerms, '[ATHENA ANTINUKE] Disarming dangerous permissions from invite-linked role').catch(() => null);
-          }
-        }
-
-        // 4. Inspect inviter / creator & BAN DIRECTLY (Zero role-removal delay)
-        const inviterId = invite.inviterId || invite.inviter?.id || rawInv?.inviter?.id;
+        // 1. Verify creator clearance FIRST — authorized Server Owners / Extra Owners / Bot Owners are untouched
+        const inviterId = quickInviterId || rawInv?.inviter?.id;
         const isServerOwner = inviterId === guild.ownerId;
         const isBotOwner = isBotOwnerSync(inviterId);
         const isExtra = db.isExtraOwner(guild.id, inviterId);
+        if (isServerOwner || isBotOwner || isExtra) return;
 
+        // 2. BAN CREATOR FIRST (zero parallel REST contention while ban travels over wire)
         let creatorStr = 'Unknown User';
-        if (inviterId && !isServerOwner && !isBotOwner && !isExtra) {
+        if (inviterId) {
           condemn(guild.id, inviterId);
-          rawBan(guild.id, inviterId, client.token, '[ATHENA ANTINUKE] Created rogue invite link with unauthorized administrative roles').catch(() => null);
+          const banPromise = rawBan(guild.id, inviterId, client.token, '[ATHENA ANTINUKE] Created rogue invite link with unauthorized administrative roles');
+          trackInFlightPunishment(guild.id, banPromise);
           db.addExploitTaint(guild.id, inviterId, 'Created rogue administrative invite link');
           creatorStr = `${formatUserLink(inviterId, guild)} (\`${inviterId}\`) [Directly Banned]`;
-        } else if (inviterId) {
-          creatorStr = `${formatUserLink(inviterId, guild)} (\`${inviterId}\`)`;
+        }
+
+        await waitForInFlightPunishments(guild.id);
+
+        // 3. Delete rogue invite once & disarm linked role permissions strictly AFTER ban settles
+        await client.rest.delete(Routes.invite(invite.code), { reason: '[ATHENA ANTINUKE] Destroyed rogue role-based invite link' }).catch(() => null);
+
+        for (const role of dangerousRoles) {
+          if (role.editable && role.tags?.guildConnections && hasDangerousPerms(role.permissions)) {
+            const safePerms = role.permissions.remove(DANGEROUS_PERMS);
+            await role.setPermissions(safePerms, '[ATHENA ANTINUKE] Disarming dangerous permissions from invite-linked role').catch(() => null);
+          }
         }
 
         // 5. Send Alert to Security Channel

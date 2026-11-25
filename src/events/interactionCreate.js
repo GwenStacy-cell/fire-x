@@ -250,10 +250,9 @@ export default {
       if (interaction.customId === 'lockdown_lift') {
         const isAuthorizedAdmin = isBotOwnerSync(interaction.user.id) || 
           interaction.user.id === interaction.guild?.ownerId || 
-          isExtraOwner(interaction.guild?.id, interaction.user.id) || 
-          interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+          isExtraOwner(interaction.guild?.id, interaction.user.id);
         if (!isAuthorizedAdmin) {
-          return interaction.reply({ content: '-# You lack authorization to lift server panic lockdown. Administrator or higher clearance required.', flags: MessageFlags.Ephemeral });
+          return interaction.reply({ content: '-# You lack authorization to lift server panic lockdown. Server Owner or Extra Owner clearance required.', flags: MessageFlags.Ephemeral });
         }
         await interaction.deferUpdate().catch(() => null);
         const result = await handleUnlockdown(interaction.guild, interaction.member);
@@ -668,9 +667,9 @@ export default {
         const { buildHoneypotPanel, setupHoneypot, removeHoneypot } = await import('../commands/honeypot.js');
         const guild = interaction.guild;
         if (!guild) return;
-        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id);
         if (!isAuth) {
-          return interaction.reply({ content: `-# ${WRONG_EMOJI} You do not have permission to configure Honeypots.`, flags: MessageFlags.Ephemeral });
+          return interaction.reply({ content: `-# ${WRONG_EMOJI} Only the Server Owner or Extra Owners can configure Honeypots.`, flags: MessageFlags.Ephemeral });
         }
         await interaction.deferUpdate().catch(() => null);
         if (cid === 'honeypot_setup') {
@@ -681,8 +680,7 @@ export default {
           const cfg = db.getGuildConfig(guild.id);
           const current = (cfg.honeypotPunishment || 'ban').toLowerCase();
           const next = current === 'ban' ? 'timeout' : (current === 'timeout' ? 'kick' : 'ban');
-          cfg.honeypotPunishment = next;
-          db.save();
+          db.updateGuildConfig(guild.id, { honeypotPunishment: next });
         }
         const updatedPanel = buildHoneypotPanel(guild);
         return cv2.respond(interaction, updatedPanel, 7);
@@ -693,9 +691,9 @@ export default {
         const { buildExploitScanCard, executeAutoPatch } = await import('../commands/exploitscan.js');
         const guild = interaction.guild;
         if (!guild) return;
-        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id);
         if (!isAuth) {
-          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> You do not have permission to patch server exploits.', flags: MessageFlags.Ephemeral });
+          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> Only the Server Owner or Extra Owners can patch server exploits.', flags: MessageFlags.Ephemeral });
         }
         await interaction.deferUpdate().catch(() => null);
         if (cid === 'exploitscan_autopatch') {
@@ -710,9 +708,9 @@ export default {
         const snapshotId = cid.replace('tm_restore_', '');
         const guild = interaction.guild;
         if (!guild) return;
-        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id);
         if (!isAuth) {
-          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> Only Administrators can restore Time-Machine snapshots.', flags: MessageFlags.Ephemeral });
+          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> Only the Server Owner or Extra Owners can restore Time-Machine snapshots.', flags: MessageFlags.Ephemeral });
         }
         const snapshot = db.getTimeMachineSnapshot(guild.id, snapshotId);
         if (!snapshot) {
@@ -787,9 +785,9 @@ export default {
       if (cid.startsWith('gk_')) {
         const guild = interaction.guild;
         if (!guild) return;
-        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id) || interaction.member?.permissions?.has(PermissionFlagsBits.Administrator);
+        const isAuth = isBotOwnerSync(interaction.user.id) || guild.ownerId === interaction.user.id || db.isExtraOwner(guild.id, interaction.user.id);
         if (!isAuth) {
-          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> You do not have permission to configure Gatekeeper.', flags: MessageFlags.Ephemeral });
+          return interaction.reply({ content: '-# <:cross_red:1533860128015519895> Only the Server Owner or Extra Owners can configure Gatekeeper.', flags: MessageFlags.Ephemeral });
         }
         const { buildGatekeeperPanel } = await import('../commands/gatekeeper.js');
         const cfg = db.getGuildConfig(guild.id);
@@ -1947,6 +1945,9 @@ export default {
       }
 
       if (interaction.customId.startsWith('modal_honeypot_')) {
+        if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+          return interaction.reply({ content: '-# <a:04_cross_circle:1565665644806934639> Only the **Server Owner** or **Extra Owners** can configure Honeypots.', flags: MessageFlags.Ephemeral }).catch(() => null);
+        }
         const channelId = interaction.customId.replace('modal_honeypot_', '');
         const bannerUrl = interaction.fields.getTextInputValue('banner_url') || null;
         let timeoutVal = interaction.fields.getTextInputValue('timeout_minutes');
@@ -2079,12 +2080,25 @@ export default {
       
       
       if (interaction.customId === "modal_sec_extra_owner") {
-          const targetId = interaction.fields.getTextInputValue("target_id");
+          const isRootOwner = isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild?.ownerId;
+          if (!isRootOwner) {
+            return interaction.reply({ content: "-# <a:04_cross_circle:1565665644806934639> Only the **Server Owner** or **Bot Owner** can add Extra Owners.", flags: MessageFlags.Ephemeral });
+          }
+          const rawTarget = interaction.fields.getTextInputValue("target_id") || "";
+          const match = rawTarget.trim().match(/^\d{17,20}$/);
+          if (!match) {
+            return interaction.reply({ content: "-# <a:04_cross_circle:1565665644806934639> Please enter a valid Discord User ID.", flags: MessageFlags.Ephemeral });
+          }
+          const targetId = match[0];
           const db = (await import("../database.js")).default;
           db.addExtraOwner(interaction.guild.id, targetId);
           return interaction.reply({ content: `Successfully added Extra Owner: ${formatUserLink(targetId, interaction.guild)}`, flags: MessageFlags.Ephemeral });
       }
       if (interaction.customId === "modal_2fa_setup") {
+        const isRootOwner = isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild?.ownerId;
+        if (!isRootOwner) {
+          return interaction.reply({ content: "-# <a:04_cross_circle:1565665644806934639> Only the **Server Owner** or **Bot Owner** can configure 2FA settings.", flags: MessageFlags.Ephemeral });
+        }
         const email = interaction.fields.getTextInputValue("2fa_email");
         if (!email.includes("@")) return interaction.reply({ content: "Invalid email format.", flags: MessageFlags.Ephemeral });
         
@@ -2130,6 +2144,10 @@ export default {
       }
       
         if (interaction.customId === "modal_2fa_verify") {
+          const isRootOwner = isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild?.ownerId;
+          if (!isRootOwner) {
+            return interaction.reply({ content: "-# <a:04_cross_circle:1565665644806934639> Only the **Server Owner** or **Bot Owner** can verify 2FA setup.", flags: MessageFlags.Ephemeral });
+          }
           const inputCode = interaction.fields.getTextInputValue("2fa_code").trim();
           const config = db.getGuildConfig(interaction.guild.id);
           
@@ -2152,6 +2170,9 @@ export default {
         }
 
         if (interaction.customId === "modal_2fa_intercept") {
+          if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+            return interaction.reply({ content: "-# <a:04_cross_circle:1565665644806934639> Only the **Server Owner** or **Extra Owners** can authorize 2FA challenges.", flags: MessageFlags.Ephemeral });
+          }
           const inputCode = interaction.fields.getTextInputValue("2fa_code").trim();
           const config = db.getGuildConfig(interaction.guild.id);
           
@@ -2180,6 +2201,11 @@ export default {
 
       // Two-Factor Authentication Prompt Button Handler
       if (interaction.isButton() && (interaction.customId === "btn_verify_2fa" || interaction.customId === "btn_intercept_2fa")) {
+        const isRootOwner = isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild?.ownerId;
+        const canIntercept = isExtraOwnerOrHigher(interaction.user.id, interaction.guild);
+        if ((interaction.customId === "btn_verify_2fa" && !isRootOwner) || (interaction.customId === "btn_intercept_2fa" && !canIntercept)) {
+          return interaction.reply({ content: "-# <a:04_cross_circle:1565665644806934639> Access Denied: Insufficient ownership clearance for 2FA verification.", flags: MessageFlags.Ephemeral });
+        }
         const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = await import("discord.js");
         const modal = new ModalBuilder()
           .setCustomId(interaction.customId === "btn_intercept_2fa" ? "modal_2fa_intercept" : "modal_2fa_verify")
@@ -3171,10 +3197,34 @@ export default {
   } // close execute
 }; // close object
 
-async function handleSecurityInteractions(interaction, guild) {
+export async function handleSecurityInteractions(interaction, guild) {
   if (!guild) return;
   const customId = interaction.customId;
   const config = db.getGuildConfig(guild.id);
+
+  // Strict Zero-Trust Authorization Gate for all security UI controls
+  const isRootOwner = isBotOwnerSync(interaction.user.id) || interaction.user.id === guild.ownerId;
+  const isOwnerOnlyControl = customId === 'sec_extra_owner' || customId === 'sec_2fa_gmail';
+  if (isOwnerOnlyControl && !isRootOwner) {
+    return interaction.reply({
+      content: '-# <a:04_cross_circle:1565665644806934639> Only the **Server Owner** or **Bot Owner** can configure Extra Owners or 2FA settings.',
+      flags: MessageFlags.Ephemeral
+    }).catch(() => null);
+  }
+  const isSecurityControl = (
+    customId.startsWith('sec_') ||
+    customId.startsWith('am_') ||
+    customId.startsWith('bp_') ||
+    customId.startsWith('wlo_') ||
+    customId.startsWith('wl_') ||
+    ['toggle_antinuke', 'toggle_spam', 'toggle_invite', 'toggle_blacklist_filter', 'cycle_punishment', 'antinuke_config', 'save_panel'].includes(customId)
+  );
+  if (isSecurityControl && !isExtraOwnerOrHigher(interaction.user.id, guild)) {
+    return interaction.reply({
+      content: '-# <a:04_cross_circle:1565665644806934639> Access Denied: Only the **Server Owner** or **Extra Owners** can operate Athena security controls.',
+      flags: MessageFlags.Ephemeral
+    }).catch(() => null);
+  }
 
     if (customId === 'sec_module_manage') {
       try {
@@ -4684,6 +4734,12 @@ async function handleSecurityInteractions(interaction, guild) {
 export async function handleWhitelistModal(interaction) {
   if (!interaction.isModalSubmit()) return;
   if (!interaction.customId.startsWith('wlModal_limit_')) return;
+  if (!isExtraOwnerOrHigher(interaction.user.id, interaction.guild)) {
+    return interaction.reply({
+      content: '-# <a:04_cross_circle:1565665644806934639> Only the **Server Owner** or **Extra Owners** can configure whitelist limits.',
+      flags: MessageFlags.Ephemeral
+    }).catch(() => null);
+  }
   
   const parts = interaction.customId.split('_');
   const type = parts[2];

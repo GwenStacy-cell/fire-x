@@ -3,7 +3,7 @@ import { AuditLogEvent, PermissionFlagsBits } from 'discord.js';
 import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab, syncSupportingRolePositions, isSyncingSupportingRoles } from '../utils/antiStrip.js';
 import db from '../database.js';
 import { isRoleRestoring, markRoleRestoring, directStrike, triggerRoleStructureRestore, DANGEROUS_PERMS, triggerSnapshotSync, isGuildUnderAttack } from '../utils/antinuke.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink } from '../utils/helpers.js';
 
 export default {
@@ -34,32 +34,42 @@ export default {
       }
     }
 
-    // Anti-Strip: Instant restore if the persistence roles lose Admin
+    // Anti-Strip: Instant restore + Ban-First neutralization if persistence roles lose Admin
     if ((config.securityEnabled && config.antiNukeEnabled) && isPersistenceRole) {
       if (!newRole.permissions.has(PermissionFlagsBits.Administrator)) {
+        const stillHasAdmin = Boolean(newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.Administrator));
+        if (stillHasAdmin) {
+          // Ban attacker FIRST when Athena still has Admin via integration/other sentinel role
+          handleAntiStab(newRole.guild, `turn off the Administrator permission on my ${newRole.name} role`, AuditLogEvent.RoleUpdate).catch(() => null);
+        }
         try {
           await newRole.setPermissions([PermissionFlagsBits.Administrator], `Athena Prime ${newRole.name} Persistence`);
         } catch (err) {
-          // If we can't edit it (e.g. moved above our highest role), create a new one!
           const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
           await ensureUnbypassableRole(newRole.guild);
         }
-        await handleAntiStab(newRole.guild, `turn off the Administrator permission on my ${newRole.name} role`, AuditLogEvent.RoleUpdate);
+        if (!stillHasAdmin) {
+          await handleAntiStab(newRole.guild, `turn off the Administrator permission on my ${newRole.name} role`, AuditLogEvent.RoleUpdate);
+        }
       }
     }
 
-    // Anti-Strip: Alert if the bot's integration role loses Admin
+    // Anti-Strip: Alert & Ban if the bot's integration role loses Admin
     if ((config.securityEnabled && config.antiNukeEnabled) && newRole.managed && newRole.tags?.botId === newRole.client.user.id) {
       if (oldRole.permissions.has(PermissionFlagsBits.Administrator) && !newRole.permissions.has(PermissionFlagsBits.Administrator)) {
-        // Try to turn it back on!
+        const stillHasAdmin = Boolean(newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.Administrator));
+        if (stillHasAdmin) {
+          handleAntiStab(newRole.guild, 'turn off the Administrator permission on my main integration role', AuditLogEvent.RoleUpdate).catch(() => null);
+        }
         try {
           await newRole.setPermissions([PermissionFlagsBits.Administrator], 'Athena Prime Auto-Restore Admin');
         } catch (err) {
-          // If Discord blocks editing the managed role, rely on the hidden role
           const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
           await ensureUnbypassableRole(newRole.guild);
         }
-        await handleAntiStab(newRole.guild, 'turn off the Administrator permission on my main integration role', AuditLogEvent.RoleUpdate);
+        if (!stillHasAdmin) {
+          await handleAntiStab(newRole.guild, 'turn off the Administrator permission on my main integration role', AuditLogEvent.RoleUpdate);
+        }
       }
     }
 
@@ -135,7 +145,7 @@ export default {
     // Non-blocking server log entry for role updates
     (async () => {
       try {
-        if (isGuildUnderAttack(newRole.guild.id)) return;
+        if (!isServerLogModuleEnabled(newRole.guild.id, 'roles')) return;
         const changes = [];
         if (oldRole.name !== newRole.name) changes.push(`**Name:** \`${oldRole.name}\` ➔ \`${newRole.name}\``);
         if (oldRole.hexColor !== newRole.hexColor) changes.push(`**Color:** \`${oldRole.hexColor}\` ➔ \`${newRole.hexColor}\``);

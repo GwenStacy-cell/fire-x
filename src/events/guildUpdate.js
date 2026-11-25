@@ -1,7 +1,7 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, isGuildUnderAttack, dispatcher } from '../utils/antinuke.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { directStrike, isGuildUnderAttack, rawVanityReclaim, waitForInFlightPunishments } from '../utils/antinuke.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export default {
@@ -14,31 +14,23 @@ export default {
       return;
     }
 
-    // 1. Vanity URL Sniping Protection
-    if (oldGuild.vanityURLCode && newGuild.vanityURLCode !== oldGuild.vanityURLCode) {
-      // Immediately fire raw HTTP request to reclaim vanity URL before sniper bots can get it
-      try {
-        await fetch(`https://discord.com/api/v10/guilds/${newGuild.id}/vanity-url`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bot ${newGuild.client.token}`,
-            'Content-Type': 'application/json',
-            'X-Audit-Log-Reason': 'Athena Anti-Nuke: Instant Vanity URL Sniping Protection (Zero-Day Reclaim)'
-          },
-          body: JSON.stringify({ vanity_url_code: oldGuild.vanityURLCode }),
-          dispatcher
-        });
-      } catch (e) {
-        console.error('[Athena Anti-Nuke] Failed to raw reclaim vanity url', e);
-      }
-
-      // Strike the offender
+    // 1. Vanity URL Sniping Protection (Ban-First + PATCH /vanity-url { code })
+    if (oldGuild.vanityURLCode && newGuild.vanityURLCode !== oldGuild.vanityURLCode && config.antinukeModules?.antiVanitySteal !== false) {
       directStrike(
         newGuild,
         AuditLogEvent.GuildUpdate,
         'Server Vanity URL Tampering',
         newGuild.id,
-        async () => `Successfully reclaimed Vanity URL **discord.gg/${oldGuild.vanityURLCode}** instantly.`
+        async () => {
+          await waitForInFlightPunishments(newGuild.id);
+          await rawVanityReclaim(
+            newGuild.id,
+            oldGuild.vanityURLCode,
+            newGuild.client.token,
+            'Athena Anti-Nuke: Vanity URL Reclaimed'
+          );
+          return `Successfully reclaimed Vanity URL **discord.gg/${oldGuild.vanityURLCode}**.`;
+        }
       ).catch(() => null);
     }
 
@@ -88,7 +80,7 @@ export default {
     // 3. Non-blocking server log entry for all server/guild modifications
     (async () => {
       try {
-        if (isGuildUnderAttack(newGuild.id)) return;
+        if (!isServerLogModuleEnabled(newGuild.id, 'server')) return;
         const changes = [];
         if (oldGuild.name !== newGuild.name) changes.push(`**Server Name:** \`${oldGuild.name}\` ➔ \`${newGuild.name}\``);
         if (oldGuild.icon !== newGuild.icon) changes.push(`**Server Icon:** Icon updated`);

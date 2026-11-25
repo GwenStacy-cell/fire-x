@@ -1,7 +1,7 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, rawDeleteWebhook, rawBan, isAuthorized, condemn, setGuildUnderAttack, isGuildUnderAttack } from '../utils/antinuke.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { directStrike, rawDeleteWebhook, rawBan, isAuthorized, condemn, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, isGuildUnderAttack } from '../utils/antinuke.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export default {
@@ -12,6 +12,8 @@ export default {
     const config = db.getGuildConfig(guild.id);
     if (!config?.securityEnabled && !config?.antiNukeEnabled) return;
     if (config?.antinukeModules?.antiWebhooks === false) return;
+    // During active attack bursts, Wiretap intercepts WEBHOOKS_UPDATE via warm Undici sockets cleanly without REST contention
+    if (isGuildUnderAttack(guild.id)) return;
 
     try {
       // 1. Fetch channel's current webhooks with 0ms delay
@@ -27,40 +29,43 @@ export default {
       for (const [whId, webhook] of newWebhooks) {
         const owner = webhook.owner;
 
-        // If owner is known and unauthorized: ZERO TOLERANCE (THRESHOLD = 1)
+        // If owner is known and unauthorized: ZERO TOLERANCE (BAN FIRST, DELETE WEBHOOK SECOND)
         if (owner) {
-          if (isAuthorized(guild, owner, 'antiwebhooks')) continue;
+          const ownerMember = guild.members.cache.get(owner.id) || owner;
+          if (isAuthorized(guild, ownerMember, 'antiwebhooks')) continue;
 
-          // ⚡ Rogue webhook detected! Instant Raw Ban + Webhook Annihilation (Zero redundant role-strip overhead)
+          // ⚡ Phase 1: Ban offender FIRST
           condemn(guild.id, owner.id);
           setGuildUnderAttack(guild.id, owner.id, 60_000);
-          
-          Promise.allSettled([
-            rawDeleteWebhook(whId, token, '[ATHENA SENTINEL] Rogue Webhook Neutralized'),
-            rawBan(guild.id, owner.id, token, '[ATHENA SENTINEL] Unauthorized Webhook Creation')
-          ]).catch(() => null);
+          const banPromise = rawBan(guild.id, owner.id, token, '[ATHENA SENTINEL] Unauthorized Webhook Creation');
+          trackInFlightPunishment(guild.id, banPromise);
 
-          // Trigger directStrike for server log, quarantine fallback, and owner DM
+          // ⚡ Phase 2: Delete webhook ONLY AFTER ban strike settles
+          waitForInFlightPunishments(guild.id).then(() => {
+            rawDeleteWebhook(whId, token, '[ATHENA SENTINEL] Rogue Webhook Neutralized').catch(() => null);
+          }).catch(() => null);
+
+          // Trigger directStrike for logging, quarantine fallback, and owner DM
           directStrike(
             guild,
             AuditLogEvent.WebhookCreate,
             'Unauthorized Webhook Creation',
             whId,
             async () => {
+              await waitForInFlightPunishments(guild.id);
               await rawDeleteWebhook(whId, token).catch(() => null);
             }
           ).catch(() => null);
         } else {
-          // Owner unknown (e.g. lack of audit permissions) — immediately eliminate rogue webhook
-          await rawDeleteWebhook(whId, token, '[ATHENA SENTINEL] Unverified Rogue Webhook Neutralized').catch(() => null);
-
+          // Owner unknown — let directStrike resolve audit log first, ban first, then delete webhook
           directStrike(
             guild,
             AuditLogEvent.WebhookCreate,
             'Unauthorized Webhook Creation',
             whId,
             async () => {
-              await rawDeleteWebhook(whId, token).catch(() => null);
+              await waitForInFlightPunishments(guild.id);
+              await rawDeleteWebhook(whId, token, '[ATHENA SENTINEL] Unverified Rogue Webhook Neutralized').catch(() => null);
             }
           ).catch(() => null);
         }
@@ -72,7 +77,7 @@ export default {
     // Non-blocking server log entry for webhooks
     (async () => {
       try {
-        if (isGuildUnderAttack(guild.id)) return;
+        if (!isServerLogModuleEnabled(guild.id, 'webhooks')) return;
         const { executor, reason } = await getAuditExecutorAndReason(guild, AuditLogEvent.WebhookCreate, null);
         const executorStr = executor ? `${formatUserLink(executor, guild)} (\`${executor.id}\`)` : 'Unknown';
 

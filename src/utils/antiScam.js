@@ -154,13 +154,18 @@ export async function scanImageForScam(url) {
 }
 
 export async function getRawOCRText(url) {
-  const worker = await workerPromise;
+  const worker = await getWorker();
   if (!worker) return 'Worker not ready';
-  
+
   try {
     const res = await fetch(url, { headers: { 'User-Agent': 'DiscordBot (https://discord.com, 1.0.0)' } });
     if (!res.ok) return 'Fetch failed';
     const buffer = await res.arrayBuffer().then(buf => Buffer.from(buf));
+
+    const canvasPkg = await getCanvas();
+    if (!canvasPkg) return 'Error: Canvas module unavailable';
+    const { createCanvas, loadImage } = canvasPkg;
+
     const img = await loadImage(buffer);
     if (img.width < 50 || img.height < 50) return 'Error: Image too small for OCR';
     const canvas = createCanvas(img.width, img.height);

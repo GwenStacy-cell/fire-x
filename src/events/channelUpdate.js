@@ -1,7 +1,7 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, isChannelRestoring, markChannelRestoring, isGuildUnderAttack } from '../utils/antinuke.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { directStrike, isChannelRestoring, markChannelRestoring, isGuildUnderAttack, triggerSnapshotSync } from '../utils/antinuke.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
 export default {
@@ -90,10 +90,15 @@ export default {
       }
     }
 
+    // Keep infrastructure snapshot synced after legitimate channel updates
+    if (!isGuildUnderAttack(guild.id)) {
+      triggerSnapshotSync(guild, 15_000);
+    }
+
     // 4. Non-blocking server log entry for channel updates
     (async () => {
       try {
-        if (isGuildUnderAttack(guild.id)) return;
+        if (!isServerLogModuleEnabled(guild.id, 'channels')) return;
         const changes = [];
         if (oldChannel.name !== newChannel.name) changes.push(`**Name:** \`${oldChannel.name}\` ➔ \`${newChannel.name}\``);
         if (oldChannel.topic !== newChannel.topic) changes.push(`**Topic:** \`${oldChannel.topic || 'None'}\` ➔ \`${newChannel.topic || 'None'}\``);

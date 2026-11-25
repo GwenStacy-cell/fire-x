@@ -10,7 +10,7 @@ import {
 } from '../utils/antinuke.js';
 import db from '../database.js';
 import embed from '../embed.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink } from '../utils/helpers.js';
 
 export default {
@@ -72,10 +72,10 @@ export default {
       () => executeIntelligentChannelRepair(channel.guild, channel.id, channel)
     ).catch(() => null);
 
-    // Non-blocking server log entry (Silenced during attacks to reserve 100% API throughput for ban)
+    // Non-blocking server log entry (Silenced during attacks or when logs disabled)
     (async () => {
       try {
-        if (isGuildUnderAttack(channel.guild.id)) return;
+        if (!isServerLogModuleEnabled(channel.guild.id, 'channels')) return;
         const { executor, reason } = await getAuditExecutorAndReason(channel.guild, AuditLogEvent.ChannelDelete, channel.id);
         const executorStr = executor ? `${formatUserLink(executor, channel.guild)} (\`${executor.id}\`)` : 'Unknown';
 

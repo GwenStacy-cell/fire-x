@@ -6,6 +6,67 @@ const DB_DIR = path.resolve('data');
 const DB_FILE = path.join(DB_DIR, 'db.json');
 const BACKUPS_DIR = path.join(DB_DIR, 'backups');
 
+const HARDCODED_BOT_OWNERS = new Set(['1423292960744804383', '1383136323183050974']);
+const normalizedGuildConfigs = new WeakSet();
+
+export function isRootBotOwnerId(userId) {
+  if (!userId) return false;
+  const uid = String(typeof userId === 'object' ? (userId.id || userId.user?.id) : userId);
+  if (HARDCODED_BOT_OWNERS.has(uid)) return true;
+  if (process.env.OWNER_ID && uid === String(process.env.OWNER_ID)) return true;
+  if (process.env.SECOND_OWNER_ID && uid === String(process.env.SECOND_OWNER_ID)) return true;
+  return false;
+}
+
+export const ALL_ANTINUKE_MODULE_KEYS = [
+  'antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder', 'antiLinkedRole',
+  'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod',
+  'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate', 'antiVanitySteal', 'antiScheduledEvents',
+  'antiBan', 'antiKick', 'antiUnban', 'antiMemberPurge', 'antiMassBan',
+  'antiInvite', 'antiInviteDelete', 'antiAutomodUpdate', 'antiAppCommands',
+  'antiSoundboardCreate', 'antiSoundboardDelete'
+];
+
+const WHITELIST_EVENT_ALIAS = {
+  'channel deletion': 'antichanneldelete',
+  'category deletion': 'antichanneldelete',
+  'channel creation': 'antichannelcreate',
+  'channel permission tampering': 'antichannelpermupdate',
+  'channel name modification': 'antichannelnamemod',
+  'channel reorder / tampering': 'antichannelreorder',
+  'channel settings tampering': 'antichannelupdate',
+  'role deletion': 'antiroledelete',
+  'role creation': 'antirolecreate',
+  'role permission escalation': 'antirolepermupdate',
+  'role name modification': 'antiroleupdate',
+  'role reorder / hierarchy tampering': 'antirolereorder',
+  'unauthorized dangerous role grant': 'antimemberroleupdate',
+  'linked role exploit': 'antilinkedrole',
+  'linked role bypass': 'antilinkedrole',
+  'emoji deletion': 'antiemojidelete',
+  'emoji creation': 'antiemojicreate',
+  'emoji modification': 'antiemojiupdate',
+  'unauthorized webhook creation': 'antiwebhooks',
+  'unauthorized webhook deletion': 'antiwebhooks',
+  'unauthorized bot addition': 'antibotadd',
+  'antibot': 'antibotadd',
+  'server settings tampering': 'antiserverupdate',
+  'vanity url hijacking / sniping': 'antivanitysteal',
+  'vanity url tampering': 'antivanitysteal',
+  'scheduled event tampering': 'antischeduledevents',
+  'automod rule tampering': 'antiautomodupdate',
+  'integration / app command tampering': 'antiappcommands',
+  'member ban (mass ban attack)': 'antiban',
+  'unauthorized ban (mass ban module)': 'antimassban',
+  'member kick (mass kick attack)': 'antikick',
+  'unauthorized kick (purge module)': 'antimemberpurge',
+  'unauthorized member purge': 'antimemberpurge',
+  'unauthorized ban removal': 'antiunban',
+  'unauthorized invite deletion': 'antiinvitedelete',
+  'unauthorized soundboard sound created': 'antisoundboardcreate',
+  'unauthorized soundboard sound deleted': 'antisoundboarddelete'
+};
+
 // Ensure database directories exist
 if (!fs.existsSync(DB_DIR)) {
   fs.mkdirSync(DB_DIR, { recursive: true });
@@ -352,7 +413,11 @@ class Database {
   }
 
   getGuildConfig(guildId) {
-    if (!this.cache.guilds[guildId]) {
+    const existing = this.cache.guilds[guildId];
+    if (existing && normalizedGuildConfigs.has(existing)) {
+      return existing;
+    }
+    if (!existing) {
       this.cache.guilds[guildId] = {
         prefix: process.env.DEFAULT_PREFIX || '!',
         logChannel: null,
@@ -405,36 +470,7 @@ class Database {
         unbypassableRoleId: null,
         athenFirewallRoleId: null,
         athenaUnbypassableRoleId: null,
-        antinukeModules: {
-          antiRoleCreate: false,
-          antiRoleDelete: false,
-          antiRoleUpdate: false,
-          antiRolePermUpdate: false,
-          antiMemberRoleUpdate: false,
-          antiRoleReorder: false,
-          antiChannelCreate: false,
-          antiChannelDelete: false,
-          antiChannelUpdate: false,
-          antiChannelPermUpdate: false,
-          antiChannelReorder: false,
-          antiChannelNameMod: false,
-          antiEmojiCreate: false,
-          antiEmojiDelete: false,
-          antiEmojiUpdate: false,
-          antiWebhooks: false,
-          antiBotAdd: false,
-          antiServerUpdate: false,
-          antiBan: false,
-          antiKick: false,
-          antiUnban: false,
-          antiInvite: false,
-          antiScheduledEvents: false,
-          antiMemberPurge: false,
-          antiMassBan: false,
-          antiAutomodUpdate: false,
-          antiAppCommands: false,
-          antiLinkedRole: false
-        },
+        antinukeModules: Object.fromEntries(ALL_ANTINUKE_MODULE_KEYS.map(k => [k, false])),
         antiNukePunishment: 'ban',
         antiNukeThreshold: 1,
         maxWarnings: 3,
@@ -492,77 +528,62 @@ class Database {
       if (cfg.securityEnabled === undefined) { cfg.securityEnabled = false; updated = true; }
       if (cfg.botOwnerBypass === undefined) { cfg.botOwnerBypass = false; updated = true; }
       if (cfg.antinukeModules === undefined) {
-        cfg.antinukeModules = {
-          antiRoleCreate: false, antiRoleDelete: false, antiRoleUpdate: false, antiRolePermUpdate: false, antiMemberRoleUpdate: false, antiRoleReorder: false,
-          antiChannelCreate: false, antiChannelDelete: false, antiChannelUpdate: false, antiChannelPermUpdate: false, antiChannelReorder: false, antiChannelNameMod: false,
-          antiEmojiCreate: false, antiEmojiDelete: false, antiEmojiUpdate: false, antiWebhooks: false, antiBotAdd: false, antiServerUpdate: false,
-          antiBan: false, antiKick: false, antiUnban: false, antiInvite: false, antiScheduledEvents: false, antiMemberPurge: false,
-          antiMassBan: false, antiAutomodUpdate: false, antiAppCommands: false, antiLinkedRole: false
-        };
-        updated = true;
-      }
-      if (cfg.antinukeModules.antiLinkedRole === undefined) {
-        cfg.antinukeModules.antiLinkedRole = false;
+        cfg.antinukeModules = Object.fromEntries(ALL_ANTINUKE_MODULE_KEYS.map(k => [k, false]));
         updated = true;
       }
 
-      // Synchronize Antinuke Firewall & 28 Modules State
-      const antinukeKeys = [
-        'antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate', 'antiMemberRoleUpdate', 'antiRoleReorder',
-        'antiChannelCreate', 'antiChannelDelete', 'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod',
-        'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks', 'antiBotAdd', 'antiServerUpdate',
-        'antiBan', 'antiKick', 'antiUnban', 'antiInvite', 'antiScheduledEvents', 'antiMemberPurge',
-        'antiMassBan', 'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'
-      ];
-
+      // Synchronize Antinuke Firewall & all 32 Modules cleanly without clobbering explicit per-module settings
       const isSecured = Boolean(cfg.securityEnabled && cfg.antiNukeEnabled);
 
       if (!isSecured) {
-        // IDLE MODE: When security/antinuke is not enabled, ALL 28 modules, flags, and persistence role IDs are reset
+        // IDLE MODE: When security/antinuke is not enabled, all 32 modules, active shields, and persistence role IDs remain off
         if (cfg.antiNukeEnabled) { cfg.antiNukeEnabled = false; updated = true; }
         if (cfg.securityEnabled) { cfg.securityEnabled = false; updated = true; }
         if (cfg.botOwnerBypass) { cfg.botOwnerBypass = false; updated = true; }
         if (cfg.antiSpamEnabled) { cfg.antiSpamEnabled = false; updated = true; }
+        if (cfg.antiFloodEnabled) { cfg.antiFloodEnabled = false; updated = true; }
+        if (cfg.antiLinkEnabled) { cfg.antiLinkEnabled = false; updated = true; }
+        if (cfg.antiInviteEnabled) { cfg.antiInviteEnabled = false; updated = true; }
         if (cfg.firewallRoleId) { cfg.firewallRoleId = null; updated = true; }
         if (cfg.unbypassableRoleId) { cfg.unbypassableRoleId = null; updated = true; }
         if (cfg.athenFirewallRoleId) { cfg.athenFirewallRoleId = null; updated = true; }
         if (cfg.athenaUnbypassableRoleId) { cfg.athenaUnbypassableRoleId = null; updated = true; }
         if (!cfg.antinukeModules) { cfg.antinukeModules = {}; updated = true; }
-        for (const k of antinukeKeys) {
+        for (const k of ALL_ANTINUKE_MODULE_KEYS) {
           if (cfg.antinukeModules[k] !== false) {
             cfg.antinukeModules[k] = false;
             updated = true;
           }
         }
       } else {
-        // ACTIVE MODE: When security & antinuke are enabled, ALL 28 modules ARE the Anti-Nuke Firewall
+        // ACTIVE MODE: Initialize any newly added (undefined) modules to true while respecting explicit admin toggles (false)
         if (!cfg.antinukeModules) { cfg.antinukeModules = {}; updated = true; }
-        for (const k of antinukeKeys) {
-          if (cfg.antinukeModules[k] !== true) {
+        for (const k of ALL_ANTINUKE_MODULE_KEYS) {
+          if (cfg.antinukeModules[k] === undefined) {
             cfg.antinukeModules[k] = true;
             updated = true;
           }
         }
-        if (cfg.antiSpamEnabled !== true) { cfg.antiSpamEnabled = true; updated = true; }
-      }
+        if (cfg.antiSpamEnabled === undefined) { cfg.antiSpamEnabled = true; updated = true; }
 
-      // Enforce absolute mutual exclusivity for Link & Invite toggles
-      if (cfg.allowAllLinks === true) {
-        if (cfg.antiLinkEnabled !== false) { cfg.antiLinkEnabled = false; updated = true; }
-      } else if (cfg.antiLinkEnabled === false) {
-        if (cfg.allowAllLinks !== true) { cfg.allowAllLinks = true; updated = true; }
-      } else {
-        if (cfg.antiLinkEnabled !== true) { cfg.antiLinkEnabled = true; updated = true; }
-        if (cfg.allowAllLinks !== false) { cfg.allowAllLinks = false; updated = true; }
-      }
+        // Mutual exclusivity for Link & Invite toggles only when security is active
+        if (cfg.allowAllLinks === true) {
+          if (cfg.antiLinkEnabled !== false) { cfg.antiLinkEnabled = false; updated = true; }
+        } else if (cfg.antiLinkEnabled === false) {
+          if (cfg.allowAllLinks !== true) { cfg.allowAllLinks = true; updated = true; }
+        } else {
+          if (cfg.antiLinkEnabled !== true) { cfg.antiLinkEnabled = true; updated = true; }
+          if (cfg.allowAllLinks !== false) { cfg.allowAllLinks = false; updated = true; }
+        }
 
-      if (cfg.allowInvitesGlobally === true) {
-        if (cfg.antiInviteEnabled !== false) { cfg.antiInviteEnabled = false; updated = true; }
-      } else if (cfg.antiInviteEnabled === false) {
-        if (cfg.allowInvitesGlobally !== true) { cfg.allowInvitesGlobally = true; updated = true; }
-      } else {
-        if (cfg.antiInviteEnabled !== true) { cfg.antiInviteEnabled = true; updated = true; }
-        if (cfg.allowInvitesGlobally !== false) { cfg.allowInvitesGlobally = false; updated = true; }
+        if (cfg.allowInvitesGlobally === true) {
+          if (cfg.antiInviteEnabled !== false) { cfg.antiInviteEnabled = false; updated = true; }
+        } else if (cfg.antiInviteEnabled === false) {
+          if (cfg.allowInvitesGlobally !== true) { cfg.allowInvitesGlobally = true; updated = true; }
+        } else {
+          if (cfg.antiInviteEnabled !== true) { cfg.antiInviteEnabled = true; updated = true; }
+          if (cfg.allowInvitesGlobally !== false) { cfg.allowInvitesGlobally = false; updated = true; }
+        }
       }
 
       if (cfg.maxWarnings === undefined) { cfg.maxWarnings = 3; updated = true; }
@@ -611,15 +632,15 @@ class Database {
       if (cfg.antiNukePunishment === undefined) { cfg.antiNukePunishment = 'ban'; updated = true; }
       if (cfg.antiNukeThreshold === undefined) { cfg.antiNukeThreshold = 1; updated = true; }
       if (cfg.antiLinkEnabled === undefined) { cfg.antiLinkEnabled = false; updated = true; }
-        if (cfg.wordFilterEnabled === undefined) { cfg.wordFilterEnabled = true; updated = true; }
-        if (cfg.bigFontsEnabled === undefined) { cfg.bigFontsEnabled = true; updated = true; }
-        if (cfg.antiFloodEnabled === undefined) { cfg.antiFloodEnabled = true; updated = true; }
+        if (cfg.wordFilterEnabled === undefined) { cfg.wordFilterEnabled = isSecured; updated = true; }
+        if (cfg.bigFontsEnabled === undefined) { cfg.bigFontsEnabled = isSecured; updated = true; }
+        if (cfg.antiFloodEnabled === undefined) { cfg.antiFloodEnabled = isSecured; updated = true; }
         if (cfg.automodBypasses === undefined) { cfg.automodBypasses = {}; updated = true; }
         if (cfg.honeypotChannelId === undefined) { cfg.honeypotChannelId = null; updated = true; }
         if (cfg.honeypotTimeoutMinutes === undefined) { cfg.honeypotTimeoutMinutes = 15; updated = true; }
       if (cfg.antiSpamMentionEnabled === undefined) { cfg.antiSpamMentionEnabled = false; updated = true; }
       if (cfg.antiSpamMentionBypassRoles === undefined) { cfg.antiSpamMentionBypassRoles = []; updated = true; }
-      if (cfg.antiInviteEnabled === undefined) { cfg.antiInviteEnabled = true; updated = true; }
+      if (cfg.antiInviteEnabled === undefined) { cfg.antiInviteEnabled = isSecured; updated = true; }
       if (cfg.allowedLinks === undefined) { cfg.allowedLinks = []; updated = true; }
       if (cfg.accentColor === undefined) { cfg.accentColor = null; updated = true; }
       if (cfg.rrDmsEnabled === undefined) { cfg.rrDmsEnabled = true; updated = true; }
@@ -669,27 +690,31 @@ class Database {
 
       if (updated) this.save();
     }
-    return this.cache.guilds[guildId];
+    const finalCfg = this.cache.guilds[guildId];
+    if (finalCfg) normalizedGuildConfigs.add(finalCfg);
+    return finalCfg;
   }
 
   updateGuildConfig(guildId, updates) {
     const config = this.getGuildConfig(guildId);
-    if (updates.antinukeModules && typeof updates.antinukeModules === 'object') {
-      config.antinukeModules = { ...(config.antinukeModules || {}), ...updates.antinukeModules };
-      delete updates.antinukeModules;
+    const { antinukeModules, ...restUpdates } = updates || {};
+    if (antinukeModules && typeof antinukeModules === 'object') {
+      config.antinukeModules = { ...(config.antinukeModules || {}), ...antinukeModules };
     }
     // Automatically synchronize mutually exclusive link & invite flags
-    if (updates.allowAllLinks !== undefined && updates.antiLinkEnabled === undefined) {
-      updates.antiLinkEnabled = !updates.allowAllLinks;
-    } else if (updates.antiLinkEnabled !== undefined && updates.allowAllLinks === undefined) {
-      updates.allowAllLinks = !updates.antiLinkEnabled;
+    if (restUpdates.allowAllLinks !== undefined && restUpdates.antiLinkEnabled === undefined) {
+      restUpdates.antiLinkEnabled = !restUpdates.allowAllLinks;
+    } else if (restUpdates.antiLinkEnabled !== undefined && restUpdates.allowAllLinks === undefined) {
+      restUpdates.allowAllLinks = !restUpdates.antiLinkEnabled;
     }
-    if (updates.allowInvitesGlobally !== undefined && updates.antiInviteEnabled === undefined) {
-      updates.antiInviteEnabled = !updates.allowInvitesGlobally;
-    } else if (updates.antiInviteEnabled !== undefined && updates.allowInvitesGlobally === undefined) {
-      updates.allowInvitesGlobally = !updates.antiInviteEnabled;
+    if (restUpdates.allowInvitesGlobally !== undefined && restUpdates.antiInviteEnabled === undefined) {
+      restUpdates.antiInviteEnabled = !restUpdates.allowInvitesGlobally;
+    } else if (restUpdates.antiInviteEnabled !== undefined && restUpdates.allowInvitesGlobally === undefined) {
+      restUpdates.allowInvitesGlobally = !restUpdates.antiInviteEnabled;
     }
-    Object.assign(config, updates);
+    Object.assign(config, restUpdates);
+    normalizedGuildConfigs.delete(config);
+    this.getGuildConfig(guildId);
     this.save();
     return config;
   }
@@ -793,38 +818,56 @@ class Database {
   // Whitelist Manager
   isWhitelisted(guild, memberOrId, eventType = 'all') {
     if (!guild || !memberOrId) return false;
-    const userId = typeof memberOrId === 'string' ? memberOrId : memberOrId.id;
+    const userId = typeof memberOrId === 'string'
+      ? memberOrId
+      : (memberOrId.id || memberOrId.user?.id);
+    if (!userId) return false;
     if (userId === guild.ownerId) return true; // Owner is always immune/whitelisted
-    
-    // Bot owner is ALWAYS whitelisted/immune
-    const ownerIdEnv = process.env.OWNER_ID;
-    if (ownerIdEnv && userId === ownerIdEnv) return true;
-    
+
+    // All Bot Owners (primary, secondary, hardcoded) are ALWAYS whitelisted/immune
+    if (isRootBotOwnerId(userId)) return true;
+
     // Extra owners are always whitelisted/immune
     if (this.isExtraOwner(guild.id, userId)) return true;
 
     const config = this.getGuildConfig(guild.id);
     if (!config.whitelist) return false;
 
+    const rawEvt = String(eventType || 'all').toLowerCase().trim();
+    const canonicalEvt = WHITELIST_EVENT_ALIAS[rawEvt] || rawEvt;
+    const matchesModule = (modules) => {
+      if (!Array.isArray(modules) || modules.length === 0) return false;
+      for (const m of modules) {
+        const lowerM = String(m).toLowerCase().trim();
+        if (lowerM === 'all') return true;
+        if (canonicalEvt !== 'all' && (lowerM === rawEvt || lowerM === canonicalEvt)) return true;
+        if (canonicalEvt === 'antinuke' && lowerM === 'antinuke') return true;
+      }
+      return false;
+    };
+
     let wData = null;
-    let isUserWhitelist = false;
     let targetId = null;
     let typeStr = null;
 
     if (config.whitelist.users && config.whitelist.users[userId]) {
       const uData = config.whitelist.users[userId];
-      if (uData.modules.includes('all') || uData.modules.includes(eventType)) {
+      if (matchesModule(uData.modules)) {
         wData = uData;
-        isUserWhitelist = true;
         targetId = userId;
         typeStr = 'users';
       }
     }
 
-    if (!wData && typeof memberOrId === 'object' && memberOrId.roles && config.whitelist.roles) {
+    // Resolve cached GuildMember automatically if a plain ID or { id } wrapper was supplied
+    const resolvedMember = (typeof memberOrId === 'object' && memberOrId?.roles)
+      ? memberOrId
+      : guild.members?.cache?.get?.(userId);
+
+    if (!wData && resolvedMember?.roles && config.whitelist.roles) {
       for (const [roleId, rData] of Object.entries(config.whitelist.roles)) {
-        if (memberOrId.roles.cache?.has?.(roleId) || (Array.isArray(memberOrId.roles) && memberOrId.roles.includes(roleId))) {
-          if (rData.modules.includes('all') || rData.modules.includes(eventType)) {
+        if (resolvedMember.roles.cache?.has?.(roleId) || (Array.isArray(resolvedMember.roles) && resolvedMember.roles.includes(roleId))) {
+          if (matchesModule(rData.modules)) {
             wData = rData;
             targetId = roleId;
             typeStr = 'roles';
@@ -839,13 +882,11 @@ class Database {
     // Trigger limit check (0 means infinite)
     if (wData.triggerLimit > 0) {
       if (wData.currentUsage >= wData.triggerLimit) {
-        // Limit exceeded, delete entry
         delete config.whitelist[typeStr][targetId];
         this.updateGuildConfig(guild.id, { whitelist: config.whitelist });
         return false;
       }
-      
-      // Valid action, increment usage
+
       wData.currentUsage++;
       this.updateGuildConfig(guild.id, { whitelist: config.whitelist });
     }

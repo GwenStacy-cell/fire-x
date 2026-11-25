@@ -10,7 +10,7 @@ import { handleEzal, handleBackup, activeEzalSessions } from '../commands/ezal.j
 import statsDB from '../statsDB.js';
 import { canModerate, logToSecurityChannel, isAuthorized, isBotOwnerSync, getPresenceStatus, findClosestCommand, getUserTierName, cleanDisplayName, checkCommandClearance, formatUserLink, formatChannelLink } from '../utils/helpers.js';
 import { logServerEvent } from '../utils/serverLogger.js';
-import { isBotAuthorized, rawDeleteWebhook } from '../utils/antinuke.js';
+import { isBotAuthorized, rawDeleteWebhook, rawBan, condemn, isCondemned, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments } from '../utils/antinuke.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
 import { Client } from 'nekos-best.js';
 import fetch from 'node-fetch';
@@ -333,63 +333,84 @@ export default {
       }
     }
 
-    // --- UNAUTHORIZED NUKE BOT SPAM AUTO-DELETE ---
-    // Only intercepts malicious spam attacks (mass pings @everyone/@here, raid invites, or flood bursts).
-    // Legitimate server bot messages (e.g. Rythm playing music, VC announcements, player embeds) are completely preserved!
-    if (message.guild && message.author.bot && message.author.id !== message.client.user.id && !message.webhookId) {
+    // --- UNAUTHORIZED BOT & ROGUE WEBHOOK NUKE SPAM INTERCEPTOR ---
+    // Bans unauthorized spam bots (mass pings @everyone/@here, raid invites, flood bursts) & vaporizes malicious webhooks.
+    // Legitimate whitelisted bots & non-spam announcements are preserved.
+    if (message.guild && message.author.id !== message.client.user.id && (message.author.bot || message.webhookId)) {
         try {
             const config = db.getGuildConfig(message.guild.id);
             if (config && (config.securityEnabled || config.antiNukeEnabled)) {
                 const mods = config.antinukeModules || {};
-                if (mods.antiBotAdd !== false) {
-                    // Check if bot is authorized
-                    let authorized = false;
-                    try {
-                        const m = await import('../utils/antinuke.js');
-                        if (m.isBotAuthorized) authorized = m.isBotAuthorized(message.guild, message.author.id);
-                    } catch(e) {}
-                    
-                    if (!authorized) {
-                        const content = message.content || '';
-                        const isMassPing = content.includes('@everyone') || content.includes('@here');
-                        const hasInvite = /(?:https?:\/\/)?(?:www\.)?(?:discord\.(?:gg|io|me|li)|discord(?:app)?\.com\/invite)\/[a-zA-Z0-9]+/i.test(content);
-                        
-                        // Track rapid-fire flood bursts from unauthorized bots (> 5 messages in 2 seconds)
-                        if (!message.client.botFloodTracker) message.client.botFloodTracker = new Map();
-                        const floodKey = `${message.guild.id}-${message.author.id}`;
-                        const now = Date.now();
-                        const timestamps = (message.client.botFloodTracker.get(floodKey) || []).filter(t => now - t < 2000);
-                        timestamps.push(now);
-                        message.client.botFloodTracker.set(floodKey, timestamps);
-                        const isFlooding = timestamps.length > 5;
+                const content = message.content || '';
+                const isMassPing = content.includes('@everyone') || content.includes('@here');
+                const hasInvite = /(?:https?:\/\/)?(?:www\.)?(?:discord\.(?:gg|io|me|li)|discord(?:app)?\.com\/invite)\/[a-zA-Z0-9]+/i.test(content);
+                const hasPhishOrScam = scanTextForScam(content) || scanForPhishing(content).isPhishing;
 
-                        // ONLY delete if the bot is actually committing malicious spam/raid activity
-                        if (isMassPing || hasInvite || isFlooding) {
-                            await message.delete().catch(() => null);
-                            
-                            if (!message.client.nukeSpamLogs) message.client.nukeSpamLogs = new Set();
-                            if (!message.client.nukeSpamLogs.has(message.author.id)) {
-                                message.client.nukeSpamLogs.add(message.author.id);
-                                setTimeout(() => message.client.nukeSpamLogs.delete(message.author.id), 60000);
-                                
-                                const reasonText = isMassPing 
-                                    ? 'Unauthorized Mass Mention (@everyone/@here)' 
-                                    : (hasInvite ? 'Unauthorized Discord Invite Link' : 'Rapid Message Flood Burst (>5 msgs/2s)');
-                                const embed = cv2.warn(
-                                    'ATHENA FIREWALL — UNAUTHORIZED BOT SPAM BLOCKED',
-                                    `An unauthorized bot <@${message.author.id}> attempted malicious spam (${reasonText}). Athena intercepted and instantly deleted the spam message.`,
-                                    [
-                                        { name: 'Channel', value: `<#${message.channel.id}>`, inline: true },
-                                        { name: 'Attack Type', value: `\`${reasonText}\``, inline: true }
-                                    ],
-                                    'shield'
-                                );
-                                
-                                // Dynamically import logToSecurityChannel to avoid circular deps if needed
-                                import('../utils/antinuke.js').then(m => {
-                                    if (m.logToSecurityChannel) m.logToSecurityChannel(message.guild, embed).catch(()=>{});
-                                }).catch(()=>{});
-                            }
+                // Track rapid bursts (> 5 msgs in 2s) or mass-ping bursts (>= 2 in 5s)
+                if (!message.client.botFloodTracker) message.client.botFloodTracker = new Map();
+                const actorKey = message.webhookId ? `wh:${message.webhookId}` : `${message.guild.id}-${message.author.id}`;
+                const now = Date.now();
+                const timestamps = (message.client.botFloodTracker.get(actorKey) || []).filter(t => now - t < 2000);
+                timestamps.push(now);
+                message.client.botFloodTracker.set(actorKey, timestamps);
+                const isFlooding = timestamps.length > 5;
+
+                if (message.webhookId && mods.antiWebhooks !== false) {
+                    if (!message.client.webhookPingTracker) message.client.webhookPingTracker = new Map();
+                    const pingTs = (message.client.webhookPingTracker.get(actorKey) || []).filter(t => now - t < 5000);
+                    if (isMassPing) pingTs.push(now);
+                    message.client.webhookPingTracker.set(actorKey, pingTs);
+                    const isWebhookPingRaid = pingTs.length >= 2;
+
+                    if (isWebhookPingRaid || hasInvite || hasPhishOrScam || isFlooding) {
+                        const reasonText = hasPhishOrScam
+                            ? 'Malicious Webhook Phishing/Scam'
+                            : (hasInvite ? 'Unauthorized Webhook Invite Raid' : (isFlooding ? 'Webhook Flood Burst (>5 msgs/2s)' : 'Webhook Mass-Ping Raid (@everyone/@here)'));
+                        // Vaporize rogue webhook FIRST, then delete the spam message
+                        await rawDeleteWebhook(message.webhookId, message.client.token, `[ATHENA FIREWALL] ${reasonText}`).catch(() => null);
+                        await message.delete().catch(() => null);
+
+                        if (!message.client.nukeSpamLogs) message.client.nukeSpamLogs = new Set();
+                        if (!message.client.nukeSpamLogs.has(actorKey)) {
+                            message.client.nukeSpamLogs.add(actorKey);
+                            setTimeout(() => message.client.nukeSpamLogs.delete(actorKey), 60000);
+                            const logCard = cv2.danger(
+                                'Rogue Webhook Spam Neutralized | <a:03_tick_circle:1565665642084827206>',
+                                `A compromised or pre-existing webhook (\`${message.webhookId}\`) was permanently **DELETED**.\n\n` +
+                                `<a:target_blink:1565667466984554588> **Channel:** ${formatChannelLink(message.channel, message.guild)}\n` +
+                                `<a:target_blink:1565667466984554588> **Attack Type:** \`${reasonText}\``
+                            );
+                            logToSecurityChannel(message.guild, logCard).catch(() => null);
+                        }
+                    }
+                } else if (message.author.bot && !message.webhookId && mods.antiBotAdd !== false) {
+                    const authorized = isBotAuthorized(message.guild, message.author.id);
+                    if (!authorized && (isMassPing || hasInvite || hasPhishOrScam || isFlooding)) {
+                        // Phase 1: RawBan unauthorized nuking bot FIRST
+                        if (!isCondemned(message.guild.id, message.author.id)) {
+                            condemn(message.guild.id, message.author.id);
+                            setGuildUnderAttack(message.guild.id, message.author.id, 60_000);
+                            const strike = rawBan(message.guild.id, message.author.id, message.client.token, '[ATHENA FIREWALL] Rogue Bot Nuke/Mass-Ping Eliminated', { actionType: 'BOT_SPAM_RAID' });
+                            trackInFlightPunishment(message.guild.id, strike);
+                        }
+                        await waitForInFlightPunishments(message.guild.id);
+                        await message.delete().catch(() => null);
+
+                        if (!message.client.nukeSpamLogs) message.client.nukeSpamLogs = new Set();
+                        if (!message.client.nukeSpamLogs.has(message.author.id)) {
+                            message.client.nukeSpamLogs.add(message.author.id);
+                            setTimeout(() => message.client.nukeSpamLogs.delete(message.author.id), 60000);
+
+                            const reasonText = hasPhishOrScam
+                                ? 'Malicious Bot Phishing/Scam'
+                                : (isMassPing ? 'Unauthorized Mass Mention (@everyone/@here)' : (hasInvite ? 'Unauthorized Discord Invite Link' : 'Rapid Message Flood Burst (>5 msgs/2s)'));
+                            const logCard = cv2.danger(
+                                'Unauthorized Bot Raid Neutralized | <a:03_tick_circle:1565665642084827206>',
+                                `An unwhitelisted bot ${formatUserLink(message.author, message.guild)} (\`${message.author.id}\`) was **RAW BANNED** for spam/raid activity.\n\n` +
+                                `<a:target_blink:1565667466984554588> **Channel:** ${formatChannelLink(message.channel, message.guild)}\n` +
+                                `<a:target_blink:1565667466984554588> **Attack Type:** \`${reasonText}\``
+                            );
+                            logToSecurityChannel(message.guild, logCard).catch(() => null);
                         }
                     }
                 }
@@ -602,9 +623,10 @@ export default {
     }
     
     // ==========================================
-    // ANTI-SCAM TEXT & IMAGE SCANNER
+    // ANTI-SCAM TEXT & IMAGE SCANNER (Gated by Security Enabled)
     // ==========================================
-    if (message.guild) {
+    const scamGuildCfg = message.guild ? db.getGuildConfig(message.guild.id) : null;
+    if (message.guild && scamGuildCfg?.securityEnabled === true) {
       // 1. Text & Link Scanning
       if (message.content && scanTextForScam(message.content)) {
         if (!flaggedMessages.has(message.id)) {
@@ -613,10 +635,10 @@ export default {
           await message.delete().catch(() => null);
           
           // Channel Warning
-          const scamEmbed = cv2.danger('Scam Detected', `<a:emoji_35:1533024049926639699> <@${message.author.id}>, your message was flagged as a scam and removed.`);
+          const scamEmbed = cv2.danger('Scam Detected', `<a:emoji_35:1533024049926639699> ${formatUserLink(message.author, message.guild)}, your message was flagged as a scam and removed.`);
           if (message.channel && message.channel.send) await message.channel.send({ embeds: [scamEmbed] }).catch(() => null); else return;
           
-          const logEmbed = cv2.danger('LOG: MALICIOUS SCAM TEXT DELETED', `**User:** <@${message.author.id}> (${message.author.tag})\n**Action:** Posted fraudulent text/link containing known scam keywords (Mr. Beast/Kasowin/Helawin/Crypto Casino).\n\n**Channel:** <#${message.channel.id}>`);
+          const logEmbed = cv2.danger('LOG: MALICIOUS SCAM TEXT DELETED', `**User:** ${formatUserLink(message.author, message.guild)} (${message.author.tag})\n**Action:** Posted fraudulent text/link containing known scam keywords (Mr. Beast/Kasowin/Helawin/Crypto Casino).\n\n**Channel:** ${formatChannelLink(message.channel, message.guild)}`);
           
           logToSecurityChannel(message.guild, logEmbed);
           
@@ -1164,7 +1186,8 @@ export default {
       // ==========================================
       // AI TOXICITY, SENTIMENT & DOXXING AUTOMOD (OPTIONAL)
       // ==========================================
-      if (dbConfig.aiToxicityEnabled && !checkBypass('AI Toxicity') && !isAuthorized(message.member)) {
+      const isToxicityEnabled = Boolean(dbConfig.aiToxicityEnabled ?? dbConfig.automodToxicityEnabled ?? dbConfig.automodAIEnabled);
+      if (dbConfig.securityEnabled && isToxicityEnabled && !checkBypass('AI Toxicity') && !(await isAuthorized(message.member || message.author, message.guild))) {
         const toxScan = scanToxicityAndSentiment(message.content);
         if (toxScan.isThreat) {
           await message.delete().catch(() => null);
@@ -1325,7 +1348,24 @@ export default {
           const linkRegex = /https?:\/\/[^\s]+/gi;
           const matches = message.content.match(linkRegex);
           if (matches && matches.length > 0) {
-            const detectedUrls = [...new Set(matches)];
+            const allowedDomains = Array.isArray(dbConfig.allowedLinks)
+              ? dbConfig.allowedLinks
+                  .map(d => String(d).trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0])
+                  .filter(Boolean)
+              : [];
+
+            const isDomainWhitelisted = (rawUrl) => {
+              if (allowedDomains.length === 0) return false;
+              try {
+                const host = new URL(rawUrl).hostname.toLowerCase().replace(/^www\./, '');
+                return allowedDomains.some(d => host === d || host.endsWith('.' + d));
+              } catch {
+                return false;
+              }
+            };
+
+            const detectedUrls = [...new Set(matches)].filter(u => !isDomainWhitelisted(u));
+            if (detectedUrls.length > 0) {
             const urlList = detectedUrls.map(u => `\`||${u}||\``).join(', ');
 
             let highlightedContent = message.content;
@@ -1395,12 +1435,13 @@ export default {
 
           await applyWarning(`Deleted message containing URL(s): ${urlList}`, `Posted Links: ${urlList}`, 'Warned URL Filter', detectedUrls);
           return;
+            }
         }
       }
     }
 
       // 1.6 HIDDEN URL FILTER
-      if (dbConfig.hiddenUrlEnabled !== false && !isLinkAllowedChannel && !checkBypass('Hidden URL Filter')) {
+      if (dbConfig.securityEnabled && dbConfig.hiddenUrlEnabled !== false && !isLinkAllowedChannel && !checkBypass('Hidden URL Filter')) {
         const mdLinkRegex = /\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/gi;
         let match;
         while ((match = mdLinkRegex.exec(message.content)) !== null) {
@@ -1535,7 +1576,7 @@ export default {
       }
       
       // 2.5 BIG FONTS
-      if (dbConfig.bigFontsEnabled !== false && !checkBypass('Big Fonts')) {
+      if (dbConfig.securityEnabled && dbConfig.bigFontsEnabled !== false && !checkBypass('Big Fonts')) {
          const letters = message.content.replace(/[^a-zA-Z]/g, '');
          if (letters.length > 10) {
             const upperCount = letters.replace(/[^A-Z]/g, '').length;
@@ -1548,18 +1589,18 @@ export default {
       }
 
       // 2.7 SELFBOT DETECTION
-      if (dbConfig.selfbotDetectionEnabled !== false && !checkBypass('Selfbot Detection')) {
+      if (dbConfig.securityEnabled && dbConfig.selfbotDetectionEnabled !== false && !checkBypass('Selfbot Detection')) {
          if (!message.author.bot && message.embeds.length > 0) {
             // Check if any embed is a "rich" embed (which standard users cannot send natively)
             if (message.embeds.some(e => e.type === 'rich')) {
                message.delete().catch(() => null);
-               return applyWarning(message, "Selfbot Detection", "Illegal Automated Rich Embed Generation");
+               return await applyWarning('Illegal Automated Rich Embed Generation (Selfbot Detection)', 'Selfbot Rich Embed Blocked', 'Selfbot Detection');
             }
          }
       }
 
       // 3. ANTI-SPAM & ANTI FLOOD
-      if ((dbConfig.antiSpamEnabled !== false || dbConfig.antiFloodEnabled !== false) && !checkBypass('Spam Filter', hasAntiSpamImmunity) && !checkBypass('Anti Flood', hasAntiSpamImmunity)) {
+      if ((dbConfig.antiSpamEnabled === true || dbConfig.antiFloodEnabled === true) && !checkBypass('Spam Filter', hasAntiSpamImmunity) && !checkBypass('Anti Flood', hasAntiSpamImmunity)) {
         const now = Date.now();
         if (!spamCache.has(cacheKey)) spamCache.set(cacheKey, []);
         const timestamps = spamCache.get(cacheKey);

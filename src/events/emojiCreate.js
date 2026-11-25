@@ -1,6 +1,6 @@
 import { AuditLogEvent } from 'discord.js';
 import { directStrike, isGuildUnderAttack } from '../utils/antinuke.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink } from '../utils/helpers.js';
 
 export default {
@@ -21,7 +21,7 @@ export default {
     // Non-blocking server log entry
     (async () => {
       try {
-        if (isGuildUnderAttack(emoji.guild.id)) return;
+        if (!isServerLogModuleEnabled(emoji.guild.id, 'emojis')) return;
         const { executor, reason } = await getAuditExecutorAndReason(emoji.guild, AuditLogEvent.EmojiCreate, emoji.id);
         const executorStr = executor ? `${formatUserLink(executor, emoji.guild)} (\`${executor.id}\`)` : 'Unknown';
         const emojiStr = emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`;

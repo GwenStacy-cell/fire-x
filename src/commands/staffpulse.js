@@ -21,10 +21,6 @@ export function isAuthorized(guild, member, userId) {
   if (isBotOwnerSync(userId)) return true;
   if (guild.ownerId === userId) return true;
   if (db.isExtraOwner(guild.id, userId)) return true;
-  if (member?.permissions?.has(PermissionFlagsBits.ManageMessages)) return true;
-  if (member?.permissions?.has(PermissionFlagsBits.KickMembers)) return true;
-  if (member?.permissions?.has(PermissionFlagsBits.BanMembers)) return true;
-  if (member?.permissions?.has(PermissionFlagsBits.Administrator)) return true;
   return false;
 }
 
