@@ -16,6 +16,27 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '25 November 2026',
+    version: 'v4.0.7',
+    headline: 'Minimalist Grey Subtext !ping Card (No Avatar Accessory)',
+    summary: 'Converted !ping telemetry body lines and section headers to Discord grey subtext formatting (-# / > -#) and removed the bot avatar thumbnail for a sleek full-width card.',
+    whatsNew: [],
+    improvements: [
+      {
+        title: 'Uniform Grey & Grey-Bold Typography',
+        desc: 'Formatted !ping sections and telemetry metrics with -# and > -# subtext markdown so labels and values render cleanly in grey and grey bold.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Removed Avatar Thumbnail from !ping',
+        desc: 'Replaced the Section thumbnail accessory in buildPingPayload with clean full-width text blocks.'
+      }
+    ],
+    tip: 'Use !ping for a compact grey-themed latency card with the real-time telemetry chart.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '25 November 2026',
     version: 'v4.0.6',
     headline: 'Clean !ping Telemetry Typography Polish',
     summary: 'Removed the heading tick icon and inline monospace code pills from !ping / /ping for cleaner readability without copy-box wrapping.',
