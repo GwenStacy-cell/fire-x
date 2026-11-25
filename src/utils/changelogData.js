@@ -16,6 +16,31 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '25 November 2026',
+    version: 'v4.0.8',
+    headline: 'Minimalist Grey Subtext !ss Security Firewall Panel',
+    summary: 'Redesigned !ss (getSecurityStatusPanel) into a sleek, compact Components V2 container with uniform grey/grey-bold typography, accurate Ban-First combat telemetry, and a 4-domain 32-module shield matrix.',
+    whatsNew: [],
+    improvements: [
+      {
+        title: 'Compact 4-Domain Shield Matrix',
+        desc: 'Grouped all 32 Anti-Nuke defense modules cleanly across Roles & Escalation, Channels & Layout, Members & Access, and Server, Hooks & Assets without vertical scroll clutter.'
+      },
+      {
+        title: 'Clean Grey Telemetry Typography',
+        desc: 'Formatted Firewall & Combat Engine telemetry in Discord grey subtext (-# / > -#) with zero backtick copy-boxes, fake YAML blocks, or outdated 10ms polling copy.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Real-Time Engine & DB Sentinel Status',
+        desc: 'Surfaced live combatTelemetry strike metrics, warm TLS socket pool stats, and DB-tracked sentinel role binding status while preserving all interactive security buttons.'
+      }
+    ],
+    tip: 'Use !ss to review all 32 Anti-Nuke modules and Ban-First engine readiness in a single compact view.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '25 November 2026',
     version: 'v4.0.7',
     headline: 'Minimalist Grey Subtext !ping Card (No Avatar Accessory)',
     summary: 'Converted !ping telemetry body lines and section headers to Discord grey subtext formatting (-# / > -#) and removed the bot avatar thumbnail for a sleek full-width card.',

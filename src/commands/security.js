@@ -32,7 +32,8 @@ import { setupDashboardChannel } from '../utils/dashboardManager.js';
 import { resolveMediaUrl, isPinterestUrl } from '../utils/pinterest.js';
 import { StringSelectMenuBuilder, UserSelectMenuBuilder, RoleSelectMenuBuilder, ChannelSelectMenuBuilder } from 'discord.js';
 import { auditAndNeutralizeOnboarding, CRITICAL_ONBOARDING_PERMS, hasCriticalOnboardingPerms, getDangerousPermNames } from '../utils/onboardingGuard.js';
-import { hasDangerousPerms, isAuthorized } from '../utils/antinuke.js';
+import { hasDangerousPerms, isAuthorized, combatTelemetry } from '../utils/antinuke.js';
+import { CHANGELOG_ENTRIES } from '../utils/changelogData.js';
 import { 
   dispatchTacticalAudioToVc, 
   createTacticalDispatchAttachment, 
@@ -5497,7 +5498,8 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
 
 export async function getSecurityStatusPanel(guild) {
   let config = db.getGuildConfig(guild.id);
-  const maxPos = Math.max(...guild.roles.cache.map(r => r.position));
+  const rolePositions = guild.roles?.cache?.size ? guild.roles.cache.map(r => r.position) : [0];
+  const maxPos = Math.max(...rolePositions);
   let botMember = guild.members.me || (guild.members?.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id && guild.members?.fetch ? await guild.members.fetch(guild.client.user.id).catch(() => null) : null);
   const botPos = botMember?.roles?.highest?.position ?? 0;
   const meetsRoleHierarchy = botPos >= maxPos - 2;
@@ -5511,11 +5513,14 @@ export async function getSecurityStatusPanel(guild) {
     ? (botMember.permissions.has(PermissionFlagsBits.ManageRoles) || botMember.permissions.has(PermissionFlagsBits.Administrator))
     : true;
 
-  // Active Self-Healing: If Anti-Nuke is active, verify sentinels exist in Discord and are assigned to Athena
+  // Active Self-Healing: Verify DB-tracked persistence sentinel roles exist and remain bound to Athena
+  let unbRole = null;
+  let fwRole = null;
+  let botWearsBoth = false;
   if (isSecured) {
-    const unbRole = config.unbypassableRoleId ? (guild.roles.cache.get(config.unbypassableRoleId) || await guild.roles.fetch(config.unbypassableRoleId).catch(() => null)) : null;
-    const fwRole = config.firewallRoleId ? (guild.roles.cache.get(config.firewallRoleId) || await guild.roles.fetch(config.firewallRoleId).catch(() => null)) : null;
-    const botWearsBoth = botMember && unbRole && fwRole && botMember.roles.cache.has(unbRole.id) && botMember.roles.cache.has(fwRole.id);
+    unbRole = config.unbypassableRoleId ? (guild.roles.cache.get(config.unbypassableRoleId) || await guild.roles.fetch(config.unbypassableRoleId).catch(() => null)) : null;
+    fwRole = config.firewallRoleId ? (guild.roles.cache.get(config.firewallRoleId) || await guild.roles.fetch(config.firewallRoleId).catch(() => null)) : null;
+    botWearsBoth = Boolean(botMember && unbRole && fwRole && botMember.roles.cache.has(unbRole.id) && botMember.roles.cache.has(fwRole.id));
 
     if ((!unbRole || !fwRole || !botWearsBoth) && hasManageRoles) {
       const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
@@ -5525,115 +5530,172 @@ export async function getSecurityStatusPanel(guild) {
         if (botMember?.fetch) {
           botMember = await botMember.fetch(true).catch(() => botMember);
         }
+        unbRole = config.unbypassableRoleId ? (guild.roles.cache.get(config.unbypassableRoleId) || await guild.roles.fetch(config.unbypassableRoleId).catch(() => null)) : null;
+        fwRole = config.firewallRoleId ? (guild.roles.cache.get(config.firewallRoleId) || await guild.roles.fetch(config.firewallRoleId).catch(() => null)) : null;
+        botWearsBoth = Boolean(botMember && unbRole && fwRole && botMember.roles.cache.has(unbRole.id) && botMember.roles.cache.has(fwRole.id));
       }
     }
   }
 
-  let botAvatarUrl = guild.client?.user?.displayAvatarURL({ dynamic: true, size: 256 }) || null;
-
-  const modLabels = {
-    antiRoleCreate: 'Anti Role Create',
-    antiRoleDelete: 'Anti Role Delete',
-    antiRoleUpdate: 'Anti Role Update',
-    antiRolePermUpdate: 'Anti Role Perm Update',
-    antiMemberRoleUpdate: 'Anti Member Role Update',
-    antiRoleReorder: 'Anti Role Reorder',
-    antiChannelCreate: 'Anti Channel Create',
-    antiChannelDelete: 'Anti Channel Delete',
-    antiChannelUpdate: 'Anti Channel Update',
-    antiChannelPermUpdate: 'Anti Channel Perm Update',
-    antiChannelReorder: 'Anti Channel Reorder',
-    antiChannelNameMod: 'Anti Channel Name Mod',
-    antiEmojiCreate: 'Anti Emoji Create',
-    antiEmojiDelete: 'Anti Emoji Delete',
-    antiEmojiUpdate: 'Anti Emoji Update',
-    antiWebhooks: 'Anti Webhooks',
-    antiBotAdd: 'Anti Bot Add',
-    antiServerUpdate: 'Anti Server Update',
-    antiVanitySteal: 'Anti Vanity Stealer',
-    antiBan: 'Anti Ban',
-    antiKick: 'Anti Kick',
-    antiUnban: 'Anti Unban',
-    antiInvite: 'Anti Invite',
-    antiInviteDelete: 'Anti Invite Delete',
-    antiSoundboardCreate: 'Anti Soundboard Create',
-    antiSoundboardDelete: 'Anti Soundboard Delete',
-    antiScheduledEvents: 'Anti Scheduled Events',
-    antiMemberPurge: 'Anti Member Purge',
-    antiMassBan: 'Anti Mass Ban',
-    antiAutomodUpdate: 'Anti Automod Update',
-    antiAppCommands: 'Anti App Commands',
-    antiLinkedRole: 'Anti Linked Role Exploit'
-  };
-
-  const emojiOn  = '<:on:1533844867191406672>';
-  const emojiOff = '<:off:1533844858983157851>';
-
-  let listText = '';
-  for (const k of Object.keys(modLabels)) {
-    const isEnabled = isSecured && (config.antinukeModules?.[k] !== false);
-    listText += `> ${isEnabled ? emojiOn : emojiOff} ${modLabels[k]}\n`;
-  }
-
-  const totalModules = Object.keys(modLabels).length;
-  const activeModulesCount = isSecured 
-    ? Object.keys(modLabels).filter(k => config.antinukeModules?.[k] !== false).length 
-    : 0;
-
-  if (!isSecured) {
-    if (!meetsHierarchy) {
-      listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **Hierarchy Requirements Not Met for Anti-Nuke:**\n` +
-                  `> -# ${BULLET_EMOJI} Member Count: **${guild.memberCount || 0} / 200** ${meetsMemberCount ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Requires at least 200 members)'}\n` +
-                  `> -# ${BULLET_EMOJI} Role Position: **Pos ${botPos}** (Highest: ${maxPos}) ${meetsRoleHierarchy ? '<:on:1533844867191406672>' : '<:off:1533844858983157851> (Must be Top 3 in Server Settings > Roles)'}\n` +
-                  `> -# **Execute \`!security enable all\` or \`!antinuke enable\` or click \`Engage All Shields\` once requirements are met. (Bot Owner bypasses all requirements).**`;
-    } else {
-      listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **Security is currently DISABLED on this server.**\n> -# **Execute \`!security enable all\` or \`!antinuke enable\` or click \`Engage All Shields\` below to arm all ${totalModules} modules.**`;
+  // Group all 32 Anti-Nuke defense modules cleanly across 4 security domains
+  const moduleGroups = [
+    {
+      title: 'Roles & Escalation',
+      rows: [
+        [
+          ['antiRoleCreate', 'Role Create'],
+          ['antiRoleDelete', 'Role Delete'],
+          ['antiRoleUpdate', 'Role Update'],
+          ['antiRolePermUpdate', 'Role Perms']
+        ],
+        [
+          ['antiMemberRoleUpdate', 'Member Roles'],
+          ['antiRoleReorder', 'Role Reorder'],
+          ['antiLinkedRole', 'Linked Roles']
+        ]
+      ]
+    },
+    {
+      title: 'Channels & Layout',
+      rows: [
+        [
+          ['antiChannelCreate', 'Channel Create'],
+          ['antiChannelDelete', 'Channel Delete'],
+          ['antiChannelUpdate', 'Channel Update']
+        ],
+        [
+          ['antiChannelPermUpdate', 'Channel Perms'],
+          ['antiChannelReorder', 'Channel Reorder'],
+          ['antiChannelNameMod', 'Name Lock']
+        ]
+      ]
+    },
+    {
+      title: 'Members & Access',
+      rows: [
+        [
+          ['antiBan', 'Ban'],
+          ['antiMassBan', 'Mass Ban'],
+          ['antiKick', 'Kick'],
+          ['antiUnban', 'Unban']
+        ],
+        [
+          ['antiMemberPurge', 'Prune/Purge'],
+          ['antiBotAdd', 'Bot Add'],
+          ['antiInvite', 'Invite Create'],
+          ['antiInviteDelete', 'Invite Delete']
+        ]
+      ]
+    },
+    {
+      title: 'Server, Hooks & Assets',
+      rows: [
+        [
+          ['antiServerUpdate', 'Server Update'],
+          ['antiVanitySteal', 'Vanity Steal'],
+          ['antiWebhooks', 'Webhooks'],
+          ['antiAutomodUpdate', 'AutoMod']
+        ],
+        [
+          ['antiAppCommands', 'App Commands'],
+          ['antiEmojiCreate', 'Emoji Create'],
+          ['antiEmojiDelete', 'Emoji Delete'],
+          ['antiEmojiUpdate', 'Emoji Update']
+        ],
+        [
+          ['antiSoundboardCreate', 'Sound Create'],
+          ['antiSoundboardDelete', 'Sound Delete'],
+          ['antiScheduledEvents', 'Events']
+        ]
+      ]
     }
-  } else if (!hasManageRoles) {
-    listText += `\n> -# <a:exclamation_outline1:1565666739356827759> **PERMISSION ADVISORY:** Athena Prime lacks the **Manage Roles** permission. Persistence sentinels cannot be bound. Grant Administrator or Manage Roles in Server Settings > Roles.`;
+  ];
+
+  const allModuleEntries = moduleGroups.flatMap(g => g.rows.flat());
+  const totalModules = allModuleEntries.length;
+  const isModuleActive = (k) => isSecured && (config.antinukeModules?.[k] !== false);
+  const activeModulesCount = allModuleEntries.filter(([k]) => isModuleActive(k)).length;
+  const integrityPct = totalModules > 0 ? Math.round((activeModulesCount / totalModules) * 100) : 0;
+
+  const barLen = 12;
+  const barFilled = totalModules > 0 ? Math.round((activeModulesCount / totalModules) * barLen) : 0;
+  const barVisual = `${'▰'.repeat(barFilled)}${'▱'.repeat(barLen - barFilled)}`;
+
+  const matrixLines = [`-# **Anti-Nuke Matrix · ${activeModulesCount}/${totalModules} Modules Armed**`];
+  for (const group of moduleGroups) {
+    const flatMods = group.rows.flat();
+    const groupActive = flatMods.filter(([k]) => isModuleActive(k)).length;
+    matrixLines.push(`-# **${group.title}** (${groupActive}/${flatMods.length})`);
+    for (const row of group.rows) {
+      const renderedRow = row
+        .map(([k, label]) => `${isModuleActive(k) ? TOGGLE_ON : TOGGLE_OFF} ${label}`)
+        .join(' · ');
+      matrixLines.push(`> -# ${renderedRow}`);
+    }
   }
 
   const liveRecords = db.getSecurityLiveRecords(guild.id);
+  const stats = combatTelemetry.getStats();
+  const poolCount = stats.socketPool?.connections || 128;
+  const engineLabel = isSecured
+    ? '0ms Raw Wiretap · Single-Shot Ban-First'
+    : 'Standby · Firewall Offline';
+  const strikeLabel = stats.totalStrikes > 0
+    ? `${stats.avgLatency}ms avg (${stats.successfulStrikes}/${stats.totalStrikes} bans)`
+    : (isSecured ? `Armed · ${poolCount} Warm TLS Sockets` : 'Offline');
+  const sentinelLabel = !isSecured
+    ? 'Unbound · Security Disabled'
+    : (!hasManageRoles
+        ? 'Blocked · Missing Manage Roles'
+        : (botWearsBoth ? 'Dual Sentinels Locked' : 'Sync Pending'));
+  const gateLabel = hasBotBypass
+    ? `${TOGGLE_ON} **Owner Clearance** (${guild.memberCount || 0} members · Pos ${botPos}/${maxPos})`
+    : `${meetsMemberCount ? TOGGLE_ON : TOGGLE_OFF} **Members:** ${guild.memberCount || 0}/200 · ${meetsRoleHierarchy ? TOGGLE_ON : TOGGLE_OFF} **Role Pos:** ${botPos}/${maxPos}`;
 
-  const shieldProgress = renderSleekProgressBar(activeModulesCount, totalModules, 14);
-  const memberProgress = renderSleekProgressBar(guild.memberCount || 0, 200, 12);
-  const rolePosProgress = renderSleekProgressBar(botPos, Math.max(botPos, maxPos), 12);
+  const defaultHex = isSecured ? '#00e5ff' : '#ed4245';
+  const parsedAccent = parseInt(String(config?.accentColor || defaultHex).replace('#', ''), 16);
+  const accentColorInt = Number.isFinite(parsedAccent) ? parsedAccent : (isSecured ? 0x00E5FF : 0xED4245);
+  const version = CHANGELOG_ENTRIES[0]?.version || 'v4.0.8';
 
-  const headerSection = { type: 10, content: `# ${getRandomHeadingGlyph()} Security Firewall Status | <a:03_tick_circle:1565665642084827206>\n` +
-      "-# Global Status: " + (isSecured ? "**God-Tier Firewall ACTIVE**" : "Offline \u2014 Unprotected") + "\n" +
-      "-# " + BULLET_EMOJI + " **Shield Integrity:** " + shieldProgress + " (" + activeModulesCount + "/" + totalModules + " Shields Armed)\n" +
-      "-# " + BULLET_EMOJI + " **Hierarchy Gate:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : memberProgress + " (" + (meetsMemberCount ? "Requirement Met" : "Requires 200 Members") + ")") + "\n" +
-      "-# " + BULLET_EMOJI + " **Role Position:** " + (hasBotBypass ? "<:on:1533844867191406672> (Bypassed via Bot Owner Clearance)" : rolePosProgress + " (Pos " + botPos + " / " + maxPos + ")") + "\n" +
-      "-# " + BULLET_EMOJI + " **Strike Velocity:** " + (isSecured ? "Ludicrously fast \u2014 **1-3ms execution**" : "Disabled") + "\n" +
-      "-# " + BULLET_EMOJI + " **Live Audit Records:** **`" + liveRecords.length + "` threat events neutralized** in real-time\n" +
-      "-# " + BULLET_EMOJI + " **Architecture Rule:** The " + totalModules + " modules represent the Anti-Nuke Firewall. Disabling disarms all " + totalModules + " modules and deletes persistence roles."
-    };
-
-  const detailsSection = { type: 10, content:
-    "-# **Advanced Architecture & Exploit Defense:**\n" +
-    "-# **1. Real-Time Role Interceptor (`guildMemberUpdate.js`):** Intercepts unauthorized gaining of Administrator / dangerous roles. Cross-examines 60s audit logs for authorized executors. Automatically strips roles, disarms dangerous permissions, and isolates the account in Quarantine.\n" +
-    "-# **2. Join-Time Dangerous Role Guard (`guildMemberAdd.js`):** Neutralizes Discord Onboarding & pre-linked role exploits by stripping join-time dangerous roles and isolating the user.\n" +
-    "-# **Raw Websocket Wiretap:** Intercepts raw network streams to execute zero-day bans in <1ms, bypassing library latency.\n" +
-    "-# **Lightspeed Detection:** Direct API polling every 10ms catches destructive events instantly.\n" +
-    "-# **Flawless Restoration:** Re-engineers exact channel/category raw positions and permissions post-nuke."
-  };
-
-  const offModulesCount = totalModules - activeModulesCount;
-  const resultText = (activeModulesCount === totalModules && isSecured) 
-    ? '100% Armed & Active' 
-    : (isSecured ? `${Math.round((activeModulesCount/totalModules)*100)}% Armed & Active` : '0% Armed — Security Disarmed');
-  const auditTick = (activeModulesCount === totalModules && isSecured) ? '<a:03_tick_circle:1565665642084827206>' : '<a:exclamation_outline1:1565666739356827759>';
-
-  const auditTelemetrySection = {
+  const headerSection = {
     type: 10,
-    content: `# ${getRandomHeadingGlyph()} Anti-Nuke Shield Matrix Audit | ${auditTick}\n` +
-      "```yaml\n" +
-      `Total modules rendered: ${totalModules}\n` +
-      `ON modules: ${activeModulesCount}  (<:on:1533844867191406672>)\n` +
-      `OFF modules: ${offModulesCount}\n` +
-      `Result: ${resultText}\n` +
-      "```"
+    content:
+      `# ${NINJA_BULLET} Athena Security Status ${NINJA_BULLET_RTL}\n` +
+      `-# ${UPTIME_EMOJI} **Status:** **${isSecured ? 'Armed & Protected' : 'Disarmed · Unprotected'}** · **Shields:** **${activeModulesCount}/${totalModules}** (${integrityPct}%) · **Incidents:** **${liveRecords.length}**`
   };
+
+  const telemetrySection = {
+    type: 10,
+    content:
+      `-# **Firewall & Combat Engine**\n` +
+      `> -# ${BULLET_EMOJI} **Shield Integrity:** ${barVisual} **${integrityPct}%** (${activeModulesCount}/${totalModules} armed)\n` +
+      `> -# ${BULLET_EMOJI} **Defense Pipeline:** **${engineLabel}** · **${strikeLabel}**\n` +
+      `> -# ${BULLET_EMOJI} **Sentinels & Gate:** **${sentinelLabel}** · ${gateLabel}\n` +
+      `> -# ${BULLET_EMOJI} **Recovery & Guard:** Instant Role Strip on Upgrade · Post-Nuke Channel & Perm Restore`
+  };
+
+  let advisorySection = null;
+  if (!isSecured && !meetsHierarchy) {
+    advisorySection = {
+      type: 10,
+      content:
+        `-# ${WARN_EMOJI} **Deployment Gate Not Met:** Server requires at least **200 members** (${guild.memberCount || 0}/200) and Athena in **Top 3 roles** (Pos ${botPos}/${maxPos}).\n` +
+        `> -# ${BULLET_EMOJI} Click **Engage All Shields** or run **!security enable all** once requirements are met.`
+    };
+  } else if (!isSecured) {
+    advisorySection = {
+      type: 10,
+      content:
+        `-# ${WARN_EMOJI} **Shields Disarmed:** All ${totalModules} Anti-Nuke modules are currently offline.\n` +
+        `> -# ${BULLET_EMOJI} Click **Engage All Shields** below or run **!security enable all** to arm protection.`
+    };
+  } else if (!hasManageRoles) {
+    advisorySection = {
+      type: 10,
+      content:
+        `-# ${WARN_EMOJI} **Permission Advisory:** Athena lacks **Manage Roles**, so persistence sentinel roles cannot be bound.`
+    };
+  }
 
   const actionButtons = [];
   if (!isSecured) {
@@ -5646,21 +5708,28 @@ export async function getSecurityStatusPanel(guild) {
   actionButtons.push({ type: 2, custom_id: 'sec_architecture_guide', label: 'Exploit Guide', style: 2 });
   actionButtons.push({ type: 2, custom_id: 'sec_close', label: 'Close', style: 2 });
 
+  const containerComponents = [
+    headerSection,
+    { type: 14, divider: true },
+    telemetrySection
+  ];
+  if (advisorySection) {
+    containerComponents.push({ type: 14, divider: true });
+    containerComponents.push(advisorySection);
+  }
+  containerComponents.push(
+    { type: 14, divider: true },
+    { type: 10, content: matrixLines.join('\n') },
+    { type: 14, divider: true },
+    { type: 1, components: actionButtons.slice(0, 5) },
+    { type: 14, divider: true },
+    { type: 10, content: `-# **Athena Prime ${version} · Zero-Trust Security Matrix · Threshold 1 / Raw Ban-First**` }
+  );
+
   const container = {
     type: 17,
-    components: [
-      headerSection,
-      { type: 14, divider: true },
-      detailsSection,
-      { type: 14, divider: true },
-      auditTelemetrySection,
-      { type: 14, divider: true },
-      { type: 10, content: listText.trimEnd() },
-      { type: 14, divider: true },
-      { type: 1, components: actionButtons.slice(0, 5) },
-      { type: 14, divider: true },
-      { type: 10, content: '-# **Athena Bulletproof Security !!!**' }
-    ]
+    accent_color: accentColorInt,
+    components: containerComponents
   };
 
   return { components: [container], flags: MessageFlags.IsComponentsV2 };
