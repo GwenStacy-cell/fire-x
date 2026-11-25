@@ -16,6 +16,27 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '25 November 2026',
+    version: 'v4.0.6',
+    headline: 'Clean !ping Telemetry Typography Polish',
+    summary: 'Removed the heading tick icon and inline monospace code pills from !ping / /ping for cleaner readability without copy-box wrapping.',
+    whatsNew: [],
+    improvements: [
+      {
+        title: 'Clean Bold Typography on !ping',
+        desc: 'Formatted WebSocket, REST, TLS pool, strike latency, memory, and uptime metrics using crisp bold text instead of clickable backtick pills, preventing multi-line wrap beside the bot thumbnail.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Removed Header Tick Icon on !ping',
+        desc: 'Removed the tick badge inside the ninja-bullet !ping heading for a cleaner symmetric header.'
+      }
+    ],
+    tip: 'Use !ping anytime to view live socket latency alongside the real-time telemetry graph.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '25 November 2026',
     version: 'v4.0.5',
     headline: 'Tactical !ping UI Redesign & Authentic Multi-Layer Telemetry Graph',
     summary: 'Redesigned !ping / /ping with a modern Components V2 tactical telemetry card, live warm-TLS & REST latency probes, real Anti-Nuke strike benchmarks, runtime memory/uptime readouts, and an upgraded obsidian telemetry matrix graph driven purely by real samples.',

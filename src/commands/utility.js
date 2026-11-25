@@ -163,28 +163,28 @@ export async function buildPingPayload(client, guild, user, member = null) {
   const totalShards = client.ws?.shards?.size || 1;
   const signalTier = !hasWsPing ? 'Calibrating' : (wsMs < 80 ? 'Optimal' : wsMs < 160 ? 'Nominal' : 'Elevated');
   const poolSize = stats.socketPool?.connections || 128;
-  const poolHeartbeat = stats.socketPool?.heartbeatDaemon || '8s (Active Heartbeat)';
-  const version = CHANGELOG_ENTRIES[0]?.version || 'v4.0.5';
+  const heartbeatShort = String(stats.socketPool?.heartbeatDaemon || '8s').split(' ')[0] || '8s';
+  const version = CHANGELOG_ENTRIES[0]?.version || 'v4.0.6';
 
   const initiatorLink = formatUserLink(member || user, guild);
   const networkBlockText =
     `### Network & Anti-Nuke Pipeline\n` +
-    `> ${BULLET_EMOJI} **Gateway WebSocket:** \`${wsDisplay}\` · **Discord REST:** \`${restMs != null ? `${restMs}ms` : 'N/A'}\`\n` +
-    `> ${BULLET_EMOJI} **Warm TLS Socket:** \`${socketMs != null ? `${socketMs}ms` : 'N/A'}\` · **Pool:** \`${poolSize} sockets (${poolHeartbeat})\`\n` +
-    `> ${BULLET_EMOJI} **Anti-Nuke Strike Latency:** \`${strikeText}\``;
+    `> ${BULLET_EMOJI} **Gateway WebSocket:** **${wsDisplay}** · **Discord REST:** **${restMs != null ? `${restMs}ms` : 'N/A'}**\n` +
+    `> ${BULLET_EMOJI} **Warm TLS Socket:** **${socketMs != null ? `${socketMs}ms` : 'N/A'}** · **Pool:** **${poolSize} TLS** (${heartbeatShort} Keep-Alive)\n` +
+    `> ${BULLET_EMOJI} **Anti-Nuke Strike Latency:** **${strikeText}**`;
 
   const runtimeBlockText =
     `### Runtime & Memory Health\n` +
-    `> ${BULLET_EMOJI} **Config Cache Lookup:** \`${dbMs}ms\` · **Process RAM:** \`${heapMb} MB Heap\` / \`${rssMb} MB RSS\`\n` +
-    `> ${BULLET_EMOJI} **System Uptime:** \`${uptimeStr}\` · **Cluster Scope:** \`${guildCount.toLocaleString()} guilds\``;
+    `> ${BULLET_EMOJI} **Config Cache Lookup:** **${dbMs}ms** · **Process RAM:** **${heapMb} MB Heap** / **${rssMb} MB RSS**\n` +
+    `> ${BULLET_EMOJI} **System Uptime:** **${uptimeStr}** · **Cluster Scope:** **${guildCount.toLocaleString()} guilds**`;
 
   const botAvatarUrl = client.user?.displayAvatarURL?.({ size: 256 }) || null;
   const components = [
     {
       type: 10,
       content:
-        `# ${NINJA_BULLET} Athena System & Combat Telemetry | ${TICK_EMOJI} ${NINJA_BULLET_RTL}\n` +
-        `-# ${UPTIME_EMOJI} **Requested by:** ${initiatorLink} · **Signal:** \`${signalTier}\` · **Shard:** \`#${shardId + 1}/${totalShards}\``
+        `# ${NINJA_BULLET} Athena System & Combat Telemetry ${NINJA_BULLET_RTL}\n` +
+        `-# ${UPTIME_EMOJI} **Requested by:** ${initiatorLink} · **Signal:** **${signalTier}** · **Shard:** #${shardId + 1}/${totalShards}`
     },
     { type: 14, divider: true },
     botAvatarUrl
