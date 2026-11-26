@@ -1,4 +1,5 @@
 ﻿import { createCanvas, loadImage } from './canvas.js';
+import { isMainThread, runCanvasTask } from './canvasWorkerHost.js';
 
 // Helper to strip standard emojis so they don't render as tofu boxes in node-canvas
 function stripEmojis(str) {
@@ -45,6 +46,18 @@ function calculateLines(ctx, text, maxWidth) {
 }
 
 export async function generateQuoteBuffer(username, avatarUrl, text, timestampStr, theme = 'dark', roleColor = '#FFFFFF', realUsername = '') {
+  if (isMainThread) {
+    const res = await runCanvasTask(
+      'quoteBuffer',
+      [username, avatarUrl, text, timestampStr, theme, roleColor, realUsername],
+      () => generateQuoteBufferLocal(username, avatarUrl, text, timestampStr, theme, roleColor, realUsername)
+    );
+    if (res) return Buffer.isBuffer(res) ? res : Buffer.from(res);
+  }
+  return await generateQuoteBufferLocal(username, avatarUrl, text, timestampStr, theme, roleColor, realUsername);
+}
+
+async function generateQuoteBufferLocal(username, avatarUrl, text, timestampStr, theme = 'dark', roleColor = '#FFFFFF', realUsername = '') {
   const width = 1200;
   const height = 630;
   const canvas = createCanvas(width, height);

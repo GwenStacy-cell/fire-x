@@ -1,6 +1,7 @@
 import { AttachmentBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
+import { isMainThread, runCanvasTask } from './canvasWorkerHost.js';
 
 let canvasMod = null;
 let canvasFailed = false;
@@ -18,6 +19,16 @@ async function getCanvas() {
 }
 
 export async function generateGlobalActionCard(opts) {
+  if (isMainThread) {
+    const res = await runCanvasTask('globalActionCard', [opts], () => generateGlobalActionCardLocal(opts));
+    if (!res) return null;
+    if (res instanceof AttachmentBuilder) return res;
+    if (res.data) return new AttachmentBuilder(Buffer.from(res.data), { name: res.name || 'global_ban_log.png' });
+  }
+  return await generateGlobalActionCardLocal(opts);
+}
+
+async function generateGlobalActionCardLocal(opts) {
     const canvasPkg = await getCanvas();
     if (!canvasPkg) return null;
     const { createCanvas, loadImage } = canvasPkg;

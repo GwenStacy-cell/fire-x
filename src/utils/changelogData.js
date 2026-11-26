@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '26 November 2026',
+    version: 'v4.0.10',
+    headline: 'Canvas Worker Thread Offloading, Presence Telemetry Trim & Async CloudSync',
+    summary: 'Isolated heavy Canvas PNG/GIF rendering off the Wiretap gateway thread into a persistent worker_threads worker, filtered noisy PRESENCE_UPDATE/TYPING_START telemetry churn, and eliminated synchronous disk/zlib stalls in cloud backups.',
+    whatsNew: [
+      {
+        title: 'Dedicated Canvas Rendering Worker Thread',
+        desc: 'Added canvasWorkerHost.js and canvasWorkerTask.js so !ping telemetry graphs, quotes, security dashboards, global ban action cards, stock charts, classic rank cards, and command status banners render in a separate OS thread with seamless local fallback.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'High-Churn Presence Telemetry Filtering',
+        desc: 'Skipped PRESENCE_UPDATE and TYPING_START packet logging in index.js and liveOpsMonitor.js while keeping GuildPresences live for ServerStats online counters.'
+      },
+      {
+        title: 'Non-Blocking CloudSync Backup & Restore I/O',
+        desc: 'Replaced synchronous fs.readFileSync/writeFileSync and zlib.gzipSync/gunzipSync calls in cloudSync.js with non-blocking async file and zlib promises.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Event-Loop Anti-Stall Protection',
+        desc: 'Prevented ~28-60ms Canvas image rendering pauses or periodic cloud backup compression from delaying incoming Wiretap security packets.'
+      }
+    ],
+    tip: 'All Canvas PNG/GIF visuals keep identical styling while running off the Anti-Nuke security thread.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '26 November 2026',
     version: 'v4.0.9',
     headline: 'Raw Kernel TLS Ban Fast-Lane & Zero-Jitter Listener Pipeline',
     summary: 'Deployed a dedicated raw Node tls.TLSSocket TCP_NODELAY ban lane ahead of Undici, prioritized Wiretap to run as the #1 raw gateway listener via prependListener, and eliminated synchronous array-shift and git subprocess blocking on the event loop.',

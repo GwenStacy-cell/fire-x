@@ -29,6 +29,7 @@ import { checkAndAutoRestore, startCloudBackupScheduler } from '../utils/cloudSy
 import { connectMongo, hydrateFromMongo, startMongoSyncScheduler } from '../utils/mongoSync.js';
 import { snapshotGuildInfrastructure } from '../utils/antinuke.js';
 import { pruneDuplicateSecurityLogChannels } from '../utils/helpers.js';
+import { prewarmCanvasWorker } from '../utils/canvasWorkerHost.js';
 
 export default {
   name: 'clientReady',
@@ -216,6 +217,8 @@ export default {
 
     // Cache the developer so their mention always resolves correctly in embeds
     client.users.fetch('1423292960744804383').catch(() => null);
+    // Warm up dedicated Canvas PNG/GIF worker thread cleanly in background
+    prewarmCanvasWorker().catch(() => null);
 
     // Auto-join Home VCs and ensure Unbypassable Role across all watching guilds
     const homeVcGuilds = [];

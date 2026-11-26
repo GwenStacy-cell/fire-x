@@ -74,10 +74,11 @@ let lastGatewayPacketTime = 0;
 
 export function recordGatewayPacket(packet) {
   if (!packet) return;
+  const t = packet.t || 'UNKNOWN';
+  if (t === 'PRESENCE_UPDATE' || t === 'TYPING_START') return;
   totalGatewayPackets++;
   const now = Date.now();
   lastGatewayPacketTime = now;
-  const t = packet.t || 'UNKNOWN';
   gatewayPacketCounts.set(t, (gatewayPacketCounts.get(t) || 0) + 1);
   gatewayPacketHistory.push(now);
 

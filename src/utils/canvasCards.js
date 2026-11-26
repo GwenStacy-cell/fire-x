@@ -2,7 +2,9 @@ import { createCanvas, loadImage, registerFont } from './canvas.js';
 import { AttachmentBuilder } from 'discord.js';
 import path from 'path';
 import fs from 'fs';
-import db from '../database.js';
+import { isMainThread, runCanvasTask } from './canvasWorkerHost.js';
+
+const db = isMainThread ? (await import('../database.js')).default : null;
 import { exec } from 'child_process';
 import util from 'util';
 import ffmpegPath from 'ffmpeg-static';
@@ -87,6 +89,26 @@ for (let i = 0; i < NUM_EMBERS; i++) {
 }
 
 export async function generateAthenaClassicRankCard(member, xp, level, rank, requiredXp) {
+  const avatarUrl = member?.avatarUrl ?? (member?.user?.displayAvatarURL ? member.user.displayAvatarURL({ extension: 'png', size: 256 }) : null);
+  let rawName = member?.displayName?.replace(/[^\x00-\x7F]/g, '').trim()
+             || member?.user?.username?.replace(/[^\x00-\x7F]/g, '').trim()
+             || 'MEMBER';
+  if (rawName.length > 20) rawName = rawName.substring(0, 20) + '...';
+
+  const args = { displayName: rawName, avatarUrl, xp, level, rank, requiredXp };
+  if (isMainThread) {
+    const res = await runCanvasTask('classicRankCard', [args], () => generateAthenaClassicRankCardFromData(args));
+    if (res) return new AttachmentBuilder(Buffer.isBuffer(res) ? res : Buffer.from(res), { name: 'rank-card.png' });
+  }
+  const buf = await generateAthenaClassicRankCardFromData(args);
+  return new AttachmentBuilder(buf, { name: 'rank-card.png' });
+}
+
+export async function generateAthenaClassicRankCardFromData({ displayName, avatarUrl, xp, level, rank, requiredXp }) {
+  return await generateAthenaClassicRankCardLocal({ displayName, avatarUrl }, xp, level, rank, requiredXp, true);
+}
+
+async function generateAthenaClassicRankCardLocal(member, xp, level, rank, requiredXp, returnRawBuffer = false) {
   const W = 1024;
   const H = 342;
   const canvas = createCanvas(W, H);
@@ -133,7 +155,7 @@ export async function generateAthenaClassicRankCard(member, xp, level, rank, req
 
   // Draw Avatar
   try {
-    const avatarUrl = member?.user?.displayAvatarURL ? member.user.displayAvatarURL({ extension: 'png', size: 256 }) : null;
+    const avatarUrl = member?.avatarUrl ?? (member?.user?.displayAvatarURL ? member.user.displayAvatarURL({ extension: 'png', size: 256 }) : null);
     if (avatarUrl) {
       const av = await loadImage(avatarUrl);
       ctx.save();
@@ -209,7 +231,8 @@ export async function generateAthenaClassicRankCard(member, xp, level, rank, req
   ctx.fillStyle = '#64748b';
   ctx.fillText('Athena Prime Defense & Leveling Engine', 290, 275);
 
-  return new AttachmentBuilder(canvas.toBuffer('image/png'), { name: 'rank-card.png' });
+  const rankPngBuf = canvas.toBuffer('image/png');
+  return returnRawBuffer ? rankPngBuf : new AttachmentBuilder(rankPngBuf, { name: 'rank-card.png' });
 }
 
 export async function generateRankCard(member, xp, level, rank, requiredXp) {
@@ -847,7 +870,17 @@ const NATIVE_MAP_LIGHTS = [
   { x: 239, y: 319, phase: 1.9 }
 ];
 
-export async function generateCommandStatusBanner({
+export async function generateCommandStatusBanner(opts = {}) {
+  if (isMainThread) {
+    const res = await runCanvasTask('commandStatusBanner', [opts], () => generateCommandStatusBannerLocal(opts));
+    if (!res) return await generateCommandStatusBannerLocal(opts);
+    if (res instanceof AttachmentBuilder) return res;
+    if (res.data) return new AttachmentBuilder(Buffer.from(res.data), { name: res.name || opts?.attachmentName || 'status_banner.png' });
+  }
+  return await generateCommandStatusBannerLocal(opts);
+}
+
+async function generateCommandStatusBannerLocal({
   title = 'SYSTEM MATRIX',
   subtitle = 'ATHENA PRIME DEFENSE ENGINE',
   badge = 'ACTIVE',

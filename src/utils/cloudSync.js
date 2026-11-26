@@ -1,6 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
+import util from 'util';
+const gzipAsync = util.promisify(zlib.gzip);
+const gunzipAsync = util.promisify(zlib.gunzip);
 import { AttachmentBuilder, ChannelType, PermissionFlagsBits, EmbedBuilder } from 'discord.js';
 import fetch from 'node-fetch';
 import chalk from 'chalk';
@@ -859,16 +862,16 @@ export async function createCloudBackup(client, reason = 'Automated Schedule') {
     }
 
     const timestamp = Date.now();
-    const rawDbBuffer = fs.readFileSync(DB_FILE);
-    const compressedDbBuffer = zlib.gzipSync(rawDbBuffer);
+    const rawDbBuffer = await fs.promises.readFile(DB_FILE);
+    const compressedDbBuffer = await gzipAsync(rawDbBuffer);
     const dbAttachment = new AttachmentBuilder(compressedDbBuffer, { name: `athena_db_${timestamp}.json.gz` });
     const files = [dbAttachment];
 
     if (fs.existsSync(STATS_FILE)) {
       try {
-        const rawStats = fs.readFileSync(STATS_FILE);
+        const rawStats = await fs.promises.readFile(STATS_FILE);
         if (rawStats.length > 0) {
-          const compressedStats = zlib.gzipSync(rawStats);
+          const compressedStats = await gzipAsync(rawStats);
           files.push(new AttachmentBuilder(compressedStats, { name: `stats_${timestamp}.db.gz` }));
         }
       } catch {}
@@ -1012,12 +1015,12 @@ export async function restoreFromCloud(client, target = null) {
   // Keep a safety copy of whatever local file existed
   if (fs.existsSync(DB_FILE)) {
     try {
-      fs.copyFileSync(DB_FILE, path.join(BACKUPS_DIR, `pre_restore_${Date.now()}.json`));
+      await fs.promises.copyFile(DB_FILE, path.join(BACKUPS_DIR, `pre_restore_${Date.now()}.json`));
     } catch {}
   }
 
   // Write restored database to disk
-  fs.writeFileSync(DB_FILE, JSON.stringify(parsed, null, 2), 'utf8');
+  await fs.promises.writeFile(DB_FILE, JSON.stringify(parsed, null, 2), 'utf8');
 
   // Also restore stats.db if attached
   const statsAtt = backupMsg.attachments.find(a => a.name?.endsWith('.db') || a.name?.endsWith('.db.gz'));
@@ -1027,18 +1030,18 @@ export async function restoreFromCloud(client, target = null) {
       if (statsRes.ok) {
         let statsBuffer = Buffer.from(await statsRes.arrayBuffer());
         if (statsAtt.name.endsWith('.gz')) {
-          statsBuffer = zlib.gunzipSync(statsBuffer);
+          statsBuffer = await gunzipAsync(statsBuffer);
         }
         statsDB.close();
         const walFile = path.join(DATA_DIR, 'stats.db-wal');
         const shmFile = path.join(DATA_DIR, 'stats.db-shm');
         if (fs.existsSync(walFile)) {
-          try { fs.unlinkSync(walFile); } catch {}
+          try { await fs.promises.unlink(walFile); } catch {}
         }
         if (fs.existsSync(shmFile)) {
-          try { fs.unlinkSync(shmFile); } catch {}
+          try { await fs.promises.unlink(shmFile); } catch {}
         }
-        fs.writeFileSync(STATS_FILE, statsBuffer);
+        await fs.promises.writeFile(STATS_FILE, statsBuffer);
         statsDB.reopen();
         console.log(chalk.cyan('[CloudSync] Restored stats.db from cloud backup.'));
       }
@@ -1136,11 +1139,11 @@ export async function manualRestore(jsonContent) {
     // Create safety snapshot before overwriting
     if (fs.existsSync(DB_FILE)) {
       try {
-        fs.copyFileSync(DB_FILE, path.join(BACKUPS_DIR, `manual_before_restore_${Date.now()}.json`));
+        await fs.promises.copyFile(DB_FILE, path.join(BACKUPS_DIR, `manual_before_restore_${Date.now()}.json`));
       } catch {}
     }
 
-    fs.writeFileSync(DB_FILE, JSON.stringify(parsed, null, 2), 'utf8');
+    await fs.promises.writeFile(DB_FILE, JSON.stringify(parsed, null, 2), 'utf8');
     db.load();
 
     return {

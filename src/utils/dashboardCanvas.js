@@ -1,5 +1,6 @@
 import { createCanvas, registerFont } from './canvas.js';
 import path from 'path';
+import { isMainThread, runCanvasTask } from './canvasWorkerHost.js';
 
 // Register Roboto Font for headless Linux environments
 registerFont(path.join(process.cwd(), 'assets', 'Roboto-Regular.ttf'), { family: 'Roboto', weight: 'normal' });
@@ -64,6 +65,30 @@ function drawBlock(ctx, x, y, w, h, title, icon, value, accentColor) {
 }
 
 export async function generateDashboard(stats, accentColor) {
+  if (isMainThread) {
+    const res = await runCanvasTask('dashboard', [stats, accentColor], () => generateDashboardLocal(stats, accentColor));
+    if (res) return Buffer.isBuffer(res) ? res : Buffer.from(res);
+  }
+  return await generateDashboardLocal(stats, accentColor);
+}
+
+export async function generateTimeoutCard(logs, accentColor) {
+  if (isMainThread) {
+    const res = await runCanvasTask('timeoutCard', [logs, accentColor], () => generateTimeoutCardLocal(logs, accentColor));
+    if (res) return Buffer.isBuffer(res) ? res : Buffer.from(res);
+  }
+  return await generateTimeoutCardLocal(logs, accentColor);
+}
+
+export async function generateAutomodCard(logs, accentColor) {
+  if (isMainThread) {
+    const res = await runCanvasTask('automodCard', [logs, accentColor], () => generateAutomodCardLocal(logs, accentColor));
+    if (res) return Buffer.isBuffer(res) ? res : Buffer.from(res);
+  }
+  return await generateAutomodCardLocal(logs, accentColor);
+}
+
+async function generateDashboardLocal(stats, accentColor) {
   const width = 800;
   const height = 700;
   const canvas = createCanvas(width, height);
@@ -204,7 +229,7 @@ export async function generateDashboard(stats, accentColor) {
   return canvas.toBuffer();
 }
 
-export async function generateTimeoutCard(logs, accentColor) {
+async function generateTimeoutCardLocal(logs, accentColor) {
   const canvas = createCanvas(800, 200);
   const ctx = canvas.getContext('2d');
   
@@ -246,7 +271,7 @@ export async function generateTimeoutCard(logs, accentColor) {
   return canvas.toBuffer();
 }
 
-export async function generateAutomodCard(logs, accentColor) {
+async function generateAutomodCardLocal(logs, accentColor) {
   const canvas = createCanvas(800, 200);
   const ctx = canvas.getContext('2d');
   

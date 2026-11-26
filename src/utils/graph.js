@@ -1,4 +1,5 @@
 import { createCanvas } from './canvas.js';
+import { isMainThread, runCanvasTask } from './canvasWorkerHost.js';
 
 function hexToRgb(hex) {
   let clean = String(hex || '').replace('#', '').trim();
@@ -34,6 +35,23 @@ function drawSpline(ctx, pts) {
 }
 
 export async function generatePingGraph(
+  pingHistory,
+  accentColorHex = '#00e5ff',
+  guildsCount = 10,
+  extraMetrics = {}
+) {
+  if (isMainThread) {
+    const res = await runCanvasTask(
+      'pingGraph',
+      [pingHistory, accentColorHex, guildsCount, extraMetrics],
+      () => generatePingGraphLocal(pingHistory, accentColorHex, guildsCount, extraMetrics)
+    );
+    if (res) return Buffer.isBuffer(res) ? res : Buffer.from(res);
+  }
+  return await generatePingGraphLocal(pingHistory, accentColorHex, guildsCount, extraMetrics);
+}
+
+async function generatePingGraphLocal(
   pingHistory,
   accentColorHex = '#00e5ff',
   guildsCount = 10,

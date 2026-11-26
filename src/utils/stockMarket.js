@@ -3,8 +3,10 @@ import { AttachmentBuilder, MessageFlags } from 'discord.js';
 import { createCanvas, registerFont, loadImage } from './canvas.js';
 import cv2 from '../cv2.js';
 import { getRandomHeadingGlyph, TICK_EMOJI, BULLET_EMOJI } from './emojis.js';
-import db from '../database.js';
+import { isMainThread, runCanvasTask } from './canvasWorkerHost.js';
 import { generateAIResponse } from './ai.js';
+
+const db = isMainThread ? (await import('../database.js')).default : null;
 
 try {
   registerFont(path.join(process.cwd(), 'assets', 'Roboto-Bold.ttf'), { family: 'Roboto', weight: 'bold' });
@@ -845,6 +847,14 @@ export function getIndianMarketStatus() {
  * Renders high-resolution Canvas single-stock telemetry HUD with integrated company logo badge
  */
 export async function renderSingleStockCard(stock, customLogo = null) {
+  if (isMainThread && (!customLogo || typeof customLogo === 'string')) {
+    const res = await runCanvasTask('singleStockCard', [stock, customLogo], () => renderSingleStockCardLocal(stock, customLogo));
+    if (res) return Buffer.isBuffer(res) ? res : Buffer.from(res);
+  }
+  return await renderSingleStockCardLocal(stock, customLogo);
+}
+
+async function renderSingleStockCardLocal(stock, customLogo = null) {
   const W = 1100;
   const H = 640;
   const canvas = createCanvas(W, H);

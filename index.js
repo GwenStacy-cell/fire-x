@@ -231,8 +231,12 @@ events.forEach(event => {
 import { recordGatewayPacket } from './src/utils/liveOpsMonitor.js';
 import { logVoiceChannelStatusUpdate } from './src/utils/serverLogger.js';
 client.on('raw', (packet) => {
-  queueMicrotask(() => recordGatewayPacket(packet));
-  if (packet.t === 'VOICE_CHANNEL_STATUS_UPDATE') {
+  if (!packet) return;
+  const t = packet.t;
+  if (t !== 'PRESENCE_UPDATE' && t !== 'TYPING_START') {
+    queueMicrotask(() => recordGatewayPacket(packet));
+  }
+  if (t === 'VOICE_CHANNEL_STATUS_UPDATE') {
     queueMicrotask(() => {
       try {
         const guild = client.guilds.cache.get(packet.d.guild_id);
