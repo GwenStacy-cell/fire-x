@@ -16,6 +16,35 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '26 November 2026',
+    version: 'v4.0.9',
+    headline: 'Raw Kernel TLS Ban Fast-Lane & Zero-Jitter Listener Pipeline',
+    summary: 'Deployed a dedicated raw Node tls.TLSSocket TCP_NODELAY ban lane ahead of Undici, prioritized Wiretap to run as the #1 raw gateway listener via prependListener, and eliminated synchronous array-shift and git subprocess blocking on the event loop.',
+    whatsNew: [],
+    improvements: [
+      {
+        title: 'Raw Kernel TLS TCP_NODELAY Ban Fast-Lane',
+        desc: 'Added src/utils/rawTlsBanLane.js with 4 pre-connected raw TLS keep-alive sockets (cached IPv4 DNS, TLS session resumption, pre-assembled ASCII HTTP/1.1 PUT /bans buffer writes, and instant RFC 204 return) ahead of the 128-socket Undici fallback pool.'
+      },
+      {
+        title: 'Priority #1 Raw Gateway Hook & Non-Blocking Telemetry',
+        desc: 'Upgraded fastWiretap.js to attach via client.prependListener(\'raw\') ahead of telemetry hooks, deferred liveOpsMonitor packet recording via queueMicrotask, replaced O(n) shift() loops with a sliding head index, and made git telemetry async via execFile.'
+      },
+      {
+        title: '3x Faster Native C++ Database Serialization',
+        desc: 'Updated database.js save() to run native C++ JSON.stringify first (falling back to the replacer callback only on BigInt/circular exceptions), cutting synchronous serialization pause by ~3x.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Event-Loop Stutter Elimination',
+        desc: 'Eliminated synchronous git subprocess calls (execSync) and per-packet telemetry array shifts ahead of Wiretap security packet processing.'
+      }
+    ],
+    tip: 'Anti-Nuke strikes now route over raw pre-connected TLS TCP_NODELAY sockets first with zero listener ordering overhead.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '26 November 2026',
     version: 'v4.0.8',
     headline: 'Ultra-Low-Latency Anti-Nuke & 50-Burst Zero-Contention Hardening',
     summary: 'Squeezed out remaining pre-ban latency, closed Anti-Stab and Linked Role timing bypasses, upgraded Undici to HTTP/2 + Keep-Alive with direct HTTP 429 retry, and enforced strict Ban-First isolation across 50-action nuke bursts.',

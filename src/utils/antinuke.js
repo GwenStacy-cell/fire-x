@@ -7,6 +7,7 @@ import { executeQuarantine } from '../commands/security.js';
 import { recordAndLearnThreat } from './botThreatLearner.js';
 import dns from 'dns';
 import { Agent, setGlobalDispatcher } from 'undici';
+import { rawTlsSendBan, initRawTlsLane, getRawTlsLaneStatus } from './rawTlsBanLane.js';
 
 // Force IPv4 DNS lookups first to eliminate dual-stack IPv6 DNS resolution latency (saves 15-30ms)
 try {
@@ -37,6 +38,7 @@ export const dispatcher = new Agent({
   maxRedirections: 0
 });
 setGlobalDispatcher(dispatcher);
+const defaultDispatcherRequest = dispatcher.request;
 
 // Active multi-socket keep-alive heartbeat daemon:
 // Keeps parallel Undici TLS/HTTP2 sockets to discord.com permanently warm and top-of-pool
@@ -149,7 +151,8 @@ export const combatTelemetry = {
         heartbeatDaemon: `${Math.round(POOL_PREWARM_INTERVAL_MS / 1000)}s (Active Heartbeat)`,
         transport: 'HTTP/1.1 Keep-Alive + TLS Session Resumption (128 sessions)',
         dnsRouting: 'IPv4 First (dns.setDefaultResultOrder)',
-        payloadPrecompiled: '{"delete_message_seconds":0}'
+        payloadPrecompiled: '{"delete_message_seconds":0}',
+        rawTlsLane: getRawTlsLaneStatus()
       }
     };
   }
@@ -157,9 +160,9 @@ export const combatTelemetry = {
 
 // ==========================================
 // ⚡ DIRECT API STRIKE (0ms OVERHEAD)
-// Direct REST PUT to Discord ban endpoint over pre-warmed TCP_NODELAY TLS/H2 socket.
-// Completely bypasses discord.js cache and internal queues for instant sub-12ms execution.
-// Handles HTTP 429 rate limits directly over the warm socket instead of dropping to d.js fallback.
+// Primary lane: Direct raw kernel TLS socket (TCP_NODELAY) pre-assembled buffer write.
+// Fallback lane: Pre-warmed Undici HTTP/1.1 keep-alive connection pool with HTTP 429 retry.
+// Completely bypasses discord.js cache and internal queues for instant execution.
 // ==========================================
 const PRECOMPILED_BAN_BODY = '{"delete_message_seconds":0}';
 const authHeaderCache = new Map(); // token -> 'Bot <token>'
@@ -207,7 +210,39 @@ export async function rawBan(guildId, userId, token, reason = '[ATHENA] Anti-Nuk
 
   try {
     let statusCode = 0;
+    const canUseRawTls = dispatcher.request === defaultDispatcherRequest;
+    if (canUseRawTls) initRawTlsLane(token);
+
     for (let attempt = 0; attempt < 3; attempt++) {
+      // Fast-path #1: Direct pre-connected raw TLS socket write (skips Undici JS scheduler)
+      if (canUseRawTls) {
+        const tlsRes = await rawTlsSendBan(guildId, userId, authHeader, encodedReason);
+        if (tlsRes.handled) {
+          statusCode = tlsRes.statusCode;
+          if (tlsRes.ok) {
+            const latencyMs = performance.now() - startTime;
+            queueMicrotask(() => {
+              combatTelemetry.recordStrike({
+                guildId,
+                userId,
+                latencyMs,
+                status: 'SUCCESS (204 No Content · Raw TLS)',
+                statusCode,
+                reason,
+                actionType: metadata.actionType || (reason.includes('Join') ? 'GUILD_MEMBER_ADD (0ms Join)' : reason.includes('ChannelDelete') ? 'CHANNEL_DELETE (Direct)' : reason.includes('RoleDelete') ? 'GUILD_ROLE_DELETE (Direct)' : 'AUDIT_LOG_STRIKE')
+              });
+            });
+            return true;
+          }
+          if (statusCode === 429 && attempt < 2) {
+            await new Promise(r => setTimeout(r, tlsRes.retryAfterMs || 250));
+            continue;
+          }
+          break;
+        }
+      }
+
+      // Fallback lane: Pre-warmed Undici HTTP/1.1 Keep-Alive pool
       const res = await dispatcher.request(reqOpts);
       statusCode = res.statusCode;
 

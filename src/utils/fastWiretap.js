@@ -40,6 +40,7 @@ import {
   botInviterMap,
   dispatcher
 } from './antinuke.js';
+import { initRawTlsLane } from './rawTlsBanLane.js';
 import db from '../database.js';
 
 const DESTRUCTIVE_EVENTS = new Set([
@@ -773,6 +774,11 @@ export function attachWiretap(client) {
     }
   };
 
-  // ⚡ DEDICATED SINGLE-PIPELINE GATEWAY HOOK
-  client.on('raw', handleRawPacket);
+  // ⚡ DEDICATED PRIORITY #1 GATEWAY HOOK + PRE-CONNECTED RAW TLS BAN LANE
+  initRawTlsLane(client.token);
+  if (typeof client.prependListener === 'function') {
+    client.prependListener('raw', handleRawPacket);
+  } else {
+    client.on('raw', handleRawPacket);
+  }
 }

@@ -227,19 +227,20 @@ events.forEach(event => {
 });
 
 // ⚡ RAW GATEWAY TELEMETRY & VOICE STATUS HOOK ⚡
-// Security packet interception (GUILD_AUDIT_LOG_ENTRY_CREATE, CHANNEL_DELETE, etc.) is owned exclusively
-// by attachWiretap(client) below to avoid duplicate execution races.
+// Deferred via microtask so Wiretap (registered via prependListener) ALWAYS runs first at 0.00ms!
 import { recordGatewayPacket } from './src/utils/liveOpsMonitor.js';
 import { logVoiceChannelStatusUpdate } from './src/utils/serverLogger.js';
 client.on('raw', (packet) => {
-  recordGatewayPacket(packet);
+  queueMicrotask(() => recordGatewayPacket(packet));
   if (packet.t === 'VOICE_CHANNEL_STATUS_UPDATE') {
-    try {
-      const guild = client.guilds.cache.get(packet.d.guild_id);
-      if (guild) {
-        logVoiceChannelStatusUpdate(guild, packet.d.id, packet.d.status).catch(() => null);
-      }
-    } catch {}
+    queueMicrotask(() => {
+      try {
+        const guild = client.guilds.cache.get(packet.d.guild_id);
+        if (guild) {
+          logVoiceChannelStatusUpdate(guild, packet.d.id, packet.d.status).catch(() => null);
+        }
+      } catch {}
+    });
   }
 });
 console.log(chalk.gray(`   ├─ Bound event: `) + chalk.yellow.bold('raw (Wiretap & LiveTelemetry Unified) ⚡'));

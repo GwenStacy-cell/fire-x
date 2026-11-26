@@ -10,7 +10,9 @@ import fs from 'fs';
 import path from 'path';
 import v8 from 'v8';
 import { performance } from 'perf_hooks';
-import { execSync } from 'child_process';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+const execFileAsync = promisify(execFile);
 import db from '../database.js';
 import { 
   TICK_EMOJI, 
@@ -65,22 +67,28 @@ export function recordButtonInteraction() {
 
 // --- IN-MEMORY REAL-TIME GATEWAY PACKET TELEMETRY ---
 let totalGatewayPackets = 0;
-const gatewayPacketHistory = [];
+const gatewayPacketHistory = []; // numeric timestamps only
+let gatewayHistoryHead = 0;
 const gatewayPacketCounts = new Map();
 let lastGatewayPacketTime = 0;
 
 export function recordGatewayPacket(packet) {
   if (!packet) return;
   totalGatewayPackets++;
-  lastGatewayPacketTime = Date.now();
+  const now = Date.now();
+  lastGatewayPacketTime = now;
   const t = packet.t || 'UNKNOWN';
   gatewayPacketCounts.set(t, (gatewayPacketCounts.get(t) || 0) + 1);
-  gatewayPacketHistory.push({ t, time: lastGatewayPacketTime });
+  gatewayPacketHistory.push(now);
 
-  // Rolling 60s window for real-time packet velocity
-  const oneMinAgo = lastGatewayPacketTime - 60_000;
-  while (gatewayPacketHistory.length > 0 && gatewayPacketHistory[0].time < oneMinAgo) {
-    gatewayPacketHistory.shift();
+  // O(1) sliding window index (eliminates Array.shift() stalling under raid floods)
+  const oneMinAgo = now - 60_000;
+  while (gatewayHistoryHead < gatewayPacketHistory.length && gatewayPacketHistory[gatewayHistoryHead] < oneMinAgo) {
+    gatewayHistoryHead++;
+  }
+  if (gatewayHistoryHead > 512) {
+    gatewayPacketHistory.splice(0, gatewayHistoryHead);
+    gatewayHistoryHead = 0;
   }
 }
 
@@ -95,22 +103,29 @@ function recordPingSample(ping) {
 
 let cachedGitStats = null;
 let lastGitFetchTime = 0;
-function getGitMetrics() {
+async function getGitMetrics() {
   const now = Date.now();
   if (cachedGitStats && (now - lastGitFetchTime < 60_000)) return cachedGitStats;
   try {
-    let hash, count, lastCommitMsg, lastCommitAuthor, lastCommitRelTime;
+    const runGit = (args) => execFileAsync('git', args, { timeout: 2500 }).then(r => r.stdout.trim());
+    let hash, count;
     try {
-      hash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
-      count = execSync('git rev-list --count HEAD', { encoding: 'utf8' }).trim();
+      [hash, count] = await Promise.all([
+        runGit(['rev-parse', '--short', 'HEAD']),
+        runGit(['rev-list', '--count', 'HEAD'])
+      ]);
     } catch {
-      execSync('git config --global --add safe.directory "*"', { encoding: 'utf8' });
-      hash = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
-      count = execSync('git rev-list --count HEAD', { encoding: 'utf8' }).trim();
+      await runGit(['config', '--global', '--add', 'safe.directory', '*']).catch(() => null);
+      [hash, count] = await Promise.all([
+        runGit(['rev-parse', '--short', 'HEAD']),
+        runGit(['rev-list', '--count', 'HEAD'])
+      ]);
     }
-    lastCommitMsg = execSync('git log -1 --pretty=format:"%s"', { encoding: 'utf8' }).trim();
-    lastCommitAuthor = execSync('git log -1 --pretty=format:"%an"', { encoding: 'utf8' }).trim();
-    lastCommitRelTime = execSync('git log -1 --pretty=format:"%cr"', { encoding: 'utf8' }).trim();
+    const [lastCommitMsg, lastCommitAuthor, lastCommitRelTime] = await Promise.all([
+      runGit(['log', '-1', '--pretty=format:%s']),
+      runGit(['log', '-1', '--pretty=format:%an']),
+      runGit(['log', '-1', '--pretty=format:%cr'])
+    ]);
     cachedGitStats = {
       hash,
       count: Number(count) || 359,
@@ -324,7 +339,7 @@ export async function collectLiveTelemetry(guild, client) {
   const homeVcsCount = typeof client?.guilds?.cache?.filter === 'function' ? (client.guilds.cache.filter(g => g.members?.me?.voice?.channelId)?.size || 0) : 0;
 
   // Background Daemons & Files
-  const gitInfo = getGitMetrics();
+  const gitInfo = await getGitMetrics();
   const wiretapsCount = guild ? db.getWiretaps(guild.id).length : 0;
   const underAttack = guild ? isGuildUnderAttack(guild.id) : false;
   const liveRecordsCount = guild ? db.getSecurityLiveRecords(guild.id).length : 0;
@@ -352,8 +367,12 @@ export async function collectLiveTelemetry(guild, client) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
 
-  // Gateway Packet Velocity & Breakdown
-  const packetsLastMin = gatewayPacketHistory.filter(p => now - p.time < 60_000).length;
+  // Gateway Packet Velocity & Breakdown (O(1) sliding window count)
+  const oneMinAgo = now - 60_000;
+  while (gatewayHistoryHead < gatewayPacketHistory.length && gatewayPacketHistory[gatewayHistoryHead] < oneMinAgo) {
+    gatewayHistoryHead++;
+  }
+  const packetsLastMin = gatewayPacketHistory.length - gatewayHistoryHead;
   const topGatewayPackets = [...gatewayPacketCounts.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);

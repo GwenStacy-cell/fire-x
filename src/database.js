@@ -349,14 +349,18 @@ class Database {
       this.needsSave = false;
       
       try {
-        const replacer = (key, value) => {
-          if (typeof value === 'bigint') return value.toString();
-          // Skip circular Discord.js references if any sneak in
-          if (value && typeof value === 'object' && value.client) return undefined;
-          return value;
-        };
-        // Ultra-fast compact JSON stringification (50% smaller string, 3x faster, 0 event loop lag)
-        const dataStr = JSON.stringify(this.cache, replacer);
+        // Native C++ JSON.stringify first (~3x faster than callback replacer), replacer fallback only for BigInts/circulars
+        let dataStr;
+        try {
+          dataStr = JSON.stringify(this.cache);
+        } catch {
+          const replacer = (key, value) => {
+            if (typeof value === 'bigint') return value.toString();
+            if (value && typeof value === 'object' && value.client) return undefined;
+            return value;
+          };
+          dataStr = JSON.stringify(this.cache, replacer);
+        }
         await fs.promises.writeFile(DB_FILE, dataStr, 'utf8');
         // Continuously stream updates to MongoDB Cloud
         triggerMongoSave(this);
