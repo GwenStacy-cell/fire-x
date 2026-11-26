@@ -46,6 +46,20 @@ function getRandomStatus(guild, customStatuses) {
   return raw.replace(/{guild}/g, guild.name);
 }
 
+/**
+ * Protects Home VC, bot's occupied VC, JTC infrastructure lobbies/rooms, and live Server Stats channels.
+ */
+function isProtectedVoiceChannel(vc, guildId, cfg, botVcId, serverStats) {
+  if (!vc) return true;
+  if (vc.id === cfg?.homeVcId || vc.id === botVcId) return true;
+  if (vc.name && vc.name.toLowerCase().includes('home')) return true;
+  if (db.isJtcInfrastructure(guildId, vc.id)) return true;
+  if (serverStats?.mode === 'status' && (vc.id === serverStats.serverStatsId || vc.id === serverStats.voiceStatsId)) {
+    return true;
+  }
+  return false;
+}
+
 export const commands = [
   {
     name: 'autovcstatus',
@@ -92,9 +106,10 @@ export const commands = [
         let updated = 0;
         
         const botVcId = message.guild.members.me?.voice?.channelId;
+        const serverStats = db.getServerStats(guildId);
         for (const vc of vcs.values()) {
-          // Protect home VC, bot's current VC, and any VC explicitly named "home"
-          if (vc.id === homeVcId || vc.id === botVcId || vc.name.toLowerCase().includes('home')) continue;
+          // Protect home VC, bot's current VC, JTC infrastructure, and Server Stats status channels
+          if (isProtectedVoiceChannel(vc, guildId, cfg, botVcId, serverStats)) continue;
           
           try {
             const rawStatus = shuffledPool[index % shuffledPool.length];
@@ -124,9 +139,11 @@ export const commands = [
         const vcs = message.guild.channels.cache.filter(c => c.type === ChannelType.GuildVoice);
         const homeVcId = cfg.homeVcId;
         
+        const botVcId = message.guild.members.me?.voice?.channelId;
+        const serverStats = db.getServerStats(guildId);
         let cleared = 0;
         for (const vc of vcs.values()) {
-          if (vc.id === homeVcId || vc.name.toLowerCase().includes('home')) continue;
+          if (isProtectedVoiceChannel(vc, guildId, cfg, botVcId, serverStats)) continue;
           
           try {
             if (typeof vc.setVoiceStatus === 'function') {

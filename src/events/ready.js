@@ -432,6 +432,29 @@ export default {
       }
     }, 6 * 60 * 1000); // 6 minutes
 
+    // JTC Lobby Voice Status Sync Watchdog (restores Discord-cleared statuses on Solo/Duo/Trio/Squad/Unlimited & Standard lobbies)
+    const runJtcLobbyStatusWatchdog = async () => {
+      try {
+        const [{ syncJtcLobbyStatuses }, { isGuildUnderAttack }] = await Promise.all([
+          import('../commands/jtc.js'),
+          import('../utils/antinuke.js')
+        ]);
+        for (const [guildId, guild] of client.guilds.cache) {
+          if (isGuildUnderAttack(guildId)) continue;
+          const tiered = db.getTieredJtcConfig(guildId);
+          const jtcCfg = db.getJtcConfig(guildId);
+          if (!tiered && !jtcCfg?.lobbyChannelId && !jtcCfg?.secondaryLobbyChannelId) continue;
+          await syncJtcLobbyStatuses(guild, { delayMs: 280 }).catch(() => null);
+          await new Promise((r) => setTimeout(r, 350));
+        }
+      } catch {}
+    };
+
+    const jtcInitTimer = setTimeout(runJtcLobbyStatusWatchdog, 20_000);
+    jtcInitTimer.unref?.();
+    const jtcWatchdogInterval = setInterval(runJtcLobbyStatusWatchdog, 10 * 60 * 1000);
+    jtcWatchdogInterval.unref?.();
+
     // Sync slash commands globally
     try {
       console.log(chalk.blue(' Fetching and caching invites...'));

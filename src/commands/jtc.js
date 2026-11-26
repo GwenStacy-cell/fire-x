@@ -44,20 +44,151 @@ function getAccent(guild) {
   return 0x5865F2;
 }
 
+const TIER_STATUS_DEFINITIONS = [
+  { key: 'solo', label: 'Solo [1]', status: `${PACHA_ARROW} Join 2 Create Solo VC` },
+  { key: 'duo', label: 'Duo [2]', status: `${PACHA_ARROW} Join 2 Create Duo VC` },
+  { key: 'trio', label: 'Trio [3]', status: `${PACHA_ARROW} Join 2 Create Trio VC` },
+  { key: 'squad', label: 'Squad [4]', status: `${PACHA_ARROW} Join 2 Create Squad VC` },
+  { key: 'unlimited', label: 'Unlimited [Free]', status: `${PACHA_ARROW} Join 2 Create Unlimited VC` }
+];
+
+const STANDARD_JTC_LOBBY_STATUS = `${PACHA_ARROW} Join 2 Create VC`;
+const pendingJtcStatusTimers = new Map();
+
 /**
- * Safely sets the Discord Voice Channel Status using the REST API
+ * Safely sets the Discord Voice Channel Status using the REST API with 429 retry/backoff.
  */
-export async function setVoiceChannelStatus(client, channelId, status) {
-  if (!client || !channelId || !status) return false;
-  try {
-    if (typeof client.rest?.put === 'function') {
-      await client.rest.put(`/channels/${channelId}/voice-status`, { body: { status: String(status).substring(0, 500) } });
+export async function setVoiceChannelStatus(client, channelId, status, maxAttempts = 3) {
+  if (!client || !channelId || status === undefined) return false;
+  if (typeof client.rest?.put !== 'function') return false;
+
+  const normalizedStatus = status === null ? null : String(status).substring(0, 500);
+  if (normalizedStatus === '') return false;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await client.rest.put(`/channels/${channelId}/voice-status`, {
+        body: { status: normalizedStatus }
+      });
       return true;
+    } catch (err) {
+      const httpStatus = err?.status ?? err?.rawError?.status;
+      const apiCode = err?.code ?? err?.rawError?.code;
+      // Do not retry permanent permission or missing-channel errors
+      if (apiCode === 10003 || apiCode === 50013 || apiCode === 50001 || httpStatus === 403 || httpStatus === 404) {
+        return false;
+      }
+
+      const retryAfterSec = Number(err?.rawError?.retry_after ?? err?.data?.retry_after ?? 0);
+      const isRetryable = httpStatus === 429 || (typeof httpStatus === 'number' && httpStatus >= 500) || retryAfterSec > 0;
+      if (!isRetryable || attempt >= maxAttempts) {
+        console.warn(`[JTC Voice Status] Failed on channel ${channelId} (attempt ${attempt}/${maxAttempts}):`, err.message);
+        return false;
+      }
+
+      const waitMs = retryAfterSec > 0
+        ? Math.min(5000, Math.ceil(retryAfterSec * 1000) + 120)
+        : 350 * attempt;
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
     }
-  } catch (err) {
-    console.warn(`[JTC Voice Status] Notice on channel ${channelId}:`, err.message);
-    return false;
   }
+  return false;
+}
+
+/**
+ * Resolves the canonical expected VC status for any configured JTC generator lobby by DB ID.
+ */
+export function getExpectedJtcLobbyStatus(guildId, channelId) {
+  if (!guildId || !channelId) return null;
+  const tierInfo = db.getTierInfo(guildId, channelId);
+  if (tierInfo) {
+    const def = TIER_STATUS_DEFINITIONS.find((d) => d.key === tierInfo.tier);
+    return def ? def.status : null;
+  }
+
+  const jtcCfg = db.getJtcConfig(guildId);
+  if (!jtcCfg) return null;
+  if (jtcCfg.lobbyChannelId === channelId || jtcCfg.secondaryLobbyChannelId === channelId) {
+    return STANDARD_JTC_LOBBY_STATUS;
+  }
+  return null;
+}
+
+/**
+ * Applies/restores Voice Channel Statuses across all DB-tracked Tiered & Standard JTC lobbies.
+ */
+export async function syncJtcLobbyStatuses(guild, options = {}) {
+  if (!guild?.client) return { total: 0, updated: 0, failed: 0, entries: [] };
+
+  const delayMs = typeof options.delayMs === 'number' ? options.delayMs : 280;
+  const targets = [];
+
+  const tieredChannels = options.tieredChannels || db.getTieredJtcConfig(guild.id)?.channels;
+  if (tieredChannels) {
+    for (const def of TIER_STATUS_DEFINITIONS) {
+      const chId = tieredChannels[def.key];
+      if (chId) targets.push({ key: def.key, label: def.label, channelId: chId, status: def.status });
+    }
+  }
+
+  if (!options.onlyTiered) {
+    const jtcCfg = db.getJtcConfig(guild.id);
+    if (jtcCfg?.lobbyChannelId) {
+      targets.push({ key: 'standard', label: 'Primary JTC Lobby', channelId: jtcCfg.lobbyChannelId, status: STANDARD_JTC_LOBBY_STATUS });
+    }
+    if (jtcCfg?.secondaryLobbyChannelId) {
+      targets.push({ key: 'secondary', label: 'Secondary JTC Lobby', channelId: jtcCfg.secondaryLobbyChannelId, status: STANDARD_JTC_LOBBY_STATUS });
+    }
+  }
+
+  let updated = 0;
+  let failed = 0;
+  const entries = [];
+
+  for (let i = 0; i < targets.length; i++) {
+    const item = targets[i];
+    const ch = guild.channels.cache.get(item.channelId) || await guild.channels.fetch(item.channelId).catch(() => null);
+    if (!ch || !ch.isVoiceBased()) {
+      entries.push({ ...item, ok: false, missing: true });
+      continue;
+    }
+
+    const ok = await setVoiceChannelStatus(guild.client, ch.id, item.status);
+    if (ok) updated++;
+    else failed++;
+    entries.push({ ...item, channel: ch, ok, missing: false });
+
+    if (delayMs > 0 && i < targets.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  return { total: targets.length, updated, failed, entries };
+}
+
+/**
+ * Schedules a debounced per-channel status restore after a member leaves or vacates a JTC lobby
+ * (Discord clears voice statuses when a voice channel transitions to empty).
+ */
+export function scheduleJtcLobbyStatusSync(guild, channelId, delayMs = 1500) {
+  if (!guild?.id || !channelId) return;
+  const expected = getExpectedJtcLobbyStatus(guild.id, channelId);
+  if (!expected) return;
+
+  const timerKey = `${guild.id}:${channelId}`;
+  const prevTimer = pendingJtcStatusTimers.get(timerKey);
+  if (prevTimer) clearTimeout(prevTimer);
+
+  const timer = setTimeout(async () => {
+    pendingJtcStatusTimers.delete(timerKey);
+    try {
+      const ch = guild.channels.cache.get(channelId) || await guild.channels.fetch(channelId).catch(() => null);
+      if (!ch || !ch.isVoiceBased()) return;
+      await setVoiceChannelStatus(guild.client, ch.id, expected);
+    } catch {}
+  }, delayMs);
+  timer.unref?.();
+  pendingJtcStatusTimers.set(timerKey, timer);
 }
 
 // ==========================================
@@ -950,12 +1081,18 @@ async function deployTieredSuite(guild) {
     reason: 'Athena Tiered JTC Unlimited Lobby'
   });
 
-  // Set Discord Voice Channel Statuses on generator channels
-  await setVoiceChannelStatus(guild.client, soloChannel.id, `${PACHA_ARROW} Join 2 Create Solo VC`);
-  await setVoiceChannelStatus(guild.client, duoChannel.id, `${PACHA_ARROW} Join 2 Create Duo VC`);
-  await setVoiceChannelStatus(guild.client, trioChannel.id, `${PACHA_ARROW} Join 2 Create Trio VC`);
-  await setVoiceChannelStatus(guild.client, squadChannel.id, `${PACHA_ARROW} Join 2 Create Squad VC`);
-  await setVoiceChannelStatus(guild.client, unlimitedChannel.id, `${PACHA_ARROW} Join 2 Create Unlimited VC`);
+  // Set Discord Voice Channel Statuses on generator channels cleanly with pacing/429 retry
+  await syncJtcLobbyStatuses(guild, {
+    onlyTiered: true,
+    delayMs: 280,
+    tieredChannels: {
+      solo: soloChannel.id,
+      duo: duoChannel.id,
+      trio: trioChannel.id,
+      squad: squadChannel.id,
+      unlimited: unlimitedChannel.id
+    }
+  });
 
   // Mark all created infrastructure in Anti-Nuke deduplication cache
   markRestorationQueued(category.id);
@@ -1111,7 +1248,7 @@ async function deployNormalJtc(guild, customCategory = null, customLobby = null,
 
   markRestorationQueued(category.id);
   markRestorationQueued(lobbyChannel.id);
-  await setVoiceChannelStatus(guild.client, lobbyChannel.id, `${PACHA_ARROW} Join 2 Create VC`);
+  await setVoiceChannelStatus(guild.client, lobbyChannel.id, STANDARD_JTC_LOBBY_STATUS);
 
   const categoryId = category.id;
   const lobbyChannelId = lobbyChannel.id;
@@ -1131,6 +1268,27 @@ async function deployNormalJtc(guild, customCategory = null, customLobby = null,
   }
 
   return { category, lobbyChannel, panelChannel: customPanel };
+}
+
+async function buildTieredStatusSyncPayload(guild, isSlash = false) {
+  const tieredCfg = db.getTieredJtcConfig(guild.id);
+  if (!tieredCfg) {
+    const cmdExample = isSlash ? '/jtctiers action: setup' : '!jtctiers setup';
+    return cv2.warn(
+      `Not Found | ${WARN_EMOJI}`,
+      `No active Tiered Voice Hub configuration found for this server. Deploy one with \`${cmdExample}\`.`
+    );
+  }
+  const res = await syncJtcLobbyStatuses(guild, { onlyTiered: true, delayMs: 280 });
+  const lines = res.entries.map((e) => {
+    const link = e.channel ? formatChannelLink(e.channel, guild) : `\`${e.label}\``;
+    const badge = e.ok ? TICK_EMOJI : WRONG_EMOJI;
+    return `-# ${BULLET_EMOJI} **${e.label}:** ${link} · ${badge} ${e.ok ? 'Synced' : (e.missing ? 'Missing' : 'Failed')}`;
+  });
+  return cv2.success(
+    `Tier VC Statuses Synchronized | ${TICK_EMOJI}`,
+    `Updated Discord Voice Channel Status on **${res.updated}/${res.total}** tier generator lobbies.\n\n${lines.join('\n')}`
+  );
 }
 
 // ==========================================
@@ -1362,11 +1520,12 @@ export const commands = [
     options: [
       {
         name: 'action',
-        description: 'Action to perform: setup, disable, or info',
+        description: 'Action to perform: setup, disable, sync, or info',
         type: 3,
         required: true,
         choices: [
           { name: 'Setup Suite (Create Category & Channels)', value: 'setup' },
+          { name: 'Repair & Sync Tier VC Statuses', value: 'sync' },
           { name: 'Disable & Wipe Suite (Delete Category & Channels)', value: 'disable' },
           { name: 'View Suite Status', value: 'info' }
         ]
@@ -1376,6 +1535,10 @@ export const commands = [
       if (!isExtraOwnerOrHigher(message.author.id, message.guild)) return;
       const guild = message.guild;
       const action = (args[0] || 'setup').toLowerCase();
+
+      if (action === 'sync' || action === 'fix' || action === 'repair' || action === 'resync' || action === 'vcstatus') {
+        return message.reply(await buildTieredStatusSyncPayload(guild, false));
+      }
 
       if (action === 'disable' || action === 'delete' || action === 'wipe' || action === 'off') {
         const tieredCfg = db.getTieredJtcConfig(guild.id);
@@ -1454,6 +1617,10 @@ export const commands = [
       await interaction.deferReply();
       const guild = interaction.guild;
       const action = interaction.options.getString('action');
+
+      if (action === 'sync') {
+        return interaction.editReply(await buildTieredStatusSyncPayload(guild, true));
+      }
 
       if (action === 'disable') {
         const tieredCfg = db.getTieredJtcConfig(guild.id);

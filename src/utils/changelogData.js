@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '26 November 2026',
+    version: 'v4.0.12',
+    headline: 'JTC Tier VC Status Persistence Fix & !va Off-Thread Telemetry Matrix',
+    summary: 'Eliminated missing Solo/Duo/Tier Join-to-Create voice channel statuses across restarts and empty-room transitions, protected JTC/Stats VCs from AutoVCStatus sweeps, and redesigned !va with an Athena Telemetry Matrix CV2 layout and worker-offloaded 24h Canvas chart.',
+    whatsNew: [
+      {
+        title: 'Redesigned !va Voice Telemetry Matrix & Off-Thread Canvas Chart',
+        desc: 'Rebuilt !va (/voiceanalytics) with a clean obsidian Type 17 Components V2 container featuring dynamic heading glyphs, clickable channel/member links, share percentages, and an off-thread worker Canvas chart (voiceAnalyticsCanvas.js) displaying a 24h UTC curve, Peak badge, and Top Channels/Participants bars.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Rate-Limit Resilient JTC Lobby Status Sync & !jtctiers sync Action',
+        desc: 'Upgraded setVoiceChannelStatus with HTTP 429 retry/backoff and sequential pacing, added boot-time + 10-minute JTC status watchdog sync in ready.js, added debounced post-move/leave restoration in voiceStateUpdate.js, and exposed !jtctiers sync (/jtctiers action: sync) for instant repair.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Solo/Duo Empty-VC Status Wipe & AutoVCStatus Override Protection',
+        desc: 'Fixed Discord automatically wiping VC statuses on Solo [1] and Duo [2] after temp-room moves/empty transitions, and excluded JTC infrastructure and live Server Stats voice channels from !autovcstatus sweeps and clears.'
+      }
+    ],
+    tip: 'Use !jtctiers sync anytime to force-repair Tier VC statuses, and run !va to inspect the new Voice Telemetry Matrix.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '26 November 2026',
     version: 'v4.0.11',
     headline: 'Military-Grade Anti-Nuke Hardening, Unbypassable 2FA & Dual-Key Fix',
     summary: 'Closed critical authorization, fallback, vanity, Dual-Key, and startup TLS pre-warm gaps for zero-bypass military-grade server security and sub-millisecond cold-start readiness.',

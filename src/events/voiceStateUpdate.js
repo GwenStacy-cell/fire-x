@@ -2,7 +2,7 @@ import { ChannelType, PermissionFlagsBits, AuditLogEvent, EmbedBuilder } from 'd
 import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
 import { getVoiceConnection } from '@discordjs/voice';
-import { buildControlPanel, buildSharedPanel, setVoiceChannelStatus } from '../commands/jtc.js';
+import { buildControlPanel, buildSharedPanel, setVoiceChannelStatus, scheduleJtcLobbyStatusSync } from '../commands/jtc.js';
 import { PACHA_ARROW } from '../utils/emojis.js';
 import statsDB from '../statsDB.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
@@ -48,6 +48,7 @@ export default {
         db.recordVoiceActivity(guild.id, oldState.channelId, userId, elapsedMinutes);
         client.vcSessions.delete(sessionKey);
       }
+      scheduleJtcLobbyStatusSync(guild, oldState.channelId, 1500);
     }
     if (newState.channelId && oldState.channelId !== newState.channelId) {
       client.vcSessions.set(sessionKey, Date.now());
@@ -544,6 +545,7 @@ export default {
 
         // Move the member into their new channel
         await member.voice.setChannel(tempChannel).catch(() => null);
+        scheduleJtcLobbyStatusSync(guild, channelId, 1500);
 
         // Ghost channel sweeper: If they didn't move, or left instantly, purge it
         setTimeout(async () => {
