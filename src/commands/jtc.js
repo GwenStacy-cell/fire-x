@@ -54,6 +54,8 @@ const TIER_STATUS_DEFINITIONS = [
 
 const STANDARD_JTC_LOBBY_STATUS = `${PACHA_ARROW} Join 2 Create VC`;
 const pendingJtcStatusTimers = new Map();
+const inFlightJtcCleanups = new Set();
+const pendingBotOnlyCleanups = new Map();
 
 /**
  * Safely sets the Discord Voice Channel Status using the REST API with 429 retry/backoff.
@@ -274,6 +276,131 @@ export function scheduleJtcLobbyStatusSync(guild, channelId, delayMs = 1500) {
   pendingJtcStatusTimers.set(timerKey, timer);
 }
 
+/**
+ * Safely deletes a temporary JTC voice room (and linked temp text channel) if empty or bot-only.
+ * Marks Anti-Nuke restoration queued BEFORE deleting channels so channelDelete never false-fires.
+ */
+export async function cleanupJtcRoomIfEmpty(guild, channelId, options = {}) {
+  if (!guild?.id || !channelId) return false;
+
+  const jtcRecord = db.getJtcChannel(channelId);
+  if (!jtcRecord) return false;
+
+  if (inFlightJtcCleanups.has(channelId)) return false;
+  inFlightJtcCleanups.add(channelId);
+
+  const pendingBotTimer = pendingBotOnlyCleanups.get(channelId);
+  if (pendingBotTimer) {
+    clearTimeout(pendingBotTimer);
+    pendingBotOnlyCleanups.delete(channelId);
+  }
+
+  try {
+    let leftChannel = guild.channels?.cache?.get(channelId) || null;
+    if (!leftChannel && typeof guild.channels?.fetch === 'function') {
+      leftChannel = await guild.channels.fetch(channelId).catch(() => null);
+    }
+
+    // Channel already removed on Discord (offline/manual deletion) -> purge linked text + stale DB record
+    if (!leftChannel) {
+      if (jtcRecord.textChannelId) {
+        const orphanText = guild.channels?.cache?.get(jtcRecord.textChannelId) || await guild.channels?.fetch?.(jtcRecord.textChannelId).catch(() => null);
+        if (orphanText) {
+          markRestorationQueued(orphanText.id);
+          await orphanText.delete('JTC: Cleanup of orphaned linked text channel').catch(() => null);
+        }
+      }
+      db.removeJtcChannel(channelId);
+      return true;
+    }
+
+    if (options.minAgeMs && jtcRecord.createdAt && (Date.now() - jtcRecord.createdAt) < options.minAgeMs) {
+      return false;
+    }
+
+    const members = leftChannel.members;
+    const totalCount = members?.size ?? 0;
+    const humanCount = typeof members?.filter === 'function'
+      ? members.filter((m) => !m.user?.bot).size
+      : totalCount;
+
+    if (totalCount > 0) {
+      if (humanCount === 0 && options.purgeBotOnly) {
+        // Proceed with cleanup when bot-only room sweeps are allowed
+      } else if (humanCount === 0 && options.scheduleBotOnlyGraceMs > 0) {
+        // Delay purge slightly in case owner is transferring or a human reconnects within 10s
+        const timer = setTimeout(() => {
+          pendingBotOnlyCleanups.delete(channelId);
+          cleanupJtcRoomIfEmpty(guild, channelId, {
+            purgeBotOnly: true,
+            reason: 'JTC: All humans left, stranded bot room cleanup'
+          }).catch(() => null);
+        }, options.scheduleBotOnlyGraceMs);
+        timer.unref?.();
+        pendingBotOnlyCleanups.set(channelId, timer);
+        return false;
+      } else {
+        return false;
+      }
+    }
+
+    // Resolve any linked temp text channel BEFORE deleting DB record
+    let textChannel = null;
+    if (jtcRecord.textChannelId) {
+      textChannel = guild.channels?.cache?.get(jtcRecord.textChannelId) || await guild.channels?.fetch?.(jtcRecord.textChannelId).catch(() => null);
+    }
+    if (!textChannel && guild.channels?.cache) {
+      textChannel = guild.channels.cache.find((c) =>
+        c &&
+        c.type === 0 &&
+        c.parentId === leftChannel.parentId &&
+        typeof c.name === 'string' &&
+        c.name.endsWith('-text') &&
+        c.permissionOverwrites?.cache?.get(jtcRecord.ownerId)?.allow?.has('ManageChannels')
+      ) || null;
+    }
+
+    // Mark Anti-Nuke handled strictly BEFORE deleting channels
+    if (textChannel) {
+      markRestorationQueued(textChannel.id);
+      await textChannel.delete('JTC: Auto-cleanup of linked text channel').catch((err) => {
+        console.warn(`[JTC] Failed to delete linked text room ${textChannel.id}:`, err?.message || err);
+      });
+    }
+
+    markRestorationQueued(leftChannel.id);
+    await leftChannel.delete(options.reason || 'JTC: All members left, auto-cleanup').catch((err) => {
+      console.warn(`[JTC] Failed to delete empty room ${leftChannel.id} (${leftChannel.name}):`, err?.message || err);
+    });
+
+    db.removeJtcChannel(leftChannel.id);
+    return true;
+  } finally {
+    inFlightJtcCleanups.delete(channelId);
+  }
+}
+
+/**
+ * Sweeps all DB-tracked JTC temporary channels for a guild and removes any empty/missing/bot-only zombies.
+ */
+export async function sweepEmptyJtcChannels(guild, options = {}) {
+  if (!guild?.id) return 0;
+  const records = db.getAllJtcChannels().filter((r) => r.guildId === guild.id);
+  if (records.length === 0) return 0;
+
+  let cleaned = 0;
+  const minAgeMs = typeof options.minAgeMs === 'number' ? options.minAgeMs : 8000;
+  for (const rec of records) {
+    const ok = await cleanupJtcRoomIfEmpty(guild, rec.channelId, {
+      minAgeMs,
+      purgeBotOnly: true,
+      reason: options.reason || 'JTC: Watchdog empty temp room cleanup'
+    }).catch(() => false);
+    if (ok) cleaned++;
+  }
+  return cleaned;
+}
+
 // ==========================================
 // JTC INTERFACE COMPONENT BUILDERS (Centralized)
 // ==========================================
@@ -451,6 +578,20 @@ function resolveUserJtcChannel(interaction) {
   return null;
 }
 
+async function claimJtcRoomOwnership(vcChannel, member, jtcData) {
+  if (vcChannel.members.has(jtcData.ownerId)) return false;
+  db.setJtcOwner(vcChannel.id, member.id);
+  markChannelRestoring(vcChannel.id, 3000);
+  await vcChannel.permissionOverwrites.edit(member.id, {
+    Connect: true,
+    ManageChannels: true,
+    ViewChannel: true,
+    MuteMembers: true,
+    DeafenMembers: true
+  }).catch(() => null);
+  return true;
+}
+
 // ==========================================
 // QUICK BUTTON HANDLER
 // ==========================================
@@ -535,21 +676,13 @@ export async function handleJtcButton(interaction) {
 
   // ── QUICK CLAIM ──
   if (customId === 'jtc_btn_claim') {
-    const ownerInChannel = vcChannel.members.has(jtcData.ownerId);
-    if (ownerInChannel) {
+    const claimed = await claimJtcRoomOwnership(vcChannel, member, jtcData);
+    if (!claimed) {
       return interaction.reply(cv2.e.warn(
         `Cannot Claim | ${WARN_EMOJI}`,
         `The current room owner is still connected to the voice channel.`
       ));
     }
-    db.setJtcOwner(vcChannel.id, member.id);
-    await vcChannel.permissionOverwrites.edit(member.id, { 
-      Connect: true, 
-      ManageChannels: true, 
-      ViewChannel: true, 
-      MuteMembers: true, 
-      DeafenMembers: true 
-    }).catch(() => null);
 
     return interaction.reply(cv2.e.success(
       `Ownership Claimed | ${TICK_EMOJI}`,
@@ -605,21 +738,13 @@ export async function handleJtcSelectMenu(interaction) {
 
   // ── CLAIM ──
   if (value === 'jtc_claim') {
-    const ownerInChannel = vcChannel.members.has(jtcData.ownerId);
-    if (ownerInChannel) {
+    const claimed = await claimJtcRoomOwnership(vcChannel, member, jtcData);
+    if (!claimed) {
       return interaction.reply(cv2.e.warn(
         `Cannot Claim | ${WARN_EMOJI}`,
         `The current room owner is still connected to the voice channel.`
       ));
     }
-    db.setJtcOwner(vcChannel.id, member.id);
-    await vcChannel.permissionOverwrites.edit(member.id, { 
-      Connect: true, 
-      ManageChannels: true, 
-      ViewChannel: true, 
-      MuteMembers: true, 
-      DeafenMembers: true 
-    }).catch(() => null);
 
     return interaction.reply(cv2.e.success(
       `Ownership Claimed | ${TICK_EMOJI}`,
@@ -717,6 +842,7 @@ export async function handleJtcSelectMenu(interaction) {
         `Discord does not detect any game or activity on your profile right now.`
       ));
     }
+    markChannelRestoring(vcChannel.id, 3000);
     await vcChannel.setName(activity.name).catch(() => null);
     return interaction.reply(cv2.e.success(
       `Game Name Applied | ${TICK_EMOJI}`,
@@ -754,27 +880,38 @@ export async function handleJtcSelectMenu(interaction) {
   if (value === 'jtc_text') {
     const jtcCfg = db.getJtcConfig(guild.id);
     const targetParentId = vcChannel.parentId || jtcCfg?.categoryId || null;
-    const textChannelName = `${vcChannel.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-')}-text`;
+    const rawSlug = vcChannel.name.toLowerCase().replace(/[^a-z0-9_-]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '') || 'room';
+    const textChannelName = `${rawSlug.slice(0, 90)}-text`;
 
-    const existing = guild.channels.cache.find(c => c.name === textChannelName && c.parentId === targetParentId);
+    const existing = (jtcData.textChannelId ? guild.channels.cache.get(jtcData.textChannelId) : null)
+      || guild.channels.cache.find(c => c.type === ChannelType.GuildText && c.name === textChannelName && c.parentId === targetParentId);
     if (existing) {
+      db.setJtcTextChannel(vcChannel.id, existing.id);
       return interaction.reply(cv2.e.warn(
         `Already Exists | ${WARN_EMOJI}`,
         `A linked text channel already exists: ${formatChannelLink(existing, guild)}`
       ));
     }
 
+    const textOverwrites = [
+      { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
+      { id: member.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] },
+      { id: guild.client.user.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels, PermissionFlagsBits.ReadMessageHistory] }
+    ];
+    const gCfg = db.getGuildConfig(guild.id);
+    if (gCfg?.quarantineRoleId) {
+      textOverwrites.push({ id: gCfg.quarantineRoleId, deny: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages] });
+    }
+
     const textCh = await guild.channels.create({
       name: textChannelName,
       type: ChannelType.GuildText,
       parent: targetParentId,
-      permissionOverwrites: [
-        { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
-        { id: member.id, allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages, PermissionFlagsBits.ManageChannels] }
-      ],
+      permissionOverwrites: textOverwrites,
       reason: `JTC Temp Text Channel for ${member.user.tag}`
     });
 
+    markRestorationQueued(textCh.id);
     db.setJtcTextChannel(vcChannel.id, textCh.id);
 
     // Permit all current members
@@ -1042,7 +1179,8 @@ export async function handleJtcModal(interaction) {
       ));
     }
 
-    await vcChannel.permissionOverwrites.edit(member.id, { ManageChannels: false }).catch(() => null);
+    markChannelRestoring(vcChannel.id, 3000);
+    await vcChannel.permissionOverwrites.edit(member.id, { ManageChannels: null }).catch(() => null);
     await vcChannel.permissionOverwrites.edit(userId, { 
       Connect: true, 
       ViewChannel: true, 
@@ -1258,6 +1396,45 @@ async function wipeTieredSuite(guild) {
 
   // 5. Clear DB record
   db.clearTieredJtcConfig(guild.id);
+  return true;
+}
+
+async function wipeStandardJtc(guild, standardCfg) {
+  if (!standardCfg) standardCfg = db.getJtcConfig(guild.id);
+  if (!standardCfg) return false;
+
+  const lobbyIds = [standardCfg.lobbyChannelId, standardCfg.secondaryLobbyChannelId].filter(Boolean);
+  for (const id of lobbyIds) {
+    markRestorationQueued(id);
+    const ch = guild.channels.cache.get(id) || await guild.channels.fetch(id).catch(() => null);
+    if (ch) await ch.delete('Athena: Standard JTC disabled').catch(() => null);
+  }
+
+  // Purge any active standard (non-tiered) temp rooms belonging to this guild
+  const stdTemps = db.getAllJtcChannels().filter((c) => c.guildId === guild.id && !c.tier);
+  for (const rec of stdTemps) {
+    await cleanupJtcRoomIfEmpty(guild, rec.channelId, {
+      purgeBotOnly: true,
+      reason: 'Athena: Purging Standard JTC temp room on disable'
+    }).catch(() => null);
+    // Force delete even if members remain when explicitly disabling Standard JTC
+    const rem = guild.channels.cache.get(rec.channelId) || await guild.channels.fetch(rec.channelId).catch(() => null);
+    if (rem) {
+      markRestorationQueued(rem.id);
+      await rem.delete('Athena: Standard JTC disabled').catch(() => null);
+    }
+    db.removeJtcChannel(rec.channelId);
+  }
+
+  if (standardCfg.categoryId) {
+    markRestorationQueued(standardCfg.categoryId);
+    const cat = guild.channels.cache.get(standardCfg.categoryId) || await guild.channels.fetch(standardCfg.categoryId).catch(() => null);
+    if (cat && (cat.children?.cache?.size ?? 0) === 0) {
+      await cat.delete('Athena: Empty JTC category cleanup').catch(() => null);
+    }
+  }
+
+  db.clearJtcConfig(guild.id);
   return true;
 }
 
@@ -1902,18 +2079,7 @@ export const commands = [
         if (!standardCfg?.lobbyChannelId) {
           return message.reply(cv2.warn(`Not Found | ${WARN_EMOJI}`, 'No active Standard JTC lobby found to disable.'));
         }
-        // Attempt to clean up the lobby channel and category if desired
-        if (standardCfg.lobbyChannelId) {
-          const lobby = guild.channels.cache.get(standardCfg.lobbyChannelId) || await guild.channels.fetch(standardCfg.lobbyChannelId).catch(() => null);
-          if (lobby) await lobby.delete('Athena: Standard JTC disabled').catch(() => null);
-        }
-        if (standardCfg.categoryId) {
-          const cat = guild.channels.cache.get(standardCfg.categoryId) || await guild.channels.fetch(standardCfg.categoryId).catch(() => null);
-          if (cat && cat.children?.cache?.size === 0) {
-            await cat.delete('Athena: Empty JTC category cleanup').catch(() => null);
-          }
-        }
-        db.clearJtcConfig(guild.id);
+        await wipeStandardJtc(guild, standardCfg);
         return message.reply(cv2.danger(
           `Standard JTC Disabled | ${WRONG_EMOJI}`,
           `The Standard Join to Create system has been turned off and cleaned up.`
@@ -1923,11 +2089,11 @@ export const commands = [
       // If user specifically requested 'all'
       if (target === 'all') {
         if (tieredCfg) await wipeTieredSuite(guild);
-        if (standardCfg?.lobbyChannelId) {
-          const lobby = guild.channels.cache.get(standardCfg.lobbyChannelId) || await guild.channels.fetch(standardCfg.lobbyChannelId).catch(() => null);
-          if (lobby) await lobby.delete('Athena: Purging JTC').catch(() => null);
+        if (standardCfg?.lobbyChannelId || standardCfg?.secondaryLobbyChannelId) {
+          await wipeStandardJtc(guild, standardCfg);
+        } else {
+          db.clearJtcConfig(guild.id);
         }
-        db.clearJtcConfig(guild.id);
         return message.reply(cv2.danger(
           `All JTC Systems Disabled | ${WRONG_EMOJI}`,
           `All Join to Create configurations and tiered voice channels have been disabled and purged.`
@@ -1944,11 +2110,7 @@ export const commands = [
       }
 
       if (!tieredCfg && standardCfg?.lobbyChannelId) {
-        if (standardCfg.lobbyChannelId) {
-          const lobby = guild.channels.cache.get(standardCfg.lobbyChannelId) || await guild.channels.fetch(standardCfg.lobbyChannelId).catch(() => null);
-          if (lobby) await lobby.delete('Athena: Standard JTC disabled').catch(() => null);
-        }
-        db.clearJtcConfig(guild.id);
+        await wipeStandardJtc(guild, standardCfg);
         return message.reply(cv2.danger(
           `Standard JTC Disabled | ${WRONG_EMOJI}`,
           `The Standard Join to Create system has been turned off.`
@@ -1990,11 +2152,7 @@ export const commands = [
         if (!standardCfg?.lobbyChannelId) {
           return interaction.editReply(cv2.warn(`Not Found | ${WARN_EMOJI}`, 'No active Standard JTC lobby found to disable.'));
         }
-        if (standardCfg.lobbyChannelId) {
-          const lobby = guild.channels.cache.get(standardCfg.lobbyChannelId) || await guild.channels.fetch(standardCfg.lobbyChannelId).catch(() => null);
-          if (lobby) await lobby.delete('Athena: Standard JTC disabled').catch(() => null);
-        }
-        db.clearJtcConfig(guild.id);
+        await wipeStandardJtc(guild, standardCfg);
         return interaction.editReply(cv2.danger(
           `Standard JTC Disabled | ${WRONG_EMOJI}`,
           `The Standard Join to Create system has been turned off.`
@@ -2003,11 +2161,11 @@ export const commands = [
 
       if (target === 'all') {
         if (tieredCfg) await wipeTieredSuite(guild);
-        if (standardCfg?.lobbyChannelId) {
-          const lobby = guild.channels.cache.get(standardCfg.lobbyChannelId) || await guild.channels.fetch(standardCfg.lobbyChannelId).catch(() => null);
-          if (lobby) await lobby.delete('Athena: Purging JTC').catch(() => null);
+        if (standardCfg?.lobbyChannelId || standardCfg?.secondaryLobbyChannelId) {
+          await wipeStandardJtc(guild, standardCfg);
+        } else {
+          db.clearJtcConfig(guild.id);
         }
-        db.clearJtcConfig(guild.id);
         return interaction.editReply(cv2.danger(
           `All JTC Systems Disabled | ${WRONG_EMOJI}`,
           `All Join to Create configurations and tiered voice channels have been disabled and purged.`
@@ -2048,20 +2206,13 @@ export const commands = [
       }
 
       if (sub === 'claim') {
-        if (vcChannel.members.has(jtcData.ownerId)) {
+        const claimed = await claimJtcRoomOwnership(vcChannel, member, jtcData);
+        if (!claimed) {
           return message.reply(cv2.warn(
             `Cannot Claim | ${WARN_EMOJI}`,
             `The channel owner is still connected to the voice room.`
           ));
         }
-        db.setJtcOwner(vcChannel.id, member.id);
-        await vcChannel.permissionOverwrites.edit(member.id, { 
-          Connect: true, 
-          ManageChannels: true, 
-          ViewChannel: true, 
-          MuteMembers: true, 
-          DeafenMembers: true 
-        }).catch(() => null);
 
         return message.reply(cv2.success(
           `Ownership Claimed | ${TICK_EMOJI}`,
@@ -2109,20 +2260,13 @@ export const commands = [
       }
 
       if (sub === 'claim') {
-        if (vcChannel.members.has(jtcData.ownerId)) {
+        const claimed = await claimJtcRoomOwnership(vcChannel, member, jtcData);
+        if (!claimed) {
           return interaction.reply(cv2.warn(
             `Cannot Claim | ${WARN_EMOJI}`,
             `The owner is still in the channel.`
           ));
         }
-        db.setJtcOwner(vcChannel.id, member.id);
-        await vcChannel.permissionOverwrites.edit(member.id, { 
-          Connect: true, 
-          ManageChannels: true, 
-          ViewChannel: true, 
-          MuteMembers: true, 
-          DeafenMembers: true 
-        }).catch(() => null);
 
         return interaction.reply(cv2.success(
           `Ownership Claimed | ${TICK_EMOJI}`,

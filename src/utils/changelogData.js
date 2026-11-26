@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '26 November 2026',
+    version: 'v4.0.14',
+    headline: 'JTC Empty/Zombie Temp-Room Sweeper & Early-Return Cleanup Fix',
+    summary: 'Fixed stuck empty JTC temporary channels (e.g. after cooldown quick-hops, restarts, or stranded music bots), resolved the voiceStateUpdate -> channelDelete Anti-Nuke race, and hardened temp text & disable cleanup.',
+    whatsNew: [
+      {
+        title: 'Startup & 60s JTC Empty/Orphan Temp-Room Sweeper (sweepEmptyJtcChannels)',
+        desc: 'Added automatic startup (3s), periodic (60s / 5m), and stranded-bot grace cleanup of empty or missing JTC temporary voice channels and linked text channels across all guilds with active JTC rooms.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Concurrencied Cleanup & JTC Anti-Nuke Isolation',
+        desc: 'Consolidated empty-room deletion into cleanupJtcRoomIfEmpty with per-channel locks, Anti-Nuke markRestorationQueued ordering before .delete(), isJtcInfrastructure recognition for linked temp text rooms, and safe wipeStandardJtc + markChannelRestoring on game renames/ownership claims.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Fixed Stuck Empty JTC Rooms Skipped By Early Returns in voiceStateUpdate',
+        desc: 'Moved JTC leave cleanup ahead of the 3s creation cooldown, active-attack, HomeVC bot-leave, and missing-member returns so quick room-hops or bot disconnects never leave empty temp VCs behind.'
+      }
+    ],
+    tip: 'Stuck empty JTC channels from earlier restarts are automatically cleared within seconds after rebooting.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '26 November 2026',
     version: 'v4.0.13',
     headline: 'Tiered JTC Boot-Time Auto-Reconciliation & Rapid 3s VC Status Restore',
     summary: 'Fixed legacy 4-tier MongoDB hydration overriding Squad [4] with Unlimited and skipping newly added Unlimited [Free] lobbies, accelerated post-boot JTC VC status sync to 3s (with 5-minute watchdog), and added permanent error logging.',

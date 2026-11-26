@@ -432,13 +432,37 @@ export default {
       }
     }, 6 * 60 * 1000); // 6 minutes
 
-    // JTC Lobby Voice Status Sync Watchdog (restores Discord-cleared statuses on Solo/Duo/Trio/Squad/Unlimited & Standard lobbies)
+    // JTC Lobby Voice Status Sync + Empty Temp-Room Sweeper Watchdog
+    const runJtcEmptyRoomSweeper = async () => {
+      try {
+        const records = db.getAllJtcChannels();
+        if (!records || records.length === 0) return;
+
+        const { sweepEmptyJtcChannels } = await import('../commands/jtc.js');
+        const activeGuildIds = new Set(records.map((r) => r.guildId).filter(Boolean));
+        for (const gId of activeGuildIds) {
+          const guild = client.guilds.cache.get(gId);
+          if (!guild) {
+            // Prune orphaned JTC records for guilds the bot is no longer in
+            for (const rec of records) {
+              if (rec.guildId === gId) db.removeJtcChannel(rec.channelId);
+            }
+            continue;
+          }
+          await sweepEmptyJtcChannels(guild, { minAgeMs: 8000 }).catch(() => null);
+        }
+      } catch (err) {
+        console.warn('[JTC Sweep] Sweeper error:', err?.message || err);
+      }
+    };
+
     const runJtcLobbyStatusWatchdog = async () => {
       try {
         const [{ syncJtcLobbyStatuses }, { isGuildUnderAttack }] = await Promise.all([
           import('../commands/jtc.js'),
           import('../utils/antinuke.js')
         ]);
+        await runJtcEmptyRoomSweeper();
         for (const [guildId, guild] of client.guilds.cache) {
           if (isGuildUnderAttack(guildId)) continue;
           const tiered = db.getTieredJtcConfig(guildId);
@@ -459,6 +483,8 @@ export default {
     jtcInitTimer.unref?.();
     const jtcWatchdogInterval = setInterval(runJtcLobbyStatusWatchdog, 5 * 60 * 1000);
     jtcWatchdogInterval.unref?.();
+    const jtcEmptySweeperInterval = setInterval(runJtcEmptyRoomSweeper, 60 * 1000);
+    jtcEmptySweeperInterval.unref?.();
 
     // Sync slash commands globally
     try {

@@ -1894,6 +1894,9 @@ class Database {
   isJtcInfrastructure(guildId, channelId) {
     if (!channelId) return false;
     if (this.cache.jtcChannels?.[channelId]) return true;
+    for (const rec of Object.values(this.cache.jtcChannels || {})) {
+      if (rec?.textChannelId === channelId) return true;
+    }
     if (!guildId) {
       for (const [gId, jtc] of Object.entries(this.cache.jtc || {})) {
         if (this.isJtcInfrastructure(gId, channelId)) return true;

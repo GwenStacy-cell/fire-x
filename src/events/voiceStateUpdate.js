@@ -2,7 +2,7 @@ import { ChannelType, PermissionFlagsBits, AuditLogEvent, EmbedBuilder } from 'd
 import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
 import { getVoiceConnection } from '@discordjs/voice';
-import { buildControlPanel, buildSharedPanel, setVoiceChannelStatus, scheduleJtcLobbyStatusSync } from '../commands/jtc.js';
+import { buildControlPanel, buildSharedPanel, setVoiceChannelStatus, scheduleJtcLobbyStatusSync, cleanupJtcRoomIfEmpty } from '../commands/jtc.js';
 import { PACHA_ARROW } from '../utils/emojis.js';
 import statsDB from '../statsDB.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
@@ -49,6 +49,11 @@ export default {
         client.vcSessions.delete(sessionKey);
       }
       scheduleJtcLobbyStatusSync(guild, oldState.channelId, 1500);
+      // Run empty JTC temp-room cleanup before ANY early returns (cooldown/attack/HomeVC)
+      cleanupJtcRoomIfEmpty(guild, oldState.channelId, {
+        scheduleBotOnlyGraceMs: 10_000,
+        reason: 'JTC: All members left, auto-cleanup'
+      }).catch(() => null);
     }
     if (newState.channelId && oldState.channelId !== newState.channelId) {
       client.vcSessions.set(sessionKey, Date.now());
@@ -544,17 +549,24 @@ export default {
         setVoiceChannelStatus(guild.client, tempChannel.id, roomStatus).catch(() => null);
 
         // Move the member into their new channel
-        await member.voice.setChannel(tempChannel).catch(() => null);
+        const moved = await member.voice.setChannel(tempChannel).then(() => true).catch(() => false);
         scheduleJtcLobbyStatusSync(guild, channelId, 1500);
 
-        // Ghost channel sweeper: If they didn't move, or left instantly, purge it
-        setTimeout(async () => {
-          const freshChannel = await guild.channels.fetch(tempChannel.id).catch(() => null);
-          if (freshChannel && freshChannel.members.size === 0) {
-            db.removeJtcChannel(tempChannel.id);
-            await freshChannel.delete('JTC: User failed to move or instantly left').catch(() => null);
-          }
-        }, 2500);
+        if (!moved) {
+          await cleanupJtcRoomIfEmpty(guild, tempChannel.id, {
+            purgeBotOnly: false,
+            reason: 'JTC: User disconnected before move'
+          }).catch(() => null);
+          return;
+        }
+
+        // Ghost channel sweeper: If they didn't move, or left instantly, purge cleanly
+        setTimeout(() => {
+          cleanupJtcRoomIfEmpty(guild, tempChannel.id, {
+            purgeBotOnly: false,
+            reason: 'JTC: User failed to move or instantly left'
+          }).catch(() => null);
+        }, 3000);
 
         const vcPanel = buildControlPanel(tempChannel, member);
 
@@ -589,63 +601,21 @@ export default {
           }
         }
 
-        // ── Send panel to VC text chat (fast & resilient) ──
+        // ── Send panel to VC text chat (only if channel still exists and has members) ──
         setTimeout(async () => {
           try {
-            const freshChannel = await guild.channels.fetch(tempChannel.id).catch(() => null);
-            if (!freshChannel) return;
-            await freshChannel.send(vcPanel).catch(() => null);
+            const freshChannel = guild.channels.cache.get(tempChannel.id) || await guild.channels.fetch(tempChannel.id).catch(() => null);
+            if (!freshChannel || freshChannel.members.size === 0) return;
+            await freshChannel.send(vcPanel).catch((err) => {
+              if (err?.code !== 10003) {
+                console.warn(`[JTC] Failed to send VC control panel in ${freshChannel.id}:`, err?.message || err);
+              }
+            });
           } catch {}
         }, 1500);
 
       } catch (err) {
         console.error('[JTC] Failed to create temp channel:', err);
-      }
-    }
-
-
-    // ==========================================
-    // JOIN TO CREATE — USER LEFT A CHANNEL
-    // ==========================================
-    if (oldState.channelId && oldState.channelId !== newState.channelId) {
-      if (db.isJtcChannel(oldState.channelId)) {
-        let leftChannel = guild.channels.cache.get(oldState.channelId);
-        if (!leftChannel) {
-          leftChannel = await guild.channels.fetch(oldState.channelId).catch(() => null);
-        }
-
-        if (leftChannel) {
-          // Count real members in the channel (filter out bots, or just count all)
-          const membersCount = leftChannel.members.size;
-          
-          if (membersCount === 0) {
-            const jtcRecord = db.getJtcChannel(leftChannel.id);
-            
-            // Look for a linked text channel
-            let textChannel = null;
-            if (jtcRecord?.textChannelId) {
-              textChannel = guild.channels.cache.get(jtcRecord.textChannelId) || await guild.channels.fetch(jtcRecord.textChannelId).catch(() => null);
-            }
-            
-            // Fallback for older "zombie" text channels created before the patch:
-            if (!textChannel && jtcRecord) {
-               textChannel = guild.channels.cache.find(c => 
-                 c.type === 0 && // GuildText
-                 c.parentId === leftChannel.parentId &&
-                 c.name.endsWith('-text') &&
-                 c.permissionOverwrites.cache.get(jtcRecord.ownerId)?.allow.has('ManageChannels')
-               );
-            }
-
-            db.removeJtcChannel(leftChannel.id);
-            if (textChannel) {
-              await textChannel.delete('JTC: Auto-cleanup of linked text channel').catch(() => null);
-              console.log(`[JTC] ️ Deleted linked text room: ${textChannel.name}`);
-            }
-            await leftChannel.delete('JTC: All members left, auto-cleanup').catch(() => null);
-            console.log(`[JTC] ️ Deleted empty room: ${leftChannel.name}`);
-          }
-        }
       }
     }
 
