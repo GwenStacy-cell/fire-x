@@ -15,6 +15,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '27 November 2026',
+    version: 'v4.0.15',
+    headline: 'Redesigned !help Command Matrix UI, Ownership Clearance Card & Worker Banner',
+    summary: 'Upgraded !help / /help to the Athena Obsidian Components V2 UI with Bot Avatar accessory, prominent Athena Ownership Clearance Model, compact domain grid, un-underlined module pages, and cached off-thread Canvas banner.',
+    whatsNew: [
+      {
+        title: 'Off-Thread Athena Command Matrix Banner (helpBannerCanvas.js)',
+        desc: 'Replaced the expiring static Discord CDN banner URL with a cached worker-rendered Obsidian-Cyan Command Matrix PNG banner showing live prefix, module count, shield count, version, and clearance hierarchy.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Modernized !help Home & Module Detail Layouts',
+        desc: 'Added Type 9 Bot Avatar thumbnail section, preserved Athena Ownership Clearance Model hierarchy, grouped all 24 modules into responsive mobile-safe domain rows, removed forced bold-underline wrappers on module pages, synced Voice module docs (!va, !jtctiers sync, !autovcstatus), and updated links/footers cleanly.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Raw Bot Mention & Cross Emoji Compliance Cleanup in !help',
+        desc: 'Replaced raw <@botId> mentions with clickable formatUserLink references and replaced legacy cross/bullet emojis with standard Athena animated glyphs.'
+      }
+    ],
+    tip: 'Run !help (or /help) to preview the new Command Matrix home and module views.',
+    author: '@Dev Porsche </>'
+  },
+  {
     date: '26 November 2026',
     version: 'v4.0.14',
     headline: 'JTC Empty/Zombie Temp-Room Sweeper & Early-Return Cleanup Fix',

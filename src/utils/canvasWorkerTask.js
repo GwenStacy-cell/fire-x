@@ -6,6 +6,7 @@ import { generateGlobalActionCard } from './canvasActionLog.js';
 import { renderSingleStockCard } from './stockMarket.js';
 import { generateCommandStatusBanner, generateAthenaClassicRankCardFromData } from './canvasCards.js';
 import { generateVoiceAnalyticsMatrix } from './voiceAnalyticsCanvas.js';
+import { generateHelpBanner } from './helpBannerCanvas.js';
 
 if (!isMainThread && parentPort) {
   const sendBufferResult = (id, buf, extra = null) => {
@@ -99,6 +100,12 @@ if (!isMainThread && parentPort) {
 
         case 'voiceAnalyticsMatrix': {
           const buf = await generateVoiceAnalyticsMatrix(...args);
+          sendBufferResult(id, buf);
+          return;
+        }
+
+        case 'helpBanner': {
+          const buf = await generateHelpBanner(...args);
           sendBufferResult(id, buf);
           return;
         }

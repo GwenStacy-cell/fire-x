@@ -6,6 +6,7 @@ import { processMp3Link, processMediaLink } from '../utils/mediaDownloader.js';
 import { isAuthorized, cleanDisplayName, checkCommandClearance, formatUserLink } from '../utils/helpers.js';
 import { combatTelemetry, dispatcher } from '../utils/antinuke.js';
 import { generatePingGraph } from '../utils/graph.js';
+import { generateHelpBanner } from '../utils/helpBannerCanvas.js';
 import { CHANGELOG_ENTRIES } from '../utils/changelogData.js';
 import { performance } from 'perf_hooks';
 import fs from 'fs';
@@ -444,14 +445,14 @@ export const commands = [
                 ((cmdName === 'bl' || cmdName === 'unbl' || cmdName === 'bllist' || cmdName === 'botban' || cmdName === 'botunban') && m.id === 'security')
               );
               if (matchingModule) {
-                const container = buildHelpContainer(message.client, message.guild.id, matchingModule.id);
-                return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+                const payload = await buildHelpPayload(message.client, message.guild?.id, matchingModule.id);
+                return message.reply(payload);
               }
               const { default: commandMap } = await import('./loader.js');
               let targetCmd = commandMap.get(cmdName);
               
               if (!targetCmd) {
-                  return message.reply({ content: `-! <:cross_red:1533860128015519895> **Command Not Found:** ` + cmdName });
+                  return message.reply(cv2.warn(`Command Not Found | ${WRONG_EMOJI}`, `No command or module matched \`${cmdName}\`. Use \`${db.getGuildConfig(message.guild.id)?.prefix || '!'}help\` to browse all modules.`));
               }
               
               const cmdClearance = checkCommandClearance(targetCmd.name, message.author.id, message.guild);
@@ -1485,8 +1486,8 @@ export const commands = [
               return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
-          const components = buildHelpContainer(message.client, message.guild?.id, 'home');
-          await message.reply({ components: [components], flags: MessageFlags.IsComponentsV2 });
+          const payload = await buildHelpPayload(message.client, message.guild?.id, 'home');
+          await message.reply(payload);
         } catch (e) {
           console.error('[Help] Prefix error:', e);
           return;
@@ -1522,14 +1523,14 @@ export const commands = [
           ((cmdName === 'bl' || cmdName === 'unbl' || cmdName === 'bllist' || cmdName === 'botban' || cmdName === 'botunban') && m.id === 'security')
         );
         if (matchingModule) {
-          const container = buildHelpContainer(interaction.client, interaction.guild?.id, matchingModule.id);
-          return interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
+          const payload = await buildHelpPayload(interaction.client, interaction.guild?.id, matchingModule.id);
+          return interaction.reply(payload);
         }
         const { default: commandMap } = await import('./loader.js');
         let targetCmd = commandMap.get(cmdName);
         
         if (!targetCmd) {
-          return interaction.reply({ content: `-! <:cross_red:1533860128015519895> **Command Not Found:** ` + cmdName, flags: MessageFlags.Ephemeral });
+          return interaction.reply({ ...cv2.warn(`Command Not Found | ${WRONG_EMOJI}`, `No command or module matched \`${cmdName}\`. Use \`/help\` to browse all modules.`), flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2 });
         }
         
         const cmdClearance = checkCommandClearance(targetCmd.name, interaction.user.id, interaction.guild);
@@ -2415,11 +2416,11 @@ export const commands = [
         return interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
       }
 
-      const components = buildHelpContainer(interaction.client, interaction.guild?.id, 'home');
+      const payload = await buildHelpPayload(interaction.client, interaction.guild?.id, 'home');
       
       let reply;
       try {
-        await interaction.reply({ components: [components], flags: MessageFlags.IsComponentsV2 });
+        await interaction.reply(payload);
       } catch (e) {
         console.error('[Help] Slash error:', e);
         return;
@@ -3083,48 +3084,48 @@ async function getStatusEmbed(client, guild) {
 
 export const helpModules = [
   { id: 'security', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Security', label: 'Security Commands', emoji: 'security', commands: [
-    "`!combatops / !strikeops` - Real-time combat telemetry & single-strike timeline `[Server Owner & Extra Owner]`",
-    "`!liveops combat` - Interactive combat operations dashboard & socket pool `[Server Owner & Extra Owner]`",
-    "`!auth / !tiers` - Manage authorization tiers (Admin, Mod, Staff) `[Extra Owner]`",
-    "`!tier / !mytier / !perms` - Check authorization tier & clearance `[Public]`",
-    "`!antinuke <config|status|records|guide>` - Antinuke control panel & tripwires `[Extra Owner]`",
-    "`!botwhitelist add <botId>` - Grant bot 100% full Anti-Nuke immunity `[Server Owner]`",
-    "`!botwhitelist remove <botId> / !botunwhitelist` - Revoke Anti-Nuke immunity from bot `[Server Owner]`",
-    "`!botwhitelist list` - View all bots with Anti-Nuke immunity `[Server Owner]`",
-    "`!unbypassable / !unbypassable deploy` - Deploy persistence sentinel roles `[Extra Owner]`",
-    "`!firewall / !fw / !matrix` - Live telemetry matrix, ping & defense status `[Public]`",
-    "`!security <enable|disable all|status>` - 28-module antinuke firewall & strikes `[Extra Owner]`",
-    "`!security <enable|disable> <module>` - Toggle specific antinuke defense module `[Extra Owner]`",
-    "`!entry / !gate / !screening` - Member join screening with Bot Owner approval `[Extra Owner]`",
-    "`!spampermit / !spamrevoke <@user>` - Manage spam protection bypasses `[Extra Owner]`",
-    "`!emergency / !panic` - Server channel blackout & verification elevation `[Server Owner]`",
-    "`!endemergency / !unpanic` - Lift blackout & restore permissions `[Server Owner]`",
-    "`!lockdown / !ld <1|2|3|off>` - Batched channel lockdown (Tiers 1-3) `[Extra Owner]`",
-    "`!unlockdown / !unld` - Restore exact pre-lockdown permissions snapshot `[Extra Owner]`",
-    "`!serverhealth / !audit` - Real-time permissions & hierarchy diagnostics `[Extra Owner]`",
-    "`!honeypot / !trap [setup|remove]` - Ghost canary tripwire with auto-punishment `[Extra Owner]`",
-    "`!decapitate / !purgehooks` - Parallel sweep & purge of rogue webhooks `[Extra Owner]`",
-    "`!timemachine / !snapshot [create|list|restore]` - Hierarchy snapshots & delta restore `[Extra Owner]`",
-    "`!exploitscan / !auditperms [patch]` - Vulnerability scanner with Auto-Patch `[Extra Owner]`",
-    "`!incident / !raidreport` - Post-raid attacker dossier & forensic vectors `[Extra Owner]`",
-    "`!anomaly / !burstguard [on|off]` - Staff behavioral anomaly detection `[Extra Owner]`",
-    "`!gatekeeper / !raidgate [on|off]` - Account age & avatar perimeter gating `[Extra Owner]`",
-    "`!dualkey / !twomanrule [toggle|auth]` - Two-man rule requiring secondary approval `[Server Owner]`",
-    "`!burn / !whisper [@users] [mins]` - Self-destructing rooms with auto-purge `[Extra Owner]`",
-    "`!antighostping / !agp [on|off]` - Sentry against deleted ghost mentions `[Extra Owner]`",
-    "`!simnuke / !nukesim` - Simulation testing <1ms interception velocity `[Extra Owner]`",
-    "`!panichistory / !defconhistory` - Audit timeline of DEFCON & lockdown events `[Extra Owner]`",
-    "`!raidmode [status|on|off]` - Raid defense matrix & join-velocity lockdown `[Extra Owner]`",
-    "`!lockapps / !unlockapps` - Lock or unlock server application integrations `[Extra Owner]`",
-    "`!scanserver` - Scan server for dangerous bot & onboarding perms `[Extra Owner]`",
-    "`!neutralizeonboarding` - Audit & neutralize dangerous onboarding roles `[Extra Owner]`",
-    "`!config / !cfg` - Interactive security & thresholds dashboard `[Extra Owner]`",
-    "`!learn / !lambda / !ai [status|on|off]` - Autonomous self-learning diagnostics `[Extra Owner]`",
-    "`!bl / !botban <@user|ID> [reason]` - Blacklist user from executing bot commands `[Bot Owner & Extra Owner]`",
-    "`!unbl / !botunban <@user|ID>` - Lift command restrictions and restore access `[Bot Owner & Extra Owner]`",
-    "`!bllist` - View all currently blacklisted bot accounts `[Bot Owner & Extra Owner]`",
-    "`!np` - Global No-Prefix dashboard for trusted members `[Bot Owner]`",
-    "`!modmode` - Temporarily pause restore for server edits `[Server Owner]`"
+    "`!combatops / !strikeops` - Combat telemetry & strike timeline `[Server/Extra]`",
+    "`!liveops combat` - LiveOps combat & socket pool dashboard `[Server/Extra]`",
+    "`!auth / !tiers` - Authorization tiers (Admin/Mod/Staff) `[Extra Owner]`",
+    "`!tier / !mytier / !perms` - Check your clearance tier `[Public]`",
+    "`!antinuke <config|status|records|guide>` - Antinuke panel `[Extra Owner]`",
+    "`!botwhitelist add <botId>` - Grant bot Anti-Nuke immunity `[Server Owner]`",
+    "`!botwhitelist remove <botId> / !botunwhitelist` - Revoke bot immunity `[Server Owner]`",
+    "`!botwhitelist list` - List whitelisted bots `[Server Owner]`",
+    "`!unbypassable [deploy]` - Deploy persistence sentinels `[Extra Owner]`",
+    "`!firewall / !fw / !matrix` - Telemetry matrix & defense status `[Public]`",
+    "`!security <enable|disable all|status>` - 32-shield antinuke `[Extra Owner]`",
+    "`!security <enable|disable> <module>` - Toggle antinuke shield `[Extra Owner]`",
+    "`!entry / !gate / !screening` - Member join screening `[Extra Owner]`",
+    "`!spampermit / !spamrevoke <@user>` - Spam bypass controls `[Extra Owner]`",
+    "`!emergency / !panic` - Channel blackout & verification lock `[Server Owner]`",
+    "`!endemergency / !unpanic` - Lift blackout & restore perms `[Server Owner]`",
+    "`!lockdown / !ld <1|2|3|off>` - Channel lockdown (Tiers 1-3) `[Extra Owner]`",
+    "`!unlockdown / !unld` - Restore pre-lockdown permissions `[Extra Owner]`",
+    "`!serverhealth / !audit` - Perms & hierarchy diagnostics `[Extra Owner]`",
+    "`!honeypot / !trap [setup|remove]` - Canary trap & auto-ban `[Extra Owner]`",
+    "`!decapitate / !purgehooks` - Sweep rogue webhooks `[Extra Owner]`",
+    "`!timemachine / !snapshot [create|list|restore]` - Delta rollback `[Extra Owner]`",
+    "`!exploitscan / !auditperms [patch]` - Vuln scan & Auto-Patch `[Extra Owner]`",
+    "`!incident / !raidreport` - Post-raid dossier & forensics `[Extra Owner]`",
+    "`!anomaly / !burstguard [on|off]` - Staff anomaly guard `[Extra Owner]`",
+    "`!gatekeeper / !raidgate [on|off]` - Age/avatar join gate `[Extra Owner]`",
+    "`!dualkey / !twomanrule [toggle|auth]` - Two-man approval `[Server Owner]`",
+    "`!burn / !whisper [@users] [mins]` - Ephemeral burn rooms `[Extra Owner]`",
+    "`!antighostping / !agp [on|off]` - Deleted mention sentry `[Extra Owner]`",
+    "`!simnuke / !nukesim` - Simulate sub-1ms interception `[Extra Owner]`",
+    "`!panichistory / !defconhistory` - DEFCON & lockdown history `[Extra Owner]`",
+    "`!raidmode [status|on|off]` - Raid join-velocity lockdown `[Extra Owner]`",
+    "`!lockapps / !unlockapps` - Lock server integrations `[Extra Owner]`",
+    "`!scanserver` - Audit risky bot & onboarding perms `[Extra Owner]`",
+    "`!neutralizeonboarding` - Neutralize risky onboarding roles `[Extra Owner]`",
+    "`!config / !cfg` - Security & thresholds dashboard `[Extra Owner]`",
+    "`!learn / !lambda / !ai [status|on|off]` - Self-learning AI `[Extra Owner]`",
+    "`!bl / !botban <@user|ID> [reason]` - Bot blacklist `[Bot/Extra Owner]`",
+    "`!unbl / !botunban <@user|ID>` - Lift bot blacklist `[Bot/Extra Owner]`",
+    "`!bllist` - List blacklisted bot accounts `[Bot/Extra Owner]`",
+    "`!np` - Global No-Prefix access manager `[Bot Owner]`",
+    "`!modmode` - Maintenance pause for edits `[Server Owner]`"
   ] },
   { id: 'filters', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Filters', label: 'Automod Filters', emoji: 'filters', commands: [
     "`!automod` - Open Automated Moderation & Security Dashboard `[Extra Owner]`",
@@ -3347,44 +3348,42 @@ export const helpModules = [
     "-# <a:target_blink:1565667466984554588> **`!stats setup` / `!stats refresh`** seamlessly forwards to the Stats Bot `╭・Statistics` voice channel engine."
   ] },
   { id: 'config', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Config', label: 'Server Configuration', emoji: 'config', commands: [
-    "`!serverstats / !statsetup / !vcstats` - Dual-Mode `╭・Statistics` voice channels dashboard with 1-click mode switcher `[Extra Owner]`",
-    "`!serverstats setup status` - Deploy modern compact **Voice Status Subtitles** (2 channels: `Server Statistics` & `Voice Statistics`) with animated `<a:4964bouncingheart:1574534881776640010>` metrics `[Extra Owner]`",
-    "`!serverstats setup classic` - Deploy classic **Renamed Counter Channels** (3 channels: `Members`, `Bots`, `Server Booster`) with 8 typography fonts `[Extra Owner]`",
-    "`!serverstats refresh` - Immediately refresh all statistics channels to live member & voice counts `[Extra Owner]`",
-    "`!serverstats config <font>` - Change counter typography font (classic mode) `[Extra Owner]`",
-    "`!serverstats disable` - Wipe all statistics channels and `╭・Statistics` category `[Extra Owner]`",
-    "`!serverlogs / !slogs` - Interactive Server Modification Logging dashboard `[Extra Owner]`",
-    "`!serverlogs setup / create` - Auto-create `╭・Logs` category & `📁・server-logs` text channel `[Extra Owner]`",
-    "`!serverlogs bind <#channel>` - Bind an existing text channel for all server modification logs `[Extra Owner]`",
-    "`!serverlogs test` - Dispatch test verification log embed `[Extra Owner]`",
+    "`!serverstats / !statsetup / !vcstats` - Dual-Mode `╭・Statistics` dashboard & switcher `[Extra Owner]`",
+    "`!serverstats setup status` - Compact 2-channel **Voice Status Subtitles** with animated `<a:4964bouncingheart:1574534881776640010>` metrics `[Extra Owner]`",
+    "`!serverstats setup classic` - Classic 3-channel renamed counters with 8 typography fonts `[Extra Owner]`",
+    "`!serverstats refresh` - Sync statistics channels to live member & voice counts `[Extra Owner]`",
+    "`!serverstats config <font>` - Change classic counter typography font `[Extra Owner]`",
+    "`!serverstats disable` - Wipe statistics channels & `╭・Statistics` category `[Extra Owner]`",
+    "`!serverlogs / !slogs` - Server Modification Logging dashboard `[Extra Owner]`",
+    "`!serverlogs setup / create` - Create `╭・Logs` category & `📁・server-logs` channel `[Extra Owner]`",
+    "`!serverlogs bind <#channel>` - Bind channel for server modification logs `[Extra Owner]`",
+    "`!serverlogs test` - Dispatch test log embed `[Extra Owner]`",
     "`!serverlogs disable` - Disable server modification logging `[Extra Owner]`",
-    "`!ytstats` - Open **YouTube Stats VC Engine** (Dynamically display live YouTube subscriber counts in VC) `[Extra Owner]`",
-    "`!autorole / !autorole-config` - Open **AutoRole & Vanity Engine** (Human/Bot join roles & vanity status rewards) `[Extra Owner]`",
-    "`!autovcstatus / !randomvc [on|off|shuffle]` - Rotate custom statuses on all VCs `[Extra Owner]`",
-    "`!accent <hex>` - Set the global CV2 accent color for the server `[Extra Owner]`",
-    "`!prefix <new_prefix>` - Change the bot's command prefix `[Extra Owner]`",
-    "`!setguildavatar` - Change the bot's server icon `[Extra Owner]`",
-    "`!setguildbanner` - Change the bot's server banner `[Extra Owner]`",
-    "`!sethomevc / !unsethomevc` - Bind bot to a dedicated 24/7 VC `[Extra Owner]`",
+    "`!ytstats` - YouTube Stats VC live subscriber counter `[Extra Owner]`",
+    "`!autorole / !autorole-config` - AutoRole & vanity status reward engine `[Extra Owner]`",
+    "`!autovcstatus / !randomvc [on|off|shuffle]` - Rotate statuses on regular VCs `[Extra Owner]`",
+    "`!accent <hex>` - Set server global CV2 accent color `[Extra Owner]`",
+    "`!prefix <new_prefix>` - Change server command prefix `[Extra Owner]`",
+    "`!setguildavatar` - Change bot server icon `[Extra Owner]`",
+    "`!setguildbanner` - Change bot server banner `[Extra Owner]`",
+    "`!sethomevc / !unsethomevc` - Bind bot to 24/7 home VC `[Extra Owner]`",
     "`!backup / !bcp create|info` - Server infrastructure Backup Suite `[Server Owner]`",
-    "`!db status / backup / export / restore / setchannel` - Discord Cloud Backup & Persistence Manifest Suite `[Bot Owner]`",
-    "`!setsuggestions / !suggestchannel <#channel>` - Set designated channel for suggestions `[Extra Owner]`",
-    "`!starboard <#channel> [stars]` - Set starboard channel and star threshold `[Extra Owner]`",
-    "`!voicerole <@role|ID|Name|disable> / !vcrole` - Auto-assign role in VC for all members & bots `[Extra Owner]`",
+    "`!db status / backup / export / restore / setchannel` - Cloud Backup & Manifest Suite `[Bot Owner]`",
+    "`!setsuggestions / !suggestchannel <#channel>` - Set suggestions channel `[Extra Owner]`",
+    "`!starboard <#channel> [stars]` - Set starboard channel & threshold `[Extra Owner]`",
+    "`!voicerole <@role|ID|Name|disable> / !vcrole` - Auto-assign VC role for members & bots `[Extra Owner]`",
     "`!setstatschannel <#channel>` - Set dedicated channel for stats commands `[Extra Owner]`",
-    "`!setup` - Interactive Server Setup Wizard for logs, quarantine, and core features `[Extra Owner]`",
-    "`!setstatus <#channel>` - Deploy 24/7 live bot status and resource telemetry panel `[Bot Owner]`",
-    "`!removestatus` - Remove the 24/7 live status panel `[Bot Owner]`",
-    "`!buildserver` - Auto-generate aesthetic server layout & channel structure `[Server Owner]`",
-    "`!remotevc <guildId> <vcId>` - Remotely bind bot home voice channel `[Bot Owner]`",
-    "`!forceadmin / !unforceadmin` - Remote emergency administration bridge `[Bot Owner]`",
-    "`!dm / !dms [on|off|status]` - Server-wide Athena mention & tag DM notifications toggle `[Extra Owner]`",
-    "`!autonick` - Interactive auto-nickname enforcer dashboard `[Extra Owner]`",
+    "`!setup` - Interactive Setup Wizard for logs & quarantine `[Extra Owner]`",
+    "`!setstatus <#channel>` - Deploy 24/7 live bot status panel `[Bot Owner]`",
+    "`!removestatus` - Remove 24/7 live status panel `[Bot Owner]`",
+    "`!buildserver` - Auto-generate server layout & channels `[Server Owner]`",
+    "`!remotevc <guildId> <vcId>` - Remotely bind bot home VC `[Bot Owner]`",
+    "`!forceadmin / !unforceadmin` - Remote admin bridge `[Bot Owner]`",
+    "`!dm / !dms [on|off|status]` - Toggle Athena tag DM notifications `[Extra Owner]`",
+    "`!autonick` - Interactive auto-nickname enforcer `[Extra Owner]`",
     "",
-    "-# **__Stats Bot Voice Statistics Engine:__**",
-    "-# <a:target_blink:1565667466984554588> **Dual-Mode Architecture:** Choose between **Mode 1: Voice Status Subtitles** (compact 2-channel layout displaying live metrics via `PUT /channels/:id/voice-status` with zero rate-limit issues and animated bouncing hearts) and **Mode 2: Classic Renamed Channels** (3-channel layout with 8 custom fonts).",
-    "-# <a:target_blink:1565667466984554588> **Interactive Refresh & Switcher:** Use the `[Switch Mode]` and `[Sync Live Numbers]` buttons or `!serverstats refresh` to immediately refresh counters to live member & voice counts.",
-    "-# <a:target_blink:1565667466984554588> **Automatic Background Sync:** Athena auto-updates all statistics counters every 6 minutes while strictly respecting Discord's rate limits."
+    "-# **Stats Bot Architecture**",
+    "-# <a:target_blink:1565667466984554588> **Dual Mode & Sync:** Live **Voice Status Subtitles** or **Classic Counters** auto-syncing every 6 minutes + instant refresh."
   ] },
 
   { id: 'welcome', category: 'COMMUNITY & ENGAGEMENT', shortLabel: 'Welcome', label: 'Welcome & Leave', emoji: 'welcome', commands: [
@@ -3471,10 +3470,11 @@ export const helpModules = [
     "`!tts <voice> <msg>` - Speak directly with on-the-fly celebrity voice `[Public]`",
     "`!tts autovc` - Toggle global Auto-TTS for your VC `[Extra Owner]`",
     "`!tts stop` - Immediately halt speech playback and clear queue `[Public]`",
-    "`!voiceanalytics / !va` - 24-hour diurnal voice activity heatmaps, peak windows & channel analytics `[Extra Owner]`",
+    "`!voiceanalytics / !va` - 24-hour diurnal voice telemetry matrix & top voice hubs/participants `[Public]`",
+    "`!autovcstatus <on|off|shuffle|add|remove|list>` - Auto aesthetic VC statuses (protects Home, JTC & Server Stats VCs) `[Extra Owner]`",
     "`!voicerole <@role|ID|Name|disable> / !vcrole` - Auto-assign role in VC for all members & bots `[Extra Owner]`",
     "`!jtcnormal / !jtcsingle` - Deploy standard single Join to Create lobby & category `[Extra Owner]`",
-    "`!jtcsetup tiers / !jtctiers` - Deploy 5-tier Voice Hub (Solo [1], Duo [2], Trio [3], Squad [4], Unlimited [Free]) & #voice-controls `[Extra Owner]`",
+    "`!jtcsetup tiers / !jtctiers [setup|sync|info|disable]` - Deploy 5-tier Voice Hub & sync Solo–Unlimited VC statuses `[Extra Owner]`",
     "`!jtcdisable <standard|tiers|all>` - Wipes JTC categories, interface channel & generator channels `[Extra Owner]`",
     "`!secondaryjtc` - Setup a secondary JTC hub `[Extra Owner]`",
     "`!jtc add @user` - Whitelist user into locked temporary JTC room `[Public]`",
@@ -3494,13 +3494,9 @@ export const helpModules = [
     "`!theatermode` - Toggle Theater Mode in current VC `[Extra Owner]`",
     "`!botvoice / !bv` - Control bot server mute and deafen status `[Extra Owner]`",
     "",
-    "-# **__Dynamic Join to Create (JTC) Architecture:__**",
-    "-# <a:target_blink:1565667466984554588> **__Dual-Mode Engine:__** Deploy single lobby (`!jtcnormal`) or 5-tier generator suite (`!jtcsetup tiers` / `!jtctiers`) with Solo [1], Duo [2], Trio [3], Squad [4], and Unlimited [Free] lobbies.",
-    "-# <a:target_blink:1565667466984554588> **__Voice Channel Status Subtitles:__** Generator lobbies display styled Discord voice channel status subtitles (`<a:pacha_arrow:1574537362610856010> Join 2 Create <Tier> VC`) directly below channel names in the guild channel list.",
-    "-# <a:target_blink:1565667466984554588> **__19 Custom Animated Glyphs:__** Channel Settings & Privacy dropdowns in `#voice-controls` are fully outfitted with 19 animated action glyphs (`01_adjust_bitrate` through `19_transfer_ownership`).",
-    "-# <a:target_blink:1565667466984554588> **__Persistent Control Center:__** Dedicated `#voice-controls` interface channel equipped with Components V2 interactive dropdowns and 1-click quick control buttons.",
-    "-# <a:target_blink:1565667466984554588> **__Anti-Nuke Synchronization:__** Sub-1ms bypass in `channelCreate`, `channelUpdate`, and `channelDelete` with combat silence during active attacks (`isGuildUnderAttack`) and 3s flood protection.",
-    "-# <a:target_blink:1565667466984554588> **__Atomic Teardown:__** Wipes entire JTC categories, interface channels, and generator channels instantly via `!jtcdisable <standard|tiers|all>`."
+    "-# **Dynamic Join to Create (JTC) Architecture**",
+    "-# <a:target_blink:1565667466984554588> **Dual-Mode & Animated Statuses:** Single (`!jtcnormal`) or 5-tier lobbies (`!jtctiers setup` — Solo, Duo, Trio, Squad, Unlimited) auto-sync status subtitles (`!jtctiers sync`) on deploy, boot, and leave transitions.",
+    "-# <a:target_blink:1565667466984554588> **Control Center & Sweeper:** `#voice-controls` uses 19 animated action glyphs; empty/bot-only rooms auto-purge on leave, cooldown hops, and 60s sweeps with Anti-Nuke bypass."
   ] },
   { id: 'soundboard', category: 'VOICE & MEDIA', shortLabel: 'Soundboard', label: 'Soundboard & Lo-Fi Radio', emoji: 'soundboard', commands: [
     "`!soundboard / !sounds` - Interactive voice soundboard control deck with 12 instant sound triggers `[Public]`",
@@ -3681,261 +3677,309 @@ export const helpModules = [
   ] }
 ];
 
-const HELP_GIF = 'https://cdn.discordapp.com/attachments/1534869224277807175/1542472732325978234/ATHENA-8-27-2026.png?ex=6a915b2d&is=6a9009ad&hm=0f55bae0c0bec27649bc03e6d6be23ad16f2eb9337efdb8b5793b2d74cad89ff&';
+const HELP_DOMAIN_GROUPS = [
+  {
+    title: 'Security & Access Control',
+    moduleIds: ['security', 'filters', 'quarantine', 'whitelist']
+  },
+  {
+    title: 'Server Management & Utilities',
+    moduleIds: ['moderation', 'mass_actions', 'studio', 'tickets', 'tracking', 'config', 'utilities']
+  },
+  {
+    title: 'Voice, Community & Entertainment',
+    moduleIds: ['voice', 'soundboard', 'welcome', 'leveling', 'counting', 'economy', 'community', 'roleplay', 'arcade', 'chess']
+  },
+  {
+    title: 'AI & Market Intelligence',
+    moduleIds: ['ai', 'nifty', 'stocks']
+  }
+];
 
-export function buildHelpContainer(client, guildId, moduleId) {
-    const config = db.getGuildConfig(guildId);
-    const prefix = config?.prefix || '!';
-    const botId = client?.user?.id || '1347071663182676059';
-    
-    const getEmoji = (name, fallback) => {
-      // 1. Designated custom emojis requested specifically for these modules
-      const designatedCustomEmojis = {
-        'ai': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
-        'aiguide': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
-        'counting': '<:f4363980_d43f_47b9_81db_0fe0a9a4:1561256353094172692>',
-        'community': '<:de2de296_a511_40fa_953f_01365b9a:1561256778405257370>',
-        'economy': '<:d908aaba_8825_41ee_bc4c_ad871ad0:1561256682376400919>',
-        'coins': '<:d908aaba_8825_41ee_bc4c_ad871ad0:1561256682376400919>',
-        'finance': MARKET_CAP_ICON,
-        'nifty': MARKET_CAP_ICON,
-        'indianmkts': MARKET_CAP_ICON,
-        'stock': GLOBAL_STOCK_ICON,
-        'stocks': GLOBAL_STOCK_ICON,
-        'globalstock': GLOBAL_STOCK_ICON,
-        'chess': CHESS_ICON,
-        'roleplay': ROLEPLAY_MATRIX_ICON,
-        'rp': ROLEPLAY_MATRIX_ICON,
-        'arcade': ARCADE_CASINO_ICON,
-        'casino': ARCADE_CASINO_ICON,
-        'soundboard': SOUNDBOARD_RADIO_ICON,
-        'radio': SOUNDBOARD_RADIO_ICON,
-        'sfx': SOUNDBOARD_RADIO_ICON
-      };
-      if (designatedCustomEmojis[name]) return designatedCustomEmojis[name];
+function stripForcedUnderlines(text) {
+  return String(text || '')
+    .replace(/__\*\*([^*_]+)\*\*__/g, '**$1**')
+    .replace(/\*\*__([^_]+)__\*\*/g, '**$1**');
+}
 
-      // 2. For all other modules, search client emojis cache FIRST (original behavior restored)
-      const nameMap = {
-        'mod': 'moderation',
-        'mass': 'moderation',
-        'giveaway': 'giveaways',
-        'utilities': 'utility'
-      };
-      const searchName = nameMap[name] || name;
-      const e = client?.emojis?.cache ? client.emojis.cache.find(emoji => emoji.name === searchName || emoji.name === name) : null;
-      if (e) return `<${e.animated ? 'a' : ''}:${e.name}:${e.id}>`;
-      
-      const customEmojiFallback = {
-        'security': '<:security_and_firewall:1523672289500069940>',
-        'filters': '<:config:1533844853048209489>',
-        'quarantine': '<:off:1533844858983157851>',
-        'whitelist': '<a:uptime:1552608831060844575>',
-        'mod': '<:cross_red:1533860128015519895>',
-        'mass': '<:cross_red:1533860128015519895>',
-        'tickets': '<:139707ticket:1533859896620089485>',
-        'leveling': '<a:trophy:1533859922599481577>',
-        'giveaway': '<a:giveaway:1533844904604864603>',
-        'welcome': '<a:z_arrow_pink1:1523082728004653138>',
-        'voice': '<:music:1528159649780732046>',
-        'tracking': '<a:uptime:1552608831060844575>',
-        'config': '<:config:1533844853048209489>',
-        'community': '<:de2de296_a511_40fa_953f_01365b9a:1561256778405257370>',
-        'counting': '<:f4363980_d43f_47b9_81db_0fe0a9a4:1561256353094172692>',
-        'economy': '<:d908aaba_8825_41ee_bc4c_ad871ad0:1561256682376400919>',
-        'coins': '<:d908aaba_8825_41ee_bc4c_ad871ad0:1561256682376400919>',
-        'utilities': '<:pencil:1523770653528817835>',
-        'black_dot': '<a:black_dot:1544740123403620422>',
-        'ai': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
-        'stock': GLOBAL_STOCK_ICON,
-        'stocks': GLOBAL_STOCK_ICON,
-        'finance': MARKET_CAP_ICON,
-        'nifty': MARKET_CAP_ICON,
-        'chess': CHESS_ICON,
-        'roleplay': ROLEPLAY_MATRIX_ICON,
-        'rp': ROLEPLAY_MATRIX_ICON,
-        'arcade': ARCADE_CASINO_ICON,
-        'casino': ARCADE_CASINO_ICON,
-        'soundboard': SOUNDBOARD_RADIO_ICON,
-        'sfx': SOUNDBOARD_RADIO_ICON,
-        'radio': SOUNDBOARD_RADIO_ICON,
-        'meme': '<:pencil:1523770653528817835>',
-        'wiretap': '<a:uptime:1552608831060844575>',
-        'persona': '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
-        'home': HOME_BEAT_EMOJI
-      };
-      return customEmojiFallback[name] || fallback;
-    };
+function buildHeadingLine(title) {
+  if (Math.random() < 0.35) {
+    return `# ${NINJA_BULLET} ${title} ${NINJA_BULLET_RTL}`;
+  }
+  return `# ${getRandomHeadingGlyph()} ${title}`;
+}
 
-    let rawComponents = [];
+function resolveModuleEmoji(client, name, fallback = BULLET_EMOJI) {
+  const designatedCustomEmojis = {
+    ai: '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
+    aiguide: '<:1dd48b63_d55f_467f_bc5c_04df55c7:1561262243352412221>',
+    counting: '<:f4363980_d43f_47b9_81db_0fe0a9a4:1561256353094172692>',
+    community: '<:de2de296_a511_40fa_953f_01365b9a:1561256778405257370>',
+    economy: '<:d908aaba_8825_41ee_bc4c_ad871ad0:1561256682376400919>',
+    coins: '<:d908aaba_8825_41ee_bc4c_ad871ad0:1561256682376400919>',
+    finance: MARKET_CAP_ICON,
+    nifty: MARKET_CAP_ICON,
+    indianmkts: MARKET_CAP_ICON,
+    stock: GLOBAL_STOCK_ICON,
+    stocks: GLOBAL_STOCK_ICON,
+    globalstock: GLOBAL_STOCK_ICON,
+    chess: CHESS_ICON,
+    roleplay: ROLEPLAY_MATRIX_ICON,
+    rp: ROLEPLAY_MATRIX_ICON,
+    arcade: ARCADE_CASINO_ICON,
+    casino: ARCADE_CASINO_ICON,
+    soundboard: SOUNDBOARD_RADIO_ICON,
+    radio: SOUNDBOARD_RADIO_ICON,
+    sfx: SOUNDBOARD_RADIO_ICON
+  };
+  if (designatedCustomEmojis[name]) return designatedCustomEmojis[name];
 
-    if (moduleId === 'home') {
-      let topText = `# Hey !!! , I am <@${botId}> ,\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Welcome to Athena Prime — Built for unbypassable security and server management! Explore all modules in the directory below:**\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Athena Ownership Clearance Model:**\n`;
-      topText += `> -# Commands operate strictly on: **Bot Owner** > **Server Owner** > **Extra Owner** (\`${prefix}extraowner\`) > **Public**.\n`;
-      topText += `> -# Native Discord \`Administrator\` permissions do NOT grant access to management commands. Only the **Server Owner** and designated **Extra Owners** can configure the server.\n\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Prefix Configuration:** Use <@${botId}> \`${prefix}prefix <custom_prefix>\` to set your custom prefix.\n`;
-      topText += `> <a:z_arrow_pink1:1523082728004653138> **Command Explorer:** Type \`${prefix}help <command>\` for detailed syntax and options on any specific command!`;
+  const nameMap = { mod: 'moderation', mass: 'moderation', giveaway: 'giveaways', utilities: 'utility' };
+  const searchName = nameMap[name] || name;
+  const cacheObj = client?.emojis?.cache;
+  const cachedEmoji = typeof cacheObj?.find === 'function'
+    ? cacheObj.find((emoji) => emoji.name === searchName || emoji.name === name)
+    : null;
+  if (cachedEmoji) return `<${cachedEmoji.animated ? 'a' : ''}:${cachedEmoji.name}:${cachedEmoji.id}>`;
 
-      rawComponents.push({ type: 10, content: topText });
-      rawComponents.push({ type: 14, divider: true });
+  const customEmojiFallback = {
+    security: '<:security_and_firewall:1523672289500069940>',
+    filters: '<:config:1533844853048209489>',
+    quarantine: '<:off:1533844858983157851>',
+    whitelist: UPTIME_EMOJI,
+    mod: '<:cross_red:1533860128015519895>',
+    mass: '<:cross_red:1533860128015519895>',
+    tickets: '<:139707ticket:1533859896620089485>',
+    leveling: '<a:trophy:1533859922599481577>',
+    giveaway: '<a:giveaway:1533844904604864603>',
+    welcome: '<a:z_arrow_pink1:1523082728004653138>',
+    voice: '<:music:1528159649780732046>',
+    tracking: UPTIME_EMOJI,
+    config: '<:config:1533844853048209489>',
+    utilities: '<:pencil:1523770653528817835>',
+    home: HOME_BEAT_EMOJI
+  };
+  return customEmojiFallback[name] || fallback;
+}
 
-      const categories = [
-        { name: 'SECURITY & ACCESS CONTROL', icon: '', catName: 'SECURITY & ACCESS CONTROL' },
-        { name: 'SERVER MANAGEMENT', icon: '', catName: 'SERVER MANAGEMENT' },
-        { name: 'ENTERTAINMENT & ARCADE', icon: '', catName: 'ENTERTAINMENT & ARCADE' },
-        { name: 'STOCK & MARKET INTELLIGENCE', icon: '', catName: 'STOCK & MARKET INTELLIGENCE' },
-        { name: 'AI & SYSTEM INTELLIGENCE', icon: '', catName: 'AI & SYSTEM INTELLIGENCE' },
-        { name: 'COMMUNITY & ENGAGEMENT', icon: '', catName: 'COMMUNITY & ENGAGEMENT' },
-        { name: 'VOICE & MEDIA', icon: '', catName: 'VOICE & MEDIA' },
-        { name: 'UTILITIES & INTEGRATIONS', icon: '', catName: 'UTILITIES & INTEGRATIONS' }
-      ];
+export function buildHelpContainer(client, guildId, moduleId = 'home', options = {}) {
+  const config = db.getGuildConfig(guildId) || {};
+  const prefix = config.prefix || '!';
+  const accentHex = config.accentColor || '#00e5ff';
+  const parsedHex = parseInt(String(accentHex).replace('#', ''), 16);
+  const accentColorInt = Number.isFinite(parsedHex) ? parsedHex : 0x00E5FF;
+  const version = CHANGELOG_ENTRIES[0]?.version || 'v4.0.15';
 
-      const bullet = getEmoji('black_dot', '<a:black_dot:1544740123403620422>');
-      
-      let grid = '';
-      for (const cat of categories) {
-         grid += `### ${cat.name}\n`;
-         const mods = helpModules.filter(m => m.category === cat.catName);
-         
-         let rowStr = '';
-         for (let i = 0; i < mods.length; i++) {
-            const m = mods[i];
-            const e = getEmoji(m.emoji, '<a:uptime:1552608831060844575>');
-            
-            if (i % 2 === 0) {
-                rowStr += `> ${bullet} ${e} **${m.shortLabel}**`;
-            } else {
-                rowStr += `${bullet} ${e} **${m.shortLabel}**`;
-            }
-            
-            if (i % 2 === 1 || i === mods.length - 1) {
-                grid += rowStr + '\n';
-                rowStr = '';
-            } else {
-                rowStr += ' \u2800\u2800 ';
-            }
-         }
-         grid += '\n';
-      }
-      
-      rawComponents.push({ type: 10, content: grid.trim() });
-      rawComponents.push({ type: 14, divider: true });
+  const guild = guildId ? client?.guilds?.cache?.get(guildId) || null : null;
+  const botId = client?.user?.id || '1347071663182676059';
+  const botLink = formatUserLink(client?.user || { id: botId, username: 'Athena Prime' }, guild);
+  const avatarUrl =
+    guild?.members?.me?.displayAvatarURL?.({ extension: 'png', size: 128 }) ||
+    client?.user?.displayAvatarURL?.({ extension: 'png', size: 128 }) ||
+    null;
 
+  const rawComponents = [];
+
+  if (moduleId === 'home') {
+    const headerContent =
+      `${buildHeadingLine('Athena Prime Command Matrix')}\n` +
+      `-# ${UPTIME_EMOJI} **System:** ${botLink} · **Prefix:** \`${prefix}\` · **Modules:** \`${helpModules.length}\` · **Release:** \`${version}\``;
+
+    if (avatarUrl) {
+      rawComponents.push({
+        type: 9,
+        components: [{ type: 10, content: headerContent }],
+        accessory: { type: 11, media: { url: avatarUrl } }
+      });
     } else {
-      const mod = helpModules.find(m => m.id === moduleId || (moduleId === 'defense' && m.id === 'security'));
-      if (mod) {
-        let currentChunk = `# ${NINJA_BULLET} ${mod.label.toUpperCase()} ${NINJA_BULLET_RTL}`;
-        
-        for (const cmd of mod.commands) {
-          if (cmd === '') {
-            if (currentChunk.trim().length > 0) {
-              rawComponents.push({ type: 10, content: currentChunk.trim() });
-            }
-            rawComponents.push({ type: 14, divider: true });
-            currentChunk = '';
-            continue;
-          }
-          
-          let formatted = cmd.replace(/!/g, prefix);
-          let line = '';
-          if (formatted.startsWith('-#')) {
-            line = formatted
-              .replace(/__\*\*([^*_]+)\*\*__/g, '**__$1__**')
-              .replace(/\*\*(?!__)(.*?)(?<!__)\*\*/g, '**__$1__**');
-          } else if (
-            formatted.startsWith('**') ||
-            formatted.startsWith('Step ') ||
-            formatted.startsWith('  -') ||
-            formatted.startsWith('- ') ||
-            formatted.startsWith('•') ||
-            formatted.startsWith('  •') ||
-            /^\s*\d+\./.test(formatted)
-          ) {
-            let cleaned = formatted.replace(/^(?:[-•>]|\*(?!\*))\s*/, '').trim();
-            let underlined = cleaned
-              .replace(/__\*\*([^*_]+)\*\*__/g, '**__$1__**')
-              .replace(/\*\*(?!__)(.*?)(?<!__)\*\*/g, '**__$1__**');
-            line = `-# ${BULLET_EMOJI} ${underlined}`;
-          } else {
-            line = `> **${formatted}**`;
-          }
-
-          if (currentChunk.length + line.length + 4 > 1900) {
-            if (currentChunk.trim().length > 0) {
-              rawComponents.push({ type: 10, content: currentChunk.trim() });
-            }
-            currentChunk = line;
-          } else {
-            currentChunk += (currentChunk ? '\n\n' : '') + line;
-          }
-        }
-
-        if (currentChunk.trim().length > 0) {
-          rawComponents.push({ type: 10, content: currentChunk.trim() });
-        }
-
-        rawComponents.push({ type: 14, divider: true });
-      }
+      rawComponents.push({ type: 10, content: headerContent });
     }
 
-    const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId('help_module_select')
-      .setPlaceholder('Click to view modules');
+    rawComponents.push({ type: 14, divider: true });
+    rawComponents.push({
+      type: 10,
+      content:
+        `-# **Athena Ownership Clearance Model**\n` +
+        `> -# ${BULLET_EMOJI} **Hierarchy:** **Bot Owner** > **Server Owner** > **Extra Owner** (\`${prefix}extraowner\`) > **Public**\n` +
+        `> -# ${BULLET_EMOJI} **Strict Zero-Trust:** Native Discord \`Administrator\` grants **no** management bypass — only **Server Owner** & **Extra Owners** control core configuration.\n` +
+        `> -# ${BULLET_EMOJI} **Prefix & Explorer:** \`${prefix}prefix <new>\` · \`${prefix}help <command>\` · \`${prefix}help explain\``
+    });
+    rawComponents.push({ type: 14, divider: true });
 
-    selectMenu.addOptions([
-      {
-        label: 'Home Menu',
-        description: 'Return to the main help menu',
-        value: 'home',
-        default: moduleId === 'home'
-      }
-    ]);
-
-    for (const mod of helpModules.slice(0, 24)) {
-      const opt = {
-        label: mod.label,
-        value: mod.id,
-        default: moduleId === mod.id
-      };
-      const rawEmoji = getEmoji(mod.emoji);
-      if (rawEmoji) {
-        const match = rawEmoji.match(/^<(a)?:([a-zA-Z0-9_]+):(\d+)>$/);
-        if (match) {
-          opt.emoji = { id: match[3], name: match[2], animated: !!match[1] };
-        }
-      }
-      selectMenu.addOptions([opt]);
+    const domainLines = [];
+    for (const grp of HELP_DOMAIN_GROUPS) {
+      const mods = grp.moduleIds
+        .map((id) => helpModules.find((m) => m.id === id))
+        .filter(Boolean);
+      const chips = mods
+        .map((m) => `${resolveModuleEmoji(client, m.emoji, BULLET_EMOJI)} **${m.shortLabel}**`)
+        .join('  ·  ');
+      domainLines.push(`-# **${grp.title}**\n> -# ${BULLET_EMOJI} ${chips}`);
     }
 
-    const btnPrev = new ButtonBuilder().setCustomId(`help_prev_${moduleId}`).setEmoji(NAV_EMOJI_IDS.PREV).setStyle(ButtonStyle.Secondary);
-    const btnNext = new ButtonBuilder().setCustomId(`help_next_${moduleId}`).setEmoji(NAV_EMOJI_IDS.NEXT).setStyle(ButtonStyle.Secondary);
-    const btnRefresh = new ButtonBuilder().setCustomId('help_home').setEmoji(NAV_EMOJI_IDS.HOME).setStyle(ButtonStyle.Secondary);
-    const btnDelete = new ButtonBuilder().setCustomId('help_delete').setEmoji(NAV_EMOJI_IDS.DELETE).setStyle(ButtonStyle.Secondary);
-    const btnExplain = new ButtonBuilder()
-      .setCustomId(moduleId === 'home' ? 'arch_home' : `arch_topic_${moduleId}`)
-      .setLabel('Explain Architecture')
-      .setStyle(ButtonStyle.Secondary);
+    rawComponents.push({ type: 10, content: domainLines.join('\n\n') });
 
-    const row1 = new ActionRowBuilder().addComponents(selectMenu);
-    const row2 = new ActionRowBuilder().addComponents(btnPrev, btnNext, btnRefresh, btnExplain, btnDelete);
+    if (options.includeBannerAttachment) {
+      rawComponents.push({ type: 14, divider: true });
+      rawComponents.push({
+        type: 12,
+        items: [{ media: { url: 'attachment://athena_command_matrix.png' } }]
+      });
+    }
+  } else {
+    const normalizedId = moduleId === 'defense' ? 'security' : moduleId;
+    const modIdx = helpModules.findIndex((m) => m.id === normalizedId);
+    const mod = modIdx !== -1 ? helpModules[modIdx] : null;
 
-    const HELP_GIF = 'https://cdn.discordapp.com/attachments/1534869224277807175/1542472732325978234/ATHENA-8-27-2026.png?ex=6a915b2d&is=6a9009ad&hm=0f55bae0c0bec27649bc03e6d6be23ad16f2eb9337efdb8b5793b2d74cad89ff&';
+    if (mod) {
+      const modHeader =
+        `${buildHeadingLine(mod.label.toUpperCase())}\n` +
+        `-# ${UPTIME_EMOJI} **Module ${modIdx + 1}/${helpModules.length}** · **Prefix:** \`${prefix}\``;
+      rawComponents.push({ type: 10, content: modHeader });
+      rawComponents.push({ type: 14, divider: true });
 
-    rawComponents.push({ type: 12, items: [{ media: { url: HELP_GIF } }] });
-    rawComponents.push({ type: 14, divider: true });
-    rawComponents.push(row1.toJSON());
-    rawComponents.push({ type: 14, divider: true });
-    rawComponents.push(row2.toJSON());
-    rawComponents.push({ type: 14, divider: true });
-    rawComponents.push({ type: 10, content: '-# **Athena Prime Unbypassable Security !!**' });
+      let currentChunk = '';
+      for (const cmd of mod.commands) {
+        if (cmd === '') {
+          if (currentChunk.trim().length > 0) {
+            rawComponents.push({ type: 10, content: currentChunk.trim() });
+          }
+          rawComponents.push({ type: 14, divider: true });
+          currentChunk = '';
+          continue;
+        }
 
-    const rawContainer = {
-      type: 17,
-      components: rawComponents
+        const formatted = stripForcedUnderlines(cmd.replace(/!/g, prefix));
+        let line = '';
+
+        if (formatted.startsWith('-#')) {
+          const cleanSub = formatted
+            .replace(/^-#[>\s]*/, '')
+            .replaceAll('<a:target_blink:1565667466984554588>', BULLET_EMOJI)
+            .replace(/^•\s*/, '')
+            .trim();
+          const hasBulletPrefix = cleanSub.startsWith(BULLET_EMOJI);
+          line = hasBulletPrefix ? `> -# ${cleanSub}` : `-# ${cleanSub.replace(/:$/, '')}`;
+        } else if (
+          formatted.startsWith('**') ||
+          formatted.startsWith('Step ') ||
+          formatted.startsWith('  -') ||
+          formatted.startsWith('- ') ||
+          formatted.startsWith('•') ||
+          formatted.startsWith('  •') ||
+          /^\s*\d+\./.test(formatted)
+        ) {
+          const cleaned = formatted.replace(/^(?:[-•>]|\*(?!\*))\s*/, '').trim();
+          line = `> -# ${BULLET_EMOJI} ${cleaned}`;
+        } else {
+          line = `> -# ${formatted}`;
+        }
+
+        if (currentChunk.length + line.length + 2 > 1900) {
+          if (currentChunk.trim().length > 0) {
+            rawComponents.push({ type: 10, content: currentChunk.trim() });
+          }
+          currentChunk = line;
+        } else {
+          currentChunk += (currentChunk ? '\n' : '') + line;
+        }
+      }
+
+      if (currentChunk.trim().length > 0) {
+        rawComponents.push({ type: 10, content: currentChunk.trim() });
+      }
+    }
+  }
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId('help_module_select')
+    .setPlaceholder('Select a command module...');
+
+  selectMenu.addOptions([
+    {
+      label: 'Home Menu',
+      description: 'Return to the Athena Prime Command Matrix overview',
+      value: 'home',
+      default: moduleId === 'home'
+    }
+  ]);
+
+  for (const mod of helpModules.slice(0, 24)) {
+    const opt = {
+      label: mod.label,
+      value: mod.id,
+      default: moduleId === mod.id
     };
+    const rawEmoji = resolveModuleEmoji(client, mod.emoji, '');
+    if (rawEmoji) {
+      const match = rawEmoji.match(/^<(a)?:([a-zA-Z0-9_]+):(\d+)>$/);
+      if (match) {
+        opt.emoji = { id: match[3], name: match[2], animated: !!match[1] };
+      }
+    }
+    selectMenu.addOptions([opt]);
+  }
 
-    return cv2.sanitizeCV2Payload(rawContainer);
+  const btnPrev = new ButtonBuilder().setCustomId(`help_prev_${moduleId}`).setEmoji(NAV_EMOJI_IDS.PREV).setStyle(ButtonStyle.Secondary);
+  const btnNext = new ButtonBuilder().setCustomId(`help_next_${moduleId}`).setEmoji(NAV_EMOJI_IDS.NEXT).setStyle(ButtonStyle.Secondary);
+  const btnHome = new ButtonBuilder().setCustomId('help_home').setEmoji(NAV_EMOJI_IDS.HOME).setStyle(ButtonStyle.Secondary);
+  const btnExplain = new ButtonBuilder()
+    .setCustomId(moduleId === 'home' ? 'arch_home' : `arch_topic_${moduleId}`)
+    .setLabel('Explain Architecture')
+    .setStyle(ButtonStyle.Secondary);
+  const btnDelete = new ButtonBuilder().setCustomId('help_delete').setEmoji(NAV_EMOJI_IDS.DELETE).setStyle(ButtonStyle.Secondary);
+
+  const row1 = new ActionRowBuilder().addComponents(selectMenu);
+  const row2 = new ActionRowBuilder().addComponents(btnPrev, btnNext, btnHome, btnExplain, btnDelete);
+
+  rawComponents.push({ type: 14, divider: true });
+  rawComponents.push(row1.toJSON());
+  rawComponents.push(row2.toJSON());
+  rawComponents.push({ type: 14, divider: true });
+  rawComponents.push({
+    type: 10,
+    content: `-# **Athena Prime ${version} · Zero-Bypass Command Matrix**`
+  });
+
+  return cv2.sanitizeCV2Payload({
+    type: 17,
+    accent_color: accentColorInt,
+    components: rawComponents
+  });
+}
+
+/**
+ * Builds an async CV2 !help payload with cached off-thread Obsidian Command Matrix banner on Home view.
+ */
+export async function buildHelpPayload(client, guildId, moduleId = 'home') {
+  const config = db.getGuildConfig(guildId) || {};
+  const prefix = config.prefix || '!';
+  const accentHex = config.accentColor || '#00e5ff';
+  const version = CHANGELOG_ENTRIES[0]?.version || 'v4.0.15';
+
+  if (moduleId === 'home') {
+    const bannerBuf = await generateHelpBanner(
+      { prefix, moduleCount: helpModules.length, version },
+      accentHex
+    ).catch(() => null);
+
+    if (bannerBuf && bannerBuf.length > 0) {
+      const container = buildHelpContainer(client, guildId, 'home', { includeBannerAttachment: true });
+      return {
+        components: [container],
+        files: [new AttachmentBuilder(bannerBuf, { name: 'athena_command_matrix.png' })],
+        flags: MessageFlags.IsComponentsV2
+      };
+    }
+  }
+
+  const container = buildHelpContainer(client, guildId, moduleId, { includeBannerAttachment: false });
+  return {
+    components: [container],
+    files: [],
+    attachments: [],
+    flags: MessageFlags.IsComponentsV2
+  };
 }
 
 /**
@@ -3980,8 +4024,8 @@ export async function handleHelpInteraction(interaction) {
       targetModuleId = currentIdx === -1 ? 'home' : helpModules[currentIdx].id;
     }
 
-    const newComponents = cv2.sanitizeCV2Payload(buildHelpContainer(interaction.client, interaction.guild?.id, targetModuleId));
-    await interaction.update({ components: [newComponents], flags: MessageFlags.IsComponentsV2 }).catch(async (err) => {
+    const payload = await buildHelpPayload(interaction.client, interaction.guild?.id, targetModuleId);
+    await interaction.update(payload).catch(async (err) => {
       if (err.code === 10062) return;
       console.warn('[Help] Update failed:', err.message);
       if (!interaction.replied && !interaction.deferred) {
