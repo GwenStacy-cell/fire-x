@@ -444,15 +444,20 @@ export default {
           const tiered = db.getTieredJtcConfig(guildId);
           const jtcCfg = db.getJtcConfig(guildId);
           if (!tiered && !jtcCfg?.lobbyChannelId && !jtcCfg?.secondaryLobbyChannelId) continue;
-          await syncJtcLobbyStatuses(guild, { delayMs: 280 }).catch(() => null);
+          const res = await syncJtcLobbyStatuses(guild, { delayMs: 280 }).catch(() => null);
+          if (res && res.failed > 0) {
+            console.warn(`[JTC Sync] Guild ${guild.name} (${guildId}): synced ${res.updated}/${res.total} lobbies (${res.failed} failed)`);
+          }
           await new Promise((r) => setTimeout(r, 350));
         }
-      } catch {}
+      } catch (err) {
+        console.warn('[JTC Sync] Watchdog error:', err?.message || err);
+      }
     };
 
-    const jtcInitTimer = setTimeout(runJtcLobbyStatusWatchdog, 20_000);
+    const jtcInitTimer = setTimeout(runJtcLobbyStatusWatchdog, 3_000);
     jtcInitTimer.unref?.();
-    const jtcWatchdogInterval = setInterval(runJtcLobbyStatusWatchdog, 10 * 60 * 1000);
+    const jtcWatchdogInterval = setInterval(runJtcLobbyStatusWatchdog, 5 * 60 * 1000);
     jtcWatchdogInterval.unref?.();
 
     // Sync slash commands globally

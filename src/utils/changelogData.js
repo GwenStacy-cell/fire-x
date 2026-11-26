@@ -16,6 +16,31 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '26 November 2026',
+    version: 'v4.0.13',
+    headline: 'Tiered JTC Boot-Time Auto-Reconciliation & Rapid 3s VC Status Restore',
+    summary: 'Fixed legacy 4-tier MongoDB hydration overriding Squad [4] with Unlimited and skipping newly added Unlimited [Free] lobbies, accelerated post-boot JTC VC status sync to 3s (with 5-minute watchdog), and added permanent error logging.',
+    whatsNew: [],
+    improvements: [
+      {
+        title: 'Strict DB-ID & UserLimit Tiered Lobby Reconciliation (reconcileTieredJtcConfig)',
+        desc: 'Detects and repairs stale 4-tier database/Mongo mappings where Squad [4] (userLimit 4) was bound under unlimited and binds missing generator lobbies inside the DB-tracked category without using channel name matching.'
+      },
+      {
+        title: 'Faster 3-Second Startup Restore & 5-Minute Watchdog',
+        desc: 'Reduced initial JTC lobby status restore delay from 20s to 3s on startup and tightened periodic JTC lobby VC status refresh to every 5 minutes.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Resolved Squad [4] / Unlimited [Free] Status Mismatch After Mongo Hydration',
+        desc: 'Prevents stale MongoDB channel_setups entries from mislabeling Squad [4] as Unlimited VC or leaving Unlimited [Free] without its animated status.'
+      }
+    ],
+    tip: 'If Solo/Duo ever lose their status on an already-running instance, restart or run !jtctiers sync once to heal both Discord and MongoDB.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '26 November 2026',
     version: 'v4.0.12',
     headline: 'JTC Tier VC Status Persistence Fix & !va Off-Thread Telemetry Matrix',
     summary: 'Eliminated missing Solo/Duo/Tier Join-to-Create voice channel statuses across restarts and empty-room transitions, protected JTC/Stats VCs from AutoVCStatus sweeps, and redesigned !va with an Athena Telemetry Matrix CV2 layout and worker-offloaded 24h Canvas chart.',

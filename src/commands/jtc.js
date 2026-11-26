@@ -45,11 +45,11 @@ function getAccent(guild) {
 }
 
 const TIER_STATUS_DEFINITIONS = [
-  { key: 'solo', label: 'Solo [1]', status: `${PACHA_ARROW} Join 2 Create Solo VC` },
-  { key: 'duo', label: 'Duo [2]', status: `${PACHA_ARROW} Join 2 Create Duo VC` },
-  { key: 'trio', label: 'Trio [3]', status: `${PACHA_ARROW} Join 2 Create Trio VC` },
-  { key: 'squad', label: 'Squad [4]', status: `${PACHA_ARROW} Join 2 Create Squad VC` },
-  { key: 'unlimited', label: 'Unlimited [Free]', status: `${PACHA_ARROW} Join 2 Create Unlimited VC` }
+  { key: 'solo', userLimit: 1, label: 'Solo [1]', status: `${PACHA_ARROW} Join 2 Create Solo VC` },
+  { key: 'duo', userLimit: 2, label: 'Duo [2]', status: `${PACHA_ARROW} Join 2 Create Duo VC` },
+  { key: 'trio', userLimit: 3, label: 'Trio [3]', status: `${PACHA_ARROW} Join 2 Create Trio VC` },
+  { key: 'squad', userLimit: 4, label: 'Squad [4]', status: `${PACHA_ARROW} Join 2 Create Squad VC` },
+  { key: 'unlimited', userLimit: 0, label: 'Unlimited [Free]', status: `${PACHA_ARROW} Join 2 Create Unlimited VC` }
 ];
 
 const STANDARD_JTC_LOBBY_STATUS = `${PACHA_ARROW} Join 2 Create VC`;
@@ -76,6 +76,7 @@ export async function setVoiceChannelStatus(client, channelId, status, maxAttemp
       const apiCode = err?.code ?? err?.rawError?.code;
       // Do not retry permanent permission or missing-channel errors
       if (apiCode === 10003 || apiCode === 50013 || apiCode === 50001 || httpStatus === 403 || httpStatus === 404) {
+        console.warn(`[JTC Voice Status] Permanent failure on channel ${channelId} (status=${httpStatus ?? 'n/a'}, code=${apiCode ?? 'n/a'}):`, err.message);
         return false;
       }
 
@@ -115,6 +116,82 @@ export function getExpectedJtcLobbyStatus(guildId, channelId) {
 }
 
 /**
+ * Reconciles legacy/drifted DB tiered channel mappings strictly via DB categoryId + channel userLimit
+ * (zero hardcoded name/emoji matching) so 4-tier-upgraded or Mongo-hydrated configs map Squad [4] & Unlimited [Free] accurately.
+ */
+export async function reconcileTieredJtcConfig(guild, tieredCfg) {
+  if (!guild?.channels || !tieredCfg?.channels) return tieredCfg?.channels || null;
+
+  const orig = tieredCfg.channels;
+  const next = {
+    solo: orig.solo || null,
+    duo: orig.duo || null,
+    trio: orig.trio || null,
+    squad: orig.squad || null,
+    unlimited: orig.unlimited || null
+  };
+
+  let changed = false;
+
+  // 1. Check already-recorded DB channel IDs against their Discord userLimit (fixes legacy unlimited -> userLimit:4 collision)
+  for (const def of TIER_STATUS_DEFINITIONS) {
+    const chId = next[def.key];
+    if (!chId) continue;
+    const ch = guild.channels.cache.get(chId) || await guild.channels.fetch(chId).catch(() => null);
+    if (!ch || typeof ch.isVoiceBased !== 'function' || !ch.isVoiceBased() || typeof ch.userLimit !== 'number') continue;
+
+    if (ch.userLimit !== def.userLimit) {
+      const actualDef = TIER_STATUS_DEFINITIONS.find((d) => d.userLimit === ch.userLimit);
+      if (actualDef && !next[actualDef.key]) {
+        next[actualDef.key] = chId;
+        next[def.key] = null;
+        changed = true;
+      }
+    }
+  }
+
+  // 2. Fill any empty tier slot from non-temp generator voice channels inside the DB-tracked tiered categoryId
+  const missingDefs = TIER_STATUS_DEFINITIONS.filter((d) => !next[d.key]);
+  if (missingDefs.length > 0 && tieredCfg.categoryId) {
+    if (typeof guild.channels.fetch === 'function') {
+      await guild.channels.fetch().catch(() => null);
+    }
+    const usedIds = new Set(Object.values(next).filter(Boolean));
+    const catVoices = Array.from(guild.channels.cache?.values?.() || [])
+      .filter((ch) =>
+        ch &&
+        ch.parentId === tieredCfg.categoryId &&
+        typeof ch.isVoiceBased === 'function' &&
+        ch.isVoiceBased() &&
+        typeof ch.userLimit === 'number' &&
+        !usedIds.has(ch.id) &&
+        !db.getJtcChannel(ch.id)
+      )
+      .sort((a, b) => (BigInt(a.id || 0) < BigInt(b.id || 0) ? -1 : 1));
+
+    for (const def of missingDefs) {
+      const match = catVoices.find((ch) => ch.userLimit === def.userLimit && !usedIds.has(ch.id));
+      if (match) {
+        next[def.key] = match.id;
+        usedIds.add(match.id);
+        changed = true;
+      }
+    }
+  }
+
+  if (changed) {
+    db.setTieredJtcConfig(guild.id, {
+      categoryId: tieredCfg.categoryId,
+      interfaceChannelId: tieredCfg.interfaceChannelId,
+      interfaceMessageId: tieredCfg.interfaceMessageId,
+      channels: next
+    });
+  }
+
+  return next;
+}
+
+/**
  * Applies/restores Voice Channel Statuses across all DB-tracked Tiered & Standard JTC lobbies.
  */
 export async function syncJtcLobbyStatuses(guild, options = {}) {
@@ -123,7 +200,13 @@ export async function syncJtcLobbyStatuses(guild, options = {}) {
   const delayMs = typeof options.delayMs === 'number' ? options.delayMs : 280;
   const targets = [];
 
-  const tieredChannels = options.tieredChannels || db.getTieredJtcConfig(guild.id)?.channels;
+  let tieredChannels = options.tieredChannels;
+  if (!tieredChannels) {
+    const tieredCfg = db.getTieredJtcConfig(guild.id);
+    if (tieredCfg) {
+      tieredChannels = await reconcileTieredJtcConfig(guild, tieredCfg);
+    }
+  }
   if (tieredChannels) {
     for (const def of TIER_STATUS_DEFINITIONS) {
       const chId = tieredChannels[def.key];
