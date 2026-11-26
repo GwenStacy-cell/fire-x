@@ -161,6 +161,12 @@ export const commands = [
         const cfg = db.getGuildConfig(guild.id);
         const currentState = Boolean(cfg.dualKey?.enabled);
         const newState = sub === 'toggle' ? !currentState : (sub === 'on');
+        if (currentState && !newState && !isBotOwnerSync(message.author.id) && guild.ownerId !== message.author.id) {
+          return message.reply(cv2.danger(
+            `Server Owner Clearance Required | ${WRONG_EMOJI}`,
+            'Only the **Server Owner** or **Bot Owner** can disarm an active Dual-Key Protocol.'
+          )).catch(() => null);
+        }
         db.updateDualKeyConfig(guild.id, { enabled: newState });
 
         return message.reply(cv2.success(
@@ -190,12 +196,12 @@ export const commands = [
           )).catch(() => null);
         }
 
-        db.removePendingDualKey(actionId);
+        db.approvePendingDualKey(actionId, message.author.id);
 
         return message.reply(cv2.success(
           `Nuclear Action Authorized | ${TICK_EMOJI}`,
-          `> -# <@${message.author.id}> has provided secondary clearance for \`!${action.commandName}\`.\n` +
-          `> -# Initiator <@${action.initiatorId}> may now execute the command, or re-run the action.`
+          `> -# Secondary clearance granted for \`!${action.commandName}\` (one-time grant active for 5 minutes).\n` +
+          `> -# The initiating commander may now re-run \`!${action.commandName}\` to execute immediately.`
         )).catch(() => null);
       }
 

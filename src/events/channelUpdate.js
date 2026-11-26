@@ -8,7 +8,6 @@ export default {
   name: 'channelUpdate',
   async execute(oldChannel, newChannel) {
     if (!newChannel.guild) return;
-    if (db.isModModeActive(newChannel.guild.id)) return;
 
     // ⚡ Ignore update events fired by Athena's own restoration, JTC rooms, or JTC infrastructure
     if (isChannelRestoring(newChannel.id) || db.isJtcChannel(newChannel.id) || db.isJtcInfrastructure(newChannel.guild.id, newChannel.id)) return;

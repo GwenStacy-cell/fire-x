@@ -195,26 +195,34 @@ export async function collectLiveTelemetry(guild, client) {
 
   // 2. REST API Roundtrip Benchmark
   const restStart = process.hrtime.bigint();
-  let restMs = 210;
+  let restMs = null;
   try {
     if (client?.rest && client?.user?.id) {
       await client.rest.get(Routes.user(client.user.id));
       restMs = Math.max(1, Math.round(Number(process.hrtime.bigint() - restStart) / 1e6));
     }
   } catch {
-    restMs = Math.floor(190 + Math.random() * 35);
+    restMs = null;
   }
 
   // 3. Database High-Resolution Latency Benchmark
   const dbStart = process.hrtime.bigint();
   db.getGuildConfig(guild?.id || '0');
   const dbNanos = Number(process.hrtime.bigint() - dbStart);
-  const dbReadMs = Math.max(0.08, dbNanos / 1e6).toFixed(2);
+  const dbReadMs = Math.max(0.01, dbNanos / 1e6).toFixed(2);
 
-  // 4. Redis Cache Live Micro-Benchmark
-  const rSet = (0.7 + Math.random() * 0.5).toFixed(1);
-  const rGet = (0.2 + Math.random() * 0.2).toFixed(1);
-  const rDel = (0.4 + Math.random() * 0.4).toFixed(1);
+  // 4. In-Memory Cache Live Micro-Benchmark (true nanosecond timing)
+  const benchMap = new Map();
+  const s0 = process.hrtime.bigint();
+  benchMap.set('__bench', 1);
+  const s1 = process.hrtime.bigint();
+  benchMap.get('__bench');
+  const s2 = process.hrtime.bigint();
+  benchMap.delete('__bench');
+  const s3 = process.hrtime.bigint();
+  const rSet = Math.max(0.01, Number(s1 - s0) / 1e6).toFixed(2);
+  const rGet = Math.max(0.01, Number(s2 - s1) / 1e6).toFixed(2);
+  const rDel = Math.max(0.01, Number(s3 - s2) / 1e6).toFixed(2);
 
   // 5. Event Loop Scheduling Delay (Jitter) & ELU
   const elStart = process.hrtime.bigint();
@@ -520,7 +528,7 @@ export async function collectLiveTelemetry(guild, client) {
       maxCountStreak,
       lastCloudBackupStr,
       backupChannelId,
-      lastBackupSize: '1265.5 KB (73 guilds)'
+      lastBackupSize: `${diskStats.dbJson} (${dbStats.guilds} guilds)`
     },
     security: {
       isSecured,
@@ -598,9 +606,9 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
       content:
         `### **I. High-Velocity Latencies & Speed Pipeline**\n` +
         `> -# ${BULLET_EMOJI} **Gateway WebSocket:** \`${data.wsMs}ms\` (Shard #${data.gateway.shardId} \u2022 \`${data.gateway.status}\` \u2022 Jitter: \`\u00b1${data.pingJitter}ms\`)\n` +
-        `> -# ${BULLET_EMOJI} **Discord REST API:** \`${data.restMs}ms\` HTTPS roundtrip execution\n` +
+        `> -# ${BULLET_EMOJI} **Discord REST API:** \`${data.restMs != null ? `${data.restMs}ms` : 'N/A'}\` HTTPS roundtrip execution\n` +
         `> -# ${BULLET_EMOJI} **Database Read / Write:** \`${data.dbReadMs}ms\` (Microsecond in-memory engine)\n` +
-        `> -# ${BULLET_EMOJI} **Redis Cache Throughput:** SET: \`${data.redis.set}ms\` \u2022 GET: \`${data.redis.get}ms\` \u2022 DEL: \`${data.redis.del}ms\`\n` +
+        `> -# ${BULLET_EMOJI} **In-Memory Cache Ops:** SET: \`${data.redis.set}ms\` \u2022 GET: \`${data.redis.get}ms\` \u2022 DEL: \`${data.redis.del}ms\`\n` +
         `> -# ${BULLET_EMOJI} **Event Loop Scheduling Delay:** \`${data.elLag}ms\` (Zero micro-jitter)`
     });
 
@@ -646,9 +654,10 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
   } else if (activeView === 'combat') {
     // COMBAT OPS: SINGLE-STRIKE TIMELINE, ZERO-TOLERANCE DEFENSE & SOCKET BENCHMARKS
     const cStats = data.combat || {
-      avgLatency: 11.8,
-      minLatency: 9.4,
-      maxLatency: 14.2,
+      avgLatency: null,
+      minLatency: null,
+      maxLatency: null,
+      hasLiveLatency: false,
       totalStrikes: 0,
       successfulStrikes: 0,
       failedStrikes: 0,
@@ -658,18 +667,21 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
       cachedDeletedCount: 0,
       recentStrikes: [],
       socketPool: {
-        connections: 120,
+        connections: 128,
         keepAliveTimeout: '60,000ms',
-        heartbeatDaemon: '25s (Active Heartbeat)',
+        heartbeatDaemon: '8s (Active Heartbeat)',
         dnsRouting: 'IPv4 First (dns.setDefaultResultOrder)',
         payloadPrecompiled: '{"delete_message_seconds":0}'
       }
     };
 
-    const avg = cStats.avgLatency || 11.8;
-    const tAck = `${avg.toFixed(1)}ms`;
-    const tRej = `${(avg + 0.2).toFixed(1)}ms`;
-    const tRest = `${(avg + 0.7).toFixed(1)}ms`;
+    const hasStrikes = Boolean(cStats.totalStrikes > 0 && typeof cStats.avgLatency === 'number');
+    const baselineEstimate = typeof data.restMs === 'number' ? data.restMs : (typeof data.wsMs === 'number' ? data.wsMs : 12);
+    const avg = hasStrikes ? cStats.avgLatency : baselineEstimate;
+    const prefixEst = hasStrikes ? '' : '~';
+    const tAck = `${prefixEst}${avg.toFixed(1)}ms`;
+    const tRej = `${prefixEst}${(avg + 0.2).toFixed(1)}ms`;
+    const tRest = `${prefixEst}${(avg + 0.7).toFixed(1)}ms`;
 
     const strikeTimelineText = 
 `\`\`\`asciidoc
@@ -722,11 +734,17 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
 
     containerComponents.push({ type: 14, divider: true });
 
+    const rawTls = cStats.socketPool?.rawTlsLane;
+    const rawTlsSummary = rawTls
+      ? `${rawTls.warmIdleSockets}/${rawTls.totalSockets} pre-connected TCP_NODELAY TLS sockets (${rawTls.strikesServed} strikes served)`
+      : '8 pre-connected TCP_NODELAY TLS sockets';
+
     containerComponents.push({
       type: 10,
       content:
         `### **III. Combat Socket Engine & Bandwidth Prioritization**\n` +
-        `> -# ${BULLET_EMOJI} **Undici TLS Socket Pool:** \`${cStats.socketPool.connections} pre-warmed persistent connections\` to \`discord.com\`\n` +
+        `> -# ${BULLET_EMOJI} **Primary Raw TLS Ban Lane:** \`${rawTlsSummary}\`\n` +
+        `> -# ${BULLET_EMOJI} **Undici Fallback Pool:** \`${cStats.socketPool.connections} pre-warmed persistent connections\` to \`discord.com\`\n` +
         `> -# ${BULLET_EMOJI} **TLS Keep-Alive Heartbeat:** ${cStats.socketPool.heartbeatDaemon} (Eliminates TLS renegotiation, saves ~50ms handshake)\n` +
         `> -# ${BULLET_EMOJI} **DNS Resolution Engine:** \`${cStats.socketPool.dnsRouting}\` (Bypasses dual-stack IPv6 DNS fallback delays, saves 15-30ms)\n` +
         `> -# ${BULLET_EMOJI} **In-Flight Strike Bandwidth Priority:** \`${cStats.inFlightCount} combat locks active\` (Restorations yield API bandwidth until ban settles)\n` +
@@ -735,12 +753,16 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
 
     containerComponents.push({ type: 14, divider: true });
 
+    const benchmarkStr = hasStrikes
+      ? `Avg: \`${cStats.avgLatency}ms\` \u2022 Fastest: \`${cStats.minLatency}ms\` \u2022 Peak: \`${cStats.maxLatency}ms\``
+      : `\`Standby (0 strikes recorded this session \u2022 Armed)\``;
+
     containerComponents.push({
       type: 10,
       content:
         `### **IV. Real-Time Combat Activity & Condemned Registry**\n` +
         `> -# ${BULLET_EMOJI} **Total Hostile Bans Dispatched:** \`${cStats.totalStrikes} strikes\` (\`${cStats.successfulStrikes} neutralized\` \u2022 \`${cStats.failedStrikes} failed\`)\n` +
-        `> -# ${BULLET_EMOJI} **Socket Roundtrip Benchmark:** Avg: \`${cStats.avgLatency}ms\` \u2022 Fastest: \`${cStats.minLatency}ms\` \u2022 Peak: \`${cStats.maxLatency}ms\`\n` +
+        `> -# ${BULLET_EMOJI} **Socket Roundtrip Benchmark:** ${benchmarkStr}\n` +
         `> -# ${BULLET_EMOJI} **Actively Condemned Attackers in RAM:** \`${cStats.activeCondemned} condemned actors\` (Zero-wait bypass engaged)\n` +
         `> -# ${BULLET_EMOJI} **Restoration Pipeline Depth:** \`${cStats.restorationQueueDepth} items queued\` (\`${cStats.cachedDeletedCount} pre-cached deleted snapshots\`)\n` +
         `> -# ${BULLET_EMOJI} **Recent Combat Strike History:**\n` +
@@ -1029,7 +1051,7 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
         `### **I. Cloud Mirroring & Automated Backup Grid**\n` +
         `> -# ${BULLET_EMOJI} **Cloud Backup Engine:** Automated Discord Cloud Backup Scheduler (20m cadence)\n` +
         `> -# ${BULLET_EMOJI} **Last Cloud Backup:** ${data.analytics.lastCloudBackupStr} \u2022 Payload: \`${data.analytics.lastBackupSize}\`\n` +
-        `> -# ${BULLET_EMOJI} **Cloud Storage Channel:** <#${data.analytics.backupChannelId}> (\`#athena-db-backups\`)\n` +
+        `> -# ${BULLET_EMOJI} **Cloud Storage Channel:** \`#athena-db-backups\` (\`${data.analytics.backupChannelId}\`)\n` +
         `> -# ${BULLET_EMOJI} **In-Memory Mirroring Integrity:** Dual-Persistence WAL Checkpointed`
     });
 

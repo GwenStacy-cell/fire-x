@@ -1,4 +1,5 @@
 import { attachWiretap } from './src/utils/fastWiretap.js';
+import { initRawTlsLane } from './src/utils/rawTlsBanLane.js';
 import { checkAndInstallDependencies } from './src/autoInstall.js';
 checkAndInstallDependencies();
 import { Client, GatewayIntentBits, Partials, Collection, Options, Sweepers } from 'discord.js';
@@ -601,6 +602,7 @@ setInterval(() => {
   }
 }, 15000);
 
+initRawTlsLane(token);
 client.login(token).catch(err => {
   console.error(chalk.red.bold('\n❌ Connection Failed: Invalid token or network blockage!'));
   console.error(err);

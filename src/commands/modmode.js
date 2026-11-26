@@ -104,8 +104,8 @@ async function handleModMode(guild, moderator, action, client) {
 
     return cv2.warn(
       ' Modification Mode ACTIVE',
-      `Auto-restore of deleted channels/roles is **PAUSED** for **30 minutes**.\n\n` +
-      `During this time you can freely delete, create, and reorganise channels and roles without the bot restoring them.\n\n` +
+      `Auto-restore of deleted channels/roles is **PAUSED for authorized maintenance actors** (**${moderator}**, Server Owner, Extra Owners) for **30 minutes**.\n\n` +
+      `All unauthorized accounts or rogue bots remain under active 0ms Anti-Nuke protection and will still be banned and rolled back immediately.\n\n` +
       `**Auto-expires:** <t:${Math.floor(expiresAt / 1000)}:R>\n` +
       `Use \`/modmode stop\` to end it early.`,
       [

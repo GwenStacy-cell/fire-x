@@ -152,6 +152,8 @@ const DEFAULT_SCHEMA = {
   incidentReports: {},      // guildId -> [ { id, timestamp, type, attackerId, attackerTag, actionsAttempted, actionsBlocked, latencyMs, status, details } ]
   staffMetrics: {},         // guildId -> { userId -> { bans, kicks, warns, timeouts, purges, tickets, lastActionAt } }
   pendingDualKey: {},       // actionId -> { id, guildId, initiatorId, initiatorTag, commandName, rawArgs, createdAt, expiresAt }
+  approvedDualKeys: {},     // `${guildId}:${initiatorId}:${commandName}` -> { approvedBy, actionId, expiresAt }
+  infraSnapshots: {},       // guildId -> { lastUpdated, channels: [], roles: [] }
   burnRooms: {},            // channelId -> { channelId, guildId, creatorId, expiresAt, durationMinutes }
   roleplay: {},             // guildId -> { duoKey -> { users: [id1, id2], totalInteractions, actions: {}, firstInteractionAt, lastInteractionAt, lastAction } }
   roleplayUsers: {},        // guildId -> { userId -> { sentCount, receivedCount, actionsSent: {}, actionsReceived: {}, partners: {}, favoriteAction, customBio, lastActive } }
@@ -169,6 +171,7 @@ class Database {
     this.saveTimeout = null;
     this.isSaving = false;
     this.needsSave = false;
+    this._wlConsumedKeys = new Set();
     this.load();
 
     // Periodic lightweight background snapshot (every 15 minutes, non-blocking)
@@ -327,13 +330,22 @@ class Database {
     this.attackStateChecker = typeof fn === 'function' ? fn : null;
   }
 
-  save(deferCount = 0) {
+  save(deferCount = 0, delayMs = 3500) {
     this.needsSave = true;
-    if (this.saveTimeout) return; // Debounce already in progress
-    
-    // Debounce the save by 3.5 seconds to batch multiple rapid changes cleanly
+    if (this.saveTimeout) {
+      if (delayMs < 100 && !this.attackStateChecker?.() && !this._fastSaveRequested) {
+        clearTimeout(this.saveTimeout);
+        this.saveTimeout = null;
+      } else {
+        return; // Debounce already in progress
+      }
+    }
+    this._fastSaveRequested = delayMs < 100;
+
+    // Debounce the save (3.5s normal batching, or ~25ms for critical security state when idle)
     this.saveTimeout = setTimeout(async () => {
       this.saveTimeout = null;
+      this._fastSaveRequested = false;
       // Combat Priority Shield: Avoid synchronous main-thread JSON.stringify blocking gateway packets mid-raid
       if (this.attackStateChecker?.() && deferCount < 6) {
         this.save(deferCount + 1);
@@ -344,10 +356,10 @@ class Database {
         this.save();
         return;
       }
-      
+
       this.isSaving = true;
       this.needsSave = false;
-      
+
       try {
         // Native C++ JSON.stringify first (~3x faster than callback replacer), replacer fallback only for BigInts/circulars
         let dataStr;
@@ -361,7 +373,13 @@ class Database {
           };
           dataStr = JSON.stringify(this.cache, replacer);
         }
-        await fs.promises.writeFile(DB_FILE, dataStr, 'utf8');
+        const tmpFile = `${DB_FILE}.tmp`;
+        await fs.promises.writeFile(tmpFile, dataStr, 'utf8');
+        try {
+          await fs.promises.rename(tmpFile, DB_FILE);
+        } catch {
+          await fs.promises.writeFile(DB_FILE, dataStr, 'utf8');
+        }
         // Continuously stream updates to MongoDB Cloud
         triggerMongoSave(this);
       } catch (error) {
@@ -370,7 +388,18 @@ class Database {
         this.isSaving = false;
         if (this.needsSave) this.save(); // Process any changes that happened during the async write
       }
-    }, 3500);
+    }, delayMs);
+  }
+
+  /**
+   * Near-immediate non-blocking flush for critical security writes (yields during active raids).
+   */
+  saveCritical() {
+    if (this.attackStateChecker?.()) {
+      this.save();
+      return;
+    }
+    this.save(0, 25);
   }
 
   /**
@@ -382,6 +411,7 @@ class Database {
       clearTimeout(this.saveTimeout);
       this.saveTimeout = null;
     }
+    this._fastSaveRequested = false;
     this.needsSave = false;
     try {
       const replacer = (key, value) => {
@@ -390,7 +420,13 @@ class Database {
         return value;
       };
       const dataStr = JSON.stringify(this.cache, replacer);
-      fs.writeFileSync(DB_FILE, dataStr, 'utf8');
+      const tmpFile = `${DB_FILE}.tmp`;
+      fs.writeFileSync(tmpFile, dataStr, 'utf8');
+      try {
+        fs.renameSync(tmpFile, DB_FILE);
+      } catch {
+        fs.writeFileSync(DB_FILE, dataStr, 'utf8');
+      }
       triggerMongoSave(this);
       return true;
     } catch (error) {
@@ -728,7 +764,17 @@ class Database {
     Object.assign(config, restUpdates);
     normalizedGuildConfigs.delete(config);
     this.getGuildConfig(guildId);
-    this.save();
+    if (
+      restUpdates.securityEnabled !== undefined ||
+      restUpdates.antiNukeEnabled !== undefined ||
+      restUpdates.pendingTwoFactorCode !== undefined ||
+      restUpdates.twoFactorVerified !== undefined ||
+      restUpdates.twoFactorEmail !== undefined
+    ) {
+      this.saveCritical();
+    } else {
+      this.save();
+    }
     return config;
   }
 
@@ -829,7 +875,7 @@ class Database {
   }
 
   // Whitelist Manager
-  isWhitelisted(guild, memberOrId, eventType = 'all') {
+  isWhitelisted(guild, memberOrId, eventType = 'all', options = {}) {
     if (!guild || !memberOrId) return false;
     const userId = typeof memberOrId === 'string'
       ? memberOrId
@@ -896,12 +942,24 @@ class Database {
     if (wData.triggerLimit > 0) {
       if (wData.currentUsage >= wData.triggerLimit) {
         delete config.whitelist[typeStr][targetId];
-        this.updateGuildConfig(guild.id, { whitelist: config.whitelist });
+        this.saveCritical();
         return false;
       }
 
-      wData.currentUsage++;
-      this.updateGuildConfig(guild.id, { whitelist: config.whitelist });
+      if (options?.consume !== false) {
+        const dedupeKey = options?.dedupeKey ? `${guild.id}:${userId}:${options.dedupeKey}` : null;
+        if (!dedupeKey || !this._wlConsumedKeys.has(dedupeKey)) {
+          if (dedupeKey) {
+            this._wlConsumedKeys.add(dedupeKey);
+            if (this._wlConsumedKeys.size > 2500) {
+              const oldest = this._wlConsumedKeys.values().next().value;
+              if (oldest) this._wlConsumedKeys.delete(oldest);
+            }
+          }
+          wData.currentUsage++;
+          this.saveCritical();
+        }
+      }
     }
     return true;
   }
@@ -934,6 +992,7 @@ class Database {
     }
     
     this.updateGuildConfig(guildId, { whitelist: config.whitelist });
+    this.saveCritical();
     return true;
   }
 
@@ -996,7 +1055,7 @@ class Database {
       } else {
         set.add(userId);
       }
-      this.save();
+      this.saveCritical();
       return true;
     }
     return false;
@@ -1011,7 +1070,7 @@ class Database {
         const set = this._extraOwnersSets.get(guildId);
         if (set) set.delete(userId);
       }
-      this.save();
+      this.saveCritical();
       return true;
     }
     return false;
@@ -1228,14 +1287,14 @@ class Database {
       previousVoiceChannelId,
       expiresAt   // null = permanent, timestamp = auto-unquarantine at this time
     };
-    this.save();
+    this.saveCritical();
   }
 
   removeQuarantine(guildId, userId) {
     if (this.cache.quarantines[guildId] && this.cache.quarantines[guildId][userId]) {
       const data = this.cache.quarantines[guildId][userId];
       delete this.cache.quarantines[guildId][userId];
-      this.save();
+      this.saveCritical();
       return data;
     }
     return null;
@@ -1265,7 +1324,7 @@ class Database {
       taintedAt: Date.now(),
       reason
     };
-    this.save();
+    this.saveCritical();
   }
 
   isExploitTainted(guildId, userId) {
@@ -1276,7 +1335,7 @@ class Database {
   removeExploitTaint(guildId, userId) {
     if (this.cache.exploitTaints?.[guildId]?.[userId]) {
       delete this.cache.exploitTaints[guildId][userId];
-      this.save();
+      this.saveCritical();
       return true;
     }
     return false;
@@ -1442,7 +1501,7 @@ class Database {
   setModMode(guildId, expiresAt, startedBy) {
     this.cache.modModes = this.cache.modModes || {};
     this.cache.modModes[guildId] = { expiresAt, startedBy };
-    this.save();
+    this.saveCritical();
   }
 
   getModMode(guildId) {
@@ -1452,7 +1511,7 @@ class Database {
   clearModMode(guildId) {
     if (this.cache.modModes?.[guildId]) {
       delete this.cache.modModes[guildId];
-      this.save();
+      this.saveCritical();
     }
   }
 
@@ -1464,6 +1523,14 @@ class Database {
       return false;
     }
     return true;
+  }
+
+  isModModeBypassed(guild, executorId) {
+    if (!guild?.id || !executorId || !this.isModModeActive(guild.id)) return false;
+    if (executorId === guild.client?.user?.id) return true;
+    if (executorId === guild.ownerId || isRootBotOwnerId(executorId) || this.isExtraOwner(guild.id, executorId)) return true;
+    const mm = this.getModMode(guild.id);
+    return Boolean(mm?.startedBy && executorId === mm.startedBy);
   }
 
   // ==========================================
@@ -1924,7 +1991,7 @@ class Database {
     if (!this.cache.botWhitelist[guildId]) this.cache.botWhitelist[guildId] = [];
     if (!this.cache.botWhitelist[guildId].includes(botId)) {
       this.cache.botWhitelist[guildId].push(botId);
-      this.save();
+      this.saveCritical();
     }
   }
 
@@ -1933,7 +2000,7 @@ class Database {
     const initialLen = this.cache.botWhitelist[guildId].length;
     this.cache.botWhitelist[guildId] = this.cache.botWhitelist[guildId].filter(id => id !== botId);
     if (this.cache.botWhitelist[guildId].length !== initialLen) {
-      this.save();
+      this.saveCritical();
       return true;
     }
     return false;
@@ -3916,7 +3983,48 @@ class Database {
   removePendingDualKey(actionId) {
     if (!this.cache.pendingDualKey) return;
     delete this.cache.pendingDualKey[actionId];
+    this.saveCritical();
+  }
+
+  approvePendingDualKey(actionId, approverId) {
+    const action = this.getPendingDualKey(actionId);
+    if (!action) return null;
+    delete this.cache.pendingDualKey[actionId];
+    if (!this.cache.approvedDualKeys) this.cache.approvedDualKeys = {};
+    const grantKey = `${action.guildId}:${action.initiatorId}:${String(action.commandName || '').toLowerCase()}`;
+    this.cache.approvedDualKeys[grantKey] = {
+      actionId,
+      approvedBy: approverId,
+      expiresAt: Date.now() + 5 * 60 * 1000
+    };
+    this.saveCritical();
+    return action;
+  }
+
+  consumeApprovedDualKey(guildId, initiatorId, commandName) {
+    if (!this.cache.approvedDualKeys || !guildId || !initiatorId || !commandName) return false;
+    const grantKey = `${guildId}:${initiatorId}:${String(commandName).toLowerCase()}`;
+    const grant = this.cache.approvedDualKeys[grantKey];
+    if (!grant) return false;
+    delete this.cache.approvedDualKeys[grantKey];
+    if (Date.now() > grant.expiresAt) {
+      this.save();
+      return false;
+    }
+    this.saveCritical();
+    return true;
+  }
+
+  setInfraSnapshot(guildId, snapshotObj) {
+    if (!guildId || !snapshotObj) return;
+    if (!this.cache.infraSnapshots) this.cache.infraSnapshots = {};
+    this.cache.infraSnapshots[guildId] = snapshotObj;
     this.save();
+  }
+
+  getInfraSnapshot(guildId) {
+    if (!guildId || !this.cache.infraSnapshots) return null;
+    return this.cache.infraSnapshots[guildId] || null;
   }
 
   // --- 5. BURN ROOMS ---
@@ -3980,7 +4088,7 @@ class Database {
       cfg.dualKey = { enabled: false, protectedCommands: ['unbanall', 'emergency', 'wipeemojis', 'lockdown', 'nuke'] };
     }
     Object.assign(cfg.dualKey, updates);
-    this.save();
+    this.saveCritical();
     return cfg.dualKey;
   }
 

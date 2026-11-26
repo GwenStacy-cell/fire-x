@@ -2,7 +2,7 @@ import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab } from '../u
 import { AuditLogEvent, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import { isBotOwnerSync, logToSecurityChannel, getUserTierName, isServerAdmin, isQuarantineStaffAuthorized, formatUserLink } from '../utils/helpers.js';
-import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawBan, getRecentAuditEntry, waitForRingMatch, sharedFetchAuditLogs, trackInFlightPunishment, waitForInFlightPunishments, condemn, setGuildUnderAttack, isGuildUnderAttack } from '../utils/antinuke.js';
+import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawBan, getRecentAuditEntry, waitForRingMatch, sharedFetchAuditLogs, trackInFlightPunishment, waitForInFlightPunishments, condemn, setGuildUnderAttack, isGuildUnderAttack, combatTelemetry } from '../utils/antinuke.js';
 import { executeQuarantine } from '../commands/security.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
@@ -166,8 +166,8 @@ export default {
                 type: 10,
                 content:
                   `-# **Exploit Vector:** \`Unauthorized Manual Quarantine Role Removal\`\n` +
-                  `-# **Quarantined Target:** ${newMember} (\`${newMember.id}\` | \`${newMember.user?.tag || newMember.displayName}\`)\n` +
-                  `-# **Perpetrator (Unauthorized Admin):** ${executor ? `<@${executor.id}> (\`${executor.tag || executor.id}\`)` : '`Zero Audit / Unknown`'}\n` +
+                  `-# **Quarantined Target:** ${formatUserLink(newMember, guild)} (\`${newMember.id}\` | \`${newMember.user?.tag || newMember.displayName}\`)\n` +
+                  `-# **Perpetrator (Unauthorized Admin):** ${executor ? `${formatUserLink(executor, guild)} (\`${executor.tag || executor.id}\`)` : '`Zero Audit / Unknown`'}\n` +
                   `-# **Countermeasures Executed:** Target re-quarantined immediately${adminQuarantined ? ' and unauthorized administrator isolated into quarantine zone' : ''}.\n` +
                   `-# **Security Policy:** General Administrators cannot release quarantined members. Only Extra Owners, Whitelisted Staff, and Server Owners hold quarantine clearance.`
               },
@@ -469,7 +469,7 @@ export default {
                         eventType: isIllegalGrant ? 'Illegal Role Grant' : 'Linked Role / Dangerous Assignment Exploit',
                         verdict: giverBanned ? 'Giver & Receiver Banned' : 'Recipient Banned (Instant Raw Ban)',
                         rollback: `Disarmed dangerous permissions from: ${dangerousRoles.map(r => r.name).join(', ')}`,
-                        latencyMs: 1,
+                        latencyMs: typeof combatTelemetry.lastStrike?.latencyMs === 'number' ? Number(combatTelemetry.lastStrike.latencyMs.toFixed(2)) : 0,
                         severity: 'critical'
                       });
                     } catch (e) {}

@@ -102,9 +102,9 @@ export const combatTelemetry = {
   },
 
   getStats() {
-    let avgLatency = 11.8;
-    let minLatency = 9.4;
-    let maxLatency = 14.2;
+    let avgLatency = null;
+    let minLatency = null;
+    let maxLatency = null;
 
     if (this.latencies.length > 0) {
       const sum = this.latencies.reduce((acc, l) => acc + l, 0);
@@ -140,6 +140,7 @@ export const combatTelemetry = {
       avgLatency,
       minLatency,
       maxLatency,
+      hasLiveLatency: this.latencies.length > 0,
       activeCondemned,
       inFlightCount,
       restorationQueueDepth: (typeof restorationQueue !== 'undefined' ? restorationQueue.length : 0),
@@ -551,7 +552,7 @@ export function waitForRingMatch(guild, auditType, targetId, eventType, timeoutM
         const matchesType = !auditType || entry.action === auditType;
         const matchesTarget = !targetId || !entry.targetId || entry.targetId === targetId;
         if (matchesType && matchesTarget) {
-          if (allowAuthorized || !isAuthorized(guild, entry.executor, eventType)) {
+          if (allowAuthorized || !isAuthorized(guild, entry.executor, eventType, { consume: false })) {
             cleanup();
             resolve(entry.executor);
           }
@@ -567,7 +568,7 @@ export function waitForRingMatch(guild, auditType, targetId, eventType, timeoutM
     ringResolvers.add(resolver);
 
     const current = getRecentAuditEntry(guild.id, auditType, targetId);
-    if (current?.executor && (allowAuthorized || !isAuthorized(guild, current.executor, eventType))) {
+    if (current?.executor && (allowAuthorized || !isAuthorized(guild, current.executor, eventType, { consume: false }))) {
       cleanup();
       return resolve(current.executor);
     }
@@ -624,6 +625,25 @@ export async function sharedFetchAuditLogs(guildId, token, auditType = null) {
 // ==========================================
 export const infrastructureSnapshots = new Map(); // guildId -> { channels: Map, roles: Map, lastUpdated: number }
 
+function ensureSnapshotHydrated(guildId) {
+  if (!guildId) return null;
+  const existing = infrastructureSnapshots.get(guildId);
+  if (existing) return existing;
+  const persisted = db.getInfraSnapshot?.(guildId);
+  if (!persisted) return null;
+  try {
+    const hydrated = {
+      channels: new Map((persisted.channels || []).map(ch => [ch.id, ch])),
+      roles: new Map((persisted.roles || []).map(r => [r.id, r])),
+      lastUpdated: persisted.lastUpdated || Date.now()
+    };
+    infrastructureSnapshots.set(guildId, hydrated);
+    return hydrated;
+  } catch {
+    return null;
+  }
+}
+
 export function snapshotGuildInfrastructure(guild) {
   if (!guild || !guild.id) return;
   try {
@@ -674,22 +694,34 @@ export function snapshotGuildInfrastructure(guild) {
       });
     }
 
+    const lastUpdated = Date.now();
     infrastructureSnapshots.set(guild.id, {
       channels: channelsMap,
       roles: rolesMap,
-      lastUpdated: Date.now()
+      lastUpdated
     });
+
+    if (!isGuildUnderAttack(guild.id) && typeof db.setInfraSnapshot === 'function') {
+      db.setInfraSnapshot(guild.id, {
+        lastUpdated,
+        channels: Array.from(channelsMap.values()),
+        roles: Array.from(rolesMap.values()).map(r => ({
+          ...r,
+          members: Array.isArray(r.members) ? r.members.slice(0, 2000) : []
+        }))
+      });
+    }
   } catch (err) {
     console.error(`[AntiNuke Snapshot] Failed for ${guild.name}:`, err.message);
   }
 }
 
 export function getChannelSnapshot(guildId, channelId) {
-  return infrastructureSnapshots.get(guildId)?.channels?.get(channelId) || null;
+  return ensureSnapshotHydrated(guildId)?.channels?.get(channelId) || null;
 }
 
 export function getRoleSnapshot(guildId, roleId) {
-  return infrastructureSnapshots.get(guildId)?.roles?.get(roleId) || null;
+  return ensureSnapshotHydrated(guildId)?.roles?.get(roleId) || null;
 }
 
 // ==========================================
@@ -705,7 +737,7 @@ export async function restoreRoleStructure(guild, reason = 'Athena Anti-Nuke: Fu
     return false;
   }
 
-  const snap = infrastructureSnapshots.get(guild.id);
+  const snap = ensureSnapshotHydrated(guild.id);
   if (!snap || !snap.roles || snap.roles.size === 0) {
     console.warn(`[AntiNuke] No role snapshot found for ${guild.name}; baseline not yet indexed.`);
     return false;
@@ -932,9 +964,9 @@ export function isProtectedSystemChannel(guild, channelId) {
 // Scans for rogue spam channels created during attack flood and executes parallel undici raw deletes
 // ==========================================
 export async function annihilateRogueChannels(guild, attackerId = null) {
-  if (!guild || !guild.id) return;
+  if (!guild || !guild.id || !guild.channels?.cache) return;
   const token = guild.client.token;
-  const snap = infrastructureSnapshots.get(guild.id);
+  const snap = ensureSnapshotHydrated(guild.id);
   const baselineChannelIds = snap ? new Set(snap.channels.keys()) : new Set();
 
   try {
@@ -972,10 +1004,10 @@ export async function annihilateRogueChannels(guild, attackerId = null) {
 // Scans for rogue spam roles created during attack flood and executes parallel undici raw deletes
 // ==========================================
 export async function annihilateRogueRoles(guild, attackerId = null) {
-  if (!guild || !guild.id) return;
+  if (!guild || !guild.id || !guild.roles?.cache) return;
   const token = guild.client.token;
   const config = db.getGuildConfig(guild.id) || {};
-  const snap = infrastructureSnapshots.get(guild.id);
+  const snap = ensureSnapshotHydrated(guild.id);
   const baselineRoleIds = snap ? new Set(snap.roles.keys()) : new Set();
 
   const protectedRoleIds = new Set([
@@ -1496,7 +1528,7 @@ export async function reconcileGuildStructure(guild) {
   if (!guild) return;
   try {
     await guild.channels.fetch().catch(() => null);
-    const snap = infrastructureSnapshots.get(guild.id);
+    const snap = ensureSnapshotHydrated(guild.id);
     if (!snap) return;
 
     for (const [chId, chSnap] of snap.channels.entries()) {
@@ -1589,7 +1621,7 @@ const recentBans = new Map();
 // ==========================================
 // IS BOT AUTHORIZED
 // ==========================================
-export function isBotAuthorized(guild, botId) {
+export function isBotAuthorized(guild, botId, options = {}) {
   if (!guild || !botId) return false;
   if (botId === guild.client?.user?.id || botId === guild.members?.me?.id) return true;
   if (isBotOwnerSync(botId)) return true;
@@ -1600,7 +1632,7 @@ export function isBotAuthorized(guild, botId) {
   if (botWhitelist.includes(botId)) return true;
   const member = guild.members.cache.get(botId);
   if (member && botWhitelist.some(id => member.roles.cache.has(id))) return true;
-  if (db.isWhitelisted(guild, botId, 'antinuke')) return true;
+  if (db.isWhitelisted(guild, botId, 'antinuke', options)) return true;
   return false;
 }
 
@@ -1634,12 +1666,16 @@ const EVENT_TO_MODULE_MAP = {
   'antilinkedrole': 'antiLinkedRole',
   'linked role bypass': 'antiLinkedRole',
   'emoji deletion': 'antiEmojiDelete',
+  'sticker deletion': 'antiEmojiDelete',
   'antiemojidelete': 'antiEmojiDelete',
   'emoji creation': 'antiEmojiCreate',
+  'sticker creation': 'antiEmojiCreate',
   'antiemojicreate': 'antiEmojiCreate',
   'emoji modification': 'antiEmojiUpdate',
+  'sticker modification': 'antiEmojiUpdate',
   'antiemojiupdate': 'antiEmojiUpdate',
   'unauthorized webhook creation': 'antiWebhooks',
+  'unauthorized webhook modification': 'antiWebhooks',
   'unauthorized webhook deletion': 'antiWebhooks',
   'antiwebhooks': 'antiWebhooks',
   'unauthorized bot addition': 'antiBotAdd',
@@ -1685,7 +1721,7 @@ const EVENT_TO_MODULE_MAP = {
 // ==========================================
 // IS AUTHORIZED — Single source of truth
 // ==========================================
-export function isAuthorized(guild, executor, eventType = 'antinuke') {
+export function isAuthorized(guild, executor, eventType = 'antinuke', options = {}) {
   if (!executor) return false;
   if (executor.id === guild.client.user.id) return true;
   if (isBotOwnerSync(executor.id)) return true;
@@ -1693,7 +1729,7 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
   if (db.isExtraOwner(guild.id, executor.id)) return true;
   // Bot Join module check
   if (eventType === 'antibot' || eventType === 'antiBotAdd') {
-    return isBotAuthorized(guild, executor.id);
+    return isBotAuthorized(guild, executor.id, options);
   }
 
   // ⚡ BOT WHITELIST AUTHORIZATION:
@@ -1701,14 +1737,14 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
   // Unwhitelisting a bot (via !botwhitelist remove) revokes this immunity.
   const member = guild.members?.cache?.get(executor.id) || executor;
   const isBot = Boolean(executor.bot || guild.members?.cache?.get(executor.id)?.user?.bot);
-  if (isBot && isBotAuthorized(guild, executor.id)) return true;
+  if (isBot && isBotAuthorized(guild, executor.id, options)) return true;
 
   // Check direct eventType whitelist (supports both user IDs and cached role whitelists)
-  if (db.isWhitelisted(guild, member, eventType)) return true;
+  if (db.isWhitelisted(guild, member, eventType, options)) return true;
 
   // Check normalized module key (e.g. 'Channel Deletion' -> 'antiChannelDelete')
   const mappedKey = EVENT_TO_MODULE_MAP[String(eventType).toLowerCase().trim()];
-  if (mappedKey && db.isWhitelisted(guild, member, mappedKey)) return true;
+  if (mappedKey && db.isWhitelisted(guild, member, mappedKey, options)) return true;
 
   return false;
 }
@@ -1718,9 +1754,12 @@ export function isAuthorized(guild, executor, eventType = 'antinuke') {
 // ==========================================
 const dmThrottle = new Set();
 
-async function notifyAndLog(guild, executor, eventType, punishResult, rollbackResult) {
+async function notifyAndLog(guild, executor, eventType, punishResult, rollbackResult, options = {}) {
   // Never emit logging or BotThreatLearner REST traffic while hostile bans are still settling
   await waitForInFlightPunishments(guild.id);
+  const measuredLatency = typeof options?.latencyMs === 'number'
+    ? Number(options.latencyMs.toFixed(2))
+    : (typeof combatTelemetry.lastStrike?.latencyMs === 'number' ? Number(combatTelemetry.lastStrike.latencyMs.toFixed(2)) : 0);
   // ⚡ Persistent Real-Time Live Security Audit Record
   try {
     db.addSecurityLiveRecord(guild.id, {
@@ -1729,7 +1768,7 @@ async function notifyAndLog(guild, executor, eventType, punishResult, rollbackRe
       eventType: eventType,
       verdict: String(punishResult),
       rollback: String(rollbackResult),
-      latencyMs: Math.max(1, Math.round(Math.random() * 2 + 1)), // 1-3ms direct REST execution
+      latencyMs: measuredLatency,
       severity: (String(punishResult).toLowerCase().includes('ban') || eventType.toLowerCase().includes('nuke') || eventType.toLowerCase().includes('dangerous')) ? 'critical' : 'high'
     });
   } catch (err) {
@@ -1915,6 +1954,27 @@ export async function cascadeToInviter(guild, botId) {
   }
 }
 
+export async function resolveBanFailureFallback(guild, executorId, reason = '[ATHENA ANTI-NUKE] Hostile neutralization fallback') {
+  if (!guild || !executorId) return 'Total failure (Missing guild/executor)';
+  try {
+    if (typeof guild.members?.ban === 'function') {
+      await guild.members.ban(executorId, { reason });
+      return 'Permanently Banned (djs fallback)';
+    }
+  } catch {}
+  try {
+    const m = guild.members?.cache?.get(executorId) ?? (typeof guild.members?.fetch === 'function' ? await guild.members.fetch(executorId).catch(() => null) : null);
+    if (m?.kickable) {
+      await m.kick(reason + ' [Ban failed — kicked]');
+      return 'Kicked (hierarchy blocked ban)';
+    }
+    return `Hierarchy blocked (Cannot ban or kick ${executorId} — role above Athena or missing BanMembers)`;
+  } catch (kickErr) {
+    console.error(`[AntiNuke Kick Fallback Error for ${executorId}]:`, kickErr.message);
+    return `Hierarchy blocked (${kickErr.message})`;
+  }
+}
+
 // ==========================================
 // CORE PUNISHMENT ENGINE (INSTANT DIRECT BAN)
 // Dispatches a single, immediate rawBan request over pre-warmed Undici sockets (0ms overhead)
@@ -1948,21 +2008,8 @@ async function punish(guild, executor, eventType, config, forceBan = true) {
         if (banOk) {
           result = 'Eliminated (Direct Raw Ban — Instant)';
         } else {
-          // If direct raw ban was blocked (hierarchy conflict), attempt Discord.js fallback
-          try {
-            await guild.members.ban(executor.id, { reason });
-            result = 'Permanently Banned (djs fallback)';
-          } catch {
-            try {
-              const m = guild.members.cache.get(executor.id) ?? await guild.members.fetch(executor.id).catch(() => null);
-              if (m?.kickable) {
-                await m.kick(reason + ' [Ban failed — kicked]');
-                result = 'Kicked (hierarchy blocked ban)';
-              }
-            } catch (kickErr) {
-              console.error(`[AntiNuke Kick Fallback Error for ${executor.id}]:`, kickErr.message);
-            }
-          }
+          // If direct raw ban was blocked (hierarchy conflict or rate limit), run shared ban/kick fallback
+          result = await resolveBanFailureFallback(guild, executor.id, reason);
         }
 
         // Defer DM cleanly behind Ban-First barrier (ZERO REST traffic before ban confirms)
@@ -2060,7 +2107,12 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     [AuditLogEvent.RoleCreate]:        mods.antiRoleCreate,
     [AuditLogEvent.EmojiDelete]:       mods.antiEmojiDelete,
     [AuditLogEvent.EmojiCreate]:       mods.antiEmojiCreate,
+    [AuditLogEvent.EmojiUpdate]:       mods.antiEmojiUpdate,
+    [AuditLogEvent.StickerDelete]:     mods.antiEmojiDelete,
+    [AuditLogEvent.StickerCreate]:     mods.antiEmojiCreate,
+    [AuditLogEvent.StickerUpdate]:     mods.antiEmojiUpdate,
     [AuditLogEvent.WebhookCreate]:     mods.antiWebhooks,
+    [AuditLogEvent.WebhookUpdate]:     mods.antiWebhooks,
     [AuditLogEvent.WebhookDelete]:     mods.antiWebhooks,
     [AuditLogEvent.MemberBanAdd]:      (mods.antiBan !== false || mods.antiMassBan !== false),
     [AuditLogEvent.MemberKick]:        (mods.antiKick !== false || mods.antiMemberPurge !== false),
@@ -2168,10 +2220,23 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
     return;
   }
 
-  // Skip if it's the bot itself or authorized (0ms pure in-memory check — never stall pre-ban with member REST fetches)
+  // Skip if it's the bot itself, authorized ModMode actor, or whitelisted (0ms pure in-memory check)
   if (executor.id === guild.client.user.id) return;
 
-  if (isAuthorized(guild, executor, eventType)) {
+  if (
+    db.isModModeBypassed?.(guild, executor.id) &&
+    (
+      auditType === AuditLogEvent.ChannelDelete ||
+      auditType === AuditLogEvent.RoleDelete ||
+      auditType === AuditLogEvent.ChannelUpdate ||
+      auditType === AuditLogEvent.EmojiDelete
+    )
+  ) {
+    return;
+  }
+
+  const dsDedupeKey = `ds:${auditType}:${targetId || executor.id}`;
+  if (isAuthorized(guild, executor, eventType, { dedupeKey: dsDedupeKey })) {
     if (config.learnModeEnabled) {
       db.recordBaselineAction(guild.id, executor.id, eventType);
     }
@@ -2258,17 +2323,20 @@ export async function directStrike(guild, auditType, eventType, targetId, rollba
   // ⚡ STEP 3: ASYNCHRONOUS LOGGING LAST
   // Logging runs in background only after hostile is neutralized and repair is underway
   punishPromise.then(punishResult => {
-    notifyAndLog(guild, executor, eventType, punishResult, rollbackResult).catch(() => null);
+    const measuredLatency = typeof combatTelemetry.lastStrike?.latencyMs === 'number'
+      ? Number(combatTelemetry.lastStrike.latencyMs.toFixed(2))
+      : 0;
+    notifyAndLog(guild, executor, eventType, punishResult, rollbackResult, { latencyMs: measuredLatency }).catch(() => null);
     try {
       db.recordIncident(guild.id, {
         type: eventType.toUpperCase().replace(/\s+/g, '_'),
         attackerId: executor.id,
         attackerTag: executor.tag || executor.id,
         actionsAttempted: 1,
-        actionsBlocked: 1,
-        latencyMs: 9,
-        status: 'NEUTRALIZED (DUAL-STRIKE BAN)',
-        details: `Hostile intercepted attempting ${eventType}. Attacker banned and roles stripped.`
+        actionsBlocked: punishResult.startsWith('Hierarchy blocked') || punishResult.startsWith('Total failure') ? 0 : 1,
+        latencyMs: measuredLatency,
+        status: punishResult.toUpperCase(),
+        details: `Hostile intercepted attempting ${eventType}. Verdict: ${punishResult}.`
       });
     } catch {}
   });
@@ -2344,11 +2412,27 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
   recordAuditEntry(guild.id, entry);
   if (!fromWiretap && entry.id && !markAuditEntryHandled(entry.id)) return;
 
+  if (
+    db.isModModeBypassed?.(guild, executorId) &&
+    (
+      action === AuditLogEvent.ChannelDelete ||
+      action === AuditLogEvent.RoleDelete ||
+      action === AuditLogEvent.ChannelUpdate ||
+      action === AuditLogEvent.EmojiDelete
+    )
+  ) {
+    return;
+  }
+
   const wasAlreadyCondemned = !skipStrike && isCondemned(guild.id, executorId);
   const effectiveSkipStrike = skipStrike || wasAlreadyCondemned;
   const shouldSuppressLogs = suppressLogs || wasAlreadyCondemned;
+  const authOpts = {
+    consume: !fromWiretap,
+    dedupeKey: entry.id || `${action}:${targetId || executorId}`
+  };
 
-  if (isAuthorized(guild, cachedMember || executor)) {
+  if (isAuthorized(guild, cachedMember || executor, 'antinuke', { consume: false })) {
     if (config.learnModeEnabled) {
       db.recordBaselineAction(guild.id, executor.id, `Audit:${action}`);
     }
@@ -2361,15 +2445,23 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
   switch (action) {
     case AuditLogEvent.WebhookCreate:
       if (mods.antiWebhooks === false) return;
-      if (!isAuthorized(guild, executor, 'antiwebhooks')) {
+      if (!isAuthorized(guild, cachedMember || executor, 'antiwebhooks', authOpts)) {
         eventType = 'Unauthorized Webhook Creation';
+        forceBan = true;
+      } else return;
+      break;
+
+    case AuditLogEvent.WebhookUpdate:
+      if (mods.antiWebhooks === false) return;
+      if (!isAuthorized(guild, cachedMember || executor, 'antiwebhooks', authOpts)) {
+        eventType = 'Unauthorized Webhook Modification';
         forceBan = true;
       } else return;
       break;
 
     case AuditLogEvent.WebhookDelete:
       if (mods.antiWebhooks === false) return;
-      if (!isAuthorized(guild, executor, 'antiwebhooks')) {
+      if (!isAuthorized(guild, cachedMember || executor, 'antiwebhooks', authOpts)) {
         eventType = 'Unauthorized Webhook Deletion';
         forceBan = true;
       } else return;
@@ -2377,7 +2469,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
 
     case AuditLogEvent.ChannelDelete:
       if (mods.antiChannelDelete === false) return;
-      if (!isAuthorized(guild, executor, 'antiChannelDelete')) {
+      if (!isAuthorized(guild, cachedMember || executor, 'antiChannelDelete', authOpts)) {
         eventType = 'Channel Deletion';
         forceBan = true;
       } else return;
@@ -2385,7 +2477,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
 
     case AuditLogEvent.ChannelCreate:
       if (mods.antiChannelCreate === false) return;
-      if (!isAuthorized(guild, executor, 'antiChannelCreate')) {
+      if (!isAuthorized(guild, cachedMember || executor, 'antiChannelCreate', authOpts)) {
         eventType = 'Channel Creation';
         forceBan = true;
       } else return;
@@ -2393,7 +2485,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
 
     case AuditLogEvent.RoleDelete:
       if (mods.antiRoleDelete === false) return;
-      if (!isAuthorized(guild, executor, 'antiRoleDelete')) {
+      if (!isAuthorized(guild, cachedMember || executor, 'antiRoleDelete', authOpts)) {
         eventType = 'Role Deletion';
         forceBan = true;
       } else return;
@@ -2401,7 +2493,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
 
     case AuditLogEvent.RoleCreate:
       if (mods.antiRoleCreate === false) return;
-      if (!isAuthorized(guild, executor, 'antiRoleCreate')) {
+      if (!isAuthorized(guild, cachedMember || executor, 'antiRoleCreate', authOpts)) {
         eventType = 'Role Creation';
         forceBan = true;
       } else return;
@@ -2412,7 +2504,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
         recordBotInviter(guild.id, targetId, executorId);
       }
       if (mods.antiBotAdd === false) return;
-      if (!isAuthorized(guild, cachedMember || executor, 'antiBotAdd')) {
+      if (!isAuthorized(guild, cachedMember || executor, 'antiBotAdd', authOpts)) {
         eventType = 'Unauthorized Bot Addition';
         forceBan = true;
       } else return;
@@ -2420,7 +2512,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
 
     case AuditLogEvent.MemberUnban:
       if (mods.antiUnban === false) return;
-      if (!isAuthorized(guild, cachedMember || executor, 'antiUnban')) {
+      if (!isAuthorized(guild, cachedMember || executor, 'antiUnban', authOpts)) {
         eventType = 'Unauthorized Ban Removal';
         forceBan = true;
       } else return;
@@ -2444,18 +2536,18 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
         const escalated = DANGEROUS_PERMS.some(p => !oldPerms.has(p) && newPerms.has(p));
         const strippedSentinel = isSentinelOrBot && oldPerms.has(PermissionFlagsBits.Administrator) && !newPerms.has(PermissionFlagsBits.Administrator);
         if (escalated || strippedSentinel) {
-          if (isAuthorized(guild, cachedMember || executor, 'antiRolePermUpdate')) return;
+          if (isAuthorized(guild, cachedMember || executor, 'antiRolePermUpdate', authOpts)) return;
           eventType = strippedSentinel ? 'Persistence Role Admin Strip (Anti-Stab)' : 'Role Permission Escalation';
           forceBan = true;
         }
       }
       if (!eventType && posChange && mods.antiRoleReorder !== false) {
-        if (isAuthorized(guild, cachedMember || executor, 'antiRoleReorder')) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiRoleReorder', authOpts)) return;
         eventType = 'Role Reorder / Hierarchy Tampering';
         forceBan = true;
       }
       if (!eventType && nChange && mods.antiRoleUpdate !== false) {
-        if (isAuthorized(guild, cachedMember || executor, 'antiRoleUpdate')) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiRoleUpdate', authOpts)) return;
         eventType = 'Role Name Modification';
       }
       break;
@@ -2468,7 +2560,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
         executor.id === guild.ownerId ||
         isBotOwnerSync(executor.id) ||
         db.isExtraOwner(guild.id, executor.id) ||
-        isAuthorized(guild, cachedMember || executor, 'antiMemberRoleUpdate')
+        isAuthorized(guild, cachedMember || executor, 'antiMemberRoleUpdate', authOpts)
       )) {
         if (targetId) db.removeExploitTaint(guild.id, targetId);
         return;
@@ -2498,12 +2590,12 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
       const vanityChange = entry.changes?.find(c => c.key === 'vanity_url_code');
       if (vanityChange) {
         if (mods.antiVanitySteal === false && mods.antiServerUpdate === false) return;
-        if (isAuthorized(guild, cachedMember || executor, 'antiVanitySteal')) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiVanitySteal', authOpts)) return;
         eventType = 'Vanity URL Hijacking / Sniping';
         forceBan = true;
       } else {
         if (mods.antiServerUpdate === false) return;
-        if (isAuthorized(guild, cachedMember || executor, 'antiServerUpdate')) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiServerUpdate', authOpts)) return;
         eventType = 'Server Settings Tampering';
         forceBan = true;
       }
@@ -2512,21 +2604,21 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
 
     case AuditLogEvent.InviteDelete:
       if (mods.antiInviteDelete === false && mods.antiInvite === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiInviteDelete')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiInviteDelete', authOpts)) return;
       eventType = 'Unauthorized Invite Deletion';
       forceBan = true;
       break;
 
     case AuditLogEvent.SoundboardSoundCreate:
       if (mods.antiSoundboardCreate === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiSoundboardCreate')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiSoundboardCreate', authOpts)) return;
       eventType = 'Unauthorized Soundboard Sound Created';
       forceBan = true;
       break;
 
     case AuditLogEvent.SoundboardSoundDelete:
       if (mods.antiSoundboardDelete === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiSoundboardDelete')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiSoundboardDelete', authOpts)) return;
       eventType = 'Unauthorized Soundboard Sound Deleted';
       forceBan = true;
       break;
@@ -2537,29 +2629,64 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
       const cposChange = entry.changes?.find(c => c.key === 'position');
 
       if (cpChange && (mods.antiChannelPermUpdate !== false || mods.antiChannelUpdate !== false)) {
-        if (isAuthorized(guild, cachedMember || executor, 'antiChannelPermUpdate')) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiChannelPermUpdate', authOpts)) return;
         eventType = 'Channel Permission Tampering';
         forceBan = true;
       } else if (cnChange && (mods.antiChannelNameMod !== false || mods.antiChannelUpdate !== false)) {
-        if (isAuthorized(guild, cachedMember || executor, 'antiChannelNameMod')) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiChannelNameMod', authOpts)) return;
         eventType = 'Channel Name Modification';
         forceBan = true;
       } else if (cposChange && (mods.antiChannelReorder !== false || mods.antiChannelUpdate !== false)) {
-        if (isAuthorized(guild, cachedMember || executor, 'antiChannelReorder')) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiChannelReorder', authOpts)) return;
         eventType = 'Channel Reorder / Tampering';
         forceBan = true;
       } else if (mods.antiChannelUpdate !== false) {
-        if (isAuthorized(guild, cachedMember || executor, 'antiChannelUpdate')) return;
+        if (isAuthorized(guild, cachedMember || executor, 'antiChannelUpdate', authOpts)) return;
         eventType = 'Channel Settings Tampering';
         forceBan = true;
       }
       break;
     }
 
+    case AuditLogEvent.EmojiCreate:
+      if (mods.antiEmojiCreate === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiEmojiCreate', authOpts)) return;
+      eventType = 'Emoji Creation';
+      forceBan = true;
+      break;
+
+    case AuditLogEvent.EmojiDelete:
+      if (mods.antiEmojiDelete === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiEmojiDelete', authOpts)) return;
+      eventType = 'Emoji Deletion';
+      forceBan = true;
+      break;
+
     case AuditLogEvent.EmojiUpdate:
       if (mods.antiEmojiUpdate === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiEmojiUpdate')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiEmojiUpdate', authOpts)) return;
       eventType = 'Emoji Modification';
+      forceBan = true;
+      break;
+
+    case AuditLogEvent.StickerCreate:
+      if (mods.antiEmojiCreate === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiEmojiCreate', authOpts)) return;
+      eventType = 'Sticker Creation';
+      forceBan = true;
+      break;
+
+    case AuditLogEvent.StickerDelete:
+      if (mods.antiEmojiDelete === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiEmojiDelete', authOpts)) return;
+      eventType = 'Sticker Deletion';
+      forceBan = true;
+      break;
+
+    case AuditLogEvent.StickerUpdate:
+      if (mods.antiEmojiUpdate === false) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiEmojiUpdate', authOpts)) return;
+      eventType = 'Sticker Modification';
       forceBan = true;
       break;
 
@@ -2567,7 +2694,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
     case AuditLogEvent.GuildScheduledEventUpdate:
     case AuditLogEvent.GuildScheduledEventDelete:
       if (mods.antiScheduledEvents === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiScheduledEvents')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiScheduledEvents', authOpts)) return;
       eventType = 'Scheduled Event Tampering';
       forceBan = true;
       break;
@@ -2576,7 +2703,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
     case AuditLogEvent.AutoModerationRuleUpdate:
     case AuditLogEvent.AutoModerationRuleDelete:
       if (mods.antiAutomodUpdate === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiAutomodUpdate')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiAutomodUpdate', authOpts)) return;
       eventType = 'AutoMod Rule Tampering';
       forceBan = true;
       break;
@@ -2586,28 +2713,28 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
     case AuditLogEvent.IntegrationDelete:
     case AuditLogEvent.ApplicationCommandPermissionUpdate:
       if (mods.antiAppCommands === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiAppCommands')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiAppCommands', authOpts)) return;
       eventType = 'Integration / App Command Tampering';
       forceBan = true;
       break;
 
     case AuditLogEvent.MemberKick:
       if (mods.antiMemberPurge === false && mods.antiKick === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiKick') || isAuthorized(guild, cachedMember || executor, 'antiMemberPurge')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiKick', authOpts) || isAuthorized(guild, cachedMember || executor, 'antiMemberPurge', authOpts)) return;
       eventType = 'Unauthorized Kick (Purge Module)';
       forceBan = true;
       break;
 
     case AuditLogEvent.MemberPrune:
       if (mods.antiMemberPurge === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiMemberPurge')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiMemberPurge', authOpts)) return;
       eventType = 'Unauthorized Member Purge';
       forceBan = true;
       break;
 
     case AuditLogEvent.MemberBanAdd:
       if (mods.antiMassBan === false && mods.antiBan === false) return;
-      if (isAuthorized(guild, cachedMember || executor, 'antiBan') || isAuthorized(guild, cachedMember || executor, 'antiMassBan')) return;
+      if (isAuthorized(guild, cachedMember || executor, 'antiBan', authOpts) || isAuthorized(guild, cachedMember || executor, 'antiMassBan', authOpts)) return;
       eventType = 'Unauthorized Ban (Mass Ban Module)';
       forceBan = true;
       break;
@@ -2713,6 +2840,19 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
       rollbackResult = 'Unauthorized soundboard sound annihilated';
     }
 
+    if (action === AuditLogEvent.StickerCreate && targetId && !wiretapHandledRollback) {
+      await dispatcher.request({
+        origin: 'https://discord.com',
+        path: `/api/v10/guilds/${guild.id}/stickers/${targetId}`,
+        method: 'DELETE',
+        headers: {
+          'authorization': `Bot ${guild.client.token}`,
+          'user-agent': 'DiscordBot (Athena, 4.0.0)'
+        }
+      }).then(r => r.body.dump()).catch(() => null);
+      rollbackResult = 'Unauthorized sticker annihilated';
+    }
+
     if (action === AuditLogEvent.BotAdd && !wiretapHandledRollback) {
       if (targetId && targetId !== guild.client.user.id) {
         await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Unauthorized bot addition').catch(() => null);
@@ -2728,7 +2868,7 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
     if (action === AuditLogEvent.MemberRoleUpdate && !wiretapHandledRollback) {
       const rolesChange = entry.changes?.find(c => c.key === '$add');
       if (rolesChange?.new) {
-        if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate')) {
+        if (!isAuthorized(guild, { id: targetId }, 'antiMemberRoleUpdate', { consume: false })) {
           await rawBan(guild.id, targetId, guild.client.token, 'Athena Anti-Nuke: Recipient of unauthorized dangerous role grant').catch(() => null);
           rollbackResult = `Banned unauthorized dangerous role recipient ${formatUserLink(targetId, guild)}`;
         }
@@ -2831,7 +2971,10 @@ export async function handleAuditLogEntry(guild, entry, options = {}) {
   // ⚡ STEP 3: ASYNCHRONOUS LOGGING LAST
   const [punishResult, rollbackResult] = await Promise.all([punishPromise, rollbackPromise]);
   if (!shouldSuppressLogs) {
-    await notifyAndLog(guild, executor, eventType, punishResult, rollbackResult);
+    const measuredLatency = typeof combatTelemetry.lastStrike?.latencyMs === 'number'
+      ? Number(combatTelemetry.lastStrike.latencyMs.toFixed(2))
+      : 0;
+    await notifyAndLog(guild, executor, eventType, punishResult, rollbackResult, { latencyMs: measuredLatency });
   }
 }
 

@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { PermissionFlagsBits, EmbedBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, MessageFlags, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, MessagePayload, AttachmentBuilder } from 'discord.js';
 import { generateImageCaptcha, generateMathCaptcha, validateAnswer } from '../utils/captchaEngine.js';
 import { buildXpDashboard } from '../commands/leveling.js';
@@ -164,6 +165,11 @@ export default {
     // Evaluated at sub-1ms priority before any other handlers to guarantee Discord modal response SLA
     // ==========================================
     if (interaction.isButton() && (interaction.customId === 'btn_verify_2fa' || interaction.customId === 'btn_intercept_2fa')) {
+      const isRootOwner = isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild?.ownerId;
+      const canIntercept = isExtraOwnerOrHigher(interaction.user.id, interaction.guild);
+      if ((interaction.customId === 'btn_verify_2fa' && !isRootOwner) || (interaction.customId === 'btn_intercept_2fa' && !canIntercept)) {
+        return interaction.reply({ content: '-# <a:04_cross_circle:1565665644806934639> Access Denied: Insufficient ownership clearance for 2FA verification.', flags: MessageFlags.Ephemeral });
+      }
       const modal = new ModalBuilder()
         .setCustomId(interaction.customId === 'btn_intercept_2fa' ? 'modal_2fa_intercept' : 'modal_2fa_verify')
         .setTitle('Two-Factor Authentication');
@@ -254,6 +260,21 @@ export default {
         if (!isAuthorizedAdmin) {
           return interaction.reply({ content: '-# You lack authorization to lift server panic lockdown. Server Owner or Extra Owner clearance required.', flags: MessageFlags.Ephemeral });
         }
+        const dkCfg = interaction.guild ? db.getGuildConfig(interaction.guild.id)?.dualKey : null;
+        if (dkCfg?.enabled && dkCfg.protectedCommands?.includes('lockdown') && !isBotOwnerSync(interaction.user.id)) {
+          if (!db.consumeApprovedDualKey(interaction.guild.id, interaction.user.id, 'lockdown')) {
+            const { buildDualKeyAuthCard } = await import('../commands/dualkey.js');
+            const pendingAction = db.createPendingDualKey({
+              guildId: interaction.guild.id,
+              initiatorId: interaction.user.id,
+              initiatorTag: interaction.user.tag || interaction.user.id,
+              commandName: 'lockdown',
+              rawArgs: ['off'],
+              summary: 'Lift server panic lockdown'
+            });
+            return interaction.reply(buildDualKeyAuthCard(pendingAction)).catch(() => null);
+          }
+        }
         await interaction.deferUpdate().catch(() => null);
         const result = await handleUnlockdown(interaction.guild, interaction.member);
         return interaction.editReply(result).catch(() => null);
@@ -279,6 +300,21 @@ export default {
         const isAuthorizedOwner = isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild?.ownerId;
         if (!isAuthorizedOwner) {
           return interaction.reply({ content: '-# Only the Server Owner or Bot Owner can resolve Emergency Blackout Mode.', flags: MessageFlags.Ephemeral });
+        }
+        const dkCfg = interaction.guild ? db.getGuildConfig(interaction.guild.id)?.dualKey : null;
+        if (dkCfg?.enabled && dkCfg.protectedCommands?.includes('emergency') && !isBotOwnerSync(interaction.user.id)) {
+          if (!db.consumeApprovedDualKey(interaction.guild.id, interaction.user.id, 'emergency')) {
+            const { buildDualKeyAuthCard } = await import('../commands/dualkey.js');
+            const pendingAction = db.createPendingDualKey({
+              guildId: interaction.guild.id,
+              initiatorId: interaction.user.id,
+              initiatorTag: interaction.user.tag || interaction.user.id,
+              commandName: 'emergency',
+              rawArgs: ['end'],
+              summary: 'End emergency blackout mode'
+            });
+            return interaction.reply(buildDualKeyAuthCard(pendingAction)).catch(() => null);
+          }
         }
         await interaction.deferUpdate().catch(() => null);
         const result = await handleEmergency(interaction.guild, interaction.member, 'end');
@@ -815,6 +851,9 @@ export default {
         if (cid === 'dualkey_toggle') {
           const cfg = db.getGuildConfig(guild.id);
           const current = Boolean(cfg.dualKey?.enabled);
+          if (current && !isBotOwnerSync(interaction.user.id) && guild.ownerId !== interaction.user.id) {
+            return interaction.reply({ content: '-# <a:04_cross_circle:1565665644806934639> Only the **Server Owner** or **Bot Owner** can disarm an active Dual-Key Protocol.', flags: MessageFlags.Ephemeral });
+          }
           db.updateDualKeyConfig(guild.id, { enabled: !current });
           await interaction.deferUpdate().catch(() => null);
           return cv2.respond(interaction, buildDualKeyDashboard(guild), 7);
@@ -832,11 +871,13 @@ export default {
           if (action.initiatorId === interaction.user.id && !isBotOwnerSync(interaction.user.id)) {
             return interaction.reply({ content: '-# Two-man rule requires a DIFFERENT authorized administrator to sign off.', flags: MessageFlags.Ephemeral });
           }
-          db.removePendingDualKey(actionId);
-          await interaction.update({
-            content: `-# <a:03_tick_circle:1565665642084827206> **Nuclear Action Authorized:** <@${interaction.user.id}> granted secondary authorization for \`!${action.commandName}\` initiated by <@${action.initiatorId}>.`,
-            components: []
-          }).catch(() => null);
+          db.approvePendingDualKey(actionId, interaction.user.id);
+          const approvedCard = cv2.success(
+            'Nuclear Action Authorized | <a:03_tick_circle:1565665642084827206>',
+            `> -# ${formatUserLink(interaction.user, guild)} granted secondary authorization for \`!${action.commandName}\` initiated by ${formatUserLink(action.initiatorId, guild)}.\n` +
+            `> -# The initiator may now re-run \`!${action.commandName}\` (or \`/${action.commandName}\`) within 5 minutes to execute.`
+          );
+          await interaction.update(approvedCard).catch(() => null);
           return;
         }
         if (cid.startsWith('dualkey_abort_')) {
@@ -1831,6 +1872,26 @@ export default {
         });
       }
 
+      if (interaction.guild) {
+        const gCfg = db.getGuildConfig(interaction.guild.id);
+        const dkConfig = gCfg?.dualKey;
+        const dkCmdName = command.name || interaction.commandName;
+        if (dkConfig?.enabled && dkConfig.protectedCommands?.includes(dkCmdName) && !isBotOwnerSync(interaction.user.id)) {
+          if (!db.consumeApprovedDualKey(interaction.guild.id, interaction.user.id, dkCmdName)) {
+            const { buildDualKeyAuthCard } = await import('../commands/dualkey.js');
+            const pendingAction = db.createPendingDualKey({
+              guildId: interaction.guild.id,
+              initiatorId: interaction.user.id,
+              initiatorTag: interaction.user.tag || interaction.user.id,
+              commandName: dkCmdName,
+              rawArgs: [],
+              summary: `Execution of protected slash command /${dkCmdName}`
+            });
+            return interaction.reply(buildDualKeyAuthCard(pendingAction)).catch(() => null);
+          }
+        }
+      }
+
       try {
         await command.executeSlash(interaction);
         import('../utils/liveOpsMonitor.js').then(m => m.recordCommandExecution(interaction.commandName, 'slash')).catch(() => null);
@@ -2102,7 +2163,7 @@ export default {
         const email = interaction.fields.getTextInputValue("2fa_email");
         if (!email.includes("@")) return interaction.reply({ content: "Invalid email format.", flags: MessageFlags.Ephemeral });
         
-        const code2fa = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit code
+        const code2fa = crypto.randomInt(100000, 1000000).toString(); // 6-digit crypto code
         
         await interaction.deferReply({ flags: MessageFlags.Ephemeral });
         try {
@@ -2120,6 +2181,8 @@ export default {
           db.updateGuildConfig(interaction.guild.id, {
             twoFactorEmail: email,
             pendingTwoFactorCode: code2fa,
+            pendingTwoFactorExpiresAt: Date.now() + 10 * 60 * 1000,
+            pendingTwoFactorAttempts: 0,
             twoFactorVerified: false
           });
 
@@ -2150,11 +2213,17 @@ export default {
           }
           const inputCode = interaction.fields.getTextInputValue("2fa_code").trim();
           const config = db.getGuildConfig(interaction.guild.id);
+          if (config.pendingTwoFactorExpiresAt && Date.now() > config.pendingTwoFactorExpiresAt) {
+            db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorCode: null, pendingTwoFactorExpiresAt: null, pendingTwoFactorAttempts: 0 });
+            return interaction.reply({ content: "<a:04_cross_circle:1565665644806934639> **2FA verification code expired.** Please re-initiate setup.", flags: MessageFlags.Ephemeral });
+          }
           
           if (config.pendingTwoFactorCode && String(config.pendingTwoFactorCode).trim() === inputCode) {
             db.updateGuildConfig(interaction.guild.id, {
               twoFactorVerified: true,
-              pendingTwoFactorCode: null
+              pendingTwoFactorCode: null,
+              pendingTwoFactorExpiresAt: null,
+              pendingTwoFactorAttempts: 0
             });
             
             return interaction.reply({ 
@@ -2162,8 +2231,14 @@ export default {
               flags: MessageFlags.Ephemeral 
             });
           } else {
+            const attempts = (config.pendingTwoFactorAttempts || 0) + 1;
+            if (attempts >= 5) {
+              db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorCode: null, pendingTwoFactorExpiresAt: null, pendingTwoFactorAttempts: 0 });
+              return interaction.reply({ content: "<a:04_cross_circle:1565665644806934639> **Too many failed attempts.** Code invalidated — restart 2FA setup.", flags: MessageFlags.Ephemeral });
+            }
+            db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorAttempts: attempts });
             return interaction.reply({ 
-              content: "<a:04_cross_circle:1565665644806934639> **Incorrect verification code.** Please verify the 6-digit code in your email or Pterodactyl live console and try again.", 
+              content: `<a:04_cross_circle:1565665644806934639> **Incorrect verification code** (Attempt ${attempts}/5). Please check your email and try again.`, 
               flags: MessageFlags.Ephemeral 
             });
           }
@@ -2175,9 +2250,13 @@ export default {
           }
           const inputCode = interaction.fields.getTextInputValue("2fa_code").trim();
           const config = db.getGuildConfig(interaction.guild.id);
+          if (config.pendingTwoFactorExpiresAt && Date.now() > config.pendingTwoFactorExpiresAt) {
+            db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorCode: null, pendingTwoFactorExpiresAt: null, pendingTwoFactorAttempts: 0, pendingAction: null });
+            return interaction.reply({ content: "<a:04_cross_circle:1565665644806934639> **2FA challenge expired.** Action blocked.", flags: MessageFlags.Ephemeral });
+          }
           
           if (config.pendingTwoFactorCode && String(config.pendingTwoFactorCode).trim() === inputCode) {
-            db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorCode: null });
+            db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorCode: null, pendingTwoFactorExpiresAt: null, pendingTwoFactorAttempts: 0 });
             
             const sec = await import("../commands/security.js");
             if (sec.executeInterceptedAction) {
@@ -2189,8 +2268,14 @@ export default {
               });
             }
           } else {
+            const attempts = (config.pendingTwoFactorAttempts || 0) + 1;
+            if (attempts >= 5) {
+              db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorCode: null, pendingTwoFactorExpiresAt: null, pendingTwoFactorAttempts: 0, pendingAction: null });
+              return interaction.reply({ content: "<a:04_cross_circle:1565665644806934639> **Too many incorrect attempts.** Challenge invalidated and action aborted.", flags: MessageFlags.Ephemeral });
+            }
+            db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorAttempts: attempts });
             return interaction.reply({ 
-              content: "<a:04_cross_circle:1565665644806934639> **Incorrect 2FA code.** Action permanently blocked.", 
+              content: `<a:04_cross_circle:1565665644806934639> **Incorrect 2FA code** (Attempt ${attempts}/5). Action blocked.`, 
               flags: MessageFlags.Ephemeral 
             });
           }
@@ -2198,30 +2283,6 @@ export default {
     }
 
     if (interaction.isButton() || interaction.isAnySelectMenu()) {
-
-      // Two-Factor Authentication Prompt Button Handler
-      if (interaction.isButton() && (interaction.customId === "btn_verify_2fa" || interaction.customId === "btn_intercept_2fa")) {
-        const isRootOwner = isBotOwnerSync(interaction.user.id) || interaction.user.id === interaction.guild?.ownerId;
-        const canIntercept = isExtraOwnerOrHigher(interaction.user.id, interaction.guild);
-        if ((interaction.customId === "btn_verify_2fa" && !isRootOwner) || (interaction.customId === "btn_intercept_2fa" && !canIntercept)) {
-          return interaction.reply({ content: "-# <a:04_cross_circle:1565665644806934639> Access Denied: Insufficient ownership clearance for 2FA verification.", flags: MessageFlags.Ephemeral });
-        }
-        const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = await import("discord.js");
-        const modal = new ModalBuilder()
-          .setCustomId(interaction.customId === "btn_intercept_2fa" ? "modal_2fa_intercept" : "modal_2fa_verify")
-          .setTitle("Two-Factor Authentication");
-        const codeInput = new TextInputBuilder()
-          .setCustomId("2fa_code")
-          .setLabel("Enter the 6-digit code")
-          .setPlaceholder("e.g. 123456")
-          .setStyle(TextInputStyle.Short)
-          .setRequired(true)
-          .setMaxLength(6)
-          .setMinLength(6);
-        const row = new ActionRowBuilder().addComponents(codeInput);
-        modal.addComponents(row);
-        return interaction.showModal(modal);
-      }
 
       if (interaction.customId === 'ytstats_refresh') {
         // Use a direct reply to bypass the buggy deferReply prototype
@@ -4212,6 +4273,11 @@ export async function handleSecurityInteractions(interaction, guild) {
             const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
             snapshotGuildInfrastructure(guild);
           } else {
+            const sec = await import('../commands/security.js');
+            const challenge = await sec.create2FADisableChallenge?.(guild, true);
+            if (challenge) {
+              return interaction.reply(challenge).catch(() => null);
+            }
             await interaction.deferUpdate().catch(() => null);
 
             const { removePersistenceRoles } = await import('../utils/antiStrip.js');
@@ -4224,7 +4290,6 @@ export async function handleSecurityInteractions(interaction, guild) {
             updateData.antiLinkEnabled = false;
             updateData.botOwnerBypass = false;
             updateData.antinukeModules = config.antinukeModules || {};
-            const sec = await import('../commands/security.js');
             const allKeys = sec.ANTINUKE_ALL_KEYS;
             for (const k of allKeys) {
               updateData.antinukeModules[k] = false;

@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '26 November 2026',
+    version: 'v4.0.11',
+    headline: 'Military-Grade Anti-Nuke Hardening, Unbypassable 2FA & Dual-Key Fix',
+    summary: 'Closed critical authorization, fallback, vanity, Dual-Key, and startup TLS pre-warm gaps for zero-bypass military-grade server security and sub-millisecond cold-start readiness.',
+    whatsNew: [
+      {
+        title: 'Expanded 8-Socket Boot-Time Raw TLS Pre-Warming & Snapshot Persistence',
+        desc: 'Doubled the Raw Kernel TLS TCP_NODELAY ban pool to 8 sockets and moved pre-warming to boot/ready so all sockets are active before Strike #1, alongside disk-backed cold-start infrastructure snapshot hydration and atomic temp-file database persistence.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'True Wiretap Strike Verification, Uncached Bot Cascade & Sticker Coverage',
+        desc: 'Wiretap now verifies rawBan outcomes with automatic discord.js ban/kick hierarchy fallback, resolves swept/uncached attacking bots post-ban for inviter cascade, adds Guild Sticker interception, deduplicates trigger-limited whitelist consumption per event, and records real performance.now() strike metrics.'
+      },
+      {
+        title: 'Scoped ModMode & Disarmed Bot Quarantine Isolation',
+        desc: 'Restricted ModMode bypass strictly to authorized maintenance actors so attackers cannot nuke during maintenance, and disarmed dangerous permissions on editable managed integration roles if bots are quarantined.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Unbypassable 2FA Disarm Gate, Vanity Owner Safety & Dual-Key Single-Use Grants',
+        desc: 'Unified cryptographically random, brute-force-limited (5 attempts / 10m expiry) Gmail 2FA challenges across !antinuke disable, /antinuke disable_all, !security disable, and toggle_antinuke; prevented Wiretap vanity reclaim from reverting Server Owner edits; fixed Dual-Key infinite approval loops, covered slash/emergency buttons, and restricted Dual-Key disarmament to Server/Bot Owners.'
+      }
+    ],
+    tip: 'Use !combatops or !ss to inspect real-time 8-socket Raw TLS pool telemetry and zero-bypass defense status.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '26 November 2026',
     version: 'v4.0.10',
     headline: 'Canvas Worker Thread Offloading, Presence Telemetry Trim & Async CloudSync',
     summary: 'Isolated heavy Canvas PNG/GIF rendering off the Wiretap gateway thread into a persistent worker_threads worker, filtered noisy PRESENCE_UPDATE/TYPING_START telemetry churn, and eliminated synchronous disk/zlib stalls in cloud backups.',

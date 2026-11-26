@@ -17,7 +17,6 @@ export default {
   name: 'roleDelete',
   async execute(role) {
     if (!role.guild) return;
-    if (db.isModModeActive(role.guild.id)) return;
 
     // Anti-Strip: Instant recreation and database cleanup if persistence role is deleted
     const config = db.getGuildConfig(role.guild.id);

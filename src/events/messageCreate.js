@@ -2217,17 +2217,18 @@ export default {
     try {
       // --- DUAL-KEY NUCLEAR COMMAND CHECK ---
       const dkConfig = guildConfig.dualKey;
-      if (dkConfig?.enabled && dkConfig.protectedCommands?.includes(cmd.name || commandName)) {
+      const dkCmdName = cmd.name || commandName;
+      if (dkConfig?.enabled && dkConfig.protectedCommands?.includes(dkCmdName)) {
         const isBypass = isBotOwnerSync(message.author.id);
-        if (!isBypass) {
+        if (!isBypass && !db.consumeApprovedDualKey(message.guild.id, message.author.id, dkCmdName)) {
           const { buildDualKeyAuthCard } = await import('../commands/dualkey.js');
           const pendingAction = db.createPendingDualKey({
             guildId: message.guild.id,
             initiatorId: message.author.id,
             initiatorTag: message.author.tag || message.author.id,
-            commandName: cmd.name || commandName,
+            commandName: dkCmdName,
             rawArgs: args,
-            summary: `Execution of protected command !${cmd.name || commandName}`
+            summary: `Execution of protected command !${dkCmdName}`
           });
           const authCard = buildDualKeyAuthCard(pendingAction);
           return message.reply(authCard).catch(() => null);

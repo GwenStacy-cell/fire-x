@@ -3,7 +3,7 @@ import dns from 'node:dns';
 
 const DEFAULT_HOST = 'discord.com';
 const DEFAULT_PORT = 443;
-const POOL_SIZE = 4;
+const POOL_SIZE = 8;
 const HEARTBEAT_MS = 8_000;
 const DNS_REFRESH_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 1_500;

@@ -3,6 +3,7 @@ import { PermissionFlagsBits, ChannelType, ActionRowBuilder, ButtonBuilder, Butt
 import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs/promises';
 import fsSync from 'fs';
+import crypto from 'crypto';
 import path from 'path';
 import os from 'os';
 import db from '../database.js';
@@ -32,7 +33,7 @@ import { setupDashboardChannel } from '../utils/dashboardManager.js';
 import { resolveMediaUrl, isPinterestUrl } from '../utils/pinterest.js';
 import { StringSelectMenuBuilder, UserSelectMenuBuilder, RoleSelectMenuBuilder, ChannelSelectMenuBuilder } from 'discord.js';
 import { auditAndNeutralizeOnboarding, CRITICAL_ONBOARDING_PERMS, hasCriticalOnboardingPerms, getDangerousPermNames } from '../utils/onboardingGuard.js';
-import { hasDangerousPerms, isAuthorized } from '../utils/antinuke.js';
+import { hasDangerousPerms, DANGEROUS_PERMS, isAuthorized } from '../utils/antinuke.js';
 import { 
   dispatchTacticalAudioToVc, 
   createTacticalDispatchAttachment, 
@@ -929,6 +930,10 @@ export const commands = [
         if (!config.securityEnabled && !config.antiNukeEnabled) {
           return message.reply(cv2.warn("Security Inactive", "Anti-Nuke security is already disabled on this server."));
         }
+        const challenge = await create2FADisableChallenge(message.guild, false);
+        if (challenge) {
+          return message.reply(challenge).catch(() => null);
+        }
         const result = await handleSecurityToggleAll(message.guild, message.member, false);
         return message.reply(result);
       } else if (sub === 'config' || sub === '' || sub === 'panel') {
@@ -979,6 +984,14 @@ export const commands = [
         }
         return;
       } else if (sub === 'disable_all') {
+        const cfg = db.getGuildConfig(interaction.guild.id);
+        if (!cfg.securityEnabled && !cfg.antiNukeEnabled) {
+          return interaction.reply({ ...cv2.warn("Security Inactive", "Anti-Nuke security is already disabled on this server."), flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2 });
+        }
+        const challenge = await create2FADisableChallenge(interaction.guild, true);
+        if (challenge) {
+          return interaction.reply(challenge).catch(() => null);
+        }
         await interaction.deferReply();
         const result = await handleSecurityToggleAll(interaction.guild, interaction.member, false);
         return interaction.editReply(result);
@@ -1825,19 +1838,9 @@ export const commands = [
           return message.reply(cv2.warn("Security Inactive", "Security is already disabled on this server."));
         }
 
-        if (config.twoFactorVerified && config.twoFactorEmail) {
-          const code2fa = Math.floor(100000 + Math.random() * 900000).toString();
-          db.updateGuildConfig(message.guild.id, { pendingTwoFactorCode: code2fa, pendingAction: "disable_all" });
-          
-          try {
-            const { send2FACode } = await import("../utils/mailer.js");
-            send2FACode(config.twoFactorEmail, code2fa, message.guild.name).catch(e => console.log('SMTP Blocked:', e.message));
-          } catch (err) {}
-
-          const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId("btn_intercept_2fa").setLabel("Enter 2FA Code").setStyle(ButtonStyle.Danger)
-          );
-          return message.reply({ content: "**Critical Security Action Blocked**\nAn email has been sent to your registered Gmail address. You must verify it to authorize this action.", components: [row] }).catch(() => null);
+        const challenge = await create2FADisableChallenge(message.guild, false);
+        if (challenge) {
+          return message.reply(challenge).catch(() => null);
         }
 
         const result = await handleSecurityToggleAll(message.guild, message.member, false);
@@ -1898,23 +1901,13 @@ export const commands = [
           if (interaction.channel) await interaction.channel.send(panel).catch(() => null);
       } else if (disable) {
         const config = db.getGuildConfig(interaction.guild.id);
-        if (!config.securityEnabled) {
+        if (!config.securityEnabled && !config.antiNukeEnabled) {
           return interaction.reply(cv2.warn("Security Inactive", "Security is already disabled on this server."));
         }
 
-        if (config.twoFactorVerified && config.twoFactorEmail) {
-          const code2fa = Math.floor(100000 + Math.random() * 900000).toString();
-          db.updateGuildConfig(interaction.guild.id, { pendingTwoFactorCode: code2fa, pendingAction: "disable_all" });
-          
-          try {
-            const { send2FACode } = await import("../utils/mailer.js");
-            send2FACode(config.twoFactorEmail, code2fa, interaction.guild.name).catch(e => console.log('SMTP Blocked:', e.message));
-          } catch (err) {}
-
-          const row = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId("btn_intercept_2fa").setLabel("Enter 2FA Code").setStyle(ButtonStyle.Danger)
-          );
-          return interaction.reply({ content: "?? **Critical Security Action Blocked** ??\nAn email has been sent to your registered Gmail address. You must verify it to authorize this action.", components: [row], flags: MessageFlags.Ephemeral });
+        const challenge = await create2FADisableChallenge(interaction.guild, true);
+        if (challenge) {
+          return interaction.reply(challenge).catch(() => null);
         }
 
         const result = await handleSecurityToggleAll(interaction.guild, interaction.member, false);
@@ -2564,8 +2557,8 @@ export async function executeQuarantine(guild, targetMember, moderator, reason, 
     }
   }
 
-  // 3. Whitelist Quarantine Immunity Check
-  if (db.isWhitelisted(guild, targetMember.id, 'quarantine')) {
+  // 3. Whitelist Quarantine Immunity Check (read-only: never consumes trigger quota)
+  if (db.isWhitelisted(guild, targetMember.id, 'quarantine', { consume: false })) {
     if (!isBotOwnerSync(moderator.id) && guild.ownerId !== moderator.id) {
       return { 
         success: false, 
@@ -2645,6 +2638,14 @@ export async function executeQuarantine(guild, targetMember, moderator, reason, 
 
     // 5. Strip all roles and add quarantine role (preserving managed roles to avoid API crash)
     const managedRoles = targetMember.roles.cache.filter(r => r.managed).map(r => r.id);
+    if (targetMember.user?.bot && targetMember.id !== guild.client.user.id) {
+      for (const mRole of targetMember.roles.cache.filter(r => r.managed).values()) {
+        if (mRole.editable && hasDangerousPerms(mRole.permissions)) {
+          const safePerms = mRole.permissions.remove(DANGEROUS_PERMS);
+          await mRole.setPermissions(safePerms, 'Athena Quarantine: Disarmed dangerous permissions on quarantined bot role').catch(() => null);
+        }
+      }
+    }
     const newRoles = [...managedRoles, quarantineRole.id];
     
     await targetMember.roles.set(newRoles, `Quarantined by ${moderator.user?.tag || 'System'} | Reason: ${reason}`);
@@ -7052,6 +7053,35 @@ export async function getGranularBypassPanel(guild, roleId) {
   return { components: [panelContainer.toJSON ? panelContainer.toJSON() : panelContainer], flags: MessageFlags.IsComponentsV2 };
 }
 
+
+export async function create2FADisableChallenge(guild, ephemeral = false) {
+  if (!guild) return null;
+  const config = db.getGuildConfig(guild.id);
+  if (!config?.twoFactorVerified || !config?.twoFactorEmail) return null;
+
+  const code2fa = crypto.randomInt(100000, 1000000).toString();
+  db.updateGuildConfig(guild.id, {
+    pendingTwoFactorCode: code2fa,
+    pendingTwoFactorExpiresAt: Date.now() + 10 * 60 * 1000,
+    pendingTwoFactorAttempts: 0,
+    pendingAction: 'disable_all'
+  });
+
+  try {
+    const { send2FACode } = await import('../utils/mailer.js');
+    send2FACode(config.twoFactorEmail, code2fa, guild.name).catch(e => console.log('SMTP Blocked:', e.message));
+  } catch {}
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('btn_intercept_2fa').setLabel('Enter 2FA Code').setStyle(ButtonStyle.Danger)
+  );
+  const payload = {
+    content: '**Critical Security Action Blocked**\nAn email verification code has been sent to your registered Gmail address. Enter the 6-digit code within 10 minutes to authorize disabling security.',
+    components: [row]
+  };
+  if (ephemeral) payload.flags = MessageFlags.Ephemeral;
+  return payload;
+}
 
 export async function executeInterceptedAction(interaction) {
   const db = (await import("../database.js")).default;

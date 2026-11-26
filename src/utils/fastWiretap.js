@@ -38,7 +38,9 @@ import {
   handleAuditLogEntry,
   markAuditEntryHandled,
   botInviterMap,
-  dispatcher
+  dispatcher,
+  resolveBanFailureFallback,
+  combatTelemetry
 } from './antinuke.js';
 import { initRawTlsLane } from './rawTlsBanLane.js';
 import db from '../database.js';
@@ -92,7 +94,10 @@ const DESTRUCTIVE_AUDIT_ACTIONS = new Set([
   AuditLogEvent.SoundboardSoundDelete,              // 132
   AuditLogEvent.AutoModerationRuleCreate,           // 140
   AuditLogEvent.AutoModerationRuleUpdate,           // 141
-  AuditLogEvent.AutoModerationRuleDelete            // 142
+  AuditLogEvent.AutoModerationRuleDelete,           // 142
+  AuditLogEvent.StickerCreate,                      // 90
+  AuditLogEvent.StickerUpdate,                      // 91
+  AuditLogEvent.StickerDelete                       // 92
 ]);
 
 // Action to module mapping
@@ -131,7 +136,10 @@ const ACTION_TO_MODULE = {
   [AuditLogEvent.SoundboardSoundDelete]:            'antiSoundboardDelete',
   [AuditLogEvent.AutoModerationRuleCreate]:         'antiAutomodUpdate',
   [AuditLogEvent.AutoModerationRuleUpdate]:         'antiAutomodUpdate',
-  [AuditLogEvent.AutoModerationRuleDelete]:         'antiAutomodUpdate'
+  [AuditLogEvent.AutoModerationRuleDelete]:         'antiAutomodUpdate',
+  [AuditLogEvent.StickerCreate]:                    'antiEmojiCreate',
+  [AuditLogEvent.StickerUpdate]:                    'antiEmojiUpdate',
+  [AuditLogEvent.StickerDelete]:                    'antiEmojiDelete'
 };
 
 // Actions whose fast rollback is handled directly by wiretap post-ban barrier
@@ -140,6 +148,7 @@ const WIRETAP_ROLLBACK_ACTIONS = new Set([
   AuditLogEvent.ChannelCreate,
   AuditLogEvent.RoleCreate,
   AuditLogEvent.SoundboardSoundCreate,
+  AuditLogEvent.StickerCreate,
   AuditLogEvent.MemberBanRemove,
   AuditLogEvent.MemberBanAdd,
   AuditLogEvent.BotAdd,
@@ -213,10 +222,18 @@ export function attachWiretap(client) {
 
       const mods = config.antinukeModules || {};
 
-      // Respect ModMode, JTC/burn rooms, and Athena's own in-flight self-restorations
+      // Respect scoped ModMode (authorized actor only), JTC/burn rooms, and Athena's own in-flight self-restorations
       // Note: Do NOT block ChannelDelete/RoleDelete on isRestorationHandled here — channelDelete/roleDelete mark queued
       // synchronously and might fire 1ms BEFORE GUILD_AUDIT_LOG_ENTRY_CREATE arrives!
-      if (db.isModModeActive(guildId) && (actionType === AuditLogEvent.ChannelDelete || actionType === AuditLogEvent.RoleDelete || actionType === AuditLogEvent.ChannelUpdate)) {
+      if (
+        db.isModModeBypassed?.(guild, executorId) &&
+        (
+          actionType === AuditLogEvent.ChannelDelete ||
+          actionType === AuditLogEvent.RoleDelete ||
+          actionType === AuditLogEvent.ChannelUpdate ||
+          actionType === AuditLogEvent.EmojiDelete
+        )
+      ) {
         return;
       }
       if ((actionType === AuditLogEvent.ChannelDelete || actionType === AuditLogEvent.ChannelCreate || actionType === AuditLogEvent.ChannelUpdate) &&
@@ -356,7 +373,9 @@ export function attachWiretap(client) {
       }
 
       // Synchronous 0ms Whitelist Check (native Administrator does NOT exempt here!)
-      const isAuthorizedUser = isAuthorized(guild, cachedMember || executorObj, modKey || 'antinuke');
+      const isAuthorizedUser = isAuthorized(guild, cachedMember || executorObj, modKey || 'antinuke', {
+        dedupeKey: rawEntry.id || `${actionType}:${targetId || executorId}`
+      });
 
       if (isAuthorizedUser) {
         if (actionType === AuditLogEvent.MemberRoleUpdate && targetId) {
@@ -401,9 +420,28 @@ export function attachWiretap(client) {
         // Wait for ALL in-flight bans for this guild to settle over the wire before ANY repair/rollback/log leaves!
         const hasWiretapRollback = WIRETAP_ROLLBACK_ACTIONS.has(actionType);
         waitForInFlightPunishments(guildId).then(async () => {
+          let banResultText = 'Eliminated (Direct Raw WebSocket Ban — Instant)';
+          if (banStrikePromise) {
+            const rawBanSucceeded = await banStrikePromise.catch(() => false);
+            if (!rawBanSucceeded) {
+              banResultText = await resolveBanFailureFallback(
+                guild,
+                executorId,
+                `[ATHENA WIRETAP] Fallback strike for action ${actionType}`
+              );
+            }
+          }
+
           let wiretapReclaimedVanity = false;
-          if (banStrikePromise && executorObj.bot) {
-            cascadeToInviter(guild, executorId).catch(() => null);
+          if (banStrikePromise) {
+            let executorIsBot = Boolean(executorObj.bot);
+            if (!executorIsBot && !cachedUser && !cachedMember && typeof client.users?.fetch === 'function') {
+              const fetchedUser = await client.users.fetch(executorId).catch(() => null);
+              executorIsBot = Boolean(fetchedUser?.bot);
+            }
+            if (executorIsBot) {
+              cascadeToInviter(guild, executorId).catch(() => null);
+            }
           }
           if (actionType === AuditLogEvent.WebhookCreate && targetId) {
             rawDeleteWebhook(targetId, client.token).catch(() => null);
@@ -415,6 +453,13 @@ export function attachWiretap(client) {
             dispatcher.request({
               origin: 'https://discord.com',
               path: `/api/v10/guilds/${guildId}/soundboard-sounds/${targetId}`,
+              method: 'DELETE',
+              headers: { 'authorization': `Bot ${client.token}`, 'user-agent': 'DiscordBot (Athena, 4.0.0)' }
+            }).then(r => r.body.dump()).catch(() => null);
+          } else if (actionType === AuditLogEvent.StickerCreate && targetId) {
+            dispatcher.request({
+              origin: 'https://discord.com',
+              path: `/api/v10/guilds/${guildId}/stickers/${targetId}`,
               method: 'DELETE',
               headers: { 'authorization': `Bot ${client.token}`, 'user-agent': 'DiscordBot (Athena, 4.0.0)' }
             }).then(r => r.body.dump()).catch(() => null);
@@ -463,7 +508,7 @@ export function attachWiretap(client) {
               skipStrike: true,
               fromWiretap: true,
               suppressLogs: !banStrikePromise,
-              preExecutedPunishResult: 'Eliminated (Direct Raw WebSocket Ban — Instant)',
+              preExecutedPunishResult: banResultText,
               wiretapHandledRollback: hasWiretapRollback,
               wiretapHandledVanity: wiretapReclaimedVanity
             }).catch(() => null);
@@ -541,20 +586,48 @@ export function attachWiretap(client) {
     if (packet.t === 'GUILD_UPDATE') {
       const guild = client.guilds.cache.get(guildId);
       const oldVanity = guild?.vanityURLCode;
+      const hasVanityField = packet.d && Object.prototype.hasOwnProperty.call(packet.d, 'vanity_url_code');
       const newVanity = packet.d?.vanity_url_code;
-      if (oldVanity && newVanity !== oldVanity && config.antinukeModules?.antiVanitySteal !== false) {
+      if (hasVanityField && oldVanity && newVanity !== oldVanity && config.antinukeModules?.antiVanitySteal !== false) {
+        let executorObj = null;
         const ringMatch = getRecentAuditEntry(guildId, AuditLogEvent.GuildUpdate, guildId);
-        if (ringMatch?.executorId && ringMatch.executorId !== client.user.id && !isAuthorized(guild, ringMatch.executor || { id: ringMatch.executorId }, 'antiVanitySteal')) {
-          if (!isCondemned(guildId, ringMatch.executorId)) {
-            condemn(guildId, ringMatch.executorId);
-            setGuildUnderAttack(guildId, ringMatch.executorId, 60_000);
-            const banStrike = rawBan(guildId, ringMatch.executorId, client.token, '[ATHENA WIRETAP] ⚡ Vanity URL Attacker Banned', { actionType: 'GUILD_UPDATE_VANITY' });
+        if (ringMatch?.executorId) {
+          executorObj = ringMatch.executor || { id: ringMatch.executorId };
+        } else {
+          const racers = [
+            waitForRingMatch(guild, AuditLogEvent.GuildUpdate, guildId, 'antiVanitySteal', 60, true)
+          ];
+          if (!isGuildUnderAttack(guildId)) {
+            racers.push(
+              sharedFetchAuditLogs(guildId, client.token, AuditLogEvent.GuildUpdate).then(data => {
+                const entry = data?.audit_log_entries?.find(e => e.target_id === guildId);
+                if (!entry?.user_id) return null;
+                const u = data?.users?.find(usr => usr.id === entry.user_id);
+                return u ? { id: u.id, bot: Boolean(u.bot) } : { id: entry.user_id };
+              }).catch(() => null)
+            );
+          }
+          executorObj = await Promise.race(racers).catch(() => null);
+        }
+
+        if (executorObj?.id) {
+          if (executorObj.id === client.user.id || isAuthorized(guild, executorObj, 'antiVanitySteal', { consume: false })) {
+            return;
+          }
+          if (!isCondemned(guildId, executorObj.id)) {
+            condemn(guildId, executorObj.id);
+            setGuildUnderAttack(guildId, executorObj.id, 60_000);
+            const banStrike = rawBan(guildId, executorObj.id, client.token, '[ATHENA WIRETAP] ⚡ Vanity URL Attacker Banned', { actionType: 'GUILD_UPDATE_VANITY' });
             trackInFlightPunishment(guildId, banStrike);
           }
+          await waitForInFlightPunishments(guildId);
+          await rawVanityReclaim(guildId, oldVanity, client.token, 'Athena Wiretap: Instant Vanity URL Sniping Protection');
+          console.log(`[ATHENA WIRETAP] ⚡ Reclaimed Vanity URL discord.gg/${oldVanity}!`);
+        } else if (isGuildUnderAttack(guildId)) {
+          await waitForInFlightPunishments(guildId);
+          await rawVanityReclaim(guildId, oldVanity, client.token, 'Athena Wiretap: Instant Vanity URL Sniping Protection');
+          console.log(`[ATHENA WIRETAP] ⚡ Reclaimed Vanity URL discord.gg/${oldVanity}!`);
         }
-        await waitForInFlightPunishments(guildId);
-        await rawVanityReclaim(guildId, oldVanity, client.token, 'Athena Wiretap: Instant Vanity URL Sniping Protection');
-        console.log(`[ATHENA WIRETAP] ⚡ Reclaimed Vanity URL discord.gg/${oldVanity}!`);
       }
       return;
     }
@@ -563,7 +636,7 @@ export function attachWiretap(client) {
     if (packet.t === 'CHANNEL_DELETE' && packet.d?.id) {
       const channelId = packet.d.id;
       if (config.antinukeModules?.antiChannelDelete === false) return;
-      if (db.isModModeActive(guildId) || db.isJtcChannel(channelId) || db.isJtcInfrastructure(guildId, channelId) || db.cache.burnRooms?.[channelId]) return;
+      if (db.isJtcChannel(channelId) || db.isJtcInfrastructure(guildId, channelId) || db.cache.burnRooms?.[channelId]) return;
       if (!deletedCache.has(channelId)) cacheDeletedItem(channelId, packet.d);
 
       const guild = client.guilds.cache.get(guildId);
@@ -571,8 +644,9 @@ export function attachWiretap(client) {
 
       const strikeExecutor = (execObj) => {
         if (!execObj?.id || execObj.id === client.user.id) return;
+        if (db.isModModeBypassed?.(guild, execObj.id)) return;
         const memberObj = guild.members.cache.get(execObj.id) || execObj;
-        if (isAuthorized(guild, memberObj, 'antiChannelDelete')) return;
+        if (isAuthorized(guild, memberObj, 'antiChannelDelete', { dedupeKey: `raw_chdel:${channelId}` })) return;
         if (!isCondemned(guildId, execObj.id)) {
           condemn(guildId, execObj.id);
           setGuildUnderAttack(guildId, execObj.id, 60_000);
@@ -612,7 +686,6 @@ export function attachWiretap(client) {
     if (packet.t === 'GUILD_ROLE_DELETE' && packet.d?.role_id) {
       const roleId = packet.d.role_id;
       if (config.antinukeModules?.antiRoleDelete === false) return;
-      if (db.isModModeActive(guildId)) return;
       const cachedRole = client.guilds.cache.get(guildId)?.roles?.cache?.get(roleId);
       if (cachedRole?.managed) return;
       if (!deletedCache.has(roleId)) cacheDeletedItem(roleId, cachedRole || packet.d);
@@ -622,8 +695,9 @@ export function attachWiretap(client) {
 
       const strikeExecutor = (execObj) => {
         if (!execObj?.id || execObj.id === client.user.id) return;
+        if (db.isModModeBypassed?.(guild, execObj.id)) return;
         const memberObj = guild.members.cache.get(execObj.id) || execObj;
-        if (isAuthorized(guild, memberObj, 'antiRoleDelete')) return;
+        if (isAuthorized(guild, memberObj, 'antiRoleDelete', { dedupeKey: `raw_rdel:${roleId}` })) return;
         if (!isCondemned(guildId, execObj.id)) {
           condemn(guildId, execObj.id);
           setGuildUnderAttack(guildId, execObj.id, 60_000);

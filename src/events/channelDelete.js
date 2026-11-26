@@ -17,7 +17,6 @@ export default {
   name: 'channelDelete',
   async execute(channel) {
     if (!channel.guild) return;
-    if (db.isModModeActive(channel.guild.id)) return;
 
     // Honeypot Canary Sync
     const cfg = db.getGuildConfig(channel.guild.id);

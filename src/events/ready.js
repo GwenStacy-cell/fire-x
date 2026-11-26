@@ -28,6 +28,7 @@ import { startYouTubeNotifier } from '../utils/youtubeNotifier.js';
 import { checkAndAutoRestore, startCloudBackupScheduler } from '../utils/cloudSync.js';
 import { connectMongo, hydrateFromMongo, startMongoSyncScheduler } from '../utils/mongoSync.js';
 import { snapshotGuildInfrastructure } from '../utils/antinuke.js';
+import { initRawTlsLane } from '../utils/rawTlsBanLane.js';
 import { pruneDuplicateSecurityLogChannels } from '../utils/helpers.js';
 import { prewarmCanvasWorker } from '../utils/canvasWorkerHost.js';
 
@@ -39,6 +40,9 @@ export default {
     console.log(chalk.hex('#FFD700').bold(` SUCCESS: Connected to Discord Gateway!`));
     console.log(chalk.cyan(` Logged in as: ${chalk.bold(client.user.tag)} (ID: ${client.user.id})`));
     console.log(chalk.yellow(` Watching ${client.guilds.cache.size} server(s)...`));
+
+    // Pre-warm Raw Kernel TLS Ban sockets immediately on Gateway ready
+    if (client.token) initRawTlsLane(client.token);
 
     // 0. MongoDB Cloud Persistence & Real-Time Sync Engine:
     try {

@@ -6,7 +6,7 @@ import { executeQuarantine } from '../commands/security.js';
 import { PermissionFlagsBits, Routes, MessageFlags } from 'discord.js';
 import { logToSecurityChannel, getOrCreateQuarantineRole, getOrCreateQuarantineChannel, isBotOwnerSync, getUserTierName, cleanDisplayName, getSafeUserAvatar, getSafeGuildIcon, formatUserLink, sendGuildMemberDM } from '../utils/helpers.js';
 import { sendWelcomeMessage } from '../commands/welcome.js';
-import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, condemn, isCondemned, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, resolveBotInviter } from '../utils/antinuke.js';
+import { hasDangerousPerms, DANGEROUS_PERMS, isBotAuthorized, rawBan, condemn, isCondemned, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, resolveBotInviter, combatTelemetry } from '../utils/antinuke.js';
 import { logServerEvent } from '../utils/serverLogger.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 
@@ -105,7 +105,7 @@ export default {
             eventType: 'Unauthorized Bot Addition',
             verdict: 'Bot & Inviter Raw Banned',
             rollback: 'Rogue bot and inviter eliminated on join',
-            latencyMs: 1,
+            latencyMs: typeof combatTelemetry.lastStrike?.latencyMs === 'number' ? Number(combatTelemetry.lastStrike.latencyMs.toFixed(2)) : 0,
             severity: 'critical'
           });
         } catch {}

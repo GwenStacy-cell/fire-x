@@ -536,7 +536,7 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
       return null;
     }
     
-    const { getRecentAuditEntry, waitForRingMatch, sharedFetchAuditLogs, rawBan, condemn, setGuildUnderAttack, trackInFlightPunishment } = await import('./antinuke.js');
+    const { getRecentAuditEntry, waitForRingMatch, sharedFetchAuditLogs, rawBan, condemn, setGuildUnderAttack, trackInFlightPunishment, combatTelemetry } = await import('./antinuke.js');
     
     // ⚡ STEP 1: Check the WebSocket Audit Ring first (0ms latency, zero HTTP requests)
     let executor = null;
@@ -611,7 +611,7 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
           eventType: `Anti-Stab Persistence Attack (${actionText})`,
           verdict: executor?.id !== guild.ownerId ? 'Banned & Roles Stripped' : 'Protected (Owner Action)',
           rollback: 'Athena Unbypassable & Firewall permissions immediately restored',
-          latencyMs: 1,
+          latencyMs: typeof combatTelemetry.lastStrike?.latencyMs === 'number' ? Number(combatTelemetry.lastStrike.latencyMs.toFixed(2)) : 0,
           severity: 'critical'
         });
 
