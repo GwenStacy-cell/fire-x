@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.25',
+    headline: 'Container Disk-Space Guard & Shallow Auto-Deploy Optimization',
+    summary: 'Eliminated hidden npm cache and full git object history bloat inside Pterodactyl containers by switching start.sh and gitWatcher.js to shallow --depth 1 syncs, --omit=dev installs, and automatic temporary cache pruning.',
+    whatsNew: [
+      {
+        title: 'Shallow Git Mirror & Packfile Pruning',
+        desc: 'Removed --unshallow history downloads from gitWatcher.js and enabled shallow fetch + git gc pruning in start.sh so .git stays tiny on 2 GiB hosting containers.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Automatic npm Cache & Temp Media Cleanup on Boot',
+        desc: 'Redirects npm cache to /tmp, omits devDependencies on deploy, and clears temporary recording/cache folders (movies/web_cache, temp_media, stale scratch audio) automatically on every start.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Prevented Disk-Quota ENOSPC Lockouts on Container Restarts',
+        desc: 'Stops recurring git fetch and npm install downloads from silently filling container storage over 2 GiB.'
+      }
+    ],
+    tip: 'If a 2 GiB container ever fills up before startup, delete .npm, .cache, movies/web_cache, temp_media, and .git in Files then Restart.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.24',
     headline: 'Added "Prince" Signature Sound to Voice Soundboard Deck',
     summary: 'Added the custom "Prince" audio clip as a built-in soundboard button on !soundboard / /soundboard and playable directly via !sfx prince / /sfx.',

@@ -46,15 +46,7 @@ export async function getGitCommitCount() {
     }
 
     let num = parseInt(stdout.trim(), 10);
-    // If shallow clone detected (e.g. depth 1 count is < 100), try to unshallow
-    if (!isNaN(num) && num < 100) {
-      try {
-        await runGit('git fetch --unshallow origin main');
-        const res = await runGit('git rev-list --count HEAD');
-        num = parseInt(res.stdout.trim(), 10);
-      } catch {}
-    }
-
+    // Keep shallow clones compact — never unshallow full packfiles onto small containers
     if (!isNaN(num) && num > 0) {
       cachedCommitCount = num.toLocaleString('en-US');
       lastCountCheck = now;
@@ -157,15 +149,16 @@ export async function startGitWatcher(intervalMs = 30000) {
           const { stdout: diffOutput } = await runGit(`git diff --name-only ${currentCommit} ${remoteCommit}`).catch(() => ({ stdout: '' }));
           if (diffOutput && diffOutput.includes('package.json')) {
             console.log(chalk.yellow('[AutoDeploy] Detected changes in package.json. Updating node modules...'));
-            await runGit('npm install --no-audit --no-fund --loglevel=error').catch(() => {});
+            await runGit('npm install --omit=dev --no-audit --no-fund --loglevel=error && npm cache clean --force').catch(() => {});
           }
         } catch {}
 
-        // Pull latest updates immediately from the zero-auth public mirror
+        // Pull latest updates shallowly and prune old packfiles
         try {
-          console.log(chalk.cyan('[AutoDeploy] Synchronizing local repository via git fetch & reset...'));
-          await runGit(`git fetch ${PUBLIC_REPO_URL} main --quiet`);
+          console.log(chalk.cyan('[AutoDeploy] Synchronizing local repository via shallow fetch...'));
+          await runGit(`git fetch --depth 1 ${PUBLIC_REPO_URL} main --quiet`);
           await runGit('git reset --hard FETCH_HEAD');
+          await runGit('git reflog expire --expire=now --all && git gc --prune=now --quiet').catch(() => {});
           console.log(chalk.green('[AutoDeploy] Successfully synchronized local repository.'));
         } catch (pullErr) {
           try {
