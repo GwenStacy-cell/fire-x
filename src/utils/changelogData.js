@@ -15,6 +15,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
  */
 export const CHANGELOG_ENTRIES = [
   {
+    date: '28 November 2026',
+    version: 'v4.0.22',
+    headline: 'Immediate Boot Web Server Startup & Port Diagnostics',
+    summary: 'Moved Athena Web Platform Express server startup directly into early boot (index.js) with idempotent initWebSub protection so port binding starts instantaneously before Discord invite/audit pre-caching.',
+    whatsNew: [
+      {
+        title: 'Instant HTTP Port Binding on Boot',
+        desc: 'Starts Express on 0.0.0.0 before gateway invite/audit fetch loops so /health, WebSub, Cinema, and the Web Control Plane come online immediately even on multi-guild restarts.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Idempotent WebSub & Explicit Port Diagnostics',
+        desc: 'Logs resolved host port and DASHBOARD_BASE_URL immediately on listen and guards against duplicate initialization.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Eliminated Boot Delay Blocking Web Port Binding',
+        desc: 'Prevents slow or erroring invite/audit sync steps in ready.js from delaying or skipping Express server startup.'
+      }
+    ],
+    tip: 'Check Console for "[Web] Athena Web Platform, Cinema & WebSub listening on 0.0.0.0:2115" immediately on boot.',
+    author: '@Dev Porsche </>'
+  },
+  {
     date: '27 November 2026',
     version: 'v4.0.21',
     headline: 'Athena Web Control Plane & Passwordless !weblogin Dashboard',

@@ -4,15 +4,18 @@ import db from '../database.js';
 import chalk from 'chalk';
 import { sendYouTubeNotification } from './youtubeNotifier.js';
 import { registerCinemaRoutes } from './cinemaEngine.js';
-import { registerWebPlatform, resolveWebPort } from '../web/server.js';
+import { registerWebPlatform, resolveWebPort, getDashboardBaseUrl } from '../web/server.js';
 
 const app = express();
 const xmlParser = new XMLParser({ ignoreAttributes: false });
 
 let clientRef = null;
+let webInitialized = false;
 
 export function initWebSub(client) {
   clientRef = client;
+  if (webInitialized) return;
+  webInitialized = true;
   const port = resolveWebPort();
   
   // YouTube sends WebSub payloads as application/atom+xml
@@ -88,9 +91,9 @@ export function initWebSub(client) {
   registerWebPlatform(app, client);
 
   app.listen(port, '0.0.0.0', () => {
-    console.log(chalk.green(`[Web] Athena Web Platform, Cinema & WebSub listening on 0.0.0.0:${port}`));
+    console.log(chalk.green(`[Web] Athena Web Platform, Cinema & WebSub listening on 0.0.0.0:${port} (Public Base: ${getDashboardBaseUrl()})`));
   }).on('error', (err) => {
-    console.warn(`[Web] Could not bind port ${port} (standalone mode):`, err.message);
+    console.error(chalk.red(`[Web] Failed to bind 0.0.0.0:${port}:`), err.message);
   });
 }
 

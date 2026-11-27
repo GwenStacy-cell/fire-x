@@ -255,7 +255,9 @@ client.on('raw', (packet) => {
 });
 console.log(chalk.gray(`   ├─ Bound event: `) + chalk.yellow.bold('raw (Wiretap & LiveTelemetry Unified) ⚡'));
 
-// HTTP Web Platform, Health Check (/health), Cinema & WebSub unified on Express inside src/utils/websub.js
+// HTTP Web Platform, Health Check (/health), Cinema & WebSub unified on Express (start immediately on boot)
+import { initWebSub } from './src/utils/websub.js';
+initWebSub(client);
 
 // Authenticate with Discord APIs
 console.log(chalk.yellow('\n⏳ Connecting to Discord Gateway...'));
