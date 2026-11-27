@@ -1,5 +1,4 @@
 import crypto from 'node:crypto';
-import { PermissionFlagsBits } from 'discord.js';
 import db, { isRootBotOwnerId } from '../database.js';
 
 export const SESSION_COOKIE_NAME = 'athena_dash_session';
@@ -266,12 +265,13 @@ export function getRequestSession(req) {
 
 /**
  * Determines exact permission clearance for a user inside a specific Discord guild.
- * Enforces Athena's strict tier hierarchy:
- * - Tier 0 (root): Global Bot Owner or Server Owner
- * - Tier 1 (deputy): Registered Extra Owner (no 2FA/Disarm, no Extra Owner management)
- * - Tier 2 (admin): Server Administrator / ManageGuild (read-only security inspection)
+ * Strictly enforces Athena Prime's Ownership Model:
+ * - Bot Owner: Absolute access across mutual guilds
+ * - Server Owner: Full guild control (Extra Owners, Security Disarm, Snapshot Restore + Extra Owner powers)
+ * - Extra Owner: Extra Owner controls only (arm shields, whitelists, bot whitelist, AutoMod, blacklist, honeypot, tagdrag, snapshots, incidents)
+ * Native Discord 'Administrator' or role permissions NEVER grant access.
  */
-export async function getGuildClearance(guild, userId, { fetchMember = true } = {}) {
+export async function getGuildClearance(guild, userId) {
   if (!guild || !userId) return null;
   const uid = String(userId);
   const isGlobalRoot = isRootBotOwnerId(uid);
@@ -280,7 +280,7 @@ export async function getGuildClearance(guild, userId, { fetchMember = true } = 
     return {
       tier: 'root',
       tierNumber: 0,
-      roleLabel: isGlobalRoot ? 'BOT ROOT (TIER 0)' : 'SERVER OWNER (TIER 0)',
+      roleLabel: isGlobalRoot ? 'BOT OWNER' : 'SERVER OWNER',
       canArm: true,
       canDisarm: true,
       canToggleModules: true,
@@ -297,10 +297,10 @@ export async function getGuildClearance(guild, userId, { fetchMember = true } = 
     return {
       tier: 'deputy',
       tierNumber: 1,
-      roleLabel: 'EXTRA OWNER (TIER 1)',
+      roleLabel: 'EXTRA OWNER',
       canArm: true,
       canDisarm: false,
-      canToggleModules: false, // Deputies may arm shields via master arm; only Tier-0 disables protections
+      canToggleModules: true, // Extra Owners can arm/enable shields; disabling shields requires Server Owner / Bot Owner
       canManageWhitelist: true,
       canManageExtraOwners: false,
       canManageControls: true,
@@ -310,42 +310,17 @@ export async function getGuildClearance(guild, userId, { fetchMember = true } = 
     };
   }
 
-  let member = guild.members.cache.get(uid) || null;
-  if (!member && fetchMember) {
-    member = await guild.members.fetch(uid).catch(() => null);
-  }
-  if (!member) return null;
-
-  const isAdmin =
-    member.permissions.has(PermissionFlagsBits.Administrator) ||
-    member.permissions.has(PermissionFlagsBits.ManageGuild);
-  if (!isAdmin) return null;
-
-  return {
-    tier: 'admin',
-    tierNumber: 2,
-    roleLabel: 'SERVER ADMIN (VIEW ONLY)',
-    canArm: false,
-    canDisarm: false,
-    canToggleModules: false,
-    canManageWhitelist: false,
-    canManageExtraOwners: false,
-    canManageControls: false,
-    canCreateSnapshot: false,
-    canRestoreSnapshot: false,
-    canClearIncidents: false
-  };
+  return null;
 }
 
 /**
- * Lists all mutual guilds where the authenticated user holds management clearance.
+ * Lists all mutual guilds where the authenticated user is Bot Owner, Server Owner, or Extra Owner.
  */
 export async function getAccessibleGuilds(client, userId) {
   if (!client?.guilds?.cache) return [];
   const results = [];
   for (const guild of client.guilds.cache.values()) {
-    // Check cached member synchronously first; fetch only if root/extra or cached admin
-    const clearance = await getGuildClearance(guild, userId, { fetchMember: true });
+    const clearance = await getGuildClearance(guild, userId);
     if (!clearance) continue;
     const cfg = db.getGuildConfig(guild.id);
     results.push({
@@ -359,7 +334,7 @@ export async function getAccessibleGuilds(client, userId) {
       roleLabel: clearance.roleLabel
     });
   }
-  // Sort by highest clearance then member count descending
+  // Sort by ownership tier then member count descending
   results.sort((a, b) => (a.tierNumber - b.tierNumber) || (b.memberCount - a.memberCount));
   return results;
 }

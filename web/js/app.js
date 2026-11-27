@@ -384,7 +384,7 @@
       ovDisarmBtn.classList.toggle('opacity-40', !(clearance.canDisarm && security.isSecured));
     }
 
-    renderShieldsGrid(security.shields, security.isSecured, clearance.canToggleModules);
+    renderShieldsGrid(security.shields, security.isSecured, clearance.canToggleModules, clearance.canDisarm);
     renderAccessControl(access, clearance);
     renderTelemetryTab(guild, telemetry, security);
     renderExtraControlsTab(controls, clearance, guild);
@@ -392,11 +392,13 @@
     renderSyncDocsTab(syncSummary);
   }
 
-  function renderShieldsGrid(shields, masterArmed, canToggle) {
+  function renderShieldsGrid(shields, masterArmed, canToggle, canDisarm = false) {
     const grid = document.getElementById('shieldsMatrixGrid');
     if (!grid) return;
     const filtered = state.shieldCat === 'all' ? shields : shields.filter(s => s.category === state.shieldCat);
-    grid.innerHTML = filtered.map(s => `
+    grid.innerHTML = filtered.map(s => {
+      const canModifyThis = Boolean(masterArmed && canToggle && (!s.enabled || canDisarm));
+      return `
       <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/25 flex items-center justify-between gap-3">
         <div class="min-w-0">
           <div class="flex items-center gap-2 flex-wrap">
@@ -405,12 +407,13 @@
           </div>
           <p class="text-xs text-on-surface-variant mt-1">${esc(s.desc)}</p>
         </div>
-        <label class="tactical-switch" title="${canToggle && masterArmed ? 'Toggle Shield' : 'Tier-0 Owner required while Master Security is armed'}">
-          <input type="checkbox" class="shield-toggle-input" data-mod="${esc(s.key)}" ${s.enabled ? 'checked' : ''} ${(canToggle && masterArmed) ? '' : 'disabled'} />
+        <label class="tactical-switch" title="${canModifyThis ? 'Toggle Shield' : (masterArmed ? 'Server Owner / Bot Owner required to disable active shields' : 'Arm Master Security first')}">
+          <input type="checkbox" class="shield-toggle-input" data-mod="${esc(s.key)}" ${s.enabled ? 'checked' : ''} ${canModifyThis ? '' : 'disabled'} />
           <span class="tactical-slider"></span>
         </label>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     grid.querySelectorAll('.shield-toggle-input').forEach(inp => {
       inp.addEventListener('change', async () => {
@@ -1020,7 +1023,7 @@
             : 'shield-filter-btn px-3 py-1 rounded text-outline hover:text-on-surface font-mono text-xs';
         });
         if (state.guildData) {
-          renderShieldsGrid(state.guildData.security.shields, state.guildData.security.isSecured, state.guildData.clearance.canToggleModules);
+          renderShieldsGrid(state.guildData.security.shields, state.guildData.security.isSecured, state.guildData.clearance.canToggleModules, state.guildData.clearance.canDisarm);
         }
       });
     });

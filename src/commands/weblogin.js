@@ -81,7 +81,7 @@ export const commands = [
 
       let clearance = null;
       if (guild) {
-        clearance = await getGuildClearance(guild, user.id, { fetchMember: true });
+        clearance = await getGuildClearance(guild, user.id);
       } else {
         const guilds = await getAccessibleGuilds(message.client, user.id);
         if (guilds.length > 0) {
@@ -92,7 +92,7 @@ export const commands = [
       if (!clearance) {
         return message.reply(cv2.danger(
           `Access Denied | ${WRONG_EMOJI}`,
-          `${formatUserLink(user, guild)} Web Dashboard login is restricted to **Server Owners**, **Extra Owners**, **Server Admins** (\`Manage Server\` / \`Administrator\`), and **Bot Owners**.`
+          `${formatUserLink(user, guild)} Web Dashboard login is strictly limited by Athena Ownership Mode to **Server Owners**, **Extra Owners**, and **Bot Owners**.`
         )).catch(() => null);
       }
 
@@ -123,7 +123,7 @@ export const commands = [
 
       let clearance = null;
       if (guild) {
-        clearance = await getGuildClearance(guild, user.id, { fetchMember: true });
+        clearance = await getGuildClearance(guild, user.id);
       } else {
         const guilds = await getAccessibleGuilds(interaction.client, user.id);
         if (guilds.length > 0) {
@@ -135,7 +135,7 @@ export const commands = [
         return interaction.reply({
           ...cv2.danger(
             `Access Denied | ${WRONG_EMOJI}`,
-            `${formatUserLink(user, guild)} Web Dashboard login is restricted to **Server Owners**, **Extra Owners**, **Server Admins** (\`Manage Server\` / \`Administrator\`), and **Bot Owners**.`
+            `${formatUserLink(user, guild)} Web Dashboard login is strictly limited by Athena Ownership Mode to **Server Owners**, **Extra Owners**, and **Bot Owners**.`
           ),
           flags: MessageFlags.IsComponentsV2 | MessageFlags.Ephemeral
         }).catch(() => null);

@@ -148,7 +148,7 @@ function requireGuildAccess(client, capabilityFlag = null) {
     if (!guild) {
       return res.status(404).json({ ok: false, error: 'Athena Prime is not active in this guild.' });
     }
-    const clearance = await getGuildClearance(guild, req.dashUser.id, { fetchMember: true });
+    const clearance = await getGuildClearance(guild, req.dashUser.id);
     if (!clearance) {
       return res.status(403).json({ ok: false, error: 'Insufficient guild clearance.' });
     }
@@ -655,6 +655,13 @@ export function registerDashboardRoutes(app, client) {
     const guild = req.targetGuild;
     const moduleKey = String(req.body?.moduleKey || '').trim();
     const enabled = Boolean(req.body?.enabled);
+
+    if (!enabled && !req.clearance.canDisarm) {
+      return res.status(403).json({
+        ok: false,
+        error: 'Only the Server Owner or Bot Owner can disable active Anti-Nuke shields.'
+      });
+    }
 
     if (!ALL_ANTINUKE_MODULE_KEYS.includes(moduleKey)) {
       return res.status(400).json({ ok: false, error: 'Unknown Anti-Nuke module key.' });

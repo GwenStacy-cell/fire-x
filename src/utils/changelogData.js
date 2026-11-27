@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.23',
+    headline: 'Strict Athena Ownership Mode on Web Control Plane',
+    summary: 'Aligned web dashboard authentication and authorization strictly with Athena Prime ownership rules: only Bot Owners, Server Owners, and Extra Owners can access or operate their respective guilds, removing native Discord Administrator fallback access.',
+    whatsNew: [
+      {
+        title: 'Strict 3-Tier Ownership Enforcement (Bot Owner / Server Owner / Extra Owner)',
+        desc: 'Non-owner Discord Administrators can no longer enter server dashboards; Extra Owners receive full Extra Owner control panels while Server-Owner-Only controls (Extra Owners hierarchy, Security Disarm, active shield shutdown, and Snapshot Restore) stay locked to Server Owner / Bot Owner.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Zero-REST Mutual Guild Resolution',
+        desc: 'In-memory ownership verification in src/web/auth.js resolves mutual Server Owner & Extra Owner guilds instantaneously without REST member fetch loops.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Extra Owner Shield Enabling Parity',
+        desc: 'Allows Extra Owners to enable inactive security shields via web toggles while continuing to block unapproved module disabling.'
+      }
+    ],
+    tip: 'Any Server Owner or Extra Owner can open http://m3.obclouds.in:2115 and run !weblogin in their server to manage only the servers and command tier they own.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.22',
     headline: 'Immediate Boot Web Server Startup & Port Diagnostics',
     summary: 'Moved Athena Web Platform Express server startup directly into early boot (index.js) with idempotent initWebSub protection so port binding starts instantaneously before Discord invite/audit pre-caching.',
