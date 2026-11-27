@@ -128,8 +128,10 @@ import { commands as combatopsCmds } from './combatops.js';
 import { commands as aboutCmds } from './about.js';
 import { commands as changelogCmds } from './changelog.js';
 import { commands as togifCmds } from './togif.js';
+import { commands as webloginCmds } from './weblogin.js';
 
 export const allCommands = [
+  ...webloginCmds,
   ...togifCmds,
   ...changelogCmds,
   ...liveopsCmds,

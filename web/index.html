@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Athena Prime • Autonomous Discord Defense &amp; Control Plane</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-bright": "#363940",
+            "on-secondary-fixed-variant": "#005226",
+            "inverse-surface": "#e1e2eb",
+            "surface-container-high": "#272a31",
+            "surface-container-highest": "#32353c",
+            "surface": "#10131a",
+            "on-tertiary-fixed-variant": "#6700b5",
+            "on-primary": "#00363a",
+            "primary-container": "#00f0ff",
+            "on-secondary": "#003918",
+            "tertiary-container": "#e9d0ff",
+            "surface-container-lowest": "#0b0e14",
+            "on-error": "#690005",
+            "on-tertiary": "#480081",
+            "outline-variant": "#3b494b",
+            "surface-variant": "#32353c",
+            "secondary-container": "#05e777",
+            "error": "#ffb4ab",
+            "error-container": "#93000a",
+            "on-secondary-container": "#00622e",
+            "surface-container-low": "#191c22",
+            "tertiary-fixed": "#efdbff",
+            "on-primary-container": "#006970",
+            "surface-tint": "#00dbe9",
+            "primary-fixed": "#7df4ff",
+            "on-error-container": "#ffdad6",
+            "tertiary": "#fdf3ff",
+            "inverse-on-surface": "#2d3037",
+            "background": "#10131a",
+            "outline": "#849495",
+            "on-surface": "#e1e2eb",
+            "primary": "#dbfcff",
+            "on-background": "#e1e2eb",
+            "secondary": "#7dffa2",
+            "on-tertiary-fixed": "#2c0051",
+            "on-tertiary-container": "#8523dd",
+            "tertiary-fixed-dim": "#dcb8ff",
+            "on-secondary-fixed": "#00210b",
+            "secondary-fixed-dim": "#00e475",
+            "inverse-primary": "#006970",
+            "secondary-fixed": "#62ff96",
+            "surface-dim": "#10131a",
+            "surface-container": "#1d2026",
+            "primary-fixed-dim": "#00dbe9",
+            "on-surface-variant": "#b9cacb",
+            "on-primary-fixed-variant": "#004f54",
+            "on-primary-fixed": "#002022"
+          },
+          fontFamily: {
+            sans: ["Inter", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="/css/custom.css" />
+</head>
+<body class="bg-surface text-on-surface font-sans antialiased selection:bg-primary-container selection:text-on-primary min-h-screen">
+
+  <!-- ======================================================================= -->
+  <!-- DESKTOP LEFT SIDEBAR (Shown on lg+, visible when navigating platform)   -->
+  <!-- ======================================================================= -->
+  <aside id="appSidebar" class="hidden lg:flex fixed left-0 top-0 h-full w-80 bg-surface-container-lowest border-r border-outline-variant/25 z-40 flex-col justify-between">
+    <div class="flex flex-col flex-1 min-h-0">
+      <!-- Brand Header -->
+      <div class="px-4 py-5 flex items-center justify-between bg-surface-container-low border-b border-outline-variant/20">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container shadow-[0_0_12px_rgba(0,240,255,0.25)] shrink-0">
+            <span class="material-symbols-outlined text-[20px]">security</span>
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold uppercase tracking-wider text-primary text-sm truncate">ATHENA PRIME</div>
+            <div class="font-mono text-[10px] text-on-surface-variant tracking-widest uppercase truncate">DISCORD SOC PROTOCOL</div>
+          </div>
+        </div>
+        <div id="sidebarDefconBadge" class="flex items-center gap-1.5 px-2 py-0.5 rounded bg-secondary-container/20 text-secondary shrink-0">
+          <span class="w-1.5 h-1.5 rounded-full bg-secondary animate-ping"></span>
+          <span class="font-mono text-[10px] font-bold tracking-wider">LIVE</span>
+        </div>
+      </div>
+
+      <!-- Active Guild Selector -->
+      <div id="sidebarGuildBox" class="hidden px-4 py-3 bg-surface-container-low border-b border-outline-variant/20">
+        <label for="guildSwitcherSelect" class="block font-mono text-[10px] text-outline uppercase tracking-widest mb-1.5">Active Target Guild</label>
+        <div class="relative">
+          <select id="guildSwitcherSelect" class="w-full appearance-none bg-surface-container hover:bg-surface-container-high text-on-surface text-sm font-semibold rounded-lg px-3 py-2.5 pr-8 border border-outline-variant/40 outline-none focus:border-primary-container cursor-pointer transition-colors"></select>
+          <span class="material-symbols-outlined text-outline text-[18px] pointer-events-none absolute right-2.5 top-2.5">unfold_more</span>
+        </div>
+        <div id="guildMetaLine" class="mt-1.5 flex items-center justify-between font-mono text-[11px] text-on-surface-variant">
+          <span id="sidebarMemberCount">— members</span>
+          <span id="sidebarLatency" class="text-secondary flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span>—ms</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Primary Navigation -->
+      <nav class="flex-1 px-2.5 py-4 overflow-y-auto space-y-1">
+        <div class="px-3 pb-1 font-mono text-[10px] text-outline uppercase tracking-widest">Platform</div>
+        <button data-nav="showcase" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+          <span class="material-symbols-outlined text-[18px]">verified_user</span>
+          <span>Showcase &amp; Auth</span>
+        </button>
+
+        <div id="dashNavGroup" class="hidden pt-3 space-y-1">
+          <div class="px-3 pb-1 font-mono text-[10px] text-outline uppercase tracking-widest">Enforcement Matrix</div>
+          <button data-nav="overview" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">dashboard</span>
+            <span>Overview &amp; 2FA Gate</span>
+          </button>
+          <button data-nav="access" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
+            <span>Whitelists &amp; Access</span>
+          </button>
+          <button data-nav="sectrack" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">radar</span>
+            <span>Live Telemetry !sectrack</span>
+          </button>
+          <button data-nav="controls" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">tune</span>
+            <span>Extra Controls &amp; Backups</span>
+          </button>
+          <button data-nav="incidents" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">crisis_alert</span>
+            <span>Incident Inspector</span>
+          </button>
+
+          <div class="pt-3 px-3 pb-1 font-mono text-[10px] text-outline uppercase tracking-widest">System Archives</div>
+          <button data-nav="docs" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">terminal</span>
+            <span>Sync Matrix &amp; Docs</span>
+          </button>
+        </div>
+      </nav>
+    </div>
+
+    <!-- Bottom Operator Identity Card -->
+    <div class="p-3 bg-surface-container-low border-t border-outline-variant/20">
+      <div id="sidebarGuestCard" class="p-3 rounded-lg bg-surface-container flex items-center justify-between gap-2">
+        <div class="min-w-0">
+          <div class="font-mono text-xs font-semibold text-primary truncate">GUEST VISITOR</div>
+          <div class="font-mono text-[10px] text-on-surface-variant truncate">Run !weblogin in Discord</div>
+        </div>
+        <button id="sidebarOpenLoginBtn" class="px-2.5 py-1.5 rounded bg-primary-container text-on-primary font-mono text-[10px] font-bold uppercase tracking-wider hover:bg-primary-fixed transition-colors shrink-0">LOGIN</button>
+      </div>
+
+      <div id="sidebarUserCard" class="hidden p-2.5 rounded-lg bg-surface-container flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <img id="sidebarUserAvatar" class="w-8 h-8 rounded-lg object-cover bg-surface-container-highest shrink-0" alt="Operator" />
+          <div class="min-w-0">
+            <div id="sidebarUserName" class="font-mono text-xs text-on-surface font-semibold truncate">—</div>
+            <div id="sidebarUserRole" class="font-mono text-[10px] text-primary-container truncate">—</div>
+          </div>
+        </div>
+        <button id="logoutBtnDesktop" title="Sign Out" class="p-1.5 rounded text-on-surface-variant hover:text-error hover:bg-error-container/30 transition-colors shrink-0">
+          <span class="material-symbols-outlined text-[18px]">logout</span>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ======================================================================= -->
+  <!-- MAIN SHELL (Top Fixed Header + Dynamic Views + Mobile Dock)             -->
+  <!-- ======================================================================= -->
+  <div class="lg:pl-80 flex flex-col min-h-screen">
+
+    <!-- Top Fixed Telemetry & Action Header -->
+    <header class="fixed top-0 left-0 lg:left-80 right-0 h-16 bg-surface/85 backdrop-blur-xl border-b border-outline-variant/20 z-30 flex items-center justify-between px-4 lg:px-6 gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <!-- Mobile Guild Selector or Brand -->
+        <div class="flex lg:hidden items-center gap-2 min-w-0">
+          <div class="w-8 h-8 rounded bg-surface-container-high flex items-center justify-center text-primary-container shrink-0">
+            <span class="material-symbols-outlined text-[18px]">security</span>
+          </div>
+          <div class="min-w-0">
+            <div class="font-mono text-[11px] font-bold text-primary uppercase tracking-wider truncate">ATHENA PRIME</div>
+            <select id="mobileGuildSelect" class="hidden bg-transparent text-xs font-semibold text-on-surface outline-none max-w-[140px] truncate"></select>
+          </div>
+        </div>
+
+        <!-- Desktop Live TLS Pill -->
+        <div class="hidden sm:flex items-center gap-2 font-mono text-xs bg-surface-container-low px-3 py-1.5 rounded-lg border border-outline-variant/20">
+          <span class="w-2 h-2 rounded-full bg-secondary shadow-[0_0_8px_rgba(0,230,118,0.6)]"></span>
+          <span id="hdrTlsText" class="text-on-surface font-medium">12-Socket Raw TLS</span>
+          <span class="text-outline">|</span>
+          <span id="hdrPingText" class="text-secondary font-medium">—ms</span>
+          <span class="text-outline hidden md:inline">|</span>
+          <span id="hdrVersionText" class="text-primary-container hidden md:inline">v4.0</span>
+        </div>
+
+        <!-- Active Shield Pill -->
+        <div id="hdrShieldPill" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container-high border border-outline-variant/20">
+          <span class="material-symbols-outlined text-secondary text-[16px]" id="hdrShieldIcon">shield</span>
+          <span id="hdrShieldLabel" class="font-mono text-[11px] font-bold text-secondary tracking-wider uppercase">DEFENSE READY</span>
+        </div>
+      </div>
+
+      <!-- Right Action Controls -->
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="hdrRefreshBtn" class="hidden p-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-primary transition-colors" title="Refresh Live Data">
+          <span class="material-symbols-outlined text-[18px]">refresh</span>
+        </button>
+
+        <button id="hdrDisarmBtn" class="hidden px-3 py-1.5 rounded-lg bg-error-container text-on-error-container hover:bg-error hover:text-on-error font-mono text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[15px]">power_settings_new</span>
+          <span class="hidden sm:inline">DISARM STATE</span>
+        </button>
+
+        <button id="hdrLoginBtn" class="px-3.5 py-2 rounded-lg bg-primary-container text-on-primary font-mono text-[11px] font-bold uppercase tracking-wider shadow-[0_0_14px_rgba(0,240,255,0.35)] hover:bg-primary-fixed transition-all flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-[16px]">key</span>
+          <span>!weblogin</span>
+        </button>
+
+        <button id="hdrProfileBtn" class="hidden w-8 h-8 rounded-full overflow-hidden border border-primary-container/60 bg-surface-container-high" title="Account">
+          <img id="hdrAvatarImg" class="w-full h-full object-cover" alt="User" />
+        </button>
+      </div>
+    </header>
+
+    <!-- Main View Viewport -->
+    <main class="flex-1 pt-20 px-4 lg:px-6 pb-10 pb-mobile-dock tactical-grid-bg">
+      <div class="max-w-[1600px] mx-auto w-full">
+
+        <!-- =============================================================== -->
+        <!-- SECTION: PUBLIC LANDING SHOWCASE                                -->
+        <!-- =============================================================== -->
+        <section id="view-showcase" class="space-y-8">
+          <div class="relative rounded-2xl bg-surface-container-low/90 border border-outline-variant/25 p-6 lg:p-10 overflow-hidden shadow-2xl">
+            <div class="absolute -top-24 -right-16 w-80 h-80 bg-primary-container/10 rounded-full blur-[90px] pointer-events-none"></div>
+            <div class="absolute -bottom-24 left-1/3 w-72 h-72 bg-secondary/10 rounded-full blur-[90px] pointer-events-none"></div>
+
+            <div class="relative z-10 grid grid-cols-1 xl:grid-cols-12 gap-8 items-center">
+              <div class="xl:col-span-7 space-y-5">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-primary-container/25">
+                  <span class="w-2 h-2 rounded-full bg-secondary-container animate-pulse"></span>
+                  <span class="font-mono text-[11px] text-primary-fixed tracking-wider uppercase">DEFCON 1 AUTONOMOUS ENGINE // 12-SOCKET RAW TLS</span>
+                </div>
+
+                <h1 class="text-3xl sm:text-5xl font-bold tracking-tight text-on-surface leading-tight">
+                  Military-Grade <br />
+                  <span class="text-primary-container drop-shadow-[0_0_20px_rgba(0,240,255,0.35)]">Autonomous Discord Defense</span>
+                </h1>
+
+                <p class="text-base text-on-surface-variant max-w-2xl leading-relaxed">
+                  Sub-millisecond gateway packet interception, O(1) hashed access governance, self-healing Time-Machine snapshots, and live web control synchronized directly with Athena Prime's database.
+                </p>
+
+                <!-- 4 Live Telemetry KPI Bento Pills -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                  <div class="bg-surface-container-high/80 p-3.5 rounded-xl border border-outline-variant/20">
+                    <div class="flex items-center gap-2 text-primary-container mb-1">
+                      <span class="material-symbols-outlined text-[18px]">verified_user</span>
+                      <span class="font-mono text-xs font-bold" id="pubShieldCount">32 Shields</span>
+                    </div>
+                    <div class="font-mono text-[10px] text-on-surface-variant uppercase">Full Anti-Nuke Matrix</div>
+                  </div>
+                  <div class="bg-surface-container-high/80 p-3.5 rounded-xl border border-outline-variant/20">
+                    <div class="flex items-center gap-2 text-secondary mb-1">
+                      <span class="material-symbols-outlined text-[18px]">hub</span>
+                      <span class="font-mono text-xs font-bold" id="pubTlsSockets">12/12 Sockets</span>
+                    </div>
+                    <div class="font-mono text-[10px] text-on-surface-variant uppercase">Raw TLS Pre-Warmed</div>
+                  </div>
+                  <div class="bg-surface-container-high/80 p-3.5 rounded-xl border border-outline-variant/20">
+                    <div class="flex items-center gap-2 text-primary mb-1">
+                      <span class="material-symbols-outlined text-[18px]">dns</span>
+                      <span class="font-mono text-xs font-bold" id="pubGuildsCount">— Guilds</span>
+                    </div>
+                    <div class="font-mono text-[10px] text-on-surface-variant uppercase">Live Protected Nodes</div>
+                  </div>
+                  <div class="bg-surface-container-high/80 p-3.5 rounded-xl border border-outline-variant/20">
+                    <div class="flex items-center gap-2 text-secondary mb-1">
+                      <span class="material-symbols-outlined text-[18px]">bolt</span>
+                      <span class="font-mono text-xs font-bold" id="pubPing">—ms</span>
+                    </div>
+                    <div class="font-mono text-[10px] text-on-surface-variant uppercase">Gateway Latency</div>
+                  </div>
+                </div>
+
+                <div class="flex flex-wrap gap-3 pt-2">
+                  <button id="heroOpenAuthBtn" class="px-6 py-3 rounded-xl bg-primary-container text-on-primary font-mono text-xs font-bold uppercase tracking-wider shadow-[0_0_20px_rgba(0,240,255,0.4)] hover:bg-primary-fixed transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">security</span>
+                    <span>Login via !weblogin &amp; Open Dashboard</span>
+                  </button>
+                  <a href="#feature-matrix" class="px-5 py-3 rounded-xl bg-surface-container-high text-primary hover:bg-surface-bright font-mono text-xs font-bold uppercase tracking-wider border border-outline-variant/30 transition-all flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">terminal</span>
+                    <span>Explore Defense Matrix</span>
+                  </a>
+                </div>
+              </div>
+
+              <!-- Live System Card on Right -->
+              <div class="xl:col-span-5 bg-surface-container-lowest rounded-2xl border border-primary-container/20 p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-outline-variant/20 pb-3">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+                    <span class="font-mono text-xs font-bold text-primary uppercase tracking-wider">LIVE RELEASE TELEMETRY</span>
+                  </div>
+                  <span id="pubVersionPill" class="font-mono text-xs px-2 py-0.5 rounded bg-surface-container-high text-primary-container">v4.0.21</span>
+                </div>
+
+                <div class="space-y-2 font-mono text-xs" id="pubChangelogList">
+                  <div class="p-3 rounded-lg bg-surface-container text-on-surface-variant">Synchronizing release stream...</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                  <div class="p-2.5 rounded-lg bg-surface-container-low flex justify-between">
+                    <span class="text-on-surface-variant">Strikes Served</span>
+                    <span id="pubStrikes" class="text-primary font-bold">0</span>
+                  </div>
+                  <div class="p-2.5 rounded-lg bg-surface-container-low flex justify-between">
+                    <span class="text-on-surface-variant">Secured Guilds</span>
+                    <span id="pubSecuredGuilds" class="text-secondary font-bold">0</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive 5-Step Single-Shot Timeline -->
+          <div class="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-6 space-y-5">
+            <div>
+              <div class="font-mono text-[11px] text-primary uppercase tracking-widest">SUB-12MS ENFORCEMENT</div>
+              <h2 class="text-2xl font-semibold text-on-surface">How Single-Shot Interception Works</h2>
+              <p class="text-sm text-on-surface-variant mt-1">Eliminating asynchronous bot lag by reading raw gateway frames before high-level event queues execute.</p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 bg-surface-container-lowest p-1.5 rounded-xl">
+              <button class="timeline-step-btn flex-1 min-w-[90px] py-2 px-3 rounded-lg font-mono text-xs font-bold bg-primary-container text-on-primary transition-all" data-step="1">T-0ms</button>
+              <button class="timeline-step-btn flex-1 min-w-[90px] py-2 px-3 rounded-lg font-mono text-xs text-on-surface-variant hover:text-on-surface transition-all" data-step="2">T+0.2ms</button>
+              <button class="timeline-step-btn flex-1 min-w-[90px] py-2 px-3 rounded-lg font-mono text-xs text-on-surface-variant hover:text-on-surface transition-all" data-step="3">T+8ms</button>
+              <button class="timeline-step-btn flex-1 min-w-[90px] py-2 px-3 rounded-lg font-mono text-xs text-on-surface-variant hover:text-on-surface transition-all" data-step="4">T+18ms</button>
+              <button class="timeline-step-btn flex-1 min-w-[90px] py-2 px-3 rounded-lg font-mono text-xs text-on-surface-variant hover:text-on-surface transition-all" data-step="5">T+84ms</button>
+            </div>
+
+            <div class="rounded-xl bg-surface-container-high p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-outline-variant/25">
+              <div class="space-y-1.5">
+                <div class="flex items-center gap-2">
+                  <span id="stepBadge" class="font-mono text-xs px-2 py-0.5 rounded bg-primary-container text-on-primary font-bold">STEP 01</span>
+                  <span id="stepLatency" class="font-mono text-xs text-secondary font-semibold">0.00ms Intercept</span>
+                </div>
+                <h3 id="stepTitle" class="text-lg font-semibold text-on-surface">0ms TCP Wiretap</h3>
+                <p id="stepDescription" class="text-sm text-on-surface-variant max-w-2xl">
+                  Raw gateway packet inspection listens directly on WebSocket heartbeat buffers before standard bot handlers deserialize payloads.
+                </p>
+              </div>
+              <div class="bg-surface-container-lowest px-4 py-3 rounded-lg shrink-0 font-mono text-xs border border-outline-variant/20">
+                <div class="text-[10px] text-outline uppercase">Engine Vector</div>
+                <div id="stepVector" class="text-primary font-semibold mt-0.5">RAW_WEBSOCKET_INSPECT</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bot Feature Matrix Tabs -->
+          <div id="feature-matrix" class="rounded-2xl bg-surface-container-low border border-outline-variant/20 p-6 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+              <div>
+                <div class="font-mono text-[11px] text-primary uppercase tracking-widest">TACTICAL SPECIFICATIONS</div>
+                <h2 class="text-2xl font-semibold text-on-surface">Bot Feature Matrix</h2>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <button class="matrix-tab-btn px-3 py-1.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase" data-tab="nuke">Anti-Nuke</button>
+                <button class="matrix-tab-btn px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface font-mono text-xs uppercase" data-tab="telemetry">Telemetry</button>
+                <button class="matrix-tab-btn px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface font-mono text-xs uppercase" data-tab="automod">AutoMod</button>
+                <button class="matrix-tab-btn px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface font-mono text-xs uppercase" data-tab="tagdrag">VC Tag Drag</button>
+                <button class="matrix-tab-btn px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:text-on-surface font-mono text-xs uppercase" data-tab="sentinel">Sentinel</button>
+              </div>
+            </div>
+
+            <div id="featureMatrixContent" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- SECTION: OVERVIEW & 2FA GATE (TAB 1)                            -->
+        <!-- =============================================================== -->
+        <section id="view-overview" class="hidden space-y-6">
+          <!-- KPI Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
+            <div class="xl:col-span-2 bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 flex flex-col justify-between relative overflow-hidden">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[11px] text-on-surface-variant uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="material-symbols-outlined text-[16px] text-primary-container">shield</span>
+                  SHIELD MATRIX // STATUS FEED
+                </span>
+                <span id="ovStatusBadge" class="px-2.5 py-0.5 rounded font-mono text-[11px] font-bold bg-secondary-container/20 text-secondary">CHECKING...</span>
+              </div>
+              <div class="my-3">
+                <div id="ovArmedBig" class="text-3xl font-bold text-primary tracking-tight">0 / 32 ACTIVE</div>
+                <p id="ovStatusSub" class="text-xs text-on-surface-variant mt-1">Synchronizing guild defense perimeter...</p>
+              </div>
+              <div class="flex items-center justify-between pt-2 border-t border-outline-variant/15 font-mono text-xs">
+                <div>
+                  <span class="text-[10px] text-outline uppercase block">Hierarchy Check</span>
+                  <span id="ovHierarchyStatus" class="text-secondary font-semibold">—</span>
+                </div>
+                <div class="px-2.5 py-1 rounded bg-surface-container-high text-on-surface-variant flex items-center gap-1">
+                  <span class="material-symbols-outlined text-[14px] text-primary-container">lock</span>
+                  <span id="ov2faPill">2FA STATUS</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-outline">
+                <span class="font-mono text-[11px] uppercase">Intercept Clock</span>
+                <span class="material-symbols-outlined text-[18px] text-primary-container">bolt</span>
+              </div>
+              <div class="my-2">
+                <div class="font-mono text-2xl font-bold text-primary"><span id="ovWsPing">0</span><span class="text-xs text-primary-container ml-1 font-normal">ms WS</span></div>
+                <div class="font-mono text-[11px] text-secondary mt-1" id="ovSocketsInline">12/12 TLS Warm</div>
+              </div>
+              <div class="w-full bg-surface-container-highest rounded-full h-1.5 overflow-hidden">
+                <div class="bg-primary-container h-full w-[90%]"></div>
+              </div>
+            </div>
+
+            <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 flex flex-col justify-between">
+              <div class="flex items-center justify-between text-outline">
+                <span class="font-mono text-[11px] uppercase">Forensics &amp; Integrity</span>
+                <span class="material-symbols-outlined text-[18px] text-error">gavel</span>
+              </div>
+              <div class="my-2">
+                <div class="font-mono text-2xl font-bold text-on-surface"><span id="ovIncidentCount">0</span> <span class="text-xs text-outline font-normal">INCIDENTS</span></div>
+                <div class="font-mono text-[11px] text-on-surface-variant mt-1">Integrity Score: <span id="ovIntegrity" class="text-secondary font-bold">100%</span></div>
+              </div>
+              <div class="font-mono text-[10px] text-outline" id="ovInfraStats">— channels • — roles</div>
+            </div>
+
+            <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 flex flex-col justify-between gap-2">
+              <div class="font-mono text-[11px] text-outline uppercase flex items-center justify-between">
+                <span>Emergency Controls</span>
+                <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+              </div>
+              <div class="space-y-2">
+                <button id="ovArmBtn" class="w-full py-2 px-3 rounded-lg bg-secondary-container hover:bg-secondary text-on-secondary font-mono text-xs font-bold uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[16px]">sync</span>
+                  <span>ARM ALL 32 SHIELDS</span>
+                </button>
+                <button id="ovDisarmBtn" class="w-full py-2 px-3 rounded-lg bg-error-container/60 hover:bg-error hover:text-on-error text-error font-mono text-xs font-bold uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer">
+                  <span class="material-symbols-outlined text-[16px]">key</span>
+                  <span>SECURITY DISARM</span>
+                </button>
+              </div>
+              <div class="font-mono text-[10px] text-on-surface-variant text-center">TIER-0 OWNER + 2FA GATE</div>
+            </div>
+          </div>
+
+          <!-- Filter Bar -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 bg-surface-container-low px-5 py-4 rounded-xl border border-outline-variant/20">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-lg bg-surface-container-high flex items-center justify-center text-primary-container">
+                <span class="material-symbols-outlined text-[22px]">grid_view</span>
+              </div>
+              <div>
+                <div class="font-semibold text-primary flex items-center gap-2">
+                  <span>Anti-Nuke Defense Grid</span>
+                  <span id="ovGridBadge" class="px-2 py-0.5 rounded bg-surface-container-highest font-mono text-[10px] text-on-surface-variant">32 MODULES</span>
+                </div>
+                <div class="font-mono text-xs text-outline">Live per-module arming status synced directly with Discord gateway hooks</div>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-1 bg-surface-container-lowest p-1 rounded-lg">
+              <button class="shield-filter-btn px-3 py-1 rounded bg-surface-container-high text-primary font-mono text-xs font-bold" data-cat="all">ALL (32)</button>
+              <button class="shield-filter-btn px-3 py-1 rounded text-outline hover:text-on-surface font-mono text-xs" data-cat="authority">AUTHORITY</button>
+              <button class="shield-filter-btn px-3 py-1 rounded text-outline hover:text-on-surface font-mono text-xs" data-cat="channels">CHANNELS</button>
+              <button class="shield-filter-btn px-3 py-1 rounded text-outline hover:text-on-surface font-mono text-xs" data-cat="eviction">EVICTION</button>
+              <button class="shield-filter-btn px-3 py-1 rounded text-outline hover:text-on-surface font-mono text-xs" data-cat="vectors">VECTORS</button>
+            </div>
+          </div>
+
+          <!-- 32 Shield Modules List -->
+          <div id="shieldsMatrixGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- SECTION: WHITELISTS & ACCESS CONTROL (TAB 2)                    -->
+        <!-- =============================================================== -->
+        <section id="view-access" class="hidden space-y-6">
+          <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            <!-- Left 7 Cols: Members & Roles Whitelist -->
+            <div class="xl:col-span-7 bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">REGISTRY // O(1) HASH TABLE</span>
+                  <h2 class="text-xl font-semibold text-on-surface">Members &amp; Roles Whitelist</h2>
+                </div>
+                <button id="openAddWhitelistBtn" class="px-3.5 py-2 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase flex items-center gap-1.5 shadow-[0_0_12px_rgba(0,240,255,0.3)] hover:bg-primary-fixed transition-all">
+                  <span class="material-symbols-outlined text-[16px]">add_moderator</span>
+                  <span>NEW ENTRY</span>
+                </button>
+              </div>
+
+              <div class="flex gap-1 p-1 rounded-xl bg-surface-container-lowest">
+                <button class="wl-tab-btn flex-1 py-1.5 rounded-lg font-mono text-xs font-bold bg-surface-container text-primary-container" data-wl="all">ALL</button>
+                <button class="wl-tab-btn flex-1 py-1.5 rounded-lg font-mono text-xs text-on-surface-variant hover:text-on-surface" data-wl="users">MEMBERS</button>
+                <button class="wl-tab-btn flex-1 py-1.5 rounded-lg font-mono text-xs text-on-surface-variant hover:text-on-surface" data-wl="roles">ROLES</button>
+              </div>
+
+              <div id="whitelistContainer" class="space-y-2.5"></div>
+            </div>
+
+            <!-- Right 5 Cols: Extra Owners + Bot Whitelist -->
+            <div class="xl:col-span-5 space-y-6">
+              <!-- Extra Owners -->
+              <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">AUTHORITY // TIER 1 DEPUTIES</span>
+                    <h2 class="text-xl font-semibold text-on-surface">Extra Owners Hierarchy</h2>
+                  </div>
+                  <span class="px-2 py-0.5 rounded bg-surface-container-high font-mono text-[10px] text-secondary">TIER-0 ONLY</span>
+                </div>
+
+                <div class="p-3 rounded-lg bg-surface-container text-xs text-on-surface-variant">
+                  Extra Owners can manage whitelists, bot approvals, AutoMod, and snapshots, but <span class="text-error font-semibold">CANNOT disarm security or modify Extra Owners</span>.
+                </div>
+
+                <form id="addExtraOwnerForm" class="flex gap-2">
+                  <input id="extraOwnerIdInput" type="text" placeholder="Discord User ID (e.g. 782194819203)" class="flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                  <button type="submit" class="px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-primary font-mono text-xs font-bold uppercase transition-colors shrink-0">AUTHORIZE</button>
+                </form>
+
+                <div id="extraOwnersList" class="space-y-2"></div>
+              </div>
+
+              <!-- Bot Whitelist -->
+              <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="font-mono text-[10px] text-error uppercase tracking-widest">VECTOR // ZERO IMMUNITY</span>
+                    <h2 class="text-xl font-semibold text-on-surface">Bot Whitelist Protocol</h2>
+                  </div>
+                </div>
+
+                <div class="p-3 rounded-lg bg-error-container/20 border-l-2 border-error text-xs text-on-surface">
+                  Unwhitelisted owner-added bots run with <strong class="text-error">ZERO IMMUNITY</strong>. Any destructive event triggers immediate Raw TLS ban + inviter cascade.
+                </div>
+
+                <form id="addBotWlForm" class="flex gap-2">
+                  <input id="botWlIdInput" type="text" placeholder="Bot Application / User ID" class="flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                  <button type="submit" class="px-3.5 py-2 rounded-lg bg-surface-container-high hover:bg-primary-container hover:text-on-primary text-primary font-mono text-xs font-bold uppercase transition-colors shrink-0">ADD BOT</button>
+                </form>
+
+                <div id="botWhitelistContainer" class="space-y-2"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- SECTION: LIVE TELEMETRY !SECTRACK (TAB 3)                       -->
+        <!-- =============================================================== -->
+        <section id="view-sectrack" class="hidden space-y-6">
+          <!-- Top Ribbon -->
+          <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/25 p-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-4 font-mono text-xs">
+              <div class="flex items-center gap-2 px-3 py-1 rounded bg-surface-container-low text-secondary">
+                <span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+                <span>STREAM LIVE (POLL 5S)</span>
+              </div>
+              <div><span class="text-outline">SHARD:</span> <span id="stShard" class="text-primary font-bold">#0</span></div>
+              <div><span class="text-outline">TARGET:</span> <span id="stTarget" class="text-primary">discord.com:443</span></div>
+              <div><span class="text-outline">RESOLVED IP:</span> <span id="stResolvedIp" class="text-secondary">—</span></div>
+            </div>
+            <div class="flex items-center gap-3 font-mono text-xs">
+              <div><span class="text-outline">RATE HITS:</span> <span id="stRateHits" class="text-primary font-bold">0</span></div>
+              <div><span class="text-outline">TRACKED BUCKETS:</span> <span id="stBucketsCount" class="text-primary font-bold">0</span></div>
+              <div><span class="text-outline">STRIKES SERVED:</span> <span id="stStrikes" class="text-secondary font-bold">0</span></div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            <!-- Left 8 Cols: 12-Socket Raw TLS Mesh & Tracker Diagnostics -->
+            <div class="xl:col-span-8 space-y-6">
+              <div class="rounded-xl bg-surface-container-lowest border border-outline-variant/25 p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-outline-variant/20">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary-container text-[20px]">hub</span>
+                    <h2 class="text-lg font-semibold text-primary">12-Socket Raw TLS Mesh</h2>
+                    <span class="px-2 py-0.5 rounded bg-surface-container font-mono text-[10px] text-primary-container">HTTP/1.1 KEEP-ALIVE</span>
+                  </div>
+                  <div class="font-mono text-xs text-on-surface-variant">
+                    WARM IDLE: <span id="stWarmCount" class="text-secondary font-bold">0/12</span> • AUX REQUESTS: <span id="stAuxCount" class="text-primary font-bold">0</span>
+                  </div>
+                </div>
+
+                <div id="tlsMeshGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5"></div>
+              </div>
+
+              <!-- Subsystem Trackers (Audit Ring, AntiStrip, Recovery) -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="sectrackSubsystems"></div>
+            </div>
+
+            <!-- Right 4 Cols: Live Event Feed + X-RateLimit Buckets -->
+            <div class="xl:col-span-4 space-y-6">
+              <div class="rounded-xl bg-surface-container-low border border-outline-variant/25 p-5 space-y-3">
+                <div class="flex items-center justify-between">
+                  <h3 class="font-mono text-xs font-bold text-primary uppercase tracking-wider">LIVE SECURITY STREAM</h3>
+                  <span class="font-mono text-[10px] text-outline">LATEST EVENTS</span>
+                </div>
+                <div id="liveRecordsFeed" class="space-y-2 max-h-[380px] overflow-y-auto font-mono text-xs"></div>
+              </div>
+
+              <div class="rounded-xl bg-surface-container-low border border-outline-variant/25 p-5 space-y-3">
+                <h3 class="font-mono text-xs font-bold text-primary uppercase tracking-wider">X-RATELIMIT BUCKETS</h3>
+                <div id="rateBucketList" class="space-y-2 font-mono text-xs"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- SECTION: EXTRA CONTROLS & BACKUPS (TAB 4)                       -->
+        <!-- =============================================================== -->
+        <section id="view-controls" class="hidden space-y-6">
+          <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            <!-- AutoMod & Blacklisted Words -->
+            <div class="xl:col-span-6 bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-5">
+              <div class="flex items-start justify-between">
+                <div>
+                  <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">KERNEL FILTER // PACKET REGEX</span>
+                  <h2 class="text-xl font-semibold text-on-surface">AutoMod &amp; Blacklisted Words</h2>
+                </div>
+                <span class="font-mono text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-secondary">SYNCED LIVE</span>
+              </div>
+
+              <div id="automodTogglesList" class="space-y-2"></div>
+
+              <div class="space-y-2 pt-2 border-t border-outline-variant/20">
+                <label class="block font-mono text-[11px] text-on-surface-variant uppercase tracking-wider">Blacklisted Words / Substrings</label>
+                <form id="addBlacklistWordForm" class="flex gap-2">
+                  <input id="blacklistWordInput" type="text" placeholder="Add blacklisted phrase..." class="flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                  <button type="submit" class="px-3.5 py-2 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">ADD</button>
+                </form>
+                <div id="blacklistWordsChips" class="flex flex-wrap gap-1.5 p-3 rounded-lg bg-surface-container-lowest min-h-[54px]"></div>
+
+                <div class="relative pt-1">
+                  <input id="heuristicTesterInput" type="text" placeholder="Test message against active blacklist..." class="w-full bg-surface-container-lowest border border-outline-variant/25 rounded-lg px-3 py-2.5 pr-32 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                  <span id="heuristicTesterBadge" class="absolute right-2.5 top-3 px-2 py-0.5 rounded bg-secondary/15 text-secondary font-mono text-[10px]">CLEAN</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Stack: Honeypot + TagDrag + Snapshot Vault -->
+            <div class="xl:col-span-6 space-y-6">
+              <!-- Honeypot -->
+              <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">INTRUSION DECOY</span>
+                    <h2 class="text-xl font-semibold text-on-surface">Honeypot Decoy Tripwire</h2>
+                  </div>
+                  <span id="hpStatusPill" class="font-mono text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant">STANDBY</span>
+                </div>
+
+                <div id="hpDetailsGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 font-mono text-xs"></div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                  <select id="hpPunishmentSelect" class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
+                    <option value="ban">Punishment: BAN</option>
+                    <option value="timeout">Punishment: 28D TIMEOUT</option>
+                    <option value="kick">Punishment: KICK</option>
+                  </select>
+                  <button id="hpDeployBtn" class="px-4 py-2 rounded-lg bg-secondary-container text-on-secondary font-mono text-xs font-bold uppercase hover:bg-secondary transition-colors">DEPLOY TRAP</button>
+                  <button id="hpRemoveBtn" class="px-4 py-2 rounded-lg bg-error-container text-on-error-container font-mono text-xs font-bold uppercase hover:bg-error hover:text-on-error transition-colors">DISARM TRAP</button>
+                </div>
+              </div>
+
+              <!-- TagDrag -->
+              <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">VOICE ROUTER</span>
+                    <h2 class="text-xl font-semibold text-on-surface">!tagdrag Voice Automation</h2>
+                  </div>
+                </div>
+                <form id="addTagDragForm" class="flex flex-wrap gap-2">
+                  <input id="tdTagInput" type="text" maxlength="4" placeholder="Tag (e.g. ATN)" class="w-28 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface uppercase outline-none" />
+                  <input id="tdIntervalInput" type="number" min="1" max="60" value="2" class="w-24 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none" title="Interval seconds" />
+                  <button type="submit" class="px-4 py-2 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">ADD RULE</button>
+                </form>
+                <div id="tagDragRulesList" class="space-y-2"></div>
+              </div>
+
+              <!-- Sentinel Snapshot Vault -->
+              <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">TIME-MACHINE ENGINE</span>
+                    <h2 class="text-xl font-semibold text-on-surface">Sentinel Snapshot Vault</h2>
+                  </div>
+                </div>
+
+                <div id="snapshotStatsMosaic" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5"></div>
+
+                <div class="flex flex-wrap gap-2">
+                  <button id="btnManualSnapshot" class="px-4 py-2.5 rounded-lg bg-surface-container-high hover:bg-surface-bright text-primary font-mono text-xs font-bold uppercase flex items-center gap-1.5 transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">history</span>
+                    <span>CREATE SNAPSHOT</span>
+                  </button>
+                  <button id="btnExportJson" class="px-4 py-2.5 rounded-lg bg-surface-container-lowest border border-outline-variant/30 hover:border-primary-container text-on-surface-variant hover:text-primary font-mono text-xs font-bold uppercase flex items-center gap-1.5 transition-colors">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    <span>DOWNLOAD STATE JSON</span>
+                  </button>
+                </div>
+
+                <div id="snapshotsHistoryList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- SECTION: INCIDENT INSPECTOR & QUARANTINES (TAB 5)               -->
+        <!-- =============================================================== -->
+        <section id="view-incidents" class="hidden space-y-6">
+          <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            <div class="xl:col-span-7 bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <span class="font-mono text-[10px] text-error uppercase tracking-widest">FORENSIC TELEMETRY</span>
+                  <h2 class="text-xl font-semibold text-on-surface">Intercepted Attack Incidents</h2>
+                </div>
+                <button id="clearIncidentsBtn" class="px-3 py-1.5 rounded-lg bg-error-container/50 hover:bg-error hover:text-on-error text-error font-mono text-xs font-bold uppercase transition-colors">PURGE HISTORY</button>
+              </div>
+              <div id="incidentsList" class="space-y-2.5"></div>
+            </div>
+
+            <div class="xl:col-span-5 space-y-6">
+              <!-- Deep Dive Inspector -->
+              <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-3">
+                <h3 class="font-mono text-xs font-bold text-primary uppercase tracking-wider">FORENSIC PACKET INSPECTOR</h3>
+                <div id="incidentDeepDiveBox" class="text-xs text-on-surface-variant font-mono">
+                  Select an incident card on the left to inspect intercept telemetry, latency, and countermeasures.
+                </div>
+              </div>
+
+              <!-- Active Quarantines -->
+              <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-3">
+                <h3 class="font-mono text-xs font-bold text-error uppercase tracking-wider">ACTIVE QUARANTINE CONTAINMENT</h3>
+                <div id="quarantinesList" class="space-y-2"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- SECTION: SYNC MATRIX & EDITING DOCS (TAB 6)                     -->
+        <!-- =============================================================== -->
+        <section id="view-docs" class="hidden space-y-6">
+          <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            <div class="xl:col-span-7 bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+              <div>
+                <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">MONGODB &amp; ID PARITY</span>
+                <h2 class="text-xl font-semibold text-on-surface">Synced Server Feature Channels</h2>
+                <p class="text-xs text-on-surface-variant mt-1">All modules read from Athena's unified database using exact Discord IDs — live immediately across your bot and dashboard.</p>
+              </div>
+              <div id="syncChannelsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 font-mono text-xs"></div>
+            </div>
+
+            <div class="xl:col-span-5 bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+              <div>
+                <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">DEPLOYMENT &amp; CUSTOMIZATION</span>
+                <h2 class="text-xl font-semibold text-on-surface">Editing Website After Deploy</h2>
+              </div>
+              <div class="space-y-3 text-xs text-on-surface-variant leading-relaxed">
+                <div class="p-3 rounded-lg bg-surface-container">
+                  <div class="font-mono text-primary font-bold mb-1">1. Instant Quick Edits (Pterodactyl Files)</div>
+                  Open <code class="text-primary-container">web/index.html</code>, <code class="text-primary-container">web/css/custom.css</code>, or <code class="text-primary-container">web/js/app.js</code> directly in Obsidian Cloud Files, save, and refresh your browser (<code class="text-primary">Cache-Control: no-cache</code> is enabled).
+                </div>
+                <div class="p-3 rounded-lg bg-surface-container">
+                  <div class="font-mono text-primary font-bold mb-1">2. Permanent Edits (Recommended)</div>
+                  Because <code class="text-primary-container">start.sh</code> synchronizes from GitHub on startup/redeploy, edit locally or through Antigravity and push to <code class="text-primary">main</code> so changes never get overwritten on restart.
+                </div>
+                <div class="p-3 rounded-lg bg-surface-container">
+                  <div class="font-mono text-primary font-bold mb-1">3. Upgrading to Login With Discord Later</div>
+                  Zero rewrite needed — you can add Discord OAuth2 routes alongside Option 1 <code class="text-primary-container">!weblogin</code> inside <code class="text-primary-container">src/web/api.js</code> anytime.
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MOBILE BOTTOM NAVIGATION DOCK                                           -->
+  <!-- ======================================================================= -->
+  <nav id="mobileBottomNav" class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-surface/95 backdrop-blur-xl border-t border-outline-variant/25 flex justify-around items-center h-16 px-1">
+    <button data-nav="showcase" class="mob-nav-btn flex flex-col items-center justify-center gap-0.5 px-2 py-1 text-primary-container">
+      <span class="material-symbols-outlined text-[20px]">verified_user</span>
+      <span class="font-mono text-[9px] uppercase">Home</span>
+    </button>
+    <button data-nav="overview" class="mob-nav-btn hidden flex flex-col items-center justify-center gap-0.5 px-2 py-1 text-on-surface-variant">
+      <span class="material-symbols-outlined text-[20px]">shield</span>
+      <span class="font-mono text-[9px] uppercase">Shield</span>
+    </button>
+    <button data-nav="access" class="mob-nav-btn hidden flex flex-col items-center justify-center gap-0.5 px-2 py-1 text-on-surface-variant">
+      <span class="material-symbols-outlined text-[20px]">badge</span>
+      <span class="font-mono text-[9px] uppercase">Access</span>
+    </button>
+    <button data-nav="sectrack" class="mob-nav-btn hidden flex flex-col items-center justify-center gap-0.5 px-2 py-1 text-on-surface-variant">
+      <span class="material-symbols-outlined text-[20px]">radar</span>
+      <span class="font-mono text-[9px] uppercase">!sectrack</span>
+    </button>
+    <button data-nav="controls" class="mob-nav-btn hidden flex flex-col items-center justify-center gap-0.5 px-2 py-1 text-on-surface-variant">
+      <span class="material-symbols-outlined text-[20px]">tune</span>
+      <span class="font-mono text-[9px] uppercase">Controls</span>
+    </button>
+    <button data-nav="incidents" class="mob-nav-btn hidden flex flex-col items-center justify-center gap-0.5 px-2 py-1 text-on-surface-variant">
+      <span class="material-symbols-outlined text-[20px]">crisis_alert</span>
+      <span class="font-mono text-[9px] uppercase">Logs</span>
+    </button>
+  </nav>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL 1: OPTION 1 PASSWORDLESS !WEBLOGIN AUTH MODAL                     -->
+  <!-- ======================================================================= -->
+  <div id="authModal" class="hidden fixed inset-0 z-50 bg-surface-container-lowest/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-surface-container-low border border-primary-container/30 p-6 space-y-5 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 rounded-lg bg-primary-container/15 text-primary-container flex items-center justify-center">
+            <span class="material-symbols-outlined text-[20px]">key</span>
+          </div>
+          <div>
+            <div class="font-mono text-[10px] text-primary-container uppercase tracking-widest">OPTION 1 • ZERO SECRETS</div>
+            <h3 class="text-lg font-semibold text-on-surface">Athena Magic-Link Auth</h3>
+          </div>
+        </div>
+        <button id="closeAuthModalBtn" class="p-1.5 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <div id="authExpiredNotice" class="hidden p-3 rounded-lg bg-error-container/30 border border-error/40 text-xs text-error">
+        That login link expired or was already used. Run <code class="font-mono font-bold">!weblogin</code> in Discord to generate a fresh link.
+      </div>
+
+      <ol class="space-y-2.5 text-xs text-on-surface-variant">
+        <li class="p-3 rounded-lg bg-surface-container flex items-start gap-2.5">
+          <span class="font-mono font-bold text-primary-container">01</span>
+          <span>Open any Discord server where you are Owner, Extra Owner, or Admin alongside <strong class="text-on-surface">Athena Prime</strong>.</span>
+        </li>
+        <li class="p-3 rounded-lg bg-surface-container flex items-start gap-2.5">
+          <span class="font-mono font-bold text-primary-container">02</span>
+          <span>Send <code class="px-1.5 py-0.5 rounded bg-surface-container-lowest text-primary font-mono">!weblogin</code> (receives a DM) or <code class="px-1.5 py-0.5 rounded bg-surface-container-lowest text-primary font-mono">/weblogin</code> (private in-channel button).</span>
+        </li>
+        <li class="p-3 rounded-lg bg-surface-container flex items-start gap-2.5">
+          <span class="font-mono font-bold text-primary-container">03</span>
+          <span>Click your single-use link — or paste the URL / token from Discord directly below:</span>
+        </li>
+      </ol>
+
+      <form id="manualTokenForm" class="space-y-3">
+        <input id="manualTokenInput" type="text" placeholder="Paste !weblogin token or https://.../auth/magic?token=..." class="w-full bg-surface-container-lowest border border-outline-variant/35 rounded-lg px-3 py-2.5 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-primary-container hover:bg-primary-fixed text-on-primary font-mono text-xs font-bold uppercase tracking-wider shadow-[0_0_16px_rgba(0,240,255,0.35)] transition-all">
+          VERIFY TOKEN &amp; ENTER DASHBOARD
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL 2: ADD / EDIT WHITELIST ENTRY                                     -->
+  <!-- ======================================================================= -->
+  <div id="whitelistModal" class="hidden fixed inset-0 z-50 bg-surface-container-lowest/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-surface-container-low border border-outline-variant/35 p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-on-surface flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary-container">add_moderator</span>
+          <span>Whitelist Entry</span>
+        </h3>
+        <button id="closeWhitelistModalBtn" class="p-1 text-on-surface-variant hover:text-on-surface">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <form id="whitelistModalForm" class="space-y-3">
+        <div>
+          <label class="block font-mono text-[10px] text-outline uppercase mb-1">Entity Type</label>
+          <select id="wlTypeSelect" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
+            <option value="users">Member (User ID)</option>
+            <option value="roles">Role (Role ID)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-mono text-[10px] text-outline uppercase mb-1">Quick Pick (or paste ID below)</label>
+          <select id="wlQuickPick" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
+            <option value="">-- Select from cache --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-mono text-[10px] text-outline uppercase mb-1">Discord User or Role ID</label>
+          <input id="wlTargetIdInput" type="text" required placeholder="18-digit Snowflake ID" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-mono text-[10px] text-outline uppercase mb-1">Module Scope</label>
+            <select id="wlScopeSelect" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
+              <option value="all">ALL MODULES</option>
+              <option value="antichanneldelete,antichannelcreate">Channels Only</option>
+              <option value="antiroledelete,antirolecreate">Roles Only</option>
+              <option value="antiban,antikick">Ban &amp; Kick Only</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-mono text-[10px] text-outline uppercase mb-1">Trigger Limit (0 = Inf)</label>
+            <input id="wlLimitInput" type="number" min="0" max="1000" value="0" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none" />
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-primary-container text-on-primary font-mono text-xs font-bold uppercase tracking-wider hover:bg-primary-fixed transition-colors">
+          SAVE TO O(1) WHITELIST TABLE
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- MODAL 3: 2FA SECURITY DISARM HARDWARE / OTP GATE                        -->
+  <!-- ======================================================================= -->
+  <div id="disarmModal" class="hidden fixed inset-0 z-50 bg-surface-container-lowest/90 backdrop-blur-lg flex items-center justify-center p-4">
+    <div class="w-full max-w-md rounded-2xl bg-surface-container-low border border-error/45 overflow-hidden shadow-[0_0_40px_rgba(255,51,102,0.2)]">
+      <div class="bg-gradient-to-b from-error-container/50 to-surface-container-high p-5 border-b border-error/25 flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-error-container text-error flex items-center justify-center shrink-0">
+            <span class="material-symbols-outlined text-[24px]">gpp_maybe</span>
+          </div>
+          <div>
+            <div class="font-mono text-[10px] uppercase text-error font-bold tracking-widest">DEFCON-0 CRITICAL ACTION</div>
+            <h3 class="text-lg font-bold text-primary">DISARM ALL 32 MODULES</h3>
+          </div>
+        </div>
+        <button id="closeDisarmModalBtn" class="p-1 text-on-surface-variant hover:text-on-surface">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div id="disarmStatusMsg" class="p-3 rounded-lg bg-surface-container text-xs text-on-surface-variant font-mono">
+          Initiating Tier-0 Security Disarm Challenge...
+        </div>
+
+        <form id="disarmConfirmForm" class="space-y-3">
+          <div id="disarmOtpGroup" class="hidden space-y-2">
+            <label class="block font-mono text-[10px] text-primary uppercase tracking-wider">Enter 6-Digit Gmail 2FA Code</label>
+            <input id="disarmOtpInput" type="text" maxlength="6" pattern="\d{6}" placeholder="000000" class="w-full bg-surface-container-lowest border border-error/40 rounded-lg px-4 py-3 font-mono text-center text-xl tracking-[0.5em] text-primary outline-none focus:border-primary-container" />
+          </div>
+
+          <div id="disarmPhraseGroup" class="hidden space-y-2">
+            <label class="block font-mono text-[10px] text-error uppercase tracking-wider">Type DISARM to Confirm Shutdown</label>
+            <input id="disarmPhraseInput" type="text" placeholder="DISARM" class="w-full bg-surface-container-lowest border border-error/40 rounded-lg px-3 py-2.5 font-mono text-sm text-primary uppercase outline-none focus:border-error" />
+          </div>
+
+          <button type="submit" class="w-full py-3 rounded-xl bg-error text-on-error font-mono text-xs font-bold uppercase tracking-wider hover:opacity-95 transition-all">
+            CONFIRM SECURITY DISARM
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================================= -->
+  <!-- FLOATING TOAST NOTIFICATION                                             -->
+  <!-- ======================================================================= -->
+  <div id="toastBanner" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full font-mono text-xs font-semibold shadow-2xl transition-all duration-200 opacity-0 pointer-events-none translate-y-[-10px] flex items-center gap-2 bg-secondary-container text-on-secondary-container">
+    <span class="material-symbols-outlined text-[18px]" id="toastIcon">verified</span>
+    <span id="toastMessage">Ready</span>
+  </div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

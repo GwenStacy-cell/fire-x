@@ -1,0 +1,112 @@
+/* Athena Prime • Tactical Cyber Sentinel Stylesheet
+   Safe to edit after deployment — served live with Cache-Control: no-cache */
+
+:root {
+  --surface: #10131a;
+  --surface-lowest: #0b0e14;
+  --surface-low: #191c22;
+  --surface-card: #1d2026;
+  --surface-high: #272a31;
+  --cyan: #00f0ff;
+  --emerald: #05e777;
+  --crimson: #ff3366;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--surface);
+  color: #e1e2eb;
+  overscroll-behavior: none;
+  scroll-behavior: smooth;
+}
+
+.tactical-grid-bg {
+  background-image:
+    radial-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.glass-panel {
+  background: rgba(17, 22, 34, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.14);
+}
+
+.glass-elevated {
+  background: rgba(23, 30, 48, 0.88);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border: 1px solid rgba(0, 240, 255, 0.28);
+}
+
+/* Custom sleek thin scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.18);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 240, 255, 0.35);
+}
+
+/* Tactical toggle switch */
+.tactical-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 38px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.tactical-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.tactical-slider {
+  position: absolute;
+  inset: 0;
+  background-color: #171e30;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+  cursor: pointer;
+}
+.tactical-slider::before {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 2px;
+  top: 2px;
+  background-color: #b9cacb;
+  border-radius: 9999px;
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+.tactical-switch input:checked + .tactical-slider {
+  background-color: #05e777;
+  border-color: #7dffa2;
+  box-shadow: 0 0 10px rgba(5, 231, 119, 0.35);
+}
+.tactical-switch input:checked + .tactical-slider::before {
+  transform: translateX(18px);
+  background-color: #00210b;
+}
+.tactical-switch input:disabled + .tactical-slider {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1023px) {
+  .pb-mobile-dock {
+    padding-bottom: 5.5rem;
+  }
+}

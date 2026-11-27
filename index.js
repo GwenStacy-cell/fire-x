@@ -23,7 +23,6 @@ import chalk from 'chalk';
 import path from 'path';
 import fs from 'fs';
 import db from './src/database.js';
-import http from 'http';
 import { Shoukaku, Connectors } from 'shoukaku';
 
 // Load Environment Variables
@@ -256,17 +255,7 @@ client.on('raw', (packet) => {
 });
 console.log(chalk.gray(`   ├─ Bound event: `) + chalk.yellow.bold('raw (Wiretap & LiveTelemetry Unified) ⚡'));
 
-// Optional lightweight web server for hosting health checks (e.g., Railway)
-const PORT = process.env.PORT || null;
-if (PORT) {
-  http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.write('🛡️ Athena Prime Bot is actively online and running!');
-    res.end();
-  }).listen(PORT, () => {
-    console.log(chalk.green(`🌐 Health Check Server: Listening on port ${PORT}`));
-  });
-}
+// HTTP Web Platform, Health Check (/health), Cinema & WebSub unified on Express inside src/utils/websub.js
 
 // Authenticate with Discord APIs
 console.log(chalk.yellow('\n⏳ Connecting to Discord Gateway...'));

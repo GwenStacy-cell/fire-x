@@ -4,6 +4,7 @@ import db from '../database.js';
 import chalk from 'chalk';
 import { sendYouTubeNotification } from './youtubeNotifier.js';
 import { registerCinemaRoutes } from './cinemaEngine.js';
+import { registerWebPlatform, resolveWebPort } from '../web/server.js';
 
 const app = express();
 const xmlParser = new XMLParser({ ignoreAttributes: false });
@@ -12,7 +13,7 @@ let clientRef = null;
 
 export function initWebSub(client) {
   clientRef = client;
-  const port = process.env.WEBSUB_PORT || 3000;
+  const port = resolveWebPort();
   
   // YouTube sends WebSub payloads as application/atom+xml
   app.use(express.text({ type: ['application/atom+xml', 'application/xml', 'text/xml'] }));
@@ -83,10 +84,13 @@ export function initWebSub(client) {
   // Register Athena Cinema HTTP 206 Video Streaming & Responsive Web Theater routes
   registerCinemaRoutes(app);
 
-  app.listen(port, () => {
-    console.log(chalk.green(`[WebSub] Server listening on port ${port}`));
+  // Register Athena Prime Website & Live Control Dashboard (port unified for Pterodactyl/Cloudflare)
+  registerWebPlatform(app, client);
+
+  app.listen(port, '0.0.0.0', () => {
+    console.log(chalk.green(`[Web] Athena Web Platform, Cinema & WebSub listening on 0.0.0.0:${port}`));
   }).on('error', (err) => {
-    console.warn(`[WebSub] Could not bind port ${port} (standalone mode):`, err.message);
+    console.warn(`[Web] Could not bind port ${port} (standalone mode):`, err.message);
   });
 }
 

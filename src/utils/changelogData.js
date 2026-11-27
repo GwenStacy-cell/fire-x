@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '27 November 2026',
+    version: 'v4.0.21',
+    headline: 'Athena Web Control Plane & Passwordless !weblogin Dashboard',
+    summary: 'Launched Athena Prime Web Showcase and live Tactical Cyber Sentinel Dashboard powered directly by Express on the unified hosting port, with passwordless Option 1 (!weblogin / /weblogin) single-use magic-link authentication.',
+    whatsNew: [
+      {
+        title: 'Unified Web Platform & Live Control Dashboard (web/)',
+        desc: 'Integrated Stitch Tactical Cyber Sentinel UI covering Public Showcase, 32-Shield Matrix & 2FA Disarm Gate, Whitelists & Extra Owners Hierarchy, Live !sectrack Raw TLS Mesh, Extra Controls (AutoMod, Blacklisted Words, Honeypot, !tagdrag, Snapshots/JSON Export), Incident Inspector, and Server Channel Sync status.'
+      },
+      {
+        title: 'Passwordless Option 1 Auth (!weblogin / /weblogin)',
+        desc: 'Generates cryptographic 5-minute single-use DM magic links (or private ephemeral links via /weblogin) with HMAC-signed HttpOnly session cookies and strict Tier-0 / Tier-1 / Tier-2 server-side enforcement — requiring zero Discord OAuth apps.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Unified Pterodactyl Port Allocation & Live Static Editing',
+        desc: 'Merged duplicate plain-text HTTP health listener into unified Express server (DASHBOARD_PORT / SERVER_PORT / PORT / WEBSUB_PORT priority) binding 0.0.0.0 with no-cache static serving so edits to web/ apply cleanly on refresh.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Quarantine Web Release Actor Forwarding',
+        desc: 'Passed acting operator identity and explicit failure propagation cleanly into executeUnquarantine for web dashboard quarantine releases.'
+      }
+    ],
+    tip: 'Type !weblogin (DM link) or /weblogin (private link) in Discord to open your live Athena Web Control Plane.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '27 November 2026',
     version: 'v4.0.20',
     headline: 'Unified Security Telemetry & Explanation Command (!sectrack) + 32-Shield Codebase Sync',
     summary: 'Added !sectrack (/sectrack) — an interactive 6-view Security Telemetry & Tracking Matrix consolidating live metrics and architectural explanations for every defense subsystem — alongside fixing LiveOps 32-shield module rendering and syncing all UI/docs/prompts to 32 modules & Single-Shot Raw Ban.',
