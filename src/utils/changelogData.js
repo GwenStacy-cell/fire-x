@@ -16,6 +16,30 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.28',
+    headline: 'Bot Avatar in Sidebar Brand Header',
+    summary: 'The dashboard sidebar now shows the bot\'s real Discord avatar in the brand icon slot (top-left) instead of the security icon. Falls back gracefully to the icon if the avatar hasn\'t loaded.',
+    whatsNew: [
+      {
+        title: 'Bot Avatar in Sidebar Brand',
+        desc: '/api/me now returns botAvatar and botName; app.js injects the avatar into #sidebarBotAvatar on login, hiding the fallback security icon.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Graceful Fallback Icon',
+        desc: 'If botAvatar is null (bot not fully ready), the existing security icon remains visible — no broken image placeholder.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Offline Page Reverted to Shield',
+        desc: 'Offline page correctly shows the tactical shield emoji as designed, not the bot avatar.'
+      }
+    ]
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.27',
     headline: 'Bot Avatar on Offline Page',
     summary: 'The offline gate page now displays the bot\'s real Discord avatar (circular with animated red ring and offline dot) instead of the shield emoji. Avatar URL is cached from client.user so it persists across disconnects.',

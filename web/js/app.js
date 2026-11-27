@@ -251,6 +251,14 @@
       document.getElementById('sidebarUserAvatar').src = me.user.avatarUrl || '';
       document.getElementById('hdrAvatarImg').src = me.user.avatarUrl || '';
 
+      // Inject bot's real Discord avatar into the sidebar brand icon
+      if (me.botAvatar) {
+        const img = document.getElementById('sidebarBotAvatar');
+        const fallback = document.getElementById('sidebarBotAvatarFallback');
+        if (img) { img.src = me.botAvatar; img.style.display = ''; }
+        if (fallback) fallback.style.display = 'none';
+      }
+
       const mobSel = document.getElementById('mobileGuildSelect');
       const dskSel = document.getElementById('guildSwitcherSelect');
       const optionsHtml = state.guilds.map(g =>

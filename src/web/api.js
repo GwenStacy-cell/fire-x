@@ -260,6 +260,8 @@ export function registerDashboardRoutes(app, client) {
         avatarUrl: req.dashUser.displayAvatarURL({ size: 128 }),
         isBotOwner: isRootBotOwnerId(req.dashUser.id)
       },
+      botAvatar: client?.user?.displayAvatarURL?.({ size: 64, extension: 'png', forceStatic: false }) || null,
+      botName: client?.user?.displayName || client?.user?.username || 'Athena Prime',
       guilds
     });
   });
