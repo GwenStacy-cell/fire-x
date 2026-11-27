@@ -6,6 +6,7 @@ import { allCommands } from '../commands/loader.js';
 import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
 import { ensureUnbypassableRole, removePersistenceRoles, syncSupportingRolePositions } from '../utils/antiStrip.js';
+import { syncBotMigrationForGuild } from '../utils/botMigrationSync.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 import { updatePlayerUI } from '../utils/musicManager.js';
 import { CronJob } from 'cron';
@@ -232,10 +233,11 @@ export default {
       snapshotGuildInfrastructure(guild);
       pruneDuplicateSecurityLogChannels(guild).catch(() => null);
 
-      // Unbypassable Role & Idle Mode Cleanup
+      // Sentinel Migration (delete only old secondary/hidden & replace if Security enabled + Top 3, sync avatar/banner & existing security logs)
       const cfg = db.getGuildConfig(guild.id);
+      syncBotMigrationForGuild(guild, client, { notifyOwner: true }).catch(() => null);
+
       if (cfg && (cfg.securityEnabled || cfg.antiNukeEnabled)) {
-        ensureUnbypassableRole(guild, { force: true }).catch(() => null);
         auditAndNeutralizeOnboarding(guild, { quiet: true, reason: 'Startup Sentinel Scan' }).catch(() => null);
         // Hydrate full member cache asynchronously (keeps 0ms in-memory role whitelist & role-member snapshots accurate)
         const wlRoles = cfg.whitelist?.roles;
@@ -244,9 +246,6 @@ export default {
             guild.members.fetch().then(() => snapshotGuildInfrastructure(guild)).catch(() => null);
           }, 1500).unref();
         }
-      } else {
-        // IDLE MODE: When security / antinuke is not enabled, bot must NOT keep persistence roles
-        removePersistenceRoles(guild).catch(() => null);
       }
 
       // Home VC

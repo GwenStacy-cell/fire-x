@@ -2,10 +2,9 @@ import { PermissionFlagsBits } from 'discord.js';
 import { getRandomHeadingGlyph, TICK_EMOJI, WRONG_EMOJI, BULLET_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
 import { setupDashboardChannel } from '../utils/dashboardManager.js';
-import { ensureUnbypassableRole, removePersistenceRoles } from '../utils/antiStrip.js';
 import { snapshotGuildInfrastructure } from '../utils/antinuke.js';
-import { pruneDuplicateSecurityLogChannels } from '../utils/helpers.js';
 import { connectToHomeVc } from '../utils/voice.js';
+import { syncBotMigrationForGuild } from '../utils/botMigrationSync.js';
 
 /**
  * Hydrates and arms all persisted server configurations immediately upon guild join,
@@ -14,9 +13,8 @@ import { connectToHomeVc } from '../utils/voice.js';
 export async function hydrateGuildOnJoin(guild, client) {
   if (!guild || !client) return;
 
-  // 1. Immediate RAM ground-truth snapshot & duplicate security log cleanup
+  // 1. Immediate RAM ground-truth snapshot
   snapshotGuildInfrastructure(guild);
-  pruneDuplicateSecurityLogChannels(guild).catch(() => null);
 
   // 2. Warm invite cache immediately so invite logs track the first member join after invite
   if (!client.invites) client.invites = new Map();
@@ -27,10 +25,13 @@ export async function hydrateGuildOnJoin(guild, client) {
     if (!client.invites.has(guild.id)) client.invites.set(guild.id, new Map());
   });
 
-  // 3. Anti-Nuke Sentinels, Member Cache, Onboarding Audit & Live Security Dashboard
+  // 3. Migrate old secondary/hidden sentinels (ONLY if security enabled & Top 3), update avatar/banner,
+  // update existing #security-logs, and DM the Server Owner
+  const migrationRes = await syncBotMigrationForGuild(guild, client, { notifyOwner: true }).catch(() => null);
+
+  // 4. Member cache, onboarding guard & live security dashboard when armed
   const cfg = db.getGuildConfig(guild.id);
   if (cfg.securityEnabled && cfg.antiNukeEnabled) {
-    ensureUnbypassableRole(guild, { force: true }).catch(() => null);
     import('../utils/onboardingGuard.js')
       .then(({ auditAndNeutralizeOnboarding }) => auditAndNeutralizeOnboarding(guild, { quiet: true, reason: 'Guild Join Sentinel Scan' }))
       .catch(() => null);
@@ -40,8 +41,6 @@ export async function hydrateGuildOnJoin(guild, client) {
       guild.members?.fetch?.().then(() => snapshotGuildInfrastructure(guild)).catch(() => null);
     }
     await setupDashboardChannel(guild, client).catch(() => null);
-  } else {
-    await removePersistenceRoles(guild).catch(() => null);
   }
 
   // 4. Instant 24/7 Home VC connection (if configured)

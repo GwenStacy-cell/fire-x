@@ -75,8 +75,13 @@ async function handleUnbypassable(context, isSlash, args = []) {
     const botMe = guild.members.me || (guild.members.fetchMe ? await guild.members.fetchMe().catch(() => null) : null) || (guild.client?.user?.id ? await guild.members.fetch(guild.client.user.id).catch(() => null) : null);
     if (botMe?.permissions.has(PermissionFlagsBits.ManageRoles)) {
       try {
-        const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-        await ensureUnbypassableRole(guild, { force: true });
+        if (guild.client?.user?.id && preCfg.sentinelBotId !== guild.client.user.id) {
+          const { syncBotMigrationForGuild } = await import('../utils/botMigrationSync.js');
+          await syncBotMigrationForGuild(guild, guild.client, { notifyOwner: false });
+        } else {
+          const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+          await ensureUnbypassableRole(guild, { force: true });
+        }
       } catch {}
     }
   }

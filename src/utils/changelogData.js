@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '27 November 2026',
+    version: 'v4.0.22',
+    headline: 'Top-3 Sentinel Role Migration, Guild Avatar/Banner Sync & Server Owner DMs',
+    summary: 'Added automatic migration sync when adding a new bot token/account: deletes only old Athena secondary/hidden sentinel roles (Athena Firewall & Athena Unbypassable) and self-assigns fresh ones strictly when Security is enabled AND Athena is in the Top 3 roles, updates server-specific bot avatar & banner, logs to the already-existing security logs channel, and DMs Server Owners on join.',
+    whatsNew: [
+      {
+        title: 'Strict Top-3 Secondary & Hidden Sentinel Replacement (botMigrationSync.js)',
+        desc: 'On guildCreate, ready startup, and !unb deploy, Athena replaces only old secondary (Athena Firewall) and hidden (Athena Unbypassable) sentinel roles cleanly when securityEnabled && antiNukeEnabled AND highest role >= Top 3 — never touching primary roles. If not in Top 3, it skips replacement and DMs the Server Owner with exact steps.'
+      },
+      {
+        title: 'Auto Server-Specific Avatar/Banner Sync & Existing Security Logs Update',
+        desc: '!setguildavatar / !setguildbanner now persist URLs & CDN assets into guild DB config and log to the existing security logs channel; new bots automatically clone live guild avatars/banners from the old Athena bot (if still in server) or apply DB-saved assets and post a migration status report in the already-existing #security-logs channel.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Idempotent Migration Guard & Shared Media Resolver',
+        desc: 'Tracks sentinelBotId, guildProfileBotId, and migrationNotifiedBotId per guild in database so restarts never duplicate DMs or rebuilds, while deduplicating getImageBuffer into fetchMediaAsBuffer.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Preserved Existing Security Log Channels & Granted Permissions Cleanly',
+        desc: 'Adopts and grants permissions on already-existing DB-bound #security-logs channels instead of creating duplicates on migration.'
+      }
+    ],
+    tip: 'Keep the old bot inside the server until after adding the new bot so Discord lets the new bot clone its server-specific avatar and banner live, then remove the old bot.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '27 November 2026',
     version: 'v4.0.21',
     headline: 'Instant Live-Invite Guild Hydration & Multi-App Slash Registration Parity',
     summary: 'Updated guildCreate and ready startup hooks so inviting a new bot token/application into any pre-configured MongoDB-backed server immediately arms all protections, Home VC, invite tracking, voice roles, JTC lobbies, server stats, and slash commands with zero 3-minute wait.',
