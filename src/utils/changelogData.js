@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '27 November 2026',
+    version: 'v4.0.17',
+    headline: 'Decongested !help Module Views, Explicit Alias Lists & Server Tag Drag Architecture Docs',
+    summary: 'Restored comfortable line-gap spacing and readable command sizing across !help module views (preserving the Obsidian Home UI), listed all 22 Server Tag Drag aliases in !help and !explain, and added Server Tag Auto-VC Drag deep dives to Explain Architecture.',
+    whatsNew: [
+      {
+        title: 'Server Tag Auto-VC Drag in Explain Architecture (!explain & [Explain Architecture])',
+        desc: 'Added a dedicated Server Tag Auto-VC Drag (0ms) architecture topic, added a dedicated Server Tag Auto-VC Drag page inside the Voice Architecture explainer, registered detailed command docs for !tagdrag / !tagdragstop / !tagdragresume, and added /explain autocomplete options listing all 22 aliases.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Decongested !help Module Pages & Complete Alias Visibility',
+        desc: 'Restored blank-line spacing (\\n\\n) and full-size bold command formatting on !help module views and command inspection cards, while listing all 14 !tagdrag aliases and all 8 stop/resume aliases inside Voice Utilities without hitting Discord character truncation.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Module Character Budget Balancing Across Moderation, Tracking & Voice',
+        desc: 'Balanced verbose prose in Moderation, Tracking, and Voice help modules so every single module fits cleanly below the 3800-character CV2 limit with zero truncation notices.'
+      }
+    ],
+    tip: 'Use !help voice (or !explain servertagdrag / !explain tagdrag) to browse all spaced commands and aliases cleanly.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '27 November 2026',
     version: 'v4.0.16',
     headline: '0ms Server Tag Auto-VC Drag (!tagdrag), Live userUpdate Detection & Extra Owner Pause/Resume',
     summary: 'Added instant zero-delay Server Tag VC dragging (!tagdrag + 14 aliases), real-time userUpdate & voiceStateUpdate triggers, automatic stop on tag change/removal, Extra Owner manual stop/resume controls, and updated !help documentation.',

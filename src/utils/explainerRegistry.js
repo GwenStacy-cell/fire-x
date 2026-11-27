@@ -212,25 +212,44 @@ Athena's automod engine inspects every message across Discord Gateway at raw vel
 
   voice: {
     id: 'voice',
-    label: 'Voice Grid & Dynamic Join to Create (JTC) Architecture',
+    label: 'Voice Grid, Server Tag Drag & Dynamic JTC Architecture',
     aliases: ['vcdrag', 'vcmove', 'massmove', 'massdc', 'voicegrid', 'voicecontrol', 'jtc', 'jointocreate', 'tempvc', 'jtctiers', 'jtcnormal', 'tieredjtc', 'jtcsuite'],
-    title: 'Voice Grid & Dynamic Join to Create (JTC) Architecture | <a:03_tick_circle:1565665642084827206>',
-    description: 'High-velocity loop dragging, mass channel evacuations, dynamic Join-to-Create voice hubs, and Anti-Nuke security harmonization.',
+    title: 'Voice Grid, Server Tag Drag & Dynamic JTC Architecture | <a:03_tick_circle:1565665642084827206>',
+    description: 'High-velocity loop dragging, 0ms Server Tag Auto-VC Drag, mass channel evacuations, dynamic JTC hubs, and Anti-Nuke security harmonization.',
     pages: [
       {
         pageTitle: 'Voice Drag Loops & Mass Relocation Mechanics',
         content: `# ${getRandomHeadingGlyph()} High-Velocity Voice Dragging (\`!vcdrag\`)
 • **Objective:** Disrupts, confuses, or contains rogue actors across voice channels.
+• **Aliases:** \`!vcdrag\` (\`!loopdrag\`, \`!vcloop\`) · \`!vcdragstop\` (\`!dragstop\`, \`!stopdrag\`) · \`!vcdraglist\` (\`!draglist\`, \`!vcdragusers\`)
 • **Execution Mechanics:**
-  1. Cycles the target member through all active voice channels sequentially.
+  1. Cycles the target member through all active voice channels sequentially at 0ms start delay.
   2. Runs via a managed non-blocking interval (\`activeDrags\` map) with configurable delays (default: 2s).
   3. Dispatches Discord REST \`PATCH /guilds/{id}/members/{user}\` setting successive \`channel_id\` values.
   4. Halted safely via \`!vcdragstop\`.
-• **Immunity:** Automatically rejects dragging the Server Owner, Bot Owner, or Extra Owners.
+• **Immunity:** Automatically rejects dragging the Server Owner, Bot Owner, Extra Owners, and \`!moveprotect\` users.
 
 # Mass Relocation & Disconnect (\`!massmove\` & \`!massdc\`)
-• **Mass Move:** Atomically gathers all occupants of a source voice channel and transfers them to a destination channel with a 150ms buffer to respect Discord voice rate-limiting.
-• **Mass Disconnect:** Forcibly kicks all occupants out of a voice channel by patching \`channel_id: null\`, instantly clearing raided or sound-spammed voice channels.`
+• **Mass Move (\`!massmove\` / \`!vcmove\` / \`!moveall\`):** Atomically gathers all occupants of a source voice channel and transfers them to a destination channel with a 150ms buffer to respect Discord voice rate-limiting.
+• **Mass Disconnect (\`!massdc\` / \`!vcdc\` / \`!massdisconnect\` / \`!dcall\`):** Forcibly kicks all occupants out of a voice channel by patching \`channel_id: null\`, instantly clearing raided or sound-spammed voice channels.`
+      },
+      {
+        pageTitle: 'Server Tag Auto-VC Drag (0ms Gateway Lock) & All Aliases',
+        content: `# ${getRandomHeadingGlyph()} 0ms Server Tag Auto-VC Drag Engine (\`!tagdrag\`)
+• **Instant Gateway Activation (0ms Wait):** Fires immediately with zero 30–60s polling delay whenever a watched user joins or switches VC (\`voiceStateUpdate\`) OR equips a watched Discord Server Tag while already in VC (\`userUpdate\`).
+• **PrimaryGuild Tracking Architecture:**
+  1. Tracks \`user.primaryGuild\` (\`identityGuildId\`, \`identityEnabled\`, \`tag\`) in real time inside \`primaryGuildCache\`.
+  2. Resolves target rules from \`@user\` (reads live Server Tag), exact 1–4 char tag text, \`discord.gg/invite\`, or Discord Server ID.
+  3. Reuses \`activeDrags\` + \`database.js\` persistence (\`tagVcDrags.rules\`) with automatic 10s REST fallback verification inside active loops.
+• **Auto-Stop & Extra Owner Manual Controls:**
+  - **Automatic Release:** Stops the loop instantaneously when the member disables or switches their Server Tag (\`userUpdate\`).
+  - **Extra Owner Pause (\`!tagdragstop\`):** Stops active drag and records the member in \`pausedUsers\`, preventing VC rejoins from restarting drag until resumed.
+  - **Extra Owner Resume (\`!tagdragresume\`):** Clears pause override and immediately restarts dragging if the member is currently in VC wearing the tag.
+
+# Complete Server Tag Drag Alias Registry (22 Aliases)
+• **\`!tagdrag\` Aliases (14):** \`!tdrag\`, \`!servertagdrag\`, \`!dragtag\`, \`!vcdragtag\`, \`!tagvcdrag\`, \`!autotagdrag\`, \`!tagloop\`, \`!clandrag\`, \`!dragbytag\`, \`!vctagdrag\`, \`!stdrag\`, \`!tagvc\`, \`!servertag\`, \`!stagdrag\`
+• **\`!tagdragstop\` Aliases (4):** \`!tdragstop\`, \`!stoptagdrag\`, \`!pausetagdrag\`, \`!tagstop\`
+• **\`!tagdragresume\` Aliases (4):** \`!tdragresume\`, \`!resumetagdrag\`, \`!unpausetagdrag\`, \`!tagresume\``
       },
       {
         pageTitle: 'Join to Create (JTC) & 4-Tier Voice Hub Architecture',
@@ -286,6 +305,54 @@ In traditional bots, temporary channel creation and deletion collides violently 
 
 • **5. Atomic Teardown Engine (\`!jtcdisable <standard|tiers|all>\`):**
   - Seamlessly purges categories, interface channels, generator VCs, and active temp rooms while registering deduplication locks to prevent false nuke alerts.`
+      }
+    ]
+  },
+
+  servertagdrag: {
+    id: 'servertagdrag',
+    label: 'Server Tag Auto-VC Drag (0ms)',
+    aliases: ['tagdragarch', 'tagdrag_arch', 'servertag_arch', 'autotagdrag_arch'],
+    title: 'Server Tag Auto-VC Drag (0ms Gateway Lock) | <a:03_tick_circle:1565665642084827206>',
+    description: 'Zero-delay Server Tag voice drag triggered instantly by voiceStateUpdate and userUpdate gateway events with Extra Owner pause/resume and all 22 aliases.',
+    pages: [
+      {
+        pageTitle: '0ms Detection Engine, Auto-Stop & Manual Pause/Resume',
+        content: `# ${getRandomHeadingGlyph()} Dual-Event 0ms Detection Pipeline
+Traditional bots poll REST profiles every 30–60 seconds, letting tagged users sit in VC unmoved. Athena combines two real-time gateway listeners for instantaneous 0ms activation:
+
+• **1. VC Join / Hop Trigger (\`src/events/voiceStateUpdate.js\`):**
+  - Immediately updates \`primaryGuildCache\` from \`newState.member.user\` and calls \`evaluateTagDragForMember\`.
+  - Executes the first \`member.voice.setChannel\` move synchronously at \`0ms\` before starting the continuous rotation interval.
+
+• **2. Live Tag Equip / Change Trigger (\`src/events/userUpdate.js\`):**
+  - Discord.js v14 emits \`userUpdate\` in real time across \`USER_UPDATE\`, \`GUILD_MEMBER_UPDATE\`, and \`PRESENCE_UPDATE\`.
+  - Equipping a watched Server Tag while sitting in any VC starts dragging at 0ms.
+  - Removing or switching to another tag terminates the \`server_tag\` drag session immediately without waiting for the next tick.
+
+• **3. Extra Owner Manual Controls & Safety Immunity:**
+  - \`!tagdragstop <@user|all>\` (or \`!tagdrag stop\` / \`!vcdragstop @user\`) stops dragging AND persists the user into \`tagVcDrags.pausedUsers\`, so rejoining VC keeps them paused.
+  - \`!tagdragresume <@user|all>\` clears the pause lock and resumes dragging immediately if they are still in VC wearing the tag.
+  - **Strict Immunity:** Bot Owner, Server Owner, Extra Owners, and \`!moveprotect\` users are never dragged.`
+      },
+      {
+        pageTitle: 'Syntax Reference & Complete Alias Matrix (22 Aliases)',
+        content: `# ${getRandomHeadingGlyph()} Complete Command & Alias Registry
+All commands below require **Extra Owner**, **Server Owner**, or **Bot Owner** clearance:
+
+• **Configure Watched Server Tags:**
+  - \`!tagdrag @user\` / \`!tagdrag add @user [sec]\` — Watch the Server Tag worn by a member.
+  - \`!tagdrag add <TAG | serverId | discord.gg/invite> [sec]\` — Watch by 1–4 char tag, Server ID, or invite link.
+  - \`!tagdrag list\` · \`!tagdrag toggle <tag|id|@user>\` · \`!tagdrag remove <tag|id|@user>\` · \`!tagdrag clear\`
+
+• **\`!tagdrag\` Aliases (All 14):**
+  - \`!tdrag\`, \`!servertagdrag\`, \`!dragtag\`, \`!vcdragtag\`, \`!tagvcdrag\`, \`!autotagdrag\`, \`!tagloop\`, \`!clandrag\`, \`!dragbytag\`, \`!vctagdrag\`, \`!stdrag\`, \`!tagvc\`, \`!servertag\`, \`!stagdrag\`
+
+• **Pause / Stop Server Tag Drag (\`!tagdragstop <@user|all>\`):**
+  - **Aliases (4):** \`!tdragstop\`, \`!stoptagdrag\`, \`!pausetagdrag\`, \`!tagstop\` (plus \`!tagdrag stop @user\` & \`!vcdragstop @user\`)
+
+• **Resume Server Tag Drag (\`!tagdragresume <@user|all>\`):**
+  - **Aliases (4):** \`!tdragresume\`, \`!resumetagdrag\`, \`!unpausetagdrag\`, \`!tagresume\` (plus \`!tagdrag resume @user\`)`
       }
     ]
   },
@@ -3170,6 +3237,51 @@ export const DETAILED_COMMANDS = {
     example: '!vcdragstop @user'
   },
 
+  tagdrag: {
+    name: 'tagdrag',
+    aliases: ['tdrag', 'servertagdrag', 'dragtag', 'vcdragtag', 'tagvcdrag', 'autotagdrag', 'tagloop', 'clandrag', 'dragbytag', 'vctagdrag', 'stdrag', 'tagvc', 'servertag', 'stagdrag'],
+    category: 'Voice Grid Control & Security',
+    clearance: 'Extra Owner / Server Owner',
+    syntax: '!tagdrag [add @user|tag|serverId|invite] [sec] / !tagdrag list|toggle|remove|clear|stop|resume',
+    purpose: 'Automatically drags any VC member wearing a watched Discord Server Tag at 0ms velocity until they remove/change their tag or an Extra Owner pauses it.',
+    architecture:
+`• **0ms Real-Time Event Triggers:**
+  - Fires immediately upon VC join/hop (\`voiceStateUpdate\`) AND live Server Tag changes (\`userUpdate\` reading \`user.primaryGuild\`). Zero 30–60s waiting.
+• **Target Resolution Modes:**
+  - Accepts \`@user\` (reads active Server Tag), 1–4 character tag text, \`discord.gg/invite\`, or Discord Server ID (\`database.js\` rule persistence).
+• **Auto-Stop + Extra Owner Override:**
+  - Terminates automatically when the member drops/switches their tag.
+  - Manual \`!tagdragstop <@user|all>\` (\`!tdragstop\`, \`!stoptagdrag\`, \`!pausetagdrag\`, \`!tagstop\`) pauses the user across VC rejoins until \`!tagdragresume <@user|all>\` (\`!tdragresume\`, \`!resumetagdrag\`, \`!unpausetagdrag\`, \`!tagresume\`).
+• **Strict Immunity:** Extra Owners, Server Owner, Bot Owner, and \`!moveprotect\` users cannot be dragged.`,
+    example: '!tagdrag @user'
+  },
+
+  tagdragstop: {
+    name: 'tagdragstop',
+    aliases: ['tdragstop', 'stoptagdrag', 'pausetagdrag', 'tagstop'],
+    category: 'Voice Grid Control & Security',
+    clearance: 'Extra Owner / Server Owner',
+    syntax: '!tagdragstop <@user|userId|all>',
+    purpose: 'Stops an active Server Tag VC drag loop and pauses that member so rejoining VC will not restart dragging until resumed by an Extra Owner.',
+    architecture:
+`• **Persistent Extra Owner Override:** Stores \`pausedUsers[userId]\` in \`tagVcDrags\` (\`database.js\`) and clears any live timer in \`activeDrags\`.
+• **All Related Commands:** Works alongside \`!tagdrag stop @user\`, \`!vcdragstop @user\`, and resumes via \`!tagdragresume\` (\`!tdragresume\`, \`!resumetagdrag\`, \`!unpausetagdrag\`, \`!tagresume\`).`,
+    example: '!tagdragstop @user'
+  },
+
+  tagdragresume: {
+    name: 'tagdragresume',
+    aliases: ['tdragresume', 'resumetagdrag', 'unpausetagdrag', 'tagresume'],
+    category: 'Voice Grid Control & Security',
+    clearance: 'Extra Owner / Server Owner',
+    syntax: '!tagdragresume <@user|userId|all>',
+    purpose: 'Clears the manual Extra Owner pause override and immediately resumes Server Tag VC dragging if the member is currently in VC wearing a watched Server Tag.',
+    architecture:
+`• **Instant Sweep & Reactivation:** Removes user(s) from \`pausedUsers\` and runs \`evaluateTagDragForMember\` (with \`forceRefresh: true\`) at 0ms.
+• **All Related TagDrag Aliases:** \`!tagdrag\`, \`!tdrag\`, \`!servertagdrag\`, \`!dragtag\`, \`!vcdragtag\`, \`!tagvcdrag\`, \`!autotagdrag\`, \`!tagloop\`, \`!clandrag\`, \`!dragbytag\`, \`!vctagdrag\`, \`!stdrag\`, \`!tagvc\`, \`!servertag\`, \`!stagdrag\`.`,
+    example: '!tagdragresume @user'
+  },
+
   massmove: {
     name: 'massmove',
     aliases: ['vcmove', 'moveall'],
@@ -3531,9 +3643,13 @@ export function buildExplainContainer(topicOrCmd, pageIndex = 0, prefix = '!', c
       {
         type: 10,
         content: `# ${NINJA_BULLET} Command Architecture: \`${prefix}${matchedCmd.name}\` ${NINJA_BULLET_RTL} | <a:03_tick_circle:1565665642084827206>
+
 > -# **__Category:__** ${matchedCmd.category}
+
 > -# **__Required Clearance:__** \`${matchedCmd.clearance}\`
+
 > -# **__Aliases:__** ${aliasesText}
+
 > -# **__Syntax:__** \`${matchedCmd.syntax.replace(/!/g, prefix)}\``
       },
       { type: 14, divider: true },
@@ -3631,8 +3747,13 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
     },
     {
       label: 'Voice Grid & Dynamic JTC Hubs',
-      description: 'Loop dragging, 4-tier Join-to-Create hubs & Anti-Nuke sync',
+      description: 'Loop dragging, Server Tag drag, 4-tier JTC hubs & Anti-Nuke sync',
       value: 'voice'
+    },
+    {
+      label: 'Server Tag Auto-VC Drag (0ms)',
+      description: '0ms gateway tag detection, Extra Owner pause/resume & all 22 aliases',
+      value: 'servertagdrag'
     },
     {
       label: 'Moderation & Mass Actions',
@@ -3667,7 +3788,7 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
       content: `# ${getRandomHeadingGlyph()} Architecture & Command Deep-Dive Explainer | <a:03_tick_circle:1565665642084827206>
 > <a:uptime:1552608831060844575> **Welcome to the Athena Prime Architecture Explainer Engine!**
 > Full technical breakdowns of Gateway wiretaps, velocity throttling, zero-day exploit mitigations, and execution mechanics.
-> -# **__To inspect any command:__** Type \`${prefix}explain <command>\` (e.g. \`${prefix}explain kick\`, \`${prefix}explain vcdrag\`)`
+> -# **__To inspect any command:__** Type \`${prefix}explain <command>\` (e.g. \`${prefix}explain kick\`, \`${prefix}explain tagdrag\`, \`${prefix}explain vcdrag\`)`
     },
     { type: 14, divider: true },
     {
@@ -3677,9 +3798,9 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
 > -# **__Under-the-Hood:__** Raw WebSocket wiretap (<1ms) intercepts unlogged Linked Role and Onboarding escalations via 60s audit threshold. Reinstates sentinel roles and quarantines offenders.
 -# ${BULLET_EMOJI} **__Commands:__** \`unbypassable\`, \`antinuke\`, \`firewall\`, \`neutralizeonboarding\`, \`scanserver\`, \`panic\`, \`quarantine\`, \`botwhitelist\`, \`spampermit\`, \`autonick\`, \`learn\`, \`modmode\`
 
-### 2. Voice Grid Control & Channel Drag Architecture
-> -# **__Under-the-Hood:__** Voice gateway wiretap updates state via PATCH /guilds/{id}/members/{user}. Executes drag loops, mass moves, and mass disconnects with 150ms buffers and caller immunity.
--# ${BULLET_EMOJI} **__Commands:__** \`vcdrag\`, \`vcdragstop\`, \`massmove\`, \`massdc\`, \`muteall\`, \`unmuteall\`, \`deafenall\`, \`undeafenall\`, \`jtc\`, \`vcprotect\`
+### 2. Voice Grid, Server Tag Drag & Channel Architecture
+> -# **__Under-the-Hood:__** Real-time \`voiceStateUpdate\` + \`userUpdate\` gateway listeners trigger 0ms VC drag on watched Server Tags, auto-stop on tag change, honor Extra Owner pause/resume, and run loop/mass voice moves cleanly.
+-# ${BULLET_EMOJI} **__Commands:__** \`tagdrag\` (\`tdrag\`, \`servertagdrag\`, \`clandrag\`, +11 aliases), \`tagdragstop\` (\`tdragstop\`, \`tagstop\`), \`tagdragresume\` (\`tdragresume\`, \`tagresume\`), \`vcdrag\`, \`vcdragstop\`, \`massmove\`, \`massdc\`, \`muteall\`, \`jtc\`, \`vcprotect\`
 
 ### 3. Mass Moderation & Action Velocity Architecture
 > -# **__Under-the-Hood:__** Sequential REST execution with hierarchy checks. Velocity tripwires (>3 actions/10s) quarantine rogue staff, while pre-action DMs and SQLite forensics record accountability.

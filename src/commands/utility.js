@@ -108,6 +108,38 @@ function findHelpModule(cmdName) {
   );
 }
 
+function buildCommandInspectionContainer(targetCmd, usageText, aliasesText, permsText, descContent, catStr) {
+  const display1 = new TextDisplayBuilder().setContent(
+    `# ${NINJA_BULLET} Command Name: \`${targetCmd.name}\` ${NINJA_BULLET_RTL}\n\n` +
+    `> -# **__Command usage:__** \`${usageText}\`\n\n` +
+    `> -# **__Aliases:__** ${aliasesText}\n\n` +
+    `> -# **__Command Permissions:__** \`${permsText}\``
+  );
+  const display2 = new TextDisplayBuilder().setContent(`> -# **__Command Explain : What Is The Purpose of that command:__**\n\n> -# ${descContent}`);
+  const display3 = new TextDisplayBuilder().setContent(`-# **__Category:__** ${catStr}`);
+
+  const actionRow = {
+    type: 1,
+    components: [
+      { type: 2, custom_id: `arch_cmd_${targetCmd.name}`, label: 'Explain Architecture', style: 2, emoji: { id: NAV_EMOJI_IDS.NEXT } },
+      { type: 2, custom_id: 'arch_home', label: 'Topic Directory', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } }
+    ]
+  };
+
+  return {
+    type: 17,
+    components: [
+      display1,
+      { type: 14, divider: true },
+      display2,
+      { type: 14, divider: true },
+      display3,
+      { type: 14, divider: true },
+      actionRow
+    ]
+  };
+}
+
 function getTagDragHelpOverride(cmdName, prefix) {
   if (cmdName === 'tagdrag') {
     return {
@@ -1499,35 +1531,7 @@ export const commands = [
                     `> -# **__Persistence:__** Flushed immediately to persistent database ledger.`;
               }
 
-              const display1 = new TextDisplayBuilder().setContent(`# ${NINJA_BULLET} Command Name: \`${targetCmd.name}\` ${NINJA_BULLET_RTL}\n\n` +
-                `> -# **__Command usage:__** \`${usageText}\`\n` +
-                `> -# **__Aliases:__** ${aliasesText}\n` +
-                `> -# **__Command Permissions:__** \`${permsText}\``
-              );
-              const display2 = new TextDisplayBuilder().setContent(`> -# **__Command Explain : What Is The Purpose of that command:__**\n> -# ${descContent}`);
-              const display3 = new TextDisplayBuilder().setContent(`-# **__Category:__** ${catStr}`);
-              
-              const actionRow = {
-                type: 1,
-                components: [
-                  { type: 2, custom_id: `arch_cmd_${targetCmd.name}`, label: 'Explain Architecture', style: 2, emoji: { id: NAV_EMOJI_IDS.NEXT } },
-                  { type: 2, custom_id: 'arch_home', label: 'Topic Directory', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } }
-                ]
-              };
-
-              const container = {
-                  type: 17,
-                  components: [
-                      display1,
-                      { type: 14, divider: true },
-                      display2,
-                      { type: 14, divider: true },
-                      display3,
-                      { type: 14, divider: true },
-                      actionRow
-                  ]
-              };
-              
+              const container = buildCommandInspectionContainer(targetCmd, usageText, aliasesText, permsText, descContent, catStr);
               return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
           }
 
@@ -2417,35 +2421,7 @@ export const commands = [
             `> -# **__Persistence:__** Flushed immediately to persistent database ledger.`;
         }
 
-        const display1 = new TextDisplayBuilder().setContent(`# ${NINJA_BULLET} Command Name: \`${targetCmd.name}\` ${NINJA_BULLET_RTL}\n\n` +
-          `> -# **__Command usage:__** \`${usageText}\`\n` +
-          `> -# **__Aliases:__** ${aliasesText}\n` +
-          `> -# **__Command Permissions:__** \`${permsText}\``
-        );
-        const display2 = new TextDisplayBuilder().setContent(`> -# **__Command Explain : What Is The Purpose of that command:__**\n> -# ${descContent}`);
-        const display3 = new TextDisplayBuilder().setContent(`-# **__Category:__** ${catStr}`);
-
-        const actionRow = {
-          type: 1,
-          components: [
-            { type: 2, custom_id: `arch_cmd_${targetCmd.name}`, label: 'Explain Architecture', style: 2, emoji: { id: NAV_EMOJI_IDS.NEXT } },
-            { type: 2, custom_id: 'arch_home', label: 'Topic Directory', style: 2, emoji: { id: NAV_EMOJI_IDS.HOME } }
-          ]
-        };
-
-        const container = {
-          type: 17,
-          components: [
-            display1,
-            { type: 14, divider: true },
-            display2,
-            { type: 14, divider: true },
-            display3,
-            { type: 14, divider: true },
-            actionRow
-          ]
-        };
-
+        const container = buildCommandInspectionContainer(targetCmd, usageText, aliasesText, permsText, descContent, catStr);
         return interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
       }
 
@@ -3227,46 +3203,43 @@ export const helpModules = [
   ] },
   
   { id: 'moderation', category: 'SERVER MANAGEMENT', shortLabel: 'Mods', label: 'Moderation Tools', emoji: 'mod', commands: [
-    "`!ban / !b @user [reason]` - Ban a member from the server `[Extra Owner]`",
-    "`!tempban @user <time> [reason]` - Temporarily ban a member with auto-unban `[Extra Owner]`",
-    "`!unban <userid>` - Unban a user by User ID `[Extra Owner]`",
-    "`!unbanall` - Removes ALL active bans from the server `[Server Owner]`",
-    "`!kick / !k @user [reason]` - Kick a member from the server `[Extra Owner]`",
+    "`!ban / !b @user [reason]` - Ban a member `[Extra Owner]`",
+    "`!tempban @user <time> [reason]` - Temporary ban with auto-unban `[Extra Owner]`",
+    "`!unban <userid>` - Unban user by ID `[Extra Owner]`",
+    "`!unbanall` - Remove ALL active server bans `[Server Owner]`",
+    "`!kick / !k @user [reason]` - Kick a member `[Extra Owner]`",
     "`!timeout / !to @user [time] [reason]` - Timeout a member `[Extra Owner]`",
-    "`!temptimeout @user <time> [reason]` - Structured temporary timeout `[Extra Owner]`",
-    "`!untimeout / !unto / !removetimeout @user` - Remove timeout from a member `[Extra Owner]`",
+    "`!temptimeout @user <time> [reason]` - Timed temporary timeout `[Extra Owner]`",
+    "`!untimeout / !unto / !removetimeout @user` - Remove timeout `[Extra Owner]`",
     "`!warn / !w @user [reason]` - Warn a member `[Extra Owner]`",
-    "`!warnings @user` - View user's warnings `[Public]`",
-    "`!staffpulse / !modstats [@user]` - Moderation quota tracker & rankings `[Staff Supervisor]`",
-    "`!clearwarns / !cw @user` - Clear user's warnings `[Extra Owner]`",
-    "`!purge / !clear [amount]` - Delete recent messages `[Extra Owner]`",
+    "`!warnings @user` - View member warnings `[Public]`",
+    "`!staffpulse / !modstats [@user]` - Staff moderation quotas & rankings `[Staff]`",
+    "`!clearwarns / !cw @user` - Clear member warnings `[Extra Owner]`",
+    "`!purge / !clear [amount]` - Bulk delete messages `[Extra Owner]`",
     "`!slowmode <seconds>` - Set channel slowmode `[Extra Owner]`",
-    "`!nuke` - Clone and delete the current channel `[Extra Owner]`",
-    "`!muteall / !unmuteall` - Server mute/unmute everyone in active voice channel `[Extra Owner]`",
-    "`!deafenall / !undeafenall` - Server deafen/undeafen everyone in active voice channel `[Extra Owner]`",
-    "`!hide / !unhide` - Hide or unhide a channel `[Extra Owner]`",
-    "`!sync / !syncall` - Sync channel permissions with category `[Extra Owner]`",
-    "`!adel @user` - Auto-delete all messages sent by user `[Extra Owner]`",
-    "`!radel @user` - Remove auto-delete for user `[Extra Owner]`",
+    "`!nuke` - Clone and wipe current channel `[Extra Owner]`",
+    "`!muteall / !unmuteall` - Server mute/unmute current VC `[Extra Owner]`",
+    "`!deafenall / !undeafenall` - Server deafen/undeafen current VC `[Extra Owner]`",
+    "`!hide / !unhide` - Hide or unhide channel `[Extra Owner]`",
+    "`!sync / !syncall` - Sync permissions with category `[Extra Owner]`",
+    "`!adel / !radel @user` - Enable or remove auto-delete for user `[Extra Owner]`",
     "`!ur @user <new_name>` - Update member nickname `[Extra Owner]`",
-    "`!editrole / !er <@role>` - Interactive Role Manager GUI: Rename/Hex/Position modals, hoist/mention toggles, 13-color preset palette, 20-permission toggler, clone & delete `[Extra Owner]`",
-    "`!createrole / !cr` - Interactive Role Creator with custom permissions, color & position `[Extra Owner]`",
-    "`!deleterole / !dr <@roles...> / !role delete` - Delete one or multiple server roles `[Bot Owner & Extra Owner]`",
-    "`!addrole @user @role` - Add role to a user `[Extra Owner]`",
-    "`!removerole @user @role` - Remove role from a user `[Extra Owner]`",
-    "`!striproles @user` - Strip all roles from a user `[Extra Owner]`",
-    "`!createchannel / !createc <name>` - Quickly create a text channel `[Extra Owner]`",
-    "`!createvc / !makevc <name> [limit]` - Quickly create a voice channel `[Extra Owner]`",
-    "`!deletechannel / !delc <#channel...>` - Delete one or more channels `[Extra Owner]`",
-    "`!delcat / !deletecategory <category>` - Delete category (keeps channels safe) `[Extra Owner]`",
-    "`!delcatall / !deletecategoryall <category>` - Delete category AND all its channels `[Extra Owner]`",
-    "`!createthread / !ct <name>` - Create a new public or private thread in current channel `[Extra Owner]`",
-    "`!archivethread / !ta` - Archive the current thread `[Extra Owner]`",
-    "`!deletethread / !td` - Delete the current thread `[Extra Owner]`",
-    "`!say <message>` - Send a raw text message via bot `[Extra Owner]`",
-    "`!announce` - Launch interactive announcement builder (supports direct Pinterest links) `[Extra Owner]`",
-    "`!aiannounce [prompt] [#channel] / /aiannounce` - AI Announcement Studio with Pinterest banner support, custom emojis & live preview `[Extra Owner]`",
-    "`!fck @user <reason>` - Send direct official warning DM `[Server Owner]`"
+    "`!editrole / !er <@role>` - Role Manager GUI (rename, hex, perms, clone, delete) `[Extra Owner]`",
+    "`!createrole / !cr` - Interactive Role Creator GUI `[Extra Owner]`",
+    "`!deleterole / !dr <@roles...> / !role delete` - Delete server role(s) `[Bot/Extra Owner]`",
+    "`!addrole / !removerole @user @role` - Assign or remove a role `[Extra Owner]`",
+    "`!striproles @user` - Strip all roles from member `[Extra Owner]`",
+    "`!createchannel / !createc <name>` - Create text channel `[Extra Owner]`",
+    "`!createvc / !makevc <name> [limit]` - Create voice channel `[Extra Owner]`",
+    "`!deletechannel / !delc <#channel...>` - Delete channel(s) `[Extra Owner]`",
+    "`!delcat / !deletecategory <category>` - Delete category (keep channels) `[Extra Owner]`",
+    "`!delcatall / !deletecategoryall <category>` - Delete category & channels `[Extra Owner]`",
+    "`!createthread / !ct <name>` - Create public/private thread `[Extra Owner]`",
+    "`!archivethread / !ta / !deletethread / !td` - Archive or delete thread `[Extra Owner]`",
+    "`!say <message>` - Send raw text message via bot `[Extra Owner]`",
+    "`!announce` - Interactive announcement builder `[Extra Owner]`",
+    "`!aiannounce [prompt] [#channel]` - AI Announcement Studio with live preview `[Extra Owner]`",
+    "`!fck @user <reason>` - Direct official warning DM `[Server Owner]`"
   ] },
   { id: 'mass_actions', category: 'SERVER MANAGEMENT', shortLabel: 'Mass Mod', label: 'Mass Actions', emoji: 'mass', commands: [
     "`!massban` - Open interactive menu to ban multiple users `[Extra Owner]`",
@@ -3346,39 +3319,32 @@ export const helpModules = [
     "-# <a:target_blink:1565667466984554588> Automatically creates paired Voice Channels and Text Channels per ticket."
   ] },
   { id: 'tracking', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Tracking', label: 'Tracking & Logs', emoji: 'tracking', commands: [
-    "`!serverlogs / !slogs` - Interactive Server Modification & Voice Status Logging dashboard `[Extra Owner]`",
-    "`!serverlogs setup / create` - Auto-create `╭・Logs` category & `📁・server-logs` with private staff permissions `[Extra Owner]`",
-    "`!serverlogs bind <#channel>` - Bind any pre-existing text channel to route all live server modification logs `[Extra Owner]`",
-    "`!serverlogs test` - Dispatch an immediate verification test log embed `[Extra Owner]`",
-    "`!serverlogs disable` - Disable server modification and voice status logging `[Extra Owner]`",
-    "`!serveroverview / !so` - Statbot-style 8-panel graphical Server Overview with 9 interactive tabs & timeframe selector `[Public]`",
-    "`!userinfo / !ui / !whois [@user]` - User account profile, permissions, badges & join telemetry `[Public]`",
-    "`!serverinfo / !sinfo / !si` - Detailed server statistics, hierarchy & metrics `[Public]`",
-    "`!botstats / !bs / !bi / !binfo` - View bot performance, cluster info & telemetry `[Public]`",
-    "`!top / !leaderboard / !lb` - View top message and voice leaderboard `[Public]`",
-    "`!stats / !mystats / !me [@user]` - View server statistics, interactive telemetry HUD, or personal Canvas insights `[Public]`",
-    "`!serverstats / !statsetup` - Dual-Mode `╭・Statistics` voice channels (Voice Status Subtitles vs Classic Renamed) `[Extra Owner]`",
-    "`!serverstats setup <status|classic>` - Deploy compact 2-channel Voice Status mode or 3-channel Classic mode `[Extra Owner]`",
-    "`!serverstats refresh` - Immediately refresh statistics channels to live member & voice counts `[Extra Owner]`",
-    "`!chatlb / !topchat` - View the most active chatters `[Public]`",
-    "`!voicelb / !topvoice` - View the most active voice members `[Public]`",
-    "`!invitelb / !topinvites` - View the top inviters in the server `[Public]`",
-    "`!syncinvites` - Synchronize the invite tracker database `[Extra Owner]`",
-    "`!invitesetup / !setinvites <#channel>` - Setup invite tracking logs channel `[Extra Owner]`",
+    "`!serverlogs / !slogs` - Server Modification & Voice Status Logging panel `[Extra Owner]`",
+    "`!serverlogs setup / bind <#ch> / test / disable` - Auto-create or bind `#server-logs` `[Extra Owner]`",
+    "`!serveroverview / !so` - Statbot 8-panel Server Overview (9 tabs & timeframes) `[Public]`",
+    "`!userinfo / !ui / !whois [@user]` - Member profile, perms, badges & telemetry `[Public]`",
+    "`!serverinfo / !sinfo / !si` - Server stats, hierarchy & metrics `[Public]`",
+    "`!botstats / !bs / !bi / !binfo` - Bot performance, cluster info & telemetry `[Public]`",
+    "`!top / !leaderboard / !lb` - Message & voice activity leaderboard `[Public]`",
+    "`!stats / !mystats / !me [@user]` - Telemetry HUD or personal Canvas insights `[Public]`",
+    "`!serverstats / !statsetup` - Dual-Mode `╭・Statistics` VC counters `[Extra Owner]`",
+    "`!serverstats setup <status|classic>` - Deploy 2-ch Status or 3-ch Classic mode `[Extra Owner]`",
+    "`!serverstats refresh` - Sync stats channels to live counts `[Extra Owner]`",
+    "`!chatlb / !topchat` - Top chatters leaderboard `[Public]`",
+    "`!voicelb / !topvoice` - Top voice members leaderboard `[Public]`",
+    "`!invitelb / !topinvites` - Top inviters leaderboard `[Public]`",
+    "`!syncinvites` - Sync invite tracker database `[Extra Owner]`",
+    "`!invitesetup / !setinvites <#ch>` - Set invite logs channel `[Extra Owner]`",
     "`!invitedisable / !disableinvites` - Disable invite tracking `[Extra Owner]`",
-    "`!bjoins / !bcmds / !bservers` - View bot growth metrics `[Public]`",
+    "`!bjoins / !bcmds / !bservers` - Bot growth metrics `[Public]`",
     "`!record / !voicelog` - Setup voice logging channel `[Extra Owner]`",
-    "`!setdeletelog <#channel>` - Set where deleted messages are sent `[Extra Owner]`",
-    "`!status` - Live bot engine performance, cluster health & security telemetry `[Public]`",
-    "`!setgloballog <#channel>` - Bind global cross-server moderation action logger `[Bot Owner]`",
-    "`!removegloballog` - Unset global action log channel `[Bot Owner]`",
-    "`!testgloballog` - Dispatch test cross-server action embed `[Bot Owner]`",
+    "`!setdeletelog <#channel>` - Set deleted message log channel `[Extra Owner]`",
+    "`!status` - Live bot health & security telemetry `[Public]`",
+    "`!setgloballog / !removegloballog / !testgloballog` - Global cross-server logs `[Bot Owner]`",
     "",
     "-# **__Server Overview & Logging Suite:__**",
-    "-# <a:target_blink:1565667466984554588> **Unified Server Modification Logger:** Automatically captures channel creates/updates/deletes, live voice channel status subtitle pulses (`VOICE_CHANNEL_STATUS_UPDATE`), role changes & permission diffs, server settings, emojis/stickers, webhooks, and invites with accurate audit executor attribution.",
-    "-# <a:target_blink:1565667466984554588> **`!stats`** without arguments opens the full Statbot-style 8-panel Server Overview dashboard with interactive timeframe selector (`24h`, `7d`, `30d`, `all`).",
-    "-# <a:target_blink:1565667466984554588> **`!stats me` / `!stats @user`** renders a high-resolution personalized Canvas activity card.",
-    "-# <a:target_blink:1565667466984554588> **`!stats setup` / `!stats refresh`** seamlessly forwards to the Stats Bot `╭・Statistics` voice channel engine."
+    "-# <a:target_blink:1565667466984554588> **Unified Server Logger:** Captures channel/role diffs, voice status pulses, emojis, webhooks & invites with audit executors.",
+    "-# <a:target_blink:1565667466984554588> **`!stats` / `!stats me` / `!stats setup`:** Opens the 8-panel Overview (`24h`/`7d`/`30d`/`all`), renders Canvas activity cards, or configures `╭・Statistics`."
   ] },
   { id: 'config', category: 'UTILITIES & INTEGRATIONS', shortLabel: 'Config', label: 'Server Configuration', emoji: 'config', commands: [
     "`!serverstats / !statsetup / !vcstats` - Dual-Mode `╭・Statistics` dashboard & switcher `[Extra Owner]`",
@@ -3496,42 +3462,34 @@ export const helpModules = [
     "-# <a:target_blink:1565667466984554588> Roles purchased via shop are fulfilled and audited instantly by Role ID."
   ] },
   { id: 'voice', category: 'VOICE & MEDIA', shortLabel: 'Voice', label: 'Voice Utilities', emoji: 'voice', commands: [
-    "`!tts` - Interactive AI & Celebrity TTS Control Center `[Public]`",
-    "`!tts <message>` - Broadcast Text-to-Speech audio in your voice channel `[Public]`",
-    "`!tts voices` - Explore all 14 Celebrity & Character AI voices `[Public]`",
-    "`!tts voice <name>` - Lock default AI voice (`trump`, `modi`, `taylor`, `ariana`, `bieber`, etc.) `[Public]`",
-    "`!tts <voice> <msg>` - Speak directly with on-the-fly celebrity voice `[Public]`",
-    "`!tts autovc` - Toggle global Auto-TTS for your VC `[Extra Owner]`",
-    "`!tts stop` - Immediately halt speech playback and clear queue `[Public]`",
+    "`!tts [msg | <voice> <msg>]` - AI & Celebrity TTS panel or speak directly in VC `[Public]`",
+    "`!tts voices / !tts voice <name>` - Browse 14 voices or lock default (`trump`, `modi`, `taylor`, etc.) `[Public]`",
+    "`!tts autovc / !tts stop` - Toggle VC Auto-TTS `[Extra Owner]` or stop speech playback `[Public]`",
     "`!voiceanalytics / !va` - 24h voice telemetry matrix & top hubs/participants `[Public]`",
-    "`!autovcstatus <on|off|shuffle|add|remove|list>` - Auto aesthetic VC statuses (protects Home, JTC & Server Stats VCs) `[Extra Owner]`",
-    "`!voicerole <@role|ID|Name|disable> / !vcrole` - Auto-assign role in VC for all members & bots `[Extra Owner]`",
-    "`!jtcnormal / !jtcsingle` - Deploy standard single Join to Create lobby & category `[Extra Owner]`",
-    "`!jtcsetup tiers / !jtctiers [setup|sync|info|disable]` - Deploy 5-tier Voice Hub & sync Solo–Unlimited VC statuses `[Extra Owner]`",
-    "`!jtcdisable <standard|tiers|all>` - Wipes JTC categories, interface channel & generator channels `[Extra Owner]`",
-    "`!secondaryjtc` - Setup a secondary JTC hub `[Extra Owner]`",
-    "`!jtc add @user` - Whitelist user into locked temporary JTC room `[Public]`",
-    "`!jtc chime on|off` - Entrance chime notifications for Join to Create voice rooms `[Public]`",
-    "`!vcpanel` - Spawn the interactive VC control panel for JTC owners `[Extra Owner]`",
-    "`!vc claim / !vc info` - Voice channel quick actions and ownership claim `[Public]`",
-    "`!vcdrag @user` - Force-drag a user to your VC `[Extra Owner]`",
-    "`!vcdragstop @user` - Stop an active voice drag session `[Extra Owner]`",
-    "`!vcdraglist` - List all active voice drag sessions `[Extra Owner]`",
-    "`!tagdrag <@user|tag|ID|invite|list|remove|toggle|clear>` - Instant Server Tag VC drag (`!tdrag`, `!servertagdrag`, `!clandrag`, `!dragbytag`, `!stagdrag`, +9 aliases) `[Extra Owner]`",
-    "`!tagdragstop / !tagdragresume <@user|all>` - Pause or resume Server Tag VC drag (`!tdragstop`, `!tdragresume`, `!tagstop`, `!tagresume`) `[Extra Owner]`",
-    "`!muteall / !unmuteall` - Mute/unmute everyone in your VC `[Extra Owner]`",
-    "`!deafenall / !undeafenall` - Deafen/undeafen everyone in your VC `[Extra Owner]`",
-    "`!mute / !unmute @user` - Voice mute or unmute a specific member `[Extra Owner]`",
-    "`!deafen / !undeafen @user` - Server deafen or undeafen a member `[Extra Owner]`",
-    "`!vcprotect add|remove|list @user` - Protect user from being dragged/muted `[Extra Owner]`",
-    "`!moveprotect add|remove|list @user` - Protect user from being moved `[Extra Owner]`",
-    "`!vclock / !vcunlock` - Lock/unlock the current VC `[Extra Owner]`",
-    "`!theatermode` - Toggle Theater Mode in current VC `[Extra Owner]`",
-    "`!botvoice / !bv` - Control bot server mute and deafen status `[Extra Owner]`",
+    "`!autovcstatus <on|off|shuffle|add|remove|list>` - Auto VC statuses (`!vcstatusauto`, `!randomvc`) `[Extra Owner]`",
+    "`!voicerole <@role|ID|Name|disable> / !vcrole` - Auto VC role for members & bots `[Extra Owner]`",
+    "`!jtcnormal / !jtcsingle` - Deploy standard single Join to Create lobby `[Extra Owner]`",
+    "`!jtcsetup tiers / !jtctiers [setup|sync|info|disable]` - 5-tier Voice Hub (`Solo`–`Unlimited`) `[Extra Owner]`",
+    "`!jtcdisable / !jtcoff / !jtcstop <standard|tiers|all>` - Wipe JTC hubs & interface `[Extra Owner]`",
+    "`!secondaryjtc / !jtc2 / !secondjtc` - Deploy secondary JTC hub `[Extra Owner]`",
+    "`!jtc add @user / !jtc chime on|off` - Whitelist user or toggle chime in JTC rooms `[Public]`",
+    "`!vcpanel / !vc claim / !vc info` - JTC control panel `[Extra Owner]` or VC info & claim `[Public]`",
+    "`!vcdrag / !loopdrag / !vcloop @user` - Force-drag user across VCs `[Extra Owner]`",
+    "`!vcdragstop / !dragstop / !stopdrag @user` - Stop active VC drag `[Extra Owner]`",
+    "`!vcdraglist / !draglist / !vcdragusers` - List active VC drag sessions `[Extra Owner]`",
+    "`!tagdrag <add|@user|tag|ID|invite|list|toggle|remove|clear>` - 0ms Server Tag Auto-VC drag `[Extra Owner]`",
+    "`!tagdragstop / !tagdragresume <@user|all>` - Manual Extra Owner pause or resume `[Extra Owner]`",
+    "`!muteall / !unmuteall / !deafenall / !undeafenall` - Server mute or deafen entire VC `[Extra Owner]`",
+    "`!mute / !unmute / !deafen / !undeafen @user` - Server mute or deafen a user `[Extra Owner]`",
+    "`!vcprotect <add|remove|list> @user` - Protect user from being dragged/muted `[Extra Owner]`",
+    "`!moveprotect <add|remove|list> @user` - Protect user from being moved `[Extra Owner]`",
+    "`!vclock / !vcunlock / !theatermode / !botvoice` - Lock VC, Theater Mode, or bot mute/deaf `[Extra Owner]`",
     "",
-    "-# **Dynamic JTC & Server Tag Drag Architecture**",
-    "-# <a:target_blink:1565667466984554588> **JTC & Sweeper:** 5-tier (`Solo`–`Unlimited`) or single lobbies sync statuses (`!jtctiers sync`), clean zombies on hops/60s sweeps & spawn `#voice-controls`.",
-    "-# <a:target_blink:1565667466984554588> **Server Tag Drag (0ms):** Fires instantly on VC join or tag equip, stops automatically on tag change, and obeys Extra Owner stop/resume."
+    "-# **Server Tag Auto-VC Drag & Voice Aliases**",
+    "-# <a:target_blink:1565667466984554588> **!tagdrag Aliases (14):** `!tdrag`, `!servertagdrag`, `!dragtag`, `!vcdragtag`, `!tagvcdrag`, `!autotagdrag`, `!tagloop`, `!clandrag`, `!dragbytag`, `!vctagdrag`, `!stdrag`, `!tagvc`, `!servertag`, `!stagdrag`",
+    "-# <a:target_blink:1565667466984554588> **Stop/Resume Aliases (8):** `!tdragstop`, `!stoptagdrag`, `!pausetagdrag`, `!tagstop`, `!tdragresume`, `!resumetagdrag`, `!unpausetagdrag`, `!tagresume`",
+    "-# <a:target_blink:1565667466984554588> **Other Voice Aliases:** `!normaljtc`, `!jtcstandard`, `!tieredjtc`, `!jtcsuite`, `!jointocreate`, `!tempvc`, `!voicechannel`, `!myvc`, `!vstats`, `!voicestats`, `!vcheatmap`, `!lockvc`, `!vclockdown`, `!vcl`, `!vcunl`, `!vcdeafenall`, `!serverdeafenall`, `!vcundeafenall`, `!serverundeafenall`, `!protectvc`, `!antimove`, `!vclockdownprotection`, `!mp`, `!theater`, `!tm`, `!bv`, `!botmute`, `!botdeafen`",
+    "-# <a:target_blink:1565667466984554588> **0ms Engine & JTC:** Tag drag fires at 0ms on VC join or `userUpdate`, stops on tag change, and obeys Extra Owner stop/resume."
   ] },
   { id: 'soundboard', category: 'VOICE & MEDIA', shortLabel: 'Soundboard', label: 'Soundboard & Lo-Fi Radio', emoji: 'soundboard', commands: [
     "`!soundboard / !sounds` - Interactive voice soundboard control deck with 12 instant sound triggers `[Public]`",
@@ -3894,7 +3852,7 @@ export function buildHelpContainer(client, guildId, moduleId = 'home', options =
             .replace(/^•\s*/, '')
             .trim();
           const hasBulletPrefix = cleanSub.startsWith(BULLET_EMOJI);
-          line = hasBulletPrefix ? `> -# ${cleanSub}` : `-# ${cleanSub.replace(/:$/, '')}`;
+          line = hasBulletPrefix ? `-# ${cleanSub}` : `-# **${cleanSub}**`;
         } else if (
           formatted.startsWith('**') ||
           formatted.startsWith('Step ') ||
@@ -3905,18 +3863,18 @@ export function buildHelpContainer(client, guildId, moduleId = 'home', options =
           /^\s*\d+\./.test(formatted)
         ) {
           const cleaned = formatted.replace(/^(?:[-•>]|\*(?!\*))\s*/, '').trim();
-          line = `> -# ${BULLET_EMOJI} ${cleaned}`;
+          line = `-# ${BULLET_EMOJI} ${cleaned}`;
         } else {
-          line = `> -# ${formatted}`;
+          line = `> **${formatted}**`;
         }
 
-        if (currentChunk.length + line.length + 2 > 1900) {
+        if (currentChunk.length + line.length + 4 > 1900) {
           if (currentChunk.trim().length > 0) {
             rawComponents.push({ type: 10, content: currentChunk.trim() });
           }
           currentChunk = line;
         } else {
-          currentChunk += (currentChunk ? '\n' : '') + line;
+          currentChunk += (currentChunk ? '\n\n' : '') + line;
         }
       }
 
