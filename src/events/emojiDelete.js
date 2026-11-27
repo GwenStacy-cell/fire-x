@@ -1,5 +1,5 @@
 ﻿import { AuditLogEvent } from 'discord.js';
-import { cacheDeletedItem, directStrike, deletedCache, isRestorationHandled, markRestorationQueued, restorationRegistry, getAuditExecutorAndReason } from '../utils/antinuke.js';
+import { cacheDeletedItem, directStrike, deletedCache, isRestorationHandled, markRestorationQueued, restorationRegistry } from '../utils/antinuke.js';
 import db from '../database.js';
 import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason as getLogAudit, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink } from '../utils/helpers.js';
