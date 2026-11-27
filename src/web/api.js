@@ -1431,6 +1431,194 @@ export function registerDashboardRoutes(app, client) {
     res.json({ ok: true, message: 'Morning dispatcher saved.' });
   });
 
+  // ---------------------------------------------------------------------------
+  // ALL GUILD CHANNELS (for dashboard dropdowns)
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/channels', requireAuth(client), requireGuildAccess(client), async (req, res) => {
+    try {
+      const guild = req.targetGuild;
+      // Try to fetch fresh channels (bypasses cache gaps)
+      await guild.channels.fetch().catch(() => {});
+      const channels = guild.channels.cache
+        .filter(c => [0, 2, 4, 5, 10, 11, 12, 13, 14, 15].includes(c.type)) // text, voice, category, news, threads, stage, forum
+        .map(c => ({
+          id: c.id,
+          name: c.name,
+          type: c.type, // 0=text,2=voice,4=category,5=news
+          parentId: c.parentId || null,
+          position: c.rawPosition || 0
+        }))
+        .sort((a, b) => a.position - b.position);
+      res.json({ ok: true, channels });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // MEDIA DOWNLOADER
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/media', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    res.json({
+      ok: true,
+      mediaChannelId: cfg.mediaChannelId || '',
+      autoMediaAll: Boolean(cfg.autoMediaAll)
+    });
+  });
+
+  api.post('/guilds/:guildId/settings/media', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { mediaChannelId, autoMediaAll } = req.body || {};
+    db.updateGuildConfig(req.targetGuild.id, {
+      mediaChannelId: String(mediaChannelId || '').trim() || null,
+      autoMediaAll: Boolean(autoMediaAll)
+    });
+    res.json({ ok: true, message: 'Media downloader settings saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // MESSAGE DELETE LOG (quick-set for msgDeletes module)
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/msgdeletelog', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    const mod = cfg.serverLogs?.modules?.msgDeletes || {};
+    res.json({
+      ok: true,
+      enabled: Boolean(mod.enabled),
+      channelId: mod.channelId || '',
+      logsEnabled: Boolean(cfg.serverLogs?.enabled)
+    });
+  });
+
+  api.post('/guilds/:guildId/settings/msgdeletelog', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { enabled, channelId } = req.body || {};
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    const sl = cfg.serverLogs || { enabled: false, defaultChannelId: null, categoryId: null, modules: {} };
+    if (!sl.modules) sl.modules = {};
+    if (!sl.modules.msgDeletes) sl.modules.msgDeletes = {};
+    sl.modules.msgDeletes.enabled = Boolean(enabled);
+    sl.modules.msgDeletes.channelId = String(channelId || '').trim() || null;
+    if (Boolean(enabled)) sl.enabled = true; // auto-enable master switch
+    db.updateGuildConfig(req.targetGuild.id, { serverLogs: sl });
+    res.json({ ok: true, message: 'Message delete log saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // QUARANTINE SETUP
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/quarantine', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    const guild = req.targetGuild;
+    // Current quarantined users count
+    const quarantinedUsers = db.getQuarantinedInGuild ? db.getQuarantinedInGuild(guild.id) : {};
+    const count = Object.keys(quarantinedUsers).length;
+    res.json({
+      ok: true,
+      quarantineRoleId: cfg.quarantineRoleId || '',
+      quarantineChannelId: cfg.quarantineChannelId || '',
+      quarantineVcId: cfg.quarantineVcId || '',
+      quarantineCategoryId: cfg.quarantineCategoryId || '',
+      quarantinedCount: count,
+      gatekeeperEnabled: Boolean(cfg.gatekeeper?.enabled),
+      gatekeeperMinAge: cfg.gatekeeper?.minAgeHours ?? 24,
+      gatekeeperRequireAvatar: Boolean(cfg.gatekeeper?.requireAvatar),
+      gatekeeperAction: cfg.gatekeeper?.action || 'quarantine'
+    });
+  });
+
+  api.post('/guilds/:guildId/settings/quarantine', requireAuth(client), requireGuildAccess(client, 'canManageControls'), async (req, res) => {
+    const { action, quarantineRoleId, quarantineChannelId, quarantineVcId, quarantineCategoryId,
+            gatekeeperEnabled, gatekeeperMinAge, gatekeeperRequireAvatar, gatekeeperAction } = req.body || {};
+    const guild = req.targetGuild;
+
+    if (action === 'autosetup') {
+      // Trigger auto-setup of quarantine infrastructure
+      try {
+        const { autoSetupQuarantine } = await import('../utils/helpers.js').catch(() => ({}));
+        if (autoSetupQuarantine) {
+          await autoSetupQuarantine(guild);
+          const cfg2 = db.getGuildConfig(guild.id);
+          return res.json({ ok: true, message: 'Quarantine auto-setup complete.', quarantineRoleId: cfg2.quarantineRoleId, quarantineChannelId: cfg2.quarantineChannelId, quarantineCategoryId: cfg2.quarantineCategoryId });
+        }
+        return res.status(501).json({ ok: false, error: 'Auto-setup not available.' });
+      } catch (err) {
+        return res.status(500).json({ ok: false, error: err.message });
+      }
+    }
+
+    // Manual save
+    const updates = {};
+    if (quarantineRoleId !== undefined) updates.quarantineRoleId = String(quarantineRoleId || '').trim() || null;
+    if (quarantineChannelId !== undefined) updates.quarantineChannelId = String(quarantineChannelId || '').trim() || null;
+    if (quarantineVcId !== undefined) updates.quarantineVcId = String(quarantineVcId || '').trim() || null;
+    if (quarantineCategoryId !== undefined) updates.quarantineCategoryId = String(quarantineCategoryId || '').trim() || null;
+    const cfg = db.getGuildConfig(guild.id);
+    const gk = { ...(cfg.gatekeeper || {}), enabled: false, minAgeHours: 24, requireAvatar: false, action: 'quarantine' };
+    if (gatekeeperEnabled !== undefined) gk.enabled = Boolean(gatekeeperEnabled);
+    if (gatekeeperMinAge !== undefined) gk.minAgeHours = Math.max(0, parseInt(gatekeeperMinAge) || 0);
+    if (gatekeeperRequireAvatar !== undefined) gk.requireAvatar = Boolean(gatekeeperRequireAvatar);
+    if (gatekeeperAction !== undefined) gk.action = ['quarantine', 'kick', 'ban'].includes(gatekeeperAction) ? gatekeeperAction : 'quarantine';
+    updates.gatekeeper = gk;
+    db.updateGuildConfig(guild.id, updates);
+    res.json({ ok: true, message: 'Quarantine settings saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // SERVER STATS (auto-setup trigger)
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/serverstats', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const guild = req.targetGuild;
+    const stats = db.getServerStats ? db.getServerStats(guild.id) : null;
+    res.json({ ok: true, configured: Boolean(stats), stats: stats || null });
+  });
+
+  api.post('/guilds/:guildId/settings/serverstats', requireAuth(client), requireGuildAccess(client, 'canManageControls'), async (req, res) => {
+    const { action, mode, font } = req.body || {};
+    const guild = req.targetGuild;
+    try {
+      if (action === 'disable') {
+        const { markRestorationQueued } = await import('../utils/antinuke.js').catch(() => ({}));
+        const stats = db.getServerStats ? db.getServerStats(guild.id) : null;
+        if (stats) {
+          for (const id of [stats.categoryId, stats.serverStatsId, stats.voiceStatsId, stats.totalId, stats.humansId, stats.botsId, stats.boosterId]) {
+            if (!id) continue;
+            if (markRestorationQueued) markRestorationQueued(id);
+            const ch = guild.channels.cache.get(id) || await guild.channels.fetch(id).catch(() => null);
+            if (ch) await ch.delete('Dashboard: Removing Server Stats').catch(() => {});
+          }
+          if (db.deleteServerStats) db.deleteServerStats(guild.id);
+        }
+        return res.json({ ok: true, message: 'Server stats disabled.' });
+      }
+      if (action === 'setup' || action === 'refresh') {
+        const { setupServerStatsChannels, updateServerStatsChannels } = await import('../commands/serverstats.js').catch(() => ({}));
+        if (action === 'refresh') {
+          const stats = db.getServerStats ? db.getServerStats(guild.id) : null;
+          if (stats && updateServerStatsChannels) {
+            await updateServerStatsChannels(guild, stats).catch(() => {});
+            return res.json({ ok: true, message: 'Server stats refreshed.' });
+          }
+        }
+        if (setupServerStatsChannels) {
+          const existing = db.getServerStats ? db.getServerStats(guild.id) : null;
+          const { savedData } = await setupServerStatsChannels(guild, mode || 'status', existing);
+          return res.json({ ok: true, message: 'Server stats set up successfully.', stats: savedData });
+        }
+        return res.status(501).json({ ok: false, error: 'Setup function not available.' });
+      }
+      if (action === 'font') {
+        const stats = db.getServerStats ? db.getServerStats(guild.id) : null;
+        if (!stats) return res.status(400).json({ ok: false, error: 'Server stats not configured yet.' });
+        const updatedStats = { ...stats, font: font || 'standard' };
+        if (db.saveServerStats) db.saveServerStats(guild.id, updatedStats);
+        return res.json({ ok: true, message: `Font set to ${font}.` });
+      }
+      res.status(400).json({ ok: false, error: 'Unknown action.' });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
   app.use('/api', api);
 }
 

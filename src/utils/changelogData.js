@@ -16,7 +16,34 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
-    version: 'v4.0.30',
+    version: 'v4.0.31',
+    headline: 'Dashboard Overhaul — Real Channels, Hybrid Inputs, Guides & New Panels',
+    summary: 'Complete dashboard rewrite: channels now load from live Discord API (all guild channels, not just configured ones). Every channel/role field is now a hybrid dropdown+ID input. Birthday, Economy, Giveaway, Sticky removed. New panels: Message Delete Log, Media Downloader, Quarantine Setup (auto + manual + gatekeeper). Server Stats is now a true auto-setup button system. Full feature guides added to every panel.',
+    whatsNew: [
+      { title: 'Real Channel Loading', desc: 'New GET /api/guilds/:id/channels endpoint fetches ALL guild channels. channelOptions() now shows every channel with type icon (# text, 🔊 voice, 📁 category). Channels reload on guild switch.' },
+      { title: 'Hybrid Inputs', desc: 'Every channel and role field now has both a live dropdown AND a text input for pasting IDs. Manual ID always takes priority over the dropdown.' },
+      { title: 'Message Delete Log Panel', desc: 'Dedicated panel for ghost ping / snipe logging — sets serverLogs.modules.msgDeletes with auto-enable of master switch.' },
+      { title: 'Media Downloader Panel', desc: 'Set a dedicated channel for TikTok/Instagram/YouTube/Twitter/Reddit/Pinterest auto-download, or enable server-wide download mode.' },
+      { title: 'Quarantine Setup Panel', desc: 'Full quarantine infrastructure panel with Auto Setup (Athena creates everything), Manual Config (pick role/channels from dropdowns), and Gatekeeper (new account age filter with quarantine/kick/ban action).' },
+      { title: 'Server Stats Auto-Setup', desc: 'Server Stats panel is now a proper deployment panel with Setup/Refresh/Remove buttons and mode/font selection. Replaced the old manual voice channel ID inputs.' },
+      { title: 'Feature Guides', desc: 'Each panel now has an explanatory guide section explaining how the feature works, what commands to use in Discord, and what each setting does.' }
+    ],
+    improvements: [
+      'Removed Birthday, Economy/Shop, Giveaway Manager, Sticky Messages panels (removed features / low usage).',
+      'Server logs panel now shows all 8 log modules (bans, kicks, leaves, joins, msgDeletes, msgEdits, channels, roles) with per-module channel overrides.',
+      'Quarantine panel shows currently quarantined member count.',
+      'AutoRole panel supports multi-role lists with per-role remove buttons.',
+      'Reaction roles, custom commands, and YouTube notifier panels show proper empty states.',
+      'Guild channel cache clears on guild switch to prevent stale channel data.'
+    ],
+    fixes: [
+      'Fixed channelOptions() only returning ~11 configured channels — now returns all guild channels.',
+      'Fixed AutoReact IDs (arctChannel, arctEmojis, arctAddBtn, arctRulesList) match HTML correctly.',
+      'Fixed Sticky IDs mismatch (now removed panel entirely).',
+      'Fixed setView() not recognizing new view names (serverstats, media, quarantine, msgdeletelog).'
+    ]
+  },
+  {
     headline: 'Full Dashboard Feature Expansion — 18 New Settings Panels',
     summary: 'The web dashboard now exposes every Tier 1, Tier 2, and Tier 4 feature for direct configuration. All 18 new panels come with live data loading, inline save buttons, role/channel dropdowns, and proper validation — no feature is left out.',
     whatsNew: [

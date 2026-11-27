@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html class="dark" lang="en">
 <head>
   <meta charset="utf-8" />
@@ -157,6 +157,10 @@
             <span class="material-symbols-outlined text-[18px]">manage_history</span>
             <span>Server Logs</span>
           </button>
+          <button data-nav="msgdeletelog" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">delete_sweep</span>
+            <span>Message Delete Log</span>
+          </button>
           <button data-nav="autorole" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span class="material-symbols-outlined text-[18px]">manage_accounts</span>
             <span>Auto Role &amp; Vanity</span>
@@ -173,10 +177,6 @@
             <span class="material-symbols-outlined text-[18px]">trending_up</span>
             <span>XP &amp; Leveling</span>
           </button>
-          <button data-nav="giveaways" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
-            <span class="material-symbols-outlined text-[18px]">celebration</span>
-            <span>Giveaway Manager</span>
-          </button>
           <button data-nav="reactionroles" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span class="material-symbols-outlined text-[18px]">emoji_emotions</span>
             <span>Reaction Roles</span>
@@ -185,29 +185,25 @@
             <span class="material-symbols-outlined text-[18px]">terminal</span>
             <span>Custom Commands</span>
           </button>
-          <button data-nav="birthday" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
-            <span class="material-symbols-outlined text-[18px]">cake</span>
-            <span>Birthday System</span>
-          </button>
           <button data-nav="youtube" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span class="material-symbols-outlined text-[18px]">play_circle</span>
             <span>YouTube Notifier</span>
           </button>
-          <button data-nav="statstats" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+          <button data-nav="serverstats" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span class="material-symbols-outlined text-[18px]">bar_chart</span>
             <span>Server Stats</span>
-          </button>
-          <button data-nav="economy" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
-            <span class="material-symbols-outlined text-[18px]">monetization_on</span>
-            <span>Economy &amp; Shop</span>
           </button>
           <button data-nav="autoreact" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span class="material-symbols-outlined text-[18px]">add_reaction</span>
             <span>Auto React</span>
           </button>
-          <button data-nav="sticky" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
-            <span class="material-symbols-outlined text-[18px]">push_pin</span>
-            <span>Sticky Messages</span>
+          <button data-nav="media" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">download</span>
+            <span>Media Downloader</span>
+          </button>
+          <button data-nav="quarantine" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
+            <span class="material-symbols-outlined text-[18px]">security</span>
+            <span>Quarantine Setup</span>
           </button>
           <button data-nav="persona" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span class="material-symbols-outlined text-[18px]">psychology</span>
@@ -844,36 +840,47 @@
         <!-- SECTION: TICKET SETUP                                           -->
         <!-- =============================================================== -->
         <section id="view-tickets" class="hidden space-y-6">
+          <!-- Guide -->
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW TICKETS WORK</span>
+            <h2 class="text-xl font-semibold text-on-surface">Ticket Setup</h2>
+            <p class="text-sm text-on-surface-variant">The ticket system lets members open private support threads. Use <code class="font-mono bg-surface-container px-1 rounded">!ticketsetup</code> in Discord to post the panel, or <code class="font-mono bg-surface-container px-1 rounded">!ticketpanel</code> to create a dropdown panel with multiple categories. Configure the destination category, the staff role that gets access, and the channel where the ticket panel button appears.</p>
+            <ul class="text-xs text-on-surface-variant space-y-1 mt-2">
+              <li>• <b>Category ID</b> — The Discord category channel ID where new ticket channels are created under.</li>
+              <li>• <b>Panel Channel</b> — The channel where the "Open a Ticket" button embed will be posted.</li>
+              <li>• <b>Staff Role</b> — This role is auto-added to every new ticket for visibility.</li>
+              <li>• <b>AI Triage</b> — When enabled, Athena's AI analyzes the ticket content and suggests the right staff to ping.</li>
+            </ul>
+          </div>
+          <!-- Config -->
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">SUPPORT SYSTEM</span>
-              <h2 class="text-xl font-semibold text-on-surface">Ticket Setup</h2>
-              <p class="text-xs text-on-surface-variant mt-1">Configure the ticket system — staff roles, category, panel channel, and AI triage.</p>
-            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Ticket Category ID</label>
-                <input id="tkCategoryId" type="text" placeholder="Category channel ID" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Category ID</label>
+                <input id="tkCategoryId" type="text" placeholder="Right-click category → Copy ID" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                <p class="text-[10px] text-on-surface-variant mt-1">Or enter the category channel ID manually</p>
               </div>
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Panel Channel</label>
-                <select id="tkPanelChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container">
-                  <option value="">— Select channel —</option>
-                </select>
+                <select id="tkPanelChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading channels —</option></select>
+                <input id="tkPanelChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Staff Role</label>
-                <select id="tkStaffRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select role —</option>
-                </select>
+                <select id="tkStaffRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading roles —</option></select>
+                <input id="tkStaffRoleId" type="text" placeholder="Or paste role ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
               <div class="flex items-center gap-3 pt-5">
-                <label class="tactical-switch"><input type="checkbox" id="tkAiTriage" /><span class="tactical-slider"></span></label>
-                <span class="text-sm text-on-surface">AI Triage Enabled</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input id="tkAiTriage" type="checkbox" class="sr-only peer" />
+                  <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                  <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+                </label>
+                <span class="text-sm text-on-surface-variant">AI Triage (Smart staff ping)</span>
               </div>
             </div>
-            <div class="flex items-center justify-between pt-2">
-              <div class="font-mono text-xs text-on-surface-variant">Active Tickets: <span id="tkActiveCount" class="text-secondary font-bold">0</span></div>
+            <div class="text-xs text-on-surface-variant">Active tickets: <span id="tkActiveCount" class="font-mono text-primary">—</span></div>
+            <div class="flex justify-end">
               <button id="tkSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button>
             </div>
           </div>
@@ -883,43 +890,64 @@
         <!-- SECTION: WELCOME & LEAVE                                        -->
         <!-- =============================================================== -->
         <section id="view-welcome" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">Welcome &amp; Leave</h2>
+            <p class="text-sm text-on-surface-variant">Post a custom embed when members join or leave. Supports template variables in the message fields: <code class="font-mono bg-surface-container px-1 rounded">{user}</code> (mention), <code class="font-mono bg-surface-container px-1 rounded">{server}</code>, <code class="font-mono bg-surface-container px-1 rounded">{count}</code> (member count), <code class="font-mono bg-surface-container px-1 rounded">{ordinal}</code> (1st, 2nd…). The embed colour is a hex code.</p>
+          </div>
+          <!-- Welcome -->
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">GREET & FAREWELL</span>
-              <h2 class="text-xl font-semibold text-on-surface">Welcome &amp; Leave Messages</h2>
-              <p class="text-xs text-on-surface-variant mt-1">Variables: <code class="text-primary-container">{user} {server} {count} {ordinal} {roles} {channels}</code></p>
+            <div class="flex items-center gap-3">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="wlWelcomeEnabled" type="checkbox" class="sr-only peer" />
+                <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+              </label>
+              <span class="font-mono text-xs text-on-surface uppercase tracking-widest">Welcome Messages</span>
             </div>
-            <div class="flex gap-2">
-              <button class="wl-tab-btn px-4 py-2 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold" data-wltab="welcome">Welcome</button>
-              <button class="wl-tab-btn px-4 py-2 rounded-lg bg-surface-container-high text-on-surface-variant font-mono text-xs" data-wltab="leave">Leave</button>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="flex items-center gap-3">
-                <label class="tactical-switch"><input type="checkbox" id="wlEnabled" /><span class="tactical-slider"></span></label>
-                <span class="text-sm text-on-surface">Enabled</span>
-              </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Channel</label>
-                <select id="wlChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
-              </div>
-              <div class="sm:col-span-2">
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Message Text</label>
-                <textarea id="wlMessage" rows="3" placeholder="Welcome {user} to {server}! You are member #{count}." class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container resize-none"></textarea>
+                <select id="wlWelcomeChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="wlWelcomeChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Embed Title</label>
-                <input id="wlEmbedTitle" type="text" placeholder="Welcome!" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                <input id="wlWelcomeTitle" type="text" placeholder="Welcome to {server}!" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Message Body</label>
+                <textarea id="wlWelcomeMsg" rows="3" placeholder="Hey {user}! You are our {ordinal} member." class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container resize-none"></textarea>
               </div>
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Embed Color (hex)</label>
-                <input id="wlEmbedColor" type="text" placeholder="#00f0ff" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Embed Colour</label>
+                <input id="wlWelcomeColor" type="color" value="#00f0ff" class="h-10 w-full rounded-lg cursor-pointer border border-outline-variant/30 bg-surface-container-lowest" />
               </div>
             </div>
-            <div class="flex justify-end pt-2">
-              <button id="wlSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button>
+            <div class="flex justify-end"><button id="wlWelcomeSave" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Welcome</button></div>
+          </div>
+          <!-- Leave -->
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+            <div class="flex items-center gap-3">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="wlLeaveEnabled" type="checkbox" class="sr-only peer" />
+                <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+              </label>
+              <span class="font-mono text-xs text-on-surface uppercase tracking-widest">Leave Messages</span>
             </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Channel</label>
+                <select id="wlLeaveChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="wlLeaveChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+              </div>
+              <div class="sm:col-span-2">
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Leave Message</label>
+                <textarea id="wlLeaveMsg" rows="2" placeholder="{user} has left {server}. We now have {count} members." class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container resize-none"></textarea>
+              </div>
+            </div>
+            <div class="flex justify-end"><button id="wlLeaveSave" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Leave</button></div>
           </div>
         </section>
 
@@ -927,27 +955,57 @@
         <!-- SECTION: SERVER LOGS                                            -->
         <!-- =============================================================== -->
         <section id="view-serverlogs" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">Server Logs</h2>
+            <p class="text-sm text-on-surface-variant">Log any combination of server events to a default channel, or override individual modules to send to separate channels. Enable the master switch first. Each module can be toggled on/off independently. If a module has no channel set, it falls back to the default log channel.</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary uppercase tracking-widest">AUDIT LOGGING</span>
-              <h2 class="text-xl font-semibold text-on-surface">Server Logs</h2>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <label class="tactical-switch"><input type="checkbox" id="slEnabled" /><span class="tactical-slider"></span></label>
-                <span class="text-sm text-on-surface">Logs Enabled</span>
-              </div>
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Default Log Channel</label>
-                <select id="slDefaultChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input id="slEnabled" type="checkbox" class="sr-only peer" />
+                  <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                  <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+                </label>
+                <span class="text-sm text-on-surface">Master Switch</span>
               </div>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" id="slModulesList"></div>
-            <div class="flex justify-end pt-2">
-              <button id="slSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button>
+            <div>
+              <label class="block font-mono text-[10px] text-outline uppercase mb-1">Default Log Channel</label>
+              <select id="slDefaultChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+              <input id="slDefaultChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
             </div>
+            <div class="text-xs text-on-surface-variant">Log modules — toggle each on/off and optionally override its channel:</div>
+            <div id="slModuleGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+            <div class="flex justify-end"><button id="slSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Log Config</button></div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- SECTION: MESSAGE DELETE LOG                                     -->
+        <!-- =============================================================== -->
+        <section id="view-msgdeletelog" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">GHOST PING &amp; SNIPE LOGS</span>
+            <h2 class="text-xl font-semibold text-on-surface">Message Delete Log</h2>
+            <p class="text-sm text-on-surface-variant">Routes all deleted messages (ghost pings, sniped messages) to a dedicated log channel. This powers the <code class="font-mono bg-surface-container px-1 rounded">!snipe</code> command and ghost-ping detection. Enabling this automatically turns on the Server Logs master switch. You can also run <code class="font-mono bg-surface-container px-1 rounded">!setdeletelog #channel</code> in Discord for the same effect.</p>
+          </div>
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+            <div class="flex items-center gap-3">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="mdlEnabled" type="checkbox" class="sr-only peer" />
+                <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+              </label>
+              <span class="text-sm text-on-surface">Enable Message Delete Logging</span>
+            </div>
+            <div>
+              <label class="block font-mono text-[10px] text-outline uppercase mb-1">Log Channel</label>
+              <select id="mdlChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading channels —</option></select>
+              <input id="mdlChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+            </div>
+            <div class="flex justify-end"><button id="mdlSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save</button></div>
           </div>
         </section>
 
@@ -955,41 +1013,38 @@
         <!-- SECTION: AUTO ROLE & VANITY                                     -->
         <!-- =============================================================== -->
         <section id="view-autorole" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">Auto Role &amp; Vanity</h2>
+            <p class="text-sm text-on-surface-variant">Automatically assign roles when members join. Human roles go to real users; Bot roles go to bots. The Vanity role is granted to anyone whose status contains the vanity invite string (e.g. discord.gg/yourserver) — perfect for rewarding server boosters who rep your server.</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">ROLE AUTOMATION</span>
-              <h2 class="text-xl font-semibold text-on-surface">Auto Role &amp; Vanity</h2>
-            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Auto Role — Humans</label>
-                <select id="arHumanRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select role —</option>
-                </select>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Human Auto-Role</label>
+                <select id="arHumanRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Select role —</option></select>
+                <input id="arHumanRoleId" type="text" placeholder="Or paste role ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
                 <div id="arHumanList" class="mt-2 space-y-1"></div>
               </div>
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Auto Role — Bots</label>
-                <select id="arBotRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select role —</option>
-                </select>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Bot Auto-Role</label>
+                <select id="arBotRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Select role —</option></select>
+                <input id="arBotRoleId" type="text" placeholder="Or paste role ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
                 <div id="arBotList" class="mt-2 space-y-1"></div>
               </div>
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Vanity Role</label>
-                <select id="arVanityRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select role —</option>
-                </select>
+                <select id="arVanityRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Select role —</option></select>
+                <input id="arVanityRoleId" type="text" placeholder="Or paste role ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
                 <div id="arVanityList" class="mt-2 space-y-1"></div>
               </div>
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Vanity String (e.g. /invite)</label>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Vanity String</label>
                 <input id="arVanityString" type="text" placeholder="/discord.gg/yourserver" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                <p class="text-[10px] text-on-surface-variant mt-1">Exact text that must appear in a member's status to receive the vanity role.</p>
               </div>
             </div>
-            <div class="flex justify-end pt-2">
-              <button id="arSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button>
-            </div>
+            <div class="flex justify-end"><button id="arSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button></div>
           </div>
         </section>
 
@@ -997,36 +1052,31 @@
         <!-- SECTION: VERIFICATION GATE                                      -->
         <!-- =============================================================== -->
         <section id="view-verify" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">Verification Gate</h2>
+            <p class="text-sm text-on-surface-variant">Force new members to verify before accessing the server. Run <code class="font-mono bg-surface-container px-1 rounded">!verify setup</code> in a channel to post the verification embed, or configure here. Three modes available:<br><br><b>Button Click</b> — instant, one-click verify. <b>Captcha</b> — sends a typed captcha via DM. <b>Math</b> — sends a simple math problem via DM. The chosen role is granted on successful verification.</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">MEMBER SCREENING</span>
-              <h2 class="text-xl font-semibold text-on-surface">Verification Gate</h2>
-            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Verification Role</label>
-                <select id="vfRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select role —</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Verification Channel</label>
-                <select id="vfChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
+                <select id="vrRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading roles —</option></select>
+                <input id="vrRoleId" type="text" placeholder="Or paste role ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Verification Mode</label>
-                <select id="vfMode" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
+                <select id="vrMode" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
                   <option value="button">Button Click</option>
-                  <option value="captcha">CAPTCHA</option>
-                  <option value="math">Math Challenge</option>
+                  <option value="captcha">Captcha (DM)</option>
+                  <option value="math">Math (DM)</option>
                 </select>
               </div>
             </div>
-            <div class="flex justify-between pt-2">
-              <button id="vfDeleteBtn" class="px-4 py-2.5 rounded-lg bg-error-container text-on-error-container font-mono text-xs font-bold uppercase hover:bg-error hover:text-on-error transition-colors">Remove Gate</button>
-              <button id="vfSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button>
+            <div id="vrChannelInfo" class="text-xs text-on-surface-variant p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/20"></div>
+            <div class="flex justify-between gap-3">
+              <button id="vrDeleteBtn" class="px-4 py-2.5 rounded-lg bg-error-container text-on-error-container font-mono text-xs font-bold uppercase hover:bg-error hover:text-on-error transition-colors">Remove Setup</button>
+              <button id="vrSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save</button>
             </div>
           </div>
         </section>
@@ -1035,32 +1085,37 @@
         <!-- SECTION: COUNTING CHANNEL                                       -->
         <!-- =============================================================== -->
         <section id="view-counting" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">Counting Channel</h2>
+            <p class="text-sm text-on-surface-variant">Designate a channel where members must count upward in order. If someone sends the wrong number, the count resets. <b>Allow Math</b> lets members send expressions like <code class="font-mono bg-surface-container px-1 rounded">50+1</code> instead of just <code class="font-mono bg-surface-container px-1 rounded">51</code>. <b>Auto Topic</b> updates the channel topic with the current count after each message. Saves are checkpoints — the bot will reset to the last save instead of zero on a fail.</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">FUN FEATURE</span>
-              <h2 class="text-xl font-semibold text-on-surface">Counting Channel</h2>
-            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Counting Channel</label>
-                <select id="ctChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
+                <select id="ctChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="ctChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
-              <div class="bg-surface-container rounded-lg p-3 font-mono text-xs">
-                <div class="text-on-surface-variant">Current Count</div>
-                <div id="ctCurrentCount" class="text-2xl font-bold text-secondary mt-1">0</div>
+              <div class="text-xs text-on-surface-variant pt-5">Current count: <span id="ctCurrentCount" class="font-mono text-primary font-bold">—</span><br>Saves used: <span id="ctSaves" class="font-mono text-primary">—</span></div>
+              <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input id="ctAllowMath" type="checkbox" class="sr-only peer" />
+                  <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                  <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+                </label>
+                <span class="text-sm text-on-surface-variant">Allow Math Expressions</span>
               </div>
               <div class="flex items-center gap-3">
-                <label class="tactical-switch"><input type="checkbox" id="ctAllowMath" /><span class="tactical-slider"></span></label>
-                <span class="text-sm text-on-surface">Allow Math Expressions</span>
-              </div>
-              <div class="flex items-center gap-3">
-                <label class="tactical-switch"><input type="checkbox" id="ctAutoTopic" /><span class="tactical-slider"></span></label>
-                <span class="text-sm text-on-surface">Auto-Update Topic</span>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input id="ctAutoTopic" type="checkbox" class="sr-only peer" />
+                  <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                  <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+                </label>
+                <span class="text-sm text-on-surface-variant">Auto-Update Channel Topic</span>
               </div>
             </div>
-            <div class="flex justify-between pt-2">
+            <div class="flex justify-between gap-3">
               <button id="ctResetBtn" class="px-4 py-2.5 rounded-lg bg-error-container text-on-error-container font-mono text-xs font-bold uppercase hover:bg-error hover:text-on-error transition-colors">Reset Count</button>
               <button id="ctSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button>
             </div>
@@ -1068,68 +1123,46 @@
         </section>
 
         <!-- =============================================================== -->
-        <!-- SECTION: XP & LEVELING                                         -->
+        <!-- SECTION: XP & LEVELING                                          -->
         <!-- =============================================================== -->
         <section id="view-leveling" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">XP &amp; Leveling</h2>
+            <p class="text-sm text-on-surface-variant">Members earn XP by sending messages. When they level up, Athena announces it. <b>Announce Mode</b>: <i>same</i> = same channel as the message, <i>dm</i> = direct message, <i>channel</i> = a dedicated announce channel (set below). The <b>Command Channel</b> restricts <code class="font-mono bg-surface-container px-1 rounded">!rank</code> and <code class="font-mono bg-surface-container px-1 rounded">!lb</code> commands to one channel.</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary uppercase tracking-widest">ENGAGEMENT ENGINE</span>
-              <h2 class="text-xl font-semibold text-on-surface">XP &amp; Leveling</h2>
+            <div class="flex items-center gap-3">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="lvEnabled" type="checkbox" class="sr-only peer" />
+                <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+              </label>
+              <span class="text-sm text-on-surface">Enable XP System</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="flex items-center gap-3">
-                <label class="tactical-switch"><input type="checkbox" id="lvEnabled" /><span class="tactical-slider"></span></label>
-                <span class="text-sm text-on-surface">XP System Enabled</span>
-              </div>
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Announce Mode</label>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Level-Up Announce Mode</label>
                 <select id="lvAnnounceMode" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="current">Current Channel</option>
-                  <option value="dm">DM User</option>
-                  <option value="channel">Specific Channel</option>
-                  <option value="disabled">Disabled</option>
+                  <option value="same">Same Channel</option>
+                  <option value="dm">Direct Message</option>
+                  <option value="channel">Dedicated Channel</option>
                 </select>
               </div>
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Announce Channel</label>
-                <select id="lvAnnounceChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Level-Up Channel</label>
+                <select id="lvAnnounceChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="lvAnnounceChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Commands Channel</label>
-                <select id="lvCmdChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Command Channel</label>
+                <select id="lvCmdChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="lvCmdChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
             </div>
-            <div>
-              <div class="font-mono text-[10px] text-outline uppercase mb-2">Top 10 XP Leaderboard</div>
-              <div id="lvTopUsers" class="space-y-1"></div>
-            </div>
-            <div class="flex justify-end pt-2">
-              <button id="lvSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button>
-            </div>
-          </div>
-        </section>
-
-        <!-- =============================================================== -->
-        <!-- SECTION: GIVEAWAY MANAGER                                       -->
-        <!-- =============================================================== -->
-        <section id="view-giveaways" class="hidden space-y-6">
-          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">COMMUNITY EVENTS</span>
-              <h2 class="text-xl font-semibold text-on-surface">Giveaway Manager</h2>
-            </div>
-            <div>
-              <div class="font-mono text-[10px] text-primary-container uppercase mb-2">Active Giveaways</div>
-              <div id="gwActiveList" class="space-y-2"></div>
-            </div>
-            <div>
-              <div class="font-mono text-[10px] text-outline uppercase mb-2">Ended Giveaways (last 20)</div>
-              <div id="gwEndedList" class="space-y-2"></div>
-            </div>
+            <div class="text-xs text-on-surface-variant">Top 5 leaderboard:</div>
+            <div id="lvLeaderboard" class="space-y-1"></div>
+            <div class="flex justify-end"><button id="lvSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button></div>
           </div>
         </section>
 
@@ -1137,12 +1170,13 @@
         <!-- SECTION: REACTION ROLES                                         -->
         <!-- =============================================================== -->
         <section id="view-reactionroles" class="hidden space-y-6">
-          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary uppercase tracking-widest">SELF-ASSIGNMENT</span>
-              <h2 class="text-xl font-semibold text-on-surface">Reaction Roles</h2>
-            </div>
-            <div id="rrPanelsList" class="space-y-3"></div>
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">Reaction Roles</h2>
+            <p class="text-sm text-on-surface-variant">Reaction role panels are created with <code class="font-mono bg-surface-container px-1 rounded">!rr create</code> in Discord. Each panel is tied to a message. Members click an emoji reaction to self-assign a role. Here you can view all existing panels and delete any you no longer need.</p>
+          </div>
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-3">
+            <div id="rrList" class="space-y-2"><p class="text-xs text-on-surface-variant">Loading...</p></div>
           </div>
         </section>
 
@@ -1150,52 +1184,25 @@
         <!-- SECTION: CUSTOM COMMANDS                                        -->
         <!-- =============================================================== -->
         <section id="view-ccmds" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">Custom Commands</h2>
+            <p class="text-sm text-on-surface-variant">Create custom text commands that the bot responds to with any message. Add a <b>Command Alias</b> (what members type after the prefix, e.g. <code class="font-mono bg-surface-container px-1 rounded">!rules</code>) and the <b>Response</b> the bot sends. Supports all Discord markdown. Use <code class="font-mono bg-surface-container px-1 rounded">!ccmd add &lt;alias&gt; &lt;response&gt;</code> in Discord as an alternative.</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">COMMAND ENGINE</span>
-              <h2 class="text-xl font-semibold text-on-surface">Custom Commands</h2>
-            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Alias (without !)</label>
-                <input id="ccAlias" type="text" placeholder="hello" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Command Alias</label>
+                <input id="ccAlias" type="text" placeholder="rules" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Response Text</label>
-                <input id="ccResponse" type="text" placeholder="Hello, {user}!" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
-              </div>
-            </div>
-            <div class="flex justify-end">
-              <button id="ccAddBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Add Command</button>
-            </div>
-            <div id="ccCmdList" class="space-y-2"></div>
-          </div>
-        </section>
-
-        <!-- =============================================================== -->
-        <!-- SECTION: BIRTHDAY SYSTEM                                        -->
-        <!-- =============================================================== -->
-        <section id="view-birthday" class="hidden space-y-6">
-          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">CELEBRATIONS</span>
-              <h2 class="text-xl font-semibold text-on-surface">Birthday System</h2>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Birthday Channel</label>
-                <select id="bdChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
-              </div>
-              <div class="flex items-end">
-                <button id="bdChannelSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Set Channel</button>
+              <div class="sm:col-span-2">
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Response</label>
+                <textarea id="ccCommand" rows="3" placeholder="1. Be respectful&#10;2. No spam" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container resize-none"></textarea>
               </div>
             </div>
-            <div>
-              <div class="font-mono text-[10px] text-outline uppercase mb-2">Registered Birthdays</div>
-              <div id="bdList" class="space-y-1"></div>
-            </div>
+            <div class="flex justify-end"><button id="ccAddBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Add Command</button></div>
+            <div class="text-xs text-on-surface-variant font-mono uppercase tracking-widest mt-2">Existing Commands</div>
+            <div id="ccList" class="space-y-2"></div>
           </div>
         </section>
 
@@ -1203,101 +1210,67 @@
         <!-- SECTION: YOUTUBE NOTIFIER                                       -->
         <!-- =============================================================== -->
         <section id="view-youtube" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">YouTube Notifier</h2>
+            <p class="text-sm text-on-surface-variant">Athena polls YouTube channels and posts a notification in the chosen Discord channel when a new video is published. Add the YouTube channel URL and the Discord channel to post in. The <b>Custom Message</b> supports <code class="font-mono bg-surface-container px-1 rounded">{title}</code>, <code class="font-mono bg-surface-container px-1 rounded">{url}</code>, <code class="font-mono bg-surface-container px-1 rounded">{channel}</code> variables.</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary uppercase tracking-widest">NOTIFICATIONS</span>
-              <h2 class="text-xl font-semibold text-on-surface">YouTube Notifier</h2>
-            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">YouTube Channel ID</label>
-                <input id="ytChannelId" type="text" placeholder="UCxxxxxx" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+              <div class="sm:col-span-2">
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">YouTube Channel URL</label>
+                <input id="ytUrl" type="text" placeholder="https://youtube.com/@ChannelName" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Channel Name</label>
-                <input id="ytChannelName" type="text" placeholder="My YouTube Channel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
-              </div>
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Post To Discord Channel</label>
-                <select id="ytDiscordChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Post To Channel</label>
+                <select id="ytChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="ytChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Custom Message</label>
-                <input id="ytCustomMessage" type="text" placeholder="New video by {channel}!" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                <input id="ytMsg" type="text" placeholder="🎥 New video: {title} — {url}" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
             </div>
-            <div class="flex justify-end">
-              <button id="ytAddBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Add Notifier</button>
-            </div>
-            <div id="ytNotifiersList" class="space-y-2"></div>
+            <div class="flex justify-end"><button id="ytAddBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Add Notifier</button></div>
+            <div class="text-xs text-on-surface-variant font-mono uppercase tracking-widest mt-2">Active Notifiers</div>
+            <div id="ytList" class="space-y-2"></div>
           </div>
         </section>
 
         <!-- =============================================================== -->
-        <!-- SECTION: SERVER STATS CHANNELS                                  -->
+        <!-- SECTION: SERVER STATS (AUTO-SETUP)                              -->
         <!-- =============================================================== -->
-        <section id="view-statstats" class="hidden space-y-6">
-          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">LIVE COUNTERS</span>
-              <h2 class="text-xl font-semibold text-on-surface">Server Stats Channels</h2>
-              <p class="text-xs text-on-surface-variant mt-1">Link voice channels that display live server stats in their name.</p>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Members Counter</label>
-                <select id="ssMembers" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— None —</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Bots Counter</label>
-                <select id="ssBots" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— None —</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Boosts Counter</label>
-                <select id="ssBoosts" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— None —</option>
-                </select>
-              </div>
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Users Counter</label>
-                <select id="ssUsers" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— None —</option>
-                </select>
-              </div>
-            </div>
-            <div class="flex justify-end pt-2">
-              <button id="ssSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button>
-            </div>
+        <section id="view-serverstats" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">AUTO-SETUP SYSTEM</span>
+            <h2 class="text-xl font-semibold text-on-surface">Server Stats Channels</h2>
+            <p class="text-sm text-on-surface-variant">Automatically creates a <code class="font-mono bg-surface-container px-1 rounded">╭・Statistics</code> category with live-updating voice channels showing member counts. Two modes:<br><br><b>Status</b> — 2 compact voice channels using Discord's voice status feature (sub-title text under channel name). Best for small footprint.<br><b>Classic</b> — 3 renamed voice channels: Total Members, Humans, Bots. Best for traditional dashboards.<br><br>Discord limits channel renames to 2 per 10 minutes — updates queue automatically in the background.</p>
           </div>
-        </section>
-
-        <!-- =============================================================== -->
-        <!-- SECTION: ECONOMY & SHOP                                         -->
-        <!-- =============================================================== -->
-        <section id="view-economy" class="hidden space-y-6">
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">VIRTUAL ECONOMY</span>
-              <h2 class="text-xl font-semibold text-on-surface">Economy &amp; Shop</h2>
-            </div>
-            <div>
-              <div class="font-mono text-[10px] text-outline uppercase mb-2">Top 10 Richest Members</div>
-              <div id="econTopList" class="space-y-1"></div>
-            </div>
-            <div>
-              <div class="font-mono text-[10px] text-outline uppercase mb-2">Shop Items</div>
-              <div id="econShopList" class="space-y-2 mb-3"></div>
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <input id="shopItemName" type="text" placeholder="Item name" class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
-                <input id="shopItemPrice" type="number" placeholder="Price" class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
-                <button id="shopAddBtn" class="px-4 py-2 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Add Item</button>
+            <div id="ssStatus" class="text-sm text-on-surface-variant p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/20">Loading status…</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Setup Mode</label>
+                <select id="ssMode" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
+                  <option value="status">Status Subtitles (Compact 2-Channel)</option>
+                  <option value="classic">Classic Renamed Channels (3 Counters)</option>
+                </select>
               </div>
+              <div>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Font Style</label>
+                <select id="ssFont" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
+                  <option value="standard">Standard</option>
+                  <option value="bold">Bold Unicode</option>
+                  <option value="italic">Italic</option>
+                  <option value="smallcaps">Small Caps</option>
+                  <option value="mono">Monospace</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 justify-end">
+              <button id="ssRefreshBtn" class="px-4 py-2.5 rounded-lg bg-surface-container text-on-surface font-mono text-xs font-bold uppercase hover:bg-surface-container-high transition-colors">Refresh Counts</button>
+              <button id="ssDisableBtn" class="px-4 py-2.5 rounded-lg bg-error-container text-on-error-container font-mono text-xs font-bold uppercase hover:bg-error hover:text-on-error transition-colors">Remove Stats</button>
+              <button id="ssSetupBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Setup / Re-deploy</button>
             </div>
           </div>
         </section>
@@ -1306,60 +1279,139 @@
         <!-- SECTION: AUTO REACT                                             -->
         <!-- =============================================================== -->
         <section id="view-autoreact" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">HOW IT WORKS</span>
+            <h2 class="text-xl font-semibold text-on-surface">Auto React</h2>
+            <p class="text-sm text-on-surface-variant">Automatically add emoji reactions to every message posted in designated channels. Select a channel and type the emojis you want added (separated by spaces or commas). Supports Discord custom emojis in the format <code class="font-mono bg-surface-container px-1 rounded">&lt;:name:id&gt;</code>. Use <code class="font-mono bg-surface-container px-1 rounded">!autoreact #channel ✅ ❤️</code> in Discord as an alternative.</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">AUTOMATION</span>
-              <h2 class="text-xl font-semibold text-on-surface">Auto React</h2>
-              <p class="text-xs text-on-surface-variant mt-1">Automatically add reactions to messages in specific channels.</p>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Channel</label>
-                <select id="arctChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
+                <select id="arctChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="arctChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Emoji (comma-separated)</label>
-                <input id="arctEmojis" type="text" placeholder="👍, 👎, ❤️" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
-              </div>
-              <div class="flex items-end">
-                <button id="arctAddBtn" class="w-full px-4 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Add Rule</button>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Emojis (space or comma separated)</label>
+                <input id="arctEmojis" type="text" placeholder="👍 👎 ❤️" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
             </div>
+            <div class="flex justify-end"><button id="arctAddBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Add Rule</button></div>
+            <div class="text-xs text-on-surface-variant font-mono uppercase tracking-widest mt-2">Active Rules</div>
             <div id="arctRulesList" class="space-y-2"></div>
           </div>
         </section>
 
         <!-- =============================================================== -->
-        <!-- SECTION: STICKY MESSAGES                                        -->
+        <!-- SECTION: MEDIA DOWNLOADER                                       -->
         <!-- =============================================================== -->
-        <section id="view-sticky" class="hidden space-y-6">
+        <section id="view-media" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">AUTO MEDIA DOWNLOAD</span>
+            <h2 class="text-xl font-semibold text-on-surface">Media Downloader</h2>
+            <p class="text-sm text-on-surface-variant">When a member posts a TikTok, Instagram Reel, Twitter/X video, YouTube Short, Reddit video, Pinterest image, or Facebook video link in a designated channel, Athena automatically downloads and re-uploads it as a native Discord attachment — no watermarks, no redirects.<br><br><b>Channel Mode</b> — only triggers in the specific channel you set.<br><b>All Channels Mode</b> — triggers in every channel in the server (use with care on large servers).</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary uppercase tracking-widest">PINNED CONTENT</span>
-              <h2 class="text-xl font-semibold text-on-surface">Sticky Messages</h2>
+            <div class="flex items-center gap-3">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="mdAutoAll" type="checkbox" class="sr-only peer" />
+                <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+              </label>
+              <span class="text-sm text-on-surface">Enable in ALL Channels (server-wide)</span>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block font-mono text-[10px] text-outline uppercase mb-1">Dedicated Media Channel (single channel mode)</label>
+              <select id="mdChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+              <input id="mdChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+              <p class="text-[10px] text-on-surface-variant mt-1">If "All Channels" is on, this field is ignored.</p>
+            </div>
+            <div class="flex justify-end"><button id="mdSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save</button></div>
+          </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- SECTION: QUARANTINE SETUP                                       -->
+        <!-- =============================================================== -->
+        <section id="view-quarantine" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">CONTAINMENT VAULT</span>
+            <h2 class="text-xl font-semibold text-on-surface">Quarantine Setup</h2>
+            <p class="text-sm text-on-surface-variant">Quarantine strips all roles from a member and assigns a restricted "Quarantine" role that only has access to a single text/VC channel. Used for raid containment, suspicious account holds, and gatekeeper actions.<br><br><b>Auto Setup</b> — Athena creates the category, role, text channel and VC automatically with correct permissions locked.<br><b>Manual Setup</b> — You pick existing role/channels from your server.</p>
+            <p class="text-sm text-on-surface-variant mt-1"><b>Gatekeeper</b> — Automatically quarantines (or kicks/bans) accounts that are too new or have no avatar, as a raid prevention measure.</p>
+          </div>
+          <!-- Auto Setup -->
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-3">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">Auto Setup</span>
+            <p class="text-xs text-on-surface-variant">Click the button below and Athena will create everything needed in your server. Any existing quarantine channels will be reused.</p>
+            <div id="qtStatus" class="text-xs text-on-surface-variant p-3 bg-surface-container-lowest rounded-lg border border-outline-variant/20 font-mono"></div>
+            <button id="qtAutoSetupBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Run Auto Setup</button>
+          </div>
+          <!-- Manual Config -->
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">Manual Configuration</span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Channel</label>
-                <select id="stkyChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Quarantine Role</label>
+                <select id="qtRole" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading roles —</option></select>
+                <input id="qtRoleId" type="text" placeholder="Or paste role ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+              </div>
+              <div>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Quarantine Category ID</label>
+                <input id="qtCategoryId" type="text" placeholder="Right-click category → Copy ID" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+              </div>
+              <div>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Quarantine Text Channel</label>
+                <select id="qtChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="qtChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+              </div>
+              <div>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Quarantine Voice Channel</label>
+                <select id="qtVcChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="qtVcChannelId" type="text" placeholder="Or paste VC channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+              </div>
+            </div>
+            <div class="flex justify-end"><button id="qtManualSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Manual Config</button></div>
+          </div>
+          <!-- Gatekeeper -->
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">Gatekeeper (New Account Filter)</span>
+            <div class="flex items-center gap-3">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="gkEnabled" type="checkbox" class="sr-only peer" />
+                <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+              </label>
+              <span class="text-sm text-on-surface">Enable Gatekeeper</span>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Minimum Account Age (hours)</label>
+                <input id="gkMinAge" type="number" min="0" max="8760" placeholder="24" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                <p class="text-[10px] text-on-surface-variant mt-1">Accounts younger than this are actioned. 0 = disabled.</p>
+              </div>
+              <div>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Action</label>
+                <select id="gkAction" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
+                  <option value="quarantine">Quarantine</option>
+                  <option value="kick">Kick</option>
+                  <option value="ban">Ban</option>
                 </select>
               </div>
-              <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Footer</label>
-                <input id="stkyFooter" type="text" placeholder="📌 Sticky" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
-              </div>
-              <div class="sm:col-span-2">
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Message Content</label>
-                <textarea id="stkyContent" rows="3" placeholder="This message will be re-pinned after each message." class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container resize-none"></textarea>
+              <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input id="gkRequireAvatar" type="checkbox" class="sr-only peer" />
+                  <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                  <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+                </label>
+                <span class="text-sm text-on-surface-variant">Also require avatar (action if no avatar set)</span>
               </div>
             </div>
-            <div class="flex justify-end">
-              <button id="stkySaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Sticky</button>
-            </div>
-            <div id="stkyList" class="space-y-2"></div>
+            <div class="flex justify-end"><button id="gkSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Gatekeeper</button></div>
+          </div>
+          <!-- Currently quarantined -->
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25">
+            <div class="text-xs text-on-surface-variant">Currently quarantined: <span id="qtCount" class="font-mono text-primary font-bold">—</span> members</div>
           </div>
         </section>
 
@@ -1367,60 +1419,50 @@
         <!-- SECTION: AI PERSONA                                             -->
         <!-- =============================================================== -->
         <section id="view-persona" class="hidden space-y-6">
-          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-primary-container uppercase tracking-widest">AI PERSONALITY</span>
-              <h2 class="text-xl font-semibold text-on-surface">AI Persona</h2>
-              <p class="text-xs text-on-surface-variant mt-1">Choose how Athena Prime's AI personality presents itself to members.</p>
-            </div>
-            <div id="personaCardGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">AI IDENTITY</span>
+            <h2 class="text-xl font-semibold text-on-surface">AI Persona</h2>
+            <p class="text-sm text-on-surface-variant">Change how Athena's AI responds to <code class="font-mono bg-surface-container px-1 rounded">!ask</code> and <code class="font-mono bg-surface-container px-1 rounded">!athena</code> commands. The persona affects tone, vocabulary, and style — not facts or permissions. Click a card to activate it.</p>
           </div>
+          <div id="personaGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </section>
 
         <!-- =============================================================== -->
         <!-- SECTION: MORNING DISPATCH                                       -->
         <!-- =============================================================== -->
         <section id="view-morning" class="hidden space-y-6">
+          <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-2">
+            <span class="font-mono text-[10px] text-primary uppercase tracking-widest">DAILY DISPATCHER</span>
+            <h2 class="text-xl font-semibold text-on-surface">Morning Dispatch</h2>
+            <p class="text-sm text-on-surface-variant">Athena sends a daily morning message to your chosen channel with a greeting, motivational quote, and optionally tags <code class="font-mono bg-surface-container px-1 rounded">@everyone</code> or <code class="font-mono bg-surface-container px-1 rounded">@here</code>. The time is randomized slightly within the morning window. Set the timezone so "morning" is correct for your server's region.</p>
+          </div>
           <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/25 space-y-4">
-            <div>
-              <span class="font-mono text-[10px] text-secondary uppercase tracking-widest">DAILY DISPATCH</span>
-              <h2 class="text-xl font-semibold text-on-surface">Morning Dispatch</h2>
-              <p class="text-xs text-on-surface-variant mt-1">Send a daily morning message to a channel at a scheduled time.</p>
+            <div class="flex items-center gap-3">
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input id="mnEnabled" type="checkbox" class="sr-only peer" />
+                <div class="w-9 h-5 bg-outline rounded-full peer peer-checked:bg-primary transition-colors"></div>
+                <div class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full transition-transform peer-checked:translate-x-4"></div>
+              </label>
+              <span class="text-sm text-on-surface">Enable Morning Dispatch</span>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="flex items-center gap-3">
-                <label class="tactical-switch"><input type="checkbox" id="mdEnabled" /><span class="tactical-slider"></span></label>
-                <span class="text-sm text-on-surface">Morning Dispatch Enabled</span>
-              </div>
               <div>
-                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Dispatch Channel</label>
-                <select id="mdChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="">— Select channel —</option>
-                </select>
+                <label class="block font-mono text-[10px] text-outline uppercase mb-1">Channel</label>
+                <select id="mnChannel" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none"><option value="">— Loading —</option></select>
+                <input id="mnChannelId" type="text" placeholder="Or paste channel ID" class="w-full mt-1 bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
               </div>
               <div>
                 <label class="block font-mono text-[10px] text-outline uppercase mb-1">Timezone</label>
-                <select id="mdTimezone" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none">
-                  <option value="Asia/Kolkata">Asia/Kolkata (IST)</option>
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">America/New_York (EST)</option>
-                  <option value="America/Los_Angeles">America/Los_Angeles (PST)</option>
-                  <option value="Europe/London">Europe/London (GMT)</option>
-                  <option value="Europe/Paris">Europe/Paris (CET)</option>
-                  <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
-                  <option value="Asia/Singapore">Asia/Singapore (SGT)</option>
-                  <option value="Australia/Sydney">Australia/Sydney (AEDT)</option>
-                </select>
+                <input id="mnTimezone" type="text" placeholder="Asia/Kolkata" class="w-full bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 font-mono text-xs text-on-surface outline-none focus:border-primary-container" />
+                <p class="text-[10px] text-on-surface-variant mt-1">IANA timezone e.g. America/New_York, Europe/London</p>
               </div>
             </div>
-            <div class="flex justify-end pt-2">
-              <button id="mdSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button>
-            </div>
+            <div class="flex justify-end"><button id="mnSaveBtn" class="px-5 py-2.5 rounded-lg bg-primary-container text-on-primary font-mono text-xs font-bold uppercase hover:bg-primary-fixed transition-colors">Save Config</button></div>
           </div>
         </section>
 
         <!-- =============================================================== -->
-        <!-- SECTION: SYNC MATRIX & EDITING DOCS (TAB 6)                     -->
+<!-- SECTION: SYNC MATRIX & EDITING DOCS (TAB 6)                     -->
         <!-- =============================================================== -->
         <section id="view-docs" class="hidden space-y-6">
           <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
