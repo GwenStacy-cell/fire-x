@@ -1891,6 +1891,15 @@ class Database {
     return null;
   }
 
+  isJtcLobbyChannel(guildId, channelId) {
+    if (!guildId || !channelId) return false;
+    const jtc = this.cache.jtc?.[guildId];
+    if (!jtc) return false;
+    if (jtc.lobbyChannelId === channelId || jtc.secondaryLobbyChannelId === channelId) return true;
+    if (jtc.tiered?.channels && Object.values(jtc.tiered.channels).includes(channelId)) return true;
+    return false;
+  }
+
   isJtcInfrastructure(guildId, channelId) {
     if (!channelId) return false;
     if (this.cache.jtcChannels?.[channelId]) return true;

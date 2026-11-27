@@ -663,13 +663,30 @@ async function handleVcDrag(guild, moderator, target, intervalSec, options = {})
     activeDrags.delete(sessionKey);
   }
 
-  // — Collect all usable VCs ————————————————————————————————
+  // — Collect all usable regular VCs (exclude JTC generator lobbies, Home VC, Quarantine VC, and Stats VCs) —
+  const guildCfgForDrag = db.getGuildConfig(guild.id) || {};
+  const statsCfgForDrag = db.getServerStats(guild.id) || {};
+  const excludedVcIds = new Set(
+    [
+      guildCfgForDrag.homeVcId,
+      guildCfgForDrag.quarantineVcId,
+      statsCfgForDrag.serverStatsId,
+      statsCfgForDrag.voiceStatsId,
+      statsCfgForDrag.totalId,
+      statsCfgForDrag.humansId,
+      statsCfgForDrag.botsId,
+      statsCfgForDrag.boosterId
+    ].filter(Boolean)
+  );
+
   const getVoiceChannels = () =>
     guild.channels.cache
       .filter(c =>
         c.type === ChannelType.GuildVoice &&
-        c.permissionsFor(botMember).has(PermissionFlagsBits.MoveMembers) &&
-        c.permissionsFor(botMember).has(PermissionFlagsBits.Connect)
+        !excludedVcIds.has(c.id) &&
+        !db.isJtcLobbyChannel(guild.id, c.id) &&
+        c.permissionsFor?.(botMember)?.has(PermissionFlagsBits.MoveMembers) &&
+        c.permissionsFor?.(botMember)?.has(PermissionFlagsBits.Connect)
       )
       .map(c => c);
 

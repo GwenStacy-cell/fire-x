@@ -16,6 +16,32 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '27 November 2026',
+    version: 'v4.0.18',
+    headline: 'Fixed JTC Post-Move ReferenceError Crash, VCDrag Lobby Exclusions & MoveProtection Guard',
+    summary: 'Fixed ReferenceError: channelId is not defined after JTC room moves (restoring ghost cleanup, control panel dispatch, and lobby sync), added clear JTC audit move reasons, excluded JTC generator lobbies from VCDrag/TagDrag rotation, and hardened MoveProtection against stale count re-triggers.',
+    whatsNew: [
+      {
+        title: 'Protected JTC / Home / Stats / Quarantine Channels in VCDrag & TagDrag',
+        desc: 'Added db.isJtcLobbyChannel and excluded JTC generator lobbies, Home VC, Quarantine VC, and Server Stats channels from !vcdrag / !tagdrag rotations, while skipping JTC room spawning during active drag sessions.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Explicit Discord Audit Log Reasons on JTC Room Transfers',
+        desc: 'JTC moves now log explicit reasons ("JTC: Auto-created <Tier> room after <user> joined <Lobby>") so Discord Audit Logs always distinguish automatic JTC creations from manual or TagDrag moves.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Resolved JTC channelId ReferenceError & MoveProtection Re-Trigger Bug',
+        desc: 'Fixed ReferenceError in voiceStateUpdate.js that interrupted post-move JTC control panel & cleanup hooks, and tightened MoveProtection so unchanged MemberMove batch counts or bot-initiated moves cannot trigger false restitution.'
+      }
+    ],
+    tip: 'If VC-keeper accounts auto-reconnect directly into JTC lobbies (Solo/Duo/Trio/Squad), JTC spawns a new room — reconnect them to their room ID or use !jtcdisable if idle lobbies are unintended.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '27 November 2026',
     version: 'v4.0.17',
     headline: 'Decongested !help Module Views, Explicit Alias Lists & Server Tag Drag Architecture Docs',
     summary: 'Restored comfortable line-gap spacing and readable command sizing across !help module views (preserving the Obsidian Home UI), listed all 22 Server Tag Drag aliases in !help and !explain, and added Server Tag Auto-VC Drag deep dives to Explain Architecture.',

@@ -3,7 +3,7 @@ import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
 import { getVoiceConnection } from '@discordjs/voice';
 import { buildControlPanel, buildSharedPanel, setVoiceChannelStatus, scheduleJtcLobbyStatusSync, cleanupJtcRoomIfEmpty } from '../commands/jtc.js';
-import { evaluateTagDragForMember, updateUserPrimaryGuildCache } from '../commands/vcdrag.js';
+import { evaluateTagDragForMember, updateUserPrimaryGuildCache, isUserInDragSession } from '../commands/vcdrag.js';
 import { PACHA_ARROW } from '../utils/emojis.js';
 import statsDB from '../statsDB.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
@@ -291,14 +291,14 @@ export default {
                   if (e.extra && e.extra.channel && e.extra.channel.id === newChannelId) {
                     const count = e.extra.count || 1;
                     const lastCount = client.auditLogCounts.get(e.id);
-                    
-                    const isNewBatch = lastCount !== undefined && count > lastCount;
                     const isRecent = Math.abs(Date.now() - e.createdTimestamp) < 15000;
-                    
-                    const isMatch = isNewBatch || isRecent;
-                    
-                    if (isMatch) {
+                    const isNewMove = lastCount !== undefined ? count > lastCount : isRecent;
+
+                    if (isNewMove) {
                       client.auditLogCounts.set(e.id, count);
+                      if (e.executor?.id === client.user?.id || e.executor?.id === userId) {
+                        return false;
+                      }
                       return true;
                     }
                   }
@@ -468,6 +468,9 @@ export default {
       const member = newState.member;
       if (!member) return;
 
+      // Skip JTC room creation if user is actively in a VCDrag / TagDrag loop
+      if (isUserInDragSession(guild.id, member.id)) return;
+
       // ⚡ SECURITY FAST-PATH: Do not create channels during active server attacks
       // Allocates 100% of network throughput and REST rate limits to the Anti-Nuke defense engine
       if (isGuildUnderAttack(guild.id)) return;
@@ -557,8 +560,13 @@ export default {
         setVoiceChannelStatus(guild.client, tempChannel.id, roomStatus).catch(() => null);
 
         // Move the member into their new channel
-        const moved = await member.voice.setChannel(tempChannel).then(() => true).catch(() => false);
-        scheduleJtcLobbyStatusSync(guild, channelId, 1500);
+        const lobbyChannelId = newState.channelId;
+        const lobbyName = newState.channel?.name || 'JTC Lobby';
+        const moved = await member.voice.setChannel(
+          tempChannel,
+          `JTC: Auto-created ${tierInfo ? tierInfo.label : 'Private'} room after ${member.user.tag} joined ${lobbyName}`
+        ).then(() => true).catch(() => false);
+        scheduleJtcLobbyStatusSync(guild, lobbyChannelId, 1500);
 
         if (!moved) {
           await cleanupJtcRoomIfEmpty(guild, tempChannel.id, {
