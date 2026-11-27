@@ -6,7 +6,6 @@ import { allCommands } from '../commands/loader.js';
 import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
 import { ensureUnbypassableRole, removePersistenceRoles, syncSupportingRolePositions } from '../utils/antiStrip.js';
-import { syncBotMigrationForGuild } from '../utils/botMigrationSync.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 import { updatePlayerUI } from '../utils/musicManager.js';
 import { CronJob } from 'cron';
@@ -233,11 +232,10 @@ export default {
       snapshotGuildInfrastructure(guild);
       pruneDuplicateSecurityLogChannels(guild).catch(() => null);
 
-      // Sentinel Migration (delete only old secondary/hidden & replace if Security enabled + Top 3, sync avatar/banner & existing security logs)
+      // Unbypassable Role & Idle Mode Cleanup
       const cfg = db.getGuildConfig(guild.id);
-      syncBotMigrationForGuild(guild, client, { notifyOwner: true }).catch(() => null);
-
       if (cfg && (cfg.securityEnabled || cfg.antiNukeEnabled)) {
+        ensureUnbypassableRole(guild, { force: true }).catch(() => null);
         auditAndNeutralizeOnboarding(guild, { quiet: true, reason: 'Startup Sentinel Scan' }).catch(() => null);
         // Hydrate full member cache asynchronously (keeps 0ms in-memory role whitelist & role-member snapshots accurate)
         const wlRoles = cfg.whitelist?.roles;
@@ -246,6 +244,9 @@ export default {
             guild.members.fetch().then(() => snapshotGuildInfrastructure(guild)).catch(() => null);
           }, 1500).unref();
         }
+      } else {
+        // IDLE MODE: When security / antinuke is not enabled, bot must NOT keep persistence roles
+        removePersistenceRoles(guild).catch(() => null);
       }
 
       // Home VC
@@ -442,11 +443,9 @@ export default {
         for (const gId of activeGuildIds) {
           const guild = client.guilds.cache.get(gId);
           if (!guild) {
-            // Delay orphaned JTC temp-room pruning for 30m after boot so migrating bots can be invited without losing active room ownership
-            if ((client.uptime || 0) > 30 * 60 * 1000) {
-              for (const rec of records) {
-                if (rec.guildId === gId) db.removeJtcChannel(rec.channelId);
-              }
+            // Prune orphaned JTC records for guilds the bot is no longer in
+            for (const rec of records) {
+              if (rec.guildId === gId) db.removeJtcChannel(rec.channelId);
             }
             continue;
           }
@@ -706,8 +705,8 @@ export default {
           };
         }).slice(0, 100);
 
-      // ⚡ Zero-Latency Hash Matching (scoped per Bot Application ID so new tokens auto-register slash commands!)
-      const currentSlashHash = crypto.createHash('sha256').update(`${client.user.id}:${JSON.stringify(slashData)}`).digest('hex');
+      // ⚡ Zero-Latency Hash Matching: Avoid redundant global REST registration if commands haven't changed!
+      const currentSlashHash = crypto.createHash('sha256').update(JSON.stringify(slashData)).digest('hex');
       if (db.cache.lastSlashHash === currentSlashHash) {
         console.log(chalk.green(` All ${slashData.length} Slash Commands are already synchronized (0ms hash match).`));
       } else {

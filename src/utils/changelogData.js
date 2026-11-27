@@ -16,62 +16,6 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '27 November 2026',
-    version: 'v4.0.22',
-    headline: 'Top-3 Sentinel Role Migration, Guild Avatar/Banner Sync & Server Owner DMs',
-    summary: 'Added automatic migration sync when adding a new bot token/account: deletes only old Athena secondary/hidden sentinel roles (Athena Firewall & Athena Unbypassable) and self-assigns fresh ones strictly when Security is enabled AND Athena is in the Top 3 roles, updates server-specific bot avatar & banner, logs to the already-existing security logs channel, and DMs Server Owners on join.',
-    whatsNew: [
-      {
-        title: 'Strict Top-3 Secondary & Hidden Sentinel Replacement (botMigrationSync.js)',
-        desc: 'On guildCreate, ready startup, and !unb deploy, Athena replaces only old secondary (Athena Firewall) and hidden (Athena Unbypassable) sentinel roles cleanly when securityEnabled && antiNukeEnabled AND highest role >= Top 3 — never touching primary roles. If not in Top 3, it skips replacement and DMs the Server Owner with exact steps.'
-      },
-      {
-        title: 'Auto Server-Specific Avatar/Banner Sync & Existing Security Logs Update',
-        desc: '!setguildavatar / !setguildbanner now persist URLs & CDN assets into guild DB config and log to the existing security logs channel; new bots automatically clone live guild avatars/banners from the old Athena bot (if still in server) or apply DB-saved assets and post a migration status report in the already-existing #security-logs channel.'
-      }
-    ],
-    improvements: [
-      {
-        title: 'Idempotent Migration Guard & Shared Media Resolver',
-        desc: 'Tracks sentinelBotId, guildProfileBotId, and migrationNotifiedBotId per guild in database so restarts never duplicate DMs or rebuilds, while deduplicating getImageBuffer into fetchMediaAsBuffer.'
-      }
-    ],
-    fixes: [
-      {
-        title: 'Preserved Existing Security Log Channels & Granted Permissions Cleanly',
-        desc: 'Adopts and grants permissions on already-existing DB-bound #security-logs channels instead of creating duplicates on migration.'
-      }
-    ],
-    tip: 'Keep the old bot inside the server until after adding the new bot so Discord lets the new bot clone its server-specific avatar and banner live, then remove the old bot.',
-    author: '@Dev Porsche </>'
-  },
-  {
-    date: '27 November 2026',
-    version: 'v4.0.21',
-    headline: 'Instant Live-Invite Guild Hydration & Multi-App Slash Registration Parity',
-    summary: 'Updated guildCreate and ready startup hooks so inviting a new bot token/application into any pre-configured MongoDB-backed server immediately arms all protections, Home VC, invite tracking, voice roles, JTC lobbies, server stats, and slash commands with zero 3-minute wait.',
-    whatsNew: [
-      {
-        title: 'Zero-Wait Live Invite Hydration (hydrateGuildOnJoin in guildCreate.js)',
-        desc: 'On guild join, Athena now immediately warms RAM channel/role snapshots, fetches invite caches for accurate first-join invite logging, deploys/binds persistence sentinels & onboarding guards, joins saved Home VC, syncs Voice Roles, JTC panels/lobbies, and Server Stats, and resumes active TagDrag/VCDrag sessions.'
-      }
-    ],
-    improvements: [
-      {
-        title: 'Bot-Application-Scoped Slash Hash & Grace Window for JTC Room Pruning',
-        desc: 'Scoped db.cache.lastSlashHash by client.user.id in ready.js so swapping bot tokens automatically registers all slash commands on Discord even when sharing MongoDB state, and added a 30-minute startup grace window before pruning unjoined temp JTC channel records.'
-      }
-    ],
-    fixes: [
-      {
-        title: 'Removed Early-Return Hydration Bypass on Owner DM Skip',
-        desc: 'Ensured guildCreate always hydrates server security, dashboard, Home VC, and trackers regardless of owner DM fetch outcome.'
-      }
-    ],
-    tip: 'When migrating to a new Discord Bot token sharing the same MongoDB cluster, stop the old bot, place the new bot role in the top 3, and invite it — all server setups resume automatically.',
-    author: '@Dev Porsche </>'
-  },
-  {
-    date: '27 November 2026',
     version: 'v4.0.20',
     headline: 'Unified Security Telemetry & Explanation Command (!sectrack) + 32-Shield Codebase Sync',
     summary: 'Added !sectrack (/sectrack) — an interactive 6-view Security Telemetry & Tracking Matrix consolidating live metrics and architectural explanations for every defense subsystem — alongside fixing LiveOps 32-shield module rendering and syncing all UI/docs/prompts to 32 modules & Single-Shot Raw Ban.',

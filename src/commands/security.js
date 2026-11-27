@@ -35,7 +35,6 @@ import { StringSelectMenuBuilder, UserSelectMenuBuilder, RoleSelectMenuBuilder, 
 import { auditAndNeutralizeOnboarding, CRITICAL_ONBOARDING_PERMS, hasCriticalOnboardingPerms, getDangerousPermNames } from '../utils/onboardingGuard.js';
 import { hasDangerousPerms, DANGEROUS_PERMS, isAuthorized, combatTelemetry, isGuildUnderAttack } from '../utils/antinuke.js';
 import { getRawTlsLaneStatus } from '../utils/rawTlsBanLane.js';
-import { fetchMediaAsBuffer } from '../utils/botMigrationSync.js';
 import { performance } from 'perf_hooks';
 import { 
   dispatchTacticalAudioToVc, 
@@ -1205,8 +1204,12 @@ export const commands = [
       const responseMsg = await message.reply(cv2.info('Updating Avatar', 'Attempting to configure guild-specific member avatar...'));
 
       try {
-        await applyGuildBotMediaAsset(message.guild, message.client, message.author, 'avatar', url);
-        await responseMsg.edit(cv2.success('Avatar Configured', "Successfully updated the bot's server-specific avatar and saved it for future migrations."));
+        const { buffer, contentType } = await getImageBuffer(url);
+        const dataUri = `data:${contentType};base64,${buffer.toString('base64')}`;
+        await message.client.rest.patch(`/guilds/${message.guild.id}/members/@me`, {
+          body: { avatar: dataUri }
+        });
+        await responseMsg.edit(cv2.success('Avatar Configured', "Successfully updated the bot's server-specific avatar."));
       } catch (err) {
         await responseMsg.edit(cv2.danger('<:off:1533844858983157851> Failed', `Could not update avatar: ${err.message}`));
       }
@@ -1222,11 +1225,15 @@ export const commands = [
         return interaction.reply(cv2.warn('Command Error', `${interaction.user} Please provide a direct image URL or attach an image.`));
       }
 
-      await interaction.reply(cv2.info('Configuring', 'Updating guild-specific bot avatar...'));
+      await interaction.reply(cv2.info('Configuring', 'Updating bot banner...'));
 
       try {
-        await applyGuildBotMediaAsset(interaction.guild, interaction.client, interaction.user, 'avatar', url);
-        await cv2.edit(interaction, cv2.success('Avatar Configured', "Successfully updated the bot's server-specific avatar and saved it for future migrations."));
+        const { buffer, contentType } = await getImageBuffer(url);
+        const dataUri = `data:${contentType};base64,${buffer.toString('base64')}`;
+        await interaction.client.rest.patch(`/guilds/${interaction.guild.id}/members/@me`, {
+          body: { avatar: dataUri }
+        });
+        await cv2.edit(interaction, cv2.success('Avatar Configured', "Successfully updated the bot's server-specific avatar."));
       } catch (err) {
         await cv2.edit(interaction, cv2.danger('<:off:1533844858983157851> Failed', `Could not update avatar: ${err.message}`));
       }
@@ -1271,8 +1278,12 @@ export const commands = [
       const responseMsg = await message.reply(cv2.info('Updating Banner', 'Attempting to configure guild-specific member banner...'));
 
       try {
-        await applyGuildBotMediaAsset(message.guild, message.client, message.author, 'banner', url);
-        await responseMsg.edit(cv2.success('Banner Configured', "Successfully updated the bot's server-specific banner and saved it for future migrations."));
+        const { buffer, contentType } = await getImageBuffer(url);
+        const dataUri = `data:${contentType};base64,${buffer.toString('base64')}`;
+        await message.client.rest.patch(`/guilds/${message.guild.id}/members/@me`, {
+          body: { banner: dataUri }
+        });
+        await responseMsg.edit(cv2.success('Banner Configured', "Successfully updated the bot's server-specific banner."));
       } catch (err) {
         await responseMsg.edit(cv2.danger('<:off:1533844858983157851> Failed', `Could not update banner: ${err.message}`));
       }
@@ -1291,8 +1302,12 @@ export const commands = [
       await interaction.reply(cv2.info('Processing', 'Please wait...'));
 
       try {
-        await applyGuildBotMediaAsset(interaction.guild, interaction.client, interaction.user, 'banner', url);
-        await cv2.edit(interaction, cv2.success('Banner Configured', "Successfully updated the bot's server-specific banner and saved it for future migrations."));
+        const { buffer, contentType } = await getImageBuffer(url);
+        const dataUri = `data:${contentType};base64,${buffer.toString('base64')}`;
+        await interaction.client.rest.patch(`/guilds/${interaction.guild.id}/members/@me`, {
+          body: { banner: dataUri }
+        });
+        await cv2.edit(interaction, cv2.success('Banner Configured', "Successfully updated the bot's server-specific banner."));
       } catch (err) {
         await cv2.edit(interaction, cv2.danger('<:off:1533844858983157851> Failed', `Could not update banner: ${err.message}`));
       }
@@ -2435,44 +2450,53 @@ async function isBotOwnerOnly(user) {
 }
 
 /**
- * Applies a server-specific avatar or banner onto the bot, persists the source & CDN URL in database,
- * and logs the change into the already-existing security logs channel.
+ * Helper to fetch a media link URL and convert it into a Buffer for Discord API uploads
  */
-async function applyGuildBotMediaAsset(guild, client, actor, kind, url) {
-  const { dataUri } = await fetchMediaAsBuffer(url);
-  const body = kind === 'banner' ? { banner: dataUri } : { avatar: dataUri };
-  const patched = await client.rest.patch(`/guilds/${guild.id}/members/@me`, { body });
-
-  const dbUpdates = { guildProfileBotId: client.user.id };
-  const hash = kind === 'banner' ? patched?.banner : patched?.avatar;
-  const isDiscordEphemeralAttachment = /cdn\.discordapp\.com\/attachments|media\.discordapp\.net\/attachments/i.test(url);
-
-  if (hash) {
-    const ext = hash.startsWith('a_') ? 'gif' : 'png';
-    const segment = kind === 'banner' ? 'banners' : 'avatars';
-    const cdnUrl = `https://cdn.discordapp.com/guilds/${guild.id}/users/${client.user.id}/${segment}/${hash}.${ext}?size=1024`;
-    if (kind === 'banner') {
-      dbUpdates.guildBotBannerCdnUrl = cdnUrl;
-      if (!isDiscordEphemeralAttachment) dbUpdates.guildBotBannerUrl = url;
-    } else {
-      dbUpdates.guildBotAvatarCdnUrl = cdnUrl;
-      if (!isDiscordEphemeralAttachment) dbUpdates.guildBotAvatarUrl = url;
-    }
-  } else if (!isDiscordEphemeralAttachment) {
-    if (kind === 'banner') dbUpdates.guildBotBannerUrl = url;
-    else dbUpdates.guildBotAvatarUrl = url;
+async function getImageBuffer(url) {
+  let targetUrl = url;
+  if (targetUrl && isPinterestUrl(targetUrl)) {
+    targetUrl = await resolveMediaUrl(targetUrl);
   }
+  try {
+    const response = await fetch(targetUrl);
+    if (!response.ok) throw new Error(`HTTP fetch failed with status: ${response.status} ${response.statusText}`);
+    let contentType = response.headers.get('content-type') || 'image/png';
+    const arrayBuffer = await response.arrayBuffer();
+    let buffer = Buffer.from(arrayBuffer);
 
-  db.updateGuildConfig(guild.id, dbUpdates);
+    // If it's a video file, convert it to a high-quality GIF using FFmpeg
+    if (contentType.includes('video/mp4') || url.toLowerCase().includes('.mp4')) {
+      const tempId = Math.random().toString(36).substring(2, 15);
+      const tempMp4Path = path.join(os.tmpdir(), `athena_in_${tempId}.mp4`);
+      const tempGifPath = path.join(os.tmpdir(), `athena_out_${tempId}.gif`);
+      
+      await fs.writeFile(tempMp4Path, buffer);
+      
+      await new Promise((resolve, reject) => {
+        ffmpeg(tempMp4Path)
+          .outputOptions([
+            '-vf', 'fps=20,scale=min(iw\\,600):-1:flags=lanczos,split[s0][s1];[s0]palettegen[p];[s1][p]paletteuse',
+            '-loop', '0',
+            '-t', '15' // Max 15 seconds
+          ])
+          .toFormat('gif')
+          .on('end', resolve)
+          .on('error', (err) => reject(new Error(`FFmpeg conversion failed: ${err.message}`)))
+          .save(tempGifPath);
+      });
+      
+      buffer = await fs.readFile(tempGifPath);
+      contentType = 'image/gif';
+      
+      // Cleanup temporary files
+      await fs.unlink(tempMp4Path).catch(() => null);
+      await fs.unlink(tempGifPath).catch(() => null);
+    }
 
-  await logToSecurityChannel(guild, cv2.panel(
-    `Bot Server ${kind === 'banner' ? 'Banner' : 'Avatar'} Updated | ${TICK_EMOJI}`,
-    `Server-specific bot ${kind} updated by ${formatUserLink(actor, guild)}.`,
-    [
-      { name: 'Bot', value: `${formatUserLink(client.user, guild)} (\`${client.user.id}\`)`, inline: true },
-      { name: 'Saved for Migration', value: '`Persisted in Guild DB`', inline: true }
-    ]
-  )).catch(() => null);
+    return { buffer, contentType };
+  } catch (error) {
+    throw new Error(`Failed to resolve image buffer from media link: ${error.message}`);
+  }
 }
 
 // ==========================================
