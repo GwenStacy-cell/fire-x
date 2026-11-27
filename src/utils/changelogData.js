@@ -16,6 +16,34 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.26',
+    headline: 'Professional Bot-Offline Gate on Web Dashboard',
+    summary: 'The web control plane now shows a branded "Athena Prime is Offline" page instead of a browser ERR_CONNECTION_REFUSED error whenever the Discord client is not yet ready or has disconnected.',
+    whatsNew: [
+      {
+        title: 'Bot-Offline Gate Middleware',
+        desc: 'Added a gate in server.js that intercepts all web requests (except /health) when client.isReady() is false, returning HTTP 503 with a full tactical offline page.'
+      },
+      {
+        title: 'Tactical Offline Page',
+        desc: 'Standalone self-contained HTML with animated grid background, pulsing red glow, live status rows (Bot Status: Offline / Web Platform: Standby / Dashboard Access: Suspended), and a 30-second auto-reload countdown.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Auto-Refresh Countdown',
+        desc: 'Offline page auto-reloads every 30 seconds so users see the dashboard come back the moment the bot reconnects — no manual refresh needed.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'ERR_CONNECTION_REFUSED replaced by 503',
+        desc: 'Previously the browser showed a raw browser error when the bot was booting. Now users always get a branded page from the moment Express starts.'
+      }
+    ]
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.25',
     headline: 'Container Disk-Space Guard & Shallow Auto-Deploy Optimization',
     summary: 'Eliminated hidden npm cache and full git object history bloat inside Pterodactyl containers by switching start.sh and gitWatcher.js to shallow --depth 1 syncs, --omit=dev installs, and automatic temporary cache pruning.',
