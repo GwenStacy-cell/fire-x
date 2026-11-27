@@ -16,6 +16,29 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.27',
+    headline: 'Bot Avatar on Offline Page',
+    summary: 'The offline gate page now displays the bot\'s real Discord avatar (circular with animated red ring and offline dot) instead of the shield emoji. Avatar URL is cached from client.user so it persists across disconnects.',
+    whatsNew: [
+      {
+        title: 'Live Bot Avatar on Offline Page',
+        desc: 'Offline page now shows client.user.displayAvatarURL() in a circular frame with a spinning red ring and blinking offline status dot.'
+      },
+      {
+        title: 'Avatar Cache Across Disconnects',
+        desc: '_cachedAvatarUrl is set whenever client.user is populated, so the avatar remains visible even after a temporary Discord disconnect.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Dynamic Page Builder',
+        desc: 'OFFLINE_PAGE static string replaced with buildOfflinePage(avatarUrl, botName) function so name and avatar are always live.'
+      }
+    ],
+    fixes: []
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.26',
     headline: 'Professional Bot-Offline Gate on Web Dashboard',
     summary: 'The web control plane now shows a branded "Athena Prime is Offline" page instead of a browser ERR_CONNECTION_REFUSED error whenever the Discord client is not yet ready or has disconnected.',
