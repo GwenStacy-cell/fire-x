@@ -10,6 +10,9 @@ import {
   StreamType
 } from '@discordjs/voice';
 import { Readable } from 'stream';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import fetch from 'node-fetch';
 import { 
   ActionRowBuilder, 
@@ -29,6 +32,9 @@ import {
 } from './emojis.js';
 import { sanitizeCV2Payload } from '../cv2.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const SOUNDS_ASSETS_DIR = path.resolve(__dirname, '../assets/sounds');
+
 export const BUILTIN_SFX = {
   'airhorn': { name: 'Air Horn', url: 'https://www.myinstants.com/media/sounds/air-horn-club-sample_1.mp3' },
   'vineboom': { name: 'Vine Boom', url: 'https://www.myinstants.com/media/sounds/vine-boom.mp3' },
@@ -41,7 +47,8 @@ export const BUILTIN_SFX = {
   'victory': { name: 'Victory Fanfare', url: 'https://www.myinstants.com/media/sounds/final-fantasy-vii-victory-fanfare-1.mp3' },
   'oof': { name: 'Roblox Oof', url: 'https://www.myinstants.com/media/sounds/roblox-death-sound_1.mp3' },
   'crickets': { name: 'Awkward Crickets', url: 'https://www.myinstants.com/media/sounds/cricket-sound-sound-effect.mp3' },
-  'tada': { name: 'Ta-Da Fanfare', url: 'https://www.myinstants.com/media/sounds/tada-sound.mp3' }
+  'tada': { name: 'Ta-Da Fanfare', url: 'https://www.myinstants.com/media/sounds/tada-sound.mp3' },
+  'prince': { name: 'Prince', filePath: path.join(SOUNDS_ASSETS_DIR, 'prince.ogg') }
 };
 
 export const RADIO_STATIONS = {
@@ -113,22 +120,29 @@ export async function playSoundEffect(voiceChannel, soundKeyOrUrl) {
   session.isRadio = false;
 
   let resource;
-  try {
-    const audioRes = await fetch(soundObj.url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-      }
+  if (soundObj.filePath && fs.existsSync(soundObj.filePath)) {
+    resource = createAudioResource(fs.createReadStream(soundObj.filePath), {
+      inputType: StreamType.Arbitrary,
+      inlineVolume: true
     });
-    if (audioRes.ok) {
-      const arrayBuffer = await audioRes.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const stream = Readable.from(buffer);
-      resource = createAudioResource(stream, { inputType: StreamType.Arbitrary, inlineVolume: true });
-    } else {
+  } else {
+    try {
+      const audioRes = await fetch(soundObj.url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
+      });
+      if (audioRes.ok) {
+        const arrayBuffer = await audioRes.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const stream = Readable.from(buffer);
+        resource = createAudioResource(stream, { inputType: StreamType.Arbitrary, inlineVolume: true });
+      } else {
+        resource = createAudioResource(soundObj.url, { inlineVolume: true });
+      }
+    } catch (err) {
       resource = createAudioResource(soundObj.url, { inlineVolume: true });
     }
-  } catch (err) {
-    resource = createAudioResource(soundObj.url, { inlineVolume: true });
   }
 
   resource.volume?.setVolume(0.85);
@@ -252,8 +266,13 @@ export function buildSoundboardPanel(guild) {
     new ButtonBuilder().setCustomId('sfx:play:crickets').setLabel('Crickets').setStyle(ButtonStyle.Secondary)
   );
 
-  // Row 3: Radio Streams & Controls (all colourless Secondary buttons)
+  // Row 3: Custom / Signature Soundboard Clips
   const row3 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('sfx:play:prince').setLabel('Prince').setStyle(ButtonStyle.Secondary)
+  );
+
+  // Row 4: Radio Streams & Controls (all colourless Secondary buttons)
+  const row4 = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('sfx:radio:lofi').setLabel('24/7 Lo-Fi Radio').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('sfx:radio:synthwave').setLabel('Synthwave Radio').setStyle(ButtonStyle.Secondary),
     new ButtonBuilder().setCustomId('sfx:radio:anime').setLabel('Anime OST Radio').setStyle(ButtonStyle.Secondary),
@@ -277,6 +296,7 @@ export function buildSoundboardPanel(guild) {
       row1.toJSON(),
       row2.toJSON(),
       row3.toJSON(),
+      row4.toJSON(),
       { type: 14, divider: true },
       { type: 10, content: `-# **Athena Prime Voice Matrix \u00b7 Live In-Voice SFX & 24/7 Radio**` }
     ]

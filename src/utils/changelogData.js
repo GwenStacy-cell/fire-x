@@ -16,6 +16,27 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.24',
+    headline: 'Added "Prince" Signature Sound to Voice Soundboard Deck',
+    summary: 'Added the custom "Prince" audio clip as a built-in soundboard button on !soundboard / /soundboard and playable directly via !sfx prince / /sfx.',
+    whatsNew: [
+      {
+        title: 'Voice Soundboard "Prince" Trigger & Local Asset Playback',
+        desc: 'Bundled src/assets/sounds/prince.ogg into the soundboard engine with zero-latency local file streaming support so clicking Prince on the Voice Soundboard Deck or running !sfx prince plays reliably without external CDN failures.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Local Sound File Streaming in soundboardEngine.js',
+        desc: 'Extended playSoundEffect() to stream local soundboard assets directly alongside remote HTTP sound clips and custom server uploads.'
+      }
+    ],
+    fixes: [],
+    tip: 'Join any voice channel and run !soundboard (click "Prince") or !sfx prince.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.23',
     headline: 'Strict Athena Ownership Mode on Web Control Plane',
     summary: 'Aligned web dashboard authentication and authorization strictly with Athena Prime ownership rules: only Bot Owners, Server Owners, and Extra Owners can access or operate their respective guilds, removing native Discord Administrator fallback access.',
