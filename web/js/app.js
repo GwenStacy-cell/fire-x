@@ -137,19 +137,35 @@
   // ---------------------------------------------------------------------------
   // NAVIGATION & VIEW SWITCHING
   // ---------------------------------------------------------------------------
+  const ALL_VIEWS = [
+    'showcase','overview','access','sectrack','controls','incidents','docs',
+    'tickets','welcome','serverlogs','autorole','verify','counting',
+    'leveling','giveaways','reactionroles','ccmds','birthday','youtube',
+    'statstats','economy','autoreact','sticky','persona','morning'
+  ];
+  const SETTINGS_VIEWS = [
+    'tickets','welcome','serverlogs','autorole','verify','counting',
+    'leveling','giveaways','reactionroles','ccmds','birthday','youtube',
+    'statstats','economy','autoreact','sticky','persona','morning'
+  ];
+
   function setView(viewName) {
-    const protectedViews = ['overview', 'access', 'sectrack', 'controls', 'incidents', 'docs'];
+    const protectedViews = ['overview','access','sectrack','controls','incidents','docs',...SETTINGS_VIEWS];
     if (protectedViews.includes(viewName) && !state.me) {
       openAuthModal();
       return;
     }
 
     state.view = viewName;
-    const allViews = ['showcase', ...protectedViews];
-    allViews.forEach(v => {
+    ALL_VIEWS.forEach(v => {
       const sec = document.getElementById(`view-${v}`);
       if (sec) sec.classList.toggle('hidden', v !== viewName);
     });
+
+    // Lazy-load settings panel data when navigating to it
+    if (SETTINGS_VIEWS.includes(viewName) && state.activeGuildId) {
+      loadSettingsPanel(viewName);
+    }
 
     document.querySelectorAll('.nav-link').forEach(btn => {
       const active = btn.dataset.nav === viewName;
@@ -1270,6 +1286,579 @@
       } catch (err) { showToast(err.message, 'error'); }
     });
   }
+
+  // ---------------------------------------------------------------------------
+  // SETTINGS PANELS — lazy load dispatcher
+  // ---------------------------------------------------------------------------
+  const _settingsCache = {};
+  async function loadSettingsPanel(view) {
+    if (!state.activeGuildId) return;
+    const gid = state.activeGuildId;
+    try {
+      const map = {
+        tickets: renderTickets, welcome: renderWelcome, serverlogs: renderServerlogs,
+        autorole: renderAutorole, verify: renderVerify, counting: renderCounting,
+        leveling: renderLeveling, giveaways: renderGiveaways,
+        reactionroles: renderReactionRoles, ccmds: renderCcmds,
+        birthday: renderBirthday, youtube: renderYoutube,
+        statstats: renderStatstats, economy: renderEconomy,
+        autoreact: renderAutoreact, sticky: renderSticky,
+        persona: renderPersona, morning: renderMorning
+      };
+      const endpoint = view === 'statstats' ? 'statstats' : view;
+      const data = await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/${endpoint}`);
+      _settingsCache[view] = data;
+      if (map[view]) map[view](data, gid);
+    } catch (err) { showToast(err.message, 'error'); }
+  }
+
+  // Helper: build <option> list from availableRoles / channels
+  function roleOptions(currentId = '') {
+    const roles = state.guildData?.access?.availableRoles || [];
+    return `<option value="">— Select role —</option>` + roles.map(r =>
+      `<option value="${esc(r.id)}" ${r.id === currentId ? 'selected' : ''}>${esc(r.name)}</option>`
+    ).join('');
+  }
+  function channelOptions(currentId = '') {
+    const channels = state.guildData?.syncSummary ? Object.values(state.guildData.syncSummary).map(s => s.channel).filter(c => c?.id) : [];
+    // Fallback to any channel IDs we know
+    return `<option value="">— Select channel —</option>` + channels.map(c =>
+      `<option value="${esc(c.id)}" ${c.id === currentId ? 'selected' : ''}>#${esc(c.name || c.id)}</option>`
+    ).join('');
+  }
+
+  // ── TICKETS ──────────────────────────────────────────────────────────────
+  function renderTickets(d) {
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v || ''; };
+    const setChk = (id, v) => { const e = document.getElementById(id); if (e) e.checked = Boolean(v); };
+    set('tkCategoryId', d.categoryId);
+    document.getElementById('tkPanelChannel').innerHTML = channelOptions(d.panelChannelId);
+    document.getElementById('tkStaffRole').innerHTML = roleOptions((d.staffRoleIds || [])[0] || '');
+    setChk('tkAiTriage', d.aiTriage);
+    const cnt = document.getElementById('tkActiveCount');
+    if (cnt) cnt.textContent = d.activeCount || 0;
+  }
+  document.getElementById('tkSaveBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      const r1 = document.getElementById('tkStaffRole')?.value;
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/tickets`, {
+        method: 'POST', body: JSON.stringify({
+          categoryId: document.getElementById('tkCategoryId')?.value?.trim(),
+          staffRoleIds: r1 ? [r1] : [],
+          panelChannelId: document.getElementById('tkPanelChannel')?.value,
+          aiTriage: document.getElementById('tkAiTriage')?.checked
+        })
+      });
+      showToast('Ticket config saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── WELCOME / LEAVE ───────────────────────────────────────────────────────
+  function renderWelcome(d) {
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v ?? ''; };
+    const setChk = (id, v) => { const e = document.getElementById(id); if (e) e.checked = Boolean(v); };
+    const w = d.welcome || {}; const l = d.leave || {};
+    setChk('wlWelcomeEnabled', w.enabled);
+    document.getElementById('wlWelcomeChannel').innerHTML = channelOptions(w.channelId);
+    set('wlWelcomeMsg', w.message);
+    set('wlWelcomeTitle', w.embedTitle);
+    set('wlWelcomeColor', w.embedColor || '#00f0ff');
+    setChk('wlLeaveEnabled', l.enabled);
+    document.getElementById('wlLeaveChannel').innerHTML = channelOptions(l.channelId);
+    set('wlLeaveMsg', l.message);
+  }
+  document.getElementById('wlWelcomeSave')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/welcome`, {
+        method: 'POST', body: JSON.stringify({
+          type: 'welcome',
+          enabled: document.getElementById('wlWelcomeEnabled')?.checked,
+          channelId: document.getElementById('wlWelcomeChannel')?.value,
+          message: document.getElementById('wlWelcomeMsg')?.value,
+          embedTitle: document.getElementById('wlWelcomeTitle')?.value,
+          embedColor: document.getElementById('wlWelcomeColor')?.value
+        })
+      });
+      showToast('Welcome message saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+  document.getElementById('wlLeaveSave')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/welcome`, {
+        method: 'POST', body: JSON.stringify({
+          type: 'leave',
+          enabled: document.getElementById('wlLeaveEnabled')?.checked,
+          channelId: document.getElementById('wlLeaveChannel')?.value,
+          message: document.getElementById('wlLeaveMsg')?.value
+        })
+      });
+      showToast('Leave message saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── SERVER LOGS ───────────────────────────────────────────────────────────
+  function renderServerlogs(d) {
+    const chk = (id, v) => { const e = document.getElementById(id); if (e) e.checked = Boolean(v); };
+    chk('slEnabled', d.enabled);
+    document.getElementById('slDefaultChannel').innerHTML = channelOptions(d.defaultChannelId);
+    const grid = document.getElementById('slModuleGrid');
+    if (!grid) return;
+    const modules = d.modules || {};
+    const modKeys = ['msgDeletes','msgEdits','roleCreate','roleDelete','roleUpdate','memberBan','memberUnban','memberKick','channelCreate','channelDelete','memberJoin','memberLeave','voiceJoin','voiceLeave'];
+    const labels = { msgDeletes:'Message Deletes',msgEdits:'Message Edits',roleCreate:'Role Created',roleDelete:'Role Deleted',roleUpdate:'Role Updated',memberBan:'Member Ban',memberUnban:'Member Unban',memberKick:'Member Kick',channelCreate:'Channel Created',channelDelete:'Channel Deleted',memberJoin:'Member Join',memberLeave:'Member Leave',voiceJoin:'Voice Join',voiceLeave:'Voice Leave' };
+    grid.innerHTML = modKeys.map(k => `
+      <div class="flex items-center justify-between bg-surface-container-lowest rounded-lg px-3 py-2 border border-outline-variant/20">
+        <span class="font-mono text-xs text-on-surface">${labels[k]||k}</span>
+        <label class="tactical-switch"><input type="checkbox" data-mod="${k}" ${modules[k]?.enabled !== false ? 'checked' : ''}/><span class="tactical-slider"></span></label>
+      </div>`).join('');
+  }
+  document.getElementById('slSaveBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      const modules = {};
+      document.querySelectorAll('#slModuleGrid [data-mod]').forEach(el => {
+        modules[el.dataset.mod] = { enabled: el.checked };
+      });
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/serverlogs`, {
+        method: 'POST', body: JSON.stringify({
+          enabled: document.getElementById('slEnabled')?.checked,
+          defaultChannelId: document.getElementById('slDefaultChannel')?.value,
+          modules
+        })
+      });
+      showToast('Server logs saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── AUTOROLE ──────────────────────────────────────────────────────────────
+  function renderAutorole(d) {
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v || ''; };
+    document.getElementById('arHumanRole').innerHTML = roleOptions((d.autoroleHuman||[])[0]);
+    document.getElementById('arBotRole').innerHTML = roleOptions((d.autoroleBot||[])[0]);
+    document.getElementById('arVanityRole').innerHTML = roleOptions((d.vanityRole||[])[0]);
+    set('arVanityString', d.vanityString);
+  }
+  document.getElementById('arSaveBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      const r = id => { const v = document.getElementById(id)?.value; return v ? [v] : []; };
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/autorole`, {
+        method: 'POST', body: JSON.stringify({
+          autoroleHuman: r('arHumanRole'),
+          autoroleBot: r('arBotRole'),
+          vanityRole: r('arVanityRole'),
+          vanityString: document.getElementById('arVanityString')?.value?.trim()
+        })
+      });
+      showToast('AutoRole config saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── VERIFY ────────────────────────────────────────────────────────────────
+  function renderVerify(d) {
+    document.getElementById('vrRole').innerHTML = roleOptions(d.roleId);
+    const ms = document.getElementById('vrMode');
+    if (ms) ms.value = d.mode || 'button';
+    const info = document.getElementById('vrChannelInfo');
+    if (info) info.textContent = d.channelId ? `Deployed in channel ${d.channelId}` : 'Not deployed yet';
+  }
+  document.getElementById('vrSaveBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/verify`, {
+        method: 'POST', body: JSON.stringify({
+          action: 'save',
+          roleId: document.getElementById('vrRole')?.value,
+          mode: document.getElementById('vrMode')?.value
+        })
+      });
+      showToast('Verification saved — redeploy the panel in Discord to apply.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+  document.getElementById('vrDeleteBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/verify`, {
+        method: 'POST', body: JSON.stringify({ action: 'delete' })
+      });
+      showToast('Verification panel removed.');
+      loadSettingsPanel('verify');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── COUNTING ──────────────────────────────────────────────────────────────
+  function renderCounting(d) {
+    document.getElementById('ctChannel').innerHTML = channelOptions(d.channelId);
+    const cc = document.getElementById('ctCurrentCount');
+    if (cc) cc.textContent = d.currentCount || 0;
+    const math = document.getElementById('ctAllowMath');
+    if (math) math.checked = d.allowMath !== false;
+    const topic = document.getElementById('ctAutoTopic');
+    if (topic) topic.checked = d.autoTopic !== false;
+    const saves = document.getElementById('ctSaves');
+    if (saves) saves.value = d.saves ?? 2;
+  }
+  document.getElementById('ctSaveBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/counting`, {
+        method: 'POST', body: JSON.stringify({
+          action: 'save',
+          channelId: document.getElementById('ctChannel')?.value,
+          allowMath: document.getElementById('ctAllowMath')?.checked,
+          autoTopic: document.getElementById('ctAutoTopic')?.checked,
+          saves: Number(document.getElementById('ctSaves')?.value || 2)
+        })
+      });
+      showToast('Counting config saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+  document.getElementById('ctResetBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/counting`, {
+        method: 'POST', body: JSON.stringify({ action: 'reset' })
+      });
+      showToast('Count reset to 0.');
+      loadSettingsPanel('counting');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── LEVELING ──────────────────────────────────────────────────────────────
+  function renderLeveling(d) {
+    const chk = (id, v) => { const e = document.getElementById(id); if (e) e.checked = Boolean(v); };
+    chk('lvEnabled', d.enabled);
+    const ms = document.getElementById('lvAnnounceMode');
+    if (ms) ms.value = d.announceMode || 'current';
+    document.getElementById('lvAnnounceChannel').innerHTML = channelOptions(d.announceChannelId);
+    document.getElementById('lvCmdChannel').innerHTML = channelOptions(d.cmdChannelId);
+    // Top users
+    const lb = document.getElementById('lvLeaderboard');
+    if (lb && d.topUsers) {
+      lb.innerHTML = d.topUsers.length ? d.topUsers.map((u, i) =>
+        `<div class="flex items-center justify-between py-1.5 border-b border-outline-variant/15 last:border-0">
+          <span class="font-mono text-xs text-on-surface-variant">#${i+1} <span class="text-on-surface">${esc(u.username||u.id)}</span></span>
+          <span class="font-mono text-xs text-secondary">Lv ${u.level} · ${u.xp} XP</span>
+        </div>`).join('') : '<p class="text-xs text-on-surface-variant">No XP data yet.</p>';
+    }
+  }
+  document.getElementById('lvSaveBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/leveling`, {
+        method: 'POST', body: JSON.stringify({
+          enabled: document.getElementById('lvEnabled')?.checked,
+          announceMode: document.getElementById('lvAnnounceMode')?.value,
+          announceChannelId: document.getElementById('lvAnnounceChannel')?.value,
+          cmdChannelId: document.getElementById('lvCmdChannel')?.value
+        })
+      });
+      showToast('XP system saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── GIVEAWAYS ─────────────────────────────────────────────────────────────
+  function renderGiveaways(d) {
+    const list = document.getElementById('gwList');
+    if (!list) return;
+    const active = (d.active || []);
+    list.innerHTML = active.length ? active.map(gw => `
+      <div class="bg-surface-container-lowest rounded-lg p-4 border border-outline-variant/20 space-y-2">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <div class="font-semibold text-sm text-on-surface">${esc(gw.prize)}</div>
+            <div class="font-mono text-[10px] text-on-surface-variant">${gw.winnersCount} winner(s) · ${esc(gw.mode||'random')} mode · ${gw.entries?.length||0} entries</div>
+          </div>
+          <div class="flex gap-2 shrink-0">
+            <button onclick="window._gwEnd('${esc(gw.messageId)}')" class="px-3 py-1 rounded bg-error-container text-on-error-container font-mono text-[10px] font-bold uppercase hover:bg-error hover:text-on-error transition-colors">End</button>
+            <button onclick="window._gwReroll('${esc(gw.messageId)}')" class="px-3 py-1 rounded bg-surface-container-high text-on-surface font-mono text-[10px] uppercase hover:bg-surface-bright transition-colors">Reroll</button>
+          </div>
+        </div>
+      </div>`).join('') : '<p class="text-xs text-on-surface-variant py-4 text-center">No active giveaways.</p>';
+    window._gwEnd = async (msgId) => {
+      try { await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/settings/giveaways`, { method: 'POST', body: JSON.stringify({ action: 'end', messageId: msgId }) }); showToast('Giveaway ended.'); loadSettingsPanel('giveaways'); } catch (e) { showToast(e.message, 'error'); }
+    };
+    window._gwReroll = async (msgId) => {
+      try { await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/settings/giveaways`, { method: 'POST', body: JSON.stringify({ action: 'reroll', messageId: msgId }) }); showToast('Rerolled!'); } catch (e) { showToast(e.message, 'error'); }
+    };
+  }
+
+  // ── REACTION ROLES ────────────────────────────────────────────────────────
+  function renderReactionRoles(d) {
+    const list = document.getElementById('rrList');
+    if (!list) return;
+    const panels = d.panels || [];
+    list.innerHTML = panels.length ? panels.map(p => `
+      <div class="bg-surface-container-lowest rounded-lg p-4 border border-outline-variant/20 space-y-2">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="font-semibold text-sm text-on-surface">${esc(p.title||'Untitled Panel')}</div>
+            <div class="font-mono text-[10px] text-on-surface-variant">${(p.entries||[]).length} role(s) · channel ${p.channelId||'?'}</div>
+          </div>
+          <button onclick="window._rrDelete('${esc(p.messageId)}')" class="px-3 py-1 rounded bg-error-container text-on-error-container font-mono text-[10px] font-bold uppercase hover:bg-error hover:text-on-error transition-colors">Delete</button>
+        </div>
+        <div class="flex flex-wrap gap-1.5">${(p.entries||[]).map(e=>`<span class="px-2 py-0.5 rounded-full bg-surface-container-high font-mono text-[10px] text-on-surface">${esc(e.emoji)} ${esc(e.roleId)}</span>`).join('')}</div>
+      </div>`).join('') : '<p class="text-xs text-on-surface-variant py-4 text-center">No reaction role panels. Use <code>!rr</code> in Discord to create one.</p>';
+    window._rrDelete = async (msgId) => {
+      try { await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/settings/reactionroles`, { method: 'POST', body: JSON.stringify({ action: 'delete', messageId: msgId }) }); showToast('Panel removed.'); loadSettingsPanel('reactionroles'); } catch (e) { showToast(e.message, 'error'); }
+    };
+  }
+
+  // ── CUSTOM COMMANDS ───────────────────────────────────────────────────────
+  function renderCcmds(d) {
+    const list = document.getElementById('ccList');
+    if (!list) return;
+    const cmds = d.commands || {};
+    const keys = Object.keys(cmds);
+    list.innerHTML = keys.length ? keys.map(alias => `
+      <div class="flex items-center justify-between bg-surface-container-lowest rounded-lg px-3 py-2 border border-outline-variant/20">
+        <span class="font-mono text-xs"><span class="text-primary-container">!${esc(alias)}</span> → <span class="text-on-surface-variant">${esc(cmds[alias])}</span></span>
+        <button onclick="window._ccDelete('${esc(alias)}')" class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-mono text-[10px] hover:bg-error hover:text-on-error transition-colors">Remove</button>
+      </div>`).join('') : '<p class="text-xs text-on-surface-variant py-2">No custom commands yet.</p>';
+    window._ccDelete = async (alias) => {
+      try { await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/settings/ccmds`, { method: 'POST', body: JSON.stringify({ action: 'delete', alias }) }); showToast(`!${alias} removed.`); loadSettingsPanel('ccmds'); } catch (e) { showToast(e.message, 'error'); }
+    };
+  }
+  document.getElementById('ccAddForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      const alias = document.getElementById('ccAlias')?.value?.trim();
+      const cmd = document.getElementById('ccCommand')?.value?.trim();
+      if (!alias || !cmd) return showToast('Fill in both fields.', 'error');
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/ccmds`, {
+        method: 'POST', body: JSON.stringify({ action: 'create', alias, command: cmd })
+      });
+      document.getElementById('ccAlias').value = '';
+      document.getElementById('ccCommand').value = '';
+      showToast(`!${alias} shortcut created.`);
+      loadSettingsPanel('ccmds');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── BIRTHDAY ──────────────────────────────────────────────────────────────
+  function renderBirthday(d) {
+    document.getElementById('bdChannel').innerHTML = channelOptions(d.channelId);
+    const list = document.getElementById('bdList');
+    if (!list) return;
+    const bdays = d.birthdays || [];
+    list.innerHTML = bdays.length ? bdays.map(b =>
+      `<div class="flex items-center justify-between py-1.5 border-b border-outline-variant/15 last:border-0">
+        <span class="font-mono text-xs text-on-surface">${esc(b.userId)}</span>
+        <span class="font-mono text-xs text-secondary">${b.day}/${b.month}</span>
+      </div>`).join('') : '<p class="text-xs text-on-surface-variant py-2">No birthdays set.</p>';
+  }
+  document.getElementById('bdSaveChannel')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/birthday`, {
+        method: 'POST', body: JSON.stringify({ action: 'channel', channelId: document.getElementById('bdChannel')?.value })
+      });
+      showToast('Birthday channel saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── YOUTUBE ───────────────────────────────────────────────────────────────
+  function renderYoutube(d) {
+    const list = document.getElementById('ytList');
+    if (!list) return;
+    const notifiers = d.notifiers || [];
+    list.innerHTML = notifiers.length ? notifiers.map(n => `
+      <div class="flex items-center justify-between bg-surface-container-lowest rounded-lg px-3 py-2.5 border border-outline-variant/20 gap-2">
+        <div>
+          <div class="font-semibold text-xs text-on-surface">${esc(n.channelName||n.youtubeId)}</div>
+          <div class="font-mono text-[10px] text-on-surface-variant">→ channel ${n.discordChannelId}</div>
+        </div>
+        <button onclick="window._ytRemove('${esc(n.youtubeId)}')" class="px-2 py-1 rounded bg-error-container text-on-error-container font-mono text-[10px] hover:bg-error hover:text-on-error transition-colors shrink-0">Remove</button>
+      </div>`).join('') : '<p class="text-xs text-on-surface-variant py-2">No YouTube notifiers. Use <code>!youtube add &lt;url&gt; #channel</code> in Discord.</p>';
+    window._ytRemove = async (ytId) => {
+      try { await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/settings/youtube`, { method: 'POST', body: JSON.stringify({ action: 'remove', youtubeId: ytId }) }); showToast('Notifier removed.'); loadSettingsPanel('youtube'); } catch (e) { showToast(e.message, 'error'); }
+    };
+  }
+
+  // ── SERVER STATS ──────────────────────────────────────────────────────────
+  function renderStatstats(d) {
+    const sc = d.statChannels || {};
+    ['members','bots','boosts','users'].forEach(k => {
+      const el = document.getElementById(`sc${k.charAt(0).toUpperCase()+k.slice(1)}Channel`);
+      if (el) el.value = sc[k] || '';
+    });
+  }
+  document.getElementById('scSaveBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/statstats`, {
+        method: 'POST', body: JSON.stringify({
+          statChannels: {
+            members: document.getElementById('scMembersChannel')?.value?.trim(),
+            bots: document.getElementById('scBotsChannel')?.value?.trim(),
+            boosts: document.getElementById('scBoostsChannel')?.value?.trim(),
+            users: document.getElementById('scUsersChannel')?.value?.trim()
+          }
+        })
+      });
+      showToast('Stats channels saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── ECONOMY ───────────────────────────────────────────────────────────────
+  function renderEconomy(d) {
+    const lb = document.getElementById('ecoLeaderboard');
+    if (lb) lb.innerHTML = (d.topUsers||[]).map((u,i) =>
+      `<div class="flex items-center justify-between py-1.5 border-b border-outline-variant/15 last:border-0">
+        <span class="font-mono text-xs text-on-surface-variant">#${i+1} <span class="text-on-surface">${esc(u.username||u.id)}</span></span>
+        <span class="font-mono text-xs text-secondary">${(u.balance||0).toLocaleString()} coins</span>
+      </div>`).join('') || '<p class="text-xs text-on-surface-variant">No economy data yet.</p>';
+    const shop = document.getElementById('ecoShopList');
+    if (shop) shop.innerHTML = (d.shopItems||[]).map(item =>
+      `<div class="flex items-center justify-between bg-surface-container-lowest rounded-lg px-3 py-2 border border-outline-variant/20">
+        <div><div class="text-xs font-semibold text-on-surface">${esc(item.name)}</div><div class="font-mono text-[10px] text-on-surface-variant">${item.price} coins · role ${item.roleId||'—'}</div></div>
+        <button onclick="window._ecoRemoveItem('${esc(item.id)}')" class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-mono text-[10px] hover:bg-error hover:text-on-error">Remove</button>
+      </div>`).join('') || '<p class="text-xs text-on-surface-variant py-2">No custom shop items.</p>';
+    window._ecoRemoveItem = async (id) => {
+      try { await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/settings/economy`, { method: 'POST', body: JSON.stringify({ action: 'removeItem', itemId: id }) }); showToast('Item removed.'); loadSettingsPanel('economy'); } catch (e) { showToast(e.message, 'error'); }
+    };
+  }
+  document.getElementById('ecoAddItemForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      const name = document.getElementById('ecoItemName')?.value?.trim();
+      const price = Number(document.getElementById('ecoItemPrice')?.value || 0);
+      const roleId = document.getElementById('ecoItemRole')?.value?.trim();
+      if (!name || !price) return showToast('Name and price required.', 'error');
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/economy`, {
+        method: 'POST', body: JSON.stringify({ action: 'addItem', name, price, roleId: roleId||null })
+      });
+      e.target.reset();
+      showToast('Shop item added.');
+      loadSettingsPanel('economy');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── AUTO REACT ────────────────────────────────────────────────────────────
+  function renderAutoreact(d) {
+    const list = document.getElementById('arctRulesList');
+    if (!list) return;
+    const reacts = d.reacts || {};
+    const keys = Object.keys(reacts);
+    list.innerHTML = keys.length ? keys.map(cid => `
+      <div class="flex items-center justify-between bg-surface-container-lowest rounded-lg px-3 py-2 border border-outline-variant/20">
+        <div class="font-mono text-xs"><span class="text-on-surface-variant">#${cid}</span> → <span class="text-on-surface">${esc((reacts[cid]||[]).join(' '))}</span></div>
+        <button onclick="window._arRemove('${esc(cid)}')" class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-mono text-[10px] hover:bg-error hover:text-on-error">Remove</button>
+      </div>`).join('') : '<p class="text-xs text-on-surface-variant py-2">No auto-react rules yet.</p>';
+    window._arRemove = async (cid) => {
+      try { await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/settings/autoreact`, { method: 'POST', body: JSON.stringify({ action: 'remove', channelId: cid }) }); showToast('Rule removed.'); loadSettingsPanel('autoreact'); } catch (e) { showToast(e.message, 'error'); }
+    };
+    // populate channel dropdown
+    const sel = document.getElementById('arctChannel');
+    if (sel) sel.innerHTML = channelOptions('');
+  }
+  document.getElementById('arctAddBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      const channelId = document.getElementById('arctChannel')?.value?.trim();
+      const emojis = document.getElementById('arctEmojis')?.value?.trim().split(/[\s,]+/).filter(Boolean);
+      if (!channelId || !emojis.length) return showToast('Select a channel and enter at least one emoji.', 'error');
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/autoreact`, {
+        method: 'POST', body: JSON.stringify({ action: 'save', channelId, emojis })
+      });
+      const inp = document.getElementById('arctEmojis'); if (inp) inp.value = '';
+      showToast('Auto-react rule saved.');
+      loadSettingsPanel('autoreact');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── STICKY MESSAGES ───────────────────────────────────────────────────────
+  function renderSticky(d) {
+    const list = document.getElementById('stkyList');
+    if (!list) return;
+    const stickies = d.stickies || [];
+    list.innerHTML = stickies.length ? stickies.map(s => `
+      <div class="bg-surface-container-lowest rounded-lg p-3 border border-outline-variant/20 space-y-1">
+        <div class="flex items-start justify-between gap-2">
+          <span class="font-mono text-[10px] text-on-surface-variant">#${s.channelId}</span>
+          <button onclick="window._smRemove('${esc(s.channelId)}')" class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-mono text-[10px] hover:bg-error hover:text-on-error shrink-0">Remove</button>
+        </div>
+        <p class="text-xs text-on-surface">${esc(s.content||'').slice(0,100)}</p>
+      </div>`).join('') : '<p class="text-xs text-on-surface-variant py-2">No sticky messages active.</p>';
+    window._smRemove = async (cid) => {
+      try { await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/settings/sticky`, { method: 'POST', body: JSON.stringify({ action: 'remove', channelId: cid }) }); showToast('Sticky removed.'); loadSettingsPanel('sticky'); } catch (e) { showToast(e.message, 'error'); }
+    };
+    // also populate the channel dropdown
+    const sel = document.getElementById('stkyChannel');
+    if (sel) sel.innerHTML = channelOptions('');
+  }
+  document.getElementById('stkySaveBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      const channelId = document.getElementById('stkyChannel')?.value?.trim();
+      const content = document.getElementById('stkyContent')?.value?.trim();
+      const footer = document.getElementById('stkyFooter')?.value?.trim();
+      if (!channelId || !content) return showToast('Select a channel and enter message content.', 'error');
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/sticky`, {
+        method: 'POST', body: JSON.stringify({ action: 'set', channelId, content, footer })
+      });
+      const c = document.getElementById('stkyContent'); if (c) c.value = '';
+      showToast('Sticky message set.');
+      loadSettingsPanel('sticky');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  // ── PERSONA ───────────────────────────────────────────────────────────────
+  const PERSONA_META = {
+    default:   { name: 'Default', desc: 'Neutral, professional, helpful AI assistant.', emoji: '🤖' },
+    tsundere:  { name: 'Tsundere', desc: 'Reluctant but secretly helpful. Flustered and sharp.', emoji: '😤' },
+    cyberpunk: { name: 'Cyberpunk', desc: 'Street-smart hacker slang. Neon-lit attitude.', emoji: '⚡' },
+    butler:    { name: 'Butler', desc: 'Formal, courteous, immaculate service persona.', emoji: '🎩' },
+    sensei:    { name: 'Sensei', desc: 'Wise mentor — patient, instructive, calm.', emoji: '📖' }
+  };
+  function renderPersona(d) {
+    const grid = document.getElementById('personaGrid');
+    if (!grid) return;
+    const current = d.current || 'default';
+    grid.innerHTML = Object.entries(PERSONA_META).map(([key, p]) => `
+      <button onclick="window._setPersona('${key}')" class="relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all ${current===key ? 'border-primary-container bg-surface-container-high shadow-[0_0_16px_rgba(0,240,255,0.2)]' : 'border-outline-variant/30 bg-surface-container-lowest hover:border-outline-variant/60 hover:bg-surface-container-low'}">
+        ${current===key ? '<span class="absolute top-2 right-2 font-mono text-[9px] text-primary-container uppercase tracking-wider">Active</span>' : ''}
+        <span class="text-3xl">${p.emoji}</span>
+        <span class="font-bold text-sm text-on-surface">${p.name}</span>
+        <span class="text-[11px] text-on-surface-variant text-center leading-tight">${p.desc}</span>
+      </button>`).join('');
+    window._setPersona = async (key) => {
+      try {
+        await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/settings/persona`, {
+          method: 'POST', body: JSON.stringify({ persona: key })
+        });
+        showToast(`Persona switched to ${PERSONA_META[key]?.name}.`);
+        loadSettingsPanel('persona');
+      } catch (e) { showToast(e.message, 'error'); }
+    };
+  }
+
+  // ── MORNING ───────────────────────────────────────────────────────────────
+  function renderMorning(d) {
+    const chk = document.getElementById('mnEnabled');
+    if (chk) chk.checked = Boolean(d.enabled);
+    document.getElementById('mnChannel').innerHTML = channelOptions(d.channelId);
+    const tz = document.getElementById('mnTimezone');
+    if (tz) tz.value = d.timezone || 'Asia/Kolkata';
+  }
+  document.getElementById('mnSaveBtn')?.addEventListener('click', async () => {
+    const gid = state.activeGuildId; if (!gid) return;
+    try {
+      await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/settings/morning`, {
+        method: 'POST', body: JSON.stringify({
+          enabled: document.getElementById('mnEnabled')?.checked,
+          channelId: document.getElementById('mnChannel')?.value,
+          timezone: document.getElementById('mnTimezone')?.value || 'Asia/Kolkata'
+        })
+      });
+      showToast('Morning dispatcher saved.');
+    } catch (e) { showToast(e.message, 'error'); }
+  });
 
   // Boot
   renderFeatureMatrix('nuke');

@@ -1072,5 +1072,365 @@ export function registerDashboardRoutes(app, client) {
     res.json({ ok: true, message: 'Member released from quarantine.' });
   });
 
+  // ---------------------------------------------------------------------------
+  // AUTOROLE & VANITY
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/autorole', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    res.json({ ok: true, autoroleHuman: cfg.autoroleHuman || [], autoroleBot: cfg.autoroleBot || [], vanityRole: cfg.vanityRole || [], vanityString: cfg.vanityString || '' });
+  });
+
+  api.post('/guilds/:guildId/settings/autorole', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { autoroleHuman, autoroleBot, vanityRole, vanityString } = req.body || {};
+    db.updateGuildConfig(req.targetGuild.id, {
+      autoroleHuman: Array.isArray(autoroleHuman) ? autoroleHuman.map(String) : [],
+      autoroleBot: Array.isArray(autoroleBot) ? autoroleBot.map(String) : [],
+      vanityRole: Array.isArray(vanityRole) ? vanityRole.map(String) : [],
+      vanityString: String(vanityString || '').trim()
+    });
+    res.json({ ok: true, message: 'AutoRole settings saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // WELCOME & LEAVE
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/welcome', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const welcome = db.getWelcomeConfig(req.targetGuild.id) || {};
+    const leave = db.getLeaveConfig(req.targetGuild.id) || {};
+    res.json({ ok: true, welcome, leave });
+  });
+
+  api.post('/guilds/:guildId/settings/welcome', requireAuth(client), requireGuildAccess(client, 'canManageControls'), async (req, res) => {
+    const { type, enabled, channelId, message, embedTitle, embedColor, embedImage, embedFooter } = req.body || {};
+    const patch = { enabled: Boolean(enabled), channelId: String(channelId || ''), message: String(message || ''), embedTitle: String(embedTitle || ''), embedColor: String(embedColor || ''), embedImage: String(embedImage || ''), embedFooter: String(embedFooter || '') };
+    if (type === 'leave') {
+      if (db.updateLeaveConfig) db.updateLeaveConfig(req.targetGuild.id, patch);
+      else db.updateGuildConfig(req.targetGuild.id, { leaveConfig: patch });
+    } else {
+      if (db.updateWelcomeConfig) db.updateWelcomeConfig(req.targetGuild.id, patch);
+      else db.updateGuildConfig(req.targetGuild.id, { welcomeConfig: patch });
+    }
+    res.json({ ok: true, message: `${type === 'leave' ? 'Leave' : 'Welcome'} config saved.` });
+  });
+
+  // ---------------------------------------------------------------------------
+  // SERVER LOGS
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/serverlogs', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    res.json({ ok: true, ...(cfg.serverLogs || { enabled: false, defaultChannelId: '', categoryId: '', modules: {} }) });
+  });
+
+  api.post('/guilds/:guildId/settings/serverlogs', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { enabled, defaultChannelId, categoryId, modules } = req.body || {};
+    const existing = db.getGuildConfig(req.targetGuild.id).serverLogs || {};
+    db.updateGuildConfig(req.targetGuild.id, { serverLogs: { ...existing, enabled: Boolean(enabled), defaultChannelId: String(defaultChannelId || ''), categoryId: String(categoryId || ''), modules: modules || existing.modules || {} } });
+    res.json({ ok: true, message: 'Server Logs config saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // TICKETS
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/tickets', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const tickets = db.getTickets ? db.getTickets(req.targetGuild.id) : { config: {}, activeTickets: {} };
+    const cfg = tickets.config || {};
+    res.json({ ok: true, categoryId: cfg.categoryId || '', staffRoleIds: cfg.staffRoleIds || [], panelChannelId: cfg.panelChannelId || '', aiTriage: Boolean(cfg.aiTriage), activeCount: Object.keys(tickets.activeTickets || {}).length });
+  });
+
+  api.post('/guilds/:guildId/settings/tickets', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { categoryId, staffRoleIds, panelChannelId, aiTriage } = req.body || {};
+    const ticketCfg = { categoryId: String(categoryId || ''), staffRoleIds: Array.isArray(staffRoleIds) ? staffRoleIds.map(String) : [], panelChannelId: String(panelChannelId || ''), aiTriage: Boolean(aiTriage) };
+    if (db.updateTicketConfig) db.updateTicketConfig(req.targetGuild.id, ticketCfg);
+    else db.updateGuildConfig(req.targetGuild.id, { ticketConfig: ticketCfg });
+    res.json({ ok: true, message: 'Ticket config saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // COUNTING
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/counting', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const counting = db.getCounting(req.targetGuild.id) || {};
+    res.json({ ok: true, channelId: counting.channelId || '', currentCount: counting.currentCount || 0, allowMath: Boolean(counting.allowMath), autoTopic: Boolean(counting.autoTopic), saves: counting.saves || 0 });
+  });
+
+  api.post('/guilds/:guildId/settings/counting', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { action, channelId, allowMath, autoTopic } = req.body || {};
+    if (action === 'reset') {
+      if (db.resetCounting) db.resetCounting(req.targetGuild.id);
+      return res.json({ ok: true, message: 'Counting reset.' });
+    }
+    db.updateGuildConfig(req.targetGuild.id, { counting: { channelId: String(channelId || ''), allowMath: Boolean(allowMath), autoTopic: Boolean(autoTopic) } });
+    res.json({ ok: true, message: 'Counting config saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // VERIFICATION
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/verify', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const v = db.getVerification ? db.getVerification(req.targetGuild.id) : null;
+    res.json({ ok: true, roleId: v?.roleId || '', channelId: v?.channelId || '', mode: v?.mode || 'button', messageId: v?.messageId || '' });
+  });
+
+  api.post('/guilds/:guildId/settings/verify', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { action, roleId, channelId, mode } = req.body || {};
+    if (action === 'delete') {
+      if (db.deleteVerification) db.deleteVerification(req.targetGuild.id);
+      return res.json({ ok: true, message: 'Verification gate removed.' });
+    }
+    if (!['button', 'captcha', 'math'].includes(mode)) return res.status(400).json({ ok: false, error: 'Invalid verification mode.' });
+    if (db.updateVerification) db.updateVerification(req.targetGuild.id, { roleId: String(roleId || ''), channelId: String(channelId || ''), mode });
+    res.json({ ok: true, message: 'Verification gate saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // XP / LEVELING
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/leveling', requireAuth(client), requireGuildAccess(client), async (req, res) => {
+    const xp = db.getXpSystem ? db.getXpSystem(req.targetGuild.id) : {};
+    const topUsers = db.getTopUsersXp ? await Promise.resolve(db.getTopUsersXp(req.targetGuild.id, 10)).catch(() => []) : [];
+    res.json({ ok: true, enabled: Boolean(xp.enabled), announceMode: xp.announceMode || 'current', announceChannelId: xp.announceChannelId || '', cmdChannelId: xp.cmdChannelId || '', roleRewards: xp.roleRewards || {}, multipliers: xp.multipliers || {}, topUsers });
+  });
+
+  api.post('/guilds/:guildId/settings/leveling', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { enabled, announceMode, announceChannelId, cmdChannelId, roleRewards, multipliers } = req.body || {};
+    if (db.updateXpSystem) db.updateXpSystem(req.targetGuild.id, { enabled: Boolean(enabled), announceMode: String(announceMode || 'current'), announceChannelId: String(announceChannelId || ''), cmdChannelId: String(cmdChannelId || ''), roleRewards: roleRewards || {}, multipliers: multipliers || {} });
+    res.json({ ok: true, message: 'XP/Leveling config saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // GIVEAWAYS
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/giveaways', requireAuth(client), requireGuildAccess(client), async (req, res) => {
+    const gws = db.getGiveaways ? db.getGiveaways(req.targetGuild.id) : [];
+    const active = gws.filter(g => !g.ended);
+    const ended = gws.filter(g => g.ended).slice(0, 20);
+    res.json({ ok: true, active, ended });
+  });
+
+  api.post('/guilds/:guildId/settings/giveaways', requireAuth(client), requireGuildAccess(client, 'canManageControls'), async (req, res) => {
+    const { action, messageId } = req.body || {};
+    const gws = db.getGiveaways ? db.getGiveaways(req.targetGuild.id) : [];
+    const gw = gws.find(g => g.messageId === messageId);
+    if (!gw) return res.status(404).json({ ok: false, error: 'Giveaway not found.' });
+    if (action === 'end') {
+      try {
+        const { endGiveaway } = await import('../commands/giveaway.js').catch(() => ({}));
+        if (endGiveaway) await endGiveaway(client, messageId, gw);
+        else { gw.ended = true; if (db.saveGiveaway) db.saveGiveaway(messageId, gw); }
+      } catch { gw.ended = true; if (db.saveGiveaway) db.saveGiveaway(messageId, gw); }
+      return res.json({ ok: true, message: 'Giveaway ended.' });
+    }
+    res.status(400).json({ ok: false, error: 'Invalid giveaway action.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // REACTION ROLES
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/reactionroles', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const panels = db.getReactionRoles ? db.getReactionRoles(req.targetGuild.id) : [];
+    const panelArr = Array.isArray(panels) ? panels : Object.values(panels || {});
+    res.json({ ok: true, panels: panelArr });
+  });
+
+  api.post('/guilds/:guildId/settings/reactionroles', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { action, messageId, panelData } = req.body || {};
+    if (action === 'delete') {
+      if (db.deleteReactionRole) db.deleteReactionRole(req.targetGuild.id, messageId);
+      return res.json({ ok: true, message: 'Reaction role panel deleted.' });
+    }
+    if (action === 'add' && panelData) {
+      if (db.saveReactionRole) db.saveReactionRole(req.targetGuild.id, panelData);
+      return res.json({ ok: true, message: 'Reaction role panel saved.' });
+    }
+    res.status(400).json({ ok: false, error: 'Invalid reaction roles action.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // CUSTOM COMMANDS
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/ccmds', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    res.json({ ok: true, commands: cfg.customCommands || {} });
+  });
+
+  api.post('/guilds/:guildId/settings/ccmds', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { action, alias, response } = req.body || {};
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    const cmds = { ...(cfg.customCommands || {}) };
+    if (action === 'add') {
+      const cleanAlias = String(alias || '').trim().toLowerCase().slice(0, 32);
+      if (!cleanAlias) return res.status(400).json({ ok: false, error: 'Alias required.' });
+      cmds[cleanAlias] = String(response || '').trim();
+      db.updateGuildConfig(req.targetGuild.id, { customCommands: cmds });
+      return res.json({ ok: true, message: `Command !${cleanAlias} saved.` });
+    }
+    if (action === 'delete') {
+      delete cmds[String(alias || '').trim().toLowerCase()];
+      db.updateGuildConfig(req.targetGuild.id, { customCommands: cmds });
+      return res.json({ ok: true, message: 'Command deleted.' });
+    }
+    res.status(400).json({ ok: false, error: 'Invalid ccmd action.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // BIRTHDAY
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/birthday', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const bCfg = db.getBirthdayConfig ? db.getBirthdayConfig(req.targetGuild.id) : {};
+    const bdays = db.getBirthdays ? db.getBirthdays(req.targetGuild.id) : {};
+    const birthdayArr = Object.entries(bdays || {}).map(([userId, v]) => ({ userId, day: v.day, month: v.month }));
+    res.json({ ok: true, channelId: bCfg.channelId || '', birthdays: birthdayArr });
+  });
+
+  api.post('/guilds/:guildId/settings/birthday', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { action, channelId, userId, day, month } = req.body || {};
+    if (action === 'setChannel') {
+      if (db.setBirthdayChannel) db.setBirthdayChannel(req.targetGuild.id, String(channelId || ''));
+      return res.json({ ok: true, message: 'Birthday channel set.' });
+    }
+    if (action === 'set') {
+      if (db.setBirthday) db.setBirthday(req.targetGuild.id, String(userId || ''), Number(day), Number(month));
+      return res.json({ ok: true, message: 'Birthday set.' });
+    }
+    res.status(400).json({ ok: false, error: 'Invalid birthday action.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // YOUTUBE NOTIFIER
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/youtube', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const notifiers = db.getYouTubeNotifiers ? db.getYouTubeNotifiers(req.targetGuild.id) : [];
+    res.json({ ok: true, notifiers: notifiers || [] });
+  });
+
+  api.post('/guilds/:guildId/settings/youtube', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { action, youtubeId, youtubeUrl, channelName, discordChannelId, customMessage } = req.body || {};
+    if (action === 'add') {
+      if (!youtubeId || !discordChannelId) return res.status(400).json({ ok: false, error: 'youtubeId and discordChannelId required.' });
+      if (db.addYouTubeNotifier) db.addYouTubeNotifier(req.targetGuild.id, { youtubeId: String(youtubeId), youtubeUrl: String(youtubeUrl || ''), channelName: String(channelName || ''), discordChannelId: String(discordChannelId), customMessage: String(customMessage || '') });
+      return res.json({ ok: true, message: 'YouTube notifier added.' });
+    }
+    if (action === 'remove') {
+      if (db.removeYouTubeNotifier) db.removeYouTubeNotifier(req.targetGuild.id, String(youtubeId || ''));
+      return res.json({ ok: true, message: 'YouTube notifier removed.' });
+    }
+    res.status(400).json({ ok: false, error: 'Invalid youtube action.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // SERVER STATS CHANNELS
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/statstats', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    res.json({ ok: true, statChannels: cfg.statChannels || { members: '', bots: '', boosts: '', users: '' } });
+  });
+
+  api.post('/guilds/:guildId/settings/statstats', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { statChannels } = req.body || {};
+    const sc = statChannels || {};
+    db.updateGuildConfig(req.targetGuild.id, { statChannels: { members: String(sc.members || ''), bots: String(sc.bots || ''), boosts: String(sc.boosts || ''), users: String(sc.users || '') } });
+    res.json({ ok: true, message: 'Server stat channels saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // ECONOMY & SHOP
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/economy', requireAuth(client), requireGuildAccess(client), async (req, res) => {
+    const topRaw = db.getTopUsersEconomy ? await Promise.resolve(db.getTopUsersEconomy(req.targetGuild.id, 10)).catch(() => []) : [];
+    const shopItems = db.getCustomShopItems ? db.getCustomShopItems(req.targetGuild.id) : [];
+    const topUsers = await Promise.all((topRaw || []).map(async u => {
+      const meta = await resolveUserMeta(client, req.targetGuild, u.id);
+      return { ...u, displayName: meta.displayName };
+    }));
+    res.json({ ok: true, topUsers, shopItems: shopItems || [] });
+  });
+
+  api.post('/guilds/:guildId/settings/economy', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { action, item, itemId } = req.body || {};
+    if (action === 'addItem') {
+      if (!item || !item.name || item.price == null) return res.status(400).json({ ok: false, error: 'name and price required.' });
+      if (db.addCustomShopItem) db.addCustomShopItem(req.targetGuild.id, item);
+      return res.json({ ok: true, message: 'Shop item added.' });
+    }
+    if (action === 'removeItem') {
+      if (db.removeCustomShopItem) db.removeCustomShopItem(req.targetGuild.id, String(itemId || ''));
+      return res.json({ ok: true, message: 'Shop item removed.' });
+    }
+    res.status(400).json({ ok: false, error: 'Invalid economy action.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // AUTO REACT
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/autoreact', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const cfg = db.getGuildConfig(req.targetGuild.id);
+    res.json({ ok: true, reacts: cfg.autoReacts || {} });
+  });
+
+  api.post('/guilds/:guildId/settings/autoreact', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { reacts } = req.body || {};
+    db.updateGuildConfig(req.targetGuild.id, { autoReacts: reacts || {} });
+    res.json({ ok: true, message: 'Auto react settings saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // STICKY MESSAGES
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/sticky', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const all = db.getAllStickyMessages ? db.getAllStickyMessages(req.targetGuild.id) : {};
+    const stickies = Object.entries(all || {}).map(([channelId, v]) => ({ channelId, content: v.content || '', footer: v.footer || '' }));
+    res.json({ ok: true, stickies });
+  });
+
+  api.post('/guilds/:guildId/settings/sticky', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { action, channelId, content, footer } = req.body || {};
+    if (!channelId) return res.status(400).json({ ok: false, error: 'channelId required.' });
+    if (action === 'remove') {
+      if (db.removeStickyMessage) db.removeStickyMessage(req.targetGuild.id, String(channelId));
+      return res.json({ ok: true, message: 'Sticky message removed.' });
+    }
+    if (db.setStickyMessage) db.setStickyMessage(req.targetGuild.id, String(channelId), String(content || ''));
+    if (footer !== undefined && db.setStickyFooter) db.setStickyFooter(req.targetGuild.id, String(channelId), String(footer));
+    res.json({ ok: true, message: 'Sticky message saved.' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // AI PERSONA
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/persona', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const current = db.getGuildPersona ? db.getGuildPersona(req.targetGuild.id) : 'default';
+    const available = [
+      { key: 'default', name: 'Default', desc: 'Standard professional tone', tone: 'Neutral & helpful' },
+      { key: 'tsundere', name: 'Tsundere', desc: 'Feisty with hidden warmth', tone: 'Tsundere' },
+      { key: 'cyberpunk', name: 'Cyberpunk', desc: 'Futuristic hacker aesthetic', tone: 'Neon dystopia' },
+      { key: 'butler', name: 'Butler', desc: 'Formal & refined servant', tone: 'Ultra-polite' },
+      { key: 'sensei', name: 'Sensei', desc: 'Wise mentor & teacher', tone: 'Educational' }
+    ];
+    res.json({ ok: true, current: current || 'default', available });
+  });
+
+  api.post('/guilds/:guildId/settings/persona', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { key } = req.body || {};
+    const valid = ['default', 'tsundere', 'cyberpunk', 'butler', 'sensei'];
+    if (!valid.includes(key)) return res.status(400).json({ ok: false, error: 'Invalid persona key.' });
+    if (db.setGuildPersona) db.setGuildPersona(req.targetGuild.id, key);
+    res.json({ ok: true, message: `Persona set to ${key}.` });
+  });
+
+  // ---------------------------------------------------------------------------
+  // MORNING DISPATCHER
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/settings/morning', requireAuth(client), requireGuildAccess(client), (req, res) => {
+    const cfg = db.getMorningConfig ? db.getMorningConfig(req.targetGuild.id) : {};
+    res.json({ ok: true, enabled: Boolean(cfg.enabled), channelId: cfg.channelId || '', timezone: cfg.timezone || 'Asia/Kolkata' });
+  });
+
+  api.post('/guilds/:guildId/settings/morning', requireAuth(client), requireGuildAccess(client, 'canManageControls'), (req, res) => {
+    const { enabled, channelId, timezone } = req.body || {};
+    if (db.updateMorningConfig) db.updateMorningConfig(req.targetGuild.id, { enabled: Boolean(enabled), channelId: String(channelId || ''), timezone: String(timezone || 'Asia/Kolkata') });
+    res.json({ ok: true, message: 'Morning dispatcher saved.' });
+  });
+
   app.use('/api', api);
 }
+

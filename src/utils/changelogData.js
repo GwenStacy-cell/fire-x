@@ -16,6 +16,40 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.30',
+    headline: 'Full Dashboard Feature Expansion — 18 New Settings Panels',
+    summary: 'The web dashboard now exposes every Tier 1, Tier 2, and Tier 4 feature for direct configuration. All 18 new panels come with live data loading, inline save buttons, role/channel dropdowns, and proper validation — no feature is left out.',
+    whatsNew: [
+      { title: 'Tickets Panel', desc: 'Configure category, staff roles, panel channel, and AI triage toggle directly from the dashboard.' },
+      { title: 'Welcome & Leave Panel', desc: 'Full embed builder for welcome and leave messages — channel, message, embed title, colour, and toggle.' },
+      { title: 'Server Logs Panel', desc: 'Module-by-module toggle grid for all log event types with per-module channel overrides.' },
+      { title: 'AutoRole Panel', desc: 'Set human, bot, and vanity roles + vanity invite string with multi-role support.' },
+      { title: 'Verify Panel', desc: 'Configure verification role, mode (button/captcha/math), and delete verification setup.' },
+      { title: 'Counting Panel', desc: 'View current count, toggle allow-math and auto-topic, and hard-reset the channel count.' },
+      { title: 'Leveling / XP Panel', desc: 'Enable XP, set announce mode, announce channel, command channel, and view the leaderboard.' },
+      { title: 'Giveaways Panel', desc: 'View all active/ended giveaways with winner count, prize, and end-giveaway action.' },
+      { title: 'Reaction Roles Panel', desc: 'List all reaction-role message bindings with one-click delete per binding.' },
+      { title: 'Custom Commands Panel', desc: 'Add and delete custom command aliases mapped to response strings.' },
+      { title: 'Birthday Panel', desc: 'Set the birthday announcement channel and view all registered member birthdays.' },
+      { title: 'YouTube Notifier Panel', desc: 'Add YouTube channel notifiers with custom message, remove existing ones.' },
+      { title: 'Server Stats Panel', desc: 'Bind voice channels for member, bot, booster, and user stat counters.' },
+      { title: 'Economy Panel', desc: 'View economy leaderboard and manage the custom shop item list (add/remove items with role rewards).' },
+      { title: 'Auto React Panel', desc: 'Add per-channel emoji auto-react rules and remove existing ones.' },
+      { title: 'Sticky Messages Panel', desc: 'Set and remove sticky messages per channel with optional footer text.' },
+      { title: 'AI Persona Panel', desc: 'Switch between Default, Tsundere, Cyberpunk, Butler, and Sensei personas with one click.' },
+      { title: 'Morning Dispatcher Panel', desc: 'Enable daily morning messages, set the target channel and timezone.' }
+    ],
+    improvements: [
+      'All settings routes use requireAuth + requireGuildAccess middleware for security.',
+      'Role and channel dropdowns auto-populate from live guild state data.',
+      'Fixed AutoReact element ID mismatch (arReactList → arctRulesList, arAddForm → arctAddBtn).',
+      'Fixed Sticky Messages element ID mismatch (smList → stkyList, smSetForm → stkySaveBtn).',
+      'API GET + POST route pairs added for all 18 feature endpoints in src/web/api.js.'
+    ],
+    fixes: []
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.29',
     headline: 'Guild-Specific Bot Avatar in Sidebar',
     summary: 'The sidebar brand icon now updates to the bot\'s server-specific avatar whenever a guild is switched. If the bot has a custom server profile picture set for that guild, it shows that; otherwise falls back to the global bot avatar.',
