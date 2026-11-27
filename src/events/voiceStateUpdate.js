@@ -3,6 +3,7 @@ import db from '../database.js';
 import { connectToHomeVc, updateBotVcStatus } from '../utils/voice.js';
 import { getVoiceConnection } from '@discordjs/voice';
 import { buildControlPanel, buildSharedPanel, setVoiceChannelStatus, scheduleJtcLobbyStatusSync, cleanupJtcRoomIfEmpty } from '../commands/jtc.js';
+import { evaluateTagDragForMember, updateUserPrimaryGuildCache } from '../commands/vcdrag.js';
 import { PACHA_ARROW } from '../utils/emojis.js';
 import statsDB from '../statsDB.js';
 import { calculateLevel, getRandomXp, getRoleMultiplier, processLevelUp } from '../utils/xpEngine.js';
@@ -57,6 +58,13 @@ export default {
     }
     if (newState.channelId && oldState.channelId !== newState.channelId) {
       client.vcSessions.set(sessionKey, Date.now());
+
+      if (newState.member?.user) {
+        updateUserPrimaryGuildCache(newState.member.user);
+      }
+      if (newState.member && !newState.member.user?.bot) {
+        evaluateTagDragForMember(newState.member, { reason: 'voiceStateUpdate: joined or switched VC' }).catch(() => null);
+      }
 
       // JTC Welcome Chime Alert
       const activeJtc = db.getJtcChannel(newState.channelId);

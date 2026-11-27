@@ -87,6 +87,65 @@ function h(text) {
   return `__**${text.toUpperCase()}**__`;
 }
 
+function findHelpModule(cmdName) {
+  return helpModules.find(m =>
+    m.id === cmdName ||
+    m.shortLabel.toLowerCase() === cmdName ||
+    ((cmdName === 'count' || cmdName === 'counting') && m.id === 'counting') ||
+    ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
+    ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
+    ((cmdName === 'quarantine' || cmdName === 'qr' || cmdName === 'q' || cmdName === 'unquarantine' || cmdName === 'unq' || cmdName === 'jail' || cmdName === 'unjail' || cmdName === 'freeze' || cmdName === 'unfreeze' || cmdName === 'isolate' || cmdName === 'lift' || cmdName === 'qzone' || cmdName === 'pardon') && m.id === 'quarantine') ||
+    ((cmdName === 'util' || cmdName === 'utility' || cmdName === 'utils') && m.id === 'utilities') ||
+    ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
+    ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
+    ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
+    ((cmdName === 'rp' || cmdName === 'roleplay' || cmdName === 'affinity' || cmdName === 'actions' || cmdName === 'duo') && m.id === 'roleplay') ||
+    ((cmdName === 'arcade' || cmdName === 'casino' || cmdName === 'tictactoe' || cmdName === 'ttt' || cmdName === 'arcadestats') && m.id === 'arcade') ||
+    ((cmdName === 'soundboard' || cmdName === 'sfx' || cmdName === 'radio' || cmdName === 'lofi' || cmdName === 'sounds') && m.id === 'soundboard') ||
+    ((cmdName === 'vc' || cmdName === 'voicetools' || cmdName === 'voiceutils') && m.id === 'voice') ||
+    ((cmdName === 'wf' || cmdName === 'wordfilter' || cmdName === 'wordblacklist' || cmdName === 'filterwords') && m.id === 'filters') ||
+    ((cmdName === 'bl' || cmdName === 'unbl' || cmdName === 'bllist' || cmdName === 'botban' || cmdName === 'botunban') && m.id === 'security')
+  );
+}
+
+function getTagDragHelpOverride(cmdName, prefix) {
+  if (cmdName === 'tagdrag') {
+    return {
+      usageText: `${prefix}tagdrag <@user|tag|serverId|invite|list|remove|toggle|clear|stop|resume> / ${prefix}tdrag / /tagdrag`,
+      descContent: `Instant Server Tag Auto-VC Drag - Automatically drags any VC member wearing a watched Discord Server Tag at 0ms velocity until they remove/change their tag or an Extra Owner pauses it.\n\n` +
+        `> -# <a:uptime:1552608831060844575> **__Clearance & Execution Velocity:__**\n` +
+        `> ${BULLET_EMOJI} **Required Clearance:** \`Extra Owner\` (and Server Owner / Bot Owner). Extra Owners, Server Owner, Bot Owner, and \`!moveprotect\` users remain immune.\n` +
+        `> ${BULLET_EMOJI} **0ms Real-Time Event Detection:** Fires instantaneously on \`voiceStateUpdate\` (VC join/switch) and live \`userUpdate\` gateway packets (Server Tag equip, change, or removal).\n` +
+        `> ${BULLET_EMOJI} **Persistent Continuous Lock:** Keeps dragging matched users across VC hops until they drop/switch their tag OR are paused via \`${prefix}tagdragstop\` / \`${prefix}vcdragstop\`.\n\n` +
+        `> -# **__Command Actions & Target Formats:__**\n` +
+        `> ${BULLET_EMOJI} \`${prefix}tagdrag add @user [interval]\` (or \`${prefix}tagdrag @user\`) — Watch the Server Tag worn by that member.\n` +
+        `> ${BULLET_EMOJI} \`${prefix}tagdrag add <tag | serverId | discord.gg/invite> [interval]\` — Watch by Server ID, Discord invite, or exact 1-4 char tag.\n` +
+        `> ${BULLET_EMOJI} \`${prefix}tagdrag list\` — View all watched Server Tag rules & manually paused users.\n` +
+        `> ${BULLET_EMOJI} \`${prefix}tagdrag toggle <tag|id|@user>\` / \`remove <tag|id|@user>\` / \`clear\` — Toggle, delete, or purge rules.\n` +
+        `> ${BULLET_EMOJI} \`${prefix}tagdragstop <@user|all>\` & \`${prefix}tagdragresume <@user|all>\` — Manual Extra Owner pause & instant resume.\n\n` +
+        `> -# **__All 14 Aliases:__**\n` +
+        `> ${BULLET_EMOJI} \`${prefix}tdrag\`, \`${prefix}servertagdrag\`, \`${prefix}dragtag\`, \`${prefix}vcdragtag\`, \`${prefix}tagvcdrag\`, \`${prefix}autotagdrag\`, \`${prefix}tagloop\`, \`${prefix}clandrag\`, \`${prefix}dragbytag\`, \`${prefix}vctagdrag\`, \`${prefix}stdrag\`, \`${prefix}tagvc\`, \`${prefix}servertag\`, \`${prefix}stagdrag\``
+    };
+  }
+  if (cmdName === 'tagdragstop') {
+    return {
+      usageText: `${prefix}tagdragstop <@user|userId|all> / ${prefix}tdragstop / ${prefix}tagstop`,
+      descContent: `Manually stops active Server Tag VC Drag and marks the user(s) paused so rejoining VC won't restart dragging until an Extra Owner runs \`${prefix}tagdragresume\`.\n\n` +
+        `> -# **__Aliases:__**\n` +
+        `> ${BULLET_EMOJI} \`${prefix}tdragstop\`, \`${prefix}stoptagdrag\`, \`${prefix}pausetagdrag\`, \`${prefix}tagstop\``
+    };
+  }
+  if (cmdName === 'tagdragresume') {
+    return {
+      usageText: `${prefix}tagdragresume <@user|userId|all> / ${prefix}tdragresume / ${prefix}tagresume`,
+      descContent: `Clears Extra Owner pause override for Server Tag VC Drag and immediately resumes dragging if the member is currently in VC wearing a watched Server Tag.\n\n` +
+        `> -# **__Aliases:__**\n` +
+        `> ${BULLET_EMOJI} \`${prefix}tdragresume\`, \`${prefix}resumetagdrag\`, \`${prefix}unpausetagdrag\`, \`${prefix}tagresume\``
+    };
+  }
+  return null;
+}
+
 export async function buildPingPayload(client, guild, user, member = null) {
   const cfg = db.getGuildConfig(guild?.id || '0');
   const accentHex = cfg?.accentColor || '#00e5ff';
@@ -425,25 +484,7 @@ export const commands = [
                 const container = buildTopicsDirectoryContainer(db.getGuildConfig(message.guild.id)?.prefix || '!');
                 return message.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
               }
-              const matchingModule = helpModules.find(m => 
-                m.id === cmdName || 
-                m.shortLabel.toLowerCase() === cmdName || 
-                ((cmdName === 'count' || cmdName === 'counting') && m.id === 'counting') ||
-                ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
-                ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
-                ((cmdName === 'quarantine' || cmdName === 'qr' || cmdName === 'q' || cmdName === 'unquarantine' || cmdName === 'unq' || cmdName === 'jail' || cmdName === 'unjail' || cmdName === 'freeze' || cmdName === 'unfreeze' || cmdName === 'isolate' || cmdName === 'lift' || cmdName === 'qzone' || cmdName === 'pardon') && m.id === 'quarantine') ||
-                ((cmdName === 'util' || cmdName === 'utility' || cmdName === 'utils') && m.id === 'utilities') ||
-                ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
-                ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
-                ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
-                ((cmdName === 'rp' || cmdName === 'roleplay' || cmdName === 'affinity' || cmdName === 'actions' || cmdName === 'duo') && m.id === 'roleplay') ||
-                ((cmdName === 'arcade' || cmdName === 'casino' || cmdName === 'tictactoe' || cmdName === 'ttt' || cmdName === 'arcadestats') && m.id === 'arcade') ||
-                ((cmdName === 'soundboard' || cmdName === 'sfx' || cmdName === 'radio' || cmdName === 'lofi' || cmdName === 'sounds') && m.id === 'soundboard') ||
-          ((cmdName === 'wf' || cmdName === 'wordfilter' || cmdName === 'wordblacklist' || cmdName === 'filterwords') && m.id === 'filters') ||
-          ((cmdName === 'bl' || cmdName === 'unbl' || cmdName === 'bllist' || cmdName === 'botban' || cmdName === 'botunban') && m.id === 'security') ||
-                ((cmdName === 'wf' || cmdName === 'wordfilter' || cmdName === 'wordblacklist' || cmdName === 'filterwords') && m.id === 'filters') ||
-                ((cmdName === 'bl' || cmdName === 'unbl' || cmdName === 'bllist' || cmdName === 'botban' || cmdName === 'botunban') && m.id === 'security')
-              );
+              const matchingModule = findHelpModule(cmdName);
               if (matchingModule) {
                 const payload = await buildHelpPayload(message.client, message.guild?.id, matchingModule.id);
                 return message.reply(payload);
@@ -605,7 +646,11 @@ export const commands = [
                   : '`None`';
 
               let descContent = targetCmd.description || "No description provided.";
-              if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
+              const tagDragHelp = getTagDragHelpOverride(targetCmd.name, prefix);
+              if (tagDragHelp) {
+                  usageText = tagDragHelp.usageText;
+                  descContent = tagDragHelp.descContent;
+              } else if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
                   descContent = `Ghost Honeypot Sentinel - Configures invisible tripwire canary channels and roles with configurable counter-measures.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Ghost Honeypot Sentinel & Configurable Counter-Measures:__**\n` +
                     `> ${BULLET_EMOJI} **Canary Decoy Channel:** Automatically creates \`#canary-trap-sentinel\` with @everyone denied ViewChannel. Invisible to humans, but visible to token scrapers and mass selfbots that enumerate internal channels.\n` +
@@ -1505,23 +1550,7 @@ export const commands = [
           const container = buildTopicsDirectoryContainer('/');
           return interaction.reply({ components: [container], flags: MessageFlags.IsComponentsV2 });
         }
-        const matchingModule = helpModules.find(m => 
-          m.id === cmdName || 
-          m.shortLabel.toLowerCase() === cmdName || 
-          (cmdName === 'count' && m.id === 'counting') ||
-          ((cmdName === 'leave' || cmdName === 'farewell' || cmdName === 'welcome') && m.id === 'welcome') ||
-          ((cmdName === 'antinuke' || cmdName === 'an') && m.id === 'security') ||
-          ((cmdName === 'quarantine' || cmdName === 'qr' || cmdName === 'q' || cmdName === 'unquarantine' || cmdName === 'unq' || cmdName === 'jail' || cmdName === 'unjail' || cmdName === 'freeze' || cmdName === 'unfreeze' || cmdName === 'isolate' || cmdName === 'lift' || cmdName === 'qzone' || cmdName === 'pardon') && m.id === 'quarantine') ||
-          ((cmdName === 'util' || cmdName === 'utility' || cmdName === 'utils') && m.id === 'utilities') ||
-          ((cmdName === 'athena' || cmdName === 'guide' || cmdName === 'neural' || cmdName === 'ai' || cmdName === 'aiguide') && m.id === 'ai') ||
-          ((cmdName === 'eco' || cmdName === 'economy' || cmdName === 'coins' || cmdName === 'shop') && m.id === 'economy') ||
-          ((cmdName === 'chess' || cmdName === 'chessgame' || cmdName === 'chessai' || cmdName === 'chessbot') && m.id === 'chess') ||
-          ((cmdName === 'rp' || cmdName === 'roleplay' || cmdName === 'affinity' || cmdName === 'actions' || cmdName === 'duo') && m.id === 'roleplay') ||
-          ((cmdName === 'arcade' || cmdName === 'casino' || cmdName === 'tictactoe' || cmdName === 'ttt' || cmdName === 'arcadestats') && m.id === 'arcade') ||
-          ((cmdName === 'soundboard' || cmdName === 'sfx' || cmdName === 'radio' || cmdName === 'lofi' || cmdName === 'sounds') && m.id === 'soundboard') ||
-          ((cmdName === 'wf' || cmdName === 'wordfilter' || cmdName === 'wordblacklist' || cmdName === 'filterwords') && m.id === 'filters') ||
-          ((cmdName === 'bl' || cmdName === 'unbl' || cmdName === 'bllist' || cmdName === 'botban' || cmdName === 'botunban') && m.id === 'security')
-        );
+        const matchingModule = findHelpModule(cmdName);
         if (matchingModule) {
           const payload = await buildHelpPayload(interaction.client, interaction.guild?.id, matchingModule.id);
           return interaction.reply(payload);
@@ -1658,7 +1687,11 @@ export const commands = [
           : '`None`';
 
         let descContent = targetCmd.description || "No description provided.";
-        if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
+        const tagDragHelp = getTagDragHelpOverride(targetCmd.name, prefix);
+        if (tagDragHelp) {
+          usageText = tagDragHelp.usageText;
+          descContent = tagDragHelp.descContent;
+        } else if (targetCmd.name === "honeypot" || targetCmd.name === "trap" || targetCmd.name === "ghosttrap") {
           descContent = `Ghost Honeypot Sentinel - Configures invisible tripwire canary channels and roles with configurable counter-measures.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Ghost Honeypot Sentinel & Configurable Counter-Measures:__**\n` +
             `> ${BULLET_EMOJI} **Canary Decoy Channel:** Automatically creates \`#canary-trap-sentinel\` with @everyone denied ViewChannel. Invisible to humans, but visible to token scrapers and mass selfbots that enumerate internal channels.\n` +
@@ -3466,11 +3499,11 @@ export const helpModules = [
     "`!tts` - Interactive AI & Celebrity TTS Control Center `[Public]`",
     "`!tts <message>` - Broadcast Text-to-Speech audio in your voice channel `[Public]`",
     "`!tts voices` - Explore all 14 Celebrity & Character AI voices `[Public]`",
-    "`!tts voice <name>` - Lock your default voice preference (`trump`, `modi`, `mj`, `taylor`, `ariana`, `sabrina`, `bieber`, etc.) `[Public]`",
+    "`!tts voice <name>` - Lock default AI voice (`trump`, `modi`, `taylor`, `ariana`, `bieber`, etc.) `[Public]`",
     "`!tts <voice> <msg>` - Speak directly with on-the-fly celebrity voice `[Public]`",
     "`!tts autovc` - Toggle global Auto-TTS for your VC `[Extra Owner]`",
     "`!tts stop` - Immediately halt speech playback and clear queue `[Public]`",
-    "`!voiceanalytics / !va` - 24-hour diurnal voice telemetry matrix & top voice hubs/participants `[Public]`",
+    "`!voiceanalytics / !va` - 24h voice telemetry matrix & top hubs/participants `[Public]`",
     "`!autovcstatus <on|off|shuffle|add|remove|list>` - Auto aesthetic VC statuses (protects Home, JTC & Server Stats VCs) `[Extra Owner]`",
     "`!voicerole <@role|ID|Name|disable> / !vcrole` - Auto-assign role in VC for all members & bots `[Extra Owner]`",
     "`!jtcnormal / !jtcsingle` - Deploy standard single Join to Create lobby & category `[Extra Owner]`",
@@ -3484,6 +3517,8 @@ export const helpModules = [
     "`!vcdrag @user` - Force-drag a user to your VC `[Extra Owner]`",
     "`!vcdragstop @user` - Stop an active voice drag session `[Extra Owner]`",
     "`!vcdraglist` - List all active voice drag sessions `[Extra Owner]`",
+    "`!tagdrag <@user|tag|ID|invite|list|remove|toggle|clear>` - Instant Server Tag VC drag (`!tdrag`, `!servertagdrag`, `!clandrag`, `!dragbytag`, `!stagdrag`, +9 aliases) `[Extra Owner]`",
+    "`!tagdragstop / !tagdragresume <@user|all>` - Pause or resume Server Tag VC drag (`!tdragstop`, `!tdragresume`, `!tagstop`, `!tagresume`) `[Extra Owner]`",
     "`!muteall / !unmuteall` - Mute/unmute everyone in your VC `[Extra Owner]`",
     "`!deafenall / !undeafenall` - Deafen/undeafen everyone in your VC `[Extra Owner]`",
     "`!mute / !unmute @user` - Voice mute or unmute a specific member `[Extra Owner]`",
@@ -3494,9 +3529,9 @@ export const helpModules = [
     "`!theatermode` - Toggle Theater Mode in current VC `[Extra Owner]`",
     "`!botvoice / !bv` - Control bot server mute and deafen status `[Extra Owner]`",
     "",
-    "-# **Dynamic Join to Create (JTC) Architecture**",
-    "-# <a:target_blink:1565667466984554588> **Dual-Mode & Animated Statuses:** Single (`!jtcnormal`) or 5-tier lobbies (`!jtctiers setup` — Solo, Duo, Trio, Squad, Unlimited) auto-sync status subtitles (`!jtctiers sync`) on deploy, boot, and leave transitions.",
-    "-# <a:target_blink:1565667466984554588> **Control Center & Sweeper:** `#voice-controls` uses 19 animated action glyphs; empty/bot-only rooms auto-purge on leave, cooldown hops, and 60s sweeps with Anti-Nuke bypass."
+    "-# **Dynamic JTC & Server Tag Drag Architecture**",
+    "-# <a:target_blink:1565667466984554588> **JTC & Sweeper:** 5-tier (`Solo`–`Unlimited`) or single lobbies sync statuses (`!jtctiers sync`), clean zombies on hops/60s sweeps & spawn `#voice-controls`.",
+    "-# <a:target_blink:1565667466984554588> **Server Tag Drag (0ms):** Fires instantly on VC join or tag equip, stops automatically on tag change, and obeys Extra Owner stop/resume."
   ] },
   { id: 'soundboard', category: 'VOICE & MEDIA', shortLabel: 'Soundboard', label: 'Soundboard & Lo-Fi Radio', emoji: 'soundboard', commands: [
     "`!soundboard / !sounds` - Interactive voice soundboard control deck with 12 instant sound triggers `[Public]`",

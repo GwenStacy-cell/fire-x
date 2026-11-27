@@ -3259,6 +3259,126 @@ class Database {
     this.save();
   }
 
+  // --- Server Tag VC Drag Rules & Extra-Owner Pause State ---
+  getTagDragConfig(guildId) {
+    const guildCfg = this.getGuildConfig(guildId);
+    if (!guildCfg.tagVcDrags || typeof guildCfg.tagVcDrags !== 'object') {
+      guildCfg.tagVcDrags = { rules: [], pausedUsers: {} };
+    }
+    if (!Array.isArray(guildCfg.tagVcDrags.rules)) guildCfg.tagVcDrags.rules = [];
+    if (!guildCfg.tagVcDrags.pausedUsers || typeof guildCfg.tagVcDrags.pausedUsers !== 'object') {
+      guildCfg.tagVcDrags.pausedUsers = {};
+    }
+    return guildCfg.tagVcDrags;
+  }
+
+  addTagDragRule(guildId, { identityGuildId = null, tag = null, guildName = null, intervalSec = 2, addedBy = null }) {
+    const cfg = this.getTagDragConfig(guildId);
+    const normGuildId = identityGuildId ? String(identityGuildId).trim() : null;
+    const normTag = tag ? String(tag).trim().toUpperCase().slice(0, 4) : null;
+    const normInterval = Math.min(Math.max(parseInt(intervalSec, 10) || 2, 1), 60);
+    const ruleId = normGuildId || `TAG:${normTag}`;
+
+    const existing = cfg.rules.find(
+      (r) =>
+        (normGuildId && (r.identityGuildId === normGuildId || r.id === normGuildId)) ||
+        (!normGuildId && !r.identityGuildId && normTag && r.tag === normTag)
+    );
+
+    if (existing) {
+      if (normTag) existing.tag = normTag;
+      if (guildName) existing.guildName = guildName;
+      existing.intervalSec = normInterval;
+      existing.enabled = true;
+      existing.updatedAt = Date.now();
+      this.save();
+      return { created: false, rule: existing };
+    }
+
+    const rule = {
+      id: ruleId,
+      identityGuildId: normGuildId,
+      tag: normTag,
+      guildName: guildName || null,
+      intervalSec: normInterval,
+      enabled: true,
+      addedBy: addedBy || null,
+      addedAt: Date.now()
+    };
+    cfg.rules.push(rule);
+    this.save();
+    return { created: true, rule };
+  }
+
+  removeTagDragRule(guildId, query) {
+    const cfg = this.getTagDragConfig(guildId);
+    const raw = String(query || '').trim();
+    const upper = raw.toUpperCase();
+    const idx = cfg.rules.findIndex(
+      (r) =>
+        r.id === raw ||
+        r.identityGuildId === raw ||
+        (r.tag && r.tag.toUpperCase() === upper) ||
+        `TAG:${upper}` === r.id
+    );
+    if (idx === -1) return null;
+    const [removed] = cfg.rules.splice(idx, 1);
+    this.save();
+    return removed;
+  }
+
+  toggleTagDragRule(guildId, query) {
+    const cfg = this.getTagDragConfig(guildId);
+    const raw = String(query || '').trim();
+    const upper = raw.toUpperCase();
+    const rule = cfg.rules.find(
+      (r) =>
+        r.id === raw ||
+        r.identityGuildId === raw ||
+        (r.tag && r.tag.toUpperCase() === upper) ||
+        `TAG:${upper}` === r.id
+    );
+    if (!rule) return null;
+    rule.enabled = !rule.enabled;
+    this.save();
+    return rule;
+  }
+
+  clearTagDragRules(guildId) {
+    const cfg = this.getTagDragConfig(guildId);
+    const count = cfg.rules.length;
+    cfg.rules = [];
+    cfg.pausedUsers = {};
+    this.save();
+    return count;
+  }
+
+  pauseTagDragUser(guildId, userId, stoppedBy = null, reason = 'Manually stopped by Extra Owner') {
+    if (!guildId || !userId) return;
+    const cfg = this.getTagDragConfig(guildId);
+    cfg.pausedUsers[userId] = { stoppedBy, stoppedAt: Date.now(), reason };
+    this.save();
+  }
+
+  resumeTagDragUser(guildId, userIdOrAll) {
+    const cfg = this.getTagDragConfig(guildId);
+    if (String(userIdOrAll).toLowerCase() === 'all') {
+      const keys = Object.keys(cfg.pausedUsers);
+      cfg.pausedUsers = {};
+      this.save();
+      return keys;
+    }
+    if (!cfg.pausedUsers[userIdOrAll]) return [];
+    delete cfg.pausedUsers[userIdOrAll];
+    this.save();
+    return [userIdOrAll];
+  }
+
+  isTagDragUserPaused(guildId, userId) {
+    if (!guildId || !userId) return false;
+    return Boolean(this.cache.guilds?.[guildId]?.tagVcDrags?.pausedUsers?.[userId]);
+  }
+
   // --- Counting Engine ---
   getCounting(guildId) {
     if (!this.cache.counting) this.cache.counting = {};

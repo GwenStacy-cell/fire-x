@@ -16,6 +16,36 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '27 November 2026',
+    version: 'v4.0.16',
+    headline: '0ms Server Tag Auto-VC Drag (!tagdrag), Live userUpdate Detection & Extra Owner Pause/Resume',
+    summary: 'Added instant zero-delay Server Tag VC dragging (!tagdrag + 14 aliases), real-time userUpdate & voiceStateUpdate triggers, automatic stop on tag change/removal, Extra Owner manual stop/resume controls, and updated !help documentation.',
+    whatsNew: [
+      {
+        title: 'Instant 0ms Server Tag VC Drag Engine (!tagdrag / !tdrag / !servertagdrag / !clandrag)',
+        desc: 'Watch any Server Tag via @user, 1-4 char tag text, Server ID, or discord.gg invite. Members wearing a watched tag are dragged instantaneously at 0ms upon joining/switching VC (voiceStateUpdate) or equipping the tag live in VC (userUpdate) — zero 30-60s waiting.'
+      },
+      {
+        title: 'Auto-Stop on Tag Change + Extra Owner Manual Pause & Resume (!tagdragstop / !tagdragresume)',
+        desc: 'Dragging stops automatically the moment a member removes or switches their Server Tag. If an Extra Owner/Server Owner manually stops drag (!tagdragstop / !vcdragstop), the user stays paused across VC rejoins until !tagdragresume (or !tagdrag resume) is invoked.'
+      }
+    ],
+    improvements: [
+      {
+        title: '14 Aliases for !tagdrag + !help Voice & Command Cards',
+        desc: 'Added 14 conflict-free aliases (!tdrag, !servertagdrag, !dragtag, !vcdragtag, !tagvcdrag, !autotagdrag, !tagloop, !clandrag, !dragbytag, !vctagdrag, !stdrag, !tagvc, !servertag, !stagdrag) plus stop/resume aliases documented directly in !help and !help voice.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Registered userUpdate Event & Per-Guild Tag Drag Database Schema',
+        desc: 'Registered src/events/userUpdate.js in index.js and added persistent per-guild tagVcDrags rule and pausedUsers tracking in database.js with full startup recovery.'
+      }
+    ],
+    tip: 'Use !tagdrag @user (or !clandrag <tag|invite>) while in or out of VC — members wearing that Server Tag are dragged immediately!',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '27 November 2026',
     version: 'v4.0.15',
     headline: 'Redesigned !help Command Matrix UI, Ownership Clearance Card & Worker Banner',
     summary: 'Upgraded !help / /help to the Athena Obsidian Components V2 UI with Bot Avatar accessory, prominent Athena Ownership Clearance Model, compact domain grid, un-underlined module pages, and cached off-thread Canvas banner.',
