@@ -16,6 +16,20 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.29',
+    headline: 'Guild-Specific Bot Avatar in Sidebar',
+    summary: 'The sidebar brand icon now updates to the bot\'s server-specific avatar whenever a guild is switched. If the bot has a custom server profile picture set for that guild, it shows that; otherwise falls back to the global bot avatar.',
+    whatsNew: [
+      {
+        title: 'Per-Guild Bot Avatar',
+        desc: 'guild state API now returns botGuildAvatar via botMe.displayAvatarURL() (which returns the guild avatar if set, global avatar otherwise). app.js injects it into the sidebar on every guild switch.'
+      }
+    ],
+    improvements: [],
+    fixes: []
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.28',
     headline: 'Bot Avatar in Sidebar Brand Header',
     summary: 'The dashboard sidebar now shows the bot\'s real Discord avatar in the brand icon slot (top-left) instead of the security icon. Falls back gracefully to the icon if the avatar hasn\'t loaded.',

@@ -411,6 +411,8 @@ export function registerDashboardRoutes(app, client) {
         roleCount: guild.roles.cache.size,
         ownerId: guild.ownerId,
         shardId,
+        // Guild-specific bot avatar (server profile pic if set, else global avatar)
+        botGuildAvatar: botMe?.displayAvatarURL({ size: 64, forceStatic: false }) || client?.user?.displayAvatarURL?.({ size: 64 }) || null,
         hierarchy: {
           botPos,
           maxPos,

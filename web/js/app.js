@@ -325,6 +325,14 @@
     document.getElementById('sidebarMemberCount').textContent = `${guild.memberCount.toLocaleString()} members`;
     document.getElementById('sidebarLatency').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span>${telemetry.wsPingMs}ms</span>`;
 
+    // Update sidebar brand icon to guild-specific bot avatar (server profile pic if set)
+    if (guild.botGuildAvatar) {
+      const img = document.getElementById('sidebarBotAvatar');
+      const fallback = document.getElementById('sidebarBotAvatarFallback');
+      if (img) { img.src = guild.botGuildAvatar; img.style.display = ''; }
+      if (fallback) fallback.style.display = 'none';
+    }
+
     // Top Header Status Pills
     const shieldPill = document.getElementById('hdrShieldPill');
     const shieldLabel = document.getElementById('hdrShieldLabel');
