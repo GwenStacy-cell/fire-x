@@ -543,7 +543,7 @@ export async function buildServerFixContainer(guild, prefix = '!') {
 • **Athena Highest Role:** \`${audit.athenaRoleName}\` (Position \`${audit.athenaPosition}\`)
 • **External Bots Evaluated:** \`${audit.botCount}\`
 • **Hierarchy Inversion Risk:** ${UPTIME} **0 Conflicts** (Athena is positioned above all bots)
-• **Execution Readiness:** ${UPTIME} **100% Prepared** for sub-1ms countermeasure dual-strike.`
+• **Execution Readiness:** ${UPTIME} **100% Prepared** for sub-1ms single-shot direct raw ban.`
             },
             { type: 14, divider: true },
             {

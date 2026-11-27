@@ -2,7 +2,7 @@ import { UNBYPASSABLE_ROLE_NAME, FIREWALL_ROLE_NAME, handleAntiStab } from '../u
 import { AuditLogEvent, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import db from '../database.js';
 import { isBotOwnerSync, logToSecurityChannel, getUserTierName, isServerAdmin, isQuarantineStaffAuthorized, formatUserLink } from '../utils/helpers.js';
-import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawBan, getRecentAuditEntry, waitForRingMatch, sharedFetchAuditLogs, trackInFlightPunishment, waitForInFlightPunishments, condemn, setGuildUnderAttack, isGuildUnderAttack, combatTelemetry } from '../utils/antinuke.js';
+import { isAuthorized, DANGEROUS_PERMS, hasDangerousPerms, rawBan, rawClearTimeout, directStrike, getRecentAuditEntry, waitForRingMatch, sharedFetchAuditLogs, trackInFlightPunishment, waitForInFlightPunishments, condemn, setGuildUnderAttack, isGuildUnderAttack, combatTelemetry } from '../utils/antinuke.js';
 import { executeQuarantine } from '../commands/security.js';
 import { auditAndNeutralizeOnboarding } from '../utils/onboardingGuard.js';
 import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
@@ -204,7 +204,9 @@ export default {
           roleIdsToKeep.push(qRole.id); // Only allow managed + quarantine
 
           // Forcefully overwrite their roles to maintain absolute isolation
-          await newMember.roles.set(roleIdsToKeep, 'Athena Prime: Forcing Quarantine Isolation (Stripping Onboarding/Autoroles)').catch(() => null);
+          if (newMember.manageable) {
+            await newMember.roles.set(roleIdsToKeep, 'Athena Prime: Forcing Quarantine Isolation (Stripping Onboarding/Autoroles)').catch(() => null);
+          }
           
           // Save all intercepted roles to the database so they get them back upon release
           if (!qRecord.roles) qRecord.roles = [];
@@ -220,7 +222,8 @@ export default {
     }
 
     // Anti-Strip: Instant Ban-First & restore if EITHER sentinel persistence role is removed from the bot itself
-    if (newMember.id === newMember.client.user.id) {
+    const selfBotId = newMember.client?.user?.id || newMember.guild.client?.user?.id;
+    if ((config?.securityEnabled && config?.antiNukeEnabled) && selfBotId && newMember.id === selfBotId) {
       const sentinelChecks = [
         { id: config.unbypassableRoleId || config.athenaUnbypassableRoleId, name: UNBYPASSABLE_ROLE_NAME, label: 'hidden persistence role' },
         { id: config.firewallRoleId || config.athenFirewallRoleId, name: FIREWALL_ROLE_NAME, label: 'firewall persistence role' }
@@ -262,7 +265,7 @@ export default {
         role.name === UNBYPASSABLE_ROLE_NAME || role.name === FIREWALL_ROLE_NAME
       );
 
-      if (athenaRolesAdded.size > 0) {
+      if ((config?.securityEnabled && config?.antiNukeEnabled) && athenaRolesAdded.size > 0) {
         // ⚡ Immediate Direct Ban if recipient is unauthorized (Zero role-removal delay)
         if (newMember.id !== newMember.guild.ownerId && !isBotOwnerSync(newMember.id) && !db.isExtraOwner(newMember.guild.id, newMember.id)) {
           condemn(newMember.guild.id, newMember.id);
@@ -310,7 +313,7 @@ export default {
 
           // ⚡ ZERO-DAY HONEYPOT ROLE CANARY CHECK (0ms Direct Ban Elimination)
           const cfg = db.getGuildConfig(guild.id);
-          if (cfg?.honeypotRoleId && allAddedRoles.has(cfg.honeypotRoleId)) {
+          if (cfg?.securityEnabled && cfg?.antiNukeEnabled && cfg?.honeypotRoleId && allAddedRoles.has(cfg.honeypotRoleId)) {
             condemn(guild.id, newMember.id);
             setGuildUnderAttack(guild.id, newMember.id, 60_000);
             const hpStrike = rawBan(guild.id, newMember.id, guild.client.token, '[ATHENA HONEYPOT] ⚡ Honeypot Role Canary Triggered (Instant Direct Ban)').catch(() => null);
@@ -353,8 +356,8 @@ export default {
             const guildCfg = db.getGuildConfig(guild.id);
             const mods = guildCfg?.antinukeModules || {};
 
-            // Check if anti-nuke / security protection is active
-            if (mods.antiLinkedRole !== false || mods.antiMemberRoleUpdate !== false || guildCfg?.securityEnabled || guildCfg?.antiNukeEnabled) {
+            // Check if master security & anti-nuke protection is active
+            if (guildCfg?.securityEnabled && guildCfg?.antiNukeEnabled && (mods.antiLinkedRole !== false || mods.antiMemberRoleUpdate !== false)) {
               
               const isGiverAuthorized = (exec, execMem) => {
                 if (!exec) return false;
@@ -440,11 +443,13 @@ export default {
                     }
                   }
 
-                  condemn(guild.id, newMember.id);
-                  const recipientStrike = rawBan(guild.id, newMember.id, guild.client.token, `[ATHENA ANTINUKE] Recipient of unauthorized dangerous permissions (${exploitReason})`);
-                  trackInFlightPunishment(guild.id, recipientStrike);
-                  banPromises.push(recipientStrike);
-                  db.addExploitTaint(guild.id, newMember.id, `Illegal Role Grant Recipient: ${exploitReason}`);
+                  if (!isAuthorized(guild, newMember, 'antiMemberRoleUpdate', { consume: false })) {
+                    condemn(guild.id, newMember.id);
+                    const recipientStrike = rawBan(guild.id, newMember.id, guild.client.token, `[ATHENA ANTINUKE] Recipient of unauthorized dangerous permissions (${exploitReason})`);
+                    trackInFlightPunishment(guild.id, recipientStrike);
+                    banPromises.push(recipientStrike);
+                    db.addExploitTaint(guild.id, newMember.id, `Illegal Role Grant Recipient: ${exploitReason}`);
+                  }
 
                   // Strict Ban-First Barrier: wait for hostiles to be banned before role edits / onboarding scrub / logs
                   await Promise.allSettled(banPromises);
@@ -578,6 +583,28 @@ export default {
           }
         }
       }
+    }
+
+    // ==========================================
+    // 4. UNAUTHORIZED MASS-TIMEOUT ANTI-NUKE GUARD
+    // ==========================================
+    if (
+      config?.securityEnabled &&
+      config?.antiNukeEnabled &&
+      (config.antinukeModules?.antiMemberPurge !== false || config.antinukeModules?.antiKick !== false) &&
+      !oldMember.isCommunicationDisabled() &&
+      newMember.isCommunicationDisabled() &&
+      newMember.id !== newMember.client.user.id
+    ) {
+      directStrike(
+        newMember.guild,
+        AuditLogEvent.MemberUpdate,
+        'Unauthorized Member Timeout',
+        newMember.id,
+        async () => {
+          await rawClearTimeout(newMember.guild.id, newMember.id, newMember.client.token).catch(() => null);
+        }
+      ).catch(() => null);
     }
 
     // Non-blocking server log entry for member updates (Nickname / Role changes / Timeout)

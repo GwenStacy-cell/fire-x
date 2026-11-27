@@ -4,6 +4,7 @@ import {
   directStrike, 
   triggerSnapshotSync, 
   isRestorationHandled, 
+  isPendingSelfCreate,
   rawChannelDelete,
   isGuildUnderAttack,
   waitForInFlightPunishments
@@ -18,7 +19,12 @@ export default {
     if (!channel.guild) return;
 
     // ⚡ Ignore channels created by Athena's restoration engine or JTC infrastructure
-    if (isRestorationHandled(channel.id) || db.isJtcChannel(channel.id) || db.isJtcInfrastructure(channel.guild.id, channel.id)) return;
+    if (
+      isRestorationHandled(channel.id) ||
+      isPendingSelfCreate(channel.guild.id, 'channel', channel.name, true) ||
+      db.isJtcChannel(channel.id) ||
+      db.isJtcInfrastructure(channel.guild.id, channel.id)
+    ) return;
 
     // ⚡ DIRECT STRIKE FIRST — fire the moment channel hits gateway
     directStrike(

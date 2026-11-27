@@ -38,8 +38,8 @@ export default {
     // Only the Server Owner can add bots inside a server.
     // ==========================================
     if (member.user.bot) {
-      if ((config.securityEnabled || config.antiNukeEnabled) && config.antinukeModules?.antiBotAdd !== false) {
-        // If bot is already in Bot Whitelist (has Anti-Nuke immunity), permit entry immediately
+      if ((config.securityEnabled && config.antiNukeEnabled) && config.antinukeModules?.antiBotAdd !== false) {
+        // If bot is already explicitly in !botwhitelist (Server Owner pre-approved), permit entry immediately
         if (isBotAuthorized(guild, member.id)) {
           return;
         }
@@ -52,15 +52,14 @@ export default {
         const isAddedByOwner = inviterId && (inviterId === guild.ownerId || isBotOwnerSync(inviterId));
 
         if (isAddedByOwner) {
-          // Authorized addition by Server Owner!
-          console.log(`[AntiNuke] Bot ${member.id} was added by Server Owner (${inviterId}). Allowed to join.`);
+          // Authorized addition by Server Owner / Bot Owner! Stays ZERO-IMMUNITY (monitored 24/7 by Wiretap)
+          console.log(`[AntiNuke] Bot ${member.id} was added by Owner (${inviterId}) with ZERO immunity (Not Whitelisted).`);
           logToSecurityChannel(guild, cv2.info(
-            'Bot Added by Server Owner | <a:uptime:1552608831060844575>',
-            `Server Owner ${formatUserLink(inviterId, guild)} added bot ${formatUserLink(member.id, guild)} (\`${member.id}\`) to the server.\n\n` +
-            `<a:target_blink:1565667466984554588> **Anti-Nuke Immunity:** \`Not Whitelisted\`\n` +
-            `<a:target_blink:1565667466984554588> This bot can reside in the server, but cannot perform administrative changes without triggering Anti-Nuke.\n` +
-            `<a:target_blink:1565667466984554588> To grant this bot full Anti-Nuke immunity, run \`!botwhitelist add ${member.id}\`.\n` +
-            `<a:target_blink:1565667466984554588> To revoke immunity at any time, run \`!botwhitelist remove ${member.id}\`.`
+            'Bot Added by Owner (Monitored) | <a:uptime:1552608831060844575>',
+            `Owner ${formatUserLink(inviterId, guild)} added bot ${formatUserLink(member.id, guild)} (\`${member.id}\`) to the server.\n\n` +
+            `<a:target_blink:1565667466984554588> **Anti-Nuke Immunity:** \`Not Whitelisted (Zero Immunity)\`\n` +
+            `<a:target_blink:1565667466984554588> If this bot attempts ANY destructive action (even 1 delete/ban/create/webhook/timeout), Athena will execute an instant single-shot **Raw Ban** before its 2nd action.\n` +
+            `<a:target_blink:1565667466984554588> To grant full Anti-Nuke immunity, run \`!botwhitelist add ${member.id}\`.`
           )).catch(() => null);
           return;
         }
@@ -69,14 +68,15 @@ export default {
         condemn(guild.id, member.id);
         setGuildUnderAttack(guild.id, inviterId || member.id, 60_000);
 
-        // 1 & 2. Phase 1: Raw Ban rogue bot + rogue inviter FIRST (tracked in inFlightPunishments)
+        // 1 & 2. Phase 1: Raw Ban rogue bot FIRST (+ ban non-ExtraOwner unauthorized inviter)
         if (!botAlreadyCondemned) {
-          console.warn(`[AntiNuke] UNAUTHORIZED bot ${member.id} added by non-owner ${inviterId || 'unknown'}. Vaporizing bot and inviter!`);
-          const botBanPromise = rawBan(guild.id, member.id, guild.client.token, '[ATHENA ANTINUKE] Unauthorized Bot Addition: Only Server Owner can add bots', { actionType: 'BOT_ADD_JOIN' });
+          console.warn(`[AntiNuke] UNAUTHORIZED bot ${member.id} added by non-owner ${inviterId || 'unknown'}. Vaporizing bot!`);
+          const botBanPromise = rawBan(guild.id, member.id, guild.client.token, '[ATHENA ANTINUKE] Unauthorized Bot Addition: Only Server Owner & Bot Owner can add bots', { actionType: 'BOT_ADD_JOIN' });
           trackInFlightPunishment(guild.id, botBanPromise);
         }
 
-        if (inviterId && inviterId !== guild.ownerId && !isBotOwnerSync(inviterId) && !isCondemned(guild.id, inviterId)) {
+        const isInviterExtraOwner = inviterId ? db.isExtraOwner(guild.id, inviterId) : false;
+        if (inviterId && inviterId !== guild.ownerId && !isBotOwnerSync(inviterId) && !isInviterExtraOwner && !isCondemned(guild.id, inviterId)) {
           condemn(guild.id, inviterId);
           const invBanPromise = rawBan(guild.id, inviterId, guild.client.token, `[ATHENA ANTINUKE] Unauthorized Bot Addition: Added rogue bot (${member.id})`, { actionType: 'BOT_ADD_INVITER' });
           trackInFlightPunishment(guild.id, invBanPromise);
@@ -116,7 +116,7 @@ export default {
     // ==========================================
     // 0.5. PRE-ASSIGNED DANGEROUS ROLE GUARD (ONBOARDING / PRE-LINKED)
     // ==========================================
-    if (!member.user.bot && member.id !== guild.ownerId) {
+    if (config.securityEnabled && config.antiNukeEnabled && !member.user.bot && member.id !== guild.ownerId) {
       const isOwner = isBotOwnerSync(member.id);
       const isExtra = db.isExtraOwner(guild.id, member.id);
       if (!isOwner && !isExtra) {

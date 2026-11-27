@@ -16,6 +16,62 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '27 November 2026',
+    version: 'v4.0.20',
+    headline: 'Unified Security Telemetry & Explanation Command (!sectrack) + 32-Shield Codebase Sync',
+    summary: 'Added !sectrack (/sectrack) — an interactive 6-view Security Telemetry & Tracking Matrix consolidating live metrics and architectural explanations for every defense subsystem — alongside fixing LiveOps 32-shield module rendering and syncing all UI/docs/prompts to 32 modules & Single-Shot Raw Ban.',
+    whatsNew: [
+      {
+        title: 'Unified Security Tracker & Explanations Command (!sectrack / /sectrack + 12 Aliases)',
+        desc: 'Inspect all defense trackers live in 6 views (overview, transport, wiretap, auth, recovery, shields) covering the 12-socket Raw TLS pool & X-RateLimit buckets, 0ms Audit Ring & 1.2s REST cooldowns, O(1) whitelist index, strict Owner-only BotAdd zero-immunity rules & botInviterMap, RAM snapshots & markPendingSelfCreate markers, all 32 shields, 3.5s antiStrip sync, and 2FA lock — with built-in Why & How explanations on every panel.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'Full Help, Explain Architecture & Athena AI Integration',
+        desc: 'Registered !sectrack and all 12 aliases (!securitytrack, !tracksec, !antinuketrack, !threattrack, !shieldtrack, !trackshield, !secwatch, !secradar, !threatradar, !secmonitor, !guardtrack, !trackops) across !help, !help sectrack, !explain sectrack, and botGuideKnowledge.js.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Fixed LiveOps 32-Shield Module View & Replaced Remaining 28-Module / Dual-Strike References',
+        desc: 'Added the 4 missing shields (antiVanitySteal, antiInviteDelete, antiSoundboardCreate, antiSoundboardDelete) to LiveOps antinuke panel and updated outdated 28-module and Dual-Strike labels across about, botstats, learn, ezal, databaseadmin, security, cloudSync, tacticalAudio, botThreatLearner, explainerRegistry, and utility.'
+      }
+    ],
+    tip: 'Run !sectrack (or !sectrack transport / wiretap / auth / recovery / shields) to audit every security tracker alongside full explanations.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '27 November 2026',
+    version: 'v4.0.19',
+    headline: 'Military-Grade Anti-Nuke Hardening, 12-Socket Raw TLS Fast Lane & Zero-Hole Guard',
+    summary: 'Eliminated all identified anti-nuke bypasses, timing blind spots, and REST contention: expanded Raw TLS pool to 12 pre-connected sockets with live Discord rate-limit bucket tracking, extended raw TLS execution to Vanity/Webhook/Channel/Role countermeasures, enforced single-shot Raw Ban speed across all 32 modules, closed thread/timeout/unban/webhook-embed/AutoMod bypass gaps, and eliminated the 15s roleUpdate sync blind spot.',
+    whatsNew: [
+      {
+        title: '12-Socket Raw TLS Pool + Live X-RateLimit Bucket Awareness',
+        desc: 'Expanded rawTlsBanLane to 12 permanently warm TCP_NODELAY TLS sockets using single-copy Buffer allocation, shared X-RateLimit-Bucket / Reset-After / Global state tracking, and direct raw TLS fast paths for Vanity URL reclaim, webhook vaporization, and spam channel/role cleanup.'
+      },
+      {
+        title: 'Closed Audit, Timeout, Thread, Intent & Webhook Embed Bypasses',
+        desc: 'Fixed AuditLogEvent.MemberBanRemove handling, replaced Promise.race early-null timeouts with raceFirstTruthy + 1.2s cooldown REST fallback, expanded DANGEROUS_PERMS (ModerateMembers, ManageThreads, ManageGuildExpressions, ManageEvents, Move/Mute/DeafenMembers), guarded mass-timeouts & threads, caught webhook embed/mention pings, and enabled AutoModeration/ScheduledEvent/Integration gateway intents.'
+      }
+    ],
+    improvements: [
+      {
+        title: 'O(1) Indexed Whitelist Lookups & Non-Colliding Self-Creation Markers',
+        desc: 'Pre-indexed per-guild user/role whitelists and bot whitelists in database.js for zero-allocation O(1) authorization checks, enforced single-shot Raw Ban speed on owner-added unwhitelisted bots at zero immunity, enforced 2FA on all security disarm buttons/commands, removed ManageMessages AutoMod bypass, and replaced fake !simnuke random numbers with real live pipeline micro-benchmarks.'
+      }
+    ],
+    fixes: [
+      {
+        title: 'Fixed 15s roleUpdate Blind Spot, Create-Before-Mark & Leaked Queue Locks',
+        desc: 'Scoped isSyncingSupportingRoles strictly to actual role moves (3.5s) instead of idling every 90s for 15s, added markPendingSelfCreate before async role/channel/JTC creation, cleared restorationRegistry.queued locks cleanly on no-op exits, fixed LiveOps 32-shield telemetry, and restored /honeypot command registration.'
+      }
+    ],
+    tip: 'Use !simnuke to inspect real live TLS pool availability & O(1) decision latency, and keep untrusted owner-added bots outside !botwhitelist so they remain at zero immunity.',
+    author: '@Dev Porsche </>'
+  },
+  {
+    date: '27 November 2026',
     version: 'v4.0.18',
     headline: 'Fixed JTC Post-Move ReferenceError Crash, VCDrag Lobby Exclusions & MoveProtection Guard',
     summary: 'Fixed ReferenceError: channelId is not defined after JTC room moves (restoring ghost cleanup, control panel dispatch, and lobby sync), added clear JTC audit move reasons, excluded JTC generator lobbies from VCDrag/TagDrag rotation, and hardened MoveProtection against stale count re-triggers.',

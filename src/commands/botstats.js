@@ -139,11 +139,11 @@ export const commands = [
           {
             type: 10,
             content:
-              `> -# <a:uptime:1552608831060844575> **Defense Posture:** **ARMED (28 Automated Anti-Nuke Defensive Shields)**\n` +
-              `> -# <a:target_blink:1565667466984554588> **Elimination Engine:** **Sub-12ms Direct rawBan (PUT /bans) line-rate enforcement**\n` +
-              `> -# <a:target_blink:1565667466984554588> **Zero-Day Bot Defense:** **<1ms Pre-Emptive Elimination On Join (\`GUILD_MEMBER_ADD\` @ 0ms)**\n` +
-              `> -# <a:target_blink:1565667466984554588> **Wiretap Interception:** **Multi-Hook raw TCP packet capture before event queue**\n` +
-              `> -# <a:target_blink:1565667466984554588> **Pre-Warmed TLS Pool:** **120 Undici persistent sockets · 25s keep-alive heartbeat**\n` +
+              `> -# <a:uptime:1552608831060844575> **Defense Posture:** **ARMED (32 Automated Anti-Nuke Defensive Shields)**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Elimination Engine:** **Single-Shot Sub-12ms Direct rawBan (PUT /bans) with Zero Role-Strip Delay**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Zero-Day Bot Defense:** **Strict Owner Bot-Add + Zero-Immunity Unwhitelisted Bot Containment**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Wiretap Interception:** **Multi-Hook raw TCP packet capture + O(1) Indexed Whitelist Lookups**\n` +
+              `> -# <a:target_blink:1565667466984554588> **Pre-Warmed TLS Pool:** **12 Raw TLS Sockets (10s ping) + 128 Undici Sockets (15s prewarm)**\n` +
               `> -# <a:target_blink:1565667466984554588> **DNS Priority:** **IPv4-First (\`dns.setDefaultResultOrder\`) saving 15-30ms**\n` +
               `> -# <a:target_blink:1565667466984554588> **Ground-Truth Snapshots:** **Continuous live RAM snapshots with zero-duplicate rebuild**`
           }

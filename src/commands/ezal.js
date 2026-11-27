@@ -1015,7 +1015,7 @@ export function getEhelpPagePayload(page = 1) {
       value:
         '`!health` / `ezal health [serverId]` - Hierarchy, permissions & socket diagnostics\n' +
         '`!security records [serverId]` - Threat audit stream & telemetry\n' +
-        '`!security status [serverId]` - Inspect active protection across 28 modules\n' +
+        '`!security status [serverId]` - Inspect active protection across 32 modules\n' +
         '`!raidmode [on|off]` - Manual server raid lockdown & verification elevation\n' +
         '`!raidmode auto [on|off/threshold/window]` - Join burst detection'
     },

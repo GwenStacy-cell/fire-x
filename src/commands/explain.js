@@ -81,6 +81,7 @@ export const commands = [
           { name: 'AI Guide: Neural Architecture & Action Buttons', value: 'athena' },
           { name: 'AI Announcement: Neural Studio & Custom Emojis', value: 'aiannounce' },
           { name: 'Security: Zero-Day & Linked Role Exploits', value: 'security' },
+          { name: 'Command: !sectrack / !secwatch / !secradar (Security Trackers + Explanations)', value: 'sectrack' },
           { name: 'Persistence: Unbypassable Sentinel Roles', value: 'unbypassable' },
           { name: 'Onboarding: Neutralize Dangerous Prompt Roles', value: 'onboarding' },
           { name: 'Command: !aiannounce (AI Announcement Studio)', value: 'aiannounce' },

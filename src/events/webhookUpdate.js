@@ -1,6 +1,6 @@
 import { AuditLogEvent } from 'discord.js';
 import db from '../database.js';
-import { directStrike, rawDeleteWebhook, rawBan, isAuthorized, isCondemned, condemn, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, isGuildUnderAttack, handleAuditLogEntry } from '../utils/antinuke.js';
+import { directStrike, rawDeleteWebhook, rawBan, isAuthorized, isCondemned, condemn, setGuildUnderAttack, trackInFlightPunishment, waitForInFlightPunishments, isGuildUnderAttack, canFetchRestAudit, handleAuditLogEntry } from '../utils/antinuke.js';
 import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink, formatChannelLink } from '../utils/helpers.js';
 
@@ -10,10 +10,10 @@ export default {
     if (!channel.guild) return;
     const guild = channel.guild;
     const config = db.getGuildConfig(guild.id);
-    if (!config?.securityEnabled && !config?.antiNukeEnabled) return;
+    if (!config?.securityEnabled || !config?.antiNukeEnabled) return;
     if (config?.antinukeModules?.antiWebhooks === false) return;
-    // During active attack bursts, Wiretap intercepts WEBHOOKS_UPDATE via warm Undici sockets cleanly without REST contention
-    if (isGuildUnderAttack(guild.id)) return;
+    // Allow throttled fallback even during attacks so secondary attackers aren't ignored if Wiretap missed a channel
+    if (isGuildUnderAttack(guild.id) && !canFetchRestAudit(guild.id, `wh:${channel.id}`, 1_500)) return;
 
     try {
       // 1. Fetch channel's current webhooks with 0ms delay

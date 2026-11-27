@@ -70,24 +70,24 @@ As designed for Athena Prime:
 • **The 0ms Solution:** When any member receives a role carrying dangerous permissions (\`Administrator\`, \`ManageRoles\`, \`ManageChannels\`, \`BanMembers\`, \`KickMembers\`), Athena immediately strips the role at **0 milliseconds** before doing any verification.
 • **Instant Progressive Verification Loop:** Athena executes an immediate progressive audit loop \`[0ms, 40ms, 100ms, 250ms]\` over pre-warmed Undici TLS sockets:
   1. **Authorized Admin/Owner:** If an authorized admin granted the role, Athena immediately and safely restores it.
-  2. **Unauthorized / Exploit:** If no authorized audit entry exists or the grant was unauthorized, Athena keeps the role stripped, disarms dangerous permissions from the role itself, bans rogue grantors via dual-strike, and quarantines the recipient with permanent exploit taint tracking.
+  2. **Unauthorized / Exploit:** If no authorized audit entry exists or the grant was unauthorized, Athena keeps the role stripped, disarms dangerous permissions from the role itself, neutralizes rogue grantors via single-shot direct \`rawBan\`, and quarantines the recipient with permanent exploit taint tracking.
 • **Result:** Exactly 0 live milliseconds where an attacker holds active Administrator permissions!`
       },
       {
         pageTitle: 'Mass Rogue Role/Channel Annihilation & Direct Strike',
         content: `# ${getRandomHeadingGlyph()} Rogue Channel & Role Annihilation Engine (\`src/utils/antinuke.js\`)
 • **The Spam Nuke Vector:** Rapid nuke bots attempt to flood a guild with dozens of spam channels (e.g. \`nuked-by-xyz\`) or spam roles within 2-3 seconds.
-• **Dual-Strike Instant Neutralization:**
-  • Sub-1ms parallel \`rawRoleStrip\` and \`rawBan\` over pre-warmed keep-alive HTTP/1.1 sockets revokes \`Administrator\` and \`ManageChannels\` in Discord's permissions cache within 10-15ms.
-  • Any subsequent REST call dispatched by the nuke bot is immediately rejected by Discord with \`403 Forbidden\`.
+• **Single-Shot Raw TLS Neutralization:**
+  • Pre-connected 12-socket raw kernel TLS pool (\`TCP_NODELAY\` + TLS session resumption) fires a single-shot \`rawBan\` (\`PUT /bans\`) with zero role-strip roundtrip overhead.
+  • Any subsequent REST call dispatched by the nuke bot is immediately rejected by Discord with \`403 Forbidden\` / revoked session.
 • **Rogue Entity Sweep Workers (\`annihilateRogueChannels\` & \`annihilateRogueRoles\`):**
   • Automatically scans live channels and roles created within the last 60 seconds against Athena's ground-truth baseline infrastructure snapshot.
-  • Executes parallel batch deletions (10 concurrent requests per batch directly over Undici) to vaporize all rogue spam channels and roles in sub-second time.
+  • Executes parallel batch deletions over warm raw TLS/Undici keep-alive sockets to vaporize all rogue spam channels and roles in sub-second time.
 • **In-Flight Gateway Interceptors (\`roleCreate.js\` & \`channelCreate.js\`):**
   • When a guild is marked actively under attack (\`isGuildUnderAttack\`), newly arriving rogue spam roles and channels are intercepted and deleted at the gateway layer in sub-5ms before any permission overwrites can be written.
 
-# 5 Core Antinuke Hardening Upgrades
-• **1. Hostile Elimination API Priority:** 100% of Discord REST rate limits are strictly reserved for \`rawBan\` and \`rawRoleStrip\`. Zero restorations run during an active attack so rate limits are never exhausted on restorations before eliminating the attacker.
+# 6 Core Antinuke Hardening Upgrades
+• **1. Hostile Elimination API Priority:** 100% of Discord REST rate limits are strictly reserved for single-shot \`rawBan\`. Zero restorations run during an active attack so rate limits are never exhausted on restorations before eliminating the attacker.
 • **2. Coordinated Multi-Account Burst Auto-Lockdown:** A 2-second server-wide sliding window across all untrusted users triggers an immediate emergency server lockdown if multiple accounts attempt coordinated single destructive actions.
 • **3. Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.
 • **4. Parallel Role Member Restoration:** Infrastructure snapshots back up member role assignments and restore them in parallel batches alongside permissions.
@@ -111,7 +111,7 @@ As designed for Athena Prime:
 # Real-Time Security Live Audit & Records (\`!security records\` / \`!security live\`)
 • **Live Memory Threat Stream:** SQLite memory ledger tracking up to 100 recent neutralized hostile incursions across all attack vectors (channel deletes, role creates, admin escalations, rogue bot additions, mass kicks/bans, and rogue invites).
 • **Per-Incident Forensic Profiles:** Records the neutralized vector, perpetrator snowflake ID & tag, countermeasure verdict (\`BAN_APPLIED\`, \`ROLES_STRIPPED\`, \`QUARANTINED\`), execution latency in milliseconds (\`1-3ms execution\`), and automatic rollback repair state.
-• **Components V2 Interactive Telemetry:** Provides interactive pagination controls (Previous / Next), live SQLite refresh, clear history, and direct transition back to the 28-module defense matrix.`
+• **Components V2 Interactive Telemetry:** Provides interactive pagination controls (Previous / Next), live SQLite refresh, clear history, and direct transition back to the 32-module defense matrix.`
       }
     ]
   },
@@ -581,6 +581,30 @@ A Honeypot is an invisible text channel and decoy role configured strictly hidde
       }
     ]
   },
+  sectrack: {
+    id: 'sectrack',
+    label: 'Security Telemetry & Tracking Matrix',
+    aliases: ['securitytrack', 'tracksec', 'antinuketrack', 'threattrack', 'shieldtrack', 'trackshield', 'secwatch', 'secradar', 'threatradar', 'secmonitor', 'guardtrack', 'trackops'],
+    title: 'Security Telemetry & Unified Tracking Matrix | <a:03_tick_circle:1565665642084827206>',
+    description: 'Interactive 6-view command inspecting every real-time anti-nuke tracker alongside architectural explanations.',
+    pages: [
+      {
+        pageTitle: 'Tracked Subsystems & Command Reference (!sectrack)',
+        content: `# ${getRandomHeadingGlyph()} 1. Command & All 12 Aliases
+• **Prefix:** \`!sectrack [overview|transport|wiretap|auth|recovery|shields]\`
+• **Aliases:** \`!securitytrack\`, \`!tracksec\`, \`!antinuketrack\`, \`!threattrack\`, \`!shieldtrack\`, \`!trackshield\`, \`!secwatch\`, \`!secradar\`, \`!threatradar\`, \`!secmonitor\`, \`!guardtrack\`, \`!trackops\`
+• **Slash:** \`/sectrack [view]\` (**Clearance:** Server Owner, Extra Owner, Bot Owner)
+
+# 2. The 5 Core Trackers Explained Live Inside !sectrack
+• **Transport (\`!sectrack transport\`):** Monitors the 12 warm \`TCP_NODELAY\` Raw TLS sockets, IPv4 DNS cache, single-copy ban frame count, auxiliary raw dispatches (Vanity/Webhook/Channel/Role/Unban), and live Discord \`X-RateLimit-Remaining\` / 429 buckets.
+• **Wiretap & Combat (\`!sectrack wiretap\`):** Inspects the 0ms Gateway Audit Ring Buffer (60 entries, 30s TTL), \`raceFirstTruthy\` REST 1.2s cooldowns, 2-second burst detector, RAM condemned actors, and single-shot \`rawBan\` latency (zero role-strip delay).
+• **Auth & BotAdd (\`!sectrack auth\`):** Audits the O(1) \`Set\`/\`Map\` \`_whitelistIndex\`, \`_botWhitelistSets\`, \`botInviterMap\` bot-to-inviter lineage, and strict Owner/BotOwner-only BotAdd enforcement (keeping unwhitelisted owner-added bots at zero immunity).
+• **Recovery & Snapshots (\`!sectrack recovery\`):** Displays live RAM channel/role ground-truth snapshots, \`markPendingSelfCreate\` markers (stopping Create-Before-Mark WS races), restoration queue depth, \`deletedCache\`, and security live records.
+• **32 Shields & Sentinels (\`!sectrack shields\`):** Shows all 32 security modules, strict \`&&\` arming state, sentinel roles, 3.5s aligned \`antiStrip\` window, honeypot link, and mandatory 2FA disarm protection.`
+      }
+    ]
+  },
+
   liveops: {
     id: 'liveops',
     label: 'LiveOps Telemetry Matrix',
@@ -1134,7 +1158,7 @@ The 1024x512 War Room animated GIF HUD with in-GIF electric progress bar is impl
 
 ### 2. Security Firewall Status (!security / !ss)
 • **File:** \`sec_status.gif\`
-• **Metrics Tracked:** Active defense modules vs total 28 modules, member hierarchy gate (200 threshold), and threat events blocked.
+• **Metrics Tracked:** Active defense modules vs total 32 modules, member hierarchy gate (200 threshold), and threat events blocked.
 • **In-GIF Progress Bar:** Indicates total shield integrity and real-time firewall defense health.
 
 ### 3. Trigger Response Matrix (!trigger / !trig)
@@ -1349,18 +1373,17 @@ export const DETAILED_COMMANDS = {
   1. Creates and binds persistence backup roles ("Athena Unbypassable", "Athena Firewall") to Athena with Administrator privileges so rogue admins cannot remove or strip her permissions.
   2. Creates and deploys "#athenas-dashboard" with real-time status and interactive module toggles.
   3. Binds and activates "#security-logs" for forensic audit trails.
-  4. Activates ALL 28 antinuke modules (Anti-Ban, Anti-Kick, Anti-Channel Delete/Create/Update, Anti-Role Delete/Create/Update, Anti-Bot Add, Anti-Webhook, Anti-Member Purge, Anti-Linked Role, etc.).
-  5. Turns on 100% zero-tolerance defenses: threshold 1, instant ban punishment, anti-invite, anti-link, anti-spam, and AI toxicity/doxxing shields.
-• **Sub-1ms Dual-Strike Pre-Emption:**
-  • Pre-warmed Undici TLS sockets to Discord API execute parallel "rawRoleStrip" + "rawBan".
-  • Stripping all roles removes Administrator & ManageChannels in Discord's permissions cache within 10-15ms, causing Discord to immediately return 403 Forbidden on any second channel deletion before the nuke bot can execute it.
+  4. Activates ALL 32 antinuke modules (Anti-Ban, Anti-Kick, Anti-Channel Delete/Create/Update, Anti-Role Delete/Create/Update, Anti-Bot Add, Anti-Webhook, Anti-Member Purge, Anti-Linked Role, Anti-Vanity Stealer, Anti-Soundboard, etc.).
+  5. Turns on 100% zero-tolerance defenses: threshold 1, instant single-shot ban punishment, anti-invite, anti-link, anti-spam, and AI toxicity/doxxing shields.
+• **Sub-1ms Single-Shot Raw TLS Pre-Emption:**
+  • Pre-connected 12-socket raw kernel TLS pool to Discord executes a single-shot "rawBan" (PUT /bans) with zero role-strip latency overhead, immediately terminating nuke bots before their second request can settle.
 • **Intelligent Zero-Duplicate Damage Repair:**
-  • Synchronous atomic deduplication locks ("queued", "inFlight", "restored") prevent creating double channels or roles.
+  • Synchronous atomic deduplication locks ("queued", "inFlight", "restored", "pendingSelfCreates") prevent creating double channels or roles or racing Athena's own restorations.
   • Two-phase topological repair: Categories reconstructed first, then child channels linked to their respective categories by ID or name fallback.
   • Exact rawPosition preserved and locked via setPosition without misplacing channels in the tree.
   • Post-attack reconciliation pass ("reconcileGuildStructure") guarantees 100% channel parentage and hierarchy integrity.
-• **5 Advanced Hardening Upgrades:**
-  1. **Hostile Elimination API Priority:** 100% of Discord REST rate limits are strictly reserved for \`rawBan\` and \`rawRoleStrip\`. Zero restorations run during an active attack so rate limits are never exhausted on restorations before eliminating the attacker.
+• **6 Advanced Hardening Upgrades:**
+  1. **Hostile Elimination API Priority:** 100% of Discord REST rate limits are strictly reserved for single-shot \`rawBan\`. Zero restorations run during an active attack so rate limits are never exhausted on restorations before eliminating the attacker.
   2. **Coordinated Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all untrusted users triggers an instant emergency server lockdown if multiple accounts attempt coordinated single destructive actions.
   3. **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.
   4. **Parallel Role Member Restoration:** Infrastructure snapshots back up member role assignments and restore them in parallel batches alongside permissions.
@@ -1382,10 +1405,10 @@ export const DETAILED_COMMANDS = {
     syntax: '!security enable all / !security status',
     purpose: 'Autonomous zero-day exploit and antinuke defense engine.',
     architecture:
-`• **Enabling Antinuke:** Enabled directly via "!security enable all". There is no separate "!antinuke config" command. Running "!security enable all" turns on all 28 antinuke modules and safeguards the server against all nuke vectors.
+`• **Enabling Antinuke:** Enabled directly via "!security enable all". Running "!security enable all" turns on all 32 antinuke modules and safeguards the server against all nuke vectors.
 • **First-Action Neutralization (Stopping Nuke Bots Before 2nd Action):**
   • WebSocket audit log ring buffer delivers 0ms executor identification without REST request lag.
-  • Parallel dual-strike ("rawRoleStrip" + "rawBan") strips all roles within 10ms, revoking Administrator and ManageChannels so Discord immediately returns 403 Forbidden if the nuke bot attempts to delete a second channel.
+  • Single-shot \`rawTlsSendBan\` (\`PUT /bans\`) executes over 12 pre-connected raw kernel TLS sockets (no role-strip delay), neutralizing rogue nuke bots before a second action can complete.
 • **5 Advanced Hardening Upgrades:**
   1. API Rate Limit Hostile Strike Priority (eliminating the attacker takes 100% priority; restorations pause until the attacker is neutralized).
   2. Multi-Account Burst Protection (2-second global sliding window triggering emergency lockdown).
@@ -1526,7 +1549,7 @@ export const DETAILED_COMMANDS = {
 • **Tactile Control Interface:**
   • Interactive pagination controls (Prev / Next) to review threat history.
   • Refresh: Instantly syncs with the live SQLite audit ledger.
-  • Firewall Status: One-click shortcut back to the 28-module defense matrix.
+  • Firewall Status: One-click shortcut back to the 32-module defense matrix.
   • Clear History: Authorizes Server Owners to purge memory logs once reviewed.`,
     example: '!security records'
   },
@@ -1973,6 +1996,19 @@ export const DETAILED_COMMANDS = {
 • **Forensic Telemetry:**
   - Intercepted messages automatically log intruder ID, payload snippet, and latency to the security channel.`,
     example: '!honeypot setup timeout'
+  },
+
+  sectrack: {
+    name: 'sectrack',
+    aliases: ['securitytrack', 'tracksec', 'antinuketrack', 'threattrack', 'shieldtrack', 'trackshield', 'secwatch', 'secradar', 'threatradar', 'secmonitor', 'guardtrack', 'trackops'],
+    category: 'Security & Telemetry',
+    clearance: 'Server Owner / Extra Owner',
+    syntax: '!sectrack [overview|transport|wiretap|auth|recovery|shields] / /sectrack [view]',
+    purpose: 'Displays all real-time security, Raw TLS, Audit Ring, O(1) whitelist, BotAdd zero-immunity, recovery, and 32-shield trackers with built-in explanations.',
+    architecture:
+`• **6 Interactive Telemetry Views:** Overview, Transport (12 Raw TLS + X-RateLimit buckets), Wiretap (Audit Ring, 1.2s cooldown, 2s burst, Single-Shot Raw Ban), Auth (O(1) Whitelist Index + Strict Owner BotAdd + Inviter Cascade), Recovery (RAM Snapshots, markPendingSelfCreate, Restoration Queue), and 32 Shields (All 32 modules + AntiStrip 3.5s + 2FA).
+• **Zero Blind Spots:** Built-in architectural explanations sit directly below live server & socket metrics so admins can audit why and how every countermeasure operates.`,
+    example: '!sectrack transport'
   },
 
   liveops: {
@@ -3736,6 +3772,11 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
       value: 'security'
     },
     {
+      label: 'Security Telemetry & Trackers (!sectrack)',
+      description: '12 Raw TLS, RateLimits, Audit Ring, O(1) WL, BotAdd & Recovery explained',
+      value: 'sectrack'
+    },
+    {
       label: 'Persistence Sentinel Roles',
       description: 'Athena Unbypassable hierarchy & persistence sentinels',
       value: 'unbypassable'
@@ -3796,7 +3837,7 @@ export function buildTopicsDirectoryContainer(prefix = '!') {
       content:
 `### 1. Autonomous Security & Antinuke Architecture
 > -# **__Under-the-Hood:__** Raw WebSocket wiretap (<1ms) intercepts unlogged Linked Role and Onboarding escalations via 60s audit threshold. Reinstates sentinel roles and quarantines offenders.
--# ${BULLET_EMOJI} **__Commands:__** \`unbypassable\`, \`antinuke\`, \`firewall\`, \`neutralizeonboarding\`, \`scanserver\`, \`panic\`, \`quarantine\`, \`botwhitelist\`, \`spampermit\`, \`autonick\`, \`learn\`, \`modmode\`
+-# ${BULLET_EMOJI} **__Commands:__** \`unbypassable\`, \`antinuke\`, \`sectrack\`, \`combatops\`, \`firewall\`, \`neutralizeonboarding\`, \`scanserver\`, \`panic\`, \`quarantine\`, \`botwhitelist\`, \`spampermit\`, \`autonick\`, \`learn\`, \`modmode\`
 
 ### 2. Voice Grid, Server Tag Drag & Channel Architecture
 > -# **__Under-the-Hood:__** Real-time \`voiceStateUpdate\` + \`userUpdate\` gateway listeners trigger 0ms VC drag on watched Server Tags, auto-stop on tag change, honor Extra Owner pause/resume, and run loop/mass voice moves cleanly.

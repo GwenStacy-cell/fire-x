@@ -438,7 +438,7 @@ export default {
       const lockdown = db.getLockdownSnapshot(interaction.guild?.id);
       const isEmergency = Boolean(db.getEmergencyState(interaction.guild?.id));
       
-      let script = 'Athena Prime Defense Matrix online. Operational status nominal. All perimeter shields locked and 28 security modules active.';
+      let script = 'Athena Prime Defense Matrix online. Operational status nominal. All perimeter shields locked and 32 security modules active.';
       if (isEmergency) script = TACTICAL_DISPATCH_SCRIPTS.panic;
       else if (lockdown) script = lockdown.tier === 1 ? TACTICAL_DISPATCH_SCRIPTS.lockdown_tier1 : lockdown.tier === 2 ? TACTICAL_DISPATCH_SCRIPTS.lockdown_tier2 : TACTICAL_DISPATCH_SCRIPTS.lockdown_tier3;
 
@@ -3382,6 +3382,10 @@ export async function handleSecurityInteractions(interaction, guild) {
         return interaction.reply({ content: '-# Only the **Server Owner**, **Extra Owners**, or **Bot Owner** can disengage security shields.', flags: MessageFlags.Ephemeral });
       }
       const sec = await import('../commands/security.js');
+      const challenge = await sec.create2FADisableChallenge?.(guild, true);
+      if (challenge) {
+        return interaction.reply(challenge).catch(() => null);
+      }
       await interaction.deferReply();
       const result = await sec.handleSecurityToggleAll(guild, interaction.member, false);
       return interaction.editReply(result);
@@ -4151,6 +4155,16 @@ export async function handleSecurityInteractions(interaction, guild) {
         return await handleLiveOpsInteraction(interaction);
       } catch (err) {
         console.error('[LiveOpsMonitor Interaction Error]:', err);
+      }
+    }
+
+    // Security Telemetry & Tracking Interactive Buttons (!sectrack)
+    if (customId && customId.startsWith('sectrack:')) {
+      try {
+        const { handleSectrackInteraction } = await import('../commands/sectrack.js');
+        return await handleSectrackInteraction(interaction);
+      } catch (err) {
+        console.error('[Sectrack Interaction Error]:', err);
       }
     }
 

@@ -1,7 +1,7 @@
 ﻿import { AuditLogEvent } from 'discord.js';
-import { cacheDeletedItem, directStrike, deletedCache, queuedRestorations, isGuildUnderAttack } from '../utils/antinuke.js';
+import { cacheDeletedItem, directStrike, deletedCache, isRestorationHandled, markRestorationQueued, restorationRegistry, getAuditExecutorAndReason } from '../utils/antinuke.js';
 import db from '../database.js';
-import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
+import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason as getLogAudit, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink } from '../utils/helpers.js';
 
 export default {
@@ -17,18 +17,25 @@ export default {
       'Emoji Deletion',
       emoji.id,
       async () => {
+        if (isRestorationHandled(emoji.id)) return;
+        markRestorationQueued(emoji.id);
         try {
           const cached = deletedCache.get(emoji.id);
           if (!cached) return;
-          if (queuedRestorations.has(emoji.id)) return;
-          queuedRestorations.add(emoji.id);
-          
-          await emoji.guild.emojis.create({
+          const created = await emoji.guild.emojis.create({
             attachment: cached.url,
             name: cached.name,
             reason: 'Athena Anti-Nuke: Restored deleted emoji'
           });
-        } catch {}
+          restorationRegistry.restored.set(emoji.id, Date.now());
+          if (created?.id) restorationRegistry.restored.set(created.id, Date.now());
+          setTimeout(() => {
+            restorationRegistry.restored.delete(emoji.id);
+            if (created?.id) restorationRegistry.restored.delete(created.id);
+          }, 15 * 60 * 1000);
+        } catch {} finally {
+          restorationRegistry.queued.delete(emoji.id);
+        }
       }
     ).catch(() => null);
 
@@ -36,7 +43,7 @@ export default {
     (async () => {
       try {
         if (!isServerLogModuleEnabled(emoji.guild.id, 'emojis')) return;
-        const { executor, reason } = await getAuditExecutorAndReason(emoji.guild, AuditLogEvent.EmojiDelete, emoji.id);
+        const { executor, reason } = await getLogAudit(emoji.guild, AuditLogEvent.EmojiDelete, emoji.id);
         const executorStr = executor ? `${formatUserLink(executor, emoji.guild)} (\`${executor.id}\`)` : 'Unknown';
 
         const delEmbed = buildServerLogEmbed({

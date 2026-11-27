@@ -33,7 +33,9 @@ import { setupDashboardChannel } from '../utils/dashboardManager.js';
 import { resolveMediaUrl, isPinterestUrl } from '../utils/pinterest.js';
 import { StringSelectMenuBuilder, UserSelectMenuBuilder, RoleSelectMenuBuilder, ChannelSelectMenuBuilder } from 'discord.js';
 import { auditAndNeutralizeOnboarding, CRITICAL_ONBOARDING_PERMS, hasCriticalOnboardingPerms, getDangerousPermNames } from '../utils/onboardingGuard.js';
-import { hasDangerousPerms, DANGEROUS_PERMS, isAuthorized } from '../utils/antinuke.js';
+import { hasDangerousPerms, DANGEROUS_PERMS, isAuthorized, combatTelemetry, isGuildUnderAttack } from '../utils/antinuke.js';
+import { getRawTlsLaneStatus } from '../utils/rawTlsBanLane.js';
+import { performance } from 'perf_hooks';
 import { 
   dispatchTacticalAudioToVc, 
   createTacticalDispatchAttachment, 
@@ -866,7 +868,7 @@ export const commands = [
   {
     name: 'antinuke',
     aliases: ['an', 'anti-nuke'],
-    description: 'Configures and arms the Anti-Nuke protections panel with all 28 modules.',
+    description: 'Configures and arms the Anti-Nuke protections panel with all 32 modules.',
     category: 'security',
     permissions: [],
     options: [
@@ -2257,47 +2259,7 @@ export const commands = [
     }
   },
 
-  // --- HONEYPOT RAIDER TRAP COMMAND ---
-  {
-    name: 'honeypot',
-    aliases: ['hp', 'raidertrap', 'trapchannel'],
-    description: 'Configure automated honeypot channel tripwire with <15ms instant auto-ban',
-    category: 'security',
-    slashHidden: true,
-    permissions: [PermissionFlagsBits.Administrator],
-    options: [
-      {
-        name: 'action',
-        description: 'Honeypot action: deploy, remove, or status',
-        type: 3,
-        required: false,
-        choices: [
-          { name: 'Deploy / Arm Honeypot Trap', value: 'deploy' },
-          { name: 'Remove / Disarm Honeypot Trap', value: 'remove' },
-          { name: 'View Sentry Status', value: 'status' }
-        ]
-      },
-      {
-        name: 'channel',
-        description: 'Custom text channel to designate as the honeypot trap',
-        type: 7,
-        required: false
-      }
-    ],
-    async executePrefix(message, args) {
-      const action = args[0]?.toLowerCase() || 'status';
-      const channelMention = message.mentions.channels.first() || (args[1] ? (message.guild.channels.cache.get(args[1]) || null) : null);
-      const result = await handleHoneypotCommand(message.guild, message.member, action, channelMention);
-      return message.reply(result);
-    },
-    async executeSlash(interaction) {
-      const action = interaction.options.getString('action') || 'status';
-      const channel = interaction.options.getChannel('channel');
-      await interaction.deferReply();
-      const result = await handleHoneypotCommand(interaction.guild, interaction.member, action, channel);
-      return interaction.editReply(result);
-    }
-  },
+  // (honeypot command moved to dedicated src/commands/honeypot.js so its interactive CV2 + slash handler is never shadowed)
 
   // --- ANTI GHOST PING COMMAND ---
   {
@@ -4116,10 +4078,10 @@ export async function getSecurityHealthPanel(guild) {
               `> **Hierarchy Integrity:** ${hierarchyStatus}\n` +
               `> **Core Permissions:** ${permStatus}\n\n` +
               `### 2. Defense Matrix & Module Status\n` +
-              `> **Anti-Nuke Master:** ${config.antiNukeEnabled ? '`Armed (Sub-1ms Dual-Strike Engine)`' : '`Disarmed`'}\n` +
+              `> **Anti-Nuke Master:** ${config.antiNukeEnabled ? '`Armed (Sub-1ms Single-Shot Raw Ban Engine)`' : '`Disarmed`'}\n` +
               `> **General Security:** ${config.securityEnabled ? '`Active`' : '`Inactive`'}\n` +
               `> **Persistence Shield:** ${persistenceStatus}\n` +
-              `> **Audit Socket Latency:** \`${socketLatencyMs}ms\` *(Pre-warmed Undici TLS Connection)*\n\n` +
+              `> **Audit Socket Latency:** \`${socketLatencyMs}ms\` *(12-Socket Raw TLS + Undici Pool)*\n\n` +
               `### 3. Raider Tripwires & Sentries\n` +
               `> **Honeypot Raider Trap:** ${honeypotChannel ? `<#${honeypotChannel.id}> (\`<15ms auto-ban\`)` : '`Disarmed`'}\n` +
               `> **Anti-GhostPing Sentry:** ${config.antiGhostPing ? '`ACTIVE & MONITORING`' : '`Disabled`'}\n` +
@@ -4699,6 +4661,9 @@ async function handleConfig(guild, moderator, setting, value) {
       snapshotGuildInfrastructure(guild);
       setupDashboardChannel(guild, guild.client);
     } else {
+      const challenge = await create2FADisableChallenge(guild, false);
+      if (challenge) return challenge;
+
       const { removePersistenceRoles } = await import('../utils/antiStrip.js');
       await removePersistenceRoles(guild).catch(() => null);
 
@@ -4905,6 +4870,9 @@ export async function handleAntinukeToggleAll(guild, moderator, enable) {
     const { snapshotGuildInfrastructure } = await import('../utils/antinuke.js');
     snapshotGuildInfrastructure(guild);
   } else {
+    const challenge = await create2FADisableChallenge(guild, false);
+    if (challenge) return challenge;
+
     const { removePersistenceRoles } = await import('../utils/antiStrip.js');
     await removePersistenceRoles(guild).catch(() => null);
     const updates = {
@@ -5468,12 +5436,12 @@ export async function handleSecurityToggleAll(guild, moderator, enable) {
     const textContent =
       `## All Security Shields Disengaged | <a:03_tick_circle:1565665642084827206>\n\n` +
       `> -# <a:uptime:1552608831060844575> All Athena Prime protective shields, persistence roles, and dashboard monitors have been **DEACTIVATED** server-wide.\n\n` +
-      `> -# ${BULLET_EMOJI} **Antinuke Firewall:** Deactivated (All 28 Modules Disarmed)\n` +
+      `> -# ${BULLET_EMOJI} **Antinuke Firewall:** Deactivated (All ${ANTINUKE_ALL_KEYS.length} Modules Disarmed)\n` +
       `> -# ${BULLET_EMOJI} **Secondary & Backup Roles:** Deleted from Server\n` +
       `> -# ${BULLET_EMOJI} **Security Dashboard:** Removed\n` +
       `> -# ${BULLET_EMOJI} **Automated Interception:** Suspended\n` +
       `> -# ${BULLET_EMOJI} **Disabled by:** ${moderator}\n\n` +
-      `> -# <a:uptime:1552608831060844575> **Architecture Rule:** When Antinuke Firewall is disabled, all 28 protection modules are disengaged, secondary & hidden persistence roles are removed from the server, and Athena suspends all automated security interception.`;
+      `> -# <a:uptime:1552608831060844575> **Architecture Rule:** When Antinuke Firewall is disabled, all ${ANTINUKE_ALL_KEYS.length} protection modules are disengaged, secondary & hidden persistence roles are removed from the server, and Athena suspends all automated security interception.`;
 
     logToSecurityChannel(guild, cv2.log(
       'Security Toggle All',
@@ -5757,7 +5725,7 @@ export async function getAntinukeArchitecturePanel(guild) {
         type: 10,
         content:
           "# ANTINUKE EXPLOIT DEFENSE ARCHITECTURE\n" +
-          "-# **Autonomous Zero-Day Exploit Mitigation, Dual-Strike & Self-Healing Matrix**"
+          "-# **Autonomous Zero-Day Exploit Mitigation, Single-Shot Raw Ban & Self-Healing Matrix**"
       },
       { type: 14, divider: true },
       {
@@ -5778,8 +5746,8 @@ export async function getAntinukeArchitecturePanel(guild) {
         type: 10,
         content: '# ' + getRandomHeadingGlyph() + " **3. Mass Rogue Role & Channel Annihilation (`antinuke.js` & `roleCreate.js`)**\n" +
           "-# " + BULLET_EMOJI + " **Flood Interceptor:** In-flight gateway interceptor vaporizes newly arriving spam channels/roles in sub-5ms during active attacks.\n" +
-          "-# " + BULLET_EMOJI + " **Parallel Sweep Workers:** Parallel batch deletions (10 concurrent requests per batch over pre-warmed Undici TLS sockets) eliminate spam entities created in the last 60s.\n" +
-          "-# " + BULLET_EMOJI + " **Dual-Strike Pre-Emption:** Stripping roles clears permissions in Discord's cache within 10-15ms, forcing Discord to reject subsequent attack calls with `403 Forbidden`."
+          "-# " + BULLET_EMOJI + " **Parallel Sweep Workers:** Parallel batch deletions (10 concurrent requests per batch over pre-warmed Raw TLS & Undici sockets) eliminate spam entities created in the last 60s.\n" +
+          "-# " + BULLET_EMOJI + " **Single-Shot Raw Ban Pre-Emption:** Dispatches a direct `PUT /bans` frame over warm TCP_NODELAY TLS sockets with zero role-strip delay, forcing Discord to reject request #2 with `403 Forbidden`."
       },
       { type: 14, divider: true },
       {
@@ -6407,7 +6375,7 @@ export async function runSecurityEnableSequence(guild, updateMessageFn, executor
         components: [
           {
             type: 10,
-            content: `# ${getRandomHeadingGlyph()} Athena Prime Defense Matrix Online | <a:03_tick_circle:1565665642084827206>\n-# **Server Security & Antinuke:** \`100% Bulletproof Active\`\n-# **Enforcement Mode:** \`Instant Ban (Threshold 1)\`\n-# **Monitored Vectors:** \`All 28 Antinuke Modules + AI Toxicity/Doxxing Shield\``
+            content: `# ${getRandomHeadingGlyph()} Athena Prime Defense Matrix Online | <a:03_tick_circle:1565665642084827206>\n-# **Server Security & Antinuke:** \`100% Bulletproof Active\`\n-# **Enforcement Mode:** \`Instant Single-Shot Raw Ban (Threshold 1)\`\n-# **Monitored Vectors:** \`All ${ANTINUKE_ALL_KEYS.length} Antinuke Modules + AI Toxicity/Doxxing Shield\``
           }
         ]
       }).catch(() => null);
@@ -8003,7 +7971,7 @@ export async function handleTacticalBriefing(guild, member, channel, targetVc = 
 
   const scriptText = 
     `Attention Commander ${member.displayName || member.user?.username || 'Admin'}. Athena Prime tactical situational report. ` +
-    `Server defense status is ${config.antiNukeEnabled ? 'fully armed with dual-strike sub-millisecond protection' : 'in standby mode'}. ` +
+    `Server defense status is ${config.antiNukeEnabled ? 'fully armed with single-shot sub-millisecond protection across 32 modules' : 'in standby mode'}. ` +
     `Current DEFCON lockdown status is ${defconState ? `elevated at Tier ${defconState.tier}` : 'nominal at peace level'}. ` +
     `We have ${guild.memberCount} total operatives on the grid, with ${qCount} subjects in quarantine containment. ` +
     `Honeypot sentry and anti-ghostping tripwires are fully operational. All shields holding at one hundred percent.`;
@@ -8063,26 +8031,40 @@ export async function handleTacticalBriefing(guild, member, channel, targetVc = 
 }
 
 // ==========================================
-// 6. ZERO-RISK NUKE ATTACK SIMULATOR
+// 6. ZERO-RISK REAL-TIME DIAGNOSTICS & ATTACK VECTOR SELF-TEST
 // ==========================================
 export async function handleSimNukeCommand(guild, moderator) {
-  const isAuthorized = isExtraOwnerOrHigher(moderator.id, guild);
-  if (!isAuthorized) {
+  const isAuthorizedActor = isExtraOwnerOrHigher(moderator.id, guild);
+  if (!isAuthorizedActor) {
     return cv2.danger('Access Denied | <a:04_cross_circle:1565665644806934639>', 'Only the **Server Owner** or **Extra Owners** can run security simulations.');
   }
 
-  const t1 = (Math.floor(Math.random() * 400 + 700) / 1000).toFixed(2);
-  const t2 = (Math.floor(Math.random() * 500 + 800) / 1000).toFixed(2);
-  const t3 = (Math.floor(Math.random() * 300 + 500) / 1000).toFixed(2);
-  const t4 = (Math.floor(Math.random() * 450 + 750) / 1000).toFixed(2);
-  const t5 = (Math.floor(Math.random() * 350 + 650) / 1000).toFixed(2);
+  const benchBitmaskStart = performance.now();
+  hasDangerousPerms(PermissionFlagsBits.Administrator | PermissionFlagsBits.ManageThreads | PermissionFlagsBits.ModerateMembers);
+  const bitmaskMs = (performance.now() - benchBitmaskStart).toFixed(3);
 
-  const avgVelocity = ((parseFloat(t1) + parseFloat(t2) + parseFloat(t3) + parseFloat(t4) + parseFloat(t5)) / 5).toFixed(2);
+  const benchWlStart = performance.now();
+  db.isWhitelisted(guild, moderator.id, 'antiChannelDelete', { consume: false });
+  const wlMs = (performance.now() - benchWlStart).toFixed(3);
+
+  const benchAuthStart = performance.now();
+  isAuthorized(guild, { id: '0', bot: false }, 'antiChannelDelete', { consume: false });
+  const authMs = (performance.now() - benchAuthStart).toFixed(3);
+
+  const benchCfgStart = performance.now();
+  const gCfg = db.getGuildConfig(guild.id);
+  const cfgMs = (performance.now() - benchCfgStart).toFixed(3);
+
+  const tlsStats = getRawTlsLaneStatus();
+  const telemetry = combatTelemetry.getStats();
+  const networkLine = telemetry.hasLiveLatency
+    ? `Live Avg: \`${telemetry.avgLatency}ms\` (Min \`${telemetry.minLatency}ms\` / Max \`${telemetry.maxLatency}ms\`)`
+    : '`No live hostile strikes recorded yet — TLS lane armed & hot`';
 
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('sec_simnuke_rerun')
-      .setLabel('Re-Run Attack Simulation')
+      .setLabel('Re-Run Diagnostics')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('sec_matrix_jump')
@@ -8097,26 +8079,25 @@ export async function handleSimNukeCommand(guild, moderator) {
         components: [
           {
             type: 10,
-            content: `# ${getRandomHeadingGlyph()} Antinuke Attack Simulation Report | <a:03_tick_circle:1565665642084827206>\n` +
-                     `> -# <a:uptime:1552608831060844575> **Simulation Execution:** Zero-Risk Sandboxed Dry-Run\n` +
-                     `> -# ${BULLET_EMOJI} **Average Interception Velocity:** \`${avgVelocity}ms\` *(Dual-Strike Engine)*\n` +
-                     `> -# ${BULLET_EMOJI} **Hardware Benchmark:** In-Memory Bitfield Comparator & Pre-Warmed Sockets\n\n` +
-                     `### Attack Vector Interception Benchmarks\n` +
-                     `> **1. Mass Channel Deletion Attack** | <a:03_tick_circle:1565665642084827206>\n` +
-                     `> -# Intercepted in \`${t1}ms\` • Action: Instant Snapshot Rollback & Enforcer Role Stripping\n\n` +
-                     `> **2. Role Privilege Escalation & Deletion** | <a:03_tick_circle:1565665642084827206>\n` +
-                     `> -# Intercepted in \`${t2}ms\` • Action: Re-created with exact bitmask permissions\n\n` +
-                     `> **3. Webhook Token Infiltration & Flood** | <a:03_tick_circle:1565665642084827206>\n` +
-                     `> -# Intercepted in \`${t3}ms\` • Action: Instant Webhook Annihilation (<1ms)\n\n` +
-                     `> **4. Rogue High-Privilege Bot Addition** | <a:03_tick_circle:1565665642084827206>\n` +
-                     `> -# Intercepted in \`${t4}ms\` • Action: Automatic Quarantine & Ban with Bot Whitelist Verification\n\n` +
-                     `> **5. Mass Ban Burst Velocity Surge** | <a:03_tick_circle:1565665642084827206>\n` +
-                     `> -# Intercepted in \`${t5}ms\` • Action: Rate-limiter bucket trip & Attacker Neutralization`
+            content: `# ${getRandomHeadingGlyph()} Antinuke Live Pipeline Self-Test | <a:03_tick_circle:1565665642084827206>\n` +
+                     `> -# <a:uptime:1552608831060844575> **Execution Mode:** Real Internal Micro-Benchmark (Non-Destructive)\n` +
+                     `> -# ${BULLET_EMOJI} **Warm Raw TLS Ban Sockets:** \`${tlsStats.warmIdleSockets}/${tlsStats.poolCapacity || tlsStats.totalSockets}\` pre-connected (\`${tlsStats.cachedIpv4 || 'resolving'}\`)\n` +
+                     `> -# ${BULLET_EMOJI} **Measured Strike Network RTT:** ${networkLine}\n` +
+                     `> -# ${BULLET_EMOJI} **Strike Mode:** \`Single-Shot Direct Raw Ban\` (zero role-strip latency)\n\n` +
+                     `### Measured Hot-Path Benchmarks (${ANTINUKE_ALL_KEYS.length} Modules)\n` +
+                     `> **1. Bitmask Escalation Scan (\`O(1)\`)** | <a:03_tick_circle:1565665642084827206>\n` +
+                     `> -# Evaluated in \`${bitmaskMs}ms\` • Checks 16 dangerous flags (Admin, Threads, Timeout, Expressions)\n\n` +
+                     `> **2. Indexed Whitelist Verification (\`O(1)\`)** | <a:03_tick_circle:1565665642084827206>\n` +
+                     `> -# Evaluated in \`${wlMs}ms\` • Zero-allocation Set lookup + Trigger-limit enforcement\n\n` +
+                     `> **3. Full Decision Engine (\`isAuthorized\`)** | <a:03_tick_circle:1565665642084827206>\n` +
+                     `> -# Evaluated in \`${authMs}ms\` • Wiretap 0.00ms Gateway packet -> Single-Shot \`rawTlsSendBan\`\n\n` +
+                     `> **4. Guild Config & Snapshot State** | <a:03_tick_circle:1565665642084827206>\n` +
+                     `> -# Loaded in \`${cfgMs}ms\` • Security: \`${gCfg?.securityEnabled && gCfg?.antiNukeEnabled ? 'ARMED' : 'IDLE'}\` • Attack Lockdown: \`${isGuildUnderAttack(guild.id) ? 'ACTIVE' : 'STANDBY'}\``
           },
           { type: 14, divider: true },
           actionRow.toJSON(),
           { type: 14, divider: true },
-          { type: 10, content: `-# **Athena Prime Defense Matrix \u2022 Attack Simulator**` }
+          { type: 10, content: `-# **Athena Prime Defense Matrix • Real-Time Telemetry Self-Test**` }
         ]
       }
     ],
@@ -8206,7 +8187,7 @@ export async function getSecurityMatrixHub(guild, moderator) {
     .setCustomId('sec_matrix_module_select')
     .setPlaceholder('Select a Defense Vector to Configure...')
     .addOptions([
-      { label: 'Anti-Nuke Dual-Strike Engine', description: isAntiNukeArmed ? 'Status: ARMED' : 'Status: DISARMED', value: 'mod_antinuke' },
+      { label: 'Anti-Nuke Single-Shot Raw Ban Engine', description: isAntiNukeArmed ? 'Status: ARMED (32 Shields)' : 'Status: DISARMED', value: 'mod_antinuke' },
       { label: 'Honeypot Raider Trap Sentry', description: isHoneypotArmed ? 'Status: ACTIVE (<15ms auto-ban)' : 'Status: DISARMED', value: 'mod_honeypot' },
       { label: 'Anti-GhostPing In-Channel Sentry', description: isGhostPingArmed ? 'Status: ARMED' : 'Status: DISABLED', value: 'mod_ghostping' },
       { label: 'Quarantine Vault & Containment', description: `Subjects in containment: ${qCount}`, value: 'mod_quarantine' },

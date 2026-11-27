@@ -10,7 +10,7 @@ export const TACTICAL_DISPATCH_SCRIPTS = {
   lockdown_tier3: 'Commander! Tier 3 nuclear blackout engaged! Total server darkness deployed, all channels are isolated!',
   unlockdown: 'Commander! Server lockdown has been lifted! Channel permissions have been restored from database snapshots, and operations are back online!',
   raidmode_on: 'Warning Commander! Server raid mode armed! Join velocity thresholds are active and incoming accounts are being quarantined!',
-  security_enable_all: 'Athena Prime Defense Matrix online! All perimeter shields locked and 28 security modules armed, Commander!'
+  security_enable_all: 'Athena Prime Defense Matrix online! All perimeter shields locked and 32 security modules armed, Commander!'
 };
 
 /**

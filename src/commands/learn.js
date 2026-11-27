@@ -123,7 +123,7 @@ export function buildLearnGuidancePayload(prefix = '!') {
         type: 10,
         content: `# ${getRandomHeadingGlyph()} Autonomous Self-Learning & Lambda AI Guidance | ${TICK}\n` +
                  `> ${UPTIME} **Zero Security Disruption Guarantee:**\n` +
-                 `> ${BULLET_EMOJI} **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
+                 `> ${BULLET_EMOJI} **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 32 antinuke tripwires (mass channel, role, ban, kick, webhook, vanity, invite, soundboard, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
                  `> ${BULLET_EMOJI} **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.`
       },
       { type: 14, divider: true },

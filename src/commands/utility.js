@@ -536,7 +536,7 @@ export const commands = [
                   permsText = "Bot Owner & Extra Owner";
               } else if (targetCmd.name === "wordfilter" || targetCmd.name === "wf" || targetCmd.name === "filterwords" || targetCmd.name === "wordblacklist") {
                   permsText = "Extra Owner (or Server Owner)";
-              } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
+              } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "sectrack" || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
                   permsText = "Server Owner & Extra Owner";
               } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
                   permsText = "Public (Everyone)";
@@ -563,6 +563,8 @@ export const commands = [
               let usageText = `${prefix}${targetCmd.name}`;
               if (targetCmd.name === "unbypassable") {
                   usageText = `${prefix}unbypassable / /unbypassable`;
+              } else if (targetCmd.name === "sectrack" || targetCmd.name === "securitytrack" || targetCmd.name === "tracksec" || targetCmd.name === "secwatch" || targetCmd.name === "secradar") {
+                  usageText = `${prefix}sectrack [overview|transport|wiretap|auth|recovery|shields] / /sectrack [view]`;
               } else if (targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes") {
                   usageText = `${prefix}combatops / ${prefix}strikeops / /combatops`;
               } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
@@ -696,6 +698,20 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Change Punishment:** \`${prefix}honeypot punish <ban|timeout|kick>\` or \`/honeypot punishment <action>\`\n` +
                     `> ${BULLET_EMOJI} **Interactive Panel:** \`${prefix}honeypot\` (or \`${prefix}honeypot status\` / \`/honeypot panel\`)\n` +
                     `> ${BULLET_EMOJI} **Disarm Trap:** \`${prefix}honeypot remove\` (or \`${prefix}honeypot disarm\` / \`/honeypot disarm\`)`;
+              } else if (targetCmd.name === "sectrack" || targetCmd.name === "securitytrack" || targetCmd.name === "tracksec" || targetCmd.name === "antinuketrack" || targetCmd.name === "threattrack" || targetCmd.name === "shieldtrack" || targetCmd.name === "trackshield" || targetCmd.name === "secwatch" || targetCmd.name === "secradar" || targetCmd.name === "threatradar" || targetCmd.name === "secmonitor" || targetCmd.name === "guardtrack" || targetCmd.name === "trackops") {
+                  descContent = `Unified Security Telemetry & Tracking Matrix with Architectural Explanations across all defense layers.\n\n` +
+                    `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+                    `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner & Extra Owner\` (and Bot Owner).\n\n` +
+                    `> -# **__Command Activation & All 12 Aliases:__**\n` +
+                    `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}sectrack [overview|transport|wiretap|auth|recovery|shields]\`\n` +
+                    `> ${BULLET_EMOJI} **Aliases:** \`${prefix}securitytrack\`, \`${prefix}tracksec\`, \`${prefix}antinuketrack\`, \`${prefix}threattrack\`, \`${prefix}shieldtrack\`, \`${prefix}trackshield\`, \`${prefix}secwatch\`, \`${prefix}secradar\`, \`${prefix}threatradar\`, \`${prefix}secmonitor\`, \`${prefix}guardtrack\`, \`${prefix}trackops\`\n` +
+                    `> ${BULLET_EMOJI} **Slash Command:** \`/sectrack [view]\`\n\n` +
+                    `> -# **__Tracked Subsystems & Built-In Explanations:__**\n` +
+                    `> ${BULLET_EMOJI} **Transport (\`transport\`):** 12 warm Raw TLS \`TCP_NODELAY\` sockets, cached IPv4, strikes/aux ops, and live Discord \`X-RateLimit-*\` / 429 buckets.\n` +
+                    `> ${BULLET_EMOJI} **Wiretap & Combat (\`wiretap\`):** 0ms Audit Ring Buffer, \`raceFirstTruthy\` REST cooldowns, 2s burst counter, condemned IDs, and single-shot \`rawBan\` RTT.\n` +
+                    `> ${BULLET_EMOJI} **Auth & BotAdd (\`auth\`):** O(1) whitelist \`Set\`/\`Map\` index, \`_botWhitelistSets\`, strict Owner Bot-Add zero-immunity rule, and \`botInviterMap\`.\n` +
+                    `> ${BULLET_EMOJI} **Recovery & Snapshots (\`recovery\`):** RAM channel/role snapshots, \`markPendingSelfCreate\` markers, restoration queue depth, and incident logs.\n` +
+                    `> ${BULLET_EMOJI} **32 Shields & Sentinels (\`shields\`):** All 32 modules status, sentinel roles, 3.5s \`antiStrip\` alignment window, honeypot, and 2FA lock.`;
               } else if (targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes") {
                   descContent = `Anti-Nuke Combat Operations & Single-Strike Telemetry - Real-time combat telemetry, single-strike timeline breakdown, and socket benchmarks.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
@@ -703,13 +719,13 @@ export const commands = [
                     `> -# **__Command Activation & Aliases:__**\n` +
                     `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}combatops\` (Aliases: \`${prefix}strikeops\`, \`${prefix}strikemonitor\`, \`${prefix}combattelemetry\`, \`${prefix}combatmon\`, \`${prefix}strikes\`)\n` +
                     `> ${BULLET_EMOJI} **Slash Command:** \`/combatops\`\n` +
-                    `> ${BULLET_EMOJI} **LiveOps Suite Shortcut:** \`${prefix}liveops combat\`\n\n` +
+                    `> ${BULLET_EMOJI} **Related Dashboards:** \`${prefix}sectrack\`, \`${prefix}liveops combat\`\n\n` +
                     `> -# **__Single-Strike Combat Architecture:__**\n` +
-                    `> ${BULLET_EMOJI} **Zero-Day Bot Eviction (<1ms):** Intercepts \`GUILD_MEMBER_ADD\` at the raw TCP WebSocket packet layer. Unauthorized bots are condemned and banned at 0ms before they can dispatch a single command.\n` +
-                    `> ${BULLET_EMOJI} **Sub-12ms Direct Ban:** Eliminates nukers on their first destructive attempt. Fires a single raw HTTPS ban over pre-warmed sockets without wasting milliseconds on redundant role-stripping.\n` +
-                    `> ${BULLET_EMOJI} **Second Strike Annihilation:** Discord acknowledges ban in ~11.8ms; attacker's second channel deletion request is rejected with \`403 Forbidden\`.\n` +
-                    `> ${BULLET_EMOJI} **High-Velocity Socket Pool:** 120 persistent Undici keep-alive sockets, 25s heartbeat, and IPv4-first DNS eliminate SSL/TLS handshake delays.\n` +
-                    `> ${BULLET_EMOJI} **Intelligent Restoration Queue:** Restores deleted channels, roles, and permissions from SQLite snapshots in the background while keeping attack bandwidth 100% focused on neutralization.`;
+                    `> ${BULLET_EMOJI} **Zero-Day Bot Eviction (<1ms):** Strict Owner/BotOwner-only unwhitelisted BotAdd; owner-added unwhitelisted bots retain zero immunity across all 32 shields.\n` +
+                    `> ${BULLET_EMOJI} **Sub-12ms Single-Shot Raw Ban:** Fires one direct \`PUT /bans\` payload over 12 pre-connected Raw TLS sockets with zero role-strip roundtrip overhead.\n` +
+                    `> ${BULLET_EMOJI} **Second Strike Annihilation:** Discord acknowledges ban in milliseconds; attacker's second destructive request is rejected with \`403 Forbidden\`.\n` +
+                    `> ${BULLET_EMOJI} **High-Velocity Socket Pool:** 12 Raw TLS \`TCP_NODELAY\` sockets + 128 Undici keep-alive connections + live \`X-RateLimit\` bucket sharing.\n` +
+                    `> ${BULLET_EMOJI} **Intelligent Restoration Queue:** Restores deleted channels, roles, and permissions from RAM snapshots while yielding bandwidth to active strikes.`;
               } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
                   descContent = `Learn about Athena Prime and its military-grade security & anti-nuke architecture.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
@@ -718,8 +734,8 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}about\` (Aliases: \`${prefix}aboutathena\`, \`${prefix}botabout\`, \`${prefix}whoisathena\`)\n` +
                     `> ${BULLET_EMOJI} **Slash Command:** \`/about\`\n\n` +
                     `> -# **__Core Architectural Highlights:__**\n` +
-                    `> ${BULLET_EMOJI} **Military-Grade Anti-Nuke:** Zero-Day bot eviction (<1ms), single-strike sub-12ms direct ban, 28 antinuke shields, and zero Discord native emoji compliance.\n` +
-                    `> ${BULLET_EMOJI} **High-Velocity Infrastructure:** 120 Undici persistent sockets, IPv4-first DNS resolution, and raw TCP WebSocket packet wiretaps.\n` +
+                    `> ${BULLET_EMOJI} **Military-Grade Anti-Nuke:** Zero-Day bot eviction (<1ms), single-shot sub-12ms direct raw ban, 32 antinuke shields, and zero Discord native emoji compliance.\n` +
+                    `> ${BULLET_EMOJI} **High-Velocity Infrastructure:** 12 Raw TLS + 128 Undici persistent sockets, IPv4-first DNS resolution, and raw TCP WebSocket packet wiretaps.\n` +
                     `> ${BULLET_EMOJI} **Enterprise Profile:** Real-time cluster scope, node runtime, latency telemetry, and developer credentials.`;
               } else if (targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
                   descContent = `Athena Prime System Intelligence, Statistics & Military-Grade Security Profile.\n\n` +
@@ -730,7 +746,7 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Slash Command:** \`/botstats\`\n\n` +
                     `> -# **__Live Telemetry Metrics:__**\n` +
                     `> ${BULLET_EMOJI} **Identity & Architecture:** Host runtime, gateway ping, active servers, total users, and loaded commands.\n` +
-                    `> ${BULLET_EMOJI} **Military-Grade Security:** 28 antinuke shields, <1ms zero-day bot eviction, sub-12ms raw ban, 120 Undici socket pool, and RAM snapshots.\n` +
+                    `> ${BULLET_EMOJI} **Military-Grade Security:** 32 antinuke shields, <1ms zero-day bot eviction, sub-12ms single-shot raw ban, 12 Raw TLS + 128 Undici pool, and RAM snapshots.\n` +
                     `> ${BULLET_EMOJI} **System Footprint:** V8 heap consumption, host RAM, CPU topology, codebase line metrics, and emoji counts.`;
               } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
                   descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
@@ -742,9 +758,9 @@ export const commands = [
                     `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops combat\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
                     `> -# **__Live Telemetry Subsystems:__**\n` +
                     `> ${BULLET_EMOJI} **Master Overview:** Realtime memory heap, RSS, external buffers, CPU user/system clock, Node.js event loop lag, SQLite WAL cache status, WebSocket heartbeat, and live REST HTTPS roundtrip ping.\n` +
-                    `> ${BULLET_EMOJI} **Combat & Strike Telemetry:** Single-strike timeline breakdown, 0ms wiretap, sub-12ms raw ban, 120 Undici socket pool, and RAM condemned actors.\n` +
-                    `> ${BULLET_EMOJI} **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, role strip, channel lock, timeout, DB read/write, and audit log polling.\n` +
-                    `> ${BULLET_EMOJI} **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
+                    `> ${BULLET_EMOJI} **Combat & Strike Telemetry:** Single-strike timeline breakdown, 0ms wiretap, sub-12ms single-shot raw ban, 12 Raw TLS + 128 Undici pool, and RAM condemned actors.\n` +
+                    `> ${BULLET_EMOJI} **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, channel lock, timeout, DB read/write, and audit log polling.\n` +
+                    `> ${BULLET_EMOJI} **Antinuke & Heuristics:** All 32 shields, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
                     `> ${BULLET_EMOJI} **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.\n` +
                     `> ${BULLET_EMOJI} **Storage & Daemons:** Background worker telemetry (auto-deploy watcher, backup sync, thought broadcaster, stats channels).`;
               } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
@@ -930,7 +946,7 @@ export const commands = [
               } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
                   descContent = `Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.\n\n` +
                     `> -# <a:uptime:1552608831060844575> **__Zero Security Disruption Guarantee:__**\n` +
-                    `> ${BULLET_EMOJI} **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
+                    `> ${BULLET_EMOJI} **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 32 antinuke tripwires (mass channel, role, ban, kick, webhook, vanity, invite, soundboard, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
                     `> ${BULLET_EMOJI} **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.\n\n` +
                     `> -# **__Autonomous Bot Self-Learning & Neural Autopsy:__**\n` +
                     `> ${BULLET_EMOJI} **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
@@ -1140,16 +1156,16 @@ export const commands = [
               } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
                   descContent = `Master unbypassable security deployment, real-time threat neutralization, and incident telemetry engine.\n\n` +
                     `> -# **__Core Antinuke Upgrades:__**\n` +
-                    `> ${BULLET_EMOJI} **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (\`rawBan\` / \`rawRoleStrip\`). Zero restorations run during an active attack.\n` +
+                    `> ${BULLET_EMOJI} **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (single-shot \`rawBan\` via warm 12-socket raw TLS pool — zero role-strip delay). Zero restorations run during an active attack.\n` +
                     `> ${BULLET_EMOJI} **Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all accounts. If coordinated bots trigger destructive acts, Athena instantly initiates emergency lockdown.\n` +
-                    `> ${BULLET_EMOJI} **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.\n` +
+                    `> ${BULLET_EMOJI} **Cascade Bot Inviter Punishment:** Automatically bans unauthorized inviters of rogue bots; any owner-added unwhitelisted bot stays at zero immunity.\n` +
                     `> ${BULLET_EMOJI} **Role Member Restoration:** Infrastructure snapshots back up member role assignments; restored roles automatically re-assign members in parallel.\n` +
                     `> ${BULLET_EMOJI} **Strict 3-Tier Queue Ordering:** Damage restoration executes strictly in topological order: Roles FIRST, Categories SECOND, Channels THIRD.\n` +
-                    `> ${BULLET_EMOJI} **Vanity URL Tampering Guard:** Instant interception and automatic reclaim if an attacker modifies or steals the server vanity code.\n\n` +
+                    `> ${BULLET_EMOJI} **Vanity URL Tampering Guard:** Instant interception and automatic reclaim via raw TLS if an attacker modifies or steals the server vanity code.\n\n` +
                     `> -# **__Subcommands & Directives:__**\n` +
-                    `> ${BULLET_EMOJI} \`${prefix}security enable all\` - One-click deployment of all 28 antinuke modules, persistence roles, and dashboard.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}security enable all\` - One-click deployment of all 32 antinuke modules, persistence roles, and dashboard.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}security disable all\` - Forcibly disable security system (requires 2FA Gmail authorization).\n` +
-                    `> ${BULLET_EMOJI} \`${prefix}security status\` - Real-time active/offline matrix view across all 28 security modules.\n` +
+                    `> ${BULLET_EMOJI} \`${prefix}security status\` - Real-time active/offline matrix view across all 32 security modules.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}security records\` - Live forensic incident audit stream of neutralized threats, execution speeds, and automatic rollbacks.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}security disable <module>\` - Disable a specific security module.\n` +
                     `> ${BULLET_EMOJI} \`${prefix}security enable <module>\` - Enable a specific security module.`;
@@ -1574,7 +1590,7 @@ export const commands = [
           permsText = "Bot Owner & Extra Owner";
         } else if (targetCmd.name === "wordfilter" || targetCmd.name === "wf" || targetCmd.name === "filterwords" || targetCmd.name === "wordblacklist") {
           permsText = "Extra Owner (or Server Owner)";
-        } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
+        } else if (cmdClearance.requiredClearance === 'Server Owner & Extra Owner' || targetCmd.name === "sectrack" || targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes" || targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "perfmon" || targetCmd.name === "matrixmon" || targetCmd.name === "mon") {
           permsText = "Server Owner & Extra Owner";
         } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena" || targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
           permsText = "Public (Everyone)";
@@ -1597,6 +1613,8 @@ export const commands = [
         let usageText = `${prefix}${targetCmd.name}`;
         if (targetCmd.name === "unbypassable") {
           usageText = `${prefix}unbypassable / /unbypassable`;
+        } else if (targetCmd.name === "sectrack" || targetCmd.name === "securitytrack" || targetCmd.name === "tracksec" || targetCmd.name === "secwatch" || targetCmd.name === "secradar") {
+          usageText = `${prefix}sectrack [overview|transport|wiretap|auth|recovery|shields] / /sectrack [view]`;
         } else if (targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes") {
           usageText = `${prefix}combatops / ${prefix}strikeops / /combatops`;
         } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
@@ -1709,6 +1727,20 @@ export const commands = [
             `> ${BULLET_EMOJI} **Change Punishment:** \`${prefix}honeypot punish <ban|timeout|kick>\` or \`/honeypot punishment <action>\`\n` +
             `> ${BULLET_EMOJI} **Interactive Panel:** \`${prefix}honeypot\` (or \`${prefix}honeypot status\` / \`/honeypot panel\`)\n` +
             `> ${BULLET_EMOJI} **Disarm Trap:** \`${prefix}honeypot remove\` (or \`${prefix}honeypot disarm\` / \`/honeypot disarm\`)`;
+        } else if (targetCmd.name === "sectrack" || targetCmd.name === "securitytrack" || targetCmd.name === "tracksec" || targetCmd.name === "antinuketrack" || targetCmd.name === "threattrack" || targetCmd.name === "shieldtrack" || targetCmd.name === "trackshield" || targetCmd.name === "secwatch" || targetCmd.name === "secradar" || targetCmd.name === "threatradar" || targetCmd.name === "secmonitor" || targetCmd.name === "guardtrack" || targetCmd.name === "trackops") {
+          descContent = `Unified Security Telemetry & Tracking Matrix with Architectural Explanations across all defense layers.\n\n` +
+            `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
+            `> ${BULLET_EMOJI} **Required Clearance:** \`Server Owner & Extra Owner\` (and Bot Owner).\n\n` +
+            `> -# **__Command Activation & All 12 Aliases:__**\n` +
+            `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}sectrack [overview|transport|wiretap|auth|recovery|shields]\`\n` +
+            `> ${BULLET_EMOJI} **Aliases:** \`${prefix}securitytrack\`, \`${prefix}tracksec\`, \`${prefix}antinuketrack\`, \`${prefix}threattrack\`, \`${prefix}shieldtrack\`, \`${prefix}trackshield\`, \`${prefix}secwatch\`, \`${prefix}secradar\`, \`${prefix}threatradar\`, \`${prefix}secmonitor\`, \`${prefix}guardtrack\`, \`${prefix}trackops\`\n` +
+            `> ${BULLET_EMOJI} **Slash Command:** \`/sectrack [view]\`\n\n` +
+            `> -# **__Tracked Subsystems & Built-In Explanations:__**\n` +
+            `> ${BULLET_EMOJI} **Transport (\`transport\`):** 12 warm Raw TLS \`TCP_NODELAY\` sockets, cached IPv4, strikes/aux ops, and live Discord \`X-RateLimit-*\` / 429 buckets.\n` +
+            `> ${BULLET_EMOJI} **Wiretap & Combat (\`wiretap\`):** 0ms Audit Ring Buffer, \`raceFirstTruthy\` REST cooldowns, 2s burst counter, condemned IDs, and single-shot \`rawBan\` RTT.\n` +
+            `> ${BULLET_EMOJI} **Auth & BotAdd (\`auth\`):** O(1) whitelist \`Set\`/\`Map\` index, \`_botWhitelistSets\`, strict Owner Bot-Add zero-immunity rule, and \`botInviterMap\`.\n` +
+            `> ${BULLET_EMOJI} **Recovery & Snapshots (\`recovery\`):** RAM channel/role snapshots, \`markPendingSelfCreate\` markers, restoration queue depth, and incident logs.\n` +
+            `> ${BULLET_EMOJI} **32 Shields & Sentinels (\`shields\`):** All 32 modules status, sentinel roles, 3.5s \`antiStrip\` alignment window, honeypot, and 2FA lock.`;
         } else if (targetCmd.name === "combatops" || targetCmd.name === "strikeops" || targetCmd.name === "strikemonitor" || targetCmd.name === "combattelemetry" || targetCmd.name === "combatmon" || targetCmd.name === "strikes") {
           descContent = `Anti-Nuke Combat Operations & Single-Strike Telemetry - Real-time combat telemetry, single-strike timeline breakdown, and socket benchmarks.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
@@ -1716,13 +1748,13 @@ export const commands = [
             `> -# **__Command Activation & Aliases:__**\n` +
             `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}combatops\` (Aliases: \`${prefix}strikeops\`, \`${prefix}strikemonitor\`, \`${prefix}combattelemetry\`, \`${prefix}combatmon\`, \`${prefix}strikes\`)\n` +
             `> ${BULLET_EMOJI} **Slash Command:** \`/combatops\`\n` +
-            `> ${BULLET_EMOJI} **LiveOps Suite Shortcut:** \`${prefix}liveops combat\`\n\n` +
+            `> ${BULLET_EMOJI} **Related Dashboards:** \`${prefix}sectrack\`, \`${prefix}liveops combat\`\n\n` +
             `> -# **__Single-Strike Combat Architecture:__**\n` +
-            `> ${BULLET_EMOJI} **Zero-Day Bot Eviction (<1ms):** Intercepts \`GUILD_MEMBER_ADD\` at the raw TCP WebSocket packet layer. Unauthorized bots are condemned and banned at 0ms before they can dispatch a single command.\n` +
-            `> ${BULLET_EMOJI} **Sub-12ms Direct Ban:** Eliminates nukers on their first destructive attempt. Fires a single raw HTTPS ban over pre-warmed sockets without wasting milliseconds on redundant role-stripping.\n` +
-            `> ${BULLET_EMOJI} **Second Strike Annihilation:** Discord acknowledges ban in ~11.8ms; attacker's second channel deletion request is rejected with \`403 Forbidden\`.\n` +
-            `> ${BULLET_EMOJI} **High-Velocity Socket Pool:** 120 persistent Undici keep-alive sockets, 25s heartbeat, and IPv4-first DNS eliminate SSL/TLS handshake delays.\n` +
-            `> ${BULLET_EMOJI} **Intelligent Restoration Queue:** Restores deleted channels, roles, and permissions from SQLite snapshots in the background while keeping attack bandwidth 100% focused on neutralization.`;
+            `> ${BULLET_EMOJI} **Zero-Day Bot Eviction (<1ms):** Strict Owner/BotOwner-only unwhitelisted BotAdd; owner-added unwhitelisted bots retain zero immunity across all 32 shields.\n` +
+            `> ${BULLET_EMOJI} **Sub-12ms Single-Shot Raw Ban:** Fires one direct \`PUT /bans\` payload over 12 pre-connected Raw TLS sockets with zero role-strip roundtrip overhead.\n` +
+            `> ${BULLET_EMOJI} **Second Strike Annihilation:** Discord acknowledges ban in milliseconds; attacker's second destructive request is rejected with \`403 Forbidden\`.\n` +
+            `> ${BULLET_EMOJI} **High-Velocity Socket Pool:** 12 Raw TLS \`TCP_NODELAY\` sockets + 128 Undici keep-alive connections + live \`X-RateLimit\` bucket sharing.\n` +
+            `> ${BULLET_EMOJI} **Intelligent Restoration Queue:** Restores deleted channels, roles, and permissions from RAM snapshots while yielding bandwidth to active strikes.`;
         } else if (targetCmd.name === "about" || targetCmd.name === "aboutathena" || targetCmd.name === "botabout" || targetCmd.name === "whoisathena") {
           descContent = `Learn about Athena Prime and its military-grade security & anti-nuke architecture.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Clearance & Access Control:__**\n` +
@@ -1731,8 +1763,8 @@ export const commands = [
             `> ${BULLET_EMOJI} **Prefix Command:** \`${prefix}about\` (Aliases: \`${prefix}aboutathena\`, \`${prefix}botabout\`, \`${prefix}whoisathena\`)\n` +
             `> ${BULLET_EMOJI} **Slash Command:** \`/about\`\n\n` +
             `> -# **__Core Architectural Highlights:__**\n` +
-            `> ${BULLET_EMOJI} **Military-Grade Anti-Nuke:** Zero-Day bot eviction (<1ms), single-strike sub-12ms direct ban, 28 antinuke shields, and zero Discord native emoji compliance.\n` +
-            `> ${BULLET_EMOJI} **High-Velocity Infrastructure:** 120 Undici persistent sockets, IPv4-first DNS resolution, and raw TCP WebSocket packet wiretaps.\n` +
+            `> ${BULLET_EMOJI} **Military-Grade Anti-Nuke:** Zero-Day bot eviction (<1ms), single-shot sub-12ms direct raw ban, 32 antinuke shields, and zero Discord native emoji compliance.\n` +
+            `> ${BULLET_EMOJI} **High-Velocity Infrastructure:** 12 Raw TLS + 128 Undici persistent sockets, IPv4-first DNS resolution, and raw TCP WebSocket packet wiretaps.\n` +
             `> ${BULLET_EMOJI} **Enterprise Profile:** Real-time cluster scope, node runtime, latency telemetry, and developer credentials.`;
         } else if (targetCmd.name === "botstats" || targetCmd.name === "botinfo" || targetCmd.name === "bi" || targetCmd.name === "binfo") {
           descContent = `Athena Prime System Intelligence, Statistics & Military-Grade Security Profile.\n\n` +
@@ -1743,7 +1775,7 @@ export const commands = [
             `> ${BULLET_EMOJI} **Slash Command:** \`/botstats\`\n\n` +
             `> -# **__Live Telemetry Metrics:__**\n` +
             `> ${BULLET_EMOJI} **Identity & Architecture:** Host runtime, gateway ping, active servers, total users, and loaded commands.\n` +
-            `> ${BULLET_EMOJI} **Military-Grade Security:** 28 antinuke shields, <1ms zero-day bot eviction, sub-12ms raw ban, 120 Undici socket pool, and RAM snapshots.\n` +
+            `> ${BULLET_EMOJI} **Military-Grade Security:** 32 antinuke shields, <1ms zero-day bot eviction, sub-12ms single-shot raw ban, 12 Raw TLS + 128 Undici pool, and RAM snapshots.\n` +
             `> ${BULLET_EMOJI} **System Footprint:** V8 heap consumption, host RAM, CPU topology, codebase line metrics, and emoji counts.`;
         } else if (targetCmd.name === "liveops" || targetCmd.name === "livemonitor" || targetCmd.name === "telemetry" || targetCmd.name === "sysmon" || targetCmd.name === "matrixmon" || targetCmd.name === "perfmon" || targetCmd.name === "mon") {
           descContent = `Real-Time LiveOps Telemetry Matrix - Real-time system monitoring, execution speeds, antinuke telemetry, and background daemons.\n\n` +
@@ -1755,9 +1787,9 @@ export const commands = [
             `> ${BULLET_EMOJI} **Direct View Jump:** \`${prefix}liveops speed\`, \`${prefix}liveops antinuke\`, \`${prefix}liveops combat\`, \`${prefix}liveops voice\`, \`${prefix}liveops daemons\`\n\n` +
             `> -# **__Live Telemetry Subsystems:__**\n` +
             `> ${BULLET_EMOJI} **Master Overview:** Realtime memory heap, RSS, external buffers, CPU user/system clock, Node.js event loop lag, SQLite WAL cache status, WebSocket heartbeat, and live REST HTTPS roundtrip ping.\n` +
-            `> ${BULLET_EMOJI} **Combat & Strike Telemetry:** Single-strike timeline breakdown, 0ms wiretap, sub-12ms raw ban, 120 Undici socket pool, and RAM condemned actors.\n` +
-            `> ${BULLET_EMOJI} **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, role strip, channel lock, timeout, DB read/write, and audit log polling.\n` +
-            `> ${BULLET_EMOJI} **Antinuke & Heuristics:** Active tripwires, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
+            `> ${BULLET_EMOJI} **Combat & Strike Telemetry:** Single-strike timeline breakdown, 0ms wiretap, sub-12ms single-shot raw ban, 12 Raw TLS + 128 Undici pool, and RAM condemned actors.\n` +
+            `> ${BULLET_EMOJI} **Speed & Latencies:** Sub-10ms execution benchmarks for raw ban, channel lock, timeout, DB read/write, and audit log polling.\n` +
+            `> ${BULLET_EMOJI} **Antinuke & Heuristics:** All 32 shields, burst tracker, zero-trust enforcement velocity, and hostile elimination stats.\n` +
             `> ${BULLET_EMOJI} **Voice Telemetry:** Active voice connections, audio pipeline latency, soundboard buffers, and channel sweepers.\n` +
             `> ${BULLET_EMOJI} **Storage & Daemons:** Background worker telemetry (auto-deploy watcher, backup sync, thought broadcaster, stats channels).`;
         } else if (targetCmd.name === "changelog" || targetCmd.name === "updates" || targetCmd.name === "changes" || targetCmd.name === "cl" || targetCmd.name === "release" || targetCmd.name === "notes") {
@@ -1854,7 +1886,7 @@ export const commands = [
         } else if (targetCmd.name === "learn" || targetCmd.name === "lambda") {
           descContent = `Autonomous Self-Learning, Lambda AI Threat Autopsy & Defense Flaw Diagnostics engine.\n\n` +
             `> -# <a:uptime:1552608831060844575> **__Zero Security Disruption Guarantee:__**\n` +
-            `> ${BULLET_EMOJI} **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 28 antinuke tripwires (mass channel, role, ban, kick, webhook, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
+            `> ${BULLET_EMOJI} **Deterministic Anti-Nuke Stays 100% Armed:** Enabling Learn mode NEVER stops, pauses, or weakens server security. All 32 antinuke tripwires (mass channel, role, ban, kick, webhook, vanity, invite, soundboard, bot defense) remain armed at maximum sub-millisecond velocity.\n` +
             `> ${BULLET_EMOJI} **Parallel Intelligence Layer:** Autonomous Learning operates strictly in parallel to observe attack velocity, fingerprint hostile bot tokens, and diagnose defensive friction without adding lag.\n\n` +
             `> -# **__Autonomous Bot Self-Learning & Neural Autopsy:__**\n` +
             `> ${BULLET_EMOJI} **Rogue Bot Threat Profiling:** Automatically indexes destructive bot attacks, velocity spikes, and token compromise signatures into SQLite.\n` +
@@ -2064,16 +2096,16 @@ export const commands = [
         } else if (targetCmd.name === "security" || targetCmd.name === "antinuke") {
           descContent = `Master unbypassable security deployment, real-time threat neutralization, and incident telemetry engine.\n\n` +
             `> -# **__Core Antinuke Upgrades:__**\n` +
-            `> ${BULLET_EMOJI} **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (\`rawBan\` / \`rawRoleStrip\`). Zero restorations run during an active attack.\n` +
+            `> ${BULLET_EMOJI} **API Rate Limit Priority:** 100% of Discord REST rate limits are strictly reserved for hostile elimination (single-shot \`rawBan\` via warm 12-socket raw TLS pool — zero role-strip delay). Zero restorations run during an active attack.\n` +
             `> ${BULLET_EMOJI} **Multi-Account Burst Auto-Lockdown:** 2-second global sliding window across all accounts. If coordinated bots trigger destructive acts, Athena instantly initiates emergency lockdown.\n` +
-            `> ${BULLET_EMOJI} **Cascade Bot Inviter Punishment:** Automatically bans the member or rogue admin who invited an unauthorized rogue bot.\n` +
+            `> ${BULLET_EMOJI} **Cascade Bot Inviter Punishment:** Automatically bans unauthorized inviters of rogue bots; any owner-added unwhitelisted bot stays at zero immunity.\n` +
             `> ${BULLET_EMOJI} **Role Member Restoration:** Infrastructure snapshots back up member role assignments; restored roles automatically re-assign members in parallel.\n` +
             `> ${BULLET_EMOJI} **Strict 3-Tier Queue Ordering:** Damage restoration executes strictly in topological order: Roles FIRST, Categories SECOND, Channels THIRD.\n` +
-            `> ${BULLET_EMOJI} **Vanity URL Tampering Guard:** Instant interception and automatic reclaim if an attacker modifies or steals the server vanity code.\n\n` +
+            `> ${BULLET_EMOJI} **Vanity URL Tampering Guard:** Instant interception and automatic reclaim via raw TLS if an attacker modifies or steals the server vanity code.\n\n` +
             `> -# **__Subcommands & Directives:__**\n` +
-            `> ${BULLET_EMOJI} \`${prefix}security enable all\` - One-click deployment of all 28 antinuke modules, persistence roles, and dashboard.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}security enable all\` - One-click deployment of all 32 antinuke modules, persistence roles, and dashboard.\n` +
             `> ${BULLET_EMOJI} \`${prefix}security disable all\` - Forcibly disable security system (requires 2FA Gmail authorization).\n` +
-            `> ${BULLET_EMOJI} \`${prefix}security status\` - Real-time active/offline matrix view across all 28 security modules.\n` +
+            `> ${BULLET_EMOJI} \`${prefix}security status\` - Real-time active/offline matrix view across all 32 security modules.\n` +
             `> ${BULLET_EMOJI} \`${prefix}security records\` - Live forensic incident audit stream of neutralized threats, execution speeds, and automatic rollbacks.\n` +
             `> ${BULLET_EMOJI} \`${prefix}security disable <module>\` - Disable a specific security module.\n` +
             `> ${BULLET_EMOJI} \`${prefix}security enable <module>\` - Enable a specific security module.`;
@@ -3093,6 +3125,7 @@ async function getStatusEmbed(client, guild) {
 
 export const helpModules = [
   { id: 'security', category: 'SECURITY & ACCESS CONTROL', shortLabel: 'Security', label: 'Security Commands', emoji: 'security', commands: [
+    "`!sectrack / !secwatch / !secradar <overview|transport|wiretap|auth|recovery|shields>` - Unified security tracking & explanations (`!securitytrack`, `!tracksec`, `!antinuketrack`, `!threattrack`, `!shieldtrack`, `!trackshield`, `!threatradar`, `!secmonitor`, `!guardtrack`, `!trackops`) `[Server/Extra]`",
     "`!combatops / !strikeops` - Combat telemetry & strike timeline `[Server/Extra]`",
     "`!liveops combat` - LiveOps combat & socket pool dashboard `[Server/Extra]`",
     "`!auth / !tiers` - Authorization tiers (Admin/Mod/Staff) `[Extra Owner]`",

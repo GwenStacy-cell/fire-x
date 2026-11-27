@@ -172,6 +172,8 @@ class Database {
     this.isSaving = false;
     this.needsSave = false;
     this._wlConsumedKeys = new Set();
+    this._whitelistIndex = new Map();
+    this._botWhitelistSets = new Map();
     this.load();
 
     // Periodic lightweight background snapshot (every 15 minutes, non-blocking)
@@ -298,6 +300,15 @@ class Database {
       this._spamPermittedSet = new Set(this.cache.spamPermitted || []);
       this._bannedServersSet = new Set(this.cache.bannedServers || []);
       this._extraOwnersSets = new Map();
+      this._whitelistIndex = new Map();
+      this._botWhitelistSets = new Map();
+      if (this.cache.botWhitelist) {
+        for (const [gid, arr] of Object.entries(this.cache.botWhitelist)) {
+          if (Array.isArray(arr) && arr.length > 0) {
+            this._botWhitelistSets.set(gid, new Set(arr));
+          }
+        }
+      }
       if (this.cache.extraOwners) {
         for (const [gid, arr] of Object.entries(this.cache.extraOwners)) {
           if (Array.isArray(arr) && arr.length > 0) {
@@ -312,6 +323,8 @@ class Database {
       this._spamPermittedSet = new Set();
       this._bannedServersSet = new Set();
       this._extraOwnersSets = new Map();
+      this._whitelistIndex = new Map();
+      this._botWhitelistSets = new Map();
     }
   }
 
@@ -763,6 +776,9 @@ class Database {
     }
     Object.assign(config, restUpdates);
     normalizedGuildConfigs.delete(config);
+    if (restUpdates.whitelist !== undefined) {
+      this._whitelistIndex?.delete(guildId);
+    }
     this.getGuildConfig(guildId);
     if (
       restUpdates.securityEnabled !== undefined ||
@@ -874,6 +890,53 @@ class Database {
     }
   }
 
+  _getWhitelistIndex(guildId, whitelistObj) {
+    if (!this._whitelistIndex) this._whitelistIndex = new Map();
+    let idx = this._whitelistIndex.get(guildId);
+    if (idx && idx.ref === whitelistObj) return idx;
+
+    const usersAll = new Set();
+    const usersMod = new Map();
+    const rolesAll = new Set();
+    const rolesMod = new Map();
+    let hasLimited = false;
+
+    const addEntry = (id, data, allSet, modMap) => {
+      if (!data || !Array.isArray(data.modules) || data.modules.length === 0) return;
+      if (data.triggerLimit > 0) hasLimited = true;
+      let modsSet = modMap.get(id);
+      for (const m of data.modules) {
+        const lm = String(m).toLowerCase().trim();
+        if (lm === 'all') {
+          allSet.add(id);
+        } else {
+          if (!modsSet) {
+            modsSet = new Set();
+            modMap.set(id, modsSet);
+          }
+          modsSet.add(lm);
+          const aliased = WHITELIST_EVENT_ALIAS[lm];
+          if (aliased) modsSet.add(aliased);
+        }
+      }
+    };
+
+    if (whitelistObj?.users) {
+      for (const [uid, uData] of Object.entries(whitelistObj.users)) {
+        addEntry(uid, uData, usersAll, usersMod);
+      }
+    }
+    if (whitelistObj?.roles) {
+      for (const [rid, rData] of Object.entries(whitelistObj.roles)) {
+        addEntry(rid, rData, rolesAll, rolesMod);
+      }
+    }
+
+    idx = { ref: whitelistObj, usersAll, usersMod, rolesAll, rolesMod, hasLimited };
+    this._whitelistIndex.set(guildId, idx);
+    return idx;
+  }
+
   // Whitelist Manager
   isWhitelisted(guild, memberOrId, eventType = 'all', options = {}) {
     if (!guild || !memberOrId) return false;
@@ -894,6 +957,42 @@ class Database {
 
     const rawEvt = String(eventType || 'all').toLowerCase().trim();
     const canonicalEvt = WHITELIST_EVENT_ALIAS[rawEvt] || rawEvt;
+    const idx = this._getWhitelistIndex(guild.id, config.whitelist);
+
+    const resolvedMember = (typeof memberOrId === 'object' && memberOrId?.roles)
+      ? memberOrId
+      : guild.members?.cache?.get?.(userId);
+
+    // O(1) zero-allocation hot path when no limited triggers exist on this guild
+    if (!idx.hasLimited) {
+      if (idx.usersAll.has(userId)) return true;
+      const uMods = idx.usersMod.get(userId);
+      if (uMods && (uMods.has(rawEvt) || (canonicalEvt !== 'all' && uMods.has(canonicalEvt)) || (canonicalEvt === 'antinuke' && uMods.has('antinuke')))) {
+        return true;
+      }
+      if (resolvedMember?.roles) {
+        if (resolvedMember.roles.cache?.has) {
+          for (const rid of idx.rolesAll) {
+            if (resolvedMember.roles.cache.has(rid)) return true;
+          }
+          for (const [rid, rMods] of idx.rolesMod) {
+            if (resolvedMember.roles.cache.has(rid) && (rMods.has(rawEvt) || (canonicalEvt !== 'all' && rMods.has(canonicalEvt)) || (canonicalEvt === 'antinuke' && rMods.has('antinuke')))) {
+              return true;
+            }
+          }
+        } else if (Array.isArray(resolvedMember.roles)) {
+          for (const rid of resolvedMember.roles) {
+            if (idx.rolesAll.has(rid)) return true;
+            const rMods = idx.rolesMod.get(rid);
+            if (rMods && (rMods.has(rawEvt) || (canonicalEvt !== 'all' && rMods.has(canonicalEvt)) || (canonicalEvt === 'antinuke' && rMods.has('antinuke')))) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    }
+
     const matchesModule = (modules) => {
       if (!Array.isArray(modules) || modules.length === 0) return false;
       for (const m of modules) {
@@ -918,11 +1017,6 @@ class Database {
       }
     }
 
-    // Resolve cached GuildMember automatically if a plain ID or { id } wrapper was supplied
-    const resolvedMember = (typeof memberOrId === 'object' && memberOrId?.roles)
-      ? memberOrId
-      : guild.members?.cache?.get?.(userId);
-
     if (!wData && resolvedMember?.roles && config.whitelist.roles) {
       for (const [roleId, rData] of Object.entries(config.whitelist.roles)) {
         if (resolvedMember.roles.cache?.has?.(roleId) || (Array.isArray(resolvedMember.roles) && resolvedMember.roles.includes(roleId))) {
@@ -942,6 +1036,7 @@ class Database {
     if (wData.triggerLimit > 0) {
       if (wData.currentUsage >= wData.triggerLimit) {
         delete config.whitelist[typeStr][targetId];
+        this._whitelistIndex?.delete(guild.id);
         this.saveCritical();
         return false;
       }
@@ -979,6 +1074,26 @@ class Database {
     };
   }
 
+  getWhitelistStats(guildId) {
+    const config = this.getGuildConfig(guildId);
+    const wl = config.whitelist || { users: {}, roles: {} };
+    const idx = this._getWhitelistIndex(guildId, wl);
+    const bots = this.getBotWhitelist(guildId);
+    return {
+      indexed: Boolean(this._whitelistIndex?.has(guildId)),
+      usersAllCount: idx.usersAll.size,
+      usersModCount: idx.usersMod.size,
+      rolesAllCount: idx.rolesAll.size,
+      rolesModCount: idx.rolesMod.size,
+      totalUsers: Object.keys(wl.users || {}).length,
+      totalRoles: Object.keys(wl.roles || {}).length,
+      hasLimited: idx.hasLimited,
+      botWhitelistCount: bots.length,
+      botWhitelistIds: bots,
+      botWhitelistIndexed: Boolean(this._botWhitelistSets?.has(guildId))
+    };
+  }
+
   updateWhitelist(guildId, targetId, type, data) {
     // type is 'users' or 'roles'
     const config = this.getGuildConfig(guildId);
@@ -992,6 +1107,7 @@ class Database {
     }
     
     this.updateGuildConfig(guildId, { whitelist: config.whitelist });
+    this._whitelistIndex?.delete(guildId);
     this.saveCritical();
     return true;
   }
@@ -2003,6 +2119,14 @@ class Database {
     if (!this.cache.botWhitelist[guildId]) this.cache.botWhitelist[guildId] = [];
     if (!this.cache.botWhitelist[guildId].includes(botId)) {
       this.cache.botWhitelist[guildId].push(botId);
+      if (!this._botWhitelistSets) this._botWhitelistSets = new Map();
+      let set = this._botWhitelistSets.get(guildId);
+      if (!set) {
+        set = new Set(this.cache.botWhitelist[guildId]);
+        this._botWhitelistSets.set(guildId, set);
+      } else {
+        set.add(botId);
+      }
       this.saveCritical();
     }
   }
@@ -2012,6 +2136,7 @@ class Database {
     const initialLen = this.cache.botWhitelist[guildId].length;
     this.cache.botWhitelist[guildId] = this.cache.botWhitelist[guildId].filter(id => id !== botId);
     if (this.cache.botWhitelist[guildId].length !== initialLen) {
+      this._botWhitelistSets?.get(guildId)?.delete(botId);
       this.saveCritical();
       return true;
     }
@@ -2039,11 +2164,22 @@ class Database {
     if (!botId) return false;
     const guildId = typeof guildOrGuildId === 'string' ? guildOrGuildId : guildOrGuildId?.id;
     if (!guildId) return false;
-    const list = this.cache.botWhitelist?.[guildId] || [];
-    if (list.includes(botId)) return true;
+    if (!this._botWhitelistSets) this._botWhitelistSets = new Map();
+    let set = this._botWhitelistSets.get(guildId);
+    if (!set) {
+      const list = this.cache.botWhitelist?.[guildId];
+      if (!list || list.length === 0) return false;
+      set = new Set(list);
+      this._botWhitelistSets.set(guildId, set);
+    }
+    if (set.has(botId)) return true;
     if (typeof guildOrGuildId === 'object' && guildOrGuildId?.members) {
       const member = guildOrGuildId.members.cache.get(botId);
-      if (member && list.some(id => member.roles.cache.has(id))) return true;
+      if (member) {
+        for (const id of set) {
+          if (member.roles.cache.has(id)) return true;
+        }
+      }
     }
     return false;
   }

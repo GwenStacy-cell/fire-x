@@ -57,7 +57,7 @@ async function handleUnbypassable(context, isSlash, args = []) {
             components: [
               { type: 10, content: `# ${getRandomHeadingGlyph()} Idle Mode Active | <a:03_tick_circle:1565665642084827206>` },
               { type: 14, divider: true },
-              { type: 10, content: `> -# <a:uptime:1552608831060844575> **Server Security and Antinuke Firewall are currently inactive.**\n> -# In Idle Mode, Athena strictly does not keep or deploy secondary persistence sentinel roles.\n> -# All persistence roles have been removed. Execute \`!security enable all\` or use \`!ss\` to arm all 28 shields and deploy persistence sentinels.` },
+              { type: 10, content: `> -# <a:uptime:1552608831060844575> **Server Security and Antinuke Firewall are currently inactive.**\n> -# In Idle Mode, Athena strictly does not keep or deploy secondary persistence sentinel roles.\n> -# All persistence roles have been removed. Execute \`!security enable all\` or use \`!ss\` to arm all 32 shields and deploy persistence sentinels.` },
               { type: 14, divider: true },
               { type: 10, content: `-# **Athena Prime • Idle Sentinel State**` }
             ]
@@ -338,7 +338,7 @@ async function handleFirewall(context, isSlash, args = []) {
   const activeModulesCount = Object.values(cfg.antinukeModules || {}).filter(Boolean).length;
   const localFirewallIcon = isServerSecured ? ON : RED_OFF;
   const localFirewallText = isServerSecured
-    ? `God-Tier Firewall Armed [${activeModulesCount}/28 Security Modules Active]`
+    ? `God-Tier Firewall Armed [${activeModulesCount}/32 Security Modules Active]`
     : `Firewall Inactive [Run \`!security enable all\` to arm]`;
 
   // 7. Real Persistence Sentinel Roles Verification

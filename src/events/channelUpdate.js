@@ -13,13 +13,13 @@ export default {
     if (isChannelRestoring(newChannel.id) || db.isJtcChannel(newChannel.id) || db.isJtcInfrastructure(newChannel.guild.id, newChannel.id)) return;
 
     const config = db.getGuildConfig(newChannel.guild.id);
-    if (!config?.securityEnabled && !config?.antiNukeEnabled) return;
+    if (!config?.securityEnabled || !config?.antiNukeEnabled) return;
     const mods = config?.antinukeModules || {};
 
     const guild = newChannel.guild;
 
     // 1. Channel Permission Tampering Guard
-    if (mods.antiChannelPermUpdate !== false || mods.antiChannelUpdate !== false) {
+    if (mods.antiChannelPermUpdate !== false) {
       const oldPerms = oldChannel.permissionOverwrites?.cache;
       const newPerms = newChannel.permissionOverwrites?.cache;
 
@@ -37,9 +37,6 @@ export default {
       }
 
       if (permsTampered) {
-        // Direct strike verifies executor authorization FIRST.
-        // Extra Owners and Server Owners are NEVER touched or reverted.
-        // Unauthorized violators are banned first, then rollback runs.
         directStrike(
           guild,
           AuditLogEvent.ChannelUpdate,
@@ -52,12 +49,11 @@ export default {
             }
           }
         ).catch(() => null);
-        return;
       }
     }
 
     // 2. Channel Name Modification Guard
-    if (mods.antiChannelNameMod !== false || mods.antiChannelUpdate !== false) {
+    if (mods.antiChannelNameMod !== false) {
       if (oldChannel.name !== newChannel.name) {
         directStrike(
           guild,
@@ -69,12 +65,11 @@ export default {
             await newChannel.setName(oldChannel.name, 'Athena Anti-Nuke: Restored Channel Name').catch(() => null);
           }
         ).catch(() => null);
-        return;
       }
     }
 
     // 3. Channel Reorder / Hierarchy Tampering Guard
-    if (mods.antiChannelReorder !== false || mods.antiChannelUpdate !== false) {
+    if (mods.antiChannelReorder !== false) {
       if (oldChannel.rawPosition !== newChannel.rawPosition) {
         directStrike(
           guild,

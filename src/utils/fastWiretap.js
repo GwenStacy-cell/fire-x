@@ -9,10 +9,15 @@ import {
   rawDeleteWebhook,
   rawUnban,
   rawVanityReclaim,
+  rawDeleteInvite,
+  rawDeleteSoundboardSound,
+  rawDeleteSticker,
+  rawClearTimeout,
   isCondemned, 
   condemn, 
   setGuildUnderAttack, 
   isGuildUnderAttack,
+  canFetchRestAudit,
   recordAuditEntry,
   isProtectedSystemChannel,
   isAuthorized,
@@ -25,6 +30,7 @@ import {
   getRoleSnapshot,
   isChannelRestoring,
   isRestorationHandled,
+  isPendingSelfCreate,
   markRestorationQueued,
   restorationQueue,
   processRestorationQueue,
@@ -49,14 +55,43 @@ const DESTRUCTIVE_EVENTS = new Set([
   'GUILD_AUDIT_LOG_ENTRY_CREATE',
   'CHANNEL_DELETE',
   'CHANNEL_CREATE',
+  'THREAD_CREATE',
+  'THREAD_DELETE',
   'GUILD_ROLE_DELETE',
   'GUILD_ROLE_CREATE',
   'GUILD_BAN_ADD',
+  'GUILD_BAN_REMOVE',
   'GUILD_MEMBER_ADD',
   'INVITE_CREATE',
   'GUILD_UPDATE',
   'WEBHOOKS_UPDATE'
 ]);
+
+// Helper: Resolves with the FIRST truthy non-null value (unlike Promise.race which aborts on early null timeout)
+function raceFirstTruthy(promises) {
+  return new Promise((resolve) => {
+    if (!Array.isArray(promises) || promises.length === 0) return resolve(null);
+    let settled = false;
+    let remaining = promises.length;
+    for (const p of promises) {
+      Promise.resolve(p)
+        .then((val) => {
+          if (!settled && val) {
+            settled = true;
+            resolve(val);
+          }
+        })
+        .catch(() => null)
+        .finally(() => {
+          remaining--;
+          if (!settled && remaining <= 0) {
+            settled = true;
+            resolve(null);
+          }
+        });
+    }
+  });
+}
 
 // Action types covering ALL 32 Anti-Nuke security modules
 const DESTRUCTIVE_AUDIT_ACTIONS = new Set([
@@ -71,6 +106,7 @@ const DESTRUCTIVE_AUDIT_ACTIONS = new Set([
   AuditLogEvent.MemberPrune,                        // 21
   AuditLogEvent.MemberBanAdd,                       // 22
   AuditLogEvent.MemberBanRemove,                    // 23
+  AuditLogEvent.MemberUpdate,                       // 24 (timeouts filtered dynamically)
   AuditLogEvent.MemberRoleUpdate,                   // 25
   AuditLogEvent.BotAdd,                             // 28
   AuditLogEvent.RoleCreate,                         // 30
@@ -86,11 +122,18 @@ const DESTRUCTIVE_AUDIT_ACTIONS = new Set([
   AuditLogEvent.IntegrationCreate,                  // 80
   AuditLogEvent.IntegrationUpdate,                  // 81
   AuditLogEvent.IntegrationDelete,                  // 82
+  AuditLogEvent.StageInstanceCreate,                // 83
+  AuditLogEvent.StageInstanceUpdate,                // 84
+  AuditLogEvent.StageInstanceDelete,                // 85
   AuditLogEvent.GuildScheduledEventCreate,          // 100
   AuditLogEvent.GuildScheduledEventUpdate,          // 101
   AuditLogEvent.GuildScheduledEventDelete,          // 102
+  AuditLogEvent.ThreadCreate,                       // 110
+  AuditLogEvent.ThreadUpdate,                       // 111
+  AuditLogEvent.ThreadDelete,                       // 112
   AuditLogEvent.ApplicationCommandPermissionUpdate, // 121
   AuditLogEvent.SoundboardSoundCreate,              // 130
+  AuditLogEvent.SoundboardSoundUpdate,              // 131
   AuditLogEvent.SoundboardSoundDelete,              // 132
   AuditLogEvent.AutoModerationRuleCreate,           // 140
   AuditLogEvent.AutoModerationRuleUpdate,           // 141
@@ -109,10 +152,17 @@ const ACTION_TO_MODULE = {
   [AuditLogEvent.ChannelOverwriteCreate]:           'antiChannelPermUpdate',
   [AuditLogEvent.ChannelOverwriteUpdate]:           'antiChannelPermUpdate',
   [AuditLogEvent.ChannelOverwriteDelete]:           'antiChannelPermUpdate',
+  [AuditLogEvent.ThreadCreate]:                     'antiChannelCreate',
+  [AuditLogEvent.ThreadUpdate]:                     'antiChannelUpdate',
+  [AuditLogEvent.ThreadDelete]:                     'antiChannelDelete',
+  [AuditLogEvent.StageInstanceCreate]:              'antiServerUpdate',
+  [AuditLogEvent.StageInstanceUpdate]:              'antiServerUpdate',
+  [AuditLogEvent.StageInstanceDelete]:              'antiServerUpdate',
   [AuditLogEvent.MemberKick]:                       'antiKick',
   [AuditLogEvent.MemberPrune]:                      'antiMemberPurge',
   [AuditLogEvent.MemberBanAdd]:                     'antiBan',
   [AuditLogEvent.MemberBanRemove]:                  'antiUnban',
+  [AuditLogEvent.MemberUpdate]:                     'antiMemberPurge',
   [AuditLogEvent.MemberRoleUpdate]:                 'antiMemberRoleUpdate',
   [AuditLogEvent.BotAdd]:                           'antiBotAdd',
   [AuditLogEvent.RoleCreate]:                       'antiRoleCreate',
@@ -133,6 +183,7 @@ const ACTION_TO_MODULE = {
   [AuditLogEvent.GuildScheduledEventDelete]:        'antiScheduledEvents',
   [AuditLogEvent.ApplicationCommandPermissionUpdate]: 'antiAppCommands',
   [AuditLogEvent.SoundboardSoundCreate]:            'antiSoundboardCreate',
+  [AuditLogEvent.SoundboardSoundUpdate]:            'antiSoundboardCreate',
   [AuditLogEvent.SoundboardSoundDelete]:            'antiSoundboardDelete',
   [AuditLogEvent.AutoModerationRuleCreate]:         'antiAutomodUpdate',
   [AuditLogEvent.AutoModerationRuleUpdate]:         'antiAutomodUpdate',
@@ -146,11 +197,13 @@ const ACTION_TO_MODULE = {
 const WIRETAP_ROLLBACK_ACTIONS = new Set([
   AuditLogEvent.WebhookCreate,
   AuditLogEvent.ChannelCreate,
+  AuditLogEvent.ThreadCreate,
   AuditLogEvent.RoleCreate,
   AuditLogEvent.SoundboardSoundCreate,
   AuditLogEvent.StickerCreate,
   AuditLogEvent.MemberBanRemove,
   AuditLogEvent.MemberBanAdd,
+  AuditLogEvent.MemberUpdate,
   AuditLogEvent.BotAdd,
   AuditLogEvent.MemberRoleUpdate,
   AuditLogEvent.ChannelDelete,
@@ -162,8 +215,12 @@ const processedPacketKeys = new Map(); // pKey -> expiryTimestamp
 const PACKET_DEDUPE_EVENTS = new Set([
   'CHANNEL_DELETE',
   'CHANNEL_CREATE',
+  'THREAD_CREATE',
+  'THREAD_DELETE',
   'GUILD_ROLE_DELETE',
   'GUILD_ROLE_CREATE',
+  'GUILD_BAN_ADD',
+  'GUILD_BAN_REMOVE',
   'INVITE_CREATE'
 ]);
 
@@ -240,7 +297,7 @@ export function attachWiretap(client) {
           (db.isJtcChannel(targetId) || db.isJtcInfrastructure(guildId, targetId) || db.cache.burnRooms?.[targetId])) {
         return;
       }
-      if ((actionType === AuditLogEvent.ChannelCreate || actionType === AuditLogEvent.RoleCreate) && isRestorationHandled(targetId)) {
+      if ((actionType === AuditLogEvent.ChannelCreate || actionType === AuditLogEvent.RoleCreate || actionType === AuditLogEvent.ThreadCreate) && isRestorationHandled(targetId)) {
         return;
       }
       if (actionType === AuditLogEvent.ChannelUpdate && isChannelRestoring(targetId)) {
@@ -251,10 +308,13 @@ export function attachWiretap(client) {
       const isServerOwner = guild.ownerId === executorId;
       const isExtraOwner = db.isExtraOwner(guildId, executorId);
       const isBotOwner = isBotOwnerSync(executorId);
-      if (isServerOwner || isExtraOwner || isBotOwner) {
+      if (isServerOwner || isBotOwner || (isExtraOwner && actionType !== AuditLogEvent.BotAdd)) {
         if (actionType === AuditLogEvent.MemberRoleUpdate && targetId) {
           db.removeExploitTaint(guildId, targetId);
         }
+        return;
+      }
+      if (actionType === AuditLogEvent.BotAdd && targetId && isBotAuthorized(guild, targetId, { consume: false })) {
         return;
       }
 
@@ -368,6 +428,14 @@ export function attachWiretap(client) {
 
         const isTainted = targetId ? db.isExploitTainted(guildId, targetId) : false;
         if (!hasDangerousRoleAdded && !hasLinkedRoleAdded && !isTainted) return;
+      } else if (actionType === AuditLogEvent.MemberUpdate) {
+        if (mods.antiMemberPurge === false && mods.antiKick === false) return;
+        const timeoutChange = mappedChanges.find(c => c.key === 'communication_disabled_until');
+        if (!timeoutChange || !timeoutChange.new) return;
+        modKey = mods.antiMemberPurge !== false ? 'antiMemberPurge' : 'antiKick';
+      } else if (actionType === AuditLogEvent.SoundboardSoundUpdate) {
+        if (mods.antiSoundboardCreate === false && mods.antiSoundboardDelete === false) return;
+        modKey = mods.antiSoundboardCreate !== false ? 'antiSoundboardCreate' : 'antiSoundboardDelete';
       } else if (modKey && mods[modKey] === false) {
         return;
       }
@@ -447,22 +515,16 @@ export function attachWiretap(client) {
             rawDeleteWebhook(targetId, client.token).catch(() => null);
           } else if (actionType === AuditLogEvent.ChannelCreate && targetId) {
             rawChannelDelete(targetId, client.token, '[ATHENA WIRETAP] Rogue Spam Channel Vaporized').catch(() => null);
+          } else if (actionType === AuditLogEvent.ThreadCreate && targetId) {
+            rawChannelDelete(targetId, client.token, '[ATHENA WIRETAP] Rogue Spam Thread Vaporized').catch(() => null);
           } else if (actionType === AuditLogEvent.RoleCreate && targetId) {
             rawRoleDelete(guildId, targetId, client.token, '[ATHENA WIRETAP] Rogue Spam Role Vaporized').catch(() => null);
           } else if (actionType === AuditLogEvent.SoundboardSoundCreate && targetId) {
-            dispatcher.request({
-              origin: 'https://discord.com',
-              path: `/api/v10/guilds/${guildId}/soundboard-sounds/${targetId}`,
-              method: 'DELETE',
-              headers: { 'authorization': `Bot ${client.token}`, 'user-agent': 'DiscordBot (Athena, 4.0.0)' }
-            }).then(r => r.body.dump()).catch(() => null);
+            rawDeleteSoundboardSound(guildId, targetId, client.token).catch(() => null);
           } else if (actionType === AuditLogEvent.StickerCreate && targetId) {
-            dispatcher.request({
-              origin: 'https://discord.com',
-              path: `/api/v10/guilds/${guildId}/stickers/${targetId}`,
-              method: 'DELETE',
-              headers: { 'authorization': `Bot ${client.token}`, 'user-agent': 'DiscordBot (Athena, 4.0.0)' }
-            }).then(r => r.body.dump()).catch(() => null);
+            rawDeleteSticker(guildId, targetId, client.token).catch(() => null);
+          } else if (actionType === AuditLogEvent.MemberUpdate && targetId) {
+            rawClearTimeout(guildId, targetId, client.token).catch(() => null);
           } else if (actionType === AuditLogEvent.GuildUpdate) {
             const vanityChange = mappedChanges.find(c => c.key === 'vanity_url_code');
             if (vanityChange?.old) {
@@ -552,7 +614,7 @@ export function attachWiretap(client) {
               const botStrike = rawBan(guildId, botId, client.token, '[ATHENA WIRETAP] ⚡ Rogue Bot Banned On Join (0ms Pre-Emption)', { actionType: 'GUILD_MEMBER_ADD (0ms Join)' });
               trackInFlightPunishment(guildId, botStrike);
             }
-            if (invId && invId !== client.user.id && invId !== guild.ownerId && !isBotOwnerSync(invId) && !isCondemned(guildId, invId)) {
+            if (invId && invId !== client.user.id && invId !== guild.ownerId && !isBotOwnerSync(invId) && !db.isExtraOwner(guildId, invId) && !isCondemned(guildId, invId)) {
               condemn(guildId, invId);
               const invStrike = rawBan(guildId, invId, client.token, `[ATHENA WIRETAP] ⚡ Unauthorized Bot Inviter Banned (${botId})`, { actionType: 'BOT_ADD_INVITER' });
               trackInFlightPunishment(guildId, invStrike);
@@ -567,14 +629,24 @@ export function attachWiretap(client) {
             return;
           }
 
-          // Under active raid lockdown: ban unwhitelisted joining bot immediately at 0ms, cascade inviter after ban settles
           if (isGuildUnderAttack(guildId)) {
             strikeBotAndInviter(null);
             return;
           }
 
-          // Catch BotAdd WebSocket push arriving milliseconds after GUILD_MEMBER_ADD
-          waitForRingMatch(guild, AuditLogEvent.BotAdd, botId, 'antiBotAdd', 20, true).then(exec => {
+          // Race WS BotAdd ring arrival (250ms) against shared REST audit lookup
+          const racers = [
+            waitForRingMatch(guild, AuditLogEvent.BotAdd, botId, 'antiBotAdd', 250, true)
+          ];
+          if (canFetchRestAudit(guildId, AuditLogEvent.BotAdd, 1_200)) {
+            racers.push(
+              sharedFetchAuditLogs(guildId, client.token, AuditLogEvent.BotAdd).then(data => {
+                const entry = data?.audit_log_entries?.find(e => e.target_id === botId);
+                return entry?.user_id ? { id: entry.user_id } : null;
+              }).catch(() => null)
+            );
+          }
+          raceFirstTruthy(racers).then(exec => {
             if (exec?.id) strikeBotAndInviter(exec.id);
           }).catch(() => null);
         }
@@ -595,9 +667,9 @@ export function attachWiretap(client) {
           executorObj = ringMatch.executor || { id: ringMatch.executorId };
         } else {
           const racers = [
-            waitForRingMatch(guild, AuditLogEvent.GuildUpdate, guildId, 'antiVanitySteal', 60, true)
+            waitForRingMatch(guild, AuditLogEvent.GuildUpdate, guildId, 'antiVanitySteal', 250, true)
           ];
-          if (!isGuildUnderAttack(guildId)) {
+          if (canFetchRestAudit(guildId, AuditLogEvent.GuildUpdate, 1_200)) {
             racers.push(
               sharedFetchAuditLogs(guildId, client.token, AuditLogEvent.GuildUpdate).then(data => {
                 const entry = data?.audit_log_entries?.find(e => e.target_id === guildId);
@@ -607,7 +679,7 @@ export function attachWiretap(client) {
               }).catch(() => null)
             );
           }
-          executorObj = await Promise.race(racers).catch(() => null);
+          executorObj = await raceFirstTruthy(racers).catch(() => null);
         }
 
         if (executorObj?.id) {
@@ -632,16 +704,18 @@ export function attachWiretap(client) {
       return;
     }
 
-    // ⚡ Raw WebSocket pre-caching & coalesced audit strike on CHANNEL_DELETE
-    if (packet.t === 'CHANNEL_DELETE' && packet.d?.id) {
+    // ⚡ Raw WebSocket pre-caching & coalesced audit strike on CHANNEL_DELETE / THREAD_DELETE
+    if ((packet.t === 'CHANNEL_DELETE' || packet.t === 'THREAD_DELETE') && packet.d?.id) {
       const channelId = packet.d.id;
+      const isThread = packet.t === 'THREAD_DELETE';
       if (config.antinukeModules?.antiChannelDelete === false) return;
       if (db.isJtcChannel(channelId) || db.isJtcInfrastructure(guildId, channelId) || db.cache.burnRooms?.[channelId]) return;
-      if (!deletedCache.has(channelId)) cacheDeletedItem(channelId, packet.d);
+      if (!isThread && !deletedCache.has(channelId)) cacheDeletedItem(channelId, packet.d);
 
       const guild = client.guilds.cache.get(guildId);
       if (!guild) return;
 
+      const auditEvt = isThread ? AuditLogEvent.ThreadDelete : AuditLogEvent.ChannelDelete;
       const strikeExecutor = (execObj) => {
         if (!execObj?.id || execObj.id === client.user.id) return;
         if (db.isModModeBypassed?.(guild, execObj.id)) return;
@@ -650,25 +724,24 @@ export function attachWiretap(client) {
         if (!isCondemned(guildId, execObj.id)) {
           condemn(guildId, execObj.id);
           setGuildUnderAttack(guildId, execObj.id, 60_000);
-          const strikePromise = rawBan(guildId, execObj.id, client.token, '[ATHENA WIRETAP] ⚡ Direct ChannelDelete Ban Strike', { actionType: 'CHANNEL_DELETE (Wiretap)' });
+          const strikePromise = rawBan(guildId, execObj.id, client.token, `[ATHENA WIRETAP] ⚡ Direct ${isThread ? 'ThreadDelete' : 'ChannelDelete'} Ban Strike`, { actionType: `${packet.t} (Wiretap)` });
           trackInFlightPunishment(guildId, strikePromise);
-          queueMicrotask(() => console.log(`[ATHENA WIRETAP] ⚡ Instant ChannelDelete Ban neutralized ${execObj.id}!`));
+          queueMicrotask(() => console.log(`[ATHENA WIRETAP] ⚡ Instant ${packet.t} Ban neutralized ${execObj.id}!`));
         }
       };
 
-      const ringMatch = getRecentAuditEntry(guildId, AuditLogEvent.ChannelDelete, channelId);
+      const ringMatch = getRecentAuditEntry(guildId, auditEvt, channelId);
       if (ringMatch?.executorId) {
         strikeExecutor(ringMatch.executor || { id: ringMatch.executorId });
         return;
       }
 
-      // Race WS ring push vs single-flight coalesced audit fetch (skip REST audit fetch if already under active attack)
       const chAuditors = [
-        waitForRingMatch(guild, AuditLogEvent.ChannelDelete, channelId, 'antiChannelDelete', 20)
+        waitForRingMatch(guild, auditEvt, channelId, 'antiChannelDelete', 250)
       ];
-      if (!isGuildUnderAttack(guildId)) {
+      if (canFetchRestAudit(guildId, auditEvt, 1_200)) {
         chAuditors.push(
-          sharedFetchAuditLogs(guildId, client.token, AuditLogEvent.ChannelDelete).then(data => {
+          sharedFetchAuditLogs(guildId, client.token, auditEvt).then(data => {
             const entry = data?.audit_log_entries?.find(e => e.target_id === channelId);
             if (!entry?.user_id) return null;
             const u = data?.users?.find(usr => usr.id === entry.user_id);
@@ -676,7 +749,7 @@ export function attachWiretap(client) {
           })
         );
       }
-      Promise.race(chAuditors).then(execObj => {
+      raceFirstTruthy(chAuditors).then(execObj => {
         if (execObj) strikeExecutor(execObj);
       }).catch(() => null);
       return;
@@ -714,9 +787,9 @@ export function attachWiretap(client) {
       }
 
       const roleAuditors = [
-        waitForRingMatch(guild, AuditLogEvent.RoleDelete, roleId, 'antiRoleDelete', 20)
+        waitForRingMatch(guild, AuditLogEvent.RoleDelete, roleId, 'antiRoleDelete', 250)
       ];
-      if (!isGuildUnderAttack(guildId)) {
+      if (canFetchRestAudit(guildId, AuditLogEvent.RoleDelete, 1_200)) {
         roleAuditors.push(
           sharedFetchAuditLogs(guildId, client.token, AuditLogEvent.RoleDelete).then(data => {
             const entry = data?.audit_log_entries?.find(e => e.target_id === roleId);
@@ -726,8 +799,104 @@ export function attachWiretap(client) {
           })
         );
       }
-      Promise.race(roleAuditors).then(execObj => {
+      raceFirstTruthy(roleAuditors).then(execObj => {
         if (execObj) strikeExecutor(execObj);
+      }).catch(() => null);
+      return;
+    }
+
+    // ⚡ ZERO-DAY MASS BAN / UNBAN GUARD (GUILD_BAN_ADD / GUILD_BAN_REMOVE)
+    if (packet.t === 'GUILD_BAN_ADD' && packet.d?.user?.id) {
+      const bannedId = packet.d.user.id;
+      if (bannedId === client.user.id) return;
+      if (config.antinukeModules?.antiBan === false && config.antinukeModules?.antiMassBan === false) return;
+      const guild = client.guilds.cache.get(guildId);
+      if (!guild) return;
+
+      const strikeBanner = (execObj) => {
+        if (!execObj?.id || execObj.id === client.user.id) return;
+        const memberObj = guild.members.cache.get(execObj.id) || execObj;
+        const modCheckKey = config.antinukeModules?.antiBan !== false ? 'antiBan' : 'antiMassBan';
+        if (isAuthorized(guild, memberObj, modCheckKey, { dedupeKey: `raw_banadd:${bannedId}` })) return;
+        if (!isCondemned(guildId, execObj.id)) {
+          condemn(guildId, execObj.id);
+          setGuildUnderAttack(guildId, execObj.id, 60_000);
+          const strikePromise = rawBan(guildId, execObj.id, client.token, '[ATHENA WIRETAP] ⚡ Direct MassBan Neutralized', { actionType: 'GUILD_BAN_ADD (Wiretap)' });
+          trackInFlightPunishment(guildId, strikePromise);
+          waitForInFlightPunishments(guildId).then(() => {
+            rawUnban(guildId, bannedId, client.token, '[ATHENA WIRETAP] ⚡ Reverting Unauthorized Mass-Ban').catch(() => null);
+          }).catch(() => null);
+        }
+      };
+
+      const ringMatch = getRecentAuditEntry(guildId, AuditLogEvent.MemberBanAdd, bannedId);
+      if (ringMatch?.executorId) {
+        strikeBanner(ringMatch.executor || { id: ringMatch.executorId });
+        return;
+      }
+
+      const banAuditors = [
+        waitForRingMatch(guild, AuditLogEvent.MemberBanAdd, bannedId, 'antiBan', 250)
+      ];
+      if (canFetchRestAudit(guildId, AuditLogEvent.MemberBanAdd, 1_200)) {
+        banAuditors.push(
+          sharedFetchAuditLogs(guildId, client.token, AuditLogEvent.MemberBanAdd).then(data => {
+            const entry = data?.audit_log_entries?.find(e => e.target_id === bannedId);
+            if (!entry?.user_id) return null;
+            const u = data?.users?.find(usr => usr.id === entry.user_id);
+            return u ? { id: u.id, bot: Boolean(u.bot) } : { id: entry.user_id, bot: Boolean(guild.members.cache.get(entry.user_id)?.user?.bot) };
+          })
+        );
+      }
+      raceFirstTruthy(banAuditors).then(execObj => {
+        if (execObj) strikeBanner(execObj);
+      }).catch(() => null);
+      return;
+    }
+
+    if (packet.t === 'GUILD_BAN_REMOVE' && packet.d?.user?.id) {
+      const unbannedId = packet.d.user.id;
+      if (unbannedId === client.user.id) return;
+      if (config.antinukeModules?.antiUnban === false) return;
+      const guild = client.guilds.cache.get(guildId);
+      if (!guild) return;
+
+      const strikeUnbanner = (execObj) => {
+        if (!execObj?.id || execObj.id === client.user.id) return;
+        const memberObj = guild.members.cache.get(execObj.id) || execObj;
+        if (isAuthorized(guild, memberObj, 'antiUnban', { dedupeKey: `raw_unban:${unbannedId}` })) return;
+        if (!isCondemned(guildId, execObj.id)) {
+          condemn(guildId, execObj.id);
+          setGuildUnderAttack(guildId, execObj.id, 60_000);
+          const strikePromise = rawBan(guildId, execObj.id, client.token, '[ATHENA WIRETAP] ⚡ Unauthorized Unbanner Neutralized', { actionType: 'GUILD_BAN_REMOVE (Wiretap)' });
+          trackInFlightPunishment(guildId, strikePromise);
+          waitForInFlightPunishments(guildId).then(() => {
+            rawBan(guildId, unbannedId, client.token, '[ATHENA WIRETAP] ⚡ Re-banning Unauthorized Unban Target').catch(() => null);
+          }).catch(() => null);
+        }
+      };
+
+      const ringMatch = getRecentAuditEntry(guildId, AuditLogEvent.MemberBanRemove, unbannedId);
+      if (ringMatch?.executorId) {
+        strikeUnbanner(ringMatch.executor || { id: ringMatch.executorId });
+        return;
+      }
+
+      const unbanAuditors = [
+        waitForRingMatch(guild, AuditLogEvent.MemberBanRemove, unbannedId, 'antiUnban', 250)
+      ];
+      if (canFetchRestAudit(guildId, AuditLogEvent.MemberBanRemove, 1_200)) {
+        unbanAuditors.push(
+          sharedFetchAuditLogs(guildId, client.token, AuditLogEvent.MemberBanRemove).then(data => {
+            const entry = data?.audit_log_entries?.find(e => e.target_id === unbannedId);
+            if (!entry?.user_id) return null;
+            const u = data?.users?.find(usr => usr.id === entry.user_id);
+            return u ? { id: u.id, bot: Boolean(u.bot) } : { id: entry.user_id, bot: Boolean(guild.members.cache.get(entry.user_id)?.user?.bot) };
+          })
+        );
+      }
+      raceFirstTruthy(unbanAuditors).then(execObj => {
+        if (execObj) strikeUnbanner(execObj);
       }).catch(() => null);
       return;
     }
@@ -750,7 +919,8 @@ export function attachWiretap(client) {
       }
 
       const inviterMember = inviterId ? (guild.members.cache.get(inviterId) || { id: inviterId, bot: Boolean(packet.d?.inviter?.bot) }) : null;
-      const underAttackUnauthorized = isGuildUnderAttack(guildId) && (!inviterId || !isAuthorized(guild, inviterMember, 'antiInvite'));
+      const antiInviteEnabled = config.antinukeModules?.antiInvite !== false;
+      const underAttackUnauthorized = antiInviteEnabled && isGuildUnderAttack(guildId) && (!inviterId || !isAuthorized(guild, inviterMember, 'antiInvite'));
 
       if (hasDangerousRole || underAttackUnauthorized) {
         if (inviterId && inviterId !== client.user.id && !isAuthorized(guild, inviterMember, 'antiInvite')) {
@@ -767,26 +937,19 @@ export function attachWiretap(client) {
         }
 
         await waitForInFlightPunishments(guildId);
-        dispatcher.request({
-          origin: 'https://discord.com',
-          path: `/api/v10/invites/${code}`,
-          method: 'DELETE',
-          headers: {
-            'authorization': `Bot ${client.token}`,
-            'x-audit-log-reason': encodeURIComponent(hasDangerousRole ? 'Athena Wiretap: Rogue Administrative Invite Destroyed' : 'Athena Wiretap: Active Attack Invite Vaporized')
-          }
-        }).then(r => r.body.dump()).catch(() => null);
+        rawDeleteInvite(code, client.token, hasDangerousRole ? 'Athena Wiretap: Rogue Administrative Invite Destroyed' : 'Athena Wiretap: Active Attack Invite Vaporized').catch(() => null);
       }
       return;
     }
 
     // ⚡ ZERO-DAY FAST-PATH 5: In-Flight Cleanup During Active Attack (Strictly AFTER active bans settle!)
     if (isGuildUnderAttack(guildId)) {
-      if (packet.t === 'CHANNEL_CREATE') {
+      if (packet.t === 'CHANNEL_CREATE' || packet.t === 'THREAD_CREATE') {
         const channelId = packet.d?.id;
+        const chName = packet.d?.name;
         const guild = client.guilds.cache.get(guildId);
-        if (guild && channelId && !isProtectedSystemChannel(guild, channelId) && !isRestorationHandled(channelId)) {
-          const ring = getRecentAuditEntry(guildId, AuditLogEvent.ChannelCreate, channelId);
+        if (guild && channelId && !isProtectedSystemChannel(guild, channelId) && !isRestorationHandled(channelId) && !isPendingSelfCreate(guildId, 'channel', chName)) {
+          const ring = getRecentAuditEntry(guildId, packet.t === 'THREAD_CREATE' ? AuditLogEvent.ThreadCreate : AuditLogEvent.ChannelCreate, channelId);
           if (ring?.executor && !isAuthorized(guild, ring.executor, 'antiChannelCreate')) {
             await waitForInFlightPunishments(guildId);
             rawChannelDelete(channelId, client.token, '[ATHENA WIRETAP] In-Flight Spam Channel Annihilated').catch(() => null);
@@ -794,8 +957,9 @@ export function attachWiretap(client) {
         }
       } else if (packet.t === 'GUILD_ROLE_CREATE') {
         const roleId = packet.d?.role?.id;
+        const roleName = packet.d?.role?.name;
         const guild = client.guilds.cache.get(guildId);
-        if (guild && roleId && !isRestorationHandled(roleId)) {
+        if (guild && roleId && !isRestorationHandled(roleId) && !isPendingSelfCreate(guildId, 'role', roleName)) {
           const ring = getRecentAuditEntry(guildId, AuditLogEvent.RoleCreate, roleId);
           if (ring?.executor && !isAuthorized(guild, ring.executor, 'antiRoleCreate')) {
             await waitForInFlightPunishments(guildId);

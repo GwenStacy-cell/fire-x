@@ -572,7 +572,7 @@ export function formatDatabaseMetrics(m, options = {}) {
 
     `-# **__Security & Anti-Nuke Engine:__**\n` +
     `> -# Shields: \`${m.securityServers} armed\` | Honeypots: \`${m.honeypotCanaries || m.honeypots || 0}\` | Raid Mode: \`${m.raidModeServers}\` | Thresholds: \`${m.antiNukeThresholds}\` | GhostPing: \`${m.antiGhostPingServers || 0}\`\n` +
-    `> -# 28 Modules: \`Roles: ${m.antiRoleModulesServers}, Chs: ${m.antiChannelModulesServers}, Webhooks: ${m.antiWebhookServers}, Bots: ${m.antiBotAddServers}, Linked: ${m.antiLinkedRoleServers || 0}\`\n` +
+    `> -# 32 Modules: \`Roles: ${m.antiRoleModulesServers}, Chs: ${m.antiChannelModulesServers}, Webhooks: ${m.antiWebhookServers}, Bots: ${m.antiBotAddServers}, Linked: ${m.antiLinkedRoleServers || 0}\`\n` +
     `> -# Persistence: \`Unbypassable: ${m.unbypassableRolesCount || 0}, FW: ${m.firewallRolesCount || 0} | Incidents: ${m.incidentReportsCount || m.securityLiveTotal || 0} | Panic: ${m.panicHistoryTotal || 0} | Emergencies: ${m.emergencySnapshots || 0} | Locks: ${m.channelLockSnapshotsCount || 0} chs, ${m.lockdownSnapshots || 0} tiers\`\n\n` +
 
     `-# **__Advanced Defense & Telemetry Suite:__**\n` +

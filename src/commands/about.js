@@ -107,12 +107,13 @@ export const commands = [
             type: 10,
             content:
               `# ${NINJA_BULLET} Automated Security Shields & Governance Spectrum ${NINJA_BULLET_RTL}\n` +
-              `> -# ${BULLET_EMOJI} **28 Armed Antinuke Shields:** Protection for Channels, Roles, Webhooks, Bots, Server Updates, Bans, Kicks, and Automod.\n` +
-              `> -# ${BULLET_EMOJI} **In-Flight Combat Priority:** Restorations pause automatically while bans settle, guaranteeing zero API contention during attacks.\n` +
+              `> -# ${BULLET_EMOJI} **32 Armed Antinuke Shields:** Protection for Channels, Roles, Webhooks, Bots, Vanity URLs, Invites, Soundboard, Bans, Kicks, and Automod.\n` +
+              `> -# ${BULLET_EMOJI} **In-Flight Combat Priority:** Restorations pause automatically while single-shot raw bans settle, guaranteeing zero API contention during attacks.\n` +
               `> -# ${BULLET_EMOJI} **Quarantine Facility:** Compromised accounts are stripped and isolated in an automated quarantine zone.\n` +
               `> -# ${BULLET_EMOJI} **Dual Persistence Sentinels:** Enforces \`Athena Firewall\` and \`Athena Unbypassable\` roles against unauthorized demotions.\n` +
-              `> -# ${BULLET_EMOJI} **Vanity & Invite Protection:** Reclaims vanity URLs at 0ms and vaporizes dangerous invites in \`<1ms\`.\n\n` +
+              `> -# ${BULLET_EMOJI} **Vanity & Invite Protection:** Reclaims vanity URLs at 0ms over Raw TLS and vaporizes dangerous invites in \`<1ms\`.\n\n` +
               `# ${NINJA_BULLET} Operational Monitoring & Diagnostic Controls ${NINJA_BULLET_RTL}\n` +
+              `> -# ${BULLET_EMOJI} \`!sectrack\` · Live Security Telemetry & Tracking Matrix with architectural explanations.\n` +
               `> -# ${BULLET_EMOJI} \`!combatops\` · Military-grade live combat telemetry & single-strike timeline breakdown.\n` +
               `> -# ${BULLET_EMOJI} \`!liveops\` · Real-time engineering monitor covering V8 runtime, socket pools, and speeds.\n` +
               `> -# ${BULLET_EMOJI} \`!help\` · Interactive command catalog across all 376+ subsystems.\n` +

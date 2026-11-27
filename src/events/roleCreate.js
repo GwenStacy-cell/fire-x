@@ -1,5 +1,5 @@
 import { AuditLogEvent } from 'discord.js';
-import { directStrike, rawRoleDelete, isRestorationHandled, isGuildUnderAttack, triggerSnapshotSync } from '../utils/antinuke.js';
+import { directStrike, rawRoleDelete, isRestorationHandled, isPendingSelfCreate, isGuildUnderAttack, triggerSnapshotSync } from '../utils/antinuke.js';
 import db from '../database.js';
 import { buildServerLogEmbed, logServerEvent, getAuditExecutorAndReason, isServerLogModuleEnabled } from '../utils/serverLogger.js';
 import { formatUserLink } from '../utils/helpers.js';
@@ -10,7 +10,7 @@ export default {
     if (!role.guild) return;
 
     // ⚡ Ignore roles created by Athena's restoration engine or persistence sentinels
-    if (isRestorationHandled(role.id)) return;
+    if (isRestorationHandled(role.id) || isPendingSelfCreate(role.guild.id, 'role', role.name, true)) return;
     const config = db.getGuildConfig(role.guild.id);
     const isPersistence = (config?.unbypassableRoleId && role.id === config.unbypassableRoleId) ||
                           (config?.firewallRoleId && role.id === config.firewallRoleId) ||

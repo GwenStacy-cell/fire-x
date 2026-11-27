@@ -11,7 +11,7 @@ import { isBotOwnerSync, getSafeUserAvatar, getSafeGuildIcon, sendGuildMemberDM,
 import { handleWarn } from '../commands/moderation.js';
 import { getQueue } from '../utils/musicManager.js';
 import { activeVoiceSessions } from '../utils/soundboardEngine.js';
-import { isGuildUnderAttack, markRestorationQueued } from '../utils/antinuke.js';
+import { isGuildUnderAttack, markRestorationQueued, markPendingSelfCreate, getRecentAuditEntry, sharedFetchAuditLogs } from '../utils/antinuke.js';
 
 const theaterStrikes = new Map();
 
@@ -240,12 +240,24 @@ export default {
 
       if (becameMuted || becameDeafened) {
         console.log(`[VcProtect] Protected user ${userId} was muted/deafened. Reverting...`);
-        setTimeout(async () => {
-          const auditLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberUpdate }).catch(() => null);
-          let executor = null;
-          if (auditLogs) {
-            const log = auditLogs.entries.find(e => e.target.id === userId && (Date.now() - e.createdTimestamp) < 15000 && (e.changes.some(c => c.key === 'mute' && c.new === true) || e.changes.some(c => c.key === 'deaf' && c.new === true)));
-            if (log) executor = log.executor;
+        (async () => {
+          let ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberUpdate, userId);
+          if (!ring) await new Promise(r => setTimeout(r, 350));
+          ring = ring || getRecentAuditEntry(guild.id, AuditLogEvent.MemberUpdate, userId);
+          let executor = ring?.executor || null;
+
+          if (!executor) {
+            const rawLogs = await sharedFetchAuditLogs(guild.id, client.token, AuditLogEvent.MemberUpdate).catch(() => null);
+            const entries = rawLogs?.audit_log_entries || [];
+            const match = entries.find(e =>
+              e.target_id === userId &&
+              (Date.now() - (Number(BigInt(e.id) >> 22n) + 1420070400000) < 15000) &&
+              e.changes?.some(c => (c.key === 'mute' && c.new_value === true) || (c.key === 'deaf' && c.new_value === true))
+            );
+            if (match?.user_id) {
+              const u = rawLogs?.users?.find(usr => usr.id === match.user_id);
+              executor = u ? { id: u.id, tag: u.username } : { id: match.user_id };
+            }
           }
 
           if (executor && executor.id !== client.user.id && executor.id !== userId) {
@@ -257,10 +269,9 @@ export default {
               await handleWarn(guild, guild.members.me, execMember, `Automated: Illegally muting/deafening protected user <@${userId}>`, true);
             }
           } else if (!executor) {
-            // Revert just in case audit log missed it
             await newState.member.edit({ mute: false, deaf: false }).catch(() => null);
           }
-        }, 3000);
+        })().catch(() => null);
       }
     }
     // ==========================================
@@ -277,54 +288,53 @@ export default {
         // ==========================================
         if (oldChannelId && newChannelId) {
           if (db.isMoveProtected(guild.id, userId)) {
-            // Give audit logs a moment to register
-            setTimeout(async () => {
-              const auditLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberMove }).catch(err => {
-                console.error('[MoveProtection] Error fetching audit logs:', err);
-                return null;
-              });
-              
-              if (auditLogs) {
-                if (!client.auditLogCounts) client.auditLogCounts = new Map();
+            (async () => {
+              let ring = getRecentAuditEntry(guild.id, AuditLogEvent.MemberMove, userId);
+              if (!ring) await new Promise(r => setTimeout(r, 350));
+              ring = ring || getRecentAuditEntry(guild.id, AuditLogEvent.MemberMove, userId);
 
-                const moveLog = auditLogs.entries.find(e => {
-                  if (e.extra && e.extra.channel && e.extra.channel.id === newChannelId) {
-                    const count = e.extra.count || 1;
-                    const lastCount = client.auditLogCounts.get(e.id);
-                    const isRecent = Math.abs(Date.now() - e.createdTimestamp) < 15000;
-                    const isNewMove = lastCount !== undefined ? count > lastCount : isRecent;
-
-                    if (isNewMove) {
-                      client.auditLogCounts.set(e.id, count);
-                      if (e.executor?.id === client.user?.id || e.executor?.id === userId) {
-                        return false;
-                      }
-                      return true;
-                    }
-                  }
-                  return false;
+              let executor = ring?.executor || null;
+              if (!executor) {
+                const auditLogs = await guild.fetchAuditLogs({ limit: 5, type: AuditLogEvent.MemberMove }).catch(err => {
+                  console.error('[MoveProtection] Error fetching audit logs:', err);
+                  return null;
                 });
 
-                if (moveLog) {
-                  const executor = moveLog.executor;
-                  if (executor.id !== client.user.id && executor.id !== userId) {
-                    // Check if executor is Bot Owner or Server Owner (Bypass allowed)
-                    if (isBotOwnerSync(executor.id) || executor.id === guild.ownerId) {
-                      return; // Bypass move protection
-                    }
+                if (auditLogs) {
+                  if (!client.auditLogCounts) client.auditLogCounts = new Map();
 
-                    // Restitution: Move target back to previous channel
-                    await newState.member.voice.setChannel(oldChannelId).catch(err => console.error('[MoveProtection] Restitution failed:', err));
+                  const moveLog = auditLogs.entries.find(e => {
+                    if (e.extra && e.extra.channel && e.extra.channel.id === newChannelId) {
+                      const count = e.extra.count || 1;
+                      const lastCount = client.auditLogCounts.get(e.id);
+                      const isRecent = Math.abs(Date.now() - e.createdTimestamp) < 15000;
+                      const isNewMove = lastCount !== undefined ? count > lastCount : isRecent;
 
-                    // Punish executor: Issue a warning
-                    const execMember = await guild.members.fetch(executor.id).catch(() => null);
-                    if (execMember) {
-                      await handleWarn(guild, guild.members.me, execMember, `Automated: Illegally moving protected user <@${userId}>`, true);
+                      if (isNewMove) {
+                        client.auditLogCounts.set(e.id, count);
+                        if (e.executor?.id === client.user?.id || e.executor?.id === userId) {
+                          return false;
+                        }
+                        return true;
+                      }
                     }
-                  }
+                    return false;
+                  });
+                  if (moveLog) executor = moveLog.executor;
                 }
               }
-            }, 3000);
+
+              if (executor && executor.id !== client.user.id && executor.id !== userId) {
+                if (isBotOwnerSync(executor.id) || executor.id === guild.ownerId) {
+                  return;
+                }
+                await newState.member.voice.setChannel(oldChannelId).catch(err => console.error('[MoveProtection] Restitution failed:', err));
+                const execMember = await guild.members.fetch(executor.id).catch(() => null);
+                if (execMember) {
+                  await handleWarn(guild, guild.members.me, execMember, `Automated: Illegally moving protected user <@${userId}>`, true);
+                }
+              }
+            })().catch(() => null);
           }
         }
         // User left or switched channels
@@ -541,7 +551,8 @@ export default {
           });
         }
 
-        // Create the temp voice channel
+        // Create the temp voice channel (pre-mark before create to avoid WS race)
+        markPendingSelfCreate(guild.id, 'channel', channelName);
         const tempChannel = await guild.channels.create({
           name: channelName,
           type: ChannelType.GuildVoice,

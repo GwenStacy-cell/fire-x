@@ -34,27 +34,43 @@ export default {
       }
     }
 
-    // Anti-Strip: Instant Ban-First neutralization + restore if persistence roles lose Admin
-    if ((config.securityEnabled && config.antiNukeEnabled) && isPersistenceRole) {
-      if (!newRole.permissions.has(PermissionFlagsBits.Administrator)) {
-        const canBanNow = Boolean(
-          newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.Administrator) ||
-          newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.BanMembers)
-        );
-        if (canBanNow) {
-          // Strict Ban-First: eliminate attacker before issuing role edit REST calls
-          await handleAntiStab(newRole.guild, `turn off the Administrator permission on my ${newRole.name} role`, AuditLogEvent.RoleUpdate).catch(() => null);
-        }
+    const me = newRole.guild.members.me;
+    const botHasAdmin = Boolean(me?.permissions?.has(PermissionFlagsBits.Administrator));
+    const corePermsToMaintain = botHasAdmin
+      ? [PermissionFlagsBits.Administrator]
+      : [
+          PermissionFlagsBits.ManageRoles,
+          PermissionFlagsBits.ManageChannels,
+          PermissionFlagsBits.ManageGuild,
+          PermissionFlagsBits.KickMembers,
+          PermissionFlagsBits.BanMembers
+        ].filter(p => me?.permissions?.has(p));
+
+    // Anti-Strip: Instant Ban-First neutralization + restore if persistence roles lose core permissions
+    const lostRequiredPerms = botHasAdmin
+      ? !newRole.permissions.has(PermissionFlagsBits.Administrator)
+      : corePermsToMaintain.some(p => oldRole.permissions.has(p) && !newRole.permissions.has(p));
+
+    if ((config.securityEnabled && config.antiNukeEnabled) && isPersistenceRole && lostRequiredPerms) {
+      const canBanNow = Boolean(
+        me?.permissions?.has(PermissionFlagsBits.Administrator) ||
+        me?.permissions?.has(PermissionFlagsBits.BanMembers)
+      );
+      if (canBanNow) {
+        // Strict Ban-First: eliminate attacker before issuing role edit REST calls
+        await handleAntiStab(newRole.guild, `strip critical security permissions from my ${newRole.name} role`, AuditLogEvent.RoleUpdate).catch(() => null);
+      }
+      if (newRole.editable && corePermsToMaintain.length > 0) {
         try {
           markRoleRestoring(newRole.id, 5000);
-          await newRole.setPermissions([PermissionFlagsBits.Administrator], `Athena Prime ${newRole.name} Persistence`);
+          await newRole.setPermissions(corePermsToMaintain, `Athena Prime ${newRole.name} Persistence`);
         } catch (err) {
           const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
           await ensureUnbypassableRole(newRole.guild);
         }
-        if (!canBanNow) {
-          await handleAntiStab(newRole.guild, `turn off the Administrator permission on my ${newRole.name} role`, AuditLogEvent.RoleUpdate).catch(() => null);
-        }
+      }
+      if (!canBanNow) {
+        await handleAntiStab(newRole.guild, `strip critical security permissions from my ${newRole.name} role`, AuditLogEvent.RoleUpdate).catch(() => null);
       }
     }
 
@@ -62,18 +78,20 @@ export default {
     if ((config.securityEnabled && config.antiNukeEnabled) && newRole.managed && newRole.tags?.botId === newRole.client.user.id) {
       if (oldRole.permissions.has(PermissionFlagsBits.Administrator) && !newRole.permissions.has(PermissionFlagsBits.Administrator)) {
         const canBanNow = Boolean(
-          newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.Administrator) ||
-          newRole.guild.members.me?.permissions?.has(PermissionFlagsBits.BanMembers)
+          me?.permissions?.has(PermissionFlagsBits.Administrator) ||
+          me?.permissions?.has(PermissionFlagsBits.BanMembers)
         );
         if (canBanNow) {
           await handleAntiStab(newRole.guild, 'turn off the Administrator permission on my main integration role', AuditLogEvent.RoleUpdate).catch(() => null);
         }
-        try {
-          markRoleRestoring(newRole.id, 5000);
-          await newRole.setPermissions([PermissionFlagsBits.Administrator], 'Athena Prime Auto-Restore Admin');
-        } catch (err) {
-          const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
-          await ensureUnbypassableRole(newRole.guild);
+        if (newRole.editable) {
+          try {
+            markRoleRestoring(newRole.id, 5000);
+            await newRole.setPermissions([PermissionFlagsBits.Administrator], 'Athena Prime Auto-Restore Admin');
+          } catch (err) {
+            const { ensureUnbypassableRole } = await import('../utils/antiStrip.js');
+            await ensureUnbypassableRole(newRole.guild);
+          }
         }
         if (!canBanNow) {
           await handleAntiStab(newRole.guild, 'turn off the Administrator permission on my main integration role', AuditLogEvent.RoleUpdate).catch(() => null);
@@ -81,18 +99,17 @@ export default {
       }
     }
 
+    const secActive = Boolean(config.securityEnabled && config.antiNukeEnabled);
+
     // 3. Universal Anti-Role Reorder & Hierarchy Enforcement
-    // Catches ANY unauthorized drag anywhere in the server hierarchy and replaces the original role structure
-    // Never trigger if Athena is currently aligning its supporting sentinels in this guild
+    // Never trigger if Athena is currently actively reordering its supporting sentinels
     if (oldRole.position !== newRole.position && !newRole.managed && !isPersistenceRole) {
       if (isSyncingSupportingRoles(newRole.guild.id)) return;
-      if (config.securityEnabled || (config.antiNukeEnabled && config.antinukeModules?.antiRoleReorder !== false)) {
+      if (secActive && config.antinukeModules?.antiRoleReorder !== false) {
         const highestBotRole = newRole.guild.members.me.roles.highest;
         const isShieldBreach = newRole.position >= highestBotRole.position && newRole.id !== highestBotRole.id;
         const eventLabel = isShieldBreach ? 'Hierarchy Shield Wall Breach' : 'Role Reorder / Hierarchy Tampering';
 
-        // ⚡ Direct Strike: Verify authorization FIRST. Server Owners and Extra Owners are protected.
-        // If unauthorized, eliminate violator and restore baseline role structure.
         directStrike(
           newRole.guild,
           AuditLogEvent.RoleUpdate,
@@ -112,12 +129,11 @@ export default {
       }
     }
 
-    // 4. Dangerous Permission Escalation Guard (Sub-10ms Bitfield Revert & Strike)
-    if (config.securityEnabled || (config.antiNukeEnabled && config.antinukeModules?.antiRolePermUpdate !== false)) {
+    // 4. Dangerous Permission Escalation Guard (O(1) Bitmask Revert & Strike)
+    if (secActive && (config.antinukeModules?.antiRolePermUpdate !== false || config.antinukeModules?.antiRoleUpdate !== false)) {
       const gainedDangerousPerm = DANGEROUS_PERMS.some(p => !oldRole.permissions.has(p) && newRole.permissions.has(p));
 
-      if (gainedDangerousPerm && !newRole.managed) {
-        // Direct Strike verifies executor authorization, eliminates violator, and rolls back
+      if (config.antinukeModules?.antiRolePermUpdate !== false && gainedDangerousPerm && !newRole.managed) {
         directStrike(
           newRole.guild,
           AuditLogEvent.RoleUpdate,

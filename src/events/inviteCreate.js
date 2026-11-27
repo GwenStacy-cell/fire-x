@@ -1,7 +1,6 @@
-import { trackInFlightPunishment, waitForInFlightPunishments, isGuildUnderAttack } from '../utils/antinuke.js';
+import { trackInFlightPunishment, waitForInFlightPunishments, isGuildUnderAttack, canFetchRestAudit, rawDeleteInvite, hasDangerousPerms, DANGEROUS_PERMS, rawBan, condemn } from '../utils/antinuke.js';
 import { getRandomHeadingGlyph, BULLET_EMOJI, TICK_EMOJI } from '../utils/emojis.js';
 import db from '../database.js';
-import { hasDangerousPerms, DANGEROUS_PERMS, rawBan, condemn } from '../utils/antinuke.js';
 import { logToSecurityChannel, isBotOwnerSync, getUserTierName, formatUserLink, formatChannelLink } from '../utils/helpers.js';
 import { Routes, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { buildServerLogEmbed, logServerEvent } from '../utils/serverLogger.js';
@@ -27,7 +26,7 @@ export default {
     if (!guild) return;
 
     const config = db.getGuildConfig(guild.id);
-    if (!config || (!config.securityEnabled && !config.antiNukeEnabled)) return;
+    if (!config || !config.securityEnabled || !config.antiNukeEnabled) return;
 
     try {
       const quickInviterId = invite.inviterId || invite.inviter?.id;
@@ -41,9 +40,8 @@ export default {
         ...(Array.isArray(invite.roleIds) ? invite.roleIds : [])
       ].filter(Boolean);
 
-      // Avoid burning REST audit/invite bandwidth during active attacks or when owner-created; Wiretap already handles raw INVITE_CREATE packets.
       let rawInv = null;
-      if (localRoleIds.length === 0 && !isGuildUnderAttack(guild.id)) {
+      if (localRoleIds.length === 0 && canFetchRestAudit(guild.id, 'inviteCreate', 1_200)) {
         const rawInvites = await client.rest.get(Routes.guildInvites(guild.id)).catch(() => null);
         rawInv = Array.isArray(rawInvites) ? rawInvites.find(i => i.code === invite.code) : null;
       }
@@ -88,8 +86,8 @@ export default {
 
         await waitForInFlightPunishments(guild.id);
 
-        // 3. Delete rogue invite once & disarm linked role permissions strictly AFTER ban settles
-        await client.rest.delete(Routes.invite(invite.code), { reason: '[ATHENA ANTINUKE] Destroyed rogue role-based invite link' }).catch(() => null);
+        // 3. Delete rogue invite via 429-safe Raw TLS/Undici lane & disarm linked role permissions strictly AFTER ban settles
+        await rawDeleteInvite(invite.code, client.token, '[ATHENA ANTINUKE] Destroyed rogue role-based invite link').catch(() => null);
 
         for (const role of dangerousRoles) {
           if (role.editable && role.tags?.guildConnections && hasDangerousPerms(role.permissions)) {

@@ -13,7 +13,7 @@ import { performance } from 'perf_hooks';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 const execFileAsync = promisify(execFile);
-import db from '../database.js';
+import db, { ALL_ANTINUKE_MODULE_KEYS } from '../database.js';
 import { 
   TICK_EMOJI, 
   WRONG_EMOJI, 
@@ -302,19 +302,11 @@ export async function collectLiveTelemetry(guild, client) {
   const cfg = guild ? db.getGuildConfig(guild.id) : {};
   const isSecured = Boolean(cfg.securityEnabled && cfg.antiNukeEnabled);
   const antinukeMods = cfg.antinukeModules || {};
-  const all28Keys = [
-    'antiRoleCreate', 'antiRoleDelete', 'antiRoleUpdate', 'antiRolePermUpdate',
-    'antiMemberRoleUpdate', 'antiRoleReorder', 'antiChannelCreate', 'antiChannelDelete',
-    'antiChannelUpdate', 'antiChannelPermUpdate', 'antiChannelReorder', 'antiChannelNameMod',
-    'antiEmojiCreate', 'antiEmojiDelete', 'antiEmojiUpdate', 'antiWebhooks',
-    'antiBotAdd', 'antiServerUpdate', 'antiBan', 'antiKick', 'antiUnban',
-    'antiInvite', 'antiScheduledEvents', 'antiMemberPurge', 'antiMassBan',
-    'antiAutomodUpdate', 'antiAppCommands', 'antiLinkedRole'
-  ];
+  const all32Keys = ALL_ANTINUKE_MODULE_KEYS;
   const activeShieldsCount = isSecured 
-    ? all28Keys.filter(k => antinukeMods[k] !== false).length 
+    ? all32Keys.filter(k => antinukeMods[k] !== false).length 
     : 0;
-  const shieldsPct = ((activeShieldsCount / all28Keys.length) * 100).toFixed(1);
+  const shieldsPct = ((activeShieldsCount / all32Keys.length) * 100).toFixed(1);
 
   // Ring Buffer & Snapshot Telemetry
   const ringTelemetry = guild ? getAuditRingTelemetry(guild.id) : { size: 0, maxCapacity: 60, ttlMs: 30000, resolversActive: 0 };
@@ -533,7 +525,7 @@ export async function collectLiveTelemetry(guild, client) {
     security: {
       isSecured,
       activeShields: activeShieldsCount,
-      totalShields: all28Keys.length,
+      totalShields: all32Keys.length,
       pct: shieldsPct,
       modules: antinukeMods,
       underAttack,
@@ -736,8 +728,8 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
 
     const rawTls = cStats.socketPool?.rawTlsLane;
     const rawTlsSummary = rawTls
-      ? `${rawTls.warmIdleSockets}/${rawTls.totalSockets} pre-connected TCP_NODELAY TLS sockets (${rawTls.strikesServed} strikes served)`
-      : '8 pre-connected TCP_NODELAY TLS sockets';
+      ? `${rawTls.warmIdleSockets}/${rawTls.poolCapacity || rawTls.totalSockets} pre-connected TCP_NODELAY TLS sockets (${rawTls.strikesServed} strikes served)`
+      : '12 pre-connected TCP_NODELAY TLS sockets';
 
     containerComponents.push({
       type: 10,
@@ -854,6 +846,7 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
       antiRolePermUpdate: 'Anti Role Perm Update',
       antiMemberRoleUpdate: 'Anti Member Role Update',
       antiRoleReorder: 'Anti Role Reorder',
+      antiLinkedRole: 'Anti Linked Role Exploit',
       antiChannelCreate: 'Anti Channel Create',
       antiChannelDelete: 'Anti Channel Delete',
       antiChannelUpdate: 'Anti Channel Update',
@@ -866,16 +859,19 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
       antiWebhooks: 'Anti Webhooks',
       antiBotAdd: 'Anti Bot Add',
       antiServerUpdate: 'Anti Server Update',
+      antiVanitySteal: 'Anti Vanity Steal',
+      antiScheduledEvents: 'Anti Scheduled Events',
       antiBan: 'Anti Ban',
       antiKick: 'Anti Kick',
       antiUnban: 'Anti Unban',
-      antiInvite: 'Anti Invite',
-      antiScheduledEvents: 'Anti Scheduled Events',
       antiMemberPurge: 'Anti Member Purge',
       antiMassBan: 'Anti Mass Ban',
+      antiInvite: 'Anti Invite',
+      antiInviteDelete: 'Anti Invite Delete',
       antiAutomodUpdate: 'Anti Automod Update',
       antiAppCommands: 'Anti App Commands',
-      antiLinkedRole: 'Anti Linked Role Exploit'
+      antiSoundboardCreate: 'Anti Soundboard Create',
+      antiSoundboardDelete: 'Anti Soundboard Delete'
     };
 
     let modulesList = '';
@@ -887,7 +883,7 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
       const en2 = k2 ? (data.security.isSecured && (data.security.modules?.[k2] !== false)) : null;
 
       modulesList += `> ${en1 ? emojiOn : emojiOff} ${modLabels[k1]}` + 
-                     (k2 ? ` \u2800\u2022\u2800 ${en2 ? emojiOn : emojiOff} ${modLabels[k2]}\n` : '\n');
+                     (k2 ? ` \u2800|\u2800 ${en2 ? emojiOn : emojiOff} ${modLabels[k2]}\n` : '\n');
     }
 
     containerComponents.push({
@@ -895,14 +891,11 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
       content:
         `### **I. Hostile Elimination & Interception Architecture**\n` +
         `> -# ${BULLET_EMOJI} **Interception Engine:** \`DirectStrike (0ms WebSocket Audit Ring Buffer)\`\n` +
-        `> -# ${BULLET_EMOJI} **Elimination Speed:** \`Sub-1ms Instant Direct Raw Ban (Single Request \u2022 Zero Lag)\`\n` +
-        `> -# ${BULLET_EMOJI} **Zero-Tolerance Protocol:** Nuke bots banned immediately on 1st attempt with no lag overhead\n` +
-        `> -# ${BULLET_EMOJI} **WebSocket Audit Ring Buffer:** \`${data.security.ring.size} / ${data.security.ring.maxCapacity} entries\` (TTL: \`${data.security.ring.ttlMs / 1000}s\` \u2022 \`${data.security.ring.resolversActive} fast-track resolvers\`)\n` +
-        `> -# ${BULLET_EMOJI} **Infrastructure Ground-Truth:** \`${data.security.snapshots.channelsCount} channels\` \u2022 \`${data.security.snapshots.rolesCount} roles cached in RAM\`\n` +
-        `> -# ${BULLET_EMOJI} **Restoration Queue Depth:** \`${data.security.snapshots.restorationsQueued} queued\` (\`${data.security.snapshots.deletedItemsCached} deleted items cached\`)\n` +
-        `> -# ${BULLET_EMOJI} **Active Lockdown State:** ${data.security.underAttack ? '**ENGAGED (DEFCON 1 Attack In Progress)**' : '`Standby (0 Threats Active)`'}\n` +
-        `> -# ${BULLET_EMOJI} **Threat Profiling & Signatures:** \`${data.security.signaturesCount} attack patterns\` detected \u2022 \`${data.security.exploitTaints} exploit taints\` isolated\n` +
-        `> -# ${BULLET_EMOJI} **Quarantined Accounts:** \`${data.security.quarantinedCount}\` violators isolated in guild`
+        `> -# ${BULLET_EMOJI} **Elimination Speed:** \`Sub-1ms Single-Shot Direct Raw Ban (Zero Role-Strip Delay)\`\n` +
+        `> -# ${BULLET_EMOJI} **Zero-Immunity Owners Bot Policy:** Unwhitelisted bots banned immediately on 1st strike\n` +
+        `> -# ${BULLET_EMOJI} **Audit Ring Buffer:** \`${data.security.ring.size} / ${data.security.ring.maxCapacity} entries\` (TTL: \`${data.security.ring.ttlMs / 1000}s\` \u00b7 \`${data.security.ring.resolversActive} resolvers\`)\n` +
+        `> -# ${BULLET_EMOJI} **RAM Snapshots:** \`${data.security.snapshots.channelsCount} ch\` \u00b7 \`${data.security.snapshots.rolesCount} roles\` \u00b7 **Queue:** \`${data.security.snapshots.restorationsQueued} queued\` (\`${data.security.snapshots.deletedItemsCached} deleted cached\`)\n` +
+        `> -# ${BULLET_EMOJI} **Defense State:** ${data.security.underAttack ? '**DEFCON 1 — ATTACK LOCKDOWN**' : '`Standby (0 Threats)`'} \u00b7 Signatures: \`${data.security.signaturesCount}\` \u00b7 Taints: \`${data.security.exploitTaints}\` \u00b7 Quarantined: \`${data.security.quarantinedCount}\``
     });
 
     containerComponents.push({ type: 14, divider: true });
@@ -910,7 +903,7 @@ export async function buildLiveOpsPanel(guild, client, activeView = 'overview') 
     containerComponents.push({
       type: 10,
       content:
-        `### **II. All 28 Antinuke Defensive Modules Status**\n` +
+        `### **II. All 32 Antinuke Defensive Modules Status**\n` +
         `> -# ${BULLET_EMOJI} **Total Armed Modules:** \`${data.security.activeShields} / ${data.security.totalShields}\` (${data.security.pct}% Active)\n` +
         modulesList
     });

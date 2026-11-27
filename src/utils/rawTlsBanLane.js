@@ -3,8 +3,8 @@ import dns from 'node:dns';
 
 const DEFAULT_HOST = 'discord.com';
 const DEFAULT_PORT = 443;
-const POOL_SIZE = 8;
-const HEARTBEAT_MS = 8_000;
+const POOL_SIZE = 12;
+const HEARTBEAT_MS = 10_000;
 const DNS_REFRESH_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 1_500;
 
@@ -16,6 +16,103 @@ const REQ_TAIL = Buffer.from('\r\nConnection: keep-alive\r\n\r\n{"delete_message
 const PING_FRAME = Buffer.from('GET /api/v10/gateway HTTP/1.1\r\nHost: discord.com\r\nConnection: keep-alive\r\n\r\n', 'ascii');
 const CRLF_CRLF = Buffer.from('\r\n\r\n', 'ascii');
 const CHUNK_END = Buffer.from('0\r\n\r\n', 'ascii');
+const REASON_MAX_AGE_CACHE_MS = 60_000;
+
+// Shared per-route & global Discord REST rate-limit bucket tracker
+const routeBuckets = new Map(); // routeKey -> { remaining, resetAtMs, bucket }
+let globalRateLimitUntilMs = 0;
+let rateLimitHits = 0;
+let auxRequestsServed = 0;
+
+function pruneRouteBuckets(now) {
+  if (routeBuckets.size < 400) return;
+  for (const [key, entry] of routeBuckets.entries()) {
+    if (!entry || entry.resetAtMs <= now || routeBuckets.size > 450) {
+      routeBuckets.delete(key);
+    }
+    if (routeBuckets.size <= 300) break;
+  }
+}
+
+export function getRouteWaitMs(routeKey) {
+  const now = Date.now();
+  let waitMs = 0;
+  if (globalRateLimitUntilMs > now) {
+    waitMs = Math.max(waitMs, globalRateLimitUntilMs - now);
+  }
+  if (routeKey) {
+    const state = routeBuckets.get(routeKey);
+    if (state) {
+      if (state.resetAtMs <= now) {
+        routeBuckets.delete(routeKey);
+      } else if (state.remaining <= 0) {
+        waitMs = Math.max(waitMs, state.resetAtMs - now);
+      }
+    }
+  }
+  return Math.min(waitMs, 5_000);
+}
+
+export function recordRateLimitState(routeKey, statusCode, headersLowerStrOrObj, retryAfterSec = null) {
+  const now = Date.now();
+  let remaining = null;
+  let resetAfterSec = null;
+  let bucket = null;
+  let isGlobal = false;
+  let retryHdrSec = null;
+
+  if (typeof headersLowerStrOrObj === 'string') {
+    const remM = headersLowerStrOrObj.match(/\r\nx-ratelimit-remaining:\s*(\d+)/);
+    if (remM) remaining = parseInt(remM[1], 10);
+    const rstM = headersLowerStrOrObj.match(/\r\nx-ratelimit-reset-after:\s*([0-9.]+)/);
+    if (rstM) resetAfterSec = Number(rstM[1]);
+    const bktM = headersLowerStrOrObj.match(/\r\nx-ratelimit-bucket:\s*([^\r\n]+)/);
+    if (bktM) bucket = bktM[1].trim();
+    if (headersLowerStrOrObj.includes('\r\nx-ratelimit-global: true')) isGlobal = true;
+    const raM = headersLowerStrOrObj.match(/\r\nretry-after:\s*([0-9.]+)/);
+    if (raM) retryHdrSec = Number(raM[1]);
+  } else if (headersLowerStrOrObj && typeof headersLowerStrOrObj === 'object') {
+    const getH = (k) => {
+      const v = headersLowerStrOrObj[k];
+      return Array.isArray(v) ? v[0] : v;
+    };
+    const remV = getH('x-ratelimit-remaining');
+    if (remV !== undefined) remaining = parseInt(String(remV), 10);
+    const rstV = getH('x-ratelimit-reset-after');
+    if (rstV !== undefined) resetAfterSec = Number(rstV);
+    const bktV = getH('x-ratelimit-bucket');
+    if (bktV) bucket = String(bktV).trim();
+    if (String(getH('x-ratelimit-global')).toLowerCase() === 'true') isGlobal = true;
+    const raV = getH('retry-after');
+    if (raV !== undefined) retryHdrSec = Number(raV);
+  }
+
+  const effectiveRetrySec = Number.isFinite(retryAfterSec) && retryAfterSec > 0
+    ? retryAfterSec
+    : (Number.isFinite(retryHdrSec) && retryHdrSec > 0 ? retryHdrSec : resetAfterSec);
+
+  if (statusCode === 429) {
+    rateLimitHits++;
+    const waitMs = Math.min(5_000, Math.max(50, Math.ceil((Number(effectiveRetrySec) || 0.25) * 1000)));
+    if (isGlobal) {
+      globalRateLimitUntilMs = Math.max(globalRateLimitUntilMs, now + waitMs);
+    }
+    if (routeKey) {
+      routeBuckets.set(routeKey, { remaining: 0, resetAtMs: now + waitMs, bucket });
+    }
+    return waitMs;
+  }
+
+  if (routeKey && Number.isFinite(remaining) && Number.isFinite(resetAfterSec)) {
+    pruneRouteBuckets(now);
+    routeBuckets.set(routeKey, {
+      remaining,
+      resetAtMs: now + Math.max(50, Math.ceil(resetAfterSec * 1000)),
+      bucket
+    });
+  }
+  return 0;
+}
 
 const authBufCache = new Map();
 function getAuthBuffer(authHeader) {
@@ -103,6 +200,7 @@ function handleSocketData(sock, chunk) {
     st.statusCode = parseInt(headerStr.slice(9, 12), 10) || 0;
 
     const lower = headerStr.toLowerCase();
+    st.headersLower = lower;
     if (lower.includes('\r\nconnection: close')) st.closeAfter = true;
     if (lower.includes('transfer-encoding: chunked')) st.isChunked = true;
     const clMatch = lower.match(/\r\ncontent-length:\s*(\d+)/);
@@ -110,6 +208,7 @@ function handleSocketData(sock, chunk) {
 
     // HTTP 204 No Content MUST NOT include a body per RFC 9110
     if (st.statusCode === 204) {
+      recordRateLimitState(st.routeKey, 204, lower, null);
       const exactFrame = !st.closeAfter && st.buf.length === idx + 4;
       finalizeRequest(sock, { handled: true, statusCode: 204, ok: true }, exactFrame);
       return;
@@ -137,12 +236,17 @@ function handleSocketData(sock, chunk) {
   if (!bodyComplete) return;
 
   let retryAfterMs = 0;
+  let retryAfterSec = null;
   if (st.statusCode === 429) {
     const bodyText = st.buf.subarray(bodyStart, bodyEndIdx).toString('utf8');
     const match = bodyText.match(/"retry_after"\s*:\s*([0-9.]+)/);
     const sec = match ? Number(match[1]) : 0.25;
+    if (Number.isFinite(sec) && sec > 0) retryAfterSec = sec;
     retryAfterMs = Math.min(5000, Math.max(50, Math.ceil((Number.isFinite(sec) ? sec : 0.25) * 1000)));
   }
+
+  const trackedWaitMs = recordRateLimitState(st.routeKey, st.statusCode, st.headersLower, retryAfterSec);
+  if (trackedWaitMs > retryAfterMs) retryAfterMs = trackedWaitMs;
 
   const exactFrame = !st.closeAfter && st.buf.length === bodyEndIdx;
   finalizeRequest(
@@ -280,23 +384,22 @@ export function initRawTlsLane(token) {
 
     heartbeatTimer = setInterval(() => {
       ensurePoolWarm();
-      // Round-robin keep-alive: ping only 1 oldest idle socket every 2s so >= 3/4 sockets remain instant-ready
+      // Round-robin keep-alive: ping only 1 oldest idle socket every ~833ms so >= 11/12 sockets remain instant-ready
       const oldest = idleSockets.shift();
       if (oldest) {
         sendHeartbeatPing(oldest);
       }
-    }, Math.max(1_000, Math.floor(HEARTBEAT_MS / POOL_SIZE)));
+    }, Math.max(800, Math.floor(HEARTBEAT_MS / POOL_SIZE)));
     heartbeatTimer.unref?.();
   }
   ensurePoolWarm();
   return true;
 }
 
-export async function rawTlsSendBan(guildId, userId, authHeader, encodedReason) {
+function acquireWarmSocket() {
   if (!initialized || shuttingDown || idleSockets.length === 0) {
-    return { handled: false };
+    return null;
   }
-
   let sock = null;
   while (idleSockets.length > 0) {
     const candidate = idleSockets.pop();
@@ -305,27 +408,13 @@ export async function rawTlsSendBan(guildId, userId, authHeader, encodedReason) 
       break;
     }
   }
-  if (!sock) return { handled: false };
+  if (sock && allSockets.size + connectingCount < POOL_SIZE) spawnSocket();
+  return sock;
+}
 
-  // Ensure replacement socket is available if needed after burst
-  if (allSockets.size + connectingCount < POOL_SIZE) spawnSocket();
-
-  const frame = Buffer.concat([
-    REQ_PREFIX,
-    Buffer.from(String(guildId), 'ascii'),
-    REQ_BANS,
-    Buffer.from(String(userId), 'ascii'),
-    REQ_VER_HOST,
-    getAuthBuffer(authHeader),
-    REQ_HEADERS,
-    Buffer.from(String(encodedReason || ''), 'ascii'),
-    REQ_TAIL
-  ]);
-
+function dispatchRawFrame(sock, frame, routeKey = null) {
   sock.ref?.();
-  strikesServed++;
-
-  return await new Promise((resolve) => {
+  return new Promise((resolve) => {
     const timer = setTimeout(() => {
       if (sock._active && !sock._active.settled) {
         finalizeRequest(sock, { handled: false, error: 'timeout' }, false);
@@ -340,6 +429,8 @@ export async function rawTlsSendBan(guildId, userId, authHeader, encodedReason) 
       contentLength: -1,
       isChunked: false,
       closeAfter: false,
+      headersLower: '',
+      routeKey,
       settled: false,
       timer,
       resolve
@@ -353,14 +444,147 @@ export async function rawTlsSendBan(guildId, userId, authHeader, encodedReason) 
   });
 }
 
+export async function rawTlsSendBan(guildId, userId, authHeader, encodedReason) {
+  const sock = acquireWarmSocket();
+  if (!sock) return { handled: false };
+
+  const gStr = String(guildId);
+  const uStr = String(userId);
+  const rStr = String(encodedReason || '');
+  const authBuf = getAuthBuffer(authHeader);
+
+  const gLen = Buffer.byteLength(gStr, 'ascii');
+  const uLen = Buffer.byteLength(uStr, 'ascii');
+  const rLen = Buffer.byteLength(rStr, 'ascii');
+  const totalLen =
+    REQ_PREFIX.length + gLen + REQ_BANS.length + uLen +
+    REQ_VER_HOST.length + authBuf.length + REQ_HEADERS.length + rLen + REQ_TAIL.length;
+
+  const frame = Buffer.allocUnsafe(totalLen);
+  let off = 0;
+  REQ_PREFIX.copy(frame, off); off += REQ_PREFIX.length;
+  off += frame.write(gStr, off, 'ascii');
+  REQ_BANS.copy(frame, off); off += REQ_BANS.length;
+  off += frame.write(uStr, off, 'ascii');
+  REQ_VER_HOST.copy(frame, off); off += REQ_VER_HOST.length;
+  authBuf.copy(frame, off); off += authBuf.length;
+  REQ_HEADERS.copy(frame, off); off += REQ_HEADERS.length;
+  if (rLen > 0) off += frame.write(rStr, off, 'ascii');
+  REQ_TAIL.copy(frame, off);
+
+  strikesServed++;
+  return await dispatchRawFrame(sock, frame, `ban:${gStr}`);
+}
+
+export async function rawTlsRequest({ method, path, body = null, authHeader, encodedReason = '', routeKey = null }) {
+  const sock = acquireWarmSocket();
+  if (!sock) return { handled: false };
+
+  const bodyStr = body == null ? '' : (typeof body === 'string' ? body : JSON.stringify(body));
+  const bodyLen = bodyStr ? Buffer.byteLength(bodyStr, 'utf8') : 0;
+  let head = `${method} ${path} HTTP/1.1\r\nHost: ${targetConfig.host}\r\nAuthorization: ${authHeader}\r\n`;
+  if (bodyLen > 0) {
+    head += `Content-Type: application/json\r\nContent-Length: ${bodyLen}\r\n`;
+  }
+  if (encodedReason) {
+    head += `X-Audit-Log-Reason: ${encodedReason}\r\n`;
+  }
+  head += 'Connection: keep-alive\r\n\r\n';
+  if (bodyLen > 0) {
+    head += bodyStr;
+  }
+
+  auxRequestsServed++;
+  const frame = Buffer.from(head, 'utf8');
+  return await dispatchRawFrame(sock, frame, routeKey);
+}
+
+export function rawTlsSendVanity(guildId, code, authHeader, encodedReason) {
+  return rawTlsRequest({
+    method: 'PATCH',
+    path: `/api/v10/guilds/${guildId}/vanity-url`,
+    body: JSON.stringify({ code }),
+    authHeader,
+    encodedReason,
+    routeKey: `vanity:${guildId}`
+  });
+}
+
+export function rawTlsSendDeleteWebhook(webhookId, authHeader, encodedReason) {
+  return rawTlsRequest({
+    method: 'DELETE',
+    path: `/api/v10/webhooks/${webhookId}`,
+    authHeader,
+    encodedReason,
+    routeKey: `webhook:${webhookId}`
+  });
+}
+
+export function rawTlsSendDeleteChannel(channelId, authHeader, encodedReason) {
+  return rawTlsRequest({
+    method: 'DELETE',
+    path: `/api/v10/channels/${channelId}`,
+    authHeader,
+    encodedReason,
+    routeKey: `channel:${channelId}`
+  });
+}
+
+export function rawTlsSendDeleteRole(guildId, roleId, authHeader, encodedReason) {
+  return rawTlsRequest({
+    method: 'DELETE',
+    path: `/api/v10/guilds/${guildId}/roles/${roleId}`,
+    authHeader,
+    encodedReason,
+    routeKey: `role:${guildId}`
+  });
+}
+
+export function rawTlsSendUnban(guildId, userId, authHeader, encodedReason) {
+  return rawTlsRequest({
+    method: 'DELETE',
+    path: `/api/v10/guilds/${guildId}/bans/${userId}`,
+    authHeader,
+    encodedReason,
+    routeKey: `unban:${guildId}`
+  });
+}
+
 export function getRawTlsLaneStatus() {
+  const now = Date.now();
+  const sampleBuckets = [];
+  for (const [routeKey, entry] of routeBuckets.entries()) {
+    if (!entry || entry.resetAtMs <= now) {
+      routeBuckets.delete(routeKey);
+      continue;
+    }
+    if (sampleBuckets.length < 5) {
+      sampleBuckets.push({
+        routeKey,
+        remaining: entry.remaining,
+        resetInMs: Math.max(0, entry.resetAtMs - now),
+        bucket: entry.bucket || null
+      });
+    }
+  }
+
   return {
     initialized,
     target: `${targetConfig.host}:${targetConfig.port}`,
     cachedIpv4,
     totalSockets: allSockets.size,
     warmIdleSockets: idleSockets.length,
-    strikesServed
+    poolCapacity: POOL_SIZE,
+    heartbeatMs: HEARTBEAT_MS,
+    requestTimeoutMs: REQUEST_TIMEOUT_MS,
+    dnsRefreshMs: DNS_REFRESH_MS,
+    strikesServed,
+    auxRequestsServed,
+    rateLimitHits,
+    trackedBuckets: routeBuckets.size,
+    globalRateLimited: globalRateLimitUntilMs > now,
+    globalRateLimitRemainingMs: Math.max(0, globalRateLimitUntilMs - now),
+    sampleBuckets
   };
 }
 

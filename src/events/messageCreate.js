@@ -113,17 +113,20 @@ export default {
     // ⚡ ZERO-TOLERANCE WEBHOOK MASS-PING / SPAM INTERCEPT (0ms Execution)
     if (message.guild && message.webhookId) {
       const cfg = db.getGuildConfig(message.guild.id);
-      if (cfg?.securityEnabled || cfg?.antiNukeEnabled) {
+      if (cfg?.securityEnabled && cfg?.antiNukeEnabled) {
         if (cfg?.antinukeModules?.antiWebhooks !== false) {
           const content = message.content || '';
-          const isMassPing = content.includes('@everyone') || content.includes('@here');
-          const hasInvite = /(?:https?:\/\/)?(?:www\.)?(?:discord\.(?:gg|io|me|li)|discord(?:app)?\.com\/invite)\/[a-zA-Z0-9]+/i.test(content);
+          const embedText = message.embeds?.length
+            ? message.embeds.map(e => `${e.title || ''} ${e.description || ''} ${e.url || ''}`).join(' ')
+            : '';
+          const combined = embedText ? `${content} ${embedText}` : content;
+          const isMassPing = Boolean(message.mentions?.everyone) || combined.includes('@everyone') || combined.includes('@here');
+          const hasInvite = /(?:https?:\/\/)?(?:www\.)?(?:discord\.(?:gg|io|me|li)|discord(?:app)?\.com\/invite)\/[a-zA-Z0-9]+/i.test(combined);
           
           if (isMassPing || hasInvite) {
-            // Delete spam message immediately
-            message.delete().catch(() => null);
-            // Annihilate the rogue webhook immediately
+            // Vaporize the rogue webhook & delete spam message immediately (Raw TLS ban lane speed)
             rawDeleteWebhook(message.webhookId, message.client.token, '[ATHENA SENTINEL] Rogue Webhook Spam Intercepted').catch(() => null);
+            message.delete().catch(() => null);
             return;
           }
         }
@@ -1050,7 +1053,8 @@ export default {
       const isBotOwner = isBotOwnerSync(message.author.id);
       const isExtraOwner = db.isExtraOwner(message.guild.id, message.author.id);
       const isServerOwner = message.author.id === message.guild.ownerId;
-      const isAdmin = Boolean(message.member?.permissions?.has(PermissionFlagsBits.ManageMessages));
+      // Native Discord permissions (ManageMessages / Administrator) NEVER bypass AutoMod unless explicitly whitelisted!
+      const isAdmin = false;
       
       const filterToModuleMap = {
         'Swear Words': 'blacklistedWords',

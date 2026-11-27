@@ -177,7 +177,7 @@ export const commands = [
         const inventorySummary = 
           `\n\n-# **__Linked Cloud DB Backup Inventory (All 52 Systems Backed Up):__**\n` +
           `> -# **Server Configs:** \`${m.guilds} guilds\` | \`${m.customPrefixes} prefixes\` | \`${m.customCommandsTotal || 0} custom cmds\` | \`${m.triggers || 0} auto-replies\` | \`${m.accentColors} colors\` | \`${m.dashboardChannels} dashboards\`\n` +
-          `> -# **Antinuke & Defense:** \`${m.securityServers} armed\` | \`28 modules\` | \`${m.securityLiveTotal || 0} live records\` | \`${m.panicHistoryTotal || 0} panic logs\` | \`${m.emergencySnapshots || 0} emergency states\` | \`${m.unbypassableRolesCount || 0} unbypassable\`\n` +
+          `> -# **Antinuke & Defense:** \`${m.securityServers} armed\` | \`32 modules\` | \`${m.securityLiveTotal || 0} live records\` | \`${m.panicHistoryTotal || 0} panic logs\` | \`${m.emergencySnapshots || 0} emergency states\` | \`${m.unbypassableRolesCount || 0} unbypassable\`\n` +
           `> -# **Join Gatekeeper:** \`${m.entryActive || 0} gates\` | \`${m.entryPendingTotal || 0} pending apps\` | \`Remote DMs: ${m.botOwnerEntryRemote ? 'ACTIVE' : 'OFF'}\` | \`${m.entryVerifiedRoles || 0} verified roles\`\n` +
           `> -# **Stock & AI Heuristics:** \`${m.stockChannels || 0} alert chs\` | \`${m.dailyStockEnabled || 0} daily briefings\` | \`${m.dynamicStockSymbolsCount || 0} learned tickers\` | \`${m.baselineProfiles || 0} baselines\` | \`${m.nukeSignaturesCount || 0} anomaly sigs\`\n` +
           `> -# **Automod Filters:** \`${m.automodServers} active\` | \`${m.blacklistedWordsCount} words\` | \`${m.allowedLinksCount} allowed domains\` | \`${m.automodBypassRolesCount || 0} bypasses\`\n` +

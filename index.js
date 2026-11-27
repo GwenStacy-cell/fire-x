@@ -56,6 +56,9 @@ const client = new Client({
     GatewayIntentBits.GuildInvites,        // Required for invite tracking
     GatewayIntentBits.GuildEmojisAndStickers, // Required for emoji events
     GatewayIntentBits.GuildMessageReactions, // Required for reaction roles
+    GatewayIntentBits.AutoModerationConfiguration, // Required for AutoMod rule tamper tracking
+    GatewayIntentBits.GuildScheduledEvents,  // Required for Scheduled Event tamper tracking
+    GatewayIntentBits.GuildIntegrations,     // Required for Integration/App Command tamper tracking
     GatewayIntentBits.DirectMessages       // Required to receive owner DMs
   ],
   partials: [
@@ -211,6 +214,7 @@ const events = [
   messageUpdateEvent,
   guildCreateEvent,
   guildAuditLogEntryCreateEvent,
+  presenceUpdateEvent,
   userUpdateEvent
 ];
 

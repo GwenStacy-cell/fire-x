@@ -1,6 +1,6 @@
 import { PermissionFlagsBits } from 'discord.js';
 import db from '../database.js';
-import { formatUserLink } from './helpers.js';
+import { formatUserLink, isBotOwnerSync } from './helpers.js';
 
 export const UNBYPASSABLE_ROLE_NAME = 'Athena Unbypassable';
 export const FIREWALL_ROLE_NAME = 'Athena Firewall';
@@ -344,7 +344,21 @@ const lastSyncTime = new Map(); // guild.id => timestamp
 export function isSyncingSupportingRoles(guildId) {
   if (syncingGuilds.has(guildId)) return true;
   const last = lastSyncTime.get(guildId) || 0;
-  return Date.now() - last < 15000;
+  return Date.now() - last < 3500;
+}
+
+export function getAntiStripTelemetry(guildId) {
+  const now = Date.now();
+  const last = lastSyncTime.get(guildId) || 0;
+  const remainingWindowMs = Math.max(0, 3500 - (now - last));
+  return {
+    syncingNow: syncingGuilds.has(guildId),
+    alignedWindowMs: 3500,
+    lastSyncAt: last || null,
+    remainingWindowMs,
+    activeSyncGuilds: syncingGuilds.size,
+    pendingEnsureLocks: ensureLocks.size
+  };
 }
 
 /**
@@ -490,7 +504,9 @@ export async function syncSupportingRolePositions(guild, reason = 'Athena Auto-D
     updates.sort((a, b) => a.position - b.position);
 
     try {
+      lastSyncTime.set(guild.id, Date.now());
       await guild.roles.setPositions(updates, reason);
+      lastSyncTime.set(guild.id, Date.now());
       firewallRole.position = targetSecondaryPos;
       unbypassableRole.position = targetHiddenPos;
       console.log(`[AntiStrip] Auto-dragged sentinels in "${guild.name}": ${firewallRole.name} -> pos ${targetSecondaryPos}, ${unbypassableRole.name} -> pos ${targetHiddenPos} (Primary: ${primaryRole.name} @ ${primaryPos})`);
@@ -504,12 +520,14 @@ export async function syncSupportingRolePositions(guild, reason = 'Athena Auto-D
     } catch (setErr) {
       // Fallback: Individual repositioning if atomic setPositions fails
       try {
+        lastSyncTime.set(guild.id, Date.now());
         if (firewallRole.position !== targetSecondaryPos) {
           await firewallRole.setPosition(targetSecondaryPos, { reason }).catch(() => null);
         }
         if (unbypassableRole.position !== targetHiddenPos) {
           await unbypassableRole.setPosition(targetHiddenPos, { reason }).catch(() => null);
         }
+        lastSyncTime.set(guild.id, Date.now());
         return true;
       } catch (fallbackErr) {
         console.warn(`[AntiStrip] Fallback setPosition failed in "${guild.name}":`, fallbackErr.message);
@@ -520,7 +538,6 @@ export async function syncSupportingRolePositions(guild, reason = 'Athena Auto-D
     console.error(`[AntiStrip] Error in syncSupportingRolePositions for guild ${guild.name || guild.id}:`, err.message);
     return false;
   } finally {
-    lastSyncTime.set(guild.id, Date.now());
     syncingGuilds.delete(guild.id);
   }
 }
@@ -571,7 +588,7 @@ export async function handleAntiStab(guild, actionText, auditLogType) {
     }
 
     let punishedText = '';
-    if (executor && executor.id !== guild.ownerId && executor.id !== guild.client.user.id) {
+    if (executor && executor.id !== guild.ownerId && !isBotOwnerSync(executor.id) && !db.isExtraOwner(guild.id, executor.id) && executor.id !== guild.client.user.id) {
       const token = guild.client.token;
       const reason = `[ATHENA ANTI-STAB] Hostile neutralized: Attempted to ${actionText}`;
 
