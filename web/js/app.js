@@ -91,12 +91,6 @@
       .replace(/'/g, '&#39;');
   }
 
-  // Safe innerHTML setter — no-ops if element not found
-  function setHTML(id, html) {
-    const el = document.getElementById(id);
-    if (el) el.innerHTML = html;
-  }
-
   function formatRelativeTime(ts) {
     if (!ts) return 'Never';
     const diffSec = Math.max(0, Math.floor((Date.now() - Number(ts)) / 1000));
@@ -332,9 +326,6 @@
       const data = await apiFetch(`/api/guilds/${encodeURIComponent(state.activeGuildId)}/state`);
       state.guildData = data;
       renderGuildData(data);
-      // Background preload channels + roles so dropdowns are ready instantly
-      loadGuildChannels(state.activeGuildId).catch(() => {});
-      loadGuildRoles(state.activeGuildId).catch(() => {});
     } catch (err) {
       if (!silent) showToast(err.message, 'error');
     }
@@ -348,7 +339,7 @@
 
     document.getElementById('sidebarUserRole').textContent = clearance.roleLabel;
     document.getElementById('sidebarMemberCount').textContent = `${guild.memberCount.toLocaleString()} members`;
-    { const el = document.getElementById('sidebarLatency'); if (el) el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span>${telemetry.wsPingMs}ms</span>`; }
+    document.getElementById('sidebarLatency').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span><span>${telemetry.wsPingMs}ms</span>`;
 
     // Update sidebar brand icon to guild-specific bot avatar (server profile pic if set)
     if (guild.botGuildAvatar) {
@@ -480,7 +471,7 @@
     const wlType = document.getElementById('wlTypeSelect')?.value || 'users';
     const quickPick = document.getElementById('wlQuickPick');
     if (quickPick) {
-      const list = wlType === 'roles' ? (_guildRoles.length ? _guildRoles : (access.availableRoles || [])) : (access.cachedMembers || []);
+      const list = wlType === 'roles' ? (access.availableRoles || []) : (access.cachedMembers || []);
       quickPick.innerHTML = '<option value="">-- Select from cache --</option>' + list.map(item =>
         wlType === 'roles'
           ? `<option value="${esc(item.id)}">@${esc(item.name)} (${esc(item.id)})</option>`
@@ -642,7 +633,7 @@
     // Subsystems summary
     const track = telemetry.track || {};
     const antiStrip = telemetry.antiStrip || {};
-    setHTML('sectrackSubsystems', `
+    document.getElementById('sectrackSubsystems').innerHTML = `
       <div class="p-4 rounded-xl bg-surface-container-low border border-outline-variant/20 space-y-2">
         <div class="font-mono text-[10px] text-primary-container uppercase">AUDIT RING &amp; REST</div>
         <div class="font-mono text-lg font-bold text-on-surface">${esc(track.auditRingCount ?? 0)} Buffered</div>
@@ -658,7 +649,7 @@
         <div class="font-mono text-lg font-bold text-on-surface">${esc(track.restorationQueueLength ?? 0)} Queued Repairs</div>
         <div class="text-xs text-on-surface-variant">Under attack: ${security.underAttack ? '<span class="text-error font-bold">YES</span>' : '<span class="text-secondary">NO</span>'}</div>
       </div>
-    `);
+    `;
 
     // Live Stream
     const feed = document.getElementById('liveRecordsFeed');
@@ -766,7 +757,7 @@
       ? 'font-mono text-[10px] px-2 py-0.5 rounded bg-secondary-container/20 text-secondary font-bold'
       : 'font-mono text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant';
     document.getElementById('hpPunishmentSelect').value = hp.punishment || 'ban';
-    setHTML('hpDetailsGrid', `
+    document.getElementById('hpDetailsGrid').innerHTML = `
       <div class="p-3 rounded-lg bg-surface-container">
         <div class="text-outline text-[10px]">CANARY CHANNEL</div>
         <div class="text-primary font-bold truncate mt-0.5">${esc(hp.channelName ? `#${hp.channelName}` : 'Unconfigured')}</div>
@@ -779,7 +770,7 @@
         <div class="text-outline text-[10px]">NEUTRALIZED</div>
         <div class="text-secondary font-bold mt-0.5">${esc(hp.triggersCount || 0)} Raiders</div>
       </div>
-    `);
+    `;
     document.getElementById('hpDeployBtn').disabled = !clearance.canManageControls;
     document.getElementById('hpRemoveBtn').disabled = !(clearance.canManageControls && hp.armed);
 
@@ -821,7 +812,7 @@
 
     // Snapshot Vault
     const bk = controls.backups || {};
-    setHTML('snapshotStatsMosaic', `
+    document.getElementById('snapshotStatsMosaic').innerHTML = `
       <div class="p-3 rounded-lg bg-surface-container">
         <div class="font-mono text-[10px] text-outline">CHANNELS TRACKED</div>
         <div class="font-mono text-lg font-bold text-primary">${esc(bk.channelsTracked ?? guild.channelCount)}</div>
@@ -838,7 +829,7 @@
         <div class="font-mono text-[10px] text-outline">AUTO SNAPSHOTS</div>
         <div class="font-mono text-lg font-bold text-secondary">${esc(bk.rollingSnapshotsCount ?? 0)} Stored</div>
       </div>
-    `);
+    `;
 
     const snaps = bk.snapshots || [];
     const snapsBox = document.getElementById('snapshotsHistoryList');
@@ -891,7 +882,7 @@
       const inspectIdx = (idx) => {
         const inc = incidents[idx];
         if (!inc) return;
-        setHTML('incidentDeepDiveBox', `
+        document.getElementById('incidentDeepDiveBox').innerHTML = `
           <div class="space-y-2.5">
             <div class="p-3 rounded-lg bg-surface-container space-y-1">
               <div class="text-primary font-bold">${esc(inc.id)} — ${esc(inc.type)}</div>
@@ -904,7 +895,7 @@
             </div>
             ${inc.details ? `<div class="p-3 rounded-lg bg-surface-container-lowest text-on-surface whitespace-pre-wrap">${esc(inc.details)}</div>` : ''}
           </div>
-        `);
+        `;
       };
 
       listBox.querySelectorAll('.inc-card').forEach(card => {
@@ -958,7 +949,7 @@
       ['Home VC (24/7)', sync.homeVc],
       ['Discord Dashboard', sync.dashboardChannel]
     ];
-    setHTML('syncChannelsGrid', rows.map(([title, item]) => {
+    document.getElementById('syncChannelsGrid').innerHTML = rows.map(([title, item]) => {
       const ch = item?.channel;
       const active = Boolean(item?.enabled && ch?.exists);
       return `
@@ -970,7 +961,7 @@
           <span class="px-2 py-0.5 rounded text-[10px] font-bold shrink-0 ${active ? 'bg-secondary/20 text-secondary' : 'bg-surface-container-high text-outline'}">${active ? 'SYNCED' : 'UNSET'}</span>
         </div>
       `;
-    }).join(''));
+    }).join('');
   }
 
   // ---------------------------------------------------------------------------
@@ -1047,7 +1038,6 @@
     const onGuildChange = async (gid) => {
       state.activeGuildId = gid;
       _guildChannels = []; // clear channel cache on guild switch
-      _guildRoles = [];    // clear role cache on guild switch
       document.getElementById('guildSwitcherSelect').value = gid;
       document.getElementById('mobileGuildSelect').value = gid;
       await loadGuildState();
@@ -1304,9 +1294,8 @@
   // ---------------------------------------------------------------------------
   const _settingsCache = {};
   let _guildChannels = []; // cached from /api/guilds/:id/channels
-  let _guildRoles = [];   // cached from /api/guilds/:id/roles
 
-  // Load all guild channels from API and cache them (always force-refresh)
+  // Load all guild channels from API and cache them
   async function loadGuildChannels(gid) {
     try {
       const data = await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/channels`);
@@ -1314,25 +1303,11 @@
     } catch (_) { _guildChannels = []; }
   }
 
-  // Load all guild roles from API and cache them (always force-refresh)
-  async function loadGuildRoles(gid) {
-    try {
-      const data = await apiFetch(`/api/guilds/${encodeURIComponent(gid)}/roles`);
-      _guildRoles = data.roles || [];
-    } catch (_) {
-      // Fallback: try from guildData state if already loaded
-      _guildRoles = state.guildData?.access?.availableRoles || [];
-    }
-  }
-
   async function loadSettingsPanel(view) {
     if (!state.activeGuildId) return;
     const gid = state.activeGuildId;
-    // Always ensure channels AND roles are loaded before rendering any panel
-    await Promise.all([
-      loadGuildChannels(gid),
-      _guildRoles.length === 0 ? loadGuildRoles(gid) : Promise.resolve()
-    ]); 
+    // Ensure channels are loaded
+    if (!_guildChannels.length) await loadGuildChannels(gid);
     try {
       const map = {
         tickets: renderTickets, welcome: renderWelcome, serverlogs: renderServerlogs,
@@ -1351,7 +1326,7 @@
 
   // Helper: build <option> list from availableRoles (from guild state)
   function roleOptions(currentId = '') {
-    const roles = _guildRoles.length ? _guildRoles : (state.guildData?.access?.availableRoles || []);
+    const roles = state.guildData?.access?.availableRoles || [];
     return `<option value="">— Select role —</option>` + roles.map(r =>
       `<option value="${esc(r.id)}" ${r.id === currentId ? 'selected' : ''}>${esc(r.name)}</option>`
     ).join('');
@@ -1558,7 +1533,7 @@
       const el = document.getElementById(listId);
       if (!el) return;
       el.innerHTML = (arr||[]).map(id => {
-        const role = (_guildRoles.length ? _guildRoles : (state.guildData?.access?.availableRoles||[])).find(r=>r.id===id);
+        const role = (state.guildData?.access?.availableRoles||[]).find(r=>r.id===id);
         return `<div class="flex items-center justify-between bg-surface-container px-2 py-1 rounded text-xs font-mono">
           <span class="text-on-surface">${role ? esc(role.name) : id}</span>
           <button onclick="window._arRemoveRole('${listId}','${id}')" class="text-error hover:text-on-error ml-2">✕</button>
