@@ -173,6 +173,10 @@
         ? 'nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold bg-surface-container-high text-primary shadow-[0_0_12px_rgba(0,240,255,0.14)] transition-all text-left'
         : 'nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left';
     });
+    // Mobile bottom dock — sync active indicator
+    document.querySelectorAll('.mob-nav-btn').forEach(btn => {
+      btn.classList.toggle('mob-active', btn.dataset.nav === viewName);
+    });
 
     document.querySelectorAll('.mob-nav-btn').forEach(btn => {
       const active = btn.dataset.nav === viewName;
@@ -1994,3 +1998,72 @@
   setInterval(loadPublicOverview, 15000);
   initSession();
 })();
+
+/* ─── PARTICLE CANVAS ─────────────────────────────────────────────────────── */
+(function initParticles() {
+  const canvas = document.getElementById('particles-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const particles = Array.from({ length: 50 }, () => ({
+    x: Math.random(), y: Math.random(),
+    vx: (Math.random() - 0.5) * 0.00025,
+    vy: (Math.random() - 0.5) * 0.00025,
+    r: Math.random() * 1.8 + 0.4,
+    o: Math.random() * 0.5 + 0.2
+  }));
+  function resize() {
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+  }
+  function draw() {
+    if (!canvas.offsetParent && canvas.offsetWidth === 0) {
+      return requestAnimationFrame(draw);
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const W = canvas.width, H = canvas.height;
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x < 0) p.x = 1; if (p.x > 1) p.x = 0;
+      if (p.y < 0) p.y = 1; if (p.y > 1) p.y = 0;
+      ctx.beginPath();
+      ctx.arc(p.x * W, p.y * H, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0,240,255,${p.o})`;
+      ctx.fill();
+    });
+    // Draw connection lines between close particles
+    for (let i = 0; i < particles.length; i++) {
+      for (let j = i + 1; j < particles.length; j++) {
+        const dx = (particles[i].x - particles[j].x) * W;
+        const dy = (particles[i].y - particles[j].y) * H;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 90) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x * W, particles[i].y * H);
+          ctx.lineTo(particles[j].x * W, particles[j].y * H);
+          ctx.strokeStyle = `rgba(0,240,255,${0.08 * (1 - dist / 90)})`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  draw();
+})();
+
+/* ─── RIPPLE EFFECT ON BUTTON TAP ────────────────────────────────────────── */
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('button');
+  if (!btn || btn.classList.contains('mob-nav-btn')) return;
+  const ripple = document.createElement('span');
+  ripple.className = 'ripple';
+  const r = Math.max(btn.offsetWidth, btn.offsetHeight);
+  const rect = btn.getBoundingClientRect();
+  ripple.style.cssText = `width:${r}px;height:${r}px;left:${e.clientX - rect.left - r / 2}px;top:${e.clientY - rect.top - r / 2}px;`;
+  btn.style.position = 'relative';
+  btn.style.overflow = 'hidden';
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 500);
+});

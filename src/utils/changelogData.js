@@ -16,6 +16,30 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.32',
+    headline: 'Mobile Optimization & Visual Animations',
+    summary: 'Full mobile-first CSS overhaul with particle canvas, entry animations, hover effects, ripple taps, and dock active indicators. Looks great on both mobile and desktop.',
+    whatsNew: [
+      { title: 'Animated Tactical Grid', desc: 'Background scanline animation with cyan dot grid on the showcase page.' },
+      { title: 'Particle Canvas', desc: 'Connected floating cyan particle network animates live on the landing/showcase section.' },
+      { title: 'Entry Animations', desc: 'All sections animate in with fadeInUp. Showcase heading and cards stagger with 50ms delay offsets.' },
+      { title: 'Mobile Bottom Dock', desc: 'Active view now shows a glowing cyan pill indicator on the active tab. iOS safe-area padding, blur background, and 44px tap targets.' },
+      { title: 'Ripple on Tap', desc: 'All buttons show a cyan ripple effect on click/tap.' }
+    ],
+    improvements: [
+      'Gradient animated text on main showcase heading',
+      'Card hover lift + glow (desktop), tap scale (mobile)',
+      'Input focus glow ring (cyan 0.5 opacity)',
+      'Custom cyan dropdown arrow on all selects',
+      'iOS zoom prevention (16px min font on inputs)',
+      'Nav sidebar hover slides left indicator bar',
+      'Toast slide-in animation',
+      'Button shine sweep on hover'
+    ],
+    fixes: []
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.31',
     headline: 'Dashboard Overhaul — Real Channels, Hybrid Inputs, Guides & New Panels',
     summary: 'Complete dashboard rewrite: channels now load from live Discord API (all guild channels, not just configured ones). Every channel/role field is now a hybrid dropdown+ID input. Birthday, Economy, Giveaway, Sticky removed. New panels: Message Delete Log, Media Downloader, Quarantine Setup (auto + manual + gatekeeper). Server Stats is now a true auto-setup button system. Full feature guides added to every panel.',

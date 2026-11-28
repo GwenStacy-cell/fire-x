@@ -1,6 +1,10 @@
 /* Athena Prime • Tactical Cyber Sentinel Stylesheet
+   Mobile-optimized + Animated — v4.0.32
    Safe to edit after deployment — served live with Cache-Control: no-cache */
 
+/* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════════ */
 :root {
   --surface: #10131a;
   --surface-lowest: #0b0e14;
@@ -10,8 +14,17 @@
   --cyan: #00f0ff;
   --emerald: #05e777;
   --crimson: #ff3366;
+  --glow-cyan: 0 0 20px rgba(0,240,255,0.35), 0 0 40px rgba(0,240,255,0.15);
+  --glow-emerald: 0 0 20px rgba(5,231,119,0.35);
+  --glow-crimson: 0 0 20px rgba(255,51,102,0.4);
+  --transition-fast: 0.15s ease;
+  --transition-med: 0.3s ease;
+  --transition-slow: 0.5s ease;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   BASE RESETS
+═══════════════════════════════════════════════════════════ */
 html, body {
   margin: 0;
   padding: 0;
@@ -19,45 +32,136 @@ html, body {
   color: #e1e2eb;
   overscroll-behavior: none;
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   KEYFRAME ANIMATIONS
+═══════════════════════════════════════════════════════════ */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(22px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(0,240,255,0.2); }
+  50%       { box-shadow: 0 0 25px rgba(0,240,255,0.55), 0 0 50px rgba(0,240,255,0.2); }
+}
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(0,240,255,0.2); }
+  50%       { border-color: rgba(0,240,255,0.65); }
+}
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes neonFlicker {
+  0%, 95%, 100% { opacity: 1; }
+  96% { opacity: 0.4; }
+  97% { opacity: 1; }
+  98% { opacity: 0.3; }
+}
+@keyframes scanlines {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 100px; }
+}
+@keyframes radarSweep {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes particleFloat {
+  0%   { transform: translateY(0) translateX(0); opacity: 0.6; }
+  33%  { transform: translateY(-15px) translateX(8px); opacity: 1; }
+  66%  { transform: translateY(-8px) translateX(-5px); opacity: 0.7; }
+  100% { transform: translateY(0) translateX(0); opacity: 0.6; }
+}
+@keyframes rippleEffect {
+  to { transform: scale(4); opacity: 0; }
+}
+@keyframes countUp {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes slideInToast {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes borderRunLeft {
+  from { background-position: 200% center; }
+  to   { background-position: -200% center; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ANIMATED TACTICAL GRID BACKGROUND
+═══════════════════════════════════════════════════════════ */
 .tactical-grid-bg {
   background-image:
-    radial-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px);
+    radial-gradient(rgba(0,240,255,0.07) 1px, transparent 1px);
   background-size: 24px 24px;
+  position: relative;
+}
+.tactical-grid-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 48px,
+    rgba(0,240,255,0.025) 48px,
+    rgba(0,240,255,0.025) 50px
+  );
+  pointer-events: none;
+  animation: scanlines 8s linear infinite;
+  z-index: 0;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   GLASS PANELS
+═══════════════════════════════════════════════════════════ */
 .glass-panel {
-  background: rgba(17, 22, 34, 0.72);
+  background: rgba(17,22,34,0.72);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 240, 255, 0.14);
+  border: 1px solid rgba(0,240,255,0.14);
 }
-
 .glass-elevated {
-  background: rgba(23, 30, 48, 0.88);
+  background: rgba(23,30,48,0.88);
   backdrop-filter: blur(22px);
   -webkit-backdrop-filter: blur(22px);
-  border: 1px solid rgba(0, 240, 255, 0.28);
+  border: 1px solid rgba(0,240,255,0.28);
 }
 
-/* Custom sleek thin scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
+/* ═══════════════════════════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.18);
+  background: rgba(0,240,255,0.18);
   border-radius: 9999px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.35);
-}
+::-webkit-scrollbar-thumb:hover { background: rgba(0,240,255,0.38); }
 
-/* Tactical toggle switch */
+/* ═══════════════════════════════════════════════════════════
+   TACTICAL TOGGLE SWITCH
+═══════════════════════════════════════════════════════════ */
 .tactical-switch {
   position: relative;
   display: inline-flex;
@@ -66,35 +170,29 @@ html, body {
   height: 20px;
   flex-shrink: 0;
 }
-.tactical-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+.tactical-switch input { opacity: 0; width: 0; height: 0; }
 .tactical-slider {
   position: absolute;
   inset: 0;
   background-color: #171e30;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 9999px;
-  transition: background-color 0.18s ease, border-color 0.18s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
 .tactical-slider::before {
   content: "";
   position: absolute;
-  width: 14px;
-  height: 14px;
-  left: 2px;
-  top: 2px;
+  width: 14px; height: 14px;
+  left: 2px; top: 2px;
   background-color: #b9cacb;
   border-radius: 9999px;
-  transition: transform 0.18s ease, background-color 0.18s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 .tactical-switch input:checked + .tactical-slider {
   background-color: #05e777;
   border-color: #7dffa2;
-  box-shadow: 0 0 10px rgba(5, 231, 119, 0.35);
+  box-shadow: var(--glow-emerald);
 }
 .tactical-switch input:checked + .tactical-slider::before {
   transform: translateX(18px);
@@ -105,8 +203,484 @@ html, body {
   cursor: not-allowed;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   ENTRY ANIMATION UTILITIES
+═══════════════════════════════════════════════════════════ */
+.anim-fade-up  { animation: fadeInUp 0.4s ease both; }
+.anim-fade-in  { animation: fadeIn 0.35s ease both; }
+.anim-scale-in { animation: scaleIn 0.35s ease both; }
+.anim-float    { animation: float 3.5s ease-in-out infinite; }
+.anim-glow     { animation: glowPulse 2.5s ease-in-out infinite; }
+.anim-flicker  { animation: neonFlicker 6s linear infinite; }
+
+/* Staggered children — add .anim-stagger to parent */
+.anim-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+.anim-stagger > *:nth-child(2) { animation-delay: 0.1s; }
+.anim-stagger > *:nth-child(3) { animation-delay: 0.15s; }
+.anim-stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.anim-stagger > *:nth-child(5) { animation-delay: 0.25s; }
+.anim-stagger > *:nth-child(6) { animation-delay: 0.3s; }
+.anim-stagger > *:nth-child(7) { animation-delay: 0.35s; }
+.anim-stagger > *:nth-child(8) { animation-delay: 0.4s; }
+
+/* Section animation when shown */
+section:not(.hidden) {
+  animation: fadeInUp 0.35s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GRADIENT TEXT
+═══════════════════════════════════════════════════════════ */
+.gradient-text {
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--emerald) 50%, var(--cyan) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: borderRunLeft 4s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CYBER BORDER UTILITY
+═══════════════════════════════════════════════════════════ */
+.cyber-border {
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARD HOVER LIFT
+═══════════════════════════════════════════════════════════ */
+.card-hover {
+  transition: transform var(--transition-med), box-shadow var(--transition-med);
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0,240,255,0.15), 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   GLOW BUTTON
+═══════════════════════════════════════════════════════════ */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -60%;
+  width: 40%; height: 200%;
+  background: rgba(255,255,255,0.12);
+  transform: skewX(-20deg);
+  transition: left 0.4s ease;
+  pointer-events: none;
+}
+.btn-glow:hover::after { left: 110%; }
+.btn-glow:hover {
+  box-shadow: var(--glow-cyan);
+  transform: translateY(-1px);
+}
+.btn-glow:active { transform: scale(0.97); }
+
+/* All save buttons get hover glow */
+[id$="SaveBtn"], [id$="Btn"] {
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast), opacity var(--transition-fast);
+}
+[id$="SaveBtn"]:hover, [id$="Btn"]:hover {
+  box-shadow: 0 0 14px rgba(0,240,255,0.25);
+  transform: translateY(-1px);
+}
+[id$="SaveBtn"]:active, [id$="Btn"]:active {
+  transform: scale(0.97);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SHIMMER SKELETON LOADER
+═══════════════════════════════════════════════════════════ */
+.shimmer {
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.03) 0%,
+    rgba(255,255,255,0.08) 50%,
+    rgba(255,255,255,0.03) 100%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INPUT FOCUS GLOW
+═══════════════════════════════════════════════════════════ */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: rgba(0,240,255,0.5) !important;
+  box-shadow: 0 0 0 2px rgba(0,240,255,0.15);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* Custom select arrow */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300f0ff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 28px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PERSONA CARD HOVER
+═══════════════════════════════════════════════════════════ */
+.persona-card {
+  transition: transform var(--transition-med), box-shadow var(--transition-med);
+}
+.persona-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 36px rgba(0,240,255,0.18);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAV LINK ACTIVE STATE
+═══════════════════════════════════════════════════════════ */
+.nav-link.text-primary-container {
+  position: relative;
+}
+.nav-link.text-primary-container::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--cyan);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px rgba(0,240,255,0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SIDEBAR HOVER
+═══════════════════════════════════════════════════════════ */
+#appSidebar {
+  transition: box-shadow var(--transition-med);
+}
+#appSidebar:hover {
+  box-shadow: 4px 0 24px rgba(0,240,255,0.06);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SETTINGS GUIDE BOX (first info panel per section)
+═══════════════════════════════════════════════════════════ */
+.settings-guide {
+  position: relative;
+  overflow: hidden;
+}
+.settings-guide::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--emerald), transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DEFCON BADGE GLOW
+═══════════════════════════════════════════════════════════ */
+.defcon-badge {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   LIVE BADGE PULSE DOT
+═══════════════════════════════════════════════════════════ */
+.live-badge-dot {
+  animation: glowPulse 1.8s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PROGRESS BAR SHIMMER
+═══════════════════════════════════════════════════════════ */
+.progress-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.progress-shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  animation: shimmer 2s infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RADAR RING
+═══════════════════════════════════════════════════════════ */
+.radar-ring {
+  position: relative;
+  border-radius: 50%;
+}
+.radar-ring::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--cyan);
+  animation: radarSweep 2s linear infinite;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RIPPLE EFFECT
+═══════════════════════════════════════════════════════════ */
+.ripple-container { position: relative; overflow: hidden; }
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0,240,255,0.25);
+  transform: scale(0);
+  animation: rippleEffect 0.5s linear;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST SLIDE-IN
+═══════════════════════════════════════════════════════════ */
+#toastContainer > div {
+  animation: slideInToast 0.3s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL ENTRY
+═══════════════════════════════════════════════════════════ */
+#disarmModal > div,
+#snapshotModal > div,
+#incidentModal > div {
+  animation: scaleIn 0.25s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BOT AVATAR GLOW
+═══════════════════════════════════════════════════════════ */
+#sidebarBotAvatar {
+  transition: box-shadow var(--transition-med);
+}
+#sidebarBotAvatar:hover {
+  box-shadow: 0 0 18px rgba(0,240,255,0.4);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PARTICLE CANVAS (showcase page)
+═══════════════════════════════════════════════════════════ */
+#particles-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SHOWCASE SECTION ENTRY ANIMATIONS
+═══════════════════════════════════════════════════════════ */
+#view-showcase .space-y-5 > * { animation: fadeInLeft 0.5s ease both; }
+#view-showcase .space-y-5 > *:nth-child(1) { animation-delay: 0.1s; }
+#view-showcase .space-y-5 > *:nth-child(2) { animation-delay: 0.2s; }
+#view-showcase .space-y-5 > *:nth-child(3) { animation-delay: 0.3s; }
+#view-showcase .space-y-5 > *:nth-child(4) { animation-delay: 0.4s; }
+#view-showcase h1 { animation: fadeInUp 0.6s ease both; animation-delay: 0.1s; }
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE BOTTOM DOCK — ENHANCED
+═══════════════════════════════════════════════════════════ */
+#mobileBottomNav {
+  background: rgba(11,14,20,0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(0,240,255,0.1);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.5);
+}
+
+/* Active dock button — cyan pill indicator on top */
+#mobileBottomNav .mob-nav-btn.mob-active {
+  position: relative;
+  color: #00f0ff !important;
+}
+#mobileBottomNav .mob-nav-btn.mob-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 28px;
+  height: 3px;
+  background: var(--cyan);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 0 10px rgba(0,240,255,0.7);
+}
+
+/* Dock button tap feedback */
+#mobileBottomNav .mob-nav-btn {
+  transition: color var(--transition-fast), opacity var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+  min-width: 44px;
+  min-height: 44px;
+}
+#mobileBottomNav .mob-nav-btn:active {
+  opacity: 0.7;
+  transform: scale(0.9);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MOBILE HEADER
+═══════════════════════════════════════════════════════════ */
+#appTopBar {
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 1px 12px rgba(0,0,0,0.4), 0 1px 0 rgba(0,240,255,0.08);
+}
+
 @media (max-width: 1023px) {
+  /* Bottom dock spacing */
   .pb-mobile-dock {
-    padding-bottom: 5.5rem;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
+
+  /* ── INPUT SIZES (16px prevents iOS zoom) ── */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* ── TOUCH TARGETS ── */
+  button, [role="button"], .nav-link, .mob-nav-btn,
+  input[type="checkbox"], input[type="radio"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* ── SETTINGS PANELS ── */
+  .settings-panel {
+    padding: 1rem !important;
+  }
+  .settings-panel .grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+  .settings-panel textarea {
+    min-height: 80px;
+  }
+  .settings-panel input[type="text"],
+  .settings-panel select {
+    padding: 0.6rem 0.75rem !important;
+  }
+
+  /* ── CARDS ── */
+  .card-hover:hover {
+    transform: none; /* no hover on touch */
+    box-shadow: none;
+  }
+  .card-hover:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
+  }
+
+  /* ── PERSONA GRID ── */
+  #personaGrid {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 0.75rem;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.5rem;
+  }
+  #personaGrid > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    width: 85vw;
+  }
+
+  /* ── MODULE GRID ── */
+  #meshGrid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  /* ── OVERVIEW STAT CARDS ── */
+  .stat-card-grid {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  /* ── SERVER LOG MODULE GRID ── */
+  #slModuleGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* ── TYPOGRAPHY SCALE ── */
+  h1 { font-size: clamp(1.6rem, 7vw, 3rem) !important; }
+  h2 { font-size: clamp(1.1rem, 5vw, 1.5rem) !important; }
+
+  /* ── BOTTOM SHEET FEEL ── */
+  .settings-panel-wrap {
+    border-radius: 16px 16px 0 0;
+  }
+
+  /* ── SHOW SCROLL HINT on horizontal scrollers ── */
+  .scroll-snap-x::after {
+    content: '›';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--cyan);
+    opacity: 0.6;
+    font-size: 1.5rem;
+    pointer-events: none;
+    animation: float 1.5s ease-in-out infinite;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   iOS SAFE AREA SUPPORT
+═══════════════════════════════════════════════════════════ */
+@supports (padding: env(safe-area-inset-bottom)) {
+  #mobileBottomNav {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .pb-mobile-dock {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DESKTOP ENHANCEMENTS
+═══════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  /* Sidebar nav hover */
+  .nav-link {
+    transition: background var(--transition-fast), color var(--transition-fast), padding-left var(--transition-fast);
+  }
+  .nav-link:hover {
+    padding-left: 1.25rem !important;
+    background: rgba(0,240,255,0.04);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STAT CARD ANIMATION
+═══════════════════════════════════════════════════════════ */
+.stat-number-animate {
+  animation: countUp 0.4s ease both;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SCROLL HINT ARROW
+═══════════════════════════════════════════════════════════ */
+.scroll-hint {
+  display: inline-block;
+  animation: float 1.5s ease-in-out infinite;
+  color: var(--cyan);
+  opacity: 0.65;
 }
