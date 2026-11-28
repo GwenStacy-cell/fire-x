@@ -16,6 +16,29 @@ import { sanitizeCV2Payload } from '../cv2.js';
 export const CHANGELOG_ENTRIES = [
   {
     date: '28 November 2026',
+    version: 'v4.0.32',
+    headline: 'Dashboard Fixes — Channels & Roles Dropdowns, Null Guards',
+    summary: 'Fixed channels and roles not populating in Settings panels. Added a dedicated /roles API endpoint. Roles and channels now preload on guild select and reload fresh on every panel open. Fixed all null innerHTML errors with optional chaining. Mobile + animation CSS applied.',
+    whatsNew: [
+      { title: 'Dedicated Roles API', desc: 'New GET /guilds/:id/roles endpoint returns all non-managed roles with fresh fetch — dropdowns no longer depend on the heavy /state call.' },
+      { title: 'Background Preload', desc: 'Channels and roles now preload in the background immediately after guild select, so Settings panels open with dropdowns already populated.' },
+      { title: 'Force-Refresh on Panel Open', desc: 'Every time a Settings panel is opened, channels AND roles are always re-fetched — no stale cache issues.' },
+      { title: 'Null-Safe innerHTML', desc: 'All 6 direct .innerHTML calls on getElementById results are now guarded with ?. — eliminates "Cannot set properties of null" errors.' }
+    ],
+    improvements: [
+      'Roles dropdown falls back to /state data if /roles endpoint is unavailable',
+      'Whitelist role picker uses fresh _guildRoles cache',
+      'Guild switch now clears both _guildChannels and _guildRoles caches'
+    ],
+    fixes: [
+      'Channel dropdown showing only "Select channel" with no options',
+      'Role dropdown showing only "Select role" with no options',
+      '"Cannot set properties of null (setting innerHTML)" red toast on panel open',
+      'syncChannelsGrid, hpDetailsGrid, snapshotStatsMosaic, sectrackSubsystems, incidentDeepDiveBox, sidebarLatency all null-guarded'
+    ]
+  },
+  {
+    date: '28 November 2026',
     version: 'v4.0.31',
     headline: 'Dashboard Overhaul — Real Channels, Hybrid Inputs, Guides & New Panels',
     summary: 'Complete dashboard rewrite: channels now load from live Discord API (all guild channels, not just configured ones). Every channel/role field is now a hybrid dropdown+ID input. Birthday, Economy, Giveaway, Sticky removed. New panels: Message Delete Log, Media Downloader, Quarantine Setup (auto + manual + gatekeeper). Server Stats is now a true auto-setup button system. Full feature guides added to every panel.',

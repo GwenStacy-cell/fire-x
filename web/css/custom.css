@@ -1,6 +1,9 @@
-/* Athena Prime • Tactical Cyber Sentinel Stylesheet
-   Safe to edit after deployment — served live with Cache-Control: no-cache */
+/* Athena Prime • Tactical Cyber Sentinel Stylesheet v4.0.31
+   Mobile-optimised + Animated — Safe to edit after deployment */
 
+/* ───────────────────────────────────────────────────────────────
+   CSS CUSTOM PROPERTIES
+   ─────────────────────────────────────────────────────────────── */
 :root {
   --surface: #10131a;
   --surface-lowest: #0b0e14;
@@ -10,8 +13,16 @@
   --cyan: #00f0ff;
   --emerald: #05e777;
   --crimson: #ff3366;
+  --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.35);
+  --glow-emerald: 0 0 20px rgba(5, 231, 119, 0.35);
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-med: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* ───────────────────────────────────────────────────────────────
+   BASE RESETS
+   ─────────────────────────────────────────────────────────────── */
 html, body {
   margin: 0;
   padding: 0;
@@ -19,19 +30,69 @@ html, body {
   color: #e1e2eb;
   overscroll-behavior: none;
   scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
 }
 
+/* ───────────────────────────────────────────────────────────────
+   SCROLLBAR
+   ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 240, 255, 0.18);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(0, 240, 255, 0.4); }
+
+/* ───────────────────────────────────────────────────────────────
+   ANIMATED TACTICAL GRID BACKGROUND
+   ─────────────────────────────────────────────────────────────── */
 .tactical-grid-bg {
   background-image:
-    radial-gradient(rgba(0, 240, 255, 0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
+    radial-gradient(rgba(0, 240, 255, 0.055) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-attachment: local;
 }
 
+/* Animated scanline overlay for showcase section */
+.scanline-overlay {
+  position: relative;
+  overflow: hidden;
+}
+.scanline-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 240, 255, 0.015) 2px,
+    rgba(0, 240, 255, 0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+  animation: scanlines 8s linear infinite;
+}
+@keyframes scanlines {
+  0% { background-position: 0 0; }
+  100% { background-position: 0 100px; }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   GLASS PANELS
+   ─────────────────────────────────────────────────────────────── */
 .glass-panel {
   background: rgba(17, 22, 34, 0.72);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(0, 240, 255, 0.14);
+  transition: border-color var(--transition-med), box-shadow var(--transition-med);
+}
+.glass-panel:hover {
+  border-color: rgba(0, 240, 255, 0.28);
+  box-shadow: 0 4px 32px rgba(0, 240, 255, 0.07);
 }
 
 .glass-elevated {
@@ -41,23 +102,158 @@ html, body {
   border: 1px solid rgba(0, 240, 255, 0.28);
 }
 
-/* Custom sleek thin scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* ───────────────────────────────────────────────────────────────
+   ENTRY ANIMATIONS
+   ─────────────────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-::-webkit-scrollbar-track {
-  background: transparent;
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
 }
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 240, 255, 0.18);
-  border-radius: 9999px;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 240, 255, 0.35);
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(0, 240, 255, 0.2); }
+  50%       { box-shadow: 0 0 24px rgba(0, 240, 255, 0.5), 0 0 48px rgba(0, 240, 255, 0.15); }
+}
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(0, 240, 255, 0.2); }
+  50%       { border-color: rgba(0, 240, 255, 0.6); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+@keyframes countUp {
+  from { transform: scale(0.9); opacity: 0.6; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes neonFlicker {
+  0%, 100% { opacity: 1; }
+  92% { opacity: 1; }
+  93% { opacity: 0.4; }
+  94% { opacity: 1; }
+  96% { opacity: 0.5; }
+  97% { opacity: 1; }
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes radarSweep {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes particleFloat {
+  0%   { transform: translateY(0) translateX(0) scale(1); opacity: 0.7; }
+  33%  { transform: translateY(-15px) translateX(8px) scale(1.1); opacity: 1; }
+  66%  { transform: translateY(-8px) translateX(-5px) scale(0.9); opacity: 0.8; }
+  100% { transform: translateY(0) translateX(0) scale(1); opacity: 0.7; }
 }
 
-/* Tactical toggle switch */
+/* Staggered children animation */
+.anim-stagger > * {
+  animation: fadeInUp 0.4s ease both;
+}
+.anim-stagger > *:nth-child(1)  { animation-delay: 0.05s; }
+.anim-stagger > *:nth-child(2)  { animation-delay: 0.10s; }
+.anim-stagger > *:nth-child(3)  { animation-delay: 0.15s; }
+.anim-stagger > *:nth-child(4)  { animation-delay: 0.20s; }
+.anim-stagger > *:nth-child(5)  { animation-delay: 0.25s; }
+.anim-stagger > *:nth-child(6)  { animation-delay: 0.30s; }
+.anim-stagger > *:nth-child(7)  { animation-delay: 0.35s; }
+.anim-stagger > *:nth-child(8)  { animation-delay: 0.40s; }
+
+.anim-fade-up  { animation: fadeInUp  0.45s cubic-bezier(0.4,0,0.2,1) both; }
+.anim-fade-in  { animation: fadeIn    0.4s  ease both; }
+.anim-scale-in { animation: scaleIn   0.3s  cubic-bezier(0.4,0,0.2,1) both; }
+.anim-float    { animation: float     4s    ease-in-out infinite; }
+.anim-glow     { animation: glowPulse 2.5s  ease-in-out infinite; }
+.anim-flicker  { animation: neonFlicker 6s  ease-in-out infinite; }
+
+/* Page section view animation */
+section:not(.hidden) {
+  animation: fadeInUp 0.35s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SHIMMER SKELETON LOADER
+   ─────────────────────────────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 0%,
+    rgba(0, 240, 255, 0.08) 50%,
+    rgba(255,255,255,0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   CARD HOVER LIFT
+   ─────────────────────────────────────────────────────────────── */
+.card-hover {
+  transition: transform var(--transition-med), box-shadow var(--transition-med), border-color var(--transition-med);
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 240, 255, 0.1), 0 2px 8px rgba(0,0,0,0.3);
+  border-color: rgba(0, 240, 255, 0.3);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   GLOW BUTTON
+   ─────────────────────────────────────────────────────────────── */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+.btn-glow:hover { transform: translateY(-1px); box-shadow: var(--glow-cyan); }
+.btn-glow:hover::after { opacity: 1; }
+.btn-glow:active { transform: translateY(0); }
+
+/* Primary action button */
+button[id$="SaveBtn"],
+button[id$="Btn"]:not(.mob-nav-btn):not([data-nav]) {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+}
+button[id$="SaveBtn"]:hover,
+button[id$="Btn"]:not(.mob-nav-btn):not([data-nav]):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 240, 255, 0.25);
+}
+button[id$="SaveBtn"]:active,
+button[id$="Btn"]:not(.mob-nav-btn):not([data-nav]):active {
+  transform: translateY(0);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   TACTICAL TOGGLE SWITCH
+   ─────────────────────────────────────────────────────────────── */
 .tactical-switch {
   position: relative;
   display: inline-flex;
@@ -66,18 +262,14 @@ html, body {
   height: 20px;
   flex-shrink: 0;
 }
-.tactical-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
+.tactical-switch input { opacity: 0; width: 0; height: 0; }
 .tactical-slider {
   position: absolute;
   inset: 0;
   background-color: #171e30;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 9999px;
-  transition: background-color 0.18s ease, border-color 0.18s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
 }
 .tactical-slider::before {
@@ -89,24 +281,520 @@ html, body {
   top: 2px;
   background-color: #b9cacb;
   border-radius: 9999px;
-  transition: transform 0.18s ease, background-color 0.18s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
 }
 .tactical-switch input:checked + .tactical-slider {
   background-color: #05e777;
   border-color: #7dffa2;
-  box-shadow: 0 0 10px rgba(5, 231, 119, 0.35);
+  box-shadow: 0 0 10px rgba(5, 231, 119, 0.4);
 }
 .tactical-switch input:checked + .tactical-slider::before {
   transform: translateX(18px);
   background-color: #00210b;
 }
-.tactical-switch input:disabled + .tactical-slider {
-  opacity: 0.45;
-  cursor: not-allowed;
+.tactical-switch input:disabled + .tactical-slider { opacity: 0.45; cursor: not-allowed; }
+
+/* Peer-based Tailwind toggles (used in settings panels) */
+input[type="checkbox"].sr-only:checked + div {
+  box-shadow: 0 0 10px rgba(5, 231, 119, 0.3);
 }
 
+/* ───────────────────────────────────────────────────────────────
+   NAV LINK ACTIVE STATE
+   ─────────────────────────────────────────────────────────────── */
+.nav-link {
+  transition: background-color var(--transition-fast), color var(--transition-fast), transform var(--transition-fast);
+  position: relative;
+}
+.nav-link:hover { transform: translateX(2px); }
+.nav-link[class*="text-primary"] {
+  position: relative;
+}
+.nav-link[class*="text-primary"]::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--cyan);
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   MOBILE BOTTOM DOCK — ENHANCED
+   ─────────────────────────────────────────────────────────────── */
+#mobileBottomNav {
+  background: rgba(11, 14, 20, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(0, 240, 255, 0.12);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -4px 32px rgba(0, 0, 0, 0.5), 0 -1px 0 rgba(0, 240, 255, 0.08);
+}
+
+.mob-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 4px;
+  border-radius: 12px;
+  color: rgba(185, 202, 203, 0.6);
+  transition: color var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
+  position: relative;
+  min-height: 48px;
+  touch-action: manipulation;
+}
+.mob-nav-btn:active { transform: scale(0.9); }
+
+/* Active indicator pill above icon */
+.mob-nav-btn.mob-active::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 3px;
+  background: var(--cyan);
+  border-radius: 9999px;
+  box-shadow: 0 0 8px var(--cyan);
+  animation: fadeIn 0.2s ease;
+}
+.mob-nav-btn.mob-active {
+  color: var(--cyan);
+  background: rgba(0, 240, 255, 0.07);
+}
+.mob-nav-btn.mob-active .material-symbols-outlined {
+  font-variation-settings: 'FILL' 1, 'wght' 500;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   MOBILE HEADER
+   ─────────────────────────────────────────────────────────────── */
+#appTopBar {
+  background: rgba(11, 14, 20, 0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 1px 0 rgba(0, 240, 255, 0.08), 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SETTINGS PANEL CARDS — MOBILE FRIENDLY
+   ─────────────────────────────────────────────────────────────── */
+/* Make inputs larger and more touchable on mobile */
 @media (max-width: 1023px) {
   .pb-mobile-dock {
-    padding-bottom: 5.5rem;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
+
+  main {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    padding-top: 72px !important;
+  }
+
+  /* Settings panel inputs — bigger touch targets */
+  section input[type="text"],
+  section input[type="number"],
+  section input[type="color"],
+  section textarea,
+  section select {
+    font-size: 16px !important; /* prevents iOS zoom */
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  section textarea { min-height: 80px; }
+
+  /* Buttons — larger tap targets */
+  section button {
+    min-height: 44px;
+    font-size: 11px !important;
+  }
+
+  /* Cards — single column on small screens */
+  .grid.grid-cols-1.sm\\:grid-cols-2 { grid-template-columns: 1fr; }
+
+  /* Stat numbers — smaller on mobile */
+  .text-5xl { font-size: 2.5rem !important; }
+  .text-4xl { font-size: 2rem !important; }
+
+  /* Horizontal scroll snap for stat cards */
+  .mobile-scroll-snap {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding: 4px 2px 8px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .mobile-scroll-snap::-webkit-scrollbar { display: none; }
+  .mobile-scroll-snap > * {
+    scroll-snap-align: start;
+    flex: 0 0 80vw;
+    min-width: 240px;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   PERSONA GRID — MOBILE SNAP
+   ─────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  #personaGrid {
+    display: flex;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 4px 2px 8px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  #personaGrid > * {
+    flex: 0 0 72vw;
+    scroll-snap-align: start;
+    min-width: 200px;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   STAT CARDS / OVERVIEW GRID
+   ─────────────────────────────────────────────────────────────── */
+.stat-number {
+  animation: countUp 0.4s cubic-bezier(0.4,0,0.2,1);
+  display: inline-block;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   MODULE GRID CARDS (Anti-Nuke shields)
+   ─────────────────────────────────────────────────────────────── */
+.module-card {
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.module-card:hover {
+  transform: scale(1.015);
+  border-color: rgba(0, 240, 255, 0.35);
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.1);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   RADAR / TELEMETRY RING ANIMATION
+   ─────────────────────────────────────────────────────────────── */
+.radar-ring {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.radar-ring::before,
+.radar-ring::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  animation: radarPing 2.4s ease-out infinite;
+}
+.radar-ring::before { width: 100%; height: 100%; animation-delay: 0s; }
+.radar-ring::after  { width: 80%;  height: 80%;  animation-delay: 0.8s; }
+@keyframes radarPing {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   LIVE BADGE PULSE
+   ─────────────────────────────────────────────────────────────── */
+.live-badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--emerald);
+  box-shadow: 0 0 6px var(--emerald);
+  animation: livePulse 1.8s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(5, 231, 119, 0.5); transform: scale(1); }
+  50%       { box-shadow: 0 0 14px rgba(5, 231, 119, 0.9); transform: scale(1.2); }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   PARTICLES — SHOWCASE BACKGROUND
+   ─────────────────────────────────────────────────────────────── */
+#particles-canvas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: 0;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   TYPED TEXT CURSOR
+   ─────────────────────────────────────────────────────────────── */
+.typed-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--cyan);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.9s step-end infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   PROGRESS BARS
+   ─────────────────────────────────────────────────────────────── */
+.progress-bar-fill {
+  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 30%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 1.5s ease-in-out infinite;
+  background-size: 200% 100%;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SELECT INPUTS — CUSTOM STYLE
+   ─────────────────────────────────────────────────────────────── */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300f0ff' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px !important;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+select:focus {
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.1);
+  outline: none;
+}
+select option {
+  background: #191c22;
+  color: #e1e2eb;
+}
+
+/* Input focus glow */
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+  border-color: rgba(0, 240, 255, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(0, 240, 255, 0.1);
+  outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   TOAST NOTIFICATION — SLIDE IN
+   ─────────────────────────────────────────────────────────────── */
+#toastContainer > div {
+  animation: slideToast 0.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+@keyframes slideToast {
+  from { transform: translateY(16px) scale(0.95); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SIDEBAR — DESKTOP HOVER
+   ─────────────────────────────────────────────────────────────── */
+#appSidebar {
+  transition: box-shadow var(--transition-slow);
+}
+#appSidebar:hover {
+  box-shadow: 4px 0 32px rgba(0, 240, 255, 0.05);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   BOT AVATAR — GLOW ON HOVER
+   ─────────────────────────────────────────────────────────────── */
+#sidebarBotAvatar,
+#mobileBotAvatar {
+  transition: box-shadow var(--transition-med);
+}
+#sidebarBotAvatar:hover,
+#mobileBotAvatar:hover {
+  box-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+}
+
+/* ───────────────────────────────────────────────────────────────
+   SETTINGS PANEL GUIDE BOX
+   ─────────────────────────────────────────────────────────────── */
+section .space-y-6 > div:first-child {
+  position: relative;
+  overflow: hidden;
+}
+section .space-y-6 > div:first-child::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan), transparent 60%);
+  opacity: 0.6;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   MODAL ENTRY ANIMATION
+   ─────────────────────────────────────────────────────────────── */
+#authModal > div,
+#twoFAModal > div {
+  animation: scaleIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   PERSONA CARDS — HOVER GLOW
+   ─────────────────────────────────────────────────────────────── */
+#personaGrid > div {
+  transition: transform var(--transition-med), box-shadow var(--transition-med), border-color var(--transition-med);
+  cursor: pointer;
+}
+#personaGrid > div:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 32px rgba(0, 240, 255, 0.15);
+  border-color: rgba(0, 240, 255, 0.4) !important;
+}
+#personaGrid > div:active { transform: scale(0.98); }
+
+/* ───────────────────────────────────────────────────────────────
+   SECTION HEADINGS — ANIMATED UNDERLINE
+   ─────────────────────────────────────────────────────────────── */
+h2 {
+  position: relative;
+  display: inline-block;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   MOBILE SHEET — SETTINGS DRAWER FEEL
+   ─────────────────────────────────────────────────────────────── */
+@media (max-width: 1023px) {
+  /* Full-width cards on mobile */
+  section > .space-y-6 > div,
+  section > div {
+    border-radius: 16px !important;
+  }
+
+  /* Better spacing */
+  section.space-y-6 { gap: 16px; }
+
+  /* Swipeable indicator at top of content area */
+  main::before {
+    content: '';
+    display: block;
+    width: 36px;
+    height: 4px;
+    background: rgba(0, 240, 255, 0.2);
+    border-radius: 9999px;
+    margin: 0 auto 16px;
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   DEFCON STATUS BADGE — ANIMATED
+   ─────────────────────────────────────────────────────────────── */
+#sidebarDefconBadge {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   HORIZONTAL SCROLL INDICATOR
+   ─────────────────────────────────────────────────────────────── */
+.scroll-hint {
+  position: relative;
+}
+.scroll-hint::after {
+  content: '→';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--cyan);
+  opacity: 0.5;
+  font-size: 12px;
+  animation: float 1.5s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* ───────────────────────────────────────────────────────────────
+   OVERVIEW STAT CARDS — ANIMATED BORDER
+   ─────────────────────────────────────────────────────────────── */
+.stat-card-armed {
+  animation: borderGlow 2.5s ease-in-out infinite;
+  transition: transform var(--transition-fast);
+}
+.stat-card-armed:hover { transform: scale(1.01); }
+
+/* ───────────────────────────────────────────────────────────────
+   RIPPLE EFFECT ON BUTTON TAP
+   ─────────────────────────────────────────────────────────────── */
+.ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0, 240, 255, 0.25);
+  transform: scale(0);
+  animation: rippleAnim 0.5s linear;
+  pointer-events: none;
+}
+@keyframes rippleAnim {
+  to { transform: scale(4); opacity: 0; }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   MOBILE SAFE AREA
+   ─────────────────────────────────────────────────────────────── */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .pb-mobile-dock {
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* ───────────────────────────────────────────────────────────────
+   LANDING / SHOWCASE SECTION ENHANCEMENTS
+   ─────────────────────────────────────────────────────────────── */
+#view-showcase .text-5xl,
+#view-showcase .text-6xl {
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.1s both;
+}
+#view-showcase .text-sm,
+#view-showcase .text-base {
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.25s both;
+}
+#view-showcase a,
+#view-showcase button {
+  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.4s both;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, var(--cyan) 0%, #7df4ff 50%, var(--emerald) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Cyber border */
+.cyber-border {
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 0 1px rgba(0, 240, 255, 0.05) inset, 0 0 20px rgba(0, 240, 255, 0.05);
 }

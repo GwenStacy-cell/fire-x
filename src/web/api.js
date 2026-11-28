@@ -1456,6 +1456,23 @@ export function registerDashboardRoutes(app, client) {
   });
 
   // ---------------------------------------------------------------------------
+  // ROLES LIST (lightweight, for dropdowns)
+  // ---------------------------------------------------------------------------
+  api.get('/guilds/:guildId/roles', requireAuth(client), requireGuildAccess(client), async (req, res) => {
+    try {
+      const guild = req.targetGuild;
+      await guild.roles.fetch().catch(() => {});
+      const roles = guild.roles.cache
+        .filter(r => r.id !== guild.roles.everyone.id && !r.managed)
+        .sort((a, b) => b.position - a.position)
+        .map(r => ({ id: r.id, name: r.name, color: r.color, position: r.position }));
+      res.json({ ok: true, roles });
+    } catch (err) {
+      res.status(500).json({ ok: false, error: err.message });
+    }
+  });
+
+  // ---------------------------------------------------------------------------
   // MEDIA DOWNLOADER
   // ---------------------------------------------------------------------------
   api.get('/guilds/:guildId/settings/media', requireAuth(client), requireGuildAccess(client), (req, res) => {
